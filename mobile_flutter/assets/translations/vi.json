@@ -236,6 +236,7 @@
     "checkin_wrong_event": "Vé không thuộc sự kiện này",
     "checkin_not_found": "Không tìm thấy vé",
     "checkin_attendee": "Người tham dự",
+    "attendee_email": "Email",
     "checkin_status": "Trạng thái",
     "checkin_scan_next": "Quét tiếp",
     "checkin_forbidden": "Không có quyền",

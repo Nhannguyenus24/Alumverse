@@ -236,6 +236,7 @@
     "checkin_wrong_event": "Ticket does not belong to this event",
     "checkin_not_found": "Ticket not found",
     "checkin_attendee": "Attendee",
+    "attendee_email": "Email",
     "checkin_status": "Status",
     "checkin_scan_next": "Scan next",
     "checkin_forbidden": "No permission",

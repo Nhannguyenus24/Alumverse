@@ -15,6 +15,12 @@ class EventTicket {
   final int? memberId;
   final String? guestName;
   final String? guestEmail;
+  // Resolved holder profile (populated on check-in / single-ticket lookup).
+  final String? attendeeName;
+  final String? attendeeEmail;
+  final String? attendeeAvatarUrl;
+  // Encrypted QR payload the client renders (replaces the plaintext code).
+  final String? qrToken;
 
   const EventTicket({
     required this.id,
@@ -30,13 +36,27 @@ class EventTicket {
     this.memberId,
     this.guestName,
     this.guestEmail,
+    this.attendeeName,
+    this.attendeeEmail,
+    this.attendeeAvatarUrl,
+    this.qrToken,
   });
 
-  /// Best-effort display name for the attendee (guest name → email → member id).
+  /// Best-effort display name for the attendee
+  /// (profile name → guest name → profile/guest email → member id).
   String? get attendeeLabel {
+    if (attendeeName != null && attendeeName!.trim().isNotEmpty) return attendeeName;
     if (guestName != null && guestName!.trim().isNotEmpty) return guestName;
+    if (attendeeEmail != null && attendeeEmail!.trim().isNotEmpty) return attendeeEmail;
     if (guestEmail != null && guestEmail!.trim().isNotEmpty) return guestEmail;
     if (memberId != null) return '#$memberId';
+    return null;
+  }
+
+  /// Email to show for verification, if any.
+  String? get displayEmail {
+    if (attendeeEmail != null && attendeeEmail!.trim().isNotEmpty) return attendeeEmail;
+    if (guestEmail != null && guestEmail!.trim().isNotEmpty) return guestEmail;
     return null;
   }
 
@@ -88,6 +108,10 @@ class EventTicket {
       memberId: (json['memberId'] as num?)?.toInt(),
       guestName: json['guestName'] as String?,
       guestEmail: json['guestEmail'] as String?,
+      attendeeName: json['attendeeName'] as String?,
+      attendeeEmail: json['attendeeEmail'] as String?,
+      attendeeAvatarUrl: json['attendeeAvatarUrl'] as String?,
+      qrToken: json['qrToken'] as String?,
     );
   }
 

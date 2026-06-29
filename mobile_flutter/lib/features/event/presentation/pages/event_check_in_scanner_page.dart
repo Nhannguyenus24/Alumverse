@@ -9,9 +9,11 @@ import '../../../../core/theme/app_colors.dart';
 import '../../data/models/event_ticket.dart';
 import '../../data/repositories/event_repository.dart';
 
-/// Prefix the app embeds in the ticket QR (`MyTicketCard` / `qr_flutter`). A
-/// generic camera app yields the full string, so we strip it before lookup.
-const _qrPrefix = 'ALUMVERSE-TICKET-';
+/// Prefixes the app embeds in the ticket QR. `TKT2-` carries an encrypted token
+/// that only the backend can read; `TICKET-` is the legacy plaintext code kept
+/// for tickets issued before encryption was added.
+const _qrPrefixV2 = 'ALUMVERSE-TKT2-';
+const _qrPrefixLegacy = 'ALUMVERSE-TICKET-';
 
 enum _ResultKind { success, warning, error }
 
@@ -57,15 +59,6 @@ class _EventCheckInScannerPageState
     super.dispose();
   }
 
-  /// Strip the app QR prefix (if present) and normalise to the stored format.
-  String _normalize(String raw) {
-    var s = raw.trim();
-    if (s.toUpperCase().startsWith(_qrPrefix)) {
-      s = s.substring(_qrPrefix.length);
-    }
-    return s.trim().toUpperCase();
-  }
-
   void _onDetect(BarcodeCapture capture) {
     if (_busy) return;
     String? raw;
@@ -76,15 +69,30 @@ class _EventCheckInScannerPageState
       }
     }
     if (raw == null) return;
-    _handleCode(_normalize(raw));
+    _handleScanned(raw.trim());
   }
 
-  Future<void> _handleCode(String code) async {
-    if (code.isEmpty || _busy) return;
+  /// Route a scanned value: encrypted token → `qrToken`; legacy prefix or raw
+  /// text → `code`. Tokens are case-sensitive so they are passed through verbatim.
+  void _handleScanned(String raw) {
+    final upper = raw.toUpperCase();
+    if (upper.startsWith(_qrPrefixV2)) {
+      _handle(qrToken: raw);
+    } else if (upper.startsWith(_qrPrefixLegacy)) {
+      _handle(code: raw.substring(_qrPrefixLegacy.length).trim().toUpperCase());
+    } else {
+      _handle(code: raw.trim().toUpperCase());
+    }
+  }
+
+  Future<void> _handle({String? qrToken, String? code}) async {
+    final hasToken = qrToken != null && qrToken.isNotEmpty;
+    final hasCode = code != null && code.isNotEmpty;
+    if ((!hasToken && !hasCode) || _busy) return;
     setState(() => _busy = true);
     await _controller.stop();
 
-    final result = await _checkIn(code);
+    final result = await _checkIn(qrToken: qrToken, code: code);
     if (!mounted) return;
     await _showResult(result);
 
@@ -94,29 +102,16 @@ class _EventCheckInScannerPageState
     if (mounted) setState(() => _busy = false);
   }
 
-  Future<_CheckInResult> _checkIn(String code) async {
+  Future<_CheckInResult> _checkIn({String? qrToken, String? code}) async {
     final repo = ref.read(eventRepositoryProvider);
     try {
-      final ticket = await repo.getTicketByCode(code);
-      if (ticket.eventId != widget.eventId) {
-        return _CheckInResult(
-            _ResultKind.error, 'event.checkin_wrong_event'.tr(),
-            ticket: ticket);
-      }
-      if (ticket.isCancelled) {
-        return _CheckInResult(
-            _ResultKind.error, 'event.checkin_cancelled'.tr(),
-            ticket: ticket);
-      }
-      if (ticket.isCheckedIn) {
-        return _CheckInResult(
-            _ResultKind.warning, 'event.checkin_already'.tr(),
-            ticket: ticket);
-      }
-      final updated = await repo.checkInTicket(code);
+      // The backend decrypts/verifies the token, enforces the event scope and
+      // ticket status, and returns the holder's profile for verification.
+      final ticket =
+          await repo.checkIn(widget.eventId, qrToken: qrToken, code: code);
       return _CheckInResult(
           _ResultKind.success, 'event.checkin_success'.tr(),
-          ticket: updated);
+          ticket: ticket);
     } catch (e) {
       return _CheckInResult(_ResultKind.error, _messageOf(e));
     }
@@ -176,7 +171,7 @@ class _EventCheckInScannerPageState
       ),
     );
     if (code != null && code.trim().isNotEmpty) {
-      await _handleCode(_normalize(code));
+      await _handle(code: code.trim().toUpperCase());
     }
   }
 
@@ -319,11 +314,27 @@ class _ResultSheet extends StatelessWidget {
             ),
             if (ticket != null) ...[
               const SizedBox(height: 16),
+              if (ticket.attendeeAvatarUrl != null &&
+                  ticket.attendeeAvatarUrl!.isNotEmpty) ...[
+                Center(
+                  child: CircleAvatar(
+                    radius: 32,
+                    backgroundImage: NetworkImage(ticket.attendeeAvatarUrl!),
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
               if (ticket.attendeeLabel != null)
                 _InfoRow(
                   icon: Icons.person_outline,
                   label: 'event.checkin_attendee'.tr(),
                   value: ticket.attendeeLabel!,
+                ),
+              if (ticket.displayEmail != null)
+                _InfoRow(
+                  icon: Icons.email_outlined,
+                  label: 'event.attendee_email'.tr(),
+                  value: ticket.displayEmail!,
                 ),
               _InfoRow(
                 icon: Icons.confirmation_number_outlined,

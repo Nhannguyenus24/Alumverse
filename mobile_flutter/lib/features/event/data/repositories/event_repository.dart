@@ -117,12 +117,21 @@ class EventRepository {
     return EventTicket.fromJson(data);
   }
 
-  /// Admin/staff check-in: mark the ticket [code] as attended
-  /// (`POST /api/events/tickets/{code}/check-in`). Returns the updated ticket.
-  /// The backend rejects cancelled/expired/already-checked-in tickets, so the
-  /// caller should surface [ApiException.message] on error.
-  Future<EventTicket> checkInTicket(String code) async {
-    final res = await _dio.post(ApiEndpoints.eventCheckIn(code));
+  /// Admin/staff check-in for [eventId]. Provide either the scanned encrypted
+  /// [qrToken] (preferred) or the raw ticket [code] (manual fallback).
+  /// (`POST /api/events/{eventId}/tickets/check-in`). The backend decrypts/verifies
+  /// the token, enforces the event scope + status, and returns the updated ticket
+  /// enriched with the holder's profile so staff can verify the person. Rejected
+  /// tickets surface via [ApiException.message].
+  Future<EventTicket> checkIn(
+    int eventId, {
+    String? qrToken,
+    String? code,
+  }) async {
+    final res = await _dio.post(
+      ApiEndpoints.eventCheckIn(eventId),
+      data: {'qrToken': qrToken, 'code': code},
+    );
     final data = res.data is Map && res.data['data'] is Map
         ? res.data['data'] as Map<String, dynamic>
         : res.data as Map<String, dynamic>;
