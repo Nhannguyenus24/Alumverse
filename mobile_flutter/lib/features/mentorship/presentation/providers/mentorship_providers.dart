@@ -88,3 +88,11 @@ final mentorFeedbacksProvider =
       .watch(mentorshipRepositoryProvider)
       .getMentorFeedbacks(memberId, page: 0, limit: 20);
 });
+
+/// Single mentee session by ID — used by the session detail screen.
+final menteeSessionByIdProvider =
+    FutureProvider.family<MentorshipSession, int>((ref, sessionId) {
+  return ref
+      .watch(mentorshipRepositoryProvider)
+      .getMenteeSessionById(sessionId);
+});

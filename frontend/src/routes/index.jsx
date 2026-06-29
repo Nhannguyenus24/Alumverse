@@ -326,7 +326,11 @@ export const router = createBrowserRouter([
                   },
                   {
                     path: "create-topic",
-                    element: <ForumAlumniCreateTopicPage />,
+                    element: (
+                      <ProtectedRoute>
+                        <ForumAlumniCreateTopicPage />
+                      </ProtectedRoute>
+                    ),
                   },
                   {
                     path: ":threadId",
@@ -428,7 +432,11 @@ export const router = createBrowserRouter([
           },
           {
             path: "edit",
-            element: <MyProfileEditPage />,
+            element: (
+              <ProtectedRoute>
+                <MyProfileEditPage />
+              </ProtectedRoute>
+            ),
           },
           {
             path: ":id",
@@ -441,29 +449,45 @@ export const router = createBrowserRouter([
         children: [
           {
             index: true,
-            element: <MyTicketsPage />,
+            element: (
+              <ProtectedRoute>
+                <MyTicketsPage />
+              </ProtectedRoute>
+            ),
           },
         ],
       },
       {
         path: "saved-articles",
-        element: <SavedArticlesPage />,
+        element: (
+          <ProtectedRoute>
+            <SavedArticlesPage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "post",
-        element: <PostArticlePage />,
+        element: (
+          <ProtectedRoute>
+            <PostArticlePage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "post/event",
-        element: <PostArticleEventPage />,
+        element: (
+          <ProtectedRoute>
+            <PostArticleEventPage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "post/event/:id",
-        element: <PostArticleEventPage />,
-      },
-      {
-        path: "post/:channel",
-        element: <PostArticleGenericPage />,
+        element: (
+          <ProtectedRoute>
+            <PostArticleEventPage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "post/donation",
@@ -474,12 +498,24 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        path: "post/:channel",
+        element: (
+          <ProtectedRoute>
+            <PostArticleGenericPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
         path: "article/:channel/:id",
         element: <ArticlePage />,
       },
       {
         path: "notifications",
-        element: <NotificationPage />,
+        element: (
+          <ProtectedRoute>
+            <NotificationPage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "settings",

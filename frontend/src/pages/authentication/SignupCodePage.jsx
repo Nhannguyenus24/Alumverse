@@ -18,6 +18,7 @@ const SignupCodePage = () => {
   const { enqueueSnackbar } = useSnackbar();
   const { verifySignupCode, forgotPassword, isSubmitting: loading, setError } = useAuth();
   const emailFromState = location.state?.email ?? '';
+  const isForgotPasswordMode = location.state?.mode === 'forgot-password';
   const [countdown, setCountdown] = useState(60);
   const [otpDigits, setOtpDigits] = useState(Array(6).fill(''));
   const otpInputRefs = useRef([]);
@@ -113,6 +114,10 @@ const SignupCodePage = () => {
 
   const onSubmit = async (data) => {
     setError(null);
+    if (isForgotPasswordMode) {
+      navigate('/auth/reset-password', { state: { email: data.email, otp: data.otp } });
+      return;
+    }
     const result = await verifySignupCode({ email: data.email, otp: data.otp });
     if (result?.ok) {
       enqueueSnackbar(result.message ?? t('auth:verify_success'), { variant: 'success' });

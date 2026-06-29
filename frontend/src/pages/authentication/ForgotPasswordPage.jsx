@@ -7,9 +7,11 @@ import Page from '../../components/Page';
 import Input from '../../components/Input';
 import { sendOtpSchema } from '../../utils/regexUtils';
 import { useAuth } from '../../hooks/useAuth';
+import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
 const ForgotPasswordPage = () => {
   const { t } = useTranslation(['auth', 'common']);
+  const navigate = useOrgNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const { forgotPassword, isSubmitting: loading, setError } = useAuth();
 
@@ -27,6 +29,7 @@ const ForgotPasswordPage = () => {
     const result = await forgotPassword({ email: data.email });
     if (result?.ok) {
       enqueueSnackbar(result.message ?? t('auth:code_sent'), { variant: 'success' });
+      navigate('/auth/signup-code', { state: { email: data.email, mode: 'forgot-password' } });
     } else if (result?.error) {
       enqueueSnackbar(result.error, { variant: 'error' });
     }

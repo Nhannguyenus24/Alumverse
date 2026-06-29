@@ -38,11 +38,13 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @Tag(name = "Admin > Organizations", description = "API endpoints for managing organizations by administrators")
 @RestController
 @RequestMapping("/api/admin/organizations")
 @Validated
+@PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
 public class AdminOrganizationController {
     
     private final AdminOrganizationService organizationService;

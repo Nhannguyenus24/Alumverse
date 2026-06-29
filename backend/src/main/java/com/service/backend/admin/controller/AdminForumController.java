@@ -39,11 +39,13 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.Valid;
 import reactor.core.publisher.Mono;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @Tag(name = "Admin > Forum", description = "API endpoints for managing forums by administrators")
 @RestController
 @RequestMapping("/api/admin/forum")
 @Validated
+@PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'MODERATOR')")
 public class AdminForumController {
     
     private final AdminForumService adminForumService;

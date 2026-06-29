@@ -3,6 +3,8 @@ package com.service.backend.shared.utils;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -40,6 +42,12 @@ public class JwtUtils {
             .maximumSize(50_000)
             .build();
 
+    /**
+     * Revoked refresh token JTI set. Bounded to 100k entries to prevent unbounded growth;
+     * entries are also naturally bounded by the refresh token TTL (7–30 days).
+     */
+    private final ConcurrentHashMap<String, Boolean> revokedJtis = new ConcurrentHashMap<>();
+
     public JwtUtils(String jwtSecret, long accessTokenExpirationMs, long refreshTokenExpirationMs) {
         this.accessTokenExpirationMs = accessTokenExpirationMs;
         this.refreshTokenExpirationMs = refreshTokenExpirationMs;
@@ -74,12 +82,31 @@ public class JwtUtils {
         Instant now = Instant.now();
         JWTClaimsSet.Builder builder = new JWTClaimsSet.Builder()
                 .subject(String.valueOf(userId))
+                .jwtID(UUID.randomUUID().toString())
                 .issueTime(Date.from(now))
                 .expirationTime(Date.from(now.plusMillis(expirationMs)));
         if (organizationId != null) {
             builder.claim("organizationId", organizationId);
         }
         return signAndSerialize(builder.build());
+    }
+
+    /**
+     * Revoke a refresh token so it cannot be used after logout.
+     * Extracts the jti claim and adds it to the in-memory revocation set.
+     * No-ops if the token is already expired or unparseable.
+     */
+    public void revokeRefreshToken(String token) {
+        if (token == null || token.isBlank()) return;
+        try {
+            JWTClaimsSet claims = parseAndVerify(token);
+            String jti = claims.getJWTID();
+            if (jti != null) {
+                revokedJtis.put(jti, Boolean.TRUE);
+            }
+        } catch (Exception ignored) {
+            // Token already invalid — nothing to revoke
+        }
     }
 
     public JWTClaimsSet validateToken(String token) {
@@ -91,6 +118,12 @@ public class JwtUtils {
         Date expirationTime = claims.getExpirationTime();
         if (expirationTime != null && expirationTime.before(new Date())) {
             throw new ApplicationException(ErrorCode.INVALID_ACCESS_TOKEN, "Token has expired");
+        }
+
+        // Reject revoked refresh tokens (logout invalidation).
+        String jti = claims.getJWTID();
+        if (jti != null && revokedJtis.containsKey(jti)) {
+            throw new ApplicationException(ErrorCode.INVALID_REFRESH_TOKEN, "Token has been revoked");
         }
 
         return claims;
