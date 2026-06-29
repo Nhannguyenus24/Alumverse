@@ -15,6 +15,7 @@ import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
@@ -23,7 +24,6 @@ import com.service.backend.shared.dto.DataWithWarnings;
 import com.service.backend.shared.annotations.PublicEndpoint;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-@PublicEndpoint
 @Tag(name = "Fundraising > Funds", description = "API endpoints for viewing and managing fundraising funds")
 @RestController
 @RequestMapping("/api/funds")
@@ -33,6 +33,7 @@ public class FundController {
 
     private final FundService fundService;
 
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN')")
     @PostMapping
     public Mono<ResponseEntity<ApiResponse<Funds>>> createFund(
             @Valid @RequestBody CreateFundRequest request) {
@@ -42,6 +43,7 @@ public class FundController {
                         .body(new ApiResponse<>("Fund created successfully", createdFund)));
     }
 
+    @PublicEndpoint
     @GetMapping
     public Mono<ResponseEntity<ApiResponse<DataWithWarnings<PaginatedResponse<FundListItemResponse>>>>> getAll(
             @RequestParam(defaultValue = "0") @Min(0) int page,
@@ -74,6 +76,7 @@ public class FundController {
                 ));
     }
 
+    @PublicEndpoint
     @GetMapping("/banks")
     public Mono<ResponseEntity<ApiResponse<SupportedBanksResponse>>> getSupportedBanks() {
         return fundService.getSupportedBanksResponse()
@@ -81,6 +84,7 @@ public class FundController {
                         new ApiResponse<>("Supported banks retrieved successfully", response)));
     }
 
+    @PublicEndpoint
     @GetMapping("/{fundId}")
     public Mono<ResponseEntity<ApiResponse<FundDetailResponse>>> getDetail(
             @PathVariable @Min(1) Long fundId) {
@@ -89,6 +93,7 @@ public class FundController {
                         new ApiResponse<>("Fund retrieved successfully", response)));
     }
 
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN')")
     @PutMapping("/{fundId}")
     // co the update 1 field hoac nhieu field trong {name, manager_name, description_short, description_full, logoUrl, organizationId}
     public Mono<ResponseEntity<ApiResponse<Funds>>> updateFund(
@@ -101,6 +106,7 @@ public class FundController {
                 ));
     }
 
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN')")
     @PutMapping("/{fundId}/close")
     public Mono<ResponseEntity<ApiResponse<Funds>>> closeFund(
             @PathVariable @Min(1) Long fundId
@@ -112,6 +118,7 @@ public class FundController {
     }
 
 
+    @PublicEndpoint
     @GetMapping("/statistics")
     public Mono<ResponseEntity<ApiResponse<FundStatisticsResponse>>> getStatistics() {
         return fundService.getFundStatistics()

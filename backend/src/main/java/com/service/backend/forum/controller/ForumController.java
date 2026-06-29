@@ -2,9 +2,11 @@ package com.service.backend.forum.controller;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -35,6 +37,7 @@ import com.service.backend.forum.dto.UpdateForumPostRequest;
 import com.service.backend.forum.service.ForumService;
 import com.service.backend.shared.dto.ApiResponse;
 import com.service.backend.shared.annotations.PublicEndpoint;
+import com.service.backend.shared.utils.SecurityUtils;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -80,6 +83,7 @@ public class ForumController {
     /**
      * Create forum category
      */
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN')")
     @PostMapping("/category")
     public Mono<ResponseEntity<ApiResponse<ForumCategoryDTO>>> createCategory(
             @Valid @RequestBody CreateForumCategoryRequest request) {
@@ -90,6 +94,7 @@ public class ForumController {
     /**
      * Update forum category
      */
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN')")
     @PutMapping("/category/{id}")
     public Mono<ResponseEntity<ApiResponse<ForumCategoryDTO>>> updateCategory(
             @PathVariable @Min(value = 1, message = "Category ID must be greater than 0") Integer id,
@@ -137,7 +142,8 @@ public class ForumController {
     @PostMapping("/topic")
     public Mono<ResponseEntity<ApiResponse<ForumTopicDTO>>> createTopic(
             @Valid @RequestBody CreateForumTopicRequest request) {
-        return forumService.createTopic(request)
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(userId -> forumService.createTopic(request, userId.intValue()))
                 .map(topic -> ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("Forum topic created successfully", topic)));
     }
 
@@ -158,7 +164,8 @@ public class ForumController {
     @PostMapping("/topic/subscribe")
     public Mono<ResponseEntity<ApiResponse<ForumTopicSubscriptionDTO>>> subscribeToTopic(
             @Valid @RequestBody CreateForumTopicSubscriptionRequest request) {
-        return forumService.subscribeToTopic(request)
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(userId -> forumService.subscribeToTopic(request, userId.intValue()))
                 .map(subscription -> ResponseEntity.status(HttpStatus.CREATED)
                         .body(new ApiResponse<>("Subscribed to topic successfully", subscription)))
                 .switchIfEmpty(Mono.just(ResponseEntity.ok(new ApiResponse<>("Unsubscribed from topic successfully", null))));
@@ -169,9 +176,9 @@ public class ForumController {
      */
     @GetMapping("/topic/{topicId}/is-subscribed")
     public Mono<ResponseEntity<ApiResponse<Boolean>>> isSubscribed(
-            @PathVariable @Min(value = 1, message = "Topic ID must be greater than 0") Integer topicId,
-            @RequestParam @NotNull(message = "Member ID is required") Integer memberId) {
-        return forumService.isSubscribed(topicId, memberId)
+            @PathVariable @Min(value = 1, message = "Topic ID must be greater than 0") Integer topicId) {
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(userId -> forumService.isSubscribed(topicId, userId.intValue()))
                 .map(isSubscribed -> ResponseEntity.ok(new ApiResponse<>("Subscription status retrieved successfully", isSubscribed)));
     }
 
@@ -188,10 +195,13 @@ public class ForumController {
             @Parameter(example = "0")
             @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page must be greater than or equal to 0") int page,
             @Parameter(example = "20")
-            @RequestParam(defaultValue = "20") @Min(value = 1, message = "Size must be greater than 0") int size,
-            @Parameter(example = "1")
-            @RequestParam(required = false) Integer memberId) {
-        return forumService.findPostsByTopicId(topicId, page, size, memberId)
+            @RequestParam(defaultValue = "20") @Min(value = 1, message = "Size must be greater than 0") int size) {
+        // Public endpoint: anonymous callers get no per-user reaction flags; authenticated
+        // callers have their own member id resolved from the JWT (never trusted from the client).
+        return SecurityUtils.getCurrentUserId()
+                .map(userId -> Optional.of(userId.intValue()))
+                .defaultIfEmpty(Optional.empty())
+                .flatMap(memberId -> forumService.findPostsByTopicId(topicId, page, size, memberId.orElse(null)))
                 .map(response -> ResponseEntity.ok(new ApiResponse<>("Posts retrieved successfully", response)));
     }
 
@@ -201,7 +211,8 @@ public class ForumController {
     @PostMapping("/post")
     public Mono<ResponseEntity<ApiResponse<ForumPostDTO>>> createPost(
             @Valid @RequestBody CreateForumPostRequest request) {
-        return forumService.createPost(request)
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(userId -> forumService.createPost(request, userId.intValue()))
                 .map(post -> ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("Forum post created successfully", post)));
     }
 
@@ -212,7 +223,8 @@ public class ForumController {
     public Mono<ResponseEntity<ApiResponse<ForumPostDTO>>> answerToPost(
             @PathVariable @Min(value = 1, message = "Post ID must be greater than 0") Integer postId,
             @Valid @RequestBody CreateForumPostRequest request) {
-        return forumService.answerToPost(postId, request)
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(userId -> forumService.answerToPost(postId, request, userId.intValue()))
                 .map(post -> ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("Answer posted successfully", post)));
     }
 
@@ -245,7 +257,8 @@ public class ForumController {
     @PostMapping("/post/react")
     public Mono<ResponseEntity<ApiResponse<ForumPostReactionDTO>>> reactToPost(
             @Valid @RequestBody CreateForumPostReactionRequest request) {
-        return forumService.reactToPost(request)
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(userId -> forumService.reactToPost(request, userId.intValue()))
                 .map(reaction -> ResponseEntity.status(HttpStatus.CREATED)
                         .body(new ApiResponse<>("Like added successfully", reaction)))
                 .switchIfEmpty(Mono.just(ResponseEntity.ok(new ApiResponse<>("Like removed successfully", null))));
@@ -255,7 +268,8 @@ public class ForumController {
     public Mono<ResponseEntity<ApiResponse<ForumPostReportDTO>>> reportPost(
             @PathVariable @Min(value = 1, message = "Post ID must be greater than 0") Integer id,
             @Valid @RequestBody CreateForumPostReportRequest request) {
-        return forumService.reportPost(id, request)
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(userId -> forumService.reportPost(id, request, userId.intValue()))
                 .map(report -> ResponseEntity.status(HttpStatus.CREATED)
                         .body(new ApiResponse<>("Post report submitted successfully", report)));
     }
@@ -276,10 +290,9 @@ public class ForumController {
      */
     @GetMapping("/post/{postId}/reactions/user")
     public Mono<ResponseEntity<ApiResponse<ForumPostReactionDTO>>> getUserReaction(
-            @PathVariable @Min(value = 1, message = "Post ID must be greater than 0") Integer postId,
-            @Parameter(example = "1")
-            @RequestParam @NotNull(message = "Member ID is required") Integer memberId) {
-        return forumService.getUserReaction(postId, memberId)
+            @PathVariable @Min(value = 1, message = "Post ID must be greater than 0") Integer postId) {
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(userId -> forumService.getUserReaction(postId, userId.intValue()))
                 .map(reaction -> ResponseEntity.ok(new ApiResponse<>("User reaction retrieved successfully", reaction)))
                 .switchIfEmpty(Mono.just(ResponseEntity.ok(
                         new ApiResponse<>("No reaction found for this post", null))));

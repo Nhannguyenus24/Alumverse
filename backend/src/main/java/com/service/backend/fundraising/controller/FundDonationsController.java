@@ -7,6 +7,7 @@ import com.service.backend.fundraising.service.FundService;
 import com.service.backend.shared.dto.ApiResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.annotations.PublicEndpoint;
+import com.service.backend.shared.utils.SecurityUtils;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
@@ -53,14 +54,13 @@ public class FundDonationsController {
                 ));
     }
 
-    @PublicEndpoint
-    @GetMapping("/user/{userId}")
-    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<FundDonationListItemResponse>>>> getByUserId(
-            @PathVariable @Min(1) Integer userId,
+    @GetMapping("/me")
+    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<FundDonationListItemResponse>>>> getMyDonations(
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int limit
     ) {
-        return fundService.getDonationsByDonorMemberId(userId, page, limit)
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(userId -> fundService.getDonationsByDonorMemberId(userId.intValue(), page, limit))
                 .map(response -> ResponseEntity.ok(
                         new ApiResponse<>("Fund donations by user retrieved successfully", response)
                 ));

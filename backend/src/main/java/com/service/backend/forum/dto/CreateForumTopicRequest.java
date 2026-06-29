@@ -26,11 +26,6 @@ public class CreateForumTopicRequest {
     @Schema(example = "Hỏi đáp về đăng ký môn học")
     private String title;
     
-    @NotNull(message = "Creator member ID is required")
-    @Min(value = 1, message = "Creator member ID must be greater than 0")
-    @Schema(example = "3")
-    private Integer createdByMemberId;
-    
     @NotNull(message = "Category ID is required")
     @Min(value = 1, message = "Category ID must be greater than 0")
     @Schema(example = "2")

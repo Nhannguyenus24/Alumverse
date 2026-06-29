@@ -20,7 +20,6 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 import com.service.backend.shared.annotations.PublicEndpoint;
 
-@PublicEndpoint
 @Tag(name = "Organizations", description = "API endpoints for public organization directory")
 @RestController
 @RequestMapping("/api/organizations")
@@ -28,6 +27,7 @@ import com.service.backend.shared.annotations.PublicEndpoint;
 public class OrganizationController {
     private final OrganizationService organizationService;
 
+    @PublicEndpoint
     @GetMapping
     @Operation(
             summary = "Get all organizations",
@@ -41,6 +41,7 @@ public class OrganizationController {
                 ));
     }
 
+    @PublicEndpoint
     @GetMapping("/{slug}")
     @Operation(
             summary = "Get organization by slug",
@@ -55,6 +56,7 @@ public class OrganizationController {
                 ));
     }
 
+    @PublicEndpoint
     @GetMapping("/{organizationId}/introduction")
     @Operation(
             summary = "Get organization introduction",
@@ -82,6 +84,7 @@ public class OrganizationController {
                         .body(new ApiResponse<>("School feedback created successfully", feedback)));
     }
 
+    @PublicEndpoint
     @GetMapping("/{organizationId}/trusted-verifiers")
     @Operation(
             summary = "Get trusted verifiers",

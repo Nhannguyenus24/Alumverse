@@ -8,6 +8,7 @@ import com.service.backend.shared.dto.PaginatedResponse;
 import jakarta.validation.constraints.Min;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -25,6 +26,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RestController
 @RequestMapping("/api/admin/audit")
 @Validated
+@PreAuthorize("hasAnyRole('ADMIN','STAFF')")
 public class AuditController {
 
     private final AuditService auditService;
@@ -64,6 +66,7 @@ public class AuditController {
     /**
      * Get aggregated login stats: breakdown by method and daily counts for last 30 days
      */
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/login-history/stats")
     public Mono<ResponseEntity<ApiResponse<Map<String, Object>>>> getLoginStats() {
         return auditService.getLoginStats()
@@ -74,6 +77,7 @@ public class AuditController {
     /**
      * Get users with logins from more than 3 distinct IPs in the last 7 days
      */
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/login-history/suspicious")
     public Mono<ResponseEntity<ApiResponse<List<SuspiciousLoginInfo>>>> getSuspiciousLogins() {
         return auditService.getSuspiciousLogins()

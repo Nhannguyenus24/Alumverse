@@ -21,11 +21,6 @@ public class CreateForumPostRequest {
     @Schema(example = "5")
     private Integer topicId;
     
-    @NotNull(message = "Author member ID is required")
-    @Min(value = 1, message = "Author member ID must be greater than 0")
-    @Schema(example = "1")
-    private Integer authorMemberId;
-    
     @NotBlank(message = "Post content is required")
     @Size(min = 1, max = 10000, message = "Post content must be between 1 and 10000 characters")
     @Schema(example = "Bạn nào biết cách đăng ký môn học không? Hướng dẫn giúp mình với!")

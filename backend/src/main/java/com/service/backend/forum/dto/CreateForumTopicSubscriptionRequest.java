@@ -7,7 +7,4 @@ import lombok.Data;
 public class CreateForumTopicSubscriptionRequest {
     @NotNull(message = "Topic ID is required")
     private Integer topicId;
-
-    @NotNull(message = "Member ID is required")
-    private Integer memberId;
 }

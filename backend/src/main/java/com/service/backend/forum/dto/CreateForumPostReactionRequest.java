@@ -13,7 +13,4 @@ import lombok.NoArgsConstructor;
 public class CreateForumPostReactionRequest {
     @NotNull(message = "Post ID is required")
     private Integer postId;
-    
-    @NotNull(message = "Member ID is required")
-    private Integer memberId;
 }

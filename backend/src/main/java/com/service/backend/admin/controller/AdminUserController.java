@@ -2,6 +2,7 @@ package com.service.backend.admin.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -48,6 +49,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RestController
 @RequestMapping("/api/admin/users")
 @Validated
+@PreAuthorize("hasAnyRole('ADMIN','STAFF')")
 public class AdminUserController {
     
     private final AdminUserService adminUserService;
@@ -89,6 +91,7 @@ public class AdminUserController {
     /**
      * Ban a user
      */
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/ban")
     public Mono<ResponseEntity<ApiResponse<Boolean>>> banUser(
             @Valid @RequestBody BanUserRequest request) {
@@ -106,6 +109,7 @@ public class AdminUserController {
     /**
      * Delete a user (soft or hard delete)
      */
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping
     public Mono<ResponseEntity<ApiResponse<Boolean>>> deleteUser(
             @Valid @RequestBody DeleteUserRequest request) {
@@ -147,6 +151,7 @@ public class AdminUserController {
     /**
      * Unban a user
      */
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/unban")
     public Mono<ResponseEntity<ApiResponse<Boolean>>> unbanUser(
             @Valid @RequestBody UnbanUserRequest request) {
@@ -277,6 +282,7 @@ public class AdminUserController {
                         new ApiResponse<>("User activity fetched successfully", activity)));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/{userId}/reset-password")
     public Mono<ResponseEntity<ApiResponse<Boolean>>> resetPasswordByAdmin(
             @PathVariable Integer userId,
@@ -292,6 +298,7 @@ public class AdminUserController {
                 });
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/admins")
     public Mono<ResponseEntity<ApiResponse<Boolean>>> createAdminAccount(
             @Valid @RequestBody CreateAdminRequest request) {
@@ -317,6 +324,7 @@ public class AdminUserController {
         return reviewVerificationRequest(requestId, request);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/growth-statistics")
     public Mono<ResponseEntity<ApiResponse<UserGrowthStatisticsDTO>>> getUserGrowthStatistics() {
         return adminUserService.getUserGrowthStatistics()
@@ -324,6 +332,7 @@ public class AdminUserController {
                         new ApiResponse<>("User growth statistics fetched successfully", stats)));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/verification-statistics")
     public Mono<ResponseEntity<ApiResponse<VerificationStatisticsDTO>>> getVerificationStatistics() {
         return adminUserService.getVerificationStatistics()

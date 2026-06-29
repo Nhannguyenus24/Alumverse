@@ -1,6 +1,7 @@
 package com.service.backend.admin.controller;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -28,6 +29,7 @@ import reactor.core.publisher.Mono;
 @RequestMapping("/api/admin/education-requests")
 @Validated
 @RequiredArgsConstructor
+@PreAuthorize("hasAnyRole('ADMIN','STAFF')")
 public class AdminEducationController {
 
     private final AdminEducationService adminEducationService;

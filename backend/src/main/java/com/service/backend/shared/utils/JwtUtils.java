@@ -40,9 +40,21 @@ public class JwtUtils {
             .maximumSize(50_000)
             .build();
 
+    /**
+     * Holds access tokens explicitly revoked (e.g. on logout). A stateless JWT is otherwise
+     * valid until its expiry; this blacklist lets {@link #validateToken} reject a token early.
+     * Entries are kept only for the access-token lifetime — once the token would expire on its
+     * own there is nothing left to revoke — which bounds memory without a sweeper.
+     */
+    private final Cache<String, Boolean> revokedTokenCache;
+
     public JwtUtils(String jwtSecret, long accessTokenExpirationMs, long refreshTokenExpirationMs) {
         this.accessTokenExpirationMs = accessTokenExpirationMs;
         this.refreshTokenExpirationMs = refreshTokenExpirationMs;
+        this.revokedTokenCache = Caffeine.newBuilder()
+                .expireAfterWrite(Duration.ofMillis(accessTokenExpirationMs))
+                .maximumSize(50_000)
+                .build();
         try {
             byte[] secretKeyBytes = jwtSecret.getBytes();
             this.signer = new MACSigner(secretKeyBytes);
@@ -82,7 +94,22 @@ public class JwtUtils {
         return signAndSerialize(builder.build());
     }
 
+    /**
+     * Revokes an access token so subsequent {@link #validateToken} calls reject it. Called on
+     * logout. Idempotent; revoking an unknown/expired token is a no-op.
+     */
+    public void revokeToken(String token) {
+        if (token != null && !token.isBlank()) {
+            revokedTokenCache.put(token, Boolean.TRUE);
+        }
+    }
+
     public JWTClaimsSet validateToken(String token) {
+        // Reject explicitly revoked tokens (e.g. after logout) before any other work.
+        if (revokedTokenCache.getIfPresent(token) != null) {
+            throw new ApplicationException(ErrorCode.INVALID_ACCESS_TOKEN, "Token has been revoked");
+        }
+
         // Parse + signature verification are deterministic for a given token, so cache them.
         // Invalid/forged tokens throw from the loader and are not cached.
         JWTClaimsSet claims = verifiedTokenCache.get(token, this::parseAndVerify);

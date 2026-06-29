@@ -31,6 +31,7 @@ import com.service.backend.shared.entity.User;
 import com.service.backend.auth.service.AuthService;
 import com.service.backend.shared.dto.ApiResponse;
 import com.service.backend.shared.utils.JwtUtils;
+import com.service.backend.shared.utils.SecurityUtils;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -38,7 +39,6 @@ import reactor.core.publisher.Mono;
 import com.service.backend.shared.annotations.PublicEndpoint;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-@PublicEndpoint
 @Tag(name = "Auth", description = "API endpoints for user authentication and authorization")
 @RestController
 @RequestMapping("/api/auth")
@@ -57,6 +57,7 @@ public class AuthController {
     /**
      * Register a new user
      */
+    @PublicEndpoint
     @PostMapping("/register")
     public Mono<ResponseEntity<ApiResponse<Boolean>>> register(
             @Valid @RequestBody RegisterRequest request) {
@@ -68,6 +69,7 @@ public class AuthController {
      * Login user
      * Returns access token in response body and refresh token in HTTP-only cookie
      */
+    @PublicEndpoint
     @PostMapping("/login")
     public Mono<ResponseEntity<ApiResponse<LoginResponse>>> login(
             @Valid @RequestBody LoginRequest request,
@@ -88,6 +90,7 @@ public class AuthController {
     /**
      * Login user with Google ID token
      */
+    @PublicEndpoint
     @PostMapping("/google-login")
     public Mono<ResponseEntity<ApiResponse<LoginResponse>>> googleLogin(
             @Valid @RequestBody GoogleLoginRequest request,
@@ -102,6 +105,7 @@ public class AuthController {
     /**
      * Activate user after successful verification
      */
+    @PublicEndpoint
     @PostMapping("/activate/{userId}")
     public Mono<ResponseEntity<ApiResponse<Boolean>>> activateUser(
             @Parameter(example = "123")
@@ -113,20 +117,26 @@ public class AuthController {
     /**
      * Change user password
      */
-    @PutMapping("/password/{userId}")
+    @PutMapping("/password")
     public Mono<ResponseEntity<ApiResponse<Boolean>>> changePassword(
-            @Parameter(example = "123")
-            @PathVariable @Min(value = 1, message = "User ID must be greater than 0") Integer userId,
             @Valid @RequestBody ChangePasswordRequest request) {
-        return authService.changePassword(userId, request.getOldPassword(), request.getNewPassword())
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(userId -> authService.changePassword(userId.intValue(), request.getOldPassword(), request.getNewPassword()))
                 .thenReturn(ResponseEntity.ok(new ApiResponse<>("Password changed successfully", true)));
     }
 
     /**
      * Logout user - remove refresh token cookie
      */
+    @PublicEndpoint
     @PostMapping("/logout")
-    public Mono<ResponseEntity<ApiResponse<Boolean>>> logout() {
+    public Mono<ResponseEntity<ApiResponse<Boolean>>> logout(ServerWebExchange exchange) {
+        // Revoke the presented access token so it cannot be reused before its natural expiry.
+        String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            jwtUtils.revokeToken(authHeader.substring(7));
+        }
+
         // Create empty refresh token cookie with maxAge 0 to remove it
         ResponseCookie refreshTokenCookie = ResponseCookie
                 .from("refreshToken", "")
@@ -144,6 +154,7 @@ public class AuthController {
     /**
      * Refresh access token using refresh token from cookie
      */
+    @PublicEndpoint
     @PostMapping("/refresh")
     public Mono<ResponseEntity<ApiResponse<LoginResponse>>> refresh(
             @CookieValue(value = "refreshToken", required = false) String refreshToken) {
@@ -156,6 +167,7 @@ public class AuthController {
     /**
      * Send OTP verification code to user's email
      */
+    @PublicEndpoint
     @PostMapping("/send-otp")
     public Mono<ResponseEntity<ApiResponse<Boolean>>> sendOtp(
             @Valid @RequestBody SendOtpRequest request) {
@@ -166,6 +178,7 @@ public class AuthController {
     /**
      * Verify OTP code and activate user account
      */
+    @PublicEndpoint
     @PostMapping("/verify-otp")
     public Mono<ResponseEntity<ApiResponse<Boolean>>> verifyOtp(
             @Valid @RequestBody VerifyOtpRequest request) {
@@ -176,47 +189,43 @@ public class AuthController {
     /**
      * Request OTP to change email (sent to old email)
      */
-    @PostMapping("/change-email/{userId}/request-otp-old")
-    public Mono<ResponseEntity<ApiResponse<Boolean>>> requestChangeEmailOtpOld(
-            @Parameter(example = "123")
-            @PathVariable @Min(value = 1, message = "User ID must be greater than 0") Integer userId) {
-        return authService.requestChangeEmailOtpOld(userId)
+    @PostMapping("/change-email/request-otp-old")
+    public Mono<ResponseEntity<ApiResponse<Boolean>>> requestChangeEmailOtpOld() {
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(userId -> authService.requestChangeEmailOtpOld(userId.intValue()))
                 .thenReturn(ResponseEntity.ok(new ApiResponse<>("OTP sent to old email successfully", true)));
     }
 
     /**
      * Verify OTP sent to old email for changing email
      */
-    @PostMapping("/change-email/{userId}/verify-otp-old")
+    @PostMapping("/change-email/verify-otp-old")
     public Mono<ResponseEntity<ApiResponse<Boolean>>> verifyChangeEmailOtpOld(
-            @Parameter(example = "123")
-            @PathVariable @Min(value = 1, message = "User ID must be greater than 0") Integer userId,
             @Valid @RequestBody VerifyOldEmailOtpRequest request) {
-        return authService.verifyChangeEmailOtpOld(userId, request.getOtp())
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(userId -> authService.verifyChangeEmailOtpOld(userId.intValue(), request.getOtp()))
                 .thenReturn(ResponseEntity.ok(new ApiResponse<>("Old email verified successfully", true)));
     }
 
     /**
      * Request OTP to new email
      */
-    @PostMapping("/change-email/{userId}/request-otp-new")
+    @PostMapping("/change-email/request-otp-new")
     public Mono<ResponseEntity<ApiResponse<Boolean>>> requestChangeEmailOtpNew(
-            @Parameter(example = "123")
-            @PathVariable @Min(value = 1, message = "User ID must be greater than 0") Integer userId,
             @Valid @RequestBody SendOtpRequest request) {
-        return authService.requestChangeEmailOtpNew(userId, request.getEmail())
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(userId -> authService.requestChangeEmailOtpNew(userId.intValue(), request.getEmail()))
                 .thenReturn(ResponseEntity.ok(new ApiResponse<>("OTP sent to new email successfully", true)));
     }
 
     /**
      * Verify OTP sent to new email and update email
      */
-    @PostMapping("/change-email/{userId}/verify-otp-new")
+    @PostMapping("/change-email/verify-otp-new")
     public Mono<ResponseEntity<ApiResponse<Boolean>>> verifyChangeEmailOtpNew(
-            @Parameter(example = "123")
-            @PathVariable @Min(value = 1, message = "User ID must be greater than 0") Integer userId,
             @Valid @RequestBody VerifyOtpRequest request) {
-        return authService.verifyChangeEmailOtpNew(userId, request.getEmail(), request.getOtp())
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(userId -> authService.verifyChangeEmailOtpNew(userId.intValue(), request.getEmail(), request.getOtp()))
                 .thenReturn(ResponseEntity.ok(new ApiResponse<>("Email updated successfully", true)));
     }
 

@@ -11,6 +11,7 @@ import com.service.backend.admin.service.AdminInsightsService;
 import com.service.backend.shared.dto.ApiResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -23,6 +24,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "Admin > Dashboard", description = "API endpoints for admin dashboard metrics and statistics")
 @RestController
 @RequestMapping("/api/admin/dashboard")
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminDashboardController {
 
     private final AdminDashboardService dashboardService;
@@ -40,6 +42,7 @@ public class AdminDashboardController {
                 .map(metrics -> ResponseEntity.ok(new ApiResponse<>("Metrics fetched", metrics)));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','STAFF')")
     @GetMapping("/activities")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<ActivityItemDTO>>>> getActivities(
             @RequestParam(required = false) Integer organizationId,

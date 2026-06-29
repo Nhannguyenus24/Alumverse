@@ -12,6 +12,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
@@ -30,12 +31,14 @@ public class EventController {
 
     // ─── Event CRUD ───────────────────────────────────────────────────────────
 
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN')")
     @PostMapping
     public Mono<ResponseEntity<ApiResponse<Event>>> createEvent(@Valid @RequestBody CreateEventRequest request) {
         return eventService.createEvent(request)
                 .map(e -> ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("Event created successfully", e)));
     }
 
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN')")
     @PutMapping("/{eventId}")
     public Mono<ResponseEntity<ApiResponse<Event>>> updateEvent(
             @Parameter(example = "1") @PathVariable @Min(1) Long eventId,
@@ -44,6 +47,7 @@ public class EventController {
                 .map(e -> ResponseEntity.ok(new ApiResponse<>("Event updated successfully", e)));
     }
 
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN')")
     @DeleteMapping("/{eventId}")
     public Mono<ResponseEntity<ApiResponse<Void>>> deleteEvent(
             @Parameter(example = "1") @PathVariable @Min(1) Long eventId) {
@@ -68,6 +72,7 @@ public class EventController {
                 .map(e -> ResponseEntity.ok(new ApiResponse<>("Events retrieved successfully", e)));
     }
 
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN')")
     @PostMapping("/{eventId}/publish")
     public Mono<ResponseEntity<ApiResponse<Event>>> publishEvent(
             @Parameter(example = "1") @PathVariable @Min(1) Long eventId) {
@@ -75,6 +80,7 @@ public class EventController {
                 .map(e -> ResponseEntity.ok(new ApiResponse<>("Event published successfully", e)));
     }
 
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN')")
     @PostMapping("/{eventId}/unpublish")
     public Mono<ResponseEntity<ApiResponse<Event>>> unpublishEvent(
             @Parameter(example = "1") @PathVariable @Min(1) Long eventId) {
@@ -147,6 +153,7 @@ public class EventController {
                         Map.of("isRegistered", v))));
     }
 
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN')")
     @GetMapping("/{eventId}/interests")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<EventInterest>>>> getEventInterests(
             @Parameter(example = "1") @PathVariable @Min(1) Long eventId,
@@ -158,6 +165,7 @@ public class EventController {
 
     // ─── Step 1: Invite users ─────────────────────────────────────────────────
 
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN')")
     @PostMapping("/{eventId}/invitations")
     public Mono<ResponseEntity<ApiResponse<Integer>>> inviteUsers(
             @Parameter(example = "1") @PathVariable @Min(1) Long eventId,
@@ -167,6 +175,7 @@ public class EventController {
                         .body(new ApiResponse<>("Invitations sent: " + count, count)));
     }
 
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN')")
     @GetMapping("/{eventId}/invitations")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<EventInvitation>>>> getInvitations(
             @Parameter(example = "1") @PathVariable @Min(1) Long eventId,
@@ -198,6 +207,7 @@ public class EventController {
 
     // ─── Step 3: Reminder emails ──────────────────────────────────────────────
 
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN')")
     @PostMapping("/{eventId}/reminders")
     public Mono<ResponseEntity<ApiResponse<Integer>>> sendReminders(
             @Parameter(example = "1") @PathVariable @Min(1) Long eventId,
@@ -206,6 +216,7 @@ public class EventController {
                 .map(count -> ResponseEntity.ok(new ApiResponse<>("Reminder sent to " + count + " recipients", count)));
     }
 
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN')")
     @GetMapping("/{eventId}/email-logs")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<EventEmailLog>>>> getEmailLogs(
             @Parameter(example = "1") @PathVariable @Min(1) Long eventId,
@@ -217,6 +228,7 @@ public class EventController {
 
     // ─── Step 5: Send issued ticket emails ───────────────────────────────────
 
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN')")
     @PostMapping("/{eventId}/tickets/send-emails")
     public Mono<ResponseEntity<ApiResponse<Integer>>> sendTicketEmails(
             @Parameter(example = "1") @PathVariable @Min(1) Long eventId) {
@@ -226,6 +238,7 @@ public class EventController {
 
     // ─── Step 6: Check-in (event-scoped, QR-encrypted, staff-only) ────────────
 
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN')")
     @PostMapping("/{eventId}/tickets/check-in")
     public Mono<ResponseEntity<ApiResponse<EventTicketDetailResponse>>> checkIn(
             @Parameter(example = "1") @PathVariable @Min(1) Long eventId,
@@ -251,6 +264,7 @@ public class EventController {
                 .map(t -> ResponseEntity.ok(new ApiResponse<>("Ticket retrieved successfully", t)));
     }
 
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN')")
     @GetMapping("/{eventId}/tickets")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<EventTicket>>>> getTicketsByEvent(
             @Parameter(example = "1") @PathVariable @Min(1) Long eventId,
@@ -270,6 +284,7 @@ public class EventController {
                 .map(t -> ResponseEntity.ok(new ApiResponse<>("My tickets retrieved successfully", t)));
     }
 
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN')")
     @GetMapping("/{eventId}/statistics")
     public Mono<ResponseEntity<ApiResponse<EventStatisticsResponse>>> getEventStatistics(
             @Parameter(example = "1") @PathVariable @Min(1) Long eventId) {
@@ -288,6 +303,7 @@ public class EventController {
                 .map(list -> ResponseEntity.ok(new ApiResponse<>("Event questions retrieved successfully", list)));
     }
 
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN')")
     @PostMapping("/{eventId}/questions")
     public Mono<ResponseEntity<ApiResponse<EventQuestionResponse>>> createEventQuestion(
             @Parameter(example = "1") @PathVariable @Min(1) Long eventId,
@@ -297,6 +313,7 @@ public class EventController {
                         .body(new ApiResponse<>("Question created successfully", q)));
     }
 
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN')")
     @PutMapping("/{eventId}/questions/{questionId}")
     public Mono<ResponseEntity<ApiResponse<EventQuestionResponse>>> updateEventQuestion(
             @Parameter(example = "1") @PathVariable @Min(1) Long eventId,
@@ -306,6 +323,7 @@ public class EventController {
                 .map(q -> ResponseEntity.ok(new ApiResponse<>("Question updated successfully", q)));
     }
 
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN')")
     @DeleteMapping("/{eventId}/questions/{questionId}")
     public Mono<ResponseEntity<ApiResponse<Void>>> deleteEventQuestion(
             @Parameter(example = "1") @PathVariable @Min(1) Long eventId,
@@ -314,6 +332,7 @@ public class EventController {
                 .map(ok -> ResponseEntity.ok(new ApiResponse<>("Question deleted successfully", (Void) null)));
     }
 
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN')")
     @PutMapping("/{eventId}/questions/reorder")
     public Mono<ResponseEntity<ApiResponse<Void>>> reorderEventQuestions(
             @Parameter(example = "1") @PathVariable @Min(1) Long eventId,

@@ -2,6 +2,7 @@ package com.service.backend.admin.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -43,6 +44,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RestController
 @RequestMapping("/api/admin/organizations")
 @Validated
+@PreAuthorize("hasAnyRole('ADMIN','STAFF')")
 public class AdminOrganizationController {
     
     private final AdminOrganizationService organizationService;
@@ -54,6 +56,7 @@ public class AdminOrganizationController {
     /**
      * Get all organizations with pagination and search
      */
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<Organization>>>> getAllOrganizations(
             @RequestParam(defaultValue = "0") @Min(0) int page,
@@ -94,6 +97,7 @@ public class AdminOrganizationController {
                         new ApiResponse<>("School feedback marked as read", true)));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/feedback-statistics")
     public Mono<ResponseEntity<ApiResponse<FeedbackStatisticsDTO>>> getFeedbackStatistics() {
         return organizationService.getFeedbackStatistics()
@@ -116,6 +120,7 @@ public class AdminOrganizationController {
     /**
      * Create new organization
      */
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public Mono<ResponseEntity<ApiResponse<Organization>>> createOrganization(
             @Valid @RequestBody UpdateOrganizationRequest organization) {
@@ -127,6 +132,7 @@ public class AdminOrganizationController {
     /**
      * Update organization
      */
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{organizationId}")
     public Mono<ResponseEntity<ApiResponse<Organization>>> updateOrganization(
             @PathVariable Integer organizationId,
@@ -140,6 +146,7 @@ public class AdminOrganizationController {
     /**
      * Delete organization
      */
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{organizationId}")
     public Mono<ResponseEntity<ApiResponse<Boolean>>> deleteOrganization(
             @PathVariable Integer organizationId) {

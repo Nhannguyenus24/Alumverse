@@ -15,6 +15,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,6 +33,7 @@ import reactor.core.publisher.Mono;
 @RestController
 @RequestMapping("/api/admin/mentorship")
 @Validated
+@PreAuthorize("hasAnyRole('ADMIN','STAFF')")
 public class AdminMentorshipController {
 
     private final AdminMentorshipService adminMentorshipService;
@@ -79,6 +81,7 @@ public class AdminMentorshipController {
     }
 
     @Operation(summary = "Force-update a session status (admin override)")
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/sessions/{sessionId}/status")
     public Mono<ResponseEntity<ApiResponse<AdminMentorshipSessionDTO>>> updateSessionStatus(
             @PathVariable @Min(value = 1, message = "Session ID must be greater than 0") Integer sessionId,
@@ -89,6 +92,7 @@ public class AdminMentorshipController {
     }
 
     @Operation(summary = "Delete a session (admin override)")
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/sessions/{sessionId}")
     public Mono<ResponseEntity<ApiResponse<Void>>> deleteSession(
             @PathVariable @Min(value = 1, message = "Session ID must be greater than 0") Integer sessionId) {
@@ -127,6 +131,7 @@ public class AdminMentorshipController {
     }
 
     @Operation(summary = "Approve a mentor profile")
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/mentors/{memberId}/approve")
     public Mono<ResponseEntity<ApiResponse<AdminMentorProfileDTO>>> approveMentor(
             @PathVariable @Min(value = 1, message = "Member ID must be greater than 0") Integer memberId) {
@@ -135,6 +140,7 @@ public class AdminMentorshipController {
     }
 
     @Operation(summary = "Reject a mentor profile with a reason")
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/mentors/{memberId}/reject")
     public Mono<ResponseEntity<ApiResponse<AdminMentorProfileDTO>>> rejectMentor(
             @PathVariable @Min(value = 1, message = "Member ID must be greater than 0") Integer memberId,
@@ -144,6 +150,7 @@ public class AdminMentorshipController {
     }
 
     @Operation(summary = "Ask the applicant to update the mentor profile, with a reason")
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/mentors/{memberId}/request-update")
     public Mono<ResponseEntity<ApiResponse<AdminMentorProfileDTO>>> requestMentorUpdate(
             @PathVariable @Min(value = 1, message = "Member ID must be greater than 0") Integer memberId,
@@ -153,6 +160,7 @@ public class AdminMentorshipController {
     }
 
     @Operation(summary = "Get comprehensive mentorship statistics")
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/statistics")
     public Mono<ResponseEntity<ApiResponse<MentorshipStatisticsDTO>>> getStatistics() {
         return adminMentorshipService.getStatistics()

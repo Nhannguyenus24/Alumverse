@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -44,6 +45,7 @@ import reactor.core.publisher.Mono;
 @RestController
 @RequestMapping("/api/admin/forum")
 @Validated
+@PreAuthorize("hasAnyRole('ADMIN','STAFF')")
 public class AdminForumController {
     
     private final AdminForumService adminForumService;
@@ -54,6 +56,7 @@ public class AdminForumController {
 
     // ========== ADMIN POST MANAGEMENT ==========
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/admin/posts/yesterday")
     public Mono<ResponseEntity<ApiResponse<List<ForumPostDTO>>>> adminGetNewForumPostsYesterday() {
         return adminForumService.getNewForumPostsYesterday()
@@ -74,6 +77,7 @@ public class AdminForumController {
                 .map(paginatedResponse -> ResponseEntity.ok(new ApiResponse<>("Retrieved paginated new forum posts created yesterday", paginatedResponse)));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/admin/posts/{postId}/ban")
     public Mono<ResponseEntity<ApiResponse<ForumPostDTO>>> adminBanForumPost(
             @PathVariable @Min(value = 1, message = "Post ID must be greater than 0") Integer postId) {
@@ -81,6 +85,7 @@ public class AdminForumController {
                 .map(post -> ResponseEntity.ok(new ApiResponse<>("Forum post banned successfully", post)));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/admin/posts/{postId}/unban")
     public Mono<ResponseEntity<ApiResponse<ForumPostDTO>>> adminUnbanForumPost(
             @PathVariable @Min(value = 1, message = "Post ID must be greater than 0") Integer postId) {
@@ -88,6 +93,7 @@ public class AdminForumController {
                 .map(post -> ResponseEntity.ok(new ApiResponse<>("Forum post unbanned successfully", post)));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/admin/posts/{postId}")
     public Mono<ResponseEntity<ApiResponse<Void>>> adminDeleteForumPost(
             @PathVariable @Min(value = 1, message = "Post ID must be greater than 0") Integer postId) {
@@ -228,6 +234,7 @@ public class AdminForumController {
                 .map(category -> ResponseEntity.ok(new ApiResponse<>("Forum category status updated successfully", category)));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/admin/categories/{categoryId}")
     public Mono<ResponseEntity<ApiResponse<Void>>> adminDeleteCategory(
             @PathVariable @Min(value = 1, message = "Category ID must be greater than 0") Integer categoryId) {
@@ -285,6 +292,7 @@ public class AdminForumController {
                 .map(topic -> ResponseEntity.ok(new ApiResponse<>("Forum topic updated successfully", topic)));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/admin/topics/{topicId}")
     public Mono<ResponseEntity<ApiResponse<Void>>> adminDeleteForumTopic(
             @PathVariable @Min(value = 1, message = "Topic ID must be greater than 0") Integer topicId) {
@@ -294,6 +302,7 @@ public class AdminForumController {
 
     // ========== ADMIN STATISTICS ==========
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/admin/statistics")
     public Mono<ResponseEntity<ApiResponse<ForumStatisticsDTO>>> adminGetForumStatistics() {
         return adminForumService.getForumStatistics()
@@ -304,6 +313,7 @@ public class AdminForumController {
 
     @Operation(summary = "Get top 10 contributors by month/year",
                description = "Returns the top 10 users who posted the most in the given month and year")
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/admin/statistics/top-contributors")
     public Mono<ResponseEntity<ApiResponse<List<TopContributorDTO>>>> adminGetTopContributors(
             @Parameter(example = "4", description = "Month (1-12)")
@@ -320,6 +330,7 @@ public class AdminForumController {
 
     @Operation(summary = "Get forum engagement rate per organization",
                description = "Returns the ratio of active forum users vs total members for each organization")
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/admin/statistics/engagement")
     public Mono<ResponseEntity<ApiResponse<List<OrganizationEngagementDTO>>>> adminGetOrganizationEngagement() {
         return adminForumService.getOrganizationEngagement()
@@ -331,6 +342,7 @@ public class AdminForumController {
 
     @Operation(summary = "Get monthly activity timeline",
                description = "Returns 12 months of activity data (active users, posts, topics) for the given year")
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/admin/statistics/timeline")
     public Mono<ResponseEntity<ApiResponse<MonthlyActivityDTO>>> adminGetMonthlyTimeline(
             @Parameter(example = "2026", description = "Year")

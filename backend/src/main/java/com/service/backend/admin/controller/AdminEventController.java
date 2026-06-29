@@ -15,6 +15,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,6 +33,7 @@ import reactor.core.publisher.Mono;
 @RestController
 @RequestMapping("/api/admin/events")
 @Validated
+@PreAuthorize("hasAnyRole('ADMIN','STAFF')")
 public class AdminEventController {
 
     private final AdminEventService adminEventService;
@@ -99,6 +101,7 @@ public class AdminEventController {
 
 
     @Operation(summary = "Update an event (admin override)")
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{eventId}")
     public Mono<ResponseEntity<ApiResponse<Event>>> updateEvent(
             @PathVariable @Min(value = 1, message = "Event ID must be greater than 0") Long eventId,
@@ -108,6 +111,7 @@ public class AdminEventController {
     }
 
     @Operation(summary = "Delete an event (admin override)")
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{eventId}")
     public Mono<ResponseEntity<ApiResponse<Void>>> deleteEvent(
             @PathVariable @Min(value = 1, message = "Event ID must be greater than 0") Long eventId) {
@@ -116,6 +120,7 @@ public class AdminEventController {
     }
 
     @Operation(summary = "Publish an event")
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/{eventId}/publish")
     public Mono<ResponseEntity<ApiResponse<Event>>> publishEvent(
             @PathVariable @Min(value = 1, message = "Event ID must be greater than 0") Long eventId) {
@@ -124,6 +129,7 @@ public class AdminEventController {
     }
 
     @Operation(summary = "Unpublish an event")
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/{eventId}/unpublish")
     public Mono<ResponseEntity<ApiResponse<Event>>> unpublishEvent(
             @PathVariable @Min(value = 1, message = "Event ID must be greater than 0") Long eventId) {
@@ -144,6 +150,7 @@ public class AdminEventController {
     }
 
     @Operation(summary = "Cancel a ticket by code (admin override)")
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/tickets/{ticketCode}/cancel")
     public Mono<ResponseEntity<ApiResponse<EventTicket>>> cancelTicket(
             @Parameter(example = "EVT2026-001")
@@ -166,6 +173,7 @@ public class AdminEventController {
 
     @Operation(summary = "Get comprehensive admin event statistics",
             description = "Returns overall event counts, publish status, time-based buckets, ticket counts, and top events by registration/interest.")
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/statistics")
     public Mono<ResponseEntity<ApiResponse<EventStatisticsDTO>>> getEventStatistics() {
         return adminEventService.getEventStatistics()

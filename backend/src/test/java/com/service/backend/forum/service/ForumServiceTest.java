@@ -178,7 +178,6 @@ class ForumServiceTest {
             request.setCategoryId(1);
             request.setTitle("My Topic");
             request.setOrganizationId(1);
-            request.setCreatedByMemberId(1);
 
             ForumTopic savedTopic = ForumTopic.builder()
                     .id(1)
@@ -193,7 +192,7 @@ class ForumServiceTest {
             when(forumPostRepository.countByTopicId(1)).thenReturn(Mono.just(0L));
             when(cacheUtils.clear("forum_category_cache")).thenReturn(Mono.empty());
 
-            StepVerifier.create(forumService.createTopic(request))
+            StepVerifier.create(forumService.createTopic(request, 1))
                     .assertNext(dto -> {
                         assertThat(dto.getTitle()).isEqualTo("My Topic");
                         assertThat(dto.getStatus()).isEqualTo(Status.PENDING.name());
@@ -210,7 +209,7 @@ class ForumServiceTest {
 
             when(forumCategoryRepository.findById(99)).thenReturn(Mono.empty());
 
-            StepVerifier.create(forumService.createTopic(request))
+            StepVerifier.create(forumService.createTopic(request, 1))
                     .expectErrorMatches(err -> err instanceof ApplicationException &&
                             ((ApplicationException) err).getErrorCode() == ErrorCode.FORUM_CATEGORY_NOT_FOUND)
                     .verify();
@@ -230,7 +229,7 @@ class ForumServiceTest {
             request.setTopicId(null);
             request.setContent("Hello");
 
-            StepVerifier.create(forumService.createPost(request))
+            StepVerifier.create(forumService.createPost(request, 5))
                     .expectErrorMatches(err -> err instanceof ApplicationException &&
                             ((ApplicationException) err).getErrorCode() == ErrorCode.INVALID_TOPIC_ID)
                     .verify();
@@ -245,7 +244,7 @@ class ForumServiceTest {
 
             when(forumTopicRepository.findById(99)).thenReturn(Mono.empty());
 
-            StepVerifier.create(forumService.createPost(request))
+            StepVerifier.create(forumService.createPost(request, 5))
                     .expectErrorMatches(err -> err instanceof ApplicationException &&
                             ((ApplicationException) err).getErrorCode() == ErrorCode.FORUM_TOPIC_NOT_FOUND)
                     .verify();
@@ -264,11 +263,10 @@ class ForumServiceTest {
             CreateForumPostRequest request = new CreateForumPostRequest();
             request.setTopicId(1);
             request.setContent("Hello");
-            request.setAuthorMemberId(5);
 
             when(forumTopicRepository.findById(1)).thenReturn(Mono.just(lockedTopic));
 
-            StepVerifier.create(forumService.createPost(request))
+            StepVerifier.create(forumService.createPost(request, 5))
                     .expectErrorMatches(err -> err instanceof ApplicationException &&
                             ((ApplicationException) err).getErrorCode() == ErrorCode.FORUM_TOPIC_LOCKED)
                     .verify();
@@ -297,13 +295,12 @@ class ForumServiceTest {
             CreateForumPostRequest request = new CreateForumPostRequest();
             request.setTopicId(1);
             request.setContent("Hello World");
-            request.setAuthorMemberId(5);
 
             when(forumTopicRepository.findById(1)).thenReturn(Mono.just(activeTopic));
             when(forumPostRepository.save(any())).thenReturn(Mono.just(savedPost));
             when(cacheUtils.putWithTtl(anyString(), anyString(), any(), any())).thenReturn(Mono.empty());
 
-            StepVerifier.create(forumService.createPost(request))
+            StepVerifier.create(forumService.createPost(request, 5))
                     .assertNext(dto -> {
                         assertThat(dto.getContent()).isEqualTo("Hello World");
                         assertThat(dto.getTopicId()).isEqualTo(1);

@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Min;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,6 +26,7 @@ import reactor.core.publisher.Mono;
 @RestController
 @RequestMapping("/api/admin/articles")
 @Validated
+@PreAuthorize("hasAnyRole('ADMIN','STAFF')")
 public class AdminArticleController {
 
     private final AdminArticleService adminArticleService;
@@ -131,6 +133,7 @@ public class AdminArticleController {
     }
 
     @Operation(summary = "Get content statistics across all types")
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/statistics")
     public Mono<ResponseEntity<ApiResponse<ContentStatisticsDTO>>> getContentStatistics() {
         return adminContentService.getStatistics()

@@ -13,6 +13,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
@@ -27,6 +28,7 @@ public class JobController {
 
     private final JobService jobService;
 
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN')")
     @PostMapping
     public Mono<ResponseEntity<ApiResponse<JobResponse>>> create(@Valid @RequestBody CreateJobRequest request) {
         return jobService.create(request)
@@ -35,6 +37,7 @@ public class JobController {
                         .body(new ApiResponse<>("Job created successfully", response)));
     }
 
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN')")
     @PutMapping("/{id}")
     public Mono<ResponseEntity<ApiResponse<JobResponse>>> update(
             @PathVariable @Min(1) Integer id,
@@ -44,6 +47,7 @@ public class JobController {
                         .ok(new ApiResponse<>("Job updated successfully", response)));
     }
 
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN')")
     @DeleteMapping("/{id}")
     public Mono<ResponseEntity<ApiResponse<Void>>> delete(@PathVariable @Min(1) Integer id) {
         return jobService.delete(id)
@@ -100,6 +104,7 @@ public class JobController {
                         .ok(new ApiResponse<>("Search results retrieved successfully", response)));
     }
 
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN')")
     @PostMapping("/{id}/activate")
     public Mono<ResponseEntity<ApiResponse<JobResponse>>> activate(@PathVariable @Min(1) Integer id) {
         return jobService.activate(id)
@@ -107,6 +112,7 @@ public class JobController {
                         .ok(new ApiResponse<>("Job activated successfully", response)));
     }
 
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN')")
     @PostMapping("/{id}/deactivate")
     public Mono<ResponseEntity<ApiResponse<JobResponse>>> deactivate(@PathVariable @Min(1) Integer id) {
         return jobService.deactivate(id)

@@ -158,7 +158,7 @@ public class ForumService {
                 .doOnError(error -> log.error("Error finding forum topics for category ID: {}", categoryId, error));
     }
 
-    public Mono<ForumTopicDTO> createTopic(CreateForumTopicRequest request) {
+    public Mono<ForumTopicDTO> createTopic(CreateForumTopicRequest request, Integer createdByMemberId) {
         return forumCategoryRepository.findById(request.getCategoryId())
                 .switchIfEmpty(Mono.defer(() -> {
                     log.error("Category not found with ID: {}", request.getCategoryId());
@@ -168,7 +168,7 @@ public class ForumService {
                     ForumTopic topic = ForumTopic.builder()
                             .organizationId(request.getOrganizationId())
                             .title(request.getTitle())
-                            .createdByMemberId(request.getCreatedByMemberId())
+                            .createdByMemberId(createdByMemberId)
                             .categoryId(request.getCategoryId())
                             .viewCount(0)
                             // User-created topics await admin approval before appearing publicly.
@@ -265,7 +265,7 @@ public class ForumService {
                 .doOnError(error -> log.error("Error finding forum posts for topic ID: {}", topicId, error));
     }
 
-    public Mono<ForumPostDTO> createPost(CreateForumPostRequest request) {
+    public Mono<ForumPostDTO> createPost(CreateForumPostRequest request, Integer authorMemberId) {
         if (request.getTopicId() == null || request.getTopicId() <= 0) {
             log.warn("Invalid topic ID: {}", request.getTopicId());
             return Mono.error(new ApplicationException(ErrorCode.INVALID_TOPIC_ID));
@@ -284,13 +284,13 @@ public class ForumService {
                     boolean isActive = Status.ACTIVE.name().equals(topic.getStatus());
                     boolean isPendingByOwner = Status.PENDING.name().equals(topic.getStatus())
                             && topic.getCreatedByMemberId() != null
-                            && topic.getCreatedByMemberId().equals(request.getAuthorMemberId());
+                            && topic.getCreatedByMemberId().equals(authorMemberId);
                     if (!isActive && !isPendingByOwner) {
                         return Mono.error(new ApplicationException(ErrorCode.FORUM_TOPIC_LOCKED));
                     }
                     ForumPost post = ForumPost.builder()
                             .topicId(request.getTopicId())
-                            .authorMemberId(request.getAuthorMemberId())
+                            .authorMemberId(authorMemberId)
                             .content(request.getContent())
                             .answerToPostId(request.getAnswerToPostId())
                             .isBanned(false)
@@ -311,9 +311,9 @@ public class ForumService {
                 .doOnError(error -> log.error("Error creating forum post for topic ID: {}", request.getTopicId(), error));
     }
 
-    public Mono<ForumPostDTO> answerToPost(Integer postId, CreateForumPostRequest request) {
+    public Mono<ForumPostDTO> answerToPost(Integer postId, CreateForumPostRequest request, Integer authorMemberId) {
         request.setAnswerToPostId(postId);
-        return createPost(request)
+        return createPost(request, authorMemberId)
                 .map(result -> {
                     result.setAnswerToPostId(postId);
                     return result;
@@ -348,13 +348,13 @@ public class ForumService {
                 .doOnError(error -> log.error("Error deleting forum post ID: {}", id, error));
     }
 
-    public Mono<ForumPostReportDTO> reportPost(Integer postId, CreateForumPostReportRequest request) {
+    public Mono<ForumPostReportDTO> reportPost(Integer postId, CreateForumPostReportRequest request, Integer reporterMemberId) {
         return forumPostRepository.findById(postId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.FORUM_POST_NOT_FOUND)))
                 .flatMap(post -> {
                         ForumPostReport report = ForumPostReport.builder()
                             .postId(postId)
-                            .reporterMemberId(request.getReporterMemberId())
+                            .reporterMemberId(reporterMemberId)
                             .reason(request.getReason())
                             .status(Status.PENDING)
                             .build();
@@ -367,26 +367,26 @@ public class ForumService {
     // ========== REACTION METHODS (LIKE/DISLIKE) ==========
 
     @Transactional
-    public Mono<ForumPostReactionDTO> reactToPost(CreateForumPostReactionRequest request) {
+    public Mono<ForumPostReactionDTO> reactToPost(CreateForumPostReactionRequest request, Integer memberId) {
         return forumPostRepository.findById(request.getPostId())
                 .switchIfEmpty(Mono.defer(() -> {
                     log.error("Post not found with ID: {}", request.getPostId());
                     return Mono.error(new ApplicationException(ErrorCode.FORUM_POST_NOT_FOUND));
                 }))
                 .flatMap(post -> forumPostReactionRepository.findByPostIdAndMemberId(
-                            request.getPostId(), request.getMemberId())
+                            request.getPostId(), memberId)
                         .hasElement()
                         .flatMap(alreadyLiked -> {
                             if (Boolean.TRUE.equals(alreadyLiked)) {
                                 return forumPostReactionRepository.deleteByPostIdAndMemberId(
-                                                request.getPostId(), request.getMemberId())
+                                                request.getPostId(), memberId)
                                         .then(Mono.empty());
                             }
                             log.info("Creating new like for post ID: {}, member: {}",
-                                    request.getPostId(), request.getMemberId());
+                                    request.getPostId(), memberId);
                             ForumPostReaction reaction = ForumPostReaction.builder()
                                     .postId(request.getPostId())
-                                    .memberId(request.getMemberId())
+                                    .memberId(memberId)
                                     .build();
                             return forumPostReactionRepository.save(reaction);
                         }))
@@ -416,27 +416,27 @@ public class ForumService {
     // ========== SUBSCRIPTION METHODS ==========
 
     @Transactional
-    public Mono<ForumTopicSubscriptionDTO> subscribeToTopic(CreateForumTopicSubscriptionRequest request) {
+    public Mono<ForumTopicSubscriptionDTO> subscribeToTopic(CreateForumTopicSubscriptionRequest request, Integer memberId) {
         return forumTopicRepository.findById(request.getTopicId())
                 .switchIfEmpty(Mono.defer(() -> {
                     log.error("Topic not found with ID: {}", request.getTopicId());
                     return Mono.error(new ApplicationException(ErrorCode.FORUM_TOPIC_NOT_FOUND));
                 }))
                 .flatMap(topic -> forumTopicSubscriptionRepository.findByTopicIdAndMemberId(
-                            request.getTopicId(), request.getMemberId())
+                            request.getTopicId(), memberId)
                         .flatMap(existingSubscription -> {
                             log.info("Removing existing subscription from topic ID: {}, member: {}",
-                                    request.getTopicId(), request.getMemberId());
+                                    request.getTopicId(), memberId);
                             return forumTopicSubscriptionRepository.deleteByTopicIdAndMemberId(
-                                    request.getTopicId(), request.getMemberId())
+                                    request.getTopicId(), memberId)
                                     .then(Mono.<ForumTopicSubscription>empty());
                         })
                         .switchIfEmpty(Mono.defer(() -> {
                             log.info("Creating new subscription for topic ID: {}, member: {}",
-                                    request.getTopicId(), request.getMemberId());
+                                    request.getTopicId(), memberId);
                             ForumTopicSubscription subscription = ForumTopicSubscription.builder()
                                     .topicId(request.getTopicId())
-                                    .memberId(request.getMemberId())
+                                    .memberId(memberId)
                                     .build();
                             return forumTopicSubscriptionRepository.save(subscription);
                         })))

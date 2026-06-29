@@ -13,6 +13,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
@@ -27,6 +28,7 @@ public class LearningResourceController {
 
     private final LearningResourceService learningResourceService;
 
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN')")
     @PostMapping
     public Mono<ResponseEntity<ApiResponse<LearningResourceResponse>>> create(@Valid @RequestBody CreateLearningResourceRequest request) {
         return learningResourceService.create(request)
@@ -35,6 +37,7 @@ public class LearningResourceController {
                         .body(new ApiResponse<>("Learning resource created successfully", response)));
     }
 
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN')")
     @PutMapping("/{id}")
     public Mono<ResponseEntity<ApiResponse<LearningResourceResponse>>> update(
             @PathVariable @Min(1) Integer id,
@@ -44,6 +47,7 @@ public class LearningResourceController {
                         .ok(new ApiResponse<>("Learning resource updated successfully", response)));
     }
 
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN')")
     @DeleteMapping("/{id}")
     public Mono<ResponseEntity<ApiResponse<Void>>> delete(@PathVariable @Min(1) Integer id) {
         return learningResourceService.delete(id)
