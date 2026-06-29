@@ -44,12 +44,17 @@ class EventServiceTest {
     @InjectMocks
     private EventService eventService;
 
-    /** Reactive security context with a staff role, required by the check-in gate. */
-    private static reactor.util.context.Context staffContext() {
+    /** Reactive security context with ADMIN role — used by update/delete ownership checks. */
+    private static reactor.util.context.Context adminContext() {
         return org.springframework.security.core.context.ReactiveSecurityContextHolder.withAuthentication(
                 new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
                         "1", null,
                         java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN"))));
+    }
+
+    /** Alias kept for check-in tests that already use this name. */
+    private static reactor.util.context.Context staffContext() {
+        return adminContext();
     }
 
     private static CheckInRequest codeRequest(String code) {
@@ -122,7 +127,8 @@ class EventServiceTest {
             when(imageService.uploadBase64IfPresent(any())).thenReturn(Mono.empty());
             when(eventRepository.updateEvent(eq(1L), any())).thenReturn(Mono.just(updated));
 
-            StepVerifier.create(eventService.updateEvent(1L, request))
+            StepVerifier.create(eventService.updateEvent(1L, request)
+                            .contextWrite(adminContext()))
                     .assertNext(e -> assertThat(e.getTitle()).isEqualTo("New Title"))
                     .verifyComplete();
         }
@@ -135,7 +141,8 @@ class EventServiceTest {
 
             when(eventRepository.findEventById(99L)).thenReturn(Mono.empty());
 
-            StepVerifier.create(eventService.updateEvent(99L, request))
+            StepVerifier.create(eventService.updateEvent(99L, request)
+                            .contextWrite(adminContext()))
                     .expectErrorMatches(err -> err instanceof ApplicationException &&
                             ((ApplicationException) err).getErrorCode() == ErrorCode.EVENT_NOT_FOUND)
                     .verify();
@@ -156,7 +163,8 @@ class EventServiceTest {
             when(eventRepository.findEventById(1L)).thenReturn(Mono.just(event));
             when(eventRepository.deleteEvent(1L)).thenReturn(Mono.just(true));
 
-            StepVerifier.create(eventService.deleteEvent(1L))
+            StepVerifier.create(eventService.deleteEvent(1L)
+                            .contextWrite(adminContext()))
                     .assertNext(result -> assertThat(result).isTrue())
                     .verifyComplete();
         }
@@ -166,7 +174,8 @@ class EventServiceTest {
         void deleteEvent_notFound() {
             when(eventRepository.findEventById(99L)).thenReturn(Mono.empty());
 
-            StepVerifier.create(eventService.deleteEvent(99L))
+            StepVerifier.create(eventService.deleteEvent(99L)
+                            .contextWrite(adminContext()))
                     .expectErrorMatches(err -> err instanceof ApplicationException &&
                             ((ApplicationException) err).getErrorCode() == ErrorCode.EVENT_NOT_FOUND)
                     .verify();
