@@ -220,8 +220,11 @@ class _QrBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final invalid = ticket.isCancelled || ticket.isCheckedIn;
-    // Same payload shape as the web ticket card.
-    final payload = 'ALUMVERSE-TICKET-$code';
+    // Prefer the server-issued encrypted token; fall back to the legacy plaintext
+    // format for tickets issued before QR encryption was added.
+    final payload = (ticket.qrToken != null && ticket.qrToken!.isNotEmpty)
+        ? ticket.qrToken!
+        : 'ALUMVERSE-TICKET-$code';
 
     return Container(
       padding: const EdgeInsets.all(12),

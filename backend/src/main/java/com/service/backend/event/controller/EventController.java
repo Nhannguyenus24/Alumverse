@@ -196,39 +196,7 @@ public class EventController {
                         .body(new ApiResponse<>("Registration successful, ticket issued", t)));
     }
 
-    // ─── Step 3: Approve / reject tickets ────────────────────────────────────
-
-    @PostMapping("/tickets/{ticketId}/approve")
-    public Mono<ResponseEntity<ApiResponse<EventTicket>>> approveTicket(
-            @Parameter(example = "1") @PathVariable @Min(1) Long ticketId) {
-        return eventService.approveTicket(ticketId)
-                .map(t -> ResponseEntity.ok(new ApiResponse<>("Ticket approved", t)));
-    }
-
-    @PostMapping("/tickets/{ticketId}/reject")
-    public Mono<ResponseEntity<ApiResponse<EventTicket>>> rejectTicket(
-            @Parameter(example = "1") @PathVariable @Min(1) Long ticketId,
-            @RequestBody(required = false) ApproveTicketRequest request) {
-        return eventService.rejectTicket(ticketId, request)
-                .map(t -> ResponseEntity.ok(new ApiResponse<>("Ticket rejected", t)));
-    }
-
-    @PostMapping("/{eventId}/tickets/bulk-approve")
-    public Mono<ResponseEntity<ApiResponse<Integer>>> bulkApproveTickets(
-            @Parameter(example = "1") @PathVariable @Min(1) Long eventId,
-            @Valid @RequestBody BulkApproveRequest request) {
-        return eventService.bulkApproveTickets(request)
-                .map(count -> ResponseEntity.ok(new ApiResponse<>("Approved " + count + " tickets", count)));
-    }
-
-    @PostMapping("/{eventId}/tickets/approve-all")
-    public Mono<ResponseEntity<ApiResponse<Integer>>> approveAllPending(
-            @Parameter(example = "1") @PathVariable @Min(1) Long eventId) {
-        return eventService.approveAllPending(eventId)
-                .map(count -> ResponseEntity.ok(new ApiResponse<>("Approved " + count + " pending tickets", count)));
-    }
-
-    // ─── Step 4: Reminder emails ──────────────────────────────────────────────
+    // ─── Step 3: Reminder emails ──────────────────────────────────────────────
 
     @PostMapping("/{eventId}/reminders")
     public Mono<ResponseEntity<ApiResponse<Integer>>> sendReminders(
@@ -256,29 +224,14 @@ public class EventController {
                 .map(count -> ResponseEntity.ok(new ApiResponse<>("Ticket emails sent to " + count + " recipients", count)));
     }
 
-    // ─── Step 6: Activate + check-in ─────────────────────────────────────────
+    // ─── Step 6: Check-in (event-scoped, QR-encrypted, staff-only) ────────────
 
-    @PostMapping("/{eventId}/tickets/activate")
-    public Mono<ResponseEntity<ApiResponse<Integer>>> activateTickets(
-            @Parameter(example = "1") @PathVariable @Min(1) Long eventId) {
-        return eventService.activateTickets(eventId)
-                .map(count -> ResponseEntity.ok(new ApiResponse<>("Activated " + count + " tickets", count)));
-    }
-
-    @PostMapping("/tickets/{ticketCode}/check-in")
-    public Mono<ResponseEntity<ApiResponse<EventTicket>>> checkInTicket(
-            @Parameter(example = "ABC12345") @PathVariable @NotBlank String ticketCode) {
-        return eventService.checkInTicket(ticketCode)
+    @PostMapping("/{eventId}/tickets/check-in")
+    public Mono<ResponseEntity<ApiResponse<EventTicketDetailResponse>>> checkIn(
+            @Parameter(example = "1") @PathVariable @Min(1) Long eventId,
+            @RequestBody(required = false) CheckInRequest request) {
+        return eventService.checkIn(eventId, request)
                 .map(t -> ResponseEntity.ok(new ApiResponse<>("Checked in successfully", t)));
-    }
-
-    // ─── Step 7: Expire tickets ───────────────────────────────────────────────
-
-    @PostMapping("/{eventId}/tickets/expire")
-    public Mono<ResponseEntity<ApiResponse<Integer>>> expireTickets(
-            @Parameter(example = "1") @PathVariable @Min(1) Long eventId) {
-        return eventService.expireTickets(eventId)
-                .map(count -> ResponseEntity.ok(new ApiResponse<>("Expired " + count + " tickets", count)));
     }
 
     // ─── Ticket queries ───────────────────────────────────────────────────────
@@ -292,7 +245,7 @@ public class EventController {
     }
 
     @GetMapping("/tickets/code/{ticketCode}")
-    public Mono<ResponseEntity<ApiResponse<EventTicket>>> getTicketByCode(
+    public Mono<ResponseEntity<ApiResponse<EventTicketDetailResponse>>> getTicketByCode(
             @Parameter(example = "ABC12345") @PathVariable @NotBlank String ticketCode) {
         return eventService.getTicketByCode(ticketCode)
                 .map(t -> ResponseEntity.ok(new ApiResponse<>("Ticket retrieved successfully", t)));
@@ -310,7 +263,7 @@ public class EventController {
     }
 
     @GetMapping("/my-tickets")
-    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<EventTicket>>>> getMyTickets(
+    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<EventTicketDetailResponse>>>> getMyTickets(
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int limit) {
         return eventService.getMyTickets(page, limit)

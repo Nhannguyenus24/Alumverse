@@ -96,6 +96,10 @@ class ApiEndpoints {
   static String eventQuestions(int id) => '/api/events/$id/questions';
   static String eventStatistics(int id) => '/api/events/$id/statistics';
   static const String eventMyTickets = '/api/events/my-tickets';
+  static String eventTicketByCode(String code) =>
+      '/api/events/tickets/code/$code';
+  static String eventCheckIn(int eventId) =>
+      '/api/events/$eventId/tickets/check-in';
   static String eventCancelTicket(String code) =>
       '/api/events/tickets/$code/cancel';
   static String eventPublish(int id) => '/api/events/$id/publish';

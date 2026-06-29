@@ -26,6 +26,13 @@ final eventDetailProvider =
   return ref.read(eventRepositoryProvider).getDetail(id);
 });
 
+/// Events of an organization for the admin check-in picker (drafts + past
+/// included). Keyed by organization id. Admin/staff session required.
+final adminCheckInEventsProvider =
+    FutureProvider.family<List<EventSummary>, int>((ref, organizationId) {
+  return ref.watch(eventRepositoryProvider).getOrganizationEvents(organizationId);
+});
+
 /// The current user's registration tickets ("Vé của tôi").
 final myTicketsProvider = FutureProvider<List<EventTicket>>((ref) {
   return ref.watch(eventRepositoryProvider).getMyTickets();

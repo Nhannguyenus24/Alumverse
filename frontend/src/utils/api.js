@@ -563,27 +563,6 @@ export const eventApi = {
 		return unwrap(response);
 	},
 
-	// ── Approve / Reject ──────────────────────────────────────────────────
-	async approveTicket(ticketId) {
-		const response = await apiClient.post(`/events/tickets/${ticketId}/approve`);
-		return unwrap(response);
-	},
-
-	async rejectTicket(ticketId, payload = {}) {
-		const response = await apiClient.post(`/events/tickets/${ticketId}/reject`, payload);
-		return unwrap(response);
-	},
-
-	async bulkApproveTickets(eventId, payload) {
-		const response = await apiClient.post(`/events/${eventId}/tickets/bulk-approve`, payload);
-		return unwrap(response);
-	},
-
-	async approveAllPending(eventId) {
-		const response = await apiClient.post(`/events/${eventId}/tickets/approve-all`);
-		return unwrap(response);
-	},
-
 	// ── Reminder emails ───────────────────────────────────────────────────
 	async sendReminders(eventId, payload) {
 		const response = await apiClient.post(`/events/${eventId}/reminders`, payload);
@@ -601,16 +580,6 @@ export const eventApi = {
 		return unwrap(response);
 	},
 
-	async activateTickets(eventId) {
-		const response = await apiClient.post(`/events/${eventId}/tickets/activate`);
-		return unwrap(response);
-	},
-
-	async expireTickets(eventId) {
-		const response = await apiClient.post(`/events/${eventId}/tickets/expire`);
-		return unwrap(response);
-	},
-
 	async getTicketsByEvent(eventId, params = {}) {
 		const response = await apiClient.get(`/events/${eventId}/tickets`, { params });
 		return unwrap(response);
@@ -621,8 +590,11 @@ export const eventApi = {
 		return unwrap(response);
 	},
 
-	async checkInTicket(ticketCode) {
-		const response = await apiClient.post(`/events/tickets/${ticketCode}/check-in`);
+	// Check in a ticket for an event. Pass either a scanned/encrypted `qrToken`
+	// or a raw ticket `code` (manual fallback). The backend decrypts/verifies the
+	// token, enforces the event scope, and returns the holder's profile to verify.
+	async checkInTicket(eventId, { qrToken, code } = {}) {
+		const response = await apiClient.post(`/events/${eventId}/tickets/check-in`, { qrToken, code });
 		return unwrap(response);
 	},
 
