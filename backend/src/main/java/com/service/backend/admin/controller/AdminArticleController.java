@@ -20,11 +20,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @Tag(name = "Admin > Articles", description = "API endpoints for managing articles by administrators")
 @RestController
 @RequestMapping("/api/admin/articles")
 @Validated
+@PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
 public class AdminArticleController {
 
     private final AdminArticleService adminArticleService;

@@ -34,6 +34,7 @@ import reactor.core.publisher.Mono;
 
 @Configuration
 @EnableWebFluxSecurity
+@org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity
 public class SecurityConfig {
 
     private static final Logger log = LoggerFactory.getLogger(SecurityConfig.class);
@@ -53,7 +54,7 @@ public class SecurityConfig {
             "/*.png",
             "/*.ico",
             "/static/**",
-            "/actuator/**",
+            "/api/payment/sepay/webhook",
     };
 
     @Value("${app.cors.allowed-origin-patterns:}")

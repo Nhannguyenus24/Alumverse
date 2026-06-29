@@ -159,6 +159,29 @@ public class AuthService {
                 .doOnError(error -> logger.error("Failed to activate user with id: {}", error.getMessage()));
     }
 
+    public Mono<Void> resetPasswordWithOtp(String email, String otp, String newPassword) {
+        return cacheUtils.get(OTP_CACHE_KEY, email)
+                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.OTP_EXPIRED_NOT_FOUND)))
+                .flatMap(cachedData -> {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> cacheMap = (Map<String, Object>) cachedData;
+                    String cachedOtp = (String) cacheMap.get(OTP_CACHE_OTP_FIELD);
+                    Integer userId = ((Number) cacheMap.get(OTP_CACHE_USER_ID_FIELD)).intValue();
+
+                    if (!cachedOtp.equals(otp)) {
+                        logger.warn("Invalid OTP for password reset, email: {}", email);
+                        return Mono.error(new ApplicationException(ErrorCode.INVALID_OTP));
+                    }
+
+                    return Mono.fromCallable(() -> passwordEncoder.encode(newPassword))
+                            .subscribeOn(Schedulers.boundedElastic())
+                            .flatMap(hashedPassword -> authRepository.updatePasswordById(userId, hashedPassword))
+                            .then(cacheUtils.evict(OTP_CACHE_KEY, email));
+                })
+                .doOnSuccess(v -> logger.info("resetPasswordWithOtp: password reset for email={}", email))
+                .doOnError(error -> logger.error("Password reset failed for email: {}", error.getMessage()));
+    }
+
     public Mono<Void> changePassword(Integer userId, String oldPassword, String newPassword) {
         return authRepository.findById(userId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND)))

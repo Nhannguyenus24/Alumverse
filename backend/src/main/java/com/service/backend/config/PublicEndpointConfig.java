@@ -30,8 +30,9 @@ public class PublicEndpointConfig {
     public void init() {
         Set<String> logEntries = new HashSet<>();
         handlerMapping.getHandlerMethods().forEach((mapping, method) -> {
-            boolean isPublic = method.hasMethodAnnotation(PublicEndpoint.class) || 
-                             method.getBeanType().isAnnotationPresent(PublicEndpoint.class);
+            boolean hasPrivateOverride = method.hasMethodAnnotation(com.service.backend.shared.annotations.PrivateEndpoint.class);
+            boolean isPublic = !hasPrivateOverride && (method.hasMethodAnnotation(PublicEndpoint.class) ||
+                             method.getBeanType().isAnnotationPresent(PublicEndpoint.class));
             
             if (isPublic) {
                 Set<String> patterns = mapping.getPatternsCondition().getPatterns().stream()

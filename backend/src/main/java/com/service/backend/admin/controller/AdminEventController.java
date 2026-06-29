@@ -27,11 +27,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.service.backend.shared.utils.SecurityUtils;
 import reactor.core.publisher.Mono;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @Tag(name = "Admin > Events", description = "API endpoints for managing events by administrators")
 @RestController
 @RequestMapping("/api/admin/events")
 @Validated
+@PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
 public class AdminEventController {
 
     private final AdminEventService adminEventService;

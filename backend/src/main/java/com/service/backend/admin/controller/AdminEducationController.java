@@ -22,12 +22,14 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @Tag(name = "Admin > Education Requests", description = "API for admin to review education change requests")
 @RestController
 @RequestMapping("/api/admin/education-requests")
 @Validated
 @RequiredArgsConstructor
+@PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
 public class AdminEducationController {
 
     private final AdminEducationService adminEducationService;

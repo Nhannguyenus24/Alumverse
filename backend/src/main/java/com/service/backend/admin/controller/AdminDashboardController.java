@@ -19,10 +19,12 @@ import org.springframework.web.bind.annotation.RestController;
 import com.service.backend.shared.utils.SecurityUtils;
 import reactor.core.publisher.Mono;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @Tag(name = "Admin > Dashboard", description = "API endpoints for admin dashboard metrics and statistics")
 @RestController
 @RequestMapping("/api/admin/dashboard")
+@PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
 public class AdminDashboardController {
 
     private final AdminDashboardService dashboardService;

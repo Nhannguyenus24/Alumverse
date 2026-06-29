@@ -62,20 +62,33 @@ const isAuthWhitelistedURL = (url = '') => {
  * Logs the user out and redirects to login
  */
 const forceLogout = () => {
+  // Capture slug from auth store BEFORE reset clears it
+  const storeSlug = useAuthStore.getState().slug;
+
   useAuthStore.getState().reset();
-  
-  // Try to find a slug from the current URL to redirect back to the correct auth page
-  const pathParts = window.location.pathname.split('/').filter(Boolean);
-  const slug = pathParts.length > 0 ? pathParts[0] : 'alumni';
-  
-  const currentPath = `${window.location.pathname}${window.location.search}`;
-  const loginPath = `/${slug}/auth/login?reason=login_required&from=${encodeURIComponent(currentPath)}`;
-  
-  // Don't redirect if we are already on a login page to avoid loops
-  if (!window.location.pathname.includes('/auth/login')) {
-    console.warn('Session expired or invalid. Redirecting to login...');
-    window.location.href = loginPath;
+
+  // Don't redirect if already on a login page to avoid loops
+  if (window.location.pathname.includes('/auth/login')) {
+    return;
   }
+
+  const currentPath = `${window.location.pathname}${window.location.search}`;
+
+  // JWT user object has no organizationSlug; fall back to first path segment
+  // only if it doesn't look like a reserved top-level route
+  const RESERVED = ['admin', '404', 'unauthorized', '500', 'maintenance'];
+  let slug = storeSlug ?? null;
+  if (!slug) {
+    const firstSegment = window.location.pathname.split('/').filter(Boolean)[0];
+    slug = firstSegment && !RESERVED.includes(firstSegment) ? firstSegment : null;
+  }
+
+  const loginPath = slug
+    ? `/${slug}/auth/login?reason=login_required&from=${encodeURIComponent(currentPath)}`
+    : `/404`;
+
+  console.warn('Session expired or invalid. Redirecting to login...');
+  window.location.href = loginPath;
 };
 
 /**
