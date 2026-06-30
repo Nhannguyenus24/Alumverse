@@ -102,6 +102,7 @@ public interface ChatGroupMemberRepository extends ReactiveCrudRepository<ChatGr
             ON CONFLICT (group_id, member_id) DO NOTHING
             """)
     Mono<Void> insertMemberIfNotExists(Long groupId, Long memberId);
+    
 }
 
 

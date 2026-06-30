@@ -26,17 +26,21 @@ import com.service.backend.auth.dto.LoginResponse;
 import com.service.backend.auth.dto.RegisterRequest;
 import com.service.backend.auth.dto.SendOtpRequest;
 import com.service.backend.auth.dto.VerifyOtpRequest;
+import com.service.backend.auth.dto.ResetPasswordRequest;
 import com.service.backend.auth.dto.VerifyOldEmailOtpRequest;
 import com.service.backend.shared.entity.User;
 import com.service.backend.auth.service.AuthService;
 import com.service.backend.shared.dto.ApiResponse;
 import com.service.backend.shared.utils.JwtUtils;
+import org.springframework.beans.factory.annotation.Value;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import reactor.core.publisher.Mono;
 import com.service.backend.shared.annotations.PublicEndpoint;
+import com.service.backend.shared.annotations.PrivateEndpoint;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @PublicEndpoint
 @Tag(name = "Auth", description = "API endpoints for user authentication and authorization")
@@ -48,10 +52,23 @@ public class AuthController {
     private final JwtUtils jwtUtils;
     private final RecaptchaService recaptchaService;
 
+    @Value("${app.cookie.secure:false}")
+    private boolean cookieSecure;
+
     public AuthController(AuthService authService, JwtUtils jwtUtils, RecaptchaService recaptchaService) {
         this.authService = authService;
         this.jwtUtils = jwtUtils;
         this.recaptchaService = recaptchaService;
+    }
+
+    private ResponseCookie buildRefreshTokenCookie(String value, long maxAgeMs) {
+        return ResponseCookie.from("refreshToken", value)
+                .httpOnly(true)
+                .secure(cookieSecure)
+                .path("/")
+                .maxAge(Duration.ofMillis(maxAgeMs))
+                .sameSite(cookieSecure ? "Strict" : "Lax")
+                .build();
     }
 
     /**
@@ -100,14 +117,26 @@ public class AuthController {
     }
 
     /**
-     * Activate user after successful verification
+     * Activate user after successful verification — ADMIN only
      */
+    @PrivateEndpoint
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/activate/{userId}")
     public Mono<ResponseEntity<ApiResponse<Boolean>>> activateUser(
             @Parameter(example = "123")
             @PathVariable @Min(value = 1, message = "User ID must be greater than 0") Integer userId) {
         return authService.activateUser(userId)
                 .thenReturn(ResponseEntity.ok(new ApiResponse<>("User activated successfully", true)));
+    }
+
+    /**
+     * Reset password using OTP (forgot password flow — no old password required)
+     */
+    @PostMapping("/reset-password")
+    public Mono<ResponseEntity<ApiResponse<Boolean>>> resetPassword(
+            @Valid @RequestBody ResetPasswordRequest request) {
+        return authService.resetPasswordWithOtp(request.getEmail(), request.getOtp(), request.getNewPassword())
+                .thenReturn(ResponseEntity.ok(new ApiResponse<>("Password reset successfully", true)));
     }
 
     /**
@@ -123,12 +152,14 @@ public class AuthController {
     }
 
     /**
-     * Logout user - remove refresh token cookie
+     * Logout user - revoke refresh token and clear cookie
      */
     @PostMapping("/logout")
-    public Mono<ResponseEntity<ApiResponse<Boolean>>> logout() {
-        // Create empty refresh token cookie with maxAge 0 to remove it
-        ResponseCookie refreshTokenCookie = ResponseCookie
+    public Mono<ResponseEntity<ApiResponse<Boolean>>> logout(
+            @CookieValue(value = "refreshToken", required = false) String refreshToken) {
+        jwtUtils.revokeRefreshToken(refreshToken);
+
+        ResponseCookie clearCookie = ResponseCookie
                 .from("refreshToken", "")
                 .httpOnly(true)
                 .path("/")
@@ -137,7 +168,7 @@ public class AuthController {
                 .build();
 
         return Mono.just(ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, clearCookie.toString())
                 .body(new ApiResponse<>("Logout successful", true)));
     }
 
@@ -256,14 +287,7 @@ public class AuthController {
             );
             String refreshToken = jwtUtils.generateRefreshToken(user.getId(), null, refreshTokenExpirationMs);
 
-            ResponseCookie refreshTokenCookie = ResponseCookie
-                    .from("refreshToken", refreshToken)
-                    .httpOnly(true)
-                    // .secure(true) // turn on when in https
-                    .path("/")
-                    .maxAge(Duration.ofMillis(refreshTokenExpirationMs))
-                    .sameSite("Lax")
-                    .build();
+            ResponseCookie refreshTokenCookie = buildRefreshTokenCookie(refreshToken, refreshTokenExpirationMs);
 
             LoginResponse loginResponse = LoginResponse.builder()
                     .accessToken(accessToken)
@@ -286,15 +310,7 @@ public class AuthController {
                             organizationId
                     );
                     String refreshToken = jwtUtils.generateRefreshToken(user.getId(), organizationId, refreshTokenExpirationMs);
-
-                    ResponseCookie refreshTokenCookie = ResponseCookie
-                            .from("refreshToken", refreshToken)
-                            .httpOnly(true)
-                            // .secure(true) // turn on when in https
-                            .path("/")
-                            .maxAge(Duration.ofMillis(refreshTokenExpirationMs))
-                            .sameSite("Lax")
-                            .build();
+                    ResponseCookie refreshTokenCookie = buildRefreshTokenCookie(refreshToken, refreshTokenExpirationMs);
 
                     LoginResponse loginResponse = LoginResponse.builder()
                             .accessToken(accessToken)

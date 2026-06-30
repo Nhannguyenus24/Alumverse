@@ -56,26 +56,6 @@ public interface EventTicketR2dbcRepository extends ReactiveCrudRepository<Event
 
     Mono<Long> countByEventIdAndMemberId(Long eventId, Long memberId);
 
-    @Modifying
-    @Query("UPDATE event_tickets SET status = 'ISSUED', reviewed_by = :reviewedBy, reviewed_at = :reviewedAt WHERE id = :ticketId AND status = 'PENDING'")
-    Mono<Integer> approveTicket(Long ticketId, Long reviewedBy, LocalDateTime reviewedAt);
-
-    @Modifying
-    @Query("UPDATE event_tickets SET status = 'CANCELLED', reviewed_by = :reviewedBy, reviewed_at = :reviewedAt, reject_reason = :reason WHERE id = :ticketId AND status = 'PENDING'")
-    Mono<Integer> rejectTicket(Long ticketId, Long reviewedBy, LocalDateTime reviewedAt, String reason);
-
-    @Modifying
-    @Query("UPDATE event_tickets SET status = 'ISSUED', reviewed_by = :reviewedBy, reviewed_at = :reviewedAt WHERE event_id = :eventId AND status = 'PENDING'")
-    Mono<Integer> approveAllPendingTickets(Long eventId, Long reviewedBy, LocalDateTime reviewedAt);
-
-    @Modifying
-    @Query("UPDATE event_tickets SET status = 'ACTIVE' WHERE event_id = :eventId AND status = 'ISSUED'")
-    Mono<Integer> activateTicketsForEvent(Long eventId);
-
-    @Modifying
-    @Query("UPDATE event_tickets SET status = 'EXPIRED' WHERE event_id = :eventId AND status IN ('ISSUED', 'ACTIVE')")
-    Mono<Integer> expireTicketsForEvent(Long eventId);
-
     @Query("SELECT * FROM event_tickets WHERE event_id = :eventId AND status = 'ISSUED' ORDER BY registered_at ASC")
     Flux<EventTicket> findIssuedTicketsByEventId(Long eventId);
 

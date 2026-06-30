@@ -11,6 +11,16 @@ class EventTicket {
   final List<Map<String, dynamic>> registrationAnswers;
   // Optional event info if the backend embeds it; otherwise resolved separately.
   final String? eventTitle;
+  // Attendee identity — shown on the admin check-in result.
+  final int? memberId;
+  final String? guestName;
+  final String? guestEmail;
+  // Resolved holder profile (populated on check-in / single-ticket lookup).
+  final String? attendeeName;
+  final String? attendeeEmail;
+  final String? attendeeAvatarUrl;
+  // Encrypted QR payload the client renders (replaces the plaintext code).
+  final String? qrToken;
 
   const EventTicket({
     required this.id,
@@ -23,7 +33,32 @@ class EventTicket {
     this.rejectReason,
     this.registrationAnswers = const [],
     this.eventTitle,
+    this.memberId,
+    this.guestName,
+    this.guestEmail,
+    this.attendeeName,
+    this.attendeeEmail,
+    this.attendeeAvatarUrl,
+    this.qrToken,
   });
+
+  /// Best-effort display name for the attendee
+  /// (profile name → guest name → profile/guest email → member id).
+  String? get attendeeLabel {
+    if (attendeeName != null && attendeeName!.trim().isNotEmpty) return attendeeName;
+    if (guestName != null && guestName!.trim().isNotEmpty) return guestName;
+    if (attendeeEmail != null && attendeeEmail!.trim().isNotEmpty) return attendeeEmail;
+    if (guestEmail != null && guestEmail!.trim().isNotEmpty) return guestEmail;
+    if (memberId != null) return '#$memberId';
+    return null;
+  }
+
+  /// Email to show for verification, if any.
+  String? get displayEmail {
+    if (attendeeEmail != null && attendeeEmail!.trim().isNotEmpty) return attendeeEmail;
+    if (guestEmail != null && guestEmail!.trim().isNotEmpty) return guestEmail;
+    return null;
+  }
 
   bool get isCancelled => status.toUpperCase() == 'CANCELLED';
   bool get isCheckedIn {
@@ -70,6 +105,13 @@ class EventTicket {
           : const [],
       eventTitle: json['eventTitle'] as String? ??
           (json['event'] is Map ? json['event']['title'] as String? : null),
+      memberId: (json['memberId'] as num?)?.toInt(),
+      guestName: json['guestName'] as String?,
+      guestEmail: json['guestEmail'] as String?,
+      attendeeName: json['attendeeName'] as String?,
+      attendeeEmail: json['attendeeEmail'] as String?,
+      attendeeAvatarUrl: json['attendeeAvatarUrl'] as String?,
+      qrToken: json['qrToken'] as String?,
     );
   }
 

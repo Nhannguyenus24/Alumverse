@@ -269,7 +269,7 @@ class _AcceptRejectButtonsState
       }
     } catch (e) {
       if (mounted) {
-        AppToast.error(context, e.toString().replaceFirst('Exception: ', ''));
+        AppToast.fromError(context, e);
       }
     } finally {
       if (mounted) setState(() => _loading = false);

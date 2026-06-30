@@ -1,6 +1,7 @@
 package com.service.backend.event.service;
 
 import com.service.backend.shared.entity.*;
+import com.service.backend.event.dao.AttendeeLookupRepository;
 import com.service.backend.event.dao.IEventRepository;
 import com.service.backend.event.dto.*;
 import com.service.backend.shared.dto.PaginatedResponse;
@@ -35,6 +36,8 @@ public class EventService {
     private final NotificationService notificationService;
     private final OrganizationRepository organizationRepository;
     private final CacheUtils cacheUtils;
+    private final EventQrService eventQrService;
+    private final AttendeeLookupRepository attendeeLookupRepository;
 
     /**
      * Concurrency bound for bulk email loops. flatMap defaults to 256 in-flight subscriptions,
@@ -73,31 +76,51 @@ public class EventService {
     }
 
     public Mono<Event> updateEvent(Long eventId, UpdateEventRequest request) {
-        return eventRepository.findEventById(eventId)
-                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId)))
-                .flatMap(existingEvent -> imageService.uploadBase64IfPresent(request.getBannerBase64())
-                        .defaultIfEmpty(request.getBannerUrl() == null ? "" : request.getBannerUrl())
-                        .flatMap(bannerUrl -> {
-                            Event updatedEvent = Event.builder()
-                                    .title(request.getTitle())
-                                    .description(request.getDescription())
-                                    .bannerUrl(bannerUrl.isEmpty() ? existingEvent.getBannerUrl() : bannerUrl)
-                                    .location(request.getLocation())
-                                    .startTime(request.getStartTime())
-                                    .endTime(request.getEndTime())
-                                    .registrationStartAt(request.getRegistrationStartAt())
-                                    .registrationEndAt(request.getRegistrationEndAt())
-                                    .maxCapacity(request.getMaxCapacity())
-                                    .topic(request.getTopic() != null ? request.getTopic() : existingEvent.getTopic())
-                                    .build();
-                            return eventRepository.updateEvent(eventId, updatedEvent);
-                        }));
+        return Mono.zip(SecurityUtils.getCurrentUserId(), SecurityUtils.hasRole("ADMIN"))
+                .flatMap(ctx -> {
+                    Long currentUserId = ctx.getT1();
+                    boolean isAdmin = ctx.getT2();
+                    return eventRepository.findEventById(eventId)
+                            .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId)))
+                            .flatMap(existingEvent -> {
+                                if (!isAdmin && !existingEvent.getCreatorMemberId().equals(currentUserId)) {
+                                    return Mono.error(new ApplicationException(ErrorCode.FORBIDDEN));
+                                }
+                                return imageService.uploadBase64IfPresent(request.getBannerBase64())
+                                        .defaultIfEmpty(request.getBannerUrl() == null ? "" : request.getBannerUrl())
+                                        .flatMap(bannerUrl -> {
+                                            Event updatedEvent = Event.builder()
+                                                    .title(request.getTitle())
+                                                    .description(request.getDescription())
+                                                    .bannerUrl(bannerUrl.isEmpty() ? existingEvent.getBannerUrl() : bannerUrl)
+                                                    .location(request.getLocation())
+                                                    .startTime(request.getStartTime())
+                                                    .endTime(request.getEndTime())
+                                                    .registrationStartAt(request.getRegistrationStartAt())
+                                                    .registrationEndAt(request.getRegistrationEndAt())
+                                                    .maxCapacity(request.getMaxCapacity())
+                                                    .topic(request.getTopic() != null ? request.getTopic() : existingEvent.getTopic())
+                                                    .build();
+                                            return eventRepository.updateEvent(eventId, updatedEvent);
+                                        });
+                            });
+                });
     }
 
     public Mono<Boolean> deleteEvent(Long eventId) {
-        return eventRepository.findEventById(eventId)
-                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId)))
-                .flatMap(e -> eventRepository.deleteEvent(eventId));
+        return Mono.zip(SecurityUtils.getCurrentUserId(), SecurityUtils.hasRole("ADMIN"))
+                .flatMap(ctx -> {
+                    Long currentUserId = ctx.getT1();
+                    boolean isAdmin = ctx.getT2();
+                    return eventRepository.findEventById(eventId)
+                            .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId)))
+                            .flatMap(existingEvent -> {
+                                if (!isAdmin && !existingEvent.getCreatorMemberId().equals(currentUserId)) {
+                                    return Mono.error(new ApplicationException(ErrorCode.FORBIDDEN));
+                                }
+                                return eventRepository.deleteEvent(eventId);
+                            });
+                });
     }
 
     public Mono<Event> getEventById(Long eventId) {
@@ -371,49 +394,7 @@ public class EventService {
         return eventRepository.registerTicket(ticket);
     }
 
-    // ─── Step 3: Approve / reject tickets ────────────────────────────────────
-
-    public Mono<EventTicket> approveTicket(Long ticketId) {
-        return SecurityUtils.getCurrentUserId().flatMap(adminId ->
-                eventRepository.findTicketById(ticketId)
-                        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.TICKET_NOT_FOUND, "Ticket not found: " + ticketId)))
-                        .flatMap(ticket -> {
-                            if (ticket.getStatus() != Status.PENDING) {
-                                return Mono.error(new ApplicationException(ErrorCode.TICKET_NOT_PENDING, "Ticket is not pending"));
-                            }
-                            return eventRepository.approveTicket(ticketId, adminId)
-                                    .doOnNext(saved -> notifyTicketReview(saved, true, null));
-                        }));
-    }
-
-    public Mono<EventTicket> rejectTicket(Long ticketId, ApproveTicketRequest request) {
-        return SecurityUtils.getCurrentUserId().flatMap(adminId ->
-                eventRepository.findTicketById(ticketId)
-                        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.TICKET_NOT_FOUND, "Ticket not found: " + ticketId)))
-                        .flatMap(ticket -> {
-                            if (ticket.getStatus() != Status.PENDING) {
-                                return Mono.error(new ApplicationException(ErrorCode.TICKET_NOT_PENDING, "Ticket is not pending"));
-                            }
-                            return eventRepository.rejectTicket(ticketId, adminId, request != null ? request.getRejectReason() : null)
-                                    .doOnNext(saved -> notifyTicketReview(saved, false, request != null ? request.getRejectReason() : null));
-                        }));
-    }
-
-    public Mono<Integer> bulkApproveTickets(BulkApproveRequest request) {
-        return SecurityUtils.getCurrentUserId().flatMap(adminId ->
-                Flux.fromIterable(request.getTicketIds())
-                        .flatMap(ticketId -> eventRepository.approveTicket(ticketId, adminId)
-                                .thenReturn(1)
-                                .onErrorReturn(0))
-                        .reduce(0, Integer::sum));
-    }
-
-    public Mono<Integer> approveAllPending(Long eventId) {
-        return SecurityUtils.getCurrentUserId()
-                .flatMap(adminId -> eventRepository.approveAllPendingTickets(eventId, adminId));
-    }
-
-    // ─── Step 4: Bulk reminder email ─────────────────────────────────────────
+    // ─── Step 3: Bulk reminder email ─────────────────────────────────────────
 
     public Mono<Integer> sendReminderEmails(Long eventId, ReminderEmailRequest request) {
         return SecurityUtils.getCurrentUserId().flatMap(adminId ->
@@ -491,37 +472,63 @@ public class EventService {
         );
     }
 
-    // ─── Step 6: Activate tickets ─────────────────────────────────────────────
+    // ─── Step 6: Check-in (event-scoped, QR-encrypted, staff-only) ────────────
 
-    public Mono<Integer> activateTickets(Long eventId) {
-        return eventRepository.findEventById(eventId)
-                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId)))
-                .flatMap(e -> eventRepository.activateTicketsForEvent(eventId));
+    /**
+     * Check in a ticket for {@code eventId}. The caller supplies either the encrypted {@code qrToken}
+     * scanned from the QR (preferred) or the raw ticket {@code code} (manual fallback). Both paths
+     * enforce, server-side, that the ticket belongs to {@code eventId} ({@link ErrorCode#TICKET_WRONG_EVENT}),
+     * and that the caller is staff. Returns the holder's profile so staff can verify the person.
+     */
+    public Mono<EventTicketDetailResponse> checkIn(Long eventId, CheckInRequest request) {
+        return requireStaff()
+                .then(resolveTicketCode(eventId, request))
+                .flatMap(ticketCode -> eventRepository.findTicketByCode(ticketCode)
+                        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.TICKET_NOT_FOUND, "Ticket not found")))
+                        .flatMap(ticket -> {
+                            if (!eventId.equals(ticket.getEventId())) {
+                                return Mono.error(new ApplicationException(ErrorCode.TICKET_WRONG_EVENT, "Ticket does not belong to this event"));
+                            }
+                            if (ticket.getStatus() == Status.CANCELLED || ticket.getStatus() == Status.EXPIRED) {
+                                return Mono.error(new ApplicationException(ErrorCode.TICKET_ALREADY_CANCELLED, "Ticket is cancelled or expired"));
+                            }
+                            if (ticket.getStatus() == Status.CHECKED_IN || ticket.getStatus() == Status.USED) {
+                                return Mono.error(new ApplicationException(ErrorCode.TICKET_ALREADY_CHECKED_IN, "Ticket already checked in"));
+                            }
+                            if (ticket.getStatus() != Status.ISSUED && ticket.getStatus() != Status.ACTIVE) {
+                                return Mono.error(new ApplicationException(ErrorCode.TICKET_NOT_ACTIVE, "Ticket is not valid for check-in"));
+                            }
+                            return eventRepository.checkInTicket(ticket.getId());
+                        }))
+                .flatMap(this::toDetailWithAttendee);
     }
 
-    public Mono<EventTicket> checkInTicket(String ticketCode) {
-        return eventRepository.findTicketByCode(ticketCode)
-                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.TICKET_NOT_FOUND, "Ticket not found")))
-                .flatMap(ticket -> {
-                    if (ticket.getStatus() == Status.CANCELLED || ticket.getStatus() == Status.EXPIRED) {
-                        return Mono.error(new ApplicationException(ErrorCode.TICKET_ALREADY_CANCELLED, "Ticket is cancelled or expired"));
-                    }
-                    if (ticket.getStatus() == Status.CHECKED_IN || ticket.getStatus() == Status.USED) {
-                        return Mono.error(new ApplicationException(ErrorCode.TICKET_ALREADY_CHECKED_IN, "Ticket already checked in"));
-                    }
-                    if (ticket.getStatus() != Status.ISSUED && ticket.getStatus() != Status.ACTIVE) {
-                        return Mono.error(new ApplicationException(ErrorCode.TICKET_NOT_ACTIVE, "Ticket is not valid for check-in"));
-                    }
-                    return eventRepository.checkInTicket(ticket.getId());
-                });
+    /** Resolve the ticket code to check in: decode + event-match the QR token, else use the manual code. */
+    private Mono<String> resolveTicketCode(Long eventId, CheckInRequest request) {
+        String qrToken = request != null ? request.getQrToken() : null;
+        String code = request != null ? request.getCode() : null;
+        if (qrToken != null && !qrToken.isBlank()) {
+            return Mono.fromCallable(() -> eventQrService.decode(qrToken))
+                    .flatMap(ref -> {
+                        if (ref.eventId() != null && !ref.eventId().equals(eventId)) {
+                            return Mono.error(new ApplicationException(ErrorCode.TICKET_WRONG_EVENT, "QR code belongs to another event"));
+                        }
+                        return Mono.just(ref.ticketCode());
+                    });
+        }
+        if (code != null && !code.isBlank()) {
+            return Mono.just(code.trim().toUpperCase());
+        }
+        return Mono.error(new ApplicationException(ErrorCode.TICKET_QR_INVALID, "Missing QR token or ticket code"));
     }
 
-    // ─── Step 7: Expire tickets after event ───────────────────────────────────
-
-    public Mono<Integer> expireTickets(Long eventId) {
-        return eventRepository.findEventById(eventId)
-                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId)))
-                .flatMap(e -> eventRepository.expireTicketsForEvent(eventId));
+    private Mono<Void> requireStaff() {
+        return SecurityUtils.getCurrentUserRole()
+                .filter(role -> role.equalsIgnoreCase("ADMIN")
+                        || role.equalsIgnoreCase("STAFF")
+                        || role.equalsIgnoreCase("MODERATOR"))
+                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.FORBIDDEN, "Only staff can check in tickets")))
+                .then();
     }
 
     // ─── Ticket queries ───────────────────────────────────────────────────────
@@ -540,9 +547,10 @@ public class EventService {
                 });
     }
 
-    public Mono<EventTicket> getTicketByCode(String ticketCode) {
+    public Mono<EventTicketDetailResponse> getTicketByCode(String ticketCode) {
         return eventRepository.findTicketByCode(ticketCode)
-                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.TICKET_NOT_FOUND, "Ticket not found: " + ticketCode)));
+                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.TICKET_NOT_FOUND, "Ticket not found: " + ticketCode)))
+                .flatMap(this::toDetailWithAttendee);
     }
 
     public Mono<PaginatedResponse<EventTicket>> getTicketsByEvent(Long eventId, String status, String keyword, int page, int limit) {
@@ -556,9 +564,47 @@ public class EventService {
                 : eventRepository.findTicketsByEvent(eventId, page, limit);
     }
 
-    public Mono<PaginatedResponse<EventTicket>> getMyTickets(int page, int limit) {
+    public Mono<PaginatedResponse<EventTicketDetailResponse>> getMyTickets(int page, int limit) {
         return SecurityUtils.getCurrentUserId()
-                .flatMap(memberId -> eventRepository.findTicketsByMember(memberId, page, limit));
+                .flatMap(memberId -> eventRepository.findTicketsByMember(memberId, page, limit))
+                .map(this::mapDetailPage);
+    }
+
+    // ─── Ticket response mapping (qrToken + attendee enrichment) ──────────────
+
+    /** Map a ticket to a response carrying the encrypted QR token (no attendee lookup). */
+    private EventTicketDetailResponse toDetail(EventTicket ticket) {
+        return EventTicketDetailResponse.fromTicket(ticket)
+                .qrToken(eventQrService.encodeWithPrefix(ticket.getTicketCode(), ticket.getEventId()))
+                .build();
+    }
+
+    /** Map a ticket to a response, additionally resolving the holder's profile for verification. */
+    private Mono<EventTicketDetailResponse> toDetailWithAttendee(EventTicket ticket) {
+        EventTicketDetailResponse.EventTicketDetailResponseBuilder builder = EventTicketDetailResponse.fromTicket(ticket)
+                .qrToken(eventQrService.encodeWithPrefix(ticket.getTicketCode(), ticket.getEventId()));
+        if (ticket.getMemberId() == null) {
+            return Mono.just(builder.build());
+        }
+        return attendeeLookupRepository.findByUserId(ticket.getMemberId().intValue())
+                .map(profile -> builder
+                        .attendeeName(profile.fullName())
+                        .attendeeEmail(profile.email())
+                        .attendeeAvatarUrl(profile.avatarUrl())
+                        .build())
+                .defaultIfEmpty(builder.build());
+    }
+
+    private PaginatedResponse<EventTicketDetailResponse> mapDetailPage(PaginatedResponse<EventTicket> page) {
+        return PaginatedResponse.<EventTicketDetailResponse>builder()
+                .items(page.getItems().stream().map(this::toDetail).toList())
+                .currentPage(page.getCurrentPage())
+                .pageSize(page.getPageSize())
+                .totalPage(page.getTotalPage())
+                .totalItem(page.getTotalItem())
+                .hasNext(page.getHasNext())
+                .hasPrevious(page.getHasPrevious())
+                .build();
     }
 
     // ─── Invitation queries ───────────────────────────────────────────────────
@@ -682,18 +728,6 @@ public class EventService {
                         event.getTitle(),
                         link))
                 .then();
-    }
-
-    private void notifyTicketReview(EventTicket ticket, boolean approved, String reason) {
-        if (ticket.getMemberId() == null) return;
-        eventRepository.findEventById(ticket.getEventId())
-                .flatMap(event -> buildTicketLink(event, ticket.getTicketCode())
-                        .doOnNext(link -> notificationService.createNotificationAsync(
-                                ticket.getMemberId().intValue(),
-                                approved ? "Vé sự kiện đã được duyệt" : "Vé sự kiện bị từ chối",
-                                approved ? event.getTitle() : (reason != null ? reason : event.getTitle()),
-                                link)))
-                .subscribe();
     }
 
     private Mono<String> buildTicketLink(Event event, String ticketCode) {

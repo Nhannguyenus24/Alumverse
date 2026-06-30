@@ -1,44 +1,63 @@
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link } from 'react-router';
+import { Link, useLocation } from 'react-router';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
+import { z } from 'zod';
 import { Box, Typography, Button } from '@mui/material';
 import Page from '../../components/Page';
 import Input from '../../components/Input';
-import { getChangePasswordSchema } from '../../utils/regexUtils';
 import { useAuth } from '../../hooks/useAuth';
 import { useOrgNavigate, useOrgPath } from '../../hooks/useOrgNavigate';
+
+const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/;
 
 const ResetPasswordPage = () => {
   const { t } = useTranslation(['auth', 'common']);
   const navigate = useOrgNavigate();
   const toOrgPath = useOrgPath();
+  const location = useLocation();
   const { enqueueSnackbar } = useSnackbar();
-  const { resetPassword, isSubmitting: loading, setError } = useAuth();
+  const { resetPasswordWithOtp, isSubmitting: loading, setError } = useAuth();
 
-  const changePasswordSchema = useMemo(() => getChangePasswordSchema(t), [t]);
+  const email = location.state?.email ?? '';
+  const otp = location.state?.otp ?? '';
+
+  const schema = useMemo(() =>
+    z.object({
+      newPassword: z
+        .string()
+        .min(8, t('auth:new_password_length'))
+        .max(100, t('auth:new_password_length'))
+        .regex(PASSWORD_REGEX, t('auth:password_complexity')),
+      confirmNewPassword: z.string().min(1, t('auth:confirm_new_password_required')),
+    }).refine((d) => d.newPassword === d.confirmNewPassword, {
+      message: t('auth:new_passwords_not_match'),
+      path: ['confirmNewPassword'],
+    }),
+  [t]);
 
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm({
-    resolver: zodResolver(changePasswordSchema),
-    defaultValues: { oldPassword: '', newPassword: '', confirmNewPassword: '' },
+    resolver: zodResolver(schema),
+    defaultValues: { newPassword: '', confirmNewPassword: '' },
   });
 
   const onSubmit = async (data) => {
+    if (!email || !otp) {
+      enqueueSnackbar(t('auth:reset_password_invalid_session'), { variant: 'error' });
+      navigate('/auth/forgot-password', { replace: true });
+      return;
+    }
     setError(null);
-    const result = await resetPassword({
-      oldPassword: data.oldPassword,
-      newPassword: data.newPassword,
-      confirmNewPassword: data.confirmNewPassword,
-    });
+    const result = await resetPasswordWithOtp({ email, otp, newPassword: data.newPassword });
     if (result?.ok) {
       enqueueSnackbar(result.message ?? t('auth:reset_password_success'), { variant: 'success' });
-      navigate('/dashboard', { replace: true });
+      navigate('/auth/login', { replace: true });
     } else if (result?.error) {
       enqueueSnackbar(result.error, { variant: 'error' });
     }
@@ -71,14 +90,6 @@ const ResetPasswordPage = () => {
         </Typography>
 
         <Input
-          label={t('auth:current_password_label')}
-          placeholder="••••••••"
-          type="password"
-          error={!!errors.oldPassword}
-          helperText={errors.oldPassword?.message}
-          {...register('oldPassword')}
-        />
-        <Input
           label={t('auth:new_password_label')}
           placeholder="••••••••"
           type="password"
@@ -95,10 +106,6 @@ const ResetPasswordPage = () => {
           {...register('confirmNewPassword')}
         />
 
-        <Typography variant="body2" color="text.secondary" textAlign="center">
-          {t('auth:reset_password_skip_hint')}
-        </Typography>
-
         <Button
           type="submit"
           variant="contained"
@@ -114,13 +121,13 @@ const ResetPasswordPage = () => {
         <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ mt: 1 }}>
           <Typography
             component={Link}
-            to={toOrgPath('/dashboard')}
+            to={toOrgPath('/auth/login')}
             variant="body2"
             color="primary.main"
             fontWeight={600}
             sx={{ textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
           >
-            {t('auth:back_to_home')}
+            {t('auth:back_to_login')}
           </Typography>
         </Typography>
       </Box>

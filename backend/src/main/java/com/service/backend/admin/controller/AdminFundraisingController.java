@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.List;
 
@@ -20,6 +21,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/admin/fundraising")
 @Validated
+@PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
 public class AdminFundraisingController {
 
     private final AdminFundraisingService adminFundraisingService;

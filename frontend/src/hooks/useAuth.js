@@ -302,6 +302,31 @@ export const useAuth = () => {
     }
   }, [store, setLoading]);
 
+  const resetPasswordWithOtp = useCallback(async (payload) => {
+    const { email, otp, newPassword } = payload ?? {};
+    if (!email || !otp || !newPassword) {
+      const msg = t('invalid_data');
+      store.setError(msg);
+      return { ok: false, error: msg };
+    }
+    setLoading(true);
+    try {
+      const { data } = await apiClient.post('/auth/reset-password', { email, otp, newPassword });
+      if (!data?.data && data?.message == null) {
+        const msg = t('change_password_failed');
+        store.setError(msg);
+        return { ok: false, error: msg };
+      }
+      store.setLoading(false);
+      store.setError(null);
+      return { ok: true, message: data?.message };
+    } catch (err) {
+      const message = err.response?.data?.message ?? err.message ?? t('change_password_failed');
+      store.setError(message);
+      return { ok: false, error: message };
+    }
+  }, [store, setLoading]);
+
   const logout = useCallback(async () => {
     try {
       await apiClient.post('/auth/logout');
@@ -335,9 +360,10 @@ export const useAuth = () => {
     forgotPassword,
     verifySignupCode,
     resetPassword,
+    resetPasswordWithOtp,
     logout,
   }), [
     storageHydrated, authResolved, token, user, isBootLoading, loading, verificationLevel, error,
-    setError, clearError, login, loginWithGoogle, register, forgotPassword, verifySignupCode, resetPassword, logout
+    setError, clearError, login, loginWithGoogle, register, forgotPassword, verifySignupCode, resetPassword, resetPasswordWithOtp, logout
   ]);
 };

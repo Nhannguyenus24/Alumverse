@@ -49,9 +49,11 @@ const MyTicketCard = ({ ticket, onCancelled, highlighted = false }) => {
     }
   };
 
-  const qrData = ticket.ticketCode
-    ? `ALUMVERSE-TICKET-${ticket.ticketCode}`
-    : "ALUMVERSE-TICKET-DEMO";
+  // Prefer the server-issued encrypted token (hides the code + tamper-proof).
+  // Fall back to the legacy plaintext format only for tickets issued before the
+  // backend started returning `qrToken`.
+  const qrData = ticket.qrToken
+    || (ticket.ticketCode ? `ALUMVERSE-TICKET-${ticket.ticketCode}` : "ALUMVERSE-TICKET-DEMO");
 
   return (
     <Box
