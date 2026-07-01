@@ -19,6 +19,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
+import java.time.LocalDate;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -38,7 +40,7 @@ public class AchievementService {
                                     .title(request.getTitle())
                                     .description(request.getDescription())
                                     .imageUrl(imageUrl.isEmpty() ? null : imageUrl)
-                                    .awardedDate(request.getAwardedDate())
+                                    .awardedDate(request.getAwardedDate() != null ? request.getAwardedDate() : LocalDate.now())
                                     .topic(request.getTopic())
                                     .status(request.getStatus())
                                     .build();
@@ -50,29 +52,40 @@ public class AchievementService {
     }
 
     public Mono<AchievementResponse> update(Integer id, UpdateAchievementRequest request) {
-        return achievementRepository.findById(id)
-                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.ACHIEVEMENT_NOT_FOUND, "Achievement not found with id: " + id)))
-                .flatMap(existing -> imageService.uploadBase64IfPresent(request.getImageBase64())
-                        .defaultIfEmpty(request.getImageUrl() == null ? "" : request.getImageUrl())
-                        .flatMap(imageUrl -> {
-                            existing.setTitle(request.getTitle());
-                            existing.setDescription(request.getDescription());
-                            existing.setImageUrl(imageUrl.isEmpty() ? existing.getImageUrl() : imageUrl);
-                            existing.setAwardedDate(request.getAwardedDate());
-                            existing.setStatus(request.getStatus());
-                            if (request.getTopic() != null) existing.setTopic(request.getTopic());
-                            return achievementRepository.save(existing);
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(currentUserId -> achievementRepository.findById(id)
+                        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.ACHIEVEMENT_NOT_FOUND, "Achievement not found with id: " + id)))
+                        .flatMap(existing -> {
+                            if (!existing.getMemberId().equals(currentUserId.intValue())) {
+                                return Mono.error(new ApplicationException(ErrorCode.FORBIDDEN));
+                            }
+                            return imageService.uploadBase64IfPresent(request.getImageBase64())
+                                    .defaultIfEmpty(request.getImageUrl() == null ? "" : request.getImageUrl())
+                                    .flatMap(imageUrl -> {
+                                        existing.setTitle(request.getTitle());
+                                        existing.setDescription(request.getDescription());
+                                        existing.setImageUrl(imageUrl.isEmpty() ? existing.getImageUrl() : imageUrl);
+                                        if (request.getStatus() != null) existing.setStatus(request.getStatus());
+                                        if (request.getTopic() != null) existing.setTopic(request.getTopic());
+                                        return achievementRepository.save(existing);
+                                    });
                         }))
                 .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
                 .map(AchievementResponse::from);
     }
 
     public Mono<Boolean> delete(Integer id) {
-        return achievementRepository.findById(id)
-                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.ACHIEVEMENT_NOT_FOUND, "Achievement not found with id: " + id)))
-                .flatMap(existing -> achievementRepository.deleteById(id)
-                        .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
-                        .thenReturn(true));
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(currentUserId -> achievementRepository.findById(id)
+                        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.ACHIEVEMENT_NOT_FOUND, "Achievement not found with id: " + id)))
+                        .flatMap(existing -> {
+                            if (!existing.getMemberId().equals(currentUserId.intValue())) {
+                                return Mono.error(new ApplicationException(ErrorCode.FORBIDDEN));
+                            }
+                            return achievementRepository.deleteById(id)
+                                    .then(cacheUtils.clear("admin_content_statistics"))
+                                    .thenReturn(true);
+                        }));
     }
 
     public Mono<AchievementResponse> getById(Integer id) {

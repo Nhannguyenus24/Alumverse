@@ -1,5 +1,4 @@
 import { useRef, useState } from 'react';
-import * as XLSX from 'xlsx';
 import {
   Alert,
   Box,
@@ -41,11 +40,12 @@ const TEMPLATE_HEADERS = [
 ];
 
 const TEMPLATE_EXAMPLE = [
-  'alumni@example.com', 'Nguyễn Văn A', '22127001', 'ALUMNI', '',
+  'alumni@example.com', 'Nguyễn Văn A', '22127001', 'USER', '',
   'Chính quy', 'Công nghệ thông tin', '2024', 'GRADUATED', '2', 'ACTIVE',
 ];
 
-const downloadTemplate = () => {
+const downloadTemplate = async () => {
+  const XLSX = await import('xlsx');
   const ws = XLSX.utils.aoa_to_sheet([TEMPLATE_HEADERS, TEMPLATE_EXAMPLE]);
   ws['!cols'] = TEMPLATE_HEADERS.map(() => ({ wch: 20 }));
   const wb = XLSX.utils.book_new();
@@ -54,7 +54,7 @@ const downloadTemplate = () => {
 };
 
 // ── Validation helpers ─────────────────────────────────────────────────────────
-const VALID_ROLES = ['ALUMNI', 'STUDENT', 'ADMIN'];
+const VALID_ROLES = ['USER', 'STAFF', 'ADMIN'];
 const VALID_STATUSES = ['ACTIVE', 'INACTIVE', 'BANNED'];
 const VALID_GRADUATION = ['STUDYING', 'GRADUATED', 'DROPPED'];
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -115,8 +115,9 @@ const AdminBulkImportDialog = ({ open, onClose, organizationOptions = [], onBulk
     setParseError('');
 
     const reader = new FileReader();
-    reader.onload = (ev) => {
+    reader.onload = async (ev) => {
       try {
+        const XLSX = await import('xlsx');
         const wb = XLSX.read(ev.target.result, { type: 'array' });
         const ws = wb.Sheets[wb.SheetNames[0]];
         const raw = XLSX.utils.sheet_to_json(ws, { defval: '' });
@@ -127,7 +128,7 @@ const AdminBulkImportDialog = ({ open, onClose, organizationOptions = [], onBulk
           email: String(r.email || '').trim(),
           fullName: String(r.fullName || '').trim(),
           studentId: String(r.studentId || '').trim(),
-          role: String(r.role || 'ALUMNI').trim().toUpperCase(),
+          role: String(r.role || 'USER').trim().toUpperCase(),
           password: String(r.password || '').trim(),
           program: String(r.program || '').trim(),
           major: String(r.major || '').trim(),
@@ -162,7 +163,7 @@ const AdminBulkImportDialog = ({ open, onClose, organizationOptions = [], onBulk
       email: r.email,
       fullName: r.fullName,
       studentId: r.studentId || undefined,
-      role: r.role || 'ALUMNI',
+      role: r.role || 'USER',
       password: r.password || undefined,
       program: r.program || undefined,
       major: r.major || undefined,
@@ -252,7 +253,7 @@ const AdminBulkImportDialog = ({ open, onClose, organizationOptions = [], onBulk
             <Alert severity="info" sx={{ width: '100%', maxWidth: 600 }}>
               <Typography variant="body2" component="div">
                 <strong>Các cột bắt buộc:</strong> email, fullName<br />
-                <strong>Các cột tùy chọn:</strong> studentId, role (mặc định ALUMNI), password, program, major, graduatedYear, graduationStatus (STUDYING/GRADUATED/DROPPED), verificationLevel (0/1/2), status (mặc định ACTIVE)
+                <strong>Các cột tùy chọn:</strong> studentId, role (mặc định USER), password, program, major, graduatedYear, graduationStatus (STUDYING/GRADUATED/DROPPED), verificationLevel (0/1/2), status (mặc định ACTIVE)
               </Typography>
             </Alert>
           </Box>

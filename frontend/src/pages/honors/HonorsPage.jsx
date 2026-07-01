@@ -19,10 +19,13 @@ import Sidebar from '../../components/Sidebar';
 import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useAuth } from '../../hooks/useAuth';
+import { useCanContribute } from '../../hooks/useCanContribute';
+import { ContributeGuardTooltip } from '../../components/ContributeGuard';
 import { usePublishedAchievements } from '../../hooks/articles/usePublishedAchievements';
 import { usePublishedAlumniPosts } from '../../hooks/articles/usePublishedAlumniPosts';
 import { toCardShape } from '../../hooks/articles/toCardShape';
 import apiClient from '../../utils/axios';
+import { deleteArticleByChannel, getArticleAdminEditPath } from '../../utils/articleAdminActions';
 
 const getSidebar = (t) => [
   { id: '/honors', label: t('honors:sidebar_honors'), icon: <EmojiEventsIcon /> },
@@ -67,6 +70,7 @@ const HonorsPage = () => {
   const { enqueueSnackbar } = useSnackbar();
   const queryClient = useQueryClient();
   const { user, isAuthenticated } = useAuth();
+  const { canContribute } = useCanContribute();
   const isAdmin = isAuthenticated && user?.role === 'ADMIN';
 
   const { achievements } = usePublishedAchievements(0, 7);
@@ -89,7 +93,8 @@ const HonorsPage = () => {
   };
 
   const handleEdit = (article) => {
-    navigate(`/article/${article.channel}/${article.id}/edit`);
+    const editPath = getArticleAdminEditPath(article);
+    if (editPath) navigate(editPath);
   };
 
   const handleDelete = (article) => setDeleteTarget(article);
@@ -98,11 +103,7 @@ const HonorsPage = () => {
     if (!deleteTarget || deleting) return;
     setDeleting(true);
     try {
-      const endpoint =
-        deleteTarget.channel === 'alumni'
-          ? '/admin/articles/alumni-posts'
-          : '/admin/articles/achievements';
-      await apiClient.delete(`${endpoint}/${deleteTarget.id}`);
+      await deleteArticleByChannel(apiClient, deleteTarget);
       queryClient.invalidateQueries({ queryKey: ['publishedAlumniPosts'] });
       queryClient.invalidateQueries({ queryKey: ['publishedAchievements'] });
       enqueueSnackbar(t('honors:delete_success'), { variant: 'success' });
@@ -151,17 +152,21 @@ const HonorsPage = () => {
                   </Typography>
 
                   {!isAdmin && isAuthenticated && (
-                    <Button
-                      variant="contained"
-                      onClick={() => navigate('/honors/request-achievements')}
-                    >
-                      {t('honors:submit_achievement_request')}
-                    </Button>
+                    <ContributeGuardTooltip>
+                      <Button
+                        variant="contained"
+                        disabled={!canContribute}
+                        onClick={() => navigate('/honors/request-achievements')}
+                      >
+                        {t('honors:submit_achievement_request')}
+                      </Button>
+                    </ContributeGuardTooltip>
                   )}
                   {isAdmin && (
                     <Button
                       variant="outlined"
                       color="primary"
+                      startIcon={<EmojiEventsIcon />}
                       onClick={() => navigate('/admin/article')}
                     >
                       {t('honors:manage_honors')}

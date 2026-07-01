@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Outlet, useParams, useLocation } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { Box, useTheme, alpha } from '@mui/material';
@@ -10,6 +10,7 @@ import useAdminForumData from '../hooks/admin/useAdminForumData';
 import { AdminProvider } from '../stores/AdminStore';
 import useOrganizationStore from '../stores/organizationStore';
 import { useAuth } from '../hooks/useAuth';
+import { useMyProfile } from '../hooks/profile/useMyProfile';
 import Page from '../components/Page';
 
 const HEADER_HEIGHT = 88;
@@ -22,11 +23,33 @@ const AdminLayoutShell = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [breadcrumbs, setBreadcrumbs] = useState(null);
   const theme = useTheme();
+  
+  const outletContext = useMemo(() => ({ setBreadcrumbs }), []);
 
   const { slug } = useParams();
   const adminBase = slug ? `/${slug}/admin` : '/admin';
 
   const { user, logout } = useAuth();
+  const profileQuery = useMyProfile();
+  const profile = profileQuery.data;
+  const headerUser = useMemo(() => {
+    if (!user) return profile ?? null;
+    if (!profile) return user;
+
+    return {
+      ...user,
+      fullName: profile.fullName ?? profile.name ?? user.fullName,
+      studentId: profile.studentId ?? user.studentId,
+      email: profile.email ?? user.email,
+      avatarUrl:
+        profile.avatarUrl ??
+        profile.avatar_url ??
+        profile.avatar ??
+        profile.imageUrl ??
+        profile.image ??
+        user.avatarUrl,
+    };
+  }, [profile, user]);
 
   const currentSidebarWidth = isSidebarCollapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH;
 
@@ -76,7 +99,7 @@ const AdminLayoutShell = () => {
         <AdminHeader
           onMenuOpen={() => setMobileOpen(true)}
           isSidebarCollapsed={isSidebarCollapsed}
-          user={user}
+          user={headerUser}
           onLogout={logout}
           breadcrumbs={breadcrumbs}
         />
@@ -93,7 +116,7 @@ const AdminLayoutShell = () => {
           }}
         >
           <Box>
-            <Outlet context={{ setBreadcrumbs }} />
+            <Outlet context={outletContext} />
           </Box>
         </Box>
       </Box>
@@ -108,12 +131,15 @@ const AdminLayout = () => {
     slug,
   });
   const setOrganization = useOrganizationStore((state) => state.setOrganization);
-  const isUsersPage = location.pathname.includes('/users');
+  // The dashboard (admin index route) aggregates user & forum data client-side,
+  // so it needs both datasets loaded too — not just the dedicated /users & /forum pages.
+  const isDashboard = /\/admin\/?$/.test(location.pathname);
+  const isUsersPage = location.pathname.includes('/users') || isDashboard;
   const users = useAdminUsersLocal(system.stableOrgId, isUsersPage);
 
-  // Only load forum data when on forum pages — avoids firing 6 API calls
-  // unnecessarily when switching org while on Events / Users / etc.
-  const isForumPage = location.pathname.includes('/forum');
+  // Only load forum data when on forum pages or the dashboard — avoids firing 6 API
+  // calls unnecessarily when switching org while on Events / etc.
+  const isForumPage = location.pathname.includes('/forum') || isDashboard;
   const forum = useAdminForumData(system.stableOrgId, isForumPage);
 
   useEffect(() => {

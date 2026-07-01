@@ -2,6 +2,7 @@ package com.service.backend.fundraising.dto;
 
 import com.service.backend.shared.entity.FundReceivingInfos;
 import com.service.backend.shared.entity.Funds;
+import com.service.backend.shared.entity.User;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -36,10 +37,15 @@ public class FundDetailResponse {
 
     private FundReceivingInfos fundReceivingInfo;
 
+    private String managerEmail;
+    private Integer managerUserId;
+    private String managerAvatarUrl;
+
     public static FundDetailResponse from(
             Funds fund,
             FundReceivingInfos fundReceivingInfo,
-            String organizationName
+            String organizationName,
+            User managerUser
     ) {
         if (fund == null) {
             return null;
@@ -60,6 +66,9 @@ public class FundDetailResponse {
                 .timeEnded(fund.getTimeEnded())
                 .topic(fund.getTopic())
                 .fundReceivingInfo(fundReceivingInfo)
+                .managerEmail(fund.getManagerEmail())
+                .managerUserId(managerUser != null ? managerUser.getId() : null)
+                .managerAvatarUrl(managerUser != null ? managerUser.getAvatarUrl() : null)
                 .build();
     }
 }

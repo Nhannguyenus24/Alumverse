@@ -20,6 +20,9 @@ const queryClient = new QueryClient({
     queries: {
       staleTime: 60_000,
       retry: 1,
+      // Avoid redundant backend calls when the user simply switches back to the tab.
+      // Freshness is still guaranteed by staleTime and the per-hook refetchOnMount settings.
+      refetchOnWindowFocus: false,
     },
   },
 });

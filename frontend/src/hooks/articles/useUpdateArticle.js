@@ -13,7 +13,21 @@ const ENDPOINT_BY_CHANNEL = {
 };
 
 const buildPayload = (channel, input) => {
-  const { title, content, thumbnailBase64, thumbnailUrl, topic, ...rest } = input;
+  const {
+    title,
+    content,
+    thumbnailBase64,
+    thumbnailUrl,
+    topic,
+    ...rest
+  } = input;
+  delete rest.publishedAt;
+  delete rest.published_at;
+  delete rest.createdAt;
+  delete rest.created_at;
+  delete rest.awardedDate;
+  delete rest.awarded_date;
+
   switch (channel) {
     case 'achievement':
       return {
@@ -46,9 +60,7 @@ const buildPayload = (channel, input) => {
     case 'learning':
       return {
         title,
-        content,
-        thumbnailBase64: thumbnailBase64 ?? null,
-        thumbnailUrl: thumbnailUrl ?? null,
+        description: content,
         type: topic ?? null,
         ...rest,
       };

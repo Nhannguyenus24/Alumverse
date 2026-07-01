@@ -3,10 +3,15 @@ import apiClient from '../utils/axios';
 import useOrganizationStore from '../stores/organizationStore';
 
 const fetchMyOrgMember = async (organizationId) => {
-  const res = await apiClient.get('/users/me/organization-member', {
-    params: { organizationId },
-  });
-  return res?.data?.data ?? null;
+  try {
+    const res = await apiClient.get('/users/me/organization-member', {
+      params: { organizationId },
+    });
+    return res?.data?.data ?? null;
+  } catch (err) {
+    if (err?.response?.status === 404) return null;
+    throw err;
+  }
 };
 
 /**

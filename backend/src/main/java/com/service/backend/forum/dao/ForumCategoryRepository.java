@@ -17,6 +17,16 @@ public interface ForumCategoryRepository extends R2dbcRepository<ForumCategory, 
     Flux<ForumCategory> findByOrganizationId(Integer organizationId);
 
     /**
+     * Find forum categories by organization id filtered by status (public listing uses ACTIVE).
+     */
+    Flux<ForumCategory> findByOrganizationIdAndStatus(Integer organizationId, String status);
+
+    /**
+     * Find direct child categories of a category. Used when cascade-deleting a category.
+     */
+    Flux<ForumCategory> findByParentId(Integer parentId);
+
+    /**
      * Find forum category by name and organization id
      */
     Mono<ForumCategory> findByNameAndOrganizationId(String name, Integer organizationId);

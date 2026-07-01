@@ -182,7 +182,7 @@ class _SlotTile extends ConsumerWidget {
       }
     } catch (e) {
       if (context.mounted) {
-        AppToast.error(context, e.toString().replaceFirst('Exception: ', ''));
+        AppToast.fromError(context, e);
       }
     }
   }
@@ -255,7 +255,7 @@ class _AddSlotSheetState extends ConsumerState<_AddSlotSheet> {
       AppToast.success(context, 'mentorship.slot_added'.tr());
     } catch (e) {
       if (!mounted) return;
-      AppToast.error(context, e.toString().replaceFirst('Exception: ', ''));
+      AppToast.fromError(context, e);
     } finally {
       if (mounted) setState(() => _saving = false);
     }

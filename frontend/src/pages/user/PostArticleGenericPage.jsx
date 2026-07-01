@@ -8,10 +8,34 @@ import { useCreateAlumniPost } from '../../hooks/news/useCreateAlumniPost';
 import { useCreateAchievement } from '../../hooks/news/useCreateAchievement';
 import { useCreateJob } from '../../hooks/news/useCreateJob';
 import { useCreateLearningResource } from '../../hooks/news/useCreateLearningResource';
-import { fileToBase64 } from '../../utils/imageUtils';
+import {
+  fileToCroppedCoverBase64,
+  getJsonPayloadByteSize,
+  MAX_JSON_PAYLOAD_BYTES,
+  validateImageFile,
+} from '../../utils/imageUtils';
 import { useNotification } from '../../hooks/useNotification';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useState } from 'react';
+
+const JOB_TYPE_BY_TOPIC = {
+  internship: 'INTERNSHIP',
+  full_time: 'FULL_TIME',
+  part_time: 'PART_TIME',
+  freelance: 'FREELANCE',
+  internal_referral: 'FULL_TIME',
+  remote: 'CONTRACT',
+};
+
+const LEARNING_TYPE_BY_TOPIC = {
+  online_course: 'COURSE',
+  certificate: 'COURSE',
+  study_abroad: 'OTHER',
+  masters: 'OTHER',
+  student_exchange: 'OTHER',
+  research: 'OTHER',
+  achievement_scholarship: 'OTHER',
+};
 
 /**
  * Per-channel static configuration (no translated strings here).
@@ -32,6 +56,13 @@ const CHANNEL_CONFIG = {
     payloadKey: 'thumbnailBase64',
     useBase64: true,
     contentKey: 'content',
+    buildPayload: ({ title, content, topic, url, imageBase64 }) => ({
+      title,
+      content,
+      topic,
+      url: url || null,
+      ...(imageBase64 ? { thumbnailBase64: imageBase64 } : {}),
+    }),
   },
   alumni: {
     channelKey: 'channel_alumni',
@@ -42,6 +73,13 @@ const CHANNEL_CONFIG = {
     payloadKey: 'thumbnailBase64',
     useBase64: true,
     contentKey: 'content',
+    buildPayload: ({ title, content, topic, url, imageBase64 }) => ({
+      title,
+      content,
+      topic,
+      url: url || null,
+      ...(imageBase64 ? { thumbnailBase64: imageBase64 } : {}),
+    }),
   },
   achievement: {
     channelKey: 'channel_achievement',
@@ -52,6 +90,14 @@ const CHANNEL_CONFIG = {
     payloadKey: 'imageBase64',
     useBase64: true,
     contentKey: 'description',
+    buildPayload: ({ title, content, topic, imageBase64 }) => ({
+      title,
+      description: content,
+      topic,
+      status: 'APPROVED',
+      awardedDate: new Date().toISOString().slice(0, 10),
+      ...(imageBase64 ? { imageBase64 } : {}),
+    }),
   },
   job: {
     channelKey: 'channel_job',
@@ -62,6 +108,12 @@ const CHANNEL_CONFIG = {
     payloadKey: null,
     useBase64: false,
     contentKey: 'description',
+    buildPayload: ({ title, content, topic }) => ({
+      title,
+      description: content,
+      type: JOB_TYPE_BY_TOPIC[topic],
+      isReferral: topic === 'internal_referral',
+    }),
   },
   learning: {
     channelKey: 'channel_learning',
@@ -72,6 +124,12 @@ const CHANNEL_CONFIG = {
     payloadKey: null,
     useBase64: false,
     contentKey: 'description',
+    buildPayload: ({ title, content, topic, url }) => ({
+      title,
+      description: content,
+      type: LEARNING_TYPE_BY_TOPIC[topic],
+      linkUrl: url || null,
+    }),
   },
 };
 
@@ -89,11 +147,19 @@ const PostArticleGenericPage = () => {
   const navigate = useOrgNavigate();
   const { t } = useTranslation('article');
   const { showSuccess, showError } = useNotification();
-  const { coverFile, coverPreview, handleCoverUpload } = useCoverUpload();
+  const {
+    coverFile,
+    coverPreview,
+    coverCroppedPreview,
+    coverPositionY,
+    handleCoverUpload,
+    setCoverPositionY,
+  } = useCoverUpload();
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [topic, setTopic] = useState('');
+  const [url, setUrl] = useState('');
 
   const allHooks = useAllHooks();
   const config = CHANNEL_CONFIG[channel];
@@ -113,14 +179,36 @@ const PostArticleGenericPage = () => {
       showError(t('error_title_content_required'));
       return;
     }
+    if (!topic) {
+      showError(t('error_topic_required', { defaultValue: 'Vui lòng chọn chủ đề' }));
+      return;
+    }
+    if (coverFile) {
+      const imageValidation = validateImageFile(coverFile);
+      if (!imageValidation.valid) {
+        showError(imageValidation.message);
+        return;
+      }
+    }
     try {
-      const imageBase64 = config.useBase64 && coverFile ? await fileToBase64(coverFile) : undefined;
-
-      const payload = {
+      const imageBase64 = config.useBase64 && coverFile
+        ? await fileToCroppedCoverBase64(coverFile, coverPositionY)
+        : undefined;
+      const payload = config.buildPayload({
         title: title.trim(),
-        [config.contentKey]: content.trim(),
-        ...(config.payloadKey && imageBase64 !== undefined ? { [config.payloadKey]: imageBase64 } : {}),
-      };
+        content: content.trim(),
+        topic,
+        url: url.trim(),
+        imageBase64,
+      });
+      if ((channel === 'job' || channel === 'learning') && !payload.type) {
+        showError(t('error_topic_required', { defaultValue: 'Vui lòng chọn chủ đề' }));
+        return;
+      }
+      if (getJsonPayloadByteSize(payload) > MAX_JSON_PAYLOAD_BYTES) {
+        showError('Bài viết quá lớn để đăng. Tổng dung lượng nội dung và ảnh chính cần dưới 19MB.');
+        return;
+      }
 
       const result = await createFn(payload);
       showSuccess(t(config.successMsgKey));
@@ -135,6 +223,8 @@ const PostArticleGenericPage = () => {
       pageTitle={t(config.pageTitleKey)}
       coverPreview={coverPreview}
       onCoverChange={handleCoverUpload}
+      coverPositionY={coverPositionY}
+      onCoverPositionYChange={setCoverPositionY}
       onCancel={() => navigate(-1)}
       onSubmit={handleSubmit}
       isPending={isPending}
@@ -148,6 +238,9 @@ const PostArticleGenericPage = () => {
         setContent={setContent}
         topic={topic}
         setTopic={setTopic}
+        url={url}
+        setUrl={setUrl}
+        mainImagePreview={coverCroppedPreview ?? coverPreview}
       />
     </PostArticleShell>
   );

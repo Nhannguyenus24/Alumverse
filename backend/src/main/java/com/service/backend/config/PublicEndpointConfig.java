@@ -3,7 +3,6 @@ package com.service.backend.config;
 import com.service.backend.shared.annotations.PublicEndpoint;
 import jakarta.annotation.PostConstruct;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -31,8 +30,9 @@ public class PublicEndpointConfig {
     public void init() {
         Set<String> logEntries = new HashSet<>();
         handlerMapping.getHandlerMethods().forEach((mapping, method) -> {
-            boolean isPublic = method.hasMethodAnnotation(PublicEndpoint.class) || 
-                             method.getBeanType().isAnnotationPresent(PublicEndpoint.class);
+            boolean hasPrivateOverride = method.hasMethodAnnotation(com.service.backend.shared.annotations.PrivateEndpoint.class);
+            boolean isPublic = !hasPrivateOverride && (method.hasMethodAnnotation(PublicEndpoint.class) ||
+                             method.getBeanType().isAnnotationPresent(PublicEndpoint.class));
             
             if (isPublic) {
                 Set<String> patterns = mapping.getPatternsCondition().getPatterns().stream()

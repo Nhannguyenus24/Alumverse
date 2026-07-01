@@ -1,7 +1,6 @@
 package com.service.backend.chat.service;
 
 import com.service.backend.chat.dao.UserBlockRepository;
-import com.service.backend.chat.dto.BlockPairFlags;
 import com.service.backend.chat.dto.BlockStatusResponse;
 import com.service.backend.chat.dto.BlockedMemberInGroupItemResponse;
 import com.service.backend.chat.dto.BlockedMemberItemResponse;

@@ -38,5 +38,6 @@
   "request_proof_link_placeholder": "Link minh chứng",
   "request_upload_image": "Tải ảnh lên",
   "request_cancel": "Huỷ",
-  "request_submit": "Gửi"
+  "request_submit": "Gửi",
+  "warn_alumni_verification_required": "Bạn cần xác minh là cựu sinh viên (mức xác minh 2) để gửi yêu cầu vinh danh thành tựu."
 }

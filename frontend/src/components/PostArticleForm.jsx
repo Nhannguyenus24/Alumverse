@@ -80,6 +80,7 @@ const PostArticleForm = ({
   setTopic,
   url,
   setUrl,
+  mainImagePreview,
   donationData = {},
   handleDonationInputChange,
   eventData = {},
@@ -329,8 +330,31 @@ const PostArticleForm = ({
         }}
       />
 
+      {mainImagePreview && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1, mb: 1 }}>
+          <Box
+            component="img"
+            src={mainImagePreview}
+            alt={title || 'Main photo preview'}
+            sx={{
+              width: 'auto',
+              maxWidth: { xs: '100%', md: '72%' },
+              height: 'auto',
+              objectFit: 'contain',
+              borderRadius: 2,
+              boxShadow: '0 2px 12px rgba(0,0,0,0.12)',
+            }}
+          />
+        </Box>
+      )}
+
       <Box sx={{ mt: 2 }}>
-        <WYSIWYG value={content} onChange={setContent} placeholder={t('article:content_placeholder')} height={400} />
+        <WYSIWYG
+          value={content}
+          onChange={setContent}
+          placeholder={t('article:content_placeholder')}
+          height={400}
+        />
       </Box>
 
       <TextField
@@ -340,7 +364,7 @@ const PostArticleForm = ({
         placeholder="https://example.com/nguon-bai-viet"
         helperText={t('article:source_url_helper')}
         value={url ?? ''}
-        onChange={(e) => setUrl(e.target.value)}
+        onChange={(e) => setUrl?.(e.target.value)}
       />
     </Stack>
   );

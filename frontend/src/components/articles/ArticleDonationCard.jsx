@@ -6,7 +6,7 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { useState } from "react";
 import dayjs from "dayjs";
 import { useTranslation } from "react-i18next";
-import { truncateText } from "../../utils/text";
+import { normalizePreviewText, truncateText } from "../../utils/text";
 import { formatCurrency } from "../../utils/numberFormatter";
 import { formatDate } from "../../utils/dateFormatter";
 
@@ -114,7 +114,7 @@ const ArticleDonationCard = ({ campaign, onNavigate, onEdit, onClose, isAdmin })
               transition: "color 0.2s ease",
             }}
           >
-            {campaign.name}
+            {normalizePreviewText(campaign.name)}
           </Typography>
 
           <ArrowForwardIcon

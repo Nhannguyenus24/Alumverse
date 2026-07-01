@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router";
-import { Box, Button, CircularProgress, Container, Divider, Typography } from "@mui/material";
+import { Box, Button, Container, Divider, Stack, Typography } from "@mui/material";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import VolunteerActivismOutlinedIcon from "@mui/icons-material/VolunteerActivismOutlined";
 import DOMPurify from "dompurify";
 import dayjs from "dayjs";
 import { useTranslation } from "react-i18next";
@@ -16,13 +18,6 @@ const ARTICLE_IMG_FALLBACK = "https://placehold.co/1200x720/eef3ff/0f3a7a?text=F
 const ARTICLE_IMAGE_ASPECT_RATIO = "16 / 9";
 const DESCRIPTION_MAX_HEIGHT = { xs: 360, md: 480 };
 
-const articleImageSx = {
-  width: "100%",
-  height: "100%",
-  objectFit: "cover",
-  display: "block",
-};
-
 const descriptionContentSx = {
   lineHeight: 1.8,
   color: "text.primary",
@@ -36,6 +31,10 @@ const descriptionContentSx = {
     mb: 2,
   },
 };
+
+const sanitizeDonationContent = (html) => (
+  DOMPurify.sanitize(html || "").replace(/&amp;nbsp;|&nbsp;|&#160;|\u00a0/gi, " ")
+);
 
 export default function DonationArticlePage() {
   const { t } = useTranslation('donation');
@@ -70,7 +69,7 @@ export default function DonationArticlePage() {
 
   const handleDonate = () => { navigate(`/donations/${id}/contribute`); };
 
-  const cleanDescription = fundDetail?.descriptionFull ? DOMPurify.sanitize(fundDetail.descriptionFull) : "";
+  const cleanDescription = fundDetail?.descriptionFull ? sanitizeDonationContent(fundDetail.descriptionFull) : "";
 
   const now = dayjs();
   const startTime = fundDetail?.timeStarted ? dayjs(fundDetail.timeStarted) : null;
@@ -92,6 +91,10 @@ export default function DonationArticlePage() {
             height: { xs: "32vh", sm: "36vh", md: "40vh" },
             minHeight: { xs: 200, sm: 240, md: 280 },
             backgroundColor: "primary.main",
+            backgroundImage: `linear-gradient(rgba(4, 43, 86, 0.35), rgba(4, 43, 86, 0.35)), url(${articleImg})`,
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+            backgroundSize: "cover",
           }}
         />
 
@@ -115,7 +118,34 @@ export default function DonationArticlePage() {
               px: { xs: 4, md: 6 },
             }}
           >
-            <Breadcrumb items={[{ label: t('title').toUpperCase(), path: "/donations" }, { label: pageTitle }]} fontSize="0.8rem" />
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: { xs: 4, md: 5 }, flexWrap: "wrap" }}>
+              <Breadcrumb items={[{ label: t('title').toUpperCase(), path: "/donations" }, { label: pageTitle }]} fontSize="0.8rem" />
+              <Box sx={{ flexGrow: 1 }} />
+              {isAdmin && (
+                <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                  <Button
+                    variant="contained"
+                    color="secondary"
+                    size="medium"
+                    startIcon={<EditOutlinedIcon />}
+                    onClick={() => navigate(`/donations/${id}/edit`)}
+                    sx={{ textTransform: "none", fontWeight: 700 }}
+                  >
+                    Sửa quỹ
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    color="primary"
+                    size="medium"
+                    startIcon={<VolunteerActivismOutlinedIcon />}
+                    onClick={() => navigate("/admin/fundraising")}
+                    sx={{ textTransform: "none", fontWeight: 700 }}
+                  >
+                    Quản lý quỹ
+                  </Button>
+                </Stack>
+              )}
+            </Box>
 
             {errorMessage && (
               <Box sx={{ p: 3, borderRadius: 2, border: "1px solid #f2b8b5", backgroundColor: "#fff4f2" }}>
@@ -128,20 +158,6 @@ export default function DonationArticlePage() {
                 <Typography variant="h1" component="h1" fontWeight={700} color="primary.main" textAlign="center" sx={{ mb: 4, fontSize: { xs: "1.8rem", md: "2.1rem" } }}>
                   {fundDetail.name}
                 </Typography>
-
-                <Box sx={{ display: "flex", justifyContent: "center", mb: 4 }}>
-                  <Box
-                    sx={{
-                      width: { xs: "100%", md: "60%" },
-                      aspectRatio: ARTICLE_IMAGE_ASPECT_RATIO,
-                      borderRadius: 2,
-                      overflow: "hidden",
-                      boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
-                    }}
-                  >
-                    <Box component="img" src={articleImg} alt={fundDetail.name} sx={articleImageSx} />
-                  </Box>
-                </Box>
 
                 <Box sx={{ mt: 3, mb: 6, p: 5, bgcolor: "primary.light", borderRadius: 2, display: "flex", flexDirection: { xs: "column", md: "row" }, gap: 3, alignItems: { md: "stretch" } }}>
                   <Box sx={{ flex: 1 }}>

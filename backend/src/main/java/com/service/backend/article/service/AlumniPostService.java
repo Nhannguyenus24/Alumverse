@@ -16,6 +16,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
+import java.time.LocalDateTime;
+
 @Service
 @RequiredArgsConstructor
 public class AlumniPostService {
@@ -42,6 +44,7 @@ public class AlumniPostService {
                                         .topic(request.getTopic())
                                         .url(request.getUrl())
                                         .isHidden(true)
+                                        .publishedAt(LocalDateTime.now())
                                         .build();
 
                                 return alumniPostRepository.save(post)
@@ -73,7 +76,7 @@ public class AlumniPostService {
         return alumniPostRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.ALUMNI_POST_NOT_FOUND, "Alumni post not found with id: " + id)))
                 .flatMap(existing -> alumniPostRepository.deleteById(id)
-                        .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
+                        .then(cacheUtils.clear("admin_content_statistics"))
                         .thenReturn(true));
     }
 

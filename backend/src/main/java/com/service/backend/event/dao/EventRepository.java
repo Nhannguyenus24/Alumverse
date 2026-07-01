@@ -200,25 +200,6 @@ public class EventRepository implements IEventRepository {
         return ticketRepo.existsActiveByEventIdAndMemberId(eventId, memberId);
     }
 
-    // ─── Ticket — admin approve / reject ─────────────────────────────────────
-
-    @Override
-    public Mono<EventTicket> approveTicket(Long ticketId, Long reviewedBy) {
-        return ticketRepo.approveTicket(ticketId, reviewedBy, LocalDateTime.now())
-                .then(ticketRepo.findById(ticketId));
-    }
-
-    @Override
-    public Mono<EventTicket> rejectTicket(Long ticketId, Long reviewedBy, String reason) {
-        return ticketRepo.rejectTicket(ticketId, reviewedBy, LocalDateTime.now(), reason)
-                .then(ticketRepo.findById(ticketId));
-    }
-
-    @Override
-    public Mono<Integer> approveAllPendingTickets(Long eventId, Long reviewedBy) {
-        return ticketRepo.approveAllPendingTickets(eventId, reviewedBy, LocalDateTime.now());
-    }
-
     // ─── Ticket — issue ───────────────────────────────────────────────────────
 
     @Override
@@ -237,16 +218,6 @@ public class EventRepository implements IEventRepository {
     public Mono<EventTicket> checkInTicket(Long ticketId) {
         return ticketRepo.checkInTicket(ticketId, LocalDateTime.now())
                 .then(ticketRepo.findById(ticketId));
-    }
-
-    @Override
-    public Mono<Integer> activateTicketsForEvent(Long eventId) {
-        return ticketRepo.activateTicketsForEvent(eventId);
-    }
-
-    @Override
-    public Mono<Integer> expireTicketsForEvent(Long eventId) {
-        return ticketRepo.expireTicketsForEvent(eventId);
     }
 
     // ─── Ticket — query ───────────────────────────────────────────────────────

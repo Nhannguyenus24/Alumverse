@@ -86,7 +86,7 @@
   "field_organizer_label": "Người tổ chức",
   "field_organizer_placeholder": "Nhập tên người tổ chức",
   "field_logo_label": "Logo quỹ (tuỳ chọn)",
-  "field_logo_hint": "Hỗ trợ JPG, JPEG, PNG — tối đa 2MB.",
+  "field_logo_hint": "Hỗ trợ JPG, JPEG, PNG — tối đa 8MB.",
   "field_logo_change": "Đổi ảnh logo",
   "field_logo_choose": "Chọn ảnh logo",
   "field_logo_remove": "Xoá",
@@ -157,5 +157,14 @@
   "message_max_length": "Lời nhắn nhủ tối đa 100 ký tự",
   "custom_amount_invalid": "Vui lòng nhập số tiền hợp lệ lớn hơn 0",
   "donor_name_required": "Vui lòng nhập họ và tên/tổ chức",
-  "email_invalid": "Email không đúng định dạng"
+  "email_invalid": "Email không đúng định dạng",
+  "field_manager_email_label": "Email người phụ trách",
+  "field_manager_email_placeholder": "VD: manager@hcmus.edu.vn",
+  "validation_manager_email_required": "Vui lòng nhập email người phụ trách",
+  "validation_manager_email_invalid": "Email người phụ trách không đúng định dạng",
+  "manager_email_label": "Email liên hệ",
+  "connect_btn": "Kết nối",
+  "connect_drawer_title": "Người phụ trách quỹ",
+  "connect_drawer_note": "Đây là yêu cầu kết nối — người phụ trách sẽ nhận và phản hồi, không phải tin nhắn tức thời.",
+  "manager_is_you": "Bạn là người phụ trách quỹ này"
 }

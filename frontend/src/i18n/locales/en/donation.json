@@ -86,7 +86,7 @@
   "field_organizer_label": "Organizer",
   "field_organizer_placeholder": "Enter organizer name",
   "field_logo_label": "Fund logo (optional)",
-  "field_logo_hint": "Supports JPG, JPEG, PNG — max 2 MB.",
+  "field_logo_hint": "Supports JPG, JPEG, PNG — max 8 MB.",
   "field_logo_change": "Change logo",
   "field_logo_choose": "Choose logo",
   "field_logo_remove": "Remove",
@@ -157,5 +157,14 @@
   "message_max_length": "Message must be at most 100 characters",
   "custom_amount_invalid": "Please enter a valid amount greater than 0",
   "donor_name_required": "Please enter your full name or organization",
-  "email_invalid": "Invalid email format"
+  "email_invalid": "Invalid email format",
+  "field_manager_email_label": "Fund manager email",
+  "field_manager_email_placeholder": "e.g. manager@hcmus.edu.vn",
+  "validation_manager_email_required": "Please enter the fund manager email",
+  "validation_manager_email_invalid": "Invalid fund manager email format",
+  "manager_email_label": "Contact email",
+  "connect_btn": "Connect",
+  "connect_drawer_title": "Fund manager",
+  "connect_drawer_note": "This is a connection request — the manager will receive and respond, not an instant message.",
+  "manager_is_you": "You are the manager of this fund"
 }

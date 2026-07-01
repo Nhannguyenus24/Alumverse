@@ -159,12 +159,7 @@ jobs:
             exit 1
           fi
 
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-jar
-          path: backend/target/*.jar
-          retention-days: 1
+
 
   # ─────────────────────────────────────────────
   # Phase 3: Run backend tests
@@ -195,13 +190,7 @@ jobs:
             exit 1
           fi
 
-      - name: Publish test report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-test-results
-          path: backend/target/surefire-reports/
-          retention-days: 7
+
 
   # ─────────────────────────────────────────────
   # Phase 4: Build frontend
@@ -237,12 +226,7 @@ jobs:
             exit 1
           fi
 
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-dist
-          path: frontend/dist/
-          retention-days: 1
+
 
   # ─────────────────────────────────────────────
   # Phase 5: Lint + test frontend

@@ -1,5 +1,5 @@
 /** @deprecated Use getAcademicEmptyLabel(t) instead */
-export const ACADEMIC_EMPTY_LABEL = 'Chưa cập nhật';
+const ACADEMIC_EMPTY_LABEL = 'Chưa cập nhật';
 
 /**
  * Returns a translated "not updated" label, or falls back to the Vietnamese
@@ -7,9 +7,9 @@ export const ACADEMIC_EMPTY_LABEL = 'Chưa cập nhật';
  * @param {Function} [t] - optional i18next t function
  * @returns {string}
  */
-export const getAcademicEmptyLabel = (t) => t ? t('common:not_updated') : ACADEMIC_EMPTY_LABEL;
+const getAcademicEmptyLabel = (t) => t ? t('common:not_updated') : ACADEMIC_EMPTY_LABEL;
 
-export function parseAcademicList(value) {
+function parseAcademicList(value) {
   if (value == null) return [];
 
   if (Array.isArray(value)) {
@@ -34,13 +34,15 @@ export function parseAcademicList(value) {
 }
 
 export function buildAcademicRecords(source = {}) {
+  const academicSource = source ?? {};
+
   const lists = {
-    faculty: parseAcademicList(source.faculty),
-    major: parseAcademicList(source.major),
-    program: parseAcademicList(source.program),
-    startedYear: parseAcademicList(source.startedYear),
-    graduatedYear: parseAcademicList(source.graduatedYear),
-    graduationStatus: parseAcademicList(source.graduationStatus),
+    faculty: parseAcademicList(academicSource.faculty),
+    major: parseAcademicList(academicSource.major),
+    program: parseAcademicList(academicSource.program),
+    startedYear: parseAcademicList(academicSource.startedYear),
+    graduatedYear: parseAcademicList(academicSource.graduatedYear),
+    graduationStatus: parseAcademicList(academicSource.graduationStatus),
   };
 
   const recordCount = Math.max(

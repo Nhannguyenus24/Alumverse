@@ -119,6 +119,8 @@ const AdminUsersListPage = () => {
     return () => { active = false; };
   }, []);
 
+  const roleLabel = (role) => (role ? t(`admin:role.${role}`, { defaultValue: role }) : '');
+
   const columns = useMemo(() => [
     {
       id: 'user',
@@ -142,7 +144,7 @@ const AdminUsersListPage = () => {
         </Stack>
       )
     },
-    { id: 'role', label: t('admin:col_role') },
+    { id: 'role', label: t('admin:col_role'), render: (role) => roleLabel(role) },
     {
       id: 'status',
       label: t('admin:col_status'),
@@ -220,7 +222,7 @@ const AdminUsersListPage = () => {
         sx={{ minWidth: 120 }}
       >
         <MenuItem value="ALL">{t('admin:filter_all')}</MenuItem>
-        {USER_ROLES.map((r) => <MenuItem key={r} value={r}>{r}</MenuItem>)}
+        {USER_ROLES.map((r) => <MenuItem key={r} value={r}>{roleLabel(r)}</MenuItem>)}
       </TextField>
       <TextField
         select

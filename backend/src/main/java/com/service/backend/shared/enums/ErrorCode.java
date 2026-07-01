@@ -54,6 +54,8 @@ public enum ErrorCode {
     EVENT_REGISTRATION_ANSWER_INVALID("Câu trả lời đăng ký không hợp lệ", 400),
     CANCEL_REASON_REQUIRED("Vui lòng nhập lý do huỷ vé", 400),
     TICKET_WRONG_EVENT("Vé không thuộc sự kiện này", 400),
+    TICKET_QR_INVALID("Mã QR không hợp lệ", 400),
+    TICKET_QR_EXPIRED("Mã QR đã hết hạn", 400),
 
     // Article module
     NEWS_NOT_FOUND("Không tìm thấy tin tức", 404),
@@ -95,6 +97,7 @@ public enum ErrorCode {
     FORUM_REPORT_NOT_FOUND("Không tìm thấy báo cáo forum", 404),
     INVALID_TOPIC_ID("ID chủ đề không hợp lệ", 400),
     FORUM_TOPIC_LOCKED("Chủ đề đã bị khóa", 400),
+    FORUM_INVALID_STATUS("Trạng thái forum không hợp lệ", 400),
 
     // Education change request module
     EDUCATION_REQUEST_NOT_FOUND("Không tìm thấy yêu cầu thay đổi học vấn", 404),

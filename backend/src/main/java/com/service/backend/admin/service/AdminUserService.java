@@ -69,14 +69,14 @@ public class AdminUserService {
                 size,
                 this::enrichUserResponses)
                 .doOnSuccess(r -> logger.info("getAllUsers result: {}", JsonUtils.toJson(r)))
-                .doOnError(error -> logger.error("Error fetching users with filters", error.getMessage()));
+                .doOnError(error -> logger.error("Error fetching users with filters: {}", error.getMessage()));
     }
 
     public Mono<Boolean> banUser(Integer userId) {
         return adminUserRepository.banUserById(userId)
                 .map(count -> count > 0)
                 .doOnSuccess(success -> logger.info("banUser: userId={}, success={}", userId, success))
-                .doOnError(error -> logger.error("Error banning user: {}", userId, error.getMessage()));
+                .doOnError(error -> logger.error("Error banning user: {}", error.getMessage()));
     }
 
     public Mono<Boolean> deleteUser(Integer userId, boolean hardDelete) {
@@ -84,24 +84,24 @@ public class AdminUserService {
             return adminUserRepository.hardDeleteUserById(userId)
                     .thenReturn(true)
                     .doOnSuccess(success -> logger.info("deleteUser: userId={}, hardDelete=true", userId))
-                    .doOnError(error -> logger.error("Error hard deleting user: {}", userId, error.getMessage()))
+                    .doOnError(error -> logger.error("Error hard deleting user: {}", error.getMessage()))
                     .onErrorReturn(false);
         } else {
             return adminUserRepository.softDeleteUserById(userId)
                     .map(count -> count > 0)
                     .doOnSuccess(success -> logger.info("deleteUser: userId={}, hardDelete=false, success={}", userId, success))
-                    .doOnError(error -> logger.error("Error soft deleting user: {}", userId, error.getMessage()));
+                    .doOnError(error -> logger.error("Error soft deleting user: {}", error.getMessage()));
         }
     }
 
     public Flux<Object> getUserVerificationRequests(Integer userId) {
         return adminUserRepository.findVerificationRequestsByUserId(userId)
-                .doOnError(error -> logger.error("Error fetching verification requests for user: {}", userId, error.getMessage()));
+                .doOnError(error -> logger.error("Error fetching verification requests for user: {}", error.getMessage()));
     }
 
     public Flux<Object> getPeerVerifications(Integer userId) {
         return adminUserRepository.findPeerVerificationsByUserId(userId)
-                .doOnError(error -> logger.error("Error fetching peer verifications for user: {}", userId, error.getMessage()));
+                .doOnError(error -> logger.error("Error fetching peer verifications for user: {}", error.getMessage()));
     }
 
     @Transactional
@@ -111,8 +111,10 @@ public class AdminUserService {
                                                   String password,
                                                   List<Integer> graduatedYear, List<String> graduationStatus,
                                                   List<String> program, List<String> major,
-                                                  Integer verificationLevel, String status) {
+                                                  Integer verificationLevel, Boolean isTrustedVerifier,
+                                                  String status) {
         String upperStatus = status == null ? "ACTIVE" : status.toUpperCase();
+        boolean trustedVerifier = isTrustedVerifier != null && isTrustedVerifier;
         String graduatedYearJson = JsonUtils.toJson(graduatedYear);
         String graduationStatusJson = JsonUtils.toJson(graduationStatus);
         String programJson = JsonUtils.toJson(program);
@@ -153,12 +155,12 @@ public class AdminUserService {
                         if (exists) {
                             return Mono.error(new ApplicationException(ErrorCode.EMAIL_ALREADY_EXISTS));
                         }
-                        UserRole userRole = UserRole.ALUMNI;
+                        UserRole userRole = UserRole.USER;
                         if (StringUtils.hasText(role)) {
                             try {
                                 userRole = UserRole.valueOf(role.toUpperCase());
                             } catch (IllegalArgumentException e) {
-                                logger.warn("Invalid role provided for new user: {}, defaulting to ALUMNI", role);
+                                logger.warn("Invalid role provided for new user: {}, defaulting to USER", role);
                             }
                         }
                         String finalPassword = StringUtils.hasText(password) ? password : "Alumni2026@";
@@ -197,6 +199,7 @@ public class AdminUserService {
                         programJson,
                         majorJson,
                         verificationLevel,
+                        trustedVerifier,
                         upperStatus)
                     : adminUserRepository.createOrganizationMember(
                         organizationId,
@@ -207,10 +210,11 @@ public class AdminUserService {
                         programJson,
                         majorJson,
                         verificationLevel,
+                        trustedVerifier,
                         upperStatus))
                 .map(count -> count > 0)
                 .doOnSuccess(success -> logger.info("createOrganizationMember: userId={}, organizationId={}, success={}", actualUserId, organizationId, success))
-                .doOnError(error -> logger.error("Error adding user {} to organization {}", actualUserId, organizationId, error.getMessage()))
+                .doOnError(error -> logger.error("Error adding user {} to organization {}: {}", actualUserId, organizationId, error.getMessage()))
             );
         });
     }
@@ -258,6 +262,7 @@ public class AdminUserService {
                             programList,
                             majorList,
                             entry.getVerificationLevel() != null ? entry.getVerificationLevel() : 0,
+                            entry.getIsTrustedVerifier() != null ? entry.getIsTrustedVerifier() : false,
                             entry.getStatus())
                             .map(success -> BulkImportResult.RowResult.builder()
                                     .rowIndex(rowIndex)
@@ -295,7 +300,7 @@ public class AdminUserService {
                 })
                 .doOnSuccess(r -> logger.info("bulkCreateOrganizationMembers: total={}, success={}, failed={}",
                         r.getTotal(), r.getSuccessCount(), r.getFailureCount()))
-                .doOnError(e -> logger.error("Error in bulk import", e.getMessage()));
+                .doOnError(e -> logger.error("Error in bulk import: {}", e.getMessage()));
     }
 
     public Mono<UserResponse> getUserById(Integer userId) {
@@ -303,14 +308,14 @@ public class AdminUserService {
                 .map(this::mapToUserResponse)
                 .flatMap(this::enrichOne)
                 .doOnSuccess(user -> logger.info("getUserById result: {}", JsonUtils.toJson(user)))
-                .doOnError(error -> logger.error("Error fetching user: {}", userId, error.getMessage()));
+                .doOnError(error -> logger.error("Error fetching user: {}", error.getMessage()));
     }
 
     public Mono<Boolean> unbanUser(Integer userId) {
         return adminUserRepository.unbanUserById(userId)
                 .map(count -> count > 0)
                 .doOnSuccess(ok -> logger.info("unbanUser: userId={}, success={}", userId, ok))
-                .doOnError(e -> logger.error("Error unbanning user {}", userId, e.getMessage()));
+                .doOnError(e -> logger.error("Error unbanning user {}", e.getMessage()));
     }
 
     public Mono<UserResponse> updateUser(Integer userId, UpdateUserRequest request) {
@@ -324,7 +329,7 @@ public class AdminUserService {
                 })
                 .flatMap(saved -> applyProfileAndOrg(userId, request).then(getUserById(userId)))
                 .doOnSuccess(u -> logger.info("updateUser result: {}", JsonUtils.toJson(u)))
-                .doOnError(e -> logger.error("Error updating user {}", userId, e.getMessage()));
+                .doOnError(e -> logger.error("Error updating user {}", e.getMessage()));
     }
 
     private Mono<Void> applyProfileAndOrg(Integer userId, UpdateUserRequest request) {
@@ -400,7 +405,7 @@ public class AdminUserService {
                     size
             )
              .doOnSuccess(r -> logger.info("getAllVerificationRequests (org={}) result: {}", organizationId, JsonUtils.toJson(r)))
-             .doOnError(e -> logger.error("Error fetching verification requests for org {}", organizationId, e.getMessage()));
+             .doOnError(e -> logger.error("Error fetching verification requests for org {}", e.getMessage()));
         }
         return PaginationHelper.paginate(
                 adminUserRepository.findAllVerificationRequests(kw, size, offset).collectList(),
@@ -409,7 +414,7 @@ public class AdminUserService {
                 size
         )
          .doOnSuccess(r -> logger.info("getAllVerificationRequests result: {}", JsonUtils.toJson(r)))
-         .doOnError(e -> logger.error("Error fetching verification requests", e.getMessage()));
+         .doOnError(e -> logger.error("Error fetching verification requests: {}", e.getMessage()));
     }
 
     public Mono<PaginatedResponse<VerificationRequestResponse>> getPendingVerificationRequests(Integer organizationId, String keyword, int page, int size) {
@@ -423,7 +428,7 @@ public class AdminUserService {
                     size
             )
              .doOnSuccess(r -> logger.info("getPendingVerificationRequests (org={}) result: {}", organizationId, JsonUtils.toJson(r)))
-             .doOnError(e -> logger.error("Error fetching pending verification requests for org {}", organizationId, e.getMessage()));
+             .doOnError(e -> logger.error("Error fetching pending verification requests for org {}", e.getMessage()));
         }
         return PaginationHelper.paginate(
                 adminUserRepository.findPendingVerificationRequests(kw, size, offset).collectList(),
@@ -432,7 +437,7 @@ public class AdminUserService {
                 size
         )
          .doOnSuccess(r -> logger.info("getPendingVerificationRequests result: {}", JsonUtils.toJson(r)))
-         .doOnError(e -> logger.error("Error fetching pending verification requests", e.getMessage()));
+         .doOnError(e -> logger.error("Error fetching pending verification requests: {}", e.getMessage()));
     }
 
     public Mono<Boolean> reviewVerificationRequest(Integer requestId, String status, String adminNote) {
@@ -461,7 +466,7 @@ public class AdminUserService {
                             return Mono.just(true);
                         }))
                 .doOnSuccess(ok -> logger.info("reviewVerificationRequest: requestId={}, status={}, success={}", requestId, upperStatus, ok))
-                .doOnError(e -> logger.error("Error reviewing verification request {}", requestId, e.getMessage()))
+                .doOnError(e -> logger.error("Error reviewing verification request {}", e.getMessage()))
                 .defaultIfEmpty(false);
     }
 
@@ -502,7 +507,7 @@ public class AdminUserService {
                     page,
                     size)
                     .doOnSuccess(r -> logger.info("getAdminActionLogs (org={}) result: {}", organizationId, JsonUtils.toJson(r)))
-                    .doOnError(e -> logger.error("Error fetching admin action logs for org {}", organizationId, e.getMessage()));
+                    .doOnError(e -> logger.error("Error fetching admin action logs for org {}", e.getMessage()));
         }
         return PaginationHelper.paginate(
                 adminAuditLogRepository.findAdminActionLogs(adminUserId, targetUserId, action, size, offset).collectList(),
@@ -510,7 +515,7 @@ public class AdminUserService {
                 page,
                 size)
                 .doOnSuccess(r -> logger.info("getAdminActionLogs result: {}", JsonUtils.toJson(r)))
-                .doOnError(e -> logger.error("Error fetching admin action logs", e.getMessage()));
+                .doOnError(e -> logger.error("Error fetching admin action logs: {}", e.getMessage()));
     }
 
     @Transactional
@@ -568,7 +573,7 @@ public class AdminUserService {
                                     .thenReturn(true)));
                 })
                 .doOnSuccess(created -> logger.info("createAdminAccount: email={}, success={}", request.getEmail(), created))
-                .doOnError(e -> logger.error("Error creating admin account for email={}", request.getEmail(), e.getMessage()));
+                .doOnError(e -> logger.error("Error creating admin account for email={}: {}", request.getEmail(), e.getMessage()));
     }
 
     public Mono<Boolean> updateIsTrustedVerifier(Integer userId, Integer organizationId, boolean isTrusted) {
@@ -582,7 +587,7 @@ public class AdminUserService {
                         logger.warn("Failed to update is_trusted_verifier: Member record not found for user {} and organization {}", userId, organizationId);
                     }
                 })
-                .doOnError(error -> logger.error("Error updating is_trusted_verifier for user {} and organization {}", userId, organizationId, error.getMessage()));
+                .doOnError(error -> logger.error("Error updating is_trusted_verifier for user {} and organization {}: {}", userId, organizationId, error.getMessage()));
     }
 
     public Mono<UserGrowthStatisticsDTO> getUserGrowthStatistics() {
@@ -611,7 +616,7 @@ public class AdminUserService {
                 .dailyRegistrations(t.getT6())
                 .build())
                 .doOnSuccess(r -> logger.info("getUserGrowthStatistics completed"))
-                .doOnError(e -> logger.error("Error fetching user growth statistics", e.getMessage()));
+                .doOnError(e -> logger.error("Error fetching user growth statistics: {}", e.getMessage()));
     }
 
     public Mono<VerificationStatisticsDTO> getVerificationStatistics() {
@@ -635,7 +640,7 @@ public class AdminUserService {
                 .approvedPeerVerifications(t.getT8())
                 .build())
                 .doOnSuccess(r -> logger.info("getVerificationStatistics completed"))
-                .doOnError(e -> logger.error("Error fetching verification statistics", e.getMessage()));
+                .doOnError(e -> logger.error("Error fetching verification statistics: {}", e.getMessage()));
     }
 
     /**

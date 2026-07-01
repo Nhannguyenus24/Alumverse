@@ -76,6 +76,9 @@ dependencies:
   # QR vé sự kiện — render hoàn toàn trên client (tự host, không qua bên thứ 3)
   qr_flutter: ^4.1.0
 
+  # Quét QR vé khi admin/staff check-in tại sự kiện (camera, xử lý on-device)
+  mobile_scanner: ^5.2.3
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -34,7 +34,10 @@ public class ForumCategory {
     
     @Column("description")
     private String description;
-    
+
+    @Column("status")
+    private String status;
+
     @CreatedDate
     @Column("created_at")
     private LocalDateTime createdAt;
