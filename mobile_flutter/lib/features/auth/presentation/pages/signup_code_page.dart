@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../shared/widgets/app_toast.dart';
 import '../../../../shared/widgets/logo.dart';
+import '../../../../shared/widgets/step_indicator.dart';
 import '../providers/auth_provider.dart';
 
 class SignupCodePage extends ConsumerStatefulWidget {
@@ -117,7 +118,9 @@ class _SignupCodePageState extends ConsumerState<SignupCodePage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Center(child: AlumverseLogo(size: 80)),
-              const SizedBox(height: 48),
+              const SizedBox(height: 24),
+              const StepIndicator(current: 2, total: 2),
+              const SizedBox(height: 24),
               Text(
                 'auth.enter_code'.tr(),
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(

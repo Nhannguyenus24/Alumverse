@@ -9,6 +9,7 @@ import '../../../../core/utils/validators.dart';
 import '../../../../shared/widgets/app_toast.dart';
 import '../../../../shared/widgets/blur_validated_field.dart';
 import '../../../../shared/widgets/logo.dart';
+import '../../../../shared/widgets/step_indicator.dart';
 import '../providers/auth_provider.dart';
 
 class RegisterPage extends ConsumerStatefulWidget {
@@ -123,7 +124,9 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const Center(child: AlumverseLogo(size: 60)),
-                const SizedBox(height: 32),
+                const SizedBox(height: 24),
+                StepIndicator(current: 1, total: 2),
+                const SizedBox(height: 20),
                 Text(
                   'auth.create_account'.tr(),
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
@@ -341,3 +344,4 @@ class _PasswordRules extends StatelessWidget {
     );
   }
 }
+
