@@ -61,4 +61,7 @@ public class UpdateEventRequest {
 
     @Schema(example = "Workshop")
     private String topic;
+
+    @Schema(example = "true", description = "Whether this event requires QR code check-in scanning")
+    private Boolean requiresCheckIn;
 }

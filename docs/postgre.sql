@@ -108,6 +108,7 @@ CREATE TABLE "events" (
   "interested_count" integer DEFAULT 0,
   "topic" text,
   "is_published" boolean DEFAULT false,
+  "requires_check_in" boolean DEFAULT false,
   "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
   "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );

@@ -8,6 +8,7 @@ import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/image_url.dart';
 import '../../../../shared/widgets/error_view.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../data/models/user_profile.dart';
 import '../providers/user_providers.dart';
 
@@ -22,6 +23,8 @@ class MyProfilePage extends ConsumerWidget {
     // Only authorised trusted verifiers see the alumni-verification entry.
     final isVerifier =
         ref.watch(isTrustedVerifierProvider).valueOrNull ?? false;
+    // Admin/staff don't need academic verification — hide the button for them.
+    final isStaff = ref.watch(isStaffProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -45,7 +48,11 @@ class MyProfilePage extends ConsumerWidget {
             message: 'profile.load_failed'.tr(),
             onRetry: () => ref.invalidate(myProfileProvider),
           ),
-          data: (p) => _ProfileView(profile: p, showVerifier: isVerifier),
+          data: (p) => _ProfileView(
+            profile: p,
+            showVerifier: isVerifier,
+            showEducationVerify: !isStaff,
+          ),
         ),
       ),
     );
@@ -53,10 +60,15 @@ class MyProfilePage extends ConsumerWidget {
 }
 
 class _ProfileView extends StatelessWidget {
-  const _ProfileView({required this.profile, this.showVerifier = false});
+  const _ProfileView({
+    required this.profile,
+    this.showVerifier = false,
+    this.showEducationVerify = true,
+  });
 
   final UserProfile profile;
   final bool showVerifier;
+  final bool showEducationVerify;
 
   @override
   Widget build(BuildContext context) {
@@ -92,19 +104,20 @@ class _ProfileView extends StatelessWidget {
                   ),
                 ),
               const SizedBox(height: 12),
-              OutlinedButton.icon(
-                onPressed: () =>
-                    context.push(RouteNames.organizationRegistration),
-                icon: const Icon(Icons.verified_user_outlined, size: 18),
-                label: Text('profile.verify_education'.tr()),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.primary,
-                  side: const BorderSide(color: AppColors.primary),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
+              if (showEducationVerify)
+                OutlinedButton.icon(
+                  onPressed: () =>
+                      context.push(RouteNames.organizationRegistration),
+                  icon: const Icon(Icons.verified_user_outlined, size: 18),
+                  label: Text('profile.verify_education'.tr()),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.primary,
+                    side: const BorderSide(color: AppColors.primary),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
         ),
