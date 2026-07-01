@@ -67,6 +67,7 @@ public class EventService {
                                         .registrationEndAt(request.getRegistrationEndAt())
                                         .maxCapacity(request.getMaxCapacity())
                                         .topic(request.getTopic())
+                                        .requiresCheckIn(Boolean.TRUE.equals(request.getRequiresCheckIn()))
                                         .creatorMemberId(userId)
                                         .organizationId(orgId)
                                         .build();
@@ -100,6 +101,7 @@ public class EventService {
                                                     .registrationEndAt(request.getRegistrationEndAt())
                                                     .maxCapacity(request.getMaxCapacity())
                                                     .topic(request.getTopic() != null ? request.getTopic() : existingEvent.getTopic())
+                                                    .requiresCheckIn(request.getRequiresCheckIn() != null ? request.getRequiresCheckIn() : existingEvent.getRequiresCheckIn())
                                                     .build();
                                             return eventRepository.updateEvent(eventId, updatedEvent);
                                         });
