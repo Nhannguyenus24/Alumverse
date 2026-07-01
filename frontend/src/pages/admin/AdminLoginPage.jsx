@@ -256,8 +256,8 @@ const AdminLoginPage = () => {
                   </Typography>
                 </Box>
 
-                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
-                  <Box sx={recaptchaSx}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5, width: '100%' }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%', ...recaptchaSx }}>
                   <GoogleReCaptchaCheckbox
                     onChange={handleRecaptchaChange}
                     onExpired={handleRecaptchaExpired}
