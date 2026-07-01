@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/router/route_names.dart';
 import '../../../../shared/widgets/app_toast.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../organization/presentation/providers/organization_provider.dart';
@@ -74,7 +75,14 @@ class _ForumCreateTopicPageState extends ConsumerState<ForumCreateTopicPage> {
 
       if (!mounted) return;
       AppToast.success(context, 'forum.create_success'.tr());
-      context.pop();
+      if (topicId != null) {
+        context.pushReplacement(
+          '${RouteNames.forum}/topic/$topicId',
+          extra: _titleCtl.text.trim(),
+        );
+      } else {
+        context.pop();
+      }
     } catch (e) {
       if (mounted) AppToast.error(context, 'forum.create_failed'.tr());
     } finally {

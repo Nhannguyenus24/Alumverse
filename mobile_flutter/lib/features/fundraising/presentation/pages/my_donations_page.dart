@@ -1,7 +1,9 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/currency.dart';
 import '../../../../shared/widgets/empty_view.dart';
@@ -47,6 +49,14 @@ class MyDonationsPage extends ConsumerWidget {
                     title: 'donation.no_history'.tr(),
                     message: 'donation.no_history_desc'.tr(),
                   ),
+                  const SizedBox(height: 16),
+                  Center(
+                    child: ElevatedButton.icon(
+                      onPressed: () => context.push(RouteNames.fundraising),
+                      icon: const Icon(Icons.volunteer_activism_outlined, size: 18),
+                      label: Text('donation.explore_funds'.tr()),
+                    ),
+                  ),
                 ],
               );
             }
@@ -71,7 +81,12 @@ class _DonationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final df = DateFormat('dd/MM/yyyy • HH:mm');
-    return Container(
+    return InkWell(
+      onTap: donation.fundId != null
+          ? () => context.push('${RouteNames.fundraising}/${donation.fundId}')
+          : null,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -109,6 +124,7 @@ class _DonationCard extends StatelessWidget {
           const SizedBox(width: 12),
           _StatusChip(status: donation.status),
         ],
+      ),
       ),
     );
   }
