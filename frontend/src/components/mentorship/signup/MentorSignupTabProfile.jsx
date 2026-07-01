@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import {
+  alpha,
   Avatar,
   Box,
   Button,
@@ -125,7 +126,15 @@ const MentorSignupTabProfile = ({ values, onChange }) => {
   return (
     <Stack spacing={4}>
       {/* Quick fill via CV */}
-      <Card sx={{ p: 2.5, border: '1px solid', borderColor: 'primary.lighter', bgcolor: 'primary.lighter' }} elevation={0}>
+      <Card
+        sx={(theme) => ({
+          p: 2.5,
+          border: '1px solid',
+          borderColor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.34 : 0.2),
+          bgcolor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.14 : 0.08),
+        })}
+        elevation={0}
+      >
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ xs: 'flex-start', sm: 'center' }} justifyContent="space-between">
           <Box>
             <Typography fontWeight={700} color="primary.main">
@@ -165,7 +174,11 @@ const MentorSignupTabProfile = ({ values, onChange }) => {
         <Stack direction="row" spacing={2} alignItems="center">
           <Avatar
             src={values.avatarPreview}
-            sx={{ width: 88, height: 88, bgcolor: 'grey.200' }}
+            sx={{
+              width: 88,
+              height: 88,
+              bgcolor: (theme) => alpha(theme.palette.text.primary, theme.palette.mode === 'dark' ? 0.12 : 0.08),
+            }}
           />
           <Button
             variant="outlined"

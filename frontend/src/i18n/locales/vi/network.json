@@ -1,6 +1,6 @@
 {
-  "title": "Mạng lưới",
-  "alumni_network": "Mạng lưới cựu sinh viên",
+  "title": "Kết nối",
+  "alumni_network": "Kết nối cựu sinh viên",
   "connect": "Kết nối",
   "connected": "Đã kết nối",
   "find_alumni": "Tìm cựu sinh viên",
@@ -75,7 +75,7 @@
   "creating": "Đang tạo...",
   "create_group": "Tạo nhóm",
   "page_heading": "KẾT NỐI",
-  "page_subtitle": "Tìm và kết nối với các sinh viên và các cựu sinh viên trên nền tảng.",
+  "page_subtitle": "Tìm và kết nối với sinh viên và cựu sinh viên trên nền tảng.",
   "filter_program_label": "Program",
   "filter_program_placeholder": "VD: Regular, Advanced Program…",
   "filter_major_label": "Major",

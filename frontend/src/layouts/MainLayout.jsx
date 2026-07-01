@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { Outlet, useLocation, useMatches, useParams } from "react-router";
 import { Box } from "@mui/material";
 import Header from "../components/Header";
@@ -17,6 +17,10 @@ const MainLayout = () => {
   const normalizedPathname = getNormalizedPathname(location.pathname, slug);
 
   const isHomePage = normalizedPathname === "/";
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [location.pathname, location.search]);
 
   const headerElement = useMemo(() => <Header />, []);
   const footerElement = useMemo(() => <Footer />, []);

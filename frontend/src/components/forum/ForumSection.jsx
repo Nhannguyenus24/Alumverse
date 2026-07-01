@@ -11,7 +11,7 @@ const ForumSection = ({ title, boards = [], onBoardClick }) => {
         borderColor: 'divider',
         borderRadius: 0,
         overflow: 'hidden',
-        backgroundColor: '#fff',
+        backgroundColor: 'background.paper',
         boxShadow: 'none',
       }}
     >
@@ -22,15 +22,15 @@ const ForumSection = ({ title, boards = [], onBoardClick }) => {
           display: 'flex',
           alignItems: 'center',
           gap: 1,
-          backgroundColor: '#0B4D8D',
-          color: '#fff',
+          backgroundColor: 'primary.main',
+          color: 'primary.contrastText',
         }}
       >
         <ChatBubbleOutlineOutlinedIcon
           sx={{
             fontSize: 22,
-            color: '#fff',
-            '& path': { fill: 'none', stroke: '#fff', strokeWidth: 1.5 },
+            color: 'primary.contrastText',
+            '& path': { fill: 'none', stroke: 'currentColor', strokeWidth: 1.5 },
           }}
         />
         <Typography
@@ -63,4 +63,3 @@ const ForumSection = ({ title, boards = [], onBoardClick }) => {
 };
 
 export default ForumSection;
-

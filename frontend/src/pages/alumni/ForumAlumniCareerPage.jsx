@@ -1,13 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router';
-import { Box, Button, Container, InputAdornment, Stack, TextField, Tooltip, Typography } from '@mui/material';
+import { Box, Button, InputAdornment, TextField, Tooltip, Typography } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import SearchIcon from '@mui/icons-material/Search';
-import Page from '../../components/Page';
 import ForumFilterPanel from '../../components/forum/ForumFilterPanel';
-import ForumSponsoredCard from '../../components/forum/ForumSponsoredCard';
 import Breadcrumb from '../../components/Breadcrumb';
+import AlumniContentLayout from '../../layouts/AlumniContentLayout';
 import { useCanContribute } from '../../hooks/useCanContribute';
 import { useOrganization } from '../../hooks/useOrganization';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
@@ -82,43 +81,25 @@ const ForumAlumniCareerPage = () => {
   );
 
   return (
-    <Page
-      title={t('forum:page_title_alumni_career')}
+    <AlumniContentLayout
+      variant="forum"
+      pageTitle={t('forum:page_title_alumni_career')}
       meta={<meta name="description" content={t('forum:page_meta_alumni_career')} />}
+      sidebar={(
+        <ForumFilterPanel
+          filters={filters}
+          selectedId={selectedSidebarId}
+          onChange={handleFilterChange}
+        />
+      )}
+      header={null}
+      contentSpacing={0}
     >
-      <Container
-        maxWidth={false}
-        disableGutters
-        sx={{ pb: { xs: 4, md: 6 }, overflowX: 'hidden' }}
-      >
-        <Container maxWidth="xl" sx={{ pt: { xs: 2, sm: 3, md: 4 }, px: { xs: 2, sm: 3, lg: 6 } }}>
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: { xs: 'column', md: 'row' },
-              alignItems: 'flex-start',
-              gap: { xs: 2, md: 3 },
-            }}
-          >
-            <Stack spacing={2} sx={{ width: { xs: '100%', md: 260 }, flexShrink: 0 }}>
-              <ForumFilterPanel
-                filters={filters}
-                selectedId={selectedSidebarId}
-                onChange={handleFilterChange}
-              />
-              <ForumSponsoredCard
-                title="Sponsored"
-                imageSrc="/forum/metro_station.png"
-                imageAlt="HCMC Metro Opening"
-                caption="HCMC Metro Opening"
-              />
-            </Stack>
-
             <Box
               sx={{
                 flex: 1,
                 minWidth: 0,
-                backgroundColor: '#fff',
+                backgroundColor: 'background.paper',
                 border: 1,
                 borderColor: 'divider',
               }}
@@ -304,8 +285,9 @@ const ForumAlumniCareerPage = () => {
                             width: 10,
                             height: 10,
                             borderRadius: '50%',
-                            bgcolor: '#2ECC71',
-                            border: '2px solid #fff',
+                            bgcolor: 'success.main',
+                            border: '2px solid',
+                            borderColor: 'background.paper',
                           }}
                         />
                       </Box>
@@ -389,10 +371,7 @@ const ForumAlumniCareerPage = () => {
                 ))}
               </Box>
             </Box>
-          </Box>
-        </Container>
-      </Container>
-    </Page>
+    </AlumniContentLayout>
   );
 };
 

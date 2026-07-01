@@ -69,8 +69,8 @@ const NAV_GROUPS = (adminBase, t) => [
     items: [
       { to: `${adminBase}/article`, icon: <ArticleOutlinedIcon />, label: t('admin:nav_article') },
       { to: `${adminBase}/events`, icon: <EventNoteOutlinedIcon />, label: t('admin:nav_events') },
-      { to: `${adminBase}/fundraising`, end: true, icon: <VolunteerActivismOutlinedIcon />, label: t('admin:nav_fundraising') },
-      { to: `${adminBase}/fundraising/bank-accounts`, icon: <AccountBalanceOutlinedIcon />, label: t('admin:nav_bank_accounts') },
+      { to: `${adminBase}/donations`, end: true, icon: <VolunteerActivismOutlinedIcon />, label: t('admin:nav_fundraising') },
+      { to: `${adminBase}/donations/bank-accounts`, icon: <AccountBalanceOutlinedIcon />, label: t('admin:nav_bank_accounts') },
     ],
   },
   {
