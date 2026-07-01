@@ -1,8 +1,8 @@
 import {
   Box,
+  alpha,
   Button,
   Card,
-  Container,
   Stack,
   Typography,
 } from '@mui/material';
@@ -10,9 +10,7 @@ import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
 import EventAvailableOutlinedIcon from '@mui/icons-material/EventAvailableOutlined';
 import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
 
-import Page from '../../components/Page';
-import Sidebar from '../../components/Sidebar';
-import ForumSponsoredCard from '../../components/forum/ForumSponsoredCard';
+import AlumniContentLayout from '../../layouts/AlumniContentLayout';
 import MentorshipHubActions from '../../components/mentorship/MentorshipHubActions';
 import MentorshipMentorListSection from '../../components/mentorship/MentorshipMentorListSection';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
@@ -159,8 +157,8 @@ const GuestLandingContent = () => {
           p: { xs: 3, md: 4 },
           textAlign: 'center',
           border: '1px dashed',
-          borderColor: 'primary.light',
-          bgcolor: (theme) => `${theme.palette.primary.main}0a`,
+          borderColor: (theme) => alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.36 : 0.24),
+          bgcolor: (theme) => alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.14 : 0.06),
         }}
         elevation={0}
       >
@@ -241,33 +239,15 @@ const MentorshipPage = () => {
   const showGuestLanding = access.isGuest || access.needsEmailVerification;
 
   return (
-    <Page title={showGuestLanding ? t('mentorship:page_title_landing') : t('mentorship:page_title_hub')}>
-      <Container maxWidth={false} disableGutters sx={{ pb: 6 }}>
-        <Container maxWidth="xl" sx={{ pt: { xs: 2, sm: 3, md: 4 }, px: { xs: 2, sm: 3, lg: 6 } }}>
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: { xs: 'column', md: 'row' },
-              gap: { xs: 2, md: 3 },
-            }}
-          >
-            <Stack spacing={2} sx={{ width: { xs: '100%', md: 260 } }}>
-              <Sidebar items={getMentorshipSidebar(t)} />
-              <ForumSponsoredCard
-                title="Sponsored"
-                imageSrc="/forum/metro_station.png"
-                imageAlt="HCMC Metro"
-                caption="HCMC Metro Opening"
-              />
-            </Stack>
-
-            <Box sx={{ flex: 1, minWidth: 0, px: { xs: 1.5, sm: 2, md: 2.75 } }}>
-              {showGuestLanding ? <GuestLandingContent /> : <HubContent />}
-            </Box>
-          </Box>
-        </Container>
-      </Container>
-    </Page>
+    <AlumniContentLayout
+      variant="two"
+      pageTitle={showGuestLanding ? t('mentorship:page_title_landing') : t('mentorship:page_title_hub')}
+      sidebarItems={getMentorshipSidebar(t)}
+      header={null}
+      contentSpacing={0}
+    >
+      {showGuestLanding ? <GuestLandingContent /> : <HubContent />}
+    </AlumniContentLayout>
   );
 };
 

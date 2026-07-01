@@ -178,9 +178,6 @@ const HonorsRequestAchievementsPage = Loadable(
 );
 
 // Activities pages
-const ActivitiesPage = Loadable(
-  lazy(() => import("../pages/activities/ActivitiesPage")),
-);
 const ActivitiesEventsPage = Loadable(
   lazy(() => import("../pages/activities/ActivitiesEventsPage")),
 );
@@ -372,24 +369,27 @@ export const router = createBrowserRouter([
         ],
       },
       {
-        path: "activities",
-        children: [
-          {
-            index: true,
-            element: <ActivitiesPage />,
-          },
-          {
-            path: "events",
-            element: <ActivitiesEventsPage />,
-          },
-          {
-            path: "news",
-            element: <ActivitiesNewsPage />,
-          },
-        ],
+        path: "events",
+        element: (
+          <ProtectedRoute>
+            <ActivitiesEventsPage />
+          </ProtectedRoute>
+        ),
       },
       {
-        path: "search",
+        path: "news",
+        element: <ActivitiesNewsPage />,
+      },
+      {
+        path: "activities/events",
+        element: <Navigate to="../events" replace />,
+      },
+      {
+        path: "activities/news",
+        element: <Navigate to="../news" replace />,
+      },
+      {
+        path: "network",
         element: (
           <ProtectedRoute>
             <Outlet />
@@ -413,6 +413,22 @@ export const router = createBrowserRouter([
             element: <NetworkRestrictedConnectionsPage />,
           },
         ],
+      },
+      {
+        path: "search",
+        element: <Navigate to="../network" replace />,
+      },
+      {
+        path: "search/requests",
+        element: <Navigate to="../network/requests" replace />,
+      },
+      {
+        path: "search/connections",
+        element: <Navigate to="../network/connections" replace />,
+      },
+      {
+        path: "search/restricted-connections",
+        element: <Navigate to="../network/restricted-connections" replace />,
       },
       {
         path: "chat",
@@ -751,7 +767,7 @@ export const router = createBrowserRouter([
             ),
           },
           {
-            path: "fundraising",
+            path: "donations",
             element: (
               <ProtectedRoute allowedRoles={["ADMIN", "STAFF"]}>
                 <AdminFundraisingsPage />
@@ -759,12 +775,20 @@ export const router = createBrowserRouter([
             ),
           },
           {
-            path: "fundraising/bank-accounts",
+            path: "donations/bank-accounts",
             element: (
               <ProtectedRoute allowedRoles={["ADMIN", "STAFF"]}>
                 <AdminFundReceivingInfosPage />
               </ProtectedRoute>
             ),
+          },
+          {
+            path: "fundraising",
+            element: <Navigate to="../donations" replace />,
+          },
+          {
+            path: "fundraising/bank-accounts",
+            element: <Navigate to="../donations/bank-accounts" replace />,
           },
           {
             path: "article",
@@ -1006,7 +1030,7 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: "fundraising",
+        path: "donations",
         element: (
           <ProtectedRoute allowedRoles={["ADMIN"]}>
             <AdminFundraisingsPage />
@@ -1014,12 +1038,20 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: "fundraising/bank-accounts",
+        path: "donations/bank-accounts",
         element: (
           <ProtectedRoute allowedRoles={["ADMIN"]}>
             <AdminFundReceivingInfosPage />
           </ProtectedRoute>
         ),
+      },
+      {
+        path: "fundraising",
+        element: <Navigate to="../donations" replace />,
+      },
+      {
+        path: "fundraising/bank-accounts",
+        element: <Navigate to="../donations/bank-accounts" replace />,
       },
       {
         path: "article",

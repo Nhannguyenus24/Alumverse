@@ -143,13 +143,13 @@ const getExploreItems = (t) => [
     iconSrc: "/icons/tim_kiem_csv.svg",
     title: t("home:explore_find_title"),
     description: t("home:explore_find_desc"),
-    path: "/search",
+    path: "/network",
   },
   {
     iconSrc: "/icons/su_kien_hoi_thao.svg",
     title: t("home:explore_events_title"),
     description: t("home:explore_events_desc"),
-    path: "/activities/events",
+    path: "/events",
   },
 ];
 
@@ -209,7 +209,7 @@ const HomePage = () => {
     ? "background.paper"
     : alpha(theme.palette.primary.main, 0.035);
   const plainSectionBg = "background.default";
-  const featuredAlumniBg = "primary.main";
+  const featuredAlumniBg = theme.palette.mode === "dark" ? "primary.dark" : "primary.main";
 
   return (
     <Page
@@ -531,7 +531,7 @@ const HomePage = () => {
             <Button
               variant="contained"
               endIcon={<ArrowForwardIcon />}
-              onClick={() => navigate("/activities/news")}
+              onClick={() => navigate("/news")}
               sx={{ px: 3, py: 1.1, fontWeight: 800 }}
             >
               {t("home:news_all_cta")}

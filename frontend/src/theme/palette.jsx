@@ -1,4 +1,4 @@
-import { alpha, darken, getContrastRatio, lighten } from '@mui/material/styles';
+import { alpha, getContrastRatio } from '@mui/material/styles';
 
 function createGradient(color1, color2) {
   return `linear-gradient(to bottom, ${color1}, ${color2})`;
@@ -122,18 +122,88 @@ export const normalizeHexColor = (value, fallback) => {
   return color;
 };
 
+const hexToHsl = (hex) => {
+  const normalized = hex.replace('#', '');
+  const r = parseInt(normalized.slice(0, 2), 16) / 255;
+  const g = parseInt(normalized.slice(2, 4), 16) / 255;
+  const b = parseInt(normalized.slice(4, 6), 16) / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+
+  if (max === min) return { h: 0, s: 0, l: l * 100 };
+
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  let h;
+
+  switch (max) {
+    case r:
+      h = (g - b) / d + (g < b ? 6 : 0);
+      break;
+    case g:
+      h = (b - r) / d + 2;
+      break;
+    default:
+      h = (r - g) / d + 4;
+      break;
+  }
+
+  return { h: h * 60, s: s * 100, l: l * 100 };
+};
+
+const hslToHex = ({ h, s, l }) => {
+  const hue = ((h % 360) + 360) % 360;
+  const sat = Math.min(100, Math.max(0, s)) / 100;
+  const light = Math.min(100, Math.max(0, l)) / 100;
+  const c = (1 - Math.abs(2 * light - 1)) * sat;
+  const x = c * (1 - Math.abs(((hue / 60) % 2) - 1));
+  const m = light - c / 2;
+  let r = 0;
+  let g = 0;
+  let b = 0;
+
+  if (hue < 60) [r, g, b] = [c, x, 0];
+  else if (hue < 120) [r, g, b] = [x, c, 0];
+  else if (hue < 180) [r, g, b] = [0, c, x];
+  else if (hue < 240) [r, g, b] = [0, x, c];
+  else if (hue < 300) [r, g, b] = [x, 0, c];
+  else [r, g, b] = [c, 0, x];
+
+  const toHex = (value) => Math.round((value + m) * 255).toString(16).padStart(2, '0');
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+};
+
+const createHslTone = (base, saturationRatio, lightness) => hslToHex({
+  h: base.h,
+  s: base.s * saturationRatio,
+  l: lightness,
+});
+
 export const createBrandColor = (mainColor, fallback = PRIMARY.main, mode = 'light') => {
   const sourceMain = normalizeHexColor(mainColor, fallback);
-  const main = mode === 'dark' ? lighten(sourceMain, 0.32) : sourceMain;
+  const base = hexToHsl(sourceMain);
+  const main = mode === 'dark'
+    ? createHslTone(base, 0.68, Math.max(base.l + 28, 54))
+    : sourceMain;
   const contrastTarget = mode === 'dark' ? '#101418' : '#fff';
   const fallbackContrast = mode === 'dark' ? '#fff' : '#000';
+  const mainBase = hexToHsl(main);
 
   return {
-    lighter: lighten(main, mode === 'dark' ? 0.72 : 0.9),
-    light: lighten(main, mode === 'dark' ? 0.42 : 0.65),
+    lighter: mode === 'dark'
+      ? createHslTone(mainBase, 0.42, Math.min(mainBase.l + 34, 90))
+      : createHslTone(base, 0.4, 95),
+    light: mode === 'dark'
+      ? createHslTone(mainBase, 0.6, Math.min(mainBase.l + 18, 78))
+      : createHslTone(base, 0.6, 86),
     main,
-    dark: darken(main, mode === 'dark' ? 0.2 : 0.25),
-    darker: darken(main, mode === 'dark' ? 0.42 : 0.55),
+    dark: mode === 'dark'
+      ? createHslTone(mainBase, 0.9, Math.max(mainBase.l - 12, 24))
+      : createHslTone(base, 1, Math.max(base.l - 9, 16)),
+    darker: mode === 'dark'
+      ? createHslTone(mainBase, 1, Math.max(mainBase.l - 24, 16))
+      : createHslTone(base, 1, Math.max(base.l - 18, 10)),
     contrastText: getContrastRatio(main, contrastTarget) >= 4.5 ? contrastTarget : fallbackContrast,
   };
 };

@@ -11,4 +11,4 @@
  *
  * Keeping these in sync prevents the header from overlapping page content.
  */
-export const HEADER_HEIGHT = { xs: 72, md: 80 };
+export const HEADER_HEIGHT = { xs: 72, md: 72 };

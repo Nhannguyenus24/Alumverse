@@ -99,7 +99,16 @@ const Notification = ({ headerTextColor = "text.primary" }) => {
 
   return (
     <>
-      <Tooltip title={t("notification:tooltip")} arrow>
+      <Tooltip
+        title={t("notification:tooltip")}
+        arrow
+        placement="bottom"
+        slotProps={{
+          popper: {
+            modifiers: [{ name: 'offset', options: { offset: [0, 4] } }],
+          },
+        }}
+      >
         <Box sx={{ position: "relative" }}>
           <IconButton
             size="small"
@@ -138,7 +147,7 @@ const Notification = ({ headerTextColor = "text.primary" }) => {
           sx: {
             width: 360,
             maxHeight: 500,
-            mt: 3,
+            mt: 1.5,
             boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.1)",
             p: 1
           },
