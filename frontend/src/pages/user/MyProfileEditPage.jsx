@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useLocation } from 'react-router';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Alert,
   Box,
@@ -32,6 +33,7 @@ import { useMyProfile } from '../../hooks/profile/useMyProfile';
 import { useUpdateProfile } from '../../hooks/profile/useUpdateProfile';
 import { useMyOrganizationMember } from '../../hooks/useMyOrganizationMember';
 import useOrganizationStore from '../../stores/organizationStore';
+import useAuthStore from '../../stores/authStore';
 
 import useAvatarCrop from '../../hooks/profile/useAvatarCrop';
 import AvatarUploadDialog from '../../components/profile/AvatarUploadDialog';
@@ -119,12 +121,12 @@ const UnifiedProfileEditPage = () => {
   const isMentorshipPath = location.pathname.includes('/mentorship');
 
   const profileQuery = useMyProfile();
+  const queryClient = useQueryClient();
   const orgMemberQuery = useMyOrganizationMember();
   
   const mentorQuery = useMyMentorProfile();
-  
-  const expertiseQuery = useMyExpertise();
   const access = useMentorshipAccessState();
+  const expertiseQuery = useMyExpertise({ enabled: access.hasMentorProfile });
 
   const { updateProfile: updateBaseProfile, isPending: savingBase, errorMessage: baseError } = useUpdateProfile();
   const { updateProfile: updateMentorProfile, isPending: savingMentor, errorMessage: mentorError } = useUpdateMentorProfile();
@@ -156,6 +158,7 @@ const UnifiedProfileEditPage = () => {
 
   const avatarCrop = useAvatarCrop();
   const organizationId = useOrganizationStore((state) => state.organization?.id ?? null);
+  const setAuthUser = useAuthStore((state) => state.setUser);
 
   // Optional phone — if filled it must be a valid VN mobile number.
   const phoneError = phone.trim() ? validateVietnamPhone(phone) : null;
@@ -212,6 +215,10 @@ const UnifiedProfileEditPage = () => {
         const avatarImageUrl = await uploadBase64(avatarCrop.avatarUrl);
         if (avatarImageUrl) {
           await userSettingsApi.updateAvatar(avatarImageUrl);
+          setAuthUser({
+            ...useAuthStore.getState().user,
+            avatarUrl: avatarImageUrl,
+          });
         }
       }
       
@@ -238,6 +245,9 @@ const UnifiedProfileEditPage = () => {
         phone: phone.trim() || undefined,
         coverUrl: uploadedCoverUrl ?? undefined,
       });
+
+      queryClient.invalidateQueries({ queryKey: ['user', 'me', 'profile'] });
+      queryClient.invalidateQueries({ queryKey: ['publicProfile'] });
 
       setSuccess(true);
       setTimeout(() => navigate(isMentorshipPath ? '/development/mentorship/profile' : '/profile'), 800);

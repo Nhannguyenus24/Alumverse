@@ -31,7 +31,7 @@ public interface PeerVerificationRepository extends R2dbcRepository<PeerVerifica
                pv.created_at as created_at
         FROM peer_verifications pv
         JOIN organization_members om_target ON pv.target_member_id = om_target.user_id
-        JOIN global_profiles gp ON om_target.user_id = gp.user_id
+        JOIN users gp ON gp.id = om_target.user_id
         WHERE pv.verifier_member_id = :verifierUserId AND pv."status" = 'PENDING'
         ORDER BY pv.created_at DESC
     """)

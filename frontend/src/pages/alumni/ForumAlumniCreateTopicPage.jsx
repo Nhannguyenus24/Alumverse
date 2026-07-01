@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import {
+  Alert,
   Box,
   Button,
   Container,
@@ -26,7 +27,9 @@ import { useNotification } from '../../hooks/useNotification';
 const ForumAlumniCreateTopicPage = () => {
   const { t } = useTranslation(['forum', 'common']);
   const navigate = useOrgNavigate();
-  const { user } = useAuth();
+  const { user, verificationLevel } = useAuth();
+  // Only org-verified alumni (verification level >= 2) may create alumni forum topics.
+  const canPost = (verificationLevel ?? 0) >= 2;
   const { organization } = useOrganization();
   const organizationId = organization?.id ?? null;
   const {
@@ -133,6 +136,10 @@ const ForumAlumniCreateTopicPage = () => {
     }
     if (!user?.id) {
       showError(t('forum:error_unknown_author'));
+      return;
+    }
+    if (!canPost) {
+      showWarning(t('forum:warn_alumni_verification_required'));
       return;
     }
     if (Number.isNaN(categoryId) || categoryId <= 0) {
@@ -248,6 +255,12 @@ const ForumAlumniCreateTopicPage = () => {
               >
                 {t('forum:create_topic_title')}
               </Typography>
+
+              {!canPost && (
+                <Alert severity="warning" sx={{ mb: 2.5 }}>
+                  {t('forum:warn_alumni_verification_required')}
+                </Alert>
+              )}
 
               {/* Subject selectors */}
               <Box
@@ -383,6 +396,7 @@ const ForumAlumniCreateTopicPage = () => {
                       isSubmitting ||
                       createTopicPending ||
                       !user?.id ||
+                      !canPost ||
                       !(title ?? '').trim() ||
                       !selectedSubSubject
                     }

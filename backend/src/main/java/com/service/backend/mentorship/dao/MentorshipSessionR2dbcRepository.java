@@ -26,7 +26,7 @@ public interface MentorshipSessionR2dbcRepository extends ReactiveCrudRepository
     @Query("SELECT ms.* FROM mentorship_sessions ms " +
             "JOIN mentor_availabilities ma ON ms.availability_id = ma.id " +
             "LEFT JOIN organization_members om ON ms.mentee_member_id = om.user_id " +
-            "LEFT JOIN global_profiles gp ON om.user_id = gp.user_id " +
+            "LEFT JOIN users gp ON gp.id = om.user_id " +
             "WHERE ma.mentor_member_id = :mentorMemberId " +
             "AND (:date IS NULL OR CAST(ma.start_time AS DATE) = :date) " +
             "AND (:menteeName IS NULL OR LOWER(gp.full_name) LIKE LOWER(CONCAT('%', :menteeName, '%'))) " +
@@ -36,7 +36,7 @@ public interface MentorshipSessionR2dbcRepository extends ReactiveCrudRepository
     @Query("SELECT COUNT(ms.*) FROM mentorship_sessions ms " +
             "JOIN mentor_availabilities ma ON ms.availability_id = ma.id " +
             "LEFT JOIN organization_members om ON ms.mentee_member_id = om.user_id " +
-            "LEFT JOIN global_profiles gp ON om.user_id = gp.user_id " +
+            "LEFT JOIN users gp ON gp.id = om.user_id " +
             "WHERE ma.mentor_member_id = :mentorMemberId " +
             "AND (:date IS NULL OR CAST(ma.start_time AS DATE) = :date) " +
             "AND (:menteeName IS NULL OR LOWER(gp.full_name) LIKE LOWER(CONCAT('%', :menteeName, '%')))")
@@ -55,7 +55,7 @@ public interface MentorshipSessionR2dbcRepository extends ReactiveCrudRepository
     @Query("SELECT ms.* FROM mentorship_sessions ms " +
             "JOIN mentor_availabilities ma ON ms.availability_id = ma.id " +
             "LEFT JOIN organization_members om ON ma.mentor_member_id = om.user_id " +
-            "LEFT JOIN global_profiles gp ON om.user_id = gp.user_id " +
+            "LEFT JOIN users gp ON gp.id = om.user_id " +
             "WHERE ms.mentee_member_id = :menteeMemberId " +
             "AND (:date IS NULL OR CAST(ma.start_time AS DATE) = :date) " +
             "AND (:mentorName IS NULL OR LOWER(gp.full_name) LIKE LOWER(CONCAT('%', :mentorName, '%'))) " +
@@ -65,7 +65,7 @@ public interface MentorshipSessionR2dbcRepository extends ReactiveCrudRepository
     @Query("SELECT COUNT(ms.*) FROM mentorship_sessions ms " +
             "JOIN mentor_availabilities ma ON ms.availability_id = ma.id " +
             "LEFT JOIN organization_members om ON ma.mentor_member_id = om.user_id " +
-            "LEFT JOIN global_profiles gp ON om.user_id = gp.user_id " +
+            "LEFT JOIN users gp ON gp.id = om.user_id " +
             "WHERE ms.mentee_member_id = :menteeMemberId " +
             "AND (:date IS NULL OR CAST(ma.start_time AS DATE) = :date) " +
             "AND (:mentorName IS NULL OR LOWER(gp.full_name) LIKE LOWER(CONCAT('%', :mentorName, '%')))")

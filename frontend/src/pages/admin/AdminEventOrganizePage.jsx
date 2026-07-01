@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+  Avatar,
   Box,
   Button,
   Chip,
@@ -33,12 +34,13 @@ import { formatDateTime } from '../../utils/dateFormatter';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
 const AdminEventOrganizePage = () => {
-  const { t } = useTranslation(['admin', 'event']);
+  const { t } = useTranslation(['admin', 'event', 'common']);
   const { eventId } = useParams();
   const orgNavigate = useOrgNavigate();
 
   const statusChip = (status) => {
     const key = String(status || '').toUpperCase();
+    if (key === 'REGISTERED' || key === 'PENDING') return { color: 'default', label: t('event:ticket_status_registered') };
     if (key === 'ISSUED') return { color: 'info', label: t('event:status_issued') };
     if (key === 'USED' || key === 'CHECKED_IN') return { color: 'success', label: t('event:status_used') };
     if (key === 'CANCELLED') return { color: 'error', label: t('event:status_cancelled') };
@@ -51,6 +53,7 @@ const AdminEventOrganizePage = () => {
   const [size, setSize] = useState(10);
   const [ticketCode, setTicketCode] = useState('');
   const [checkResult, setCheckResult] = useState(null);
+  const [checkedTicket, setCheckedTicket] = useState(null);
   const [expandedId, setExpandedId] = useState(null);
   const [eventTitle, setEventTitle] = useState('');
 
@@ -74,26 +77,28 @@ const AdminEventOrganizePage = () => {
       .catch(() => {});
   }, [eventId]);
 
+  // Accept either a raw ticket code, the encrypted QR token, or a legacy
+  // `ALUMVERSE-TICKET-`-prefixed code. The backend decrypts/verifies and enforces
+  // the event scope + status, so the client just routes the value correctly.
+  const QR_PREFIX_V2 = 'ALUMVERSE-TKT2-';
+  const QR_PREFIX_LEGACY = 'ALUMVERSE-TICKET-';
+  const buildCheckInPayload = (raw) => {
+    const value = raw.trim();
+    const upper = value.toUpperCase();
+    if (upper.startsWith(QR_PREFIX_V2)) return { qrToken: value };
+    if (upper.startsWith(QR_PREFIX_LEGACY)) return { code: value.slice(QR_PREFIX_LEGACY.length).toUpperCase() };
+    return { code: upper };
+  };
+
   const handleCheckIn = async () => {
-    const code = ticketCode.trim().toUpperCase();
-    if (!code) return;
+    const raw = ticketCode.trim();
+    if (!raw) return;
     setCheckResult(null);
+    setCheckedTicket(null);
     try {
-      const ticket = await eventApi.getTicketByCode(code);
-      if (Number(ticket.eventId) !== numericEventId) {
-        setCheckResult({ type: 'error', message: t('admin:event_ticket_wrong_event') });
-        return;
-      }
-      if (['USED', 'CHECKED_IN'].includes(String(ticket.status).toUpperCase())) {
-        setCheckResult({ type: 'warning', message: t('admin:event_ticket_already_checked') });
-        return;
-      }
-      if (String(ticket.status).toUpperCase() === 'CANCELLED') {
-        setCheckResult({ type: 'error', message: t('admin:event_ticket_cancelled_msg') });
-        return;
-      }
-      await checkInMutation.mutateAsync(code);
-      setCheckResult({ type: 'success', message: t('admin:event_checkin_success', { code }) });
+      const ticket = await checkInMutation.mutateAsync(buildCheckInPayload(raw));
+      setCheckedTicket(ticket);
+      setCheckResult({ type: 'success', message: t('admin:event_checkin_success', { code: ticket?.ticketCode || '' }) });
       setTicketCode('');
       refetch();
     } catch (err) {
@@ -121,19 +126,23 @@ const AdminEventOrganizePage = () => {
           </Box>
 
           <Paper variant="outlined" sx={{ p: 2 }}>
-            <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 2 }}>
+            <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 0.5 }}>
               {t('admin:event_checkin_title')}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              {t('admin:event_checkin_help')}
             </Typography>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
               <TextField
                 fullWidth
                 label={t('admin:event_ticket_code')}
                 value={ticketCode}
-                onChange={(e) => setTicketCode(e.target.value.toUpperCase())}
+                onChange={(e) => setTicketCode(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleCheckIn()}
               />
               <Button
                 variant="contained"
+                color="accent"
                 onClick={handleCheckIn}
                 disabled={checkInMutation.isPending || !ticketCode.trim()}
                 sx={{ minWidth: 140 }}
@@ -150,6 +159,37 @@ const AdminEventOrganizePage = () => {
                 )}
                 <Typography variant="body2">{checkResult.message}</Typography>
               </Box>
+            )}
+            {checkedTicket && checkResult?.type === 'success' && (
+              <Paper variant="outlined" sx={{ mt: 2, p: 2, borderColor: 'success.main' }}>
+                <Typography variant="overline" color="success.main">
+                  {t('admin:event_checkin_verify_title')}
+                </Typography>
+                <Stack direction="row" spacing={2} alignItems="center" sx={{ mt: 1 }}>
+                  <Avatar
+                    src={checkedTicket.attendeeAvatarUrl || undefined}
+                    sx={{ width: 56, height: 56 }}
+                  >
+                    {(checkedTicket.attendeeName || checkedTicket.guestName || '?').charAt(0)}
+                  </Avatar>
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography variant="subtitle1" fontWeight={700} noWrap>
+                      {checkedTicket.attendeeName || checkedTicket.guestName || `Member #${checkedTicket.memberId}`}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" noWrap>
+                      {checkedTicket.attendeeEmail || checkedTicket.guestEmail || '-'}
+                    </Typography>
+                    <Stack direction="row" spacing={1} sx={{ mt: 0.75 }} alignItems="center" flexWrap="wrap" useFlexGap>
+                      <Chip size="small" label={checkedTicket.ticketCode} />
+                      <Chip
+                        size="small"
+                        color="success"
+                        label={t('admin:event_checked_in_at', { time: formatDateTime(checkedTicket.checkedInAt) })}
+                      />
+                    </Stack>
+                  </Box>
+                </Stack>
+              </Paper>
             )}
           </Paper>
 
@@ -237,6 +277,7 @@ const AdminEventOrganizePage = () => {
                   rowsPerPage={size}
                   onRowsPerPageChange={(e) => { setSize(parseInt(e.target.value, 10)); setPage(0); }}
                   rowsPerPageOptions={[5, 10, 25]}
+                  labelRowsPerPage={t('common:rows_per_page')}
                 />
               </>
             )}

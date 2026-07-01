@@ -4,7 +4,12 @@ import PostArticleForm from '../../components/PostArticleForm';
 import PostArticleShell from '../../components/PostArticleShell';
 import useCoverUpload from '../../hooks/useCoverUpload';
 import { useCreateNews } from '../../hooks/news/useCreateNews';
-import { fileToBase64 } from '../../utils/imageUtils';
+import {
+  fileToCroppedCoverBase64,
+  getJsonPayloadByteSize,
+  MAX_JSON_PAYLOAD_BYTES,
+  validateImageFile,
+} from '../../utils/imageUtils';
 import { useNotification } from '../../hooks/useNotification';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
@@ -13,7 +18,14 @@ const PostArticlePage = () => {
   const { t } = useTranslation('article');
   const { showSuccess, showError } = useNotification();
   const { createNews, isPending } = useCreateNews();
-  const { coverFile, coverPreview, handleCoverUpload } = useCoverUpload();
+  const {
+    coverFile,
+    coverPreview,
+    coverCroppedPreview,
+    coverPositionY,
+    handleCoverUpload,
+    setCoverPositionY,
+  } = useCoverUpload();
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -25,14 +37,25 @@ const PostArticlePage = () => {
       showError(t('error_title_content_required'));
       return;
     }
+    if (coverFile) {
+      const imageValidation = validateImageFile(coverFile);
+      if (!imageValidation.valid) {
+        showError(imageValidation.message);
+        return;
+      }
+    }
     try {
-      const thumbnailBase64 = coverFile ? await fileToBase64(coverFile) : null;
+      const thumbnailBase64 = coverFile ? await fileToCroppedCoverBase64(coverFile, coverPositionY) : null;
       const payload = {
         title: title.trim(),
         content: content.trim(),
         thumbnailBase64,
         url: url.trim() || null,
       };
+      if (getJsonPayloadByteSize(payload) > MAX_JSON_PAYLOAD_BYTES) {
+        showError('Bài viết quá lớn để đăng. Tổng dung lượng nội dung và ảnh chính cần dưới 19MB.');
+        return;
+      }
 
       const result = await createNews(payload);
       showSuccess(t('success_news'));
@@ -47,6 +70,8 @@ const PostArticlePage = () => {
       pageTitle={t('page_title_news')}
       coverPreview={coverPreview}
       onCoverChange={handleCoverUpload}
+      coverPositionY={coverPositionY}
+      onCoverPositionYChange={setCoverPositionY}
       onCancel={() => navigate(-1)}
       onSubmit={handleSubmit}
       isPending={isPending}
@@ -62,6 +87,7 @@ const PostArticlePage = () => {
         setTopic={setTopic}
         url={url}
         setUrl={setUrl}
+        mainImagePreview={coverCroppedPreview ?? coverPreview}
       />
     </PostArticleShell>
   );

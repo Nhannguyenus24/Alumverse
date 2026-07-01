@@ -8,6 +8,7 @@ import java.util.Collection;
 import org.springframework.data.r2dbc.repository.Modifying;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.r2dbc.repository.R2dbcRepository;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import reactor.core.publisher.Flux;
@@ -25,6 +26,12 @@ public interface ForumTopicSubscriptionRepository extends R2dbcRepository<ForumT
      * Delete subscription by topic id and member id
      */
     Mono<Void> deleteByTopicIdAndMemberId(Integer topicId, Integer memberId);
+
+    /**
+     * Delete all subscriptions for a topic (used when cascade-deleting a topic).
+     */
+    @Query("DELETE FROM forum_topic_subscriptions WHERE topic_id = :topicId")
+    Mono<Void> deleteByTopicId(@Param("topicId") Integer topicId);
 
     /**
      * Count subscriptions by topic id

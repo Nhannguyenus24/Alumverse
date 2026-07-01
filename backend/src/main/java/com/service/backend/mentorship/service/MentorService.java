@@ -19,14 +19,17 @@ import com.service.backend.shared.utils.SecurityUtils;
 import com.service.backend.user.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -63,17 +66,27 @@ public class MentorService {
 
     private Mono<List<MentorshipSessionResponse>> enrichAll(List<MentorshipSession> sessions) {
         if (sessions.isEmpty()) return Mono.just(List.of());
-        return Flux.fromIterable(sessions)
-                .concatMap(s -> {
-                    if (s.getAvailabilityId() == null) {
-                        return Mono.just(MentorshipSessionResponse.from(s));
-                    }
-                    return availabilityRepository.findById(s.getAvailabilityId())
-                            .map(av -> MentorshipSessionResponse.from(s, av))
-                            .defaultIfEmpty(MentorshipSessionResponse.from(s));
-                })
-                .collectList()
-                .flatMap(this::attachUserDisplay);
+
+        // Batch-load all referenced availabilities in a single query instead of one findById per session.
+        Set<Integer> availabilityIds = sessions.stream()
+                .map(MentorshipSession::getAvailabilityId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        Mono<Map<Integer, MentorAvailability>> availabilitiesMono = availabilityIds.isEmpty()
+                ? Mono.just(Map.of())
+                : availabilityRepository.findAllById(availabilityIds).collectMap(MentorAvailability::getId);
+
+        return availabilitiesMono.flatMap(availMap -> {
+            List<MentorshipSessionResponse> list = new ArrayList<>(sessions.size());
+            for (MentorshipSession s : sessions) {
+                MentorAvailability av = s.getAvailabilityId() != null ? availMap.get(s.getAvailabilityId()) : null;
+                list.add(av != null
+                        ? MentorshipSessionResponse.from(s, av)
+                        : MentorshipSessionResponse.from(s));
+            }
+            return attachUserDisplay(list);
+        });
     }
 
     private Mono<List<MentorshipSessionResponse>> attachUserDisplay(List<MentorshipSessionResponse> list) {
@@ -127,7 +140,7 @@ public class MentorService {
                                 Status current = existing.getStatus();
                                 if (Status.APPROVED.equals(current)
                                     || Status.PENDING.equals(current)) {
-                                return Mono.<MentorProfile>error(new ApplicationException(
+                                return Mono.error(new ApplicationException(
                                         ErrorCode.MENTOR_PROFILE_ALREADY_EXISTS,
                                         "Mentor profile already exists"));
                             }
@@ -231,7 +244,7 @@ public class MentorService {
                         .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EXPERTISE_NOT_FOUND, "Expertise not found with id: " + expertiseId)))
                         .flatMap(existing -> {
                             if (!memberId.equals(existing.getMentorMemberId())) {
-                                return Mono.<Boolean>error(new ApplicationException(ErrorCode.EXPERTISE_NOT_FOUND, "Expertise not found"));
+                                return Mono.error(new ApplicationException(ErrorCode.EXPERTISE_NOT_FOUND, "Expertise not found"));
                             }
                             return expertiseRepository.deleteById(expertiseId).thenReturn(true);
                         }));
@@ -243,7 +256,7 @@ public class MentorService {
                         .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EXPERTISE_NOT_FOUND, "Expertise not found with id: " + expertiseId)))
                         .flatMap(existing -> {
                             if (!memberId.equals(existing.getMentorMemberId())) {
-                                return Mono.<MentorExpertise>error(new ApplicationException(ErrorCode.EXPERTISE_NOT_FOUND, "Expertise not found"));
+                                return Mono.error(new ApplicationException(ErrorCode.EXPERTISE_NOT_FOUND, "Expertise not found"));
                             }
                             if (request.getTopic() != null) existing.setTopic(request.getTopic());
                             if (request.getYearsExperience() != null) existing.setYearsExperience(request.getYearsExperience());
@@ -281,10 +294,10 @@ public class MentorService {
                         .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.AVAILABILITY_NOT_FOUND, "Availability not found")))
                         .flatMap(existing -> {
                             if (!memberId.equals(existing.getMentorMemberId())) {
-                                return Mono.<MentorAvailability>error(new ApplicationException(ErrorCode.AVAILABILITY_NOT_FOUND, "Availability not found"));
+                                return Mono.error(new ApplicationException(ErrorCode.AVAILABILITY_NOT_FOUND, "Availability not found"));
                             }
                             if (Status.AVAILABLE != existing.getStatus()) {
-                                return Mono.<MentorAvailability>error(new ApplicationException(ErrorCode.AVAILABILITY_NOT_AVAILABLE, "Slot đã được đặt, không thể chỉnh sửa"));
+                                return Mono.error(new ApplicationException(ErrorCode.AVAILABILITY_NOT_AVAILABLE, "Slot đã được đặt, không thể chỉnh sửa"));
                             }
                             return validateSlot(memberId, request.getStartTime(), request.getEndTime(), availabilityId)
                                     .then(Mono.defer(() -> {
@@ -326,10 +339,10 @@ public class MentorService {
                         .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.AVAILABILITY_NOT_FOUND, "Availability not found with id: " + availabilityId)))
                         .flatMap(existing -> {
                             if (!memberId.equals(existing.getMentorMemberId())) {
-                                return Mono.<Boolean>error(new ApplicationException(ErrorCode.AVAILABILITY_NOT_FOUND, "Availability not found"));
+                                return Mono.error(new ApplicationException(ErrorCode.AVAILABILITY_NOT_FOUND, "Availability not found"));
                             }
                             if (Status.AVAILABLE != existing.getStatus()) {
-                                return Mono.<Boolean>error(new ApplicationException(ErrorCode.AVAILABILITY_NOT_AVAILABLE, "Slot đã được đặt, không thể xoá"));
+                                return Mono.error(new ApplicationException(ErrorCode.AVAILABILITY_NOT_AVAILABLE, "Slot đã được đặt, không thể xoá"));
                             }
                             return availabilityRepository.deleteById(availabilityId).thenReturn(true);
                         })));
@@ -436,7 +449,7 @@ public class MentorService {
                                         return availabilityRepository.countOverlapping(
                                                         mentorMemberId, proposedStart, proposedEnd, avail.getId())
                                                 .flatMap(count -> count > 0
-                                                        ? Mono.<Integer>error(new ApplicationException(
+                                                        ? Mono.error(new ApplicationException(
                                                                 ErrorCode.AVAILABILITY_OVERLAP,
                                                                 "Giờ đề xuất trùng với một lịch trống khác của bạn"))
                                                         : sessionRepository.proposeReschedule(

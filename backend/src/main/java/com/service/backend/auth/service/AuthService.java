@@ -4,9 +4,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.AbstractMap;
-import java.util.Base64;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -97,7 +95,7 @@ public class AuthService {
                                                         .then(authRepository.createOrganizationMember(organizationId, userId, studentId))
                             ));
                 })
-                .doOnError(e -> logger.error("Registration failed: {}", email, e.getMessage()));
+                .doOnError(e -> logger.error("Registration failed: {}", e.getMessage()));
     }
 
     public Mono<User> loginByEmail(String email, String password, Integer organizationId, String userAgent, String loginIp) {
@@ -152,13 +150,36 @@ public class AuthService {
                         .switchIfEmpty(registerGoogleUser(tokenInfo, organizationId, userAgent, loginIp))
                 )
                 .doOnSuccess(u -> logger.info("loginWithGoogle result: {}", JsonUtils.toJson(u)))
-                .doOnError(error -> logger.error("Google login failed", error.getMessage()));
+                .doOnError(error -> logger.error("Google login failed: {}", error.getMessage()));
     }
 
     public Mono<Void> activateUser(Integer userId) {
         return authRepository.activateUserById(userId)
                 .doOnSuccess(v -> logger.info("activateUser: userId={} activated", userId))
-                .doOnError(error -> logger.error("Failed to activate user with id: {}", userId, error.getMessage()));
+                .doOnError(error -> logger.error("Failed to activate user with id: {}", error.getMessage()));
+    }
+
+    public Mono<Void> resetPasswordWithOtp(String email, String otp, String newPassword) {
+        return cacheUtils.get(OTP_CACHE_KEY, email)
+                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.OTP_EXPIRED_NOT_FOUND)))
+                .flatMap(cachedData -> {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> cacheMap = (Map<String, Object>) cachedData;
+                    String cachedOtp = (String) cacheMap.get(OTP_CACHE_OTP_FIELD);
+                    Integer userId = ((Number) cacheMap.get(OTP_CACHE_USER_ID_FIELD)).intValue();
+
+                    if (!cachedOtp.equals(otp)) {
+                        logger.warn("Invalid OTP for password reset, email: {}", email);
+                        return Mono.error(new ApplicationException(ErrorCode.INVALID_OTP));
+                    }
+
+                    return Mono.fromCallable(() -> passwordEncoder.encode(newPassword))
+                            .subscribeOn(Schedulers.boundedElastic())
+                            .flatMap(hashedPassword -> authRepository.updatePasswordById(userId, hashedPassword))
+                            .then(cacheUtils.evict(OTP_CACHE_KEY, email));
+                })
+                .doOnSuccess(v -> logger.info("resetPasswordWithOtp: password reset for email={}", email))
+                .doOnError(error -> logger.error("Password reset failed for email: {}", error.getMessage()));
     }
 
     public Mono<Void> changePassword(Integer userId, String oldPassword, String newPassword) {
@@ -170,11 +191,12 @@ public class AuthService {
                         return Mono.error(new ApplicationException(ErrorCode.INVALID_OLD_PASSWORD));
                     }
 
-                    String hashedPassword = passwordEncoder.encode(newPassword);
-                    return authRepository.updatePasswordById(userId, hashedPassword)
+                    return Mono.fromCallable(() -> passwordEncoder.encode(newPassword))
+                            .subscribeOn(Schedulers.boundedElastic())
+                            .flatMap(hashedPassword -> authRepository.updatePasswordById(userId, hashedPassword))
                             .doOnSuccess(v -> logger.info("changePassword: userId={} password changed", userId));
                 })
-                .doOnError(error -> logger.error("Password change error for user id: {}", userId, error.getMessage()));
+                .doOnError(error -> logger.error("Password change error for user id: {}", error.getMessage()));
     }
 
     public Mono<Integer> getVerificationLevel(Integer userId, Integer organizationId) {
@@ -207,7 +229,7 @@ public class AuthService {
                             }))
                             .doOnSuccess(v -> logger.info("sendOtpVerification: OTP sent to email={}", email));
                 })
-                .doOnError(error -> logger.error("Failed to send OTP to email: {}", email, error.getMessage()));
+                .doOnError(error -> logger.error("Failed to send OTP to email: {}", error.getMessage()));
     }
 
     public Mono<Void> verifyOtpAndActivate(String email, String otp) {
@@ -230,7 +252,7 @@ public class AuthService {
                             .then(cacheUtils.evict(OTP_CACHE_KEY, email));
                 })
                 .doOnSuccess(v -> logger.info("verifyOtpAndActivate: email={} activated", email))
-                .doOnError(error -> logger.error("OTP verification failed for email: {}", email, error.getMessage()));
+                .doOnError(error -> logger.error("OTP verification failed for email: {}", error.getMessage()));
     }
 
     public Mono<Void> requestChangeEmailOtpOld(Integer userId) {
@@ -472,7 +494,7 @@ public class AuthService {
                         return Mono.empty();
                     }
                     return authRepository.createOrganizationMember(organizationId, userId, null)
-                            .doOnError(error -> logger.error("Failed to create organization membership for user id: {} in organization: {}", userId, organizationId, error.getMessage()));
+                            .doOnError(error -> logger.error("Failed to create organization membership for user id: {} in organization: {}: {}", userId, organizationId, error.getMessage()));
                 });
     }
 

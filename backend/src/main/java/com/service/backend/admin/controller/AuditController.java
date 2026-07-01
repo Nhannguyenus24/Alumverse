@@ -20,11 +20,13 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 import java.util.Map;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @Tag(name = "Admin > Audit", description = "API endpoints for viewing system audit logs")
 @RestController
 @RequestMapping("/api/admin/audit")
 @Validated
+@PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
 public class AuditController {
 
     private final AuditService auditService;

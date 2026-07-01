@@ -48,7 +48,10 @@ export default defineConfig({
           'vendor-query': ['@tanstack/react-query', 'axios', 'zustand'],
           'vendor-charts': ['recharts'],
           'vendor-editor': ['react-quill-new', 'dompurify'],
-          'vendor-misc': ['framer-motion', 'emoji-picker-react', 'dayjs'],
+          // emoji-picker-react & xlsx are intentionally NOT pinned here so Rollup can
+          // emit them as on-demand chunks loaded only when the user opens the emoji
+          // picker / runs a bulk import.
+          'vendor-misc': ['framer-motion', 'dayjs'],
         },
       },
     },

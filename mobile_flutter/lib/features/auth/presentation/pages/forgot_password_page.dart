@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/router/route_names.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../shared/widgets/app_toast.dart';
 import '../../../../shared/widgets/logo.dart';
@@ -36,7 +37,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
           .forgotPassword(_emailCtl.text.trim());
       if (!mounted) return;
       AppToast.success(context, 'auth.code_sent'.tr());
-      context.pop();
+      context.push(RouteNames.signupCode, extra: _emailCtl.text.trim());
     } catch (e) {
       if (!mounted) return;
       final message = e is Exception

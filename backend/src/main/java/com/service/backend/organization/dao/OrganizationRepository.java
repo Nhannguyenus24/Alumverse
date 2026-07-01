@@ -15,10 +15,9 @@ public interface OrganizationRepository extends R2dbcRepository<Organization, In
 
     Flux<Organization> findAll();
 
-    @Query("SELECT u.id AS user_id, gp.full_name, om.student_id as student_id, u.avatar_url, u.email, om.major, om.program " +
+    @Query("SELECT u.id AS user_id, u.full_name, om.student_id as student_id, u.avatar_url, u.email, om.major, om.program " +
            "FROM users u " +
            "JOIN organization_members om ON u.id = om.user_id " +
-           "LEFT JOIN global_profiles gp ON u.id = gp.user_id " +
            "WHERE om.organization_id = :organizationId " +
            "AND om.is_trusted_verifier = true " +
            "AND om.status = 'ACTIVE' " +

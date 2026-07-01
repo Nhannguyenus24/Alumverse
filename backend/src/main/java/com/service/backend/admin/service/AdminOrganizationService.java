@@ -59,13 +59,13 @@ public class AdminOrganizationService {
                 size
         )
         .doOnSuccess(r -> logger.info("getAllOrganizations result: {}", JsonUtils.toJson(r)))
-        .doOnError(error -> logger.error("Failed to fetch organizations - search: {}, page: {}, size: {}", search, page, size, error.getMessage()));
+        .doOnError(error -> logger.error("Failed to fetch organizations - search: {}, page: {}, size: {}, error: {}", search, page, size, error.getMessage()));
     }
 
     public Mono<Organization> getOrganizationById(Integer organizationId) {
         return organizationRepository.findById(organizationId)
                 .doOnSuccess(org -> logger.info("getOrganizationById result: {}", JsonUtils.toJson(org)))
-                .doOnError(error -> logger.error("Failed to fetch organization - ID: {}", organizationId, error.getMessage()));
+                .doOnError(error -> logger.error("Failed to fetch organization - ID: {},  error: {}", organizationId, error.getMessage()));
     }
 
     public Mono<List<String>> getPrograms(Integer organizationId) {
@@ -103,7 +103,7 @@ public class AdminOrganizationService {
     public Mono<Organization> getOrganizationBySlug(String slug) {
         return organizationRepository.findBySlug(slug)
                 .doOnSuccess(org -> logger.info("getOrganizationBySlug result: {}", JsonUtils.toJson(org)))
-                .doOnError(error -> logger.error("Failed to fetch organization - slug: {}", slug, error.getMessage()));
+                .doOnError(error -> logger.error("Failed to fetch organization - slug: {}", error.getMessage()));
     }
 
     public Mono<Organization> createOrganization(UpdateOrganizationRequest request) {
@@ -120,7 +120,7 @@ public class AdminOrganizationService {
                 ))
                 .delayUntil(res -> cacheUtils.clear(ORG_CACHE))
                 .doOnSuccess(saved -> logger.info("createOrganization result: {}", JsonUtils.toJson(saved)))
-                .doOnError(error -> logger.error("Failed to create organization: {}", request.getName(), error.getMessage()));
+                .doOnError(error -> logger.error("Failed to create organization: {}", error.getMessage()));
     }
 
     public Mono<Organization> updateOrganization(Integer organizationId, UpdateOrganizationRequest organizationUpdate) {
@@ -146,16 +146,16 @@ public class AdminOrganizationService {
                     });
                 })
                 .doOnSuccess(saved -> logger.info("updateOrganization result: {}", JsonUtils.toJson(saved)))
-                .doOnError(error -> logger.error("Failed to update organization - ID: {}", organizationId, error.getMessage()));
+                .doOnError(error -> logger.error("Failed to update organization - ID: {}", error.getMessage()));
     }
 
     public Mono<Boolean> deleteOrganization(Integer organizationId) {
         return organizationRepository.deleteById(organizationId)
-                .delayUntil(res -> cacheUtils.clear(ORG_CACHE))
+                .then(cacheUtils.clear(ORG_CACHE))
                 .then(Mono.just(true))
                 .doOnSuccess(success -> logger.info("deleteOrganization: organizationId={} deleted", organizationId))
                 .onErrorResume(error -> {
-                    logger.error("Failed to delete organization - ID: {}", organizationId, error.getMessage());
+                    logger.error("Failed to delete organization - ID: {}", error.getMessage());
                     return Mono.just(false);
                 });
     }
@@ -169,7 +169,7 @@ public class AdminOrganizationService {
                 size
         )
                 .doOnSuccess(r -> logger.info("getSchoolFeedbacks result: {}", JsonUtils.toJson(r)))
-                .doOnError(error -> logger.error("Failed to fetch school feedbacks", error.getMessage()));
+                .doOnError(error -> logger.error("Failed to fetch school feedbacks: {}", error.getMessage()));
     }
 
     public Mono<Void> markSchoolFeedbackAsRead(Integer feedbackId) {
@@ -239,7 +239,7 @@ public class AdminOrganizationService {
                 .map(this::toResponse)
                 .delayUntil(res -> cacheUtils.clear(ORG_CACHE))
                 .doOnSuccess(r -> logger.info("upsertIntroduction result: {}", JsonUtils.toJson(r)))
-                .doOnError(error -> logger.error("Failed to upsert introduction for organization id: {}", orgaId, error.getMessage()));
+                .doOnError(error -> logger.error("Failed to upsert introduction for organization: {}", error.getMessage()));
     }
 
     private OrganizationIntroductionResponse toResponse(OrganizationIntroduction intro) {
@@ -269,7 +269,7 @@ public class AdminOrganizationService {
         try {
             return JsonUtils.fromJsonToList(json, String.class);
         } catch (Exception e) {
-            logger.error("Failed to parse string list: {}", json, e.getMessage());
+            logger.error("Failed to parse string list: {}", e.getMessage());
             return List.of();
         }
     }
@@ -293,7 +293,7 @@ public class AdminOrganizationService {
                         .map(s -> OrgIntroductionMemberResponse.builder().name(s).build())
                         .toList();
             } catch (Exception ex) {
-                logger.error("Failed to parse member list: {}", json, ex.getMessage());
+                logger.error("Failed to parse member list: {}", ex.getMessage());
                 return List.of();
             }
         }
@@ -616,7 +616,7 @@ public class AdminOrganizationService {
                 .feedbackTimeline(t.getT3())
                 .build())
                 .doOnSuccess(r -> logger.info("getFeedbackStatistics completed"))
-                .doOnError(e -> logger.error("Error fetching feedback statistics", e.getMessage()));
+                .doOnError(e -> logger.error("Error fetching feedback statistics,  error: {}", e.getMessage()));
     }
 
     /** Uploads each member's image field through ImageService (if it is Base64). */

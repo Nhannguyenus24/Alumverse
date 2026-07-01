@@ -43,11 +43,13 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @Tag(name = "Admin > Users", description = "API endpoints for managing users by administrators")
 @RestController
 @RequestMapping("/api/admin/users")
 @Validated
+@PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
 public class AdminUserController {
     
     private final AdminUserService adminUserService;
@@ -233,6 +235,7 @@ public class AdminUserController {
                         request.getProgram(),
                         request.getMajor(),
                         request.getVerificationLevel(),
+                        request.getIsTrustedVerifier(),
                         request.getStatus())
                 .flatMap(success -> {
                     if (success) {

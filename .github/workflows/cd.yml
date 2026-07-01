@@ -1,8 +1,7 @@
 name: CD
 
 on:
-  pull_request:
-    types: [closed]
+  push:
     branches:
       - main
 
@@ -16,7 +15,6 @@ jobs:
   # ─────────────────────────────────────────────
   detect-changes:
     name: "Detect Changed Paths"
-    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -35,6 +33,7 @@ jobs:
           filters: |
             backend:
               - 'backend/**'
+              - '.github/workflows/cd.yml'
             frontend:
               - 'frontend/**'
 
@@ -87,36 +86,42 @@ jobs:
   #         VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
   # ─────────────────────────────────────────────
-  # Deploy Backend → Render
+  # Deploy Backend → DigitalOcean Droplet
   # ─────────────────────────────────────────────
   deploy-backend:
-    name: "Deploy Backend → Render"
+    name: "Deploy Backend → DigitalOcean Droplet"
     needs: detect-changes
     if: needs.detect-changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
-    environment:
-      name: Render
     steps:
-      - name: Trigger Render deploy hook
-        run: |
-          echo "::group::Triggering Render deploy..."
-          RESPONSE=$(curl -sf -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}")
-          echo "::endgroup::"
-          echo "✅ Render deploy triggered."
-          echo "$RESPONSE"
-
-      - name: Wait for Render deploy to complete
-        run: |
-          echo "Waiting for service to come up..."
-          MAX_ATTEMPTS=20
-          ATTEMPT=0
-          until curl -sf "${{ secrets.RENDER_SERVICE_URL }}/health" > /dev/null 2>&1; do
-            ATTEMPT=$((ATTEMPT + 1))
-            if [ "$ATTEMPT" -ge "$MAX_ATTEMPTS" ]; then
-              echo "::error title=Deploy Timeout::Health check failed after $((MAX_ATTEMPTS * 15)) seconds."
-              exit 1
-            fi
-            echo "Attempt $ATTEMPT/$MAX_ATTEMPTS — retrying in 15s..."
-            sleep 15
-          done
-          echo "✅ Backend is healthy at ${{ secrets.RENDER_SERVICE_URL }}/health"
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17' 
+          distribution: 'temurin'
+          cache: 'maven'
+      - name: Build Backend JAR
+        working-directory: backend
+        run: ./mvnw clean package -DskipTests
+      - name: Copy JAR to Droplet via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DROPLET_HOST }}
+          username: ${{ secrets.DROPLET_USER }}
+          key: ${{ secrets.DROPLET_SSH_KEY }}
+          source: "backend/target/*.jar"
+          target: "/var/www/backend/"
+          strip_components: 2
+      - name: Restart Backend Service via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DROPLET_HOST }}
+          username: ${{ secrets.DROPLET_USER }}
+          key: ${{ secrets.DROPLET_SSH_KEY }}
+          script: |
+            cd /var/www/backend/
+            rm -f app.jar
+            mv *.jar app.jar
+            systemctl restart backend
+            systemctl status backend --no-pager

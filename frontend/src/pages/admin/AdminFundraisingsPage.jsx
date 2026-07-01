@@ -82,6 +82,8 @@ const AdminFundraisingsPage = () => {
     setPage,
     rowsPerPage,
     setRowsPerPage,
+    sortOrder,
+    setSortOrder,
     closeFundById,
   } = useAdminFundraisingsData(stableOrgId);
 
@@ -244,7 +246,7 @@ const AdminFundraisingsPage = () => {
     },
     {
       id: "actions",
-      label: "",
+      label: t('col_actions'),
       align: "right",
       render: (_, fund) => (
         <Stack
@@ -256,6 +258,7 @@ const AdminFundraisingsPage = () => {
           <Tooltip title={t('fund_action_detail')}>
             <IconButton
               size="small"
+              sx={{ color: "primary.main" }}
               onClick={() => {
                 window.open(`/${getOrgSlug()}/donations/${fund.id}`, "_blank");
               }}
@@ -266,7 +269,7 @@ const AdminFundraisingsPage = () => {
           <Tooltip title={t('fund_action_donations')}>
             <IconButton
               size="small"
-              color="primary"
+              sx={{ color: "accent.main" }}
               onClick={() => {
                 setDonationsTarget(fund);
                 setDonationsPage(1);
@@ -283,13 +286,13 @@ const AdminFundraisingsPage = () => {
             <IconButton
               size="small"
               onClick={() => {
-                navigate(`/${getOrgSlug()}/donations/${fund.id}/edit`);
+                window.open(`/${getOrgSlug()}/donations/${fund.id}/edit`, "_blank", "noopener,noreferrer");
               }}
             >
               <EditOutlinedIcon fontSize="small" />
             </IconButton>
           </Tooltip>
-          {getFundPhase(fund.timeStarted, fund.timeEnded).status !== "ENDED" && (
+          {getFundPhase(fund.timeStarted, fund.timeEnded).status !== "ENDED" ? (
             <Tooltip title={t('fund_action_close')}>
               <IconButton
                 size="small"
@@ -304,6 +307,10 @@ const AdminFundraisingsPage = () => {
                 <LockOutlinedIcon fontSize="small" />
               </IconButton>
             </Tooltip>
+          ) : (
+            <IconButton size="small" disabled sx={{ visibility: "hidden" }}>
+              <LockOutlinedIcon fontSize="small" />
+            </IconButton>
           )}
         </Stack>
       ),
@@ -392,6 +399,19 @@ const AdminFundraisingsPage = () => {
         searchValue={searchTerm}
         searchPlaceholder={t('fund_search_placeholder')}
         onRowClick={(f) => setDetailItem(f)}
+        filters={
+          <TextField
+            select
+            size="small"
+            label={t('filter_sort_label')}
+            value={sortOrder}
+            onChange={(e) => setSortOrder(e.target.value)}
+            sx={{ minWidth: 150 }}
+          >
+            <MenuItem value="DESC">{t('sort_newest')}</MenuItem>
+            <MenuItem value="ASC">{t('sort_oldest')}</MenuItem>
+          </TextField>
+        }
       />
 
       {/* Dialogs */}

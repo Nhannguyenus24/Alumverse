@@ -1,4 +1,4 @@
-import { Box, Button, Container, Stack, Typography } from '@mui/material';
+import { Box, Button, Container, Stack, Typography, Tooltip } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import Page from '../../components/Page';
 import Breadcrumb from '../../components/Breadcrumb';
@@ -8,9 +8,11 @@ import ForumTopicListItem from '../../components/forum/ForumTopicListItem';
 
 import { useOrganization } from '../../hooks/useOrganization';
 import { useForumCategoryLogic } from '../../hooks/forum/useForumCategoryLogic';
+import { useCanContribute } from '../../hooks/useCanContribute';
 
 const ForumCategoryPage = () => {
   const { t } = useTranslation(['forum', 'common']);
+  const { canContribute, isAuthenticated } = useCanContribute();
   const { organization } = useOrganization();
   const organizationId = organization?.id ?? null;
 
@@ -150,14 +152,23 @@ const ForumCategoryPage = () => {
                         width: { xs: '100%', sm: 'auto' },
                       }}
                     >
-                      <Button
-                        variant="contained"
-                        color="primary"
-                        onClick={() => navigate('/forum/alumni/career/create-topic')}
-                        sx={{ minWidth: { xs: '100%', sm: 'auto' } }}
+                      <Tooltip
+                        title={canContribute ? "" : (!isAuthenticated ? t('common:verification_required_login') : t('common:verification_required_tooltip'))}
+                        placement="top"
+                        arrow
                       >
-                        {t('create_post')}
-                      </Button>
+                        <span>
+                          <Button
+                            variant="contained"
+                            color="primary"
+                            onClick={() => navigate('/forum/alumni/career/create-topic')}
+                            sx={{ minWidth: { xs: '100%', sm: 'auto' } }}
+                            disabled={!canContribute}
+                          >
+                            {t('create_post')}
+                          </Button>
+                        </span>
+                      </Tooltip>
                     </Box>
                   </Box>
                 </Box>

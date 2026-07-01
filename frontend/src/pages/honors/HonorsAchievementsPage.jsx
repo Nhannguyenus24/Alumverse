@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
-import { Box, Button, Container, Stack, Typography } from '@mui/material';
+import { Box, Button, Container, Pagination, Stack, Typography } from '@mui/material';
 import { useSnackbar } from 'notistack';
 
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
@@ -19,9 +19,12 @@ import Sidebar from '../../components/Sidebar';
 import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useAuth } from '../../hooks/useAuth';
+import { useCanContribute } from '../../hooks/useCanContribute';
+import { ContributeGuardTooltip } from '../../components/ContributeGuard';
 import { usePublishedAchievements } from '../../hooks/articles/usePublishedAchievements';
 import { toCardShape } from '../../hooks/articles/toCardShape';
 import apiClient from '../../utils/axios';
+import { deleteArticleByChannel, getArticleAdminEditPath } from '../../utils/articleAdminActions';
 
 const getSidebar = (t) => [
   { id: '/honors', label: t('honors:sidebar_honors'), icon: <EmojiEventsIcon /> },
@@ -62,11 +65,13 @@ const HonorsAchievementsPage = () => {
   const { enqueueSnackbar } = useSnackbar();
   const queryClient = useQueryClient();
   const { user, isAuthenticated } = useAuth();
+  const { canContribute } = useCanContribute();
   const isAdmin = isAuthenticated && user?.role === 'ADMIN';
   const sidebar = getSidebar(t);
   const filters = getFilters(t);
 
-  const { achievements } = usePublishedAchievements(0, 12);
+  const [page, setPage] = useState(0);
+  const { achievements, pageInfo } = usePublishedAchievements(page, 10);
 
   const [filterValues, setFilterValues] = useState({ all: true });
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -82,7 +87,8 @@ const HonorsAchievementsPage = () => {
   };
 
   const handleEdit = (article) => {
-    navigate(`/article/${article.channel}/${article.id}/edit`);
+    const editPath = getArticleAdminEditPath(article);
+    if (editPath) navigate(editPath);
   };
 
   const handleDelete = (article) => setDeleteTarget(article);
@@ -91,7 +97,7 @@ const HonorsAchievementsPage = () => {
     if (!deleteTarget || deleting) return;
     setDeleting(true);
     try {
-      await apiClient.delete(`/admin/articles/achievements/${deleteTarget.id}`);
+      await deleteArticleByChannel(apiClient, deleteTarget);
       queryClient.invalidateQueries({ queryKey: ['publishedAchievements'] });
       enqueueSnackbar(t('honors:delete_success'), { variant: 'success' });
     } catch (err) {
@@ -133,12 +139,18 @@ const HonorsAchievementsPage = () => {
                   </Typography>
 
                   {!isAdmin && isAuthenticated && (
-                    <Button variant="contained" onClick={() => navigate('/honors/request-achievements')}>
-                      {t('honors:submit_achievement_request')}
-                    </Button>
+                    <ContributeGuardTooltip>
+                      <Button
+                        variant="contained"
+                        disabled={!canContribute}
+                        onClick={() => navigate('/honors/request-achievements')}
+                      >
+                        {t('honors:submit_achievement_request')}
+                      </Button>
+                    </ContributeGuardTooltip>
                   )}
                   {isAdmin && (
-                    <Button variant="outlined" color="primary" onClick={() => navigate('/admin/article')}>
+                    <Button variant="outlined" color="primary" startIcon={<EmojiEventsIcon />} onClick={() => navigate('/admin/article')}>
                       {t('honors:manage_honors')}
                     </Button>
                   )}
@@ -193,6 +205,17 @@ const HonorsAchievementsPage = () => {
                       </Box>
                     ))}
                   </Box>
+                </Box>
+              )}
+
+              {(pageInfo?.totalPage ?? 0) > 1 && (
+                <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                  <Pagination
+                    color="primary"
+                    count={pageInfo.totalPage}
+                    page={page + 1}
+                    onChange={(_, value) => setPage(value - 1)}
+                  />
                 </Box>
               )}
             </Stack>

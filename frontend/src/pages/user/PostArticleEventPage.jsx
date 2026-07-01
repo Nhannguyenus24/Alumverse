@@ -8,7 +8,7 @@ import PostArticleShell from '../../components/PostArticleShell';
 import AdminEventQuestionSection from '../../components/admin/AdminEventQuestionSection';
 import useCoverUpload from '../../hooks/useCoverUpload';
 import { useCreateEvent } from '../../hooks/news/useCreateEvent';
-import { fileToBase64 } from '../../utils/imageUtils';
+import { fileToCroppedCoverBase64 } from '../../utils/imageUtils';
 import { useNotification } from '../../hooks/useNotification';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { eventApi } from '../../utils/api';
@@ -61,7 +61,15 @@ const PostEventPage = () => {
   const { t } = useTranslation('event');
   const { showSuccess, showError } = useNotification();
   const { createEvent, isPending: isCreating } = useCreateEvent();
-  const { coverFile, coverPreview, handleCoverUpload, setCoverPreview } = useCoverUpload();
+  const {
+    coverFile,
+    coverPreview,
+    coverCroppedPreview,
+    coverPositionY,
+    handleCoverUpload,
+    setCoverPreview,
+    setCoverPositionY,
+  } = useCoverUpload();
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -100,7 +108,7 @@ const PostEventPage = () => {
   };
 
   const buildPayload = async () => {
-    const bannerBase64 = coverFile ? await fileToBase64(coverFile) : null;
+    const bannerBase64 = coverFile ? await fileToCroppedCoverBase64(coverFile, coverPositionY) : null;
     return {
       title: title.trim(),
       description: content.trim(),
@@ -172,6 +180,8 @@ const PostEventPage = () => {
       pageTitle={isEditMode ? t('edit_page_title') : t('post_page_title')}
       coverPreview={coverPreview}
       onCoverChange={handleCoverUpload}
+      coverPositionY={coverPositionY}
+      onCoverPositionYChange={setCoverPositionY}
       onCancel={() => navigate(isEditMode ? `/admin/events/${eventId}` : -1)}
       onSubmit={handleSubmit}
       isPending={isPending}
@@ -192,6 +202,7 @@ const PostEventPage = () => {
         registrationQuestions={registrationQuestions}
         setRegistrationQuestions={setRegistrationQuestions}
         hideLocalQuestions={isEditMode}
+        mainImagePreview={coverCroppedPreview ?? coverPreview}
       />
       {isEditMode && eventId ? (
         <Box sx={{ mt: 3 }}>

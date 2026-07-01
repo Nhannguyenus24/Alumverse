@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Autocomplete, Alert, Box, Card, Container, Chip, TextField, Typography, Button, MenuItem,
   FormControlLabel, Switch, Divider, Paper, FormControl, InputLabel, Select, Stack,
@@ -39,6 +40,8 @@ import { formatDateTime } from '../../utils/dateFormatter';
 import AvatarUploadDialog from "../../components/profile/AvatarUploadDialog";
 import useAvatarCrop from "../../hooks/profile/useAvatarCrop";
 import ChangeEmailModal from '../../components/profile/ChangeEmailModal';
+import { useUploadImage } from '../../utils/imageUtils';
+import { GENDER_OPTIONS, GENDER_LABEL_KEYS } from '../../constants/gender';
 
 const parseOrganizationOptions = (value) => {
   if (!value) return [];
@@ -145,6 +148,10 @@ export default function SettingPage() {
 
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const verificationLevel = useAuthStore((state) => state.verificationLevel);
+  const setAuthUser = useAuthStore((state) => state.setUser);
+  const queryClient = useQueryClient();
+  const { uploadBase64 } = useUploadImage();
   const avatarCrop = useAvatarCrop();
   const [isEditMode, setIsEditMode] = useState(false);
   const [originalFormData, setOriginalFormData] = useState(null);
@@ -281,6 +288,20 @@ export default function SettingPage() {
       };
 
       await userSettingsApi.updateProfile(payload);
+
+      if (avatarCrop.avatarUrl && avatarCrop.avatarUrl.startsWith('data:')) {
+        const avatarImageUrl = await uploadBase64(avatarCrop.avatarUrl);
+        if (avatarImageUrl) {
+          await userSettingsApi.updateAvatar(avatarImageUrl);
+          setAuthUser({
+            ...useAuthStore.getState().user,
+            avatarUrl: avatarImageUrl,
+          });
+          queryClient.invalidateQueries({ queryKey: ['user', 'me', 'profile'] });
+          queryClient.invalidateQueries({ queryKey: ['publicProfile'] });
+        }
+      }
+
       showSuccess(t('success_save_profile'));
 
       setOriginalFormData(null);
@@ -432,7 +453,7 @@ export default function SettingPage() {
               {t('edit_info')}
             </Button>
           )}
-          {user?.role === 'GUEST' && (
+          {(verificationLevel ?? 0) === 0 && (
             <Button variant="contained" color="warning" startIcon={<ShieldOutlinedIcon />}
                     onClick={() => navigate('/cs-hcmus/organization-registration')}
             >
@@ -450,9 +471,9 @@ export default function SettingPage() {
           <FormControl fullWidth>
             <InputLabel>{t('label_gender')}</InputLabel>
             <Select name="gender" value={formData.gender} label={t('label_gender')} onChange={handleFormChange} disabled={!isEditMode}>
-              <MenuItem value="male">{t('gender_male')}</MenuItem>
-              <MenuItem value="female">{t('gender_female')}</MenuItem>
-              <MenuItem value="other">{t('gender_other')}</MenuItem>
+              {GENDER_OPTIONS.map((g) => (
+                <MenuItem key={g} value={g}>{t(GENDER_LABEL_KEYS[g])}</MenuItem>
+              ))}
             </Select>
           </FormControl>
           <TextField fullWidth label={t('label_birthdate')} name="birthDate" type="date" value={formData.birthDate} InputProps={{ readOnly: !isEditMode }} InputLabelProps={{ shrink: true }} />

@@ -38,9 +38,9 @@ public class ForumTopic {
     @Column("view_count")
     private Integer viewCount;
 
-    @Column("is_locked")
-    private Boolean isLocked;
-    
+    @Column("status")
+    private String status;
+
     @CreatedDate
     @Column("created_at")
     private LocalDateTime createdAt;

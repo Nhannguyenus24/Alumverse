@@ -12,7 +12,7 @@ const PublicRoute = ({ children }) => {
 
   // Redirect authenticated users away from public routes (like login/register)
   if (isAuthenticated) {
-    return <Navigate to={slug ? `/${slug}/dashboard` : "/404"} replace />;
+    return <Navigate to={slug ? `/${slug}` : "/404"} replace />;
   }
 
   return children;

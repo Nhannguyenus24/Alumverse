@@ -27,11 +27,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.service.backend.shared.utils.SecurityUtils;
 import reactor.core.publisher.Mono;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @Tag(name = "Admin > Mentorship", description = "API endpoints for managing mentorship programs by administrators")
 @RestController
 @RequestMapping("/api/admin/mentorship")
 @Validated
+@PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
 public class AdminMentorshipController {
 
     private final AdminMentorshipService adminMentorshipService;

@@ -33,6 +33,7 @@ import { useBlockUser } from '../../hooks/network/useBlockUser';
 import useAuthStore from '../../stores/authStore';
 import ChatAvatar from '../ChatAvatar';
 import { buildGroupBlockedMembersBannerMessage } from '../../utils/formatBlockedMemberNames';
+import { useCanContribute } from '../../hooks/useCanContribute';
 
 function formatTime(isoString) {
   if (!isoString) return '';
@@ -50,7 +51,8 @@ function formatTime(isoString) {
 const SCROLL_TOP_THRESHOLD = 8;
 
 const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
-  const { t } = useTranslation('network');
+  const { t } = useTranslation(['network', 'common']);
+  const { canContribute, isAuthenticated } = useCanContribute();
   const [draft, setDraft] = useState('');
   const draftInputRef = useRef(null);
   const [membersDrawerOpen, setMembersDrawerOpen] = useState(false);
@@ -186,14 +188,14 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
   }, [hasMore, isLoadingMore, loadMore]);
 
   // --- Send ---
-  const isInputDisabled = !isOpen || isMessagingBlocked;
+  const isInputDisabled = !isOpen || isMessagingBlocked || !canContribute;
 
   const handleSend = useCallback(() => {
     const text = draft.trim();
-    if (!text || !activeChat?.id || !isOpen || isMessagingBlocked) return;
+    if (!text || !activeChat?.id || !isOpen || isMessagingBlocked || !canContribute) return;
     wsSendMessage({ groupId: activeChat.id, content: text, chatType: activeChat?.type });
     setDraft('');
-  }, [draft, activeChat?.id, activeChat?.type, isOpen, isMessagingBlocked, wsSendMessage]);
+  }, [draft, activeChat?.id, activeChat?.type, isOpen, isMessagingBlocked, canContribute, wsSendMessage]);
 
   const handleKeyDown = useCallback((event) => {
     if (event.key !== 'Enter' || event.shiftKey) return;
@@ -270,9 +272,10 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
             {({ close }) => (
               blockedByMe ? (
                 <MenuItem
-                  disabled={isBlockActionPending}
+                  disabled={isBlockActionPending || !canContribute}
                   onClick={() => {
                     close();
+                    if (!canContribute) return;
                     unblockUser();
                   }}
                 >
@@ -283,9 +286,10 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
                 </MenuItem>
               ) : (
                 <MenuItem
-                  disabled={isBlockActionPending}
+                  disabled={isBlockActionPending || !canContribute}
                   onClick={() => {
                     close();
+                    if (!canContribute) return;
                     setBlockConfirmOpen(true);
                   }}
                 >
@@ -324,8 +328,8 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
             <Button
               color="inherit"
               size="small"
-              onClick={() => unblockUser()}
-              disabled={isBlockActionPending}
+              onClick={() => { if (canContribute) unblockUser(); }}
+              disabled={isBlockActionPending || !canContribute}
               sx={{ fontWeight: 700, textTransform: 'none' }}
             >
               {t('network:unblock')}
@@ -523,10 +527,12 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
               ? t('network:blocked_placeholder')
               : blockedByPeer
                 ? t('network:cannot_message_placeholder')
-                : ''
+                : !canContribute
+                  ? (isAuthenticated ? t('common:verification_required_tooltip') : t('common:verification_required_login'))
+                  : ''
           }
           placement="top"
-          disableHoverListener={!isMessagingBlocked}
+          disableHoverListener={!isMessagingBlocked && canContribute}
         >
           <TextField
             fullWidth
@@ -609,7 +615,7 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
         cancelText={t('network:cancel')}
         confirmColor="primary"
         loading={isBlockActionPending}
-        onConfirm={() => blockUser()}
+        onConfirm={() => { if (canContribute) blockUser(); }}
         onCancel={() => setBlockConfirmOpen(false)}
       />
     </Box>

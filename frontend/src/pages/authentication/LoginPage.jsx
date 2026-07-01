@@ -219,8 +219,8 @@ const LoginPage = () => {
           </Typography>
         </Box>
 
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
-          <Box sx={thirdPartyControlSx}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5, width: '100%' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%', ...thirdPartyControlSx }}>
           <GoogleReCaptchaCheckbox
             onChange={handleRecaptchaChange}
             onExpired={handleRecaptchaExpired}
@@ -256,10 +256,10 @@ const LoginPage = () => {
 
         {googleClientId ? (
           <Box sx={{
+            display: 'flex',
+            justifyContent: 'center',
             width: '100%',
             ...thirdPartyControlSx,
-            '& > div': { width: '100% !important' },
-            '& iframe': { width: '100% !important' },
           }}>
             <GoogleLogin
               onSuccess={handleGoogleSuccess}

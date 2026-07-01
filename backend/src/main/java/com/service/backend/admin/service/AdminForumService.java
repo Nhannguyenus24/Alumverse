@@ -1,5 +1,6 @@
 package com.service.backend.admin.service;
 
+import com.service.backend.shared.entity.*;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -26,17 +27,15 @@ import com.service.backend.forum.dao.ForumCategoryRepository;
 import com.service.backend.forum.dao.ForumPostReportRepository;
 import com.service.backend.forum.dao.ForumPostRepository;
 import com.service.backend.forum.dao.ForumTopicRepository;
+import com.service.backend.forum.dao.ForumTopicSubscriptionRepository;
 import com.service.backend.forum.dao.ForumPostReactionRepository;
 import com.service.backend.forum.dto.ForumPostDTO;
 import com.service.backend.forum.dto.ForumPostReportDTO;
-import com.service.backend.shared.entity.ForumCategory;
-import com.service.backend.shared.entity.ForumPost;
-import com.service.backend.shared.entity.ForumPostReport;
 import com.service.backend.shared.enums.Status;
-import com.service.backend.shared.entity.ForumTopic;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.exception.ApplicationException;
+import com.service.backend.shared.utils.CacheUtils;
 import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.shared.utils.SecurityUtils;
@@ -55,8 +54,10 @@ public class AdminForumService {
     private final ForumPostRepository forumPostRepository;
     private final ForumPostReactionRepository forumPostReactionRepository;
     private final ForumTopicRepository forumTopicRepository;
+    private final ForumTopicSubscriptionRepository forumTopicSubscriptionRepository;
     private final ForumCategoryRepository forumCategoryRepository;
     private final ForumPostReportRepository forumPostReportRepository;
+    private final CacheUtils cacheUtils;
     private final AdminOrganizationRepository adminOrganizationRepository;
     private final AdminUserRepository adminUserRepository;
     private final AdminAuditLogRepository adminAuditLogRepository;
@@ -248,20 +249,61 @@ public class AdminForumService {
                 .doOnSuccess(r -> log.info("updatePostVisibility result: {}", JsonUtils.toJson(r)));
     }
 
-    public Mono<com.service.backend.forum.dto.ForumTopicDTO> updateTopicLock(Integer topicId, Boolean locked, Integer adminUserId) {
+    /** Allowed values for forum topic/category status. */
+    private static final Set<String> FORUM_STATUSES = Set.of("PENDING", "ACTIVE", "INACTIVE");
+
+    private static String normalizeStatus(String status) {
+        String normalized = status == null ? null : status.trim().toUpperCase();
+        if (normalized == null || !FORUM_STATUSES.contains(normalized)) {
+            throw new ApplicationException(ErrorCode.FORUM_INVALID_STATUS);
+        }
+        return normalized;
+    }
+
+    public Mono<com.service.backend.forum.dto.ForumTopicDTO> updateTopicStatus(Integer topicId, String status, Integer adminUserId) {
+        final String newStatus;
+        try {
+            newStatus = normalizeStatus(status);
+        } catch (ApplicationException e) {
+            return Mono.error(e);
+        }
         return forumTopicRepository.findById(topicId)
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_TOPIC_NOT_FOUND))))
                 .flatMap(topic -> {
-                    Boolean before = topic.getIsLocked();
-                    topic.setIsLocked(locked);
+                    String before = topic.getStatus();
+                    topic.setStatus(newStatus);
                     topic.setUpdatedAt(LocalDateTime.now());
                     return forumTopicRepository.save(topic)
                             .flatMap(saved -> createAuditLog(adminUserId, topic.getCreatedByMemberId(),
-                                    "UPDATE_TOPIC_LOCK", "FORUM_TOPIC", String.valueOf(topicId),
-                                    String.valueOf(before), String.valueOf(locked)).thenReturn(saved));
+                                    "UPDATE_TOPIC_STATUS", "FORUM_TOPIC", String.valueOf(topicId),
+                                    before, newStatus).thenReturn(saved));
                 })
                 .flatMap(this::convertToTopicDTOWithPostCount)
-                .doOnSuccess(r -> log.info("updateTopicLock result: {}", JsonUtils.toJson(r)));
+                .delayUntil(r -> cacheUtils.clear("forum_category_cache"))
+                .doOnSuccess(r -> log.info("updateTopicStatus result: {}", JsonUtils.toJson(r)));
+    }
+
+    public Mono<com.service.backend.forum.dto.ForumCategoryDTO> updateCategoryStatus(Integer categoryId, String status, Integer adminUserId) {
+        final String newStatus;
+        try {
+            newStatus = normalizeStatus(status);
+        } catch (ApplicationException e) {
+            return Mono.error(e);
+        }
+        return forumCategoryRepository.findById(categoryId)
+                .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_CATEGORY_NOT_FOUND))))
+                .flatMap(category -> {
+                    String before = category.getStatus();
+                    category.setStatus(newStatus);
+                    category.setUpdatedAt(LocalDateTime.now());
+                    return forumCategoryRepository.save(category)
+                            .flatMap(saved -> createAuditLog(adminUserId, null,
+                                    "UPDATE_CATEGORY_STATUS", "FORUM_CATEGORY", String.valueOf(categoryId),
+                                    before, newStatus).thenReturn(saved));
+                })
+                .map(this::convertToCategoryDTO)
+                .delayUntil(r -> cacheUtils.clear("forum_category_cache"))
+                .doOnSuccess(r -> log.info("updateCategoryStatus result: {}", JsonUtils.toJson(r)));
     }
 
     // ========== DELETE TOPIC ==========
@@ -270,11 +312,22 @@ public class AdminForumService {
     public Mono<Void> deleteForumTopic(Integer topicId) {
         return forumTopicRepository.findById(topicId)
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_TOPIC_NOT_FOUND))))
-                .flatMap(topic -> forumPostReactionRepository.deleteByTopicId(topicId)
-                        .then(forumPostRepository.deleteByTopicId(topicId))
-                        .then(forumTopicRepository.deleteById(topicId)))
+                .flatMap(topic -> cascadeDeleteTopic(topicId))
                 .doOnSuccess(v -> log.info("deleteForumTopic: topicId={} deleted", topicId))
                 .doOnError(error -> log.error("Error deleting forum topic ID: {}", topicId, error));
+    }
+
+    /**
+     * Hard-delete a topic and everything that references it, respecting FK order:
+     * reactions and reports (which reference posts) -> subscriptions (reference topic)
+     * -> posts -> topic.
+     */
+    private Mono<Void> cascadeDeleteTopic(Integer topicId) {
+        return forumPostReactionRepository.deleteByTopicId(topicId)
+                .then(forumPostReportRepository.deleteByTopicId(topicId))
+                .then(forumTopicSubscriptionRepository.deleteByTopicId(topicId))
+                .then(forumPostRepository.deleteByTopicId(topicId))
+                .then(forumTopicRepository.deleteById(topicId));
     }
 
     // ========== CATEGORY MANAGEMENT ==========
@@ -301,12 +354,14 @@ public class AdminForumService {
                 .organizationId(organizationId)
                 .name(name)
                 .description(description)
+                .status(Status.ACTIVE.name())
                 .createdAt(java.time.LocalDateTime.now())
                 .updatedAt(java.time.LocalDateTime.now())
                 .build();
 
         return forumCategoryRepository.save(category)
                 .map(this::convertToCategoryDTO)
+                .delayUntil(r -> cacheUtils.clear("forum_category_cache"))
                 .doOnSuccess(result -> log.info("createCategory result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error creating forum category: {}", name, error));
     }
@@ -327,12 +382,35 @@ public class AdminForumService {
                 .doOnError(error -> log.error("Error updating category ID: {}", categoryId, error));
     }
 
+    /**
+     * Force-delete a category and everything inside it: recursively delete child categories,
+     * then cascade-delete every topic under the category (and each topic's posts/reactions/
+     * reports/subscriptions), then the category itself.
+     */
+    @Transactional
     public Mono<Void> deleteCategory(Integer categoryId) {
         return forumCategoryRepository.findById(categoryId)
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_CATEGORY_NOT_FOUND))))
-                .flatMap(category -> forumCategoryRepository.deleteById(categoryId))
-                .doOnSuccess(v -> log.info("deleteCategory: categoryId={} deleted", categoryId))
+                .flatMap(category -> cascadeDeleteCategory(categoryId))
+                .then(cacheUtils.clear("forum_category_cache"))
+                .doOnSuccess(v -> log.info("deleteCategory: categoryId={} deleted (cascade)", categoryId))
                 .doOnError(error -> log.error("Error deleting category ID: {}", categoryId, error));
+    }
+
+    private Mono<Void> cascadeDeleteCategory(Integer categoryId) {
+        Mono<Void> deleteChildren = forumCategoryRepository.findByParentId(categoryId)
+                .map(ForumCategory::getId)
+                .filter(Objects::nonNull)
+                .concatMap(this::cascadeDeleteCategory)
+                .then();
+        Mono<Void> deleteTopics = forumTopicRepository.findByCategoryId(categoryId)
+                .map(ForumTopic::getId)
+                .filter(Objects::nonNull)
+                .concatMap(this::cascadeDeleteTopic)
+                .then();
+        return deleteChildren
+                .then(deleteTopics)
+                .then(forumCategoryRepository.deleteById(categoryId));
     }
 
     // ========== TOPIC MANAGEMENT ==========
@@ -379,13 +457,15 @@ public class AdminForumService {
                                     .title(title)
                                     .createdByMemberId(createdByMemberId)
                                     .viewCount(0)
-                                    .isLocked(false)
+                                    // Admin-created topics are published immediately.
+                                    .status(Status.ACTIVE.name())
                                     .createdAt(java.time.LocalDateTime.now())
                                     .updatedAt(java.time.LocalDateTime.now())
                                     .build();
                     return forumTopicRepository.save(topic);
                 })
                 .flatMap(this::convertToTopicDTOWithPostCount)
+                .delayUntil(r -> cacheUtils.clear("forum_category_cache"))
                 .doOnSuccess(result -> log.info("createTopic result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error creating forum topic: {}", title, error));
     }
@@ -453,22 +533,35 @@ public class AdminForumService {
                 .defaultIfEmpty(ForumStatisticsDTO.CategorySummary.builder().build());
 
         Mono<List<ForumStatisticsDTO.GhostTopicSummary>> ghostTopicsMono = forumTopicRepository.findGhostTopics()
-                .flatMap(topic -> {
-                    Mono<String> categoryNameMono = topic.getCategoryId() != null
-                            ? forumCategoryRepository.findById(topic.getCategoryId())
-                                    .map(ForumCategory::getName)
-                                    .defaultIfEmpty("Unknown")
-                            : Mono.just("Uncategorized");
-
-                    return categoryNameMono.map(catName -> ForumStatisticsDTO.GhostTopicSummary.builder()
-                            .topicId(topic.getId())
-                            .title(topic.getTitle())
-                            .categoryName(catName)
-                            .viewCount(topic.getViewCount())
-                            .createdAt(topic.getCreatedAt())
-                            .build());
-                })
                 .collectList()
+                .flatMap(topics -> {
+                    if (topics.isEmpty()) return Mono.just(Collections.<ForumStatisticsDTO.GhostTopicSummary>emptyList());
+
+                    Set<Integer> categoryIds = topics.stream()
+                            .map(ForumTopic::getCategoryId)
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.toSet());
+
+                    Mono<Map<Integer, String>> categoryNamesMono = categoryIds.isEmpty()
+                            ? Mono.just(Map.of())
+                            : forumCategoryRepository.findAllById(categoryIds)
+                                    .collectMap(ForumCategory::getId, ForumCategory::getName);
+
+                    return categoryNamesMono.map(nameMap -> topics.stream()
+                            .map(topic -> {
+                                String catName = topic.getCategoryId() == null
+                                        ? "Uncategorized"
+                                        : nameMap.getOrDefault(topic.getCategoryId(), "Unknown");
+                                return ForumStatisticsDTO.GhostTopicSummary.builder()
+                                        .topicId(topic.getId())
+                                        .title(topic.getTitle())
+                                        .categoryName(catName)
+                                        .viewCount(topic.getViewCount())
+                                        .createdAt(topic.getCreatedAt())
+                                        .build();
+                            })
+                            .collect(Collectors.toList()));
+                })
                 .defaultIfEmpty(Collections.emptyList());
 
         return Mono.zip(baseMono, popularTopicMono, popularCategoryMono, ghostTopicsMono)
@@ -487,17 +580,38 @@ public class AdminForumService {
 
     public Mono<List<TopContributorDTO>> getTopContributors(int month, int year) {
         return forumPostRepository.findTopContributorMemberIds(month, year)
-                .flatMapSequential(memberId ->
-                    adminUserRepository.findById(memberId)
-                            .zipWith(forumPostRepository.countPostsByAuthorInMonth(memberId, month, year))
-                            .map(tuple -> TopContributorDTO.builder()
-                                    .memberId(memberId)
-                                    .email(tuple.getT1().getEmail())
-                                    .avatarUrl(tuple.getT1().getAvatarUrl())
-                                    .postCount(tuple.getT2())
-                                    .build())
-                )
                 .collectList()
+                .flatMap(memberIds -> {
+                    if (memberIds.isEmpty()) return Mono.just(Collections.<TopContributorDTO>emptyList());
+
+                    // Batch-load users and per-author counts instead of two queries per contributor.
+                    Mono<Map<Integer, com.service.backend.shared.entity.User>> usersMapMono =
+                            adminUserRepository.findAllById(memberIds)
+                                    .collectMap(com.service.backend.shared.entity.User::getId);
+                    Mono<Map<Integer, Long>> countsMapMono =
+                            forumPostRepository.countPostsByAuthorsInMonth(memberIds, month, year)
+                                    .collectMap(IdCountDTO::getId, IdCountDTO::getCount);
+
+                    return Mono.zip(usersMapMono, countsMapMono)
+                            .map(tuple -> {
+                                Map<Integer, com.service.backend.shared.entity.User> users = tuple.getT1();
+                                Map<Integer, Long> counts = tuple.getT2();
+                                List<TopContributorDTO> result = new ArrayList<>();
+                                for (Integer memberId : memberIds) {
+                                    com.service.backend.shared.entity.User user = users.get(memberId);
+                                    Long count = counts.get(memberId);
+                                    // Preserve original zipWith semantics: skip when user or count is absent.
+                                    if (user == null || count == null) continue;
+                                    result.add(TopContributorDTO.builder()
+                                            .memberId(memberId)
+                                            .email(user.getEmail())
+                                            .avatarUrl(user.getAvatarUrl())
+                                            .postCount(count)
+                                            .build());
+                                }
+                                return result;
+                            });
+                })
                 .defaultIfEmpty(Collections.emptyList())
                 .doOnSuccess(result -> log.info("getTopContributors result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error fetching top contributors for {}/{}", month, year, error));
@@ -507,23 +621,37 @@ public class AdminForumService {
 
     public Mono<List<OrganizationEngagementDTO>> getOrganizationEngagement() {
         return adminOrganizationRepository.findAll()
-                .flatMap(org -> {
-                    Mono<Long> totalMembersMono = adminOrganizationRepository
-                            .countActiveMembersByOrganization(org.getId())
-                            .defaultIfEmpty(0L);
-                    Mono<Long> activeForumUsersMono = forumPostRepository
-                            .countActiveForumUsersByOrganization(org.getId())
-                            .defaultIfEmpty(0L);
-
-                    return Mono.zip(totalMembersMono, activeForumUsersMono)
-                            .map(tuple -> OrganizationEngagementDTO.builder()
-                                    .organizationId(org.getId())
-                                    .organizationName(org.getName())
-                                    .totalMembers(tuple.getT1())
-                                    .activeForumUsers(tuple.getT2())
-                                    .build());
-                })
                 .collectList()
+                .flatMap(orgs -> {
+                    if (orgs.isEmpty()) return Mono.just(Collections.<OrganizationEngagementDTO>emptyList());
+
+                    Set<Integer> orgIds = orgs.stream()
+                            .map(Organization::getId)
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.toSet());
+
+                    // Two batch queries instead of two count queries per organization.
+                    Mono<Map<Integer, Long>> totalMembersMapMono =
+                            adminOrganizationRepository.countActiveMembersByOrganizations(orgIds)
+                                    .collectMap(IdCountDTO::getId, IdCountDTO::getCount);
+                    Mono<Map<Integer, Long>> activeForumUsersMapMono =
+                            forumPostRepository.countActiveForumUsersByOrganizations(orgIds)
+                                    .collectMap(IdCountDTO::getId, IdCountDTO::getCount);
+
+                    return Mono.zip(totalMembersMapMono, activeForumUsersMapMono)
+                            .map(tuple -> {
+                                Map<Integer, Long> totalMembers = tuple.getT1();
+                                Map<Integer, Long> activeForumUsers = tuple.getT2();
+                                return orgs.stream()
+                                        .map(org -> OrganizationEngagementDTO.builder()
+                                                .organizationId(org.getId())
+                                                .organizationName(org.getName())
+                                                .totalMembers(totalMembers.getOrDefault(org.getId(), 0L))
+                                                .activeForumUsers(activeForumUsers.getOrDefault(org.getId(), 0L))
+                                                .build())
+                                        .collect(Collectors.toList());
+                            });
+                })
                 .defaultIfEmpty(Collections.emptyList())
                 .doOnSuccess(result -> log.info("getOrganizationEngagement result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error fetching organization engagement rates", error));
@@ -711,6 +839,7 @@ public class AdminForumService {
                 .organizationId(category.getOrganizationId())
                 .name(category.getName())
                 .description(category.getDescription())
+                .status(category.getStatus())
                 .createdAt(category.getCreatedAt())
                 .updatedAt(category.getUpdatedAt())
                 .build();
@@ -746,6 +875,7 @@ public class AdminForumService {
                 .createdByMemberId(topic.getCreatedByMemberId())
                 .categoryId(topic.getCategoryId())
                 .viewCount(topic.getViewCount())
+                .status(topic.getStatus())
                 .postCount(postCount)
                 .createdAt(topic.getCreatedAt())
                 .updatedAt(topic.getUpdatedAt())

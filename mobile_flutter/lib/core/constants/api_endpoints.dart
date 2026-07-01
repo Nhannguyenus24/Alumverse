@@ -96,6 +96,10 @@ class ApiEndpoints {
   static String eventQuestions(int id) => '/api/events/$id/questions';
   static String eventStatistics(int id) => '/api/events/$id/statistics';
   static const String eventMyTickets = '/api/events/my-tickets';
+  static String eventTicketByCode(String code) =>
+      '/api/events/tickets/code/$code';
+  static String eventCheckIn(int eventId) =>
+      '/api/events/$eventId/tickets/check-in';
   static String eventCancelTicket(String code) =>
       '/api/events/tickets/$code/cancel';
   static String eventPublish(int id) => '/api/events/$id/publish';
@@ -183,7 +187,7 @@ class ApiEndpoints {
   static String adminMentorshipSessionDetail(int id) => '/api/admin/mentorship/sessions/$id';
   static String adminMentorshipSessionStatus(int id) => '/api/admin/mentorship/sessions/$id/status';
   static const String adminMentorshipMentors = '/api/admin/mentorship/mentors';
-  static const String adminMentorshipMentorsByApproval = '/api/admin/mentorship/mentors/by-approval';
+  static const String adminMentorshipMentorsByApproval = '/api/admin/mentorship/mentors/by-status';
   static String adminMentorshipApproveMentor(int memberId) => '/api/admin/mentorship/mentors/$memberId/approve';
   static const String adminMentorshipStatistics = '/api/admin/mentorship/statistics';
 
@@ -218,7 +222,7 @@ class ApiEndpoints {
   static String adminForumCategoryDetail(int id) => '/api/admin/forum/admin/categories/$id';
   static const String adminForumTopics = '/api/admin/forum/admin/topics';
   static String adminForumTopicDetail(int id) => '/api/admin/forum/admin/topics/$id';
-  static String adminForumTopicLock(int id) => '/api/admin/forum/topics/$id/lock';
+  static String adminForumTopicStatus(int id) => '/api/admin/forum/admin/topics/$id/status';
 
   // --- WebSocket ---
   static const String wsChat = '/ws/chat';

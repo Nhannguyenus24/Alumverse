@@ -9,32 +9,32 @@ import {
   DialogContent,
   DialogTitle,
   Divider,
+  FormControlLabel,
   IconButton,
   InputAdornment,
   MenuItem,
+  Switch,
   TextField,
   Typography,
 } from '@mui/material';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { USER_ROLES, USER_STATUSES } from '../../constants/adminDefaultUsers';
+import { formatAccountStatusLabel } from '../../constants/adminStatusDisplay';
 
 const GRADUATION_STATUSES = ['STUDYING', 'GRADUATED', 'DROPPED'];
-const VERIFICATION_LEVELS = [
-  { value: 0, label: 'Chưa xác thực' },
-  { value: 1, label: 'Đã yêu cầu' },
-  { value: 2, label: 'Đã xác thực' },
-];
+const VERIFICATION_LEVELS = [0, 1, 2, 3];
 
 const defaultEmptyForm = {
   email: '',
   studentId: '',
   fullName: '',
   password: '',
-  role: 'ALUMNI',
+  role: 'USER',
   status: 'ACTIVE',
   organizationId: '',
   verificationLevel: 0,
+  isTrustedVerifier: false,
   program: '',
   major: '',
   graduatedYear: '',
@@ -70,17 +70,18 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
           studentId: user.studentId || '',
           fullName: resolvedFullNameForEdit(user),
           password: '',
-          role: user.role || 'STUDENT',
+          role: user.role || 'USER',
           status: user.status || 'ACTIVE',
           organizationId: user.organizationId ?? firstOrganizationId,
           verificationLevel: user.verificationLevel ?? 0,
+          isTrustedVerifier: user.isTrustedVerifier ?? false,
           program: Array.isArray(user.program) ? user.program[0] ?? '' : user.program || '',
           major: Array.isArray(user.major) ? user.major[0] ?? '' : user.major || '',
           graduatedYear: Array.isArray(user.graduatedYear) ? user.graduatedYear[0] ?? '' : user.graduatedYear || '',
           graduationStatus: Array.isArray(user.graduationStatus) ? user.graduationStatus[0] ?? '' : user.graduationStatus || '',
         });
       } else {
-        setForm({ ...defaultEmptyForm, role: 'ALUMNI', organizationId: firstOrganizationId });
+        setForm({ ...defaultEmptyForm, role: 'USER', organizationId: firstOrganizationId });
       }
       setErrors({});
     }, 0);
@@ -122,6 +123,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
       organizationId: Number(form.organizationId),
       organizationName: org?.name ?? '',
       verificationLevel: Number(form.verificationLevel),
+      isTrustedVerifier: Boolean(form.isTrustedVerifier),
       program: form.program.trim() ? [form.program.trim()] : undefined,
       major: form.major.trim() ? [form.major.trim()] : undefined,
       graduatedYear: form.graduatedYear ? [Number(form.graduatedYear)] : undefined,
@@ -221,7 +223,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
             fullWidth
             slotProps={slotProps}
           >
-            {USER_ROLES.map((r) => <MenuItem key={r} value={r}>{r}</MenuItem>)}
+            {USER_ROLES.map((r) => <MenuItem key={r} value={r}>{t(`admin:role.${r}`, { defaultValue: r })}</MenuItem>)}
           </TextField>
           <TextField
             select
@@ -231,7 +233,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
             fullWidth
             slotProps={slotProps}
           >
-            {USER_STATUSES.map((s) => <MenuItem key={s} value={s}>{s}</MenuItem>)}
+            {USER_STATUSES.map((s) => <MenuItem key={s} value={s}>{formatAccountStatusLabel(s)}</MenuItem>)}
           </TextField>
         </Box>
 
@@ -295,10 +297,22 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
           fullWidth
           slotProps={slotProps}
         >
-          {VERIFICATION_LEVELS.map(({ value, label }) => (
-            <MenuItem key={value} value={value}>{value} — {label}</MenuItem>
+          {VERIFICATION_LEVELS.map((level) => (
+            <MenuItem key={level} value={level}>
+              {level} — {t(`admin:verification_level.${level}`, { defaultValue: String(level) })}
+            </MenuItem>
           ))}
         </TextField>
+
+        <FormControlLabel
+          control={
+            <Switch
+              checked={Boolean(form.isTrustedVerifier)}
+              onChange={(e) => setForm((prev) => ({ ...prev, isTrustedVerifier: e.target.checked }))}
+            />
+          }
+          label={t('admin:trusted_verifier_label', { defaultValue: 'Người xác minh tin cậy' })}
+        />
 
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>

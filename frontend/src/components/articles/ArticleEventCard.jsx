@@ -2,16 +2,19 @@ import { useState, useEffect } from 'react';
 import { Box, Typography, Button, Stack } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
-import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { useSnackbar } from 'notistack';
 import { eventApi } from '../../utils/api';
 import JoinEventDialog from '../event/JoinEventDialog';
 import { useEventQuestions, formatAnswersForApi } from '../../hooks/events/useEventQuestions';
+import { getEventRegisteredState } from '../../utils/eventRegistration';
+import { useCanContribute } from '../../hooks/useCanContribute';
+import { ContributeGuardTooltip } from '../ContributeGuard';
 
-const ArticleEventCard = ({ article, isAdmin = false, onEdit, onDelete }) => {
+const ArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
   const { t } = useTranslation(['common', 'event']);
   const { enqueueSnackbar } = useSnackbar();
+  const { canContribute } = useCanContribute();
   const [isInterested, setIsInterested] = useState(false);
   const [isJoined, setIsJoined] = useState(false);
   const [loadingInterest, setLoadingInterest] = useState(false);
@@ -26,13 +29,13 @@ const ArticleEventCard = ({ article, isAdmin = false, onEdit, onDelete }) => {
       .then((res) => setIsInterested(res?.isInterested ?? false))
       .catch(() => {});
     eventApi.checkRegistered(article.id)
-      .then((res) => { if (res?.isRegistered) setIsJoined(true); })
+      .then((res) => setIsJoined(getEventRegisteredState(res)))
       .catch(() => {});
   }, [article?.id, isAdmin]);
 
   const handleInterest = async (e) => {
     e.stopPropagation();
-    if (loadingInterest) return;
+    if (loadingInterest || !canContribute) return;
     setLoadingInterest(true);
     try {
       if (isInterested) {
@@ -51,12 +54,12 @@ const ArticleEventCard = ({ article, isAdmin = false, onEdit, onDelete }) => {
 
   const handleJoinClick = (e) => {
     e.stopPropagation();
-    if (loadingJoin || isJoined) return;
+    if (loadingJoin || isJoined || !canContribute) return;
     setOpenJoinDialog(true);
   };
 
   const handleConfirmJoin = async (answerMap) => {
-    if (loadingJoin || isJoined) return;
+    if (loadingJoin || isJoined || !canContribute) return;
     setLoadingJoin(true);
     try {
       const payload = questions.length > 0
@@ -176,44 +179,41 @@ const ArticleEventCard = ({ article, isAdmin = false, onEdit, onDelete }) => {
             color="secondary"
             startIcon={<EditOutlinedIcon />}
             sx={{ textTransform: 'none', fontWeight: 600 }}
-            onClick={onEdit}
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit?.();
+            }}
           >
             {t('common:edit')}
-          </Button>
-          <Button
-            fullWidth
-            variant="contained"
-            color="error"
-            startIcon={<DeleteOutlineOutlinedIcon />}
-            sx={{ textTransform: 'none', fontWeight: 600 }}
-            onClick={onDelete}
-          >
-            {t('common:delete')}
           </Button>
         </Stack>
       ) : (
         <Stack direction="row" spacing={1}>
-          <Button
-            fullWidth
-            variant={isInterested ? 'outlined' : 'contained'}
-            color="primary"
-            disabled={loadingInterest}
-            sx={{ bgcolor: isInterested ? 'white' : 'primary.main' }}
-            onClick={handleInterest}
-          >
-            {isInterested ? t('event:interested') : t('event:mark_interested')}
-          </Button>
+          <ContributeGuardTooltip sx={{ flex: 1 }}>
+            <Button
+              fullWidth
+              variant={isInterested ? 'outlined' : 'contained'}
+              color="primary"
+              disabled={loadingInterest || !canContribute}
+              sx={{ bgcolor: isInterested ? 'white' : 'primary.main' }}
+              onClick={handleInterest}
+            >
+              {isInterested ? t('event:interested') : t('event:mark_interested')}
+            </Button>
+          </ContributeGuardTooltip>
 
-          <Button
-            fullWidth
-            variant={isJoined ? 'outlined' : 'contained'}
-            color="success"
-            disabled={loadingJoin || isJoined}
-            sx={{ bgcolor: isJoined ? 'white' : 'success.main' }}
-            onClick={handleJoinClick}
-          >
-            {isJoined ? t('event:joined') : t('event:join')}
-          </Button>
+          <ContributeGuardTooltip sx={{ flex: 1 }}>
+            <Button
+              fullWidth
+              variant={isJoined ? 'outlined' : 'contained'}
+              color="success"
+              disabled={loadingJoin || isJoined || !canContribute}
+              sx={{ bgcolor: isJoined ? 'white' : 'success.main' }}
+              onClick={handleJoinClick}
+            >
+              {isJoined ? t('event:joined') : t('event:join')}
+            </Button>
+          </ContributeGuardTooltip>
         </Stack>
       )}
 

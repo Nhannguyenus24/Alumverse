@@ -45,6 +45,7 @@ import java.math.BigDecimal;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.time.Duration;
 
 @Service
@@ -75,7 +76,7 @@ public class FundService {
                         "Organization not found with id: " + organizationId)))
                 .flatMap(existingOrganization -> fundReceivingInfosRepository.findById(fundReceivingInfoId)
                         .switchIfEmpty(Mono.error(new ApplicationException(
-                                ErrorCode.FUND_NOT_FOUND,
+                                ErrorCode.FUND_RECEIVING_INFO_NOT_FOUND,
                                 "Fund receiving info not found with id: " + fundReceivingInfoId)))
                         .flatMap(existingFundReceivingInfo -> imageService.uploadBase64IfPresent(request.getLogoBase64())
                                 .defaultIfEmpty(request.getLogoUrl() == null ? "" : request.getLogoUrl())
@@ -88,6 +89,7 @@ public class FundService {
                                             .descriptionShort(request.getDescriptionShort())
                                             .descriptionFull(request.getDescriptionFull())
                                             .managerName(request.getManagerName())
+                                            .managerEmail(request.getManagerEmail())
                                             .targetAmount(request.getTargetAmount())
                                             .currentAmount(java.math.BigDecimal.ZERO)
                                             .timeStarted(request.getTimeStarted())
@@ -127,8 +129,7 @@ public class FundService {
 
     public Flux<FundReceivingInfos> getActiveFundReceivingInfos() {
         return cacheUtils.getOrCompute("fund_receiving_infos", "active", Duration.ofDays(1), () ->
-                fundReceivingInfosRepository.findAll()
-                        .filter(FundReceivingInfos::isActive)
+                fundReceivingInfosRepository.findAllActive()
                         .collectList()
         ).flatMapMany(Flux::fromIterable);
     }
@@ -294,13 +295,18 @@ public class FundService {
                                     "Organization not found with id: " + fund.getOrganizationId())))
                             .map(Organization::getName);
 
+                    Mono<Optional<User>> userLookupMono = userRepository.findByEmail(fund.getManagerEmail())
+                            .map(Optional::of)
+                            .defaultIfEmpty(Optional.empty());
+
                     Integer fundReceivingInfoId = fund.getFundReceivingInfoId();
                     if (fundReceivingInfoId == null) {
-                        return organizationNameMono
-                                .map(organizationName -> FundDetailResponse.from(
+                        return Mono.zip(organizationNameMono, userLookupMono)
+                                .map(tuple -> FundDetailResponse.from(
                                         fund,
                                         null,
-                                        organizationName
+                                        tuple.getT1(),
+                                        tuple.getT2().orElse(null)
                                 ));
                     }
 
@@ -309,11 +315,12 @@ public class FundService {
                                     ErrorCode.FUND_RECEIVING_INFO_NOT_FOUND,
                                     "Fund receiving info not found with id: " + fundReceivingInfoId)));
 
-                    return Mono.zip(receivingInfoMono, organizationNameMono)
+                    return Mono.zip(receivingInfoMono, organizationNameMono, userLookupMono)
                             .map(tuple -> FundDetailResponse.from(
                                     fund,
                                     tuple.getT1(),
-                                    tuple.getT2()
+                                    tuple.getT2(),
+                                    tuple.getT3().orElse(null)
                             ));
                 });
     }
@@ -395,14 +402,14 @@ public class FundService {
                             )))
                             .flatMap(existingReceivingInfo -> {
                                 String newLogoUrl = request.getLogoUrl();
-                                existing.setName(request.getName().trim());
-                                existing.setDescriptionShort(request.getDescriptionShort().trim());
-                                existing.setDescriptionFull(request.getDescriptionFull().trim());
+                                existing.setName(request.getName());
+                                existing.setDescriptionShort(request.getDescriptionShort());
+                                existing.setDescriptionFull(request.getDescriptionFull());
                                 if (newLogoUrl != null) {
-                                    String trimmedLogoUrl = newLogoUrl.trim();
-                                    existing.setLogoUrl(trimmedLogoUrl.isEmpty() ? null : trimmedLogoUrl);
+                                    existing.setLogoUrl(newLogoUrl.isEmpty() ? null : newLogoUrl);
                                 }
-                                existing.setManagerName(request.getManagerName().trim());
+                                existing.setManagerName(request.getManagerName());
+                                existing.setManagerEmail(request.getManagerEmail());
                                 existing.setTargetAmount(newTargetAmount);
                                 existing.setFundReceivingInfoId(newFundReceivingInfoId);
                                 existing.setTimeStarted(newStart);
@@ -490,7 +497,7 @@ public class FundService {
                                     .queryParam("amount", amountInVnd)
                                     .queryParam("addInfo", description);
                             if (receivingInfo.getAccountName() != null && !receivingInfo.getAccountName().isBlank()) {
-                                builder.queryParam("accountName", receivingInfo.getAccountName().trim());
+                                builder.queryParam("accountName", receivingInfo.getAccountName());
                             }
                             String qrUrl = builder.encode(StandardCharsets.UTF_8).build().toUriString();
                             return new FundDonationCheckoutResponse(qrUrl);

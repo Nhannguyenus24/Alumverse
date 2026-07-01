@@ -275,7 +275,7 @@ class _SessionCard extends ConsumerWidget {
       }
     } catch (e) {
       if (context.mounted) {
-        AppToast.error(context, e.toString().replaceFirst('Exception: ', ''));
+        AppToast.fromError(context, e);
       }
     }
   }

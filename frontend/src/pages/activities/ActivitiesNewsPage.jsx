@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Box, Button, Container, Stack, Typography } from '@mui/material';
+import { Box, Button, Container, Pagination, Stack, Typography } from '@mui/material';
 
 import { getActivitiesSidebar } from '../../constants/activitiesNav';
 import { useTranslation } from 'react-i18next';
@@ -21,6 +21,8 @@ import { toCardShape } from '../../hooks/articles/toCardShape';
 import { useAuth } from '../../hooks/useAuth';
 import { useSnackbar } from 'notistack';
 import apiClient from '../../utils/axios';
+import { deleteArticleByChannel, getArticleAdminEditPath } from '../../utils/articleAdminActions';
+import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
 
 
 const getNewsFilters = (t) => [
@@ -50,21 +52,14 @@ const getNewsFilters = (t) => [
   },
 ];
 
-const CHANNEL_TO_ENDPOINT = {
-  news: '/admin/articles/news',
-  alumni: '/admin/articles/alumni-posts',
-  achievement: '/admin/articles/achievements',
-  job: '/admin/articles/jobs',
-  learning: '/admin/articles/learning-resources',
-};
-
 const ActivitiesPage = () => {
   const { t } = useTranslation(['nav', 'article']);
   const navigate = useOrgNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const queryClient = useQueryClient();
 
-  const { news: rawNews } = usePublishedNews(0, 12);
+  const [page, setPage] = useState(0);
+  const { news: rawNews, pageInfo } = usePublishedNews(page, 10);
 
   const [filters, setFilters] = useState({ all: true });
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -85,7 +80,8 @@ const ActivitiesPage = () => {
   const isAdmin = isAuthenticated && user?.role === 'ADMIN';
 
   const handleEdit = (article) => {
-    navigate(`/article/${article.channel}/${article.id}/edit`);
+    const editPath = getArticleAdminEditPath(article);
+    if (editPath) navigate(editPath);
   };
 
   const handleDelete = (article) => setDeleteTarget(article);
@@ -94,8 +90,7 @@ const ActivitiesPage = () => {
     if (!deleteTarget || deleting) return;
     setDeleting(true);
     try {
-      const endpoint = CHANNEL_TO_ENDPOINT[deleteTarget.channel];
-      if (endpoint) await apiClient.delete(`${endpoint}/${deleteTarget.id}`);
+      await deleteArticleByChannel(apiClient, deleteTarget);
       queryClient.invalidateQueries({ queryKey: ['publishedNews'] });
       enqueueSnackbar(t('article:delete_success'), { variant: 'success' });
     } catch (err) {
@@ -145,6 +140,7 @@ const ActivitiesPage = () => {
                     <Button
                       variant="outlined"
                       color="primary"
+                      startIcon={<ArticleOutlinedIcon />}
                       onClick={() => navigate('/admin/article')}
                     >
                       {t('article:manage_news')}
@@ -244,6 +240,17 @@ const ActivitiesPage = () => {
                       </Box>
                     ))}
                   </Box>
+                </Box>
+              )}
+
+              {(pageInfo?.totalPage ?? 0) > 1 && (
+                <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                  <Pagination
+                    color="primary"
+                    count={pageInfo.totalPage}
+                    page={page + 1}
+                    onChange={(_, value) => setPage(value - 1)}
+                  />
                 </Box>
               )}
             </Stack>

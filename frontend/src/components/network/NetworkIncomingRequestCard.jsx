@@ -14,6 +14,8 @@ import { formatDateTime } from '../../utils/dateFormatter';
 import { useNetworkMemberProfileNavigation } from '../../hooks/network/useNetworkMemberProfileNavigation';
 import { networkCardClickableSx } from './networkCardUtils';
 import ChatAvatar from '../ChatAvatar';
+import { useCanContribute } from '../../hooks/useCanContribute';
+import { ContributeGuardTooltip } from '../ContributeGuard';
 
 const NetworkIncomingRequestCard = ({
   request,
@@ -23,6 +25,7 @@ const NetworkIncomingRequestCard = ({
   isResponding = false,
 }) => {
   const { t } = useTranslation('network');
+  const { canContribute } = useCanContribute();
   const previewMessage = request.message ?? '';
   const isPending = request.status === CONVERSATION_REQUEST_STATUS.PENDING;
   const { navigateToProfile, stopActionPropagation } =
@@ -59,11 +62,13 @@ const NetworkIncomingRequestCard = ({
 
   const handleAccept = (event) => {
     stopActionPropagation(event);
+    if (!canContribute) return;
     onAccept?.(request.id);
   };
 
   const handleReject = (event) => {
     stopActionPropagation(event);
+    if (!canContribute) return;
     onReject?.(request.id);
   };
 
@@ -137,27 +142,31 @@ const NetworkIncomingRequestCard = ({
             sx={{ flexShrink: 0, alignSelf: { sm: 'center' } }}
             onClick={stopActionPropagation}
           >
-            <Button
-              variant="contained"
-              color="primary"
-              size="small"
-              onClick={handleAccept}
-              disabled={isResponding}
-            >
-              {isResponding ? <CircularProgress size={16} color="inherit" /> : t('accept')}
-            </Button>
-            <Button
-              variant="outlined"
-              color="inherit"
-              size="small"
-              onClick={handleReject}
-              disabled={isResponding}
-              sx={(theme) => ({
-                borderColor: alpha(theme.palette.text.primary, 0.23),
-              })}
-            >
-              {t('reject')}
-            </Button>
+            <ContributeGuardTooltip placement="left">
+              <Button
+                variant="contained"
+                color="primary"
+                size="small"
+                onClick={handleAccept}
+                disabled={isResponding || !canContribute}
+              >
+                {isResponding ? <CircularProgress size={16} color="inherit" /> : t('accept')}
+              </Button>
+            </ContributeGuardTooltip>
+            <ContributeGuardTooltip placement="left">
+              <Button
+                variant="outlined"
+                color="inherit"
+                size="small"
+                onClick={handleReject}
+                disabled={isResponding || !canContribute}
+                sx={(theme) => ({
+                  borderColor: alpha(theme.palette.text.primary, 0.23),
+                })}
+              >
+                {t('reject')}
+              </Button>
+            </ContributeGuardTooltip>
           </Stack>
         ) : null}
       </Stack>

@@ -16,6 +16,8 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import UploadFileOutlinedIcon from '@mui/icons-material/UploadFileOutlined';
 import { useTranslation } from 'react-i18next';
+import AvatarUploadDialog from '../../profile/AvatarUploadDialog';
+import useAvatarCrop from '../../../hooks/profile/useAvatarCrop';
 
 const SectionList = ({ title, subtitle, items, onChange, fields, required = false, addLabel }) => {
   const { t } = useTranslation('mentorship');
@@ -94,7 +96,7 @@ const SectionList = ({ title, subtitle, items, onChange, fields, required = fals
 const MentorSignupTabProfile = ({ values, onChange }) => {
   const { t } = useTranslation('mentorship');
   const cvInputRef = useRef(null);
-  const avatarInputRef = useRef(null);
+  const avatarCrop = useAvatarCrop();
 
   useEffect(() => {
     const url = values.avatarPreview;
@@ -103,16 +105,16 @@ const MentorSignupTabProfile = ({ values, onChange }) => {
     };
   }, [values.avatarPreview]);
 
-  const update = (key, val) => onChange({ ...values, [key]: val });
+  useEffect(() => {
+    if (!avatarCrop.avatarUrl || avatarCrop.avatarUrl === values.avatarPreview) return;
+    onChange({
+      ...values,
+      avatarFile: avatarCrop.avatarUrl,
+      avatarPreview: avatarCrop.avatarUrl,
+    });
+  }, [avatarCrop.avatarUrl, onChange, values]);
 
-  const handleAvatarPick = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const previewUrl = URL.createObjectURL(file);
-      onChange({ ...values, avatarFile: file, avatarPreview: previewUrl });
-    }
-    e.target.value = null;
-  };
+  const update = (key, val) => onChange({ ...values, [key]: val });
 
   const handleCvPick = (e) => {
     const file = e.target.files?.[0];
@@ -168,11 +170,10 @@ const MentorSignupTabProfile = ({ values, onChange }) => {
           <Button
             variant="outlined"
             startIcon={<PhotoCameraIcon />}
-            onClick={() => avatarInputRef.current?.click()}
+            onClick={() => avatarCrop.setOpen(true)}
           >
             {values.avatarFile ? t('signup_profile_change_avatar') : t('signup_profile_pick_avatar')}
           </Button>
-          <input ref={avatarInputRef} hidden type="file" accept="image/*" onChange={handleAvatarPick} />
         </Stack>
       </Box>
 
@@ -275,6 +276,21 @@ const MentorSignupTabProfile = ({ values, onChange }) => {
           { key: 'name', label: t('signup_profile_skill_name') },
           { key: 'issuer', label: t('signup_profile_skill_issuer') },
         ]}
+      />
+
+      <AvatarUploadDialog
+        open={avatarCrop.open}
+        onClose={() => avatarCrop.setOpen(false)}
+        avatarPreview={avatarCrop.avatarPreview}
+        crop={avatarCrop.crop}
+        zoom={avatarCrop.zoom}
+        setCrop={avatarCrop.setCrop}
+        setZoom={avatarCrop.setZoom}
+        onCropComplete={(_, croppedPixels) =>
+          avatarCrop.setCroppedAreaPixels(croppedPixels)
+        }
+        onFileChange={avatarCrop.handleFileChange}
+        onSave={avatarCrop.handleSave}
       />
     </Stack>
   );

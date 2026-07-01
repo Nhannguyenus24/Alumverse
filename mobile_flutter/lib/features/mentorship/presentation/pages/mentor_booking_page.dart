@@ -99,7 +99,7 @@ class _MentorBookingPageState extends ConsumerState<MentorBookingPage> {
       Navigator.of(context).pop();
     } catch (e) {
       if (!mounted) return;
-      AppToast.error(context, e.toString().replaceFirst('Exception: ', ''));
+      AppToast.fromError(context, e);
     } finally {
       if (mounted) setState(() => _submitting = false);
     }

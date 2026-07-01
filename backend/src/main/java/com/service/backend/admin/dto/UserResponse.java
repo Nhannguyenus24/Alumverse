@@ -23,7 +23,7 @@ public class UserResponse {
     private String avatarUrl;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    /** From global_profiles (admin list/detail enrichment). */
+    /** From users.full_name (admin list/detail enrichment). */
     private String fullName;
     /** Primary organization_members row (lowest id) for this user, if any. */
     private Integer organizationId;

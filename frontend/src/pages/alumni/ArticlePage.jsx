@@ -1,13 +1,14 @@
-import { useState, useEffect, useRef, useCallback } from "react";
-import { useParams, useNavigate } from "react-router";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useParams } from "react-router";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
 import { Box, Container, Typography, CircularProgress, Button, Stack, IconButton, Tooltip } from "@mui/material";
 import NavigateBeforeIcon from "@mui/icons-material/NavigateBefore";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
+import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import Page from "../../components/Page";
-import Breadcrumb from "../../components/Breadcrumb";
 import { useArticleById } from "../../hooks/articles/useArticleById";
 import DOMPurify from "dompurify";
 import { formatDate, formatDateRange } from "../../utils/dateFormatter";
@@ -15,11 +16,55 @@ import { formatNumberVi } from "../../utils/numberFormatter";
 import JoinEventDialog from "../../components/event/JoinEventDialog";
 import { eventApi, savedItemApi } from "../../utils/api";
 import { useEventQuestions, formatAnswersForApi } from "../../hooks/events/useEventQuestions";
+import { useAuth } from "../../hooks/useAuth";
+import { useCanContribute } from "../../hooks/useCanContribute";
+import { ContributeGuardTooltip, VerificationRequiredAlert } from "../../components/ContributeGuard";
+import { useOrgNavigate } from "../../hooks/useOrgNavigate";
+import { getEventRegisteredState } from "../../utils/eventRegistration";
+
+const normalizeArticleHtml = (html) => {
+  if (!html || typeof document === "undefined") return html;
+
+  const container = document.createElement("div");
+  container.innerHTML = html;
+
+  const textWalker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+  const textNodes = [];
+  while (textWalker.nextNode()) textNodes.push(textWalker.currentNode);
+
+  textNodes.forEach((node) => {
+    node.nodeValue = (node.nodeValue ?? "").replace(/\u00a0/g, " ");
+  });
+
+  container.querySelectorAll("a").forEach((anchor) => {
+    const walker = document.createTreeWalker(anchor, NodeFilter.SHOW_TEXT);
+    const anchorTextNodes = [];
+    while (walker.nextNode()) anchorTextNodes.push(walker.currentNode);
+
+    anchorTextNodes.forEach((node) => {
+      const text = node.nodeValue ?? "";
+      if (!/[/-]/.test(text)) return;
+
+      const fragment = document.createDocumentFragment();
+      text.split(/([/-])/).forEach((part) => {
+        if (!part) return;
+        fragment.appendChild(document.createTextNode(part));
+        if (part === "/" || part === "-") {
+          fragment.appendChild(document.createElement("wbr"));
+        }
+      });
+      node.parentNode?.replaceChild(fragment, node);
+    });
+  });
+
+  return container.innerHTML;
+};
 
 /** Heart toggle to save ("quan tâm") an article. itemType is fixed to NEWS. */
 const SaveArticleButton = ({ itemId }) => {
   const { enqueueSnackbar } = useSnackbar();
   const { t } = useTranslation(['common', 'article']);
+  const { canContribute, isAuthenticated } = useCanContribute();
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -33,7 +78,7 @@ const SaveArticleButton = ({ itemId }) => {
   }, [itemId]);
 
   const toggle = async () => {
-    if (busy) return;
+    if (busy || !canContribute) return;
     setBusy(true);
     try {
       if (saved) {
@@ -52,11 +97,21 @@ const SaveArticleButton = ({ itemId }) => {
     }
   };
 
+  const guardTitle = !canContribute
+    ? (isAuthenticated ? t('common:verification_required_tooltip') : t('common:verification_required_login'))
+    : (saved ? t('article:unsave') : t('article:save_interest'));
+
   return (
-    <Tooltip title={saved ? t('article:unsave') : t('article:save_interest')}>
-      <IconButton onClick={toggle} disabled={busy} color={saved ? "primary" : "default"}>
-        {saved ? <FavoriteIcon /> : <FavoriteBorderIcon />}
-      </IconButton>
+    <Tooltip title={guardTitle} arrow>
+      <Box component="span" sx={{ display: "inline-flex" }}>
+        <IconButton
+          onClick={toggle}
+          disabled={busy || !canContribute}
+          sx={{ color: saved ? "accent.main" : "text.secondary" }}
+        >
+          {saved ? <FavoriteIcon /> : <FavoriteBorderIcon />}
+        </IconButton>
+      </Box>
     </Tooltip>
   );
 };
@@ -64,6 +119,7 @@ const SaveArticleButton = ({ itemId }) => {
 const ArticleHighlightCard = ({ data, channel, eventId }) => {
   const { enqueueSnackbar } = useSnackbar();
   const { t } = useTranslation(['common', 'article', 'event', 'donation']);
+  const { canContribute } = useCanContribute();
   const [isInterested, setIsInterested] = useState(false);
   const [isJoined, setIsJoined] = useState(false);
   const [interestedCount, setInterestedCount] = useState(data.stats?.[0]?.value ?? 0);
@@ -83,7 +139,7 @@ const ArticleHighlightCard = ({ data, channel, eventId }) => {
       .catch(() => {});
     eventApi.checkRegistered(eventId)
       .then((res) => {
-        if (res?.isRegistered) setIsJoined(true);
+        setIsJoined(getEventRegisteredState(res));
       })
       .catch(() => {});
     eventApi.getEventStatisticsById(eventId)
@@ -95,7 +151,7 @@ const ArticleHighlightCard = ({ data, channel, eventId }) => {
   }, [channel, eventId]);
 
   const handleInterest = async () => {
-    if (loadingInterest) return;
+    if (loadingInterest || !canContribute) return;
     setLoadingInterest(true);
     try {
       if (isInterested) {
@@ -115,12 +171,12 @@ const ArticleHighlightCard = ({ data, channel, eventId }) => {
   };
 
   const handleJoinClick = () => {
-    if (loadingJoin || isJoined) return;
+    if (loadingJoin || isJoined || !canContribute) return;
     setOpenJoinDialog(true);
   };
 
   const handleConfirmJoin = async (answerMap) => {
-    if (loadingJoin || isJoined) return;
+    if (loadingJoin || isJoined || !canContribute) return;
     setLoadingJoin(true);
     try {
       const payload = questions.length > 0
@@ -173,34 +229,41 @@ const ArticleHighlightCard = ({ data, channel, eventId }) => {
         </Box>
 
         {/* BUTTONS */}
+        <VerificationRequiredAlert sx={{ mb: 1 }} />
         {channel === "donation" ? (
-          <Button fullWidth variant="contained">{t('donation:donate_button')}</Button>
+          <ContributeGuardTooltip sx={{ width: "100%" }}>
+            <Button fullWidth variant="contained" disabled={!canContribute}>{t('donation:donate_button')}</Button>
+          </ContributeGuardTooltip>
         ) : (
           <Stack direction="row" spacing={1}>
-            <Button
-              fullWidth
-              variant={isInterested ? "outlined" : "contained"}
-              disabled={loadingInterest}
-              onClick={handleInterest}
-            >
-              {isInterested ? t('article:interested') : t('article:interest_action')}
-            </Button>
+            <ContributeGuardTooltip sx={{ flex: 1 }}>
+              <Button
+                fullWidth
+                variant={isInterested ? "outlined" : "contained"}
+                disabled={loadingInterest || !canContribute}
+                onClick={handleInterest}
+              >
+                {isInterested ? t('article:interested') : t('article:interest_action')}
+              </Button>
+            </ContributeGuardTooltip>
 
-            <Button
-              fullWidth
-              variant={isJoined ? "outlined" : "contained"}
-              disabled={loadingJoin || isJoined}
-              sx={{
-                bgcolor: isJoined ? "transparent" : "success.main",
-                color: isJoined ? "success.main" : "common.white",
-                "&:hover": {
-                  bgcolor: isJoined ? "transparent" : "success.dark",
-                },
-              }}
-              onClick={handleJoinClick}
-            >
-              {isJoined ? t('event:registered') : t('event:register_action')}
-            </Button>
+            <ContributeGuardTooltip sx={{ flex: 1 }}>
+              <Button
+                fullWidth
+                variant={isJoined ? "outlined" : "contained"}
+                disabled={loadingJoin || isJoined || !canContribute}
+                sx={{
+                  bgcolor: isJoined ? "transparent" : "success.main",
+                  color: isJoined ? "success.main" : "common.white",
+                  "&:hover": {
+                    bgcolor: isJoined ? "transparent" : "success.dark",
+                  },
+                }}
+                onClick={handleJoinClick}
+              >
+                {isJoined ? t('event:registered') : t('event:register_action')}
+              </Button>
+            </ContributeGuardTooltip>
           </Stack>
         )}
       </Box>
@@ -223,23 +286,28 @@ const ArticlePage = () => {
   const { t } = useTranslation(['common', 'article', 'event', 'donation']);
   const { channel, id } = useParams();
   const { enqueueSnackbar } = useSnackbar();
+  const { user } = useAuth();
   const loadErrorShownRef = useRef(false);
   const { article, isPending, isError, errorMessage } = useArticleById(channel, id);
 
-  const cleanContent = article?.content ? DOMPurify.sanitize(article.content) : "";
+  const cleanContent = useMemo(
+    () => normalizeArticleHtml(article?.content ? DOMPurify.sanitize(article.content) : ""),
+    [article]
+  );
   
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const contentRef = useRef(null);
   const heroRef = useRef(null);
   const [placeholderHeight, setPlaceholderHeight] = useState(600);
+  const isAdmin = user?.role === "ADMIN";
 
   const recalcPlaceholder = useCallback(() => {
     if (!contentRef.current || !heroRef.current) return;
     const heroH = heroRef.current.getBoundingClientRect().height;
     const contentH = contentRef.current.getBoundingClientRect().height;
-    const contentTopInHero = heroH * 0.55;
+    const contentTopInHero = heroH * 0.58;
     const overflow = contentH - (heroH - contentTopInHero);
-    setPlaceholderHeight(Math.max(overflow + 100, 100));
+    setPlaceholderHeight(Math.max(overflow + 140, 140));
   }, []);
 
   useEffect(() => {
@@ -259,7 +327,7 @@ const ArticlePage = () => {
       return;
     }
     loadErrorShownRef.current = false;
-  }, [isPending, isError, article, errorMessage, enqueueSnackbar]);
+  }, [isPending, isError, article, errorMessage, enqueueSnackbar, t]);
 
   if (isPending) {
     return (
@@ -302,23 +370,60 @@ const ArticlePage = () => {
     <Page title={article.title} meta={<meta name="description" content={`${article.title} - AlumVerse`} />}>
       <Container maxWidth={false} disableGutters sx={{ display: "flex", flexDirection: "column" }}>
         {/* Hero + absolute content frame wrapper */}
-        <Box ref={heroRef} sx={{ position: "relative", top: "-1px", pt: "1px", height: { xs: "35vh", sm: "40vh", md: "50vh" }, minHeight: { xs: 260, sm: 300, md: 380 } }}>
+        <Box ref={heroRef} sx={{ position: "relative", top: "-1px", pt: "1px", height: { xs: "42vh", sm: "50vh", md: "62vh" }, minHeight: { xs: 300, sm: 380, md: 480 } }}>
           {/* Hero banner */}
           <Box sx={{ position: "absolute", inset: 0, top: "-1px", backgroundColor: "primary.dark", backgroundImage: article.thumbnailUrl ? `url(${article.thumbnailUrl})` : "none", backgroundSize: "cover", backgroundPosition: "center", backgroundRepeat: "no-repeat" }} />
           {/* Main content frame */}
-          <Box ref={contentRef} sx={{ position: "absolute", top: { xs: "60%", sm: "65%", md: "60%" }, left: 0, right: 0, display: "flex", justifyContent: "center", px: { xs: 2, sm: 3 } }}>
-            <Box sx={{ width: "100%", maxWidth: 1200, backgroundColor: "#fff", borderRadius: 2, boxShadow: "0 4px 24px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06)", overflow: "hidden", py: { xs: 5, md: 6 }, px: { xs: 4, md: 6 } }}>
+          <Box ref={contentRef} sx={{ position: "absolute", top: { xs: "58%", sm: "60%", md: "58%" }, left: 0, right: 0, display: "flex", justifyContent: "center", px: { xs: 2, sm: 3 } }}>
+            <Box sx={{ width: "100%", maxWidth: 1200, backgroundColor: "#fff", borderRadius: 2, boxShadow: "0 4px 24px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06)", overflow: "hidden", py: { xs: 5, md: 6 }, px: { xs: 3, sm: 4, md: 6 } }}>
               {/* Breadcrumb */}
-              <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: { xs: 4, md: 5 } }}>
                 <Button startIcon={<NavigateBeforeIcon />} onClick={() => navigate(-1)} size="small" sx={{ color: "text.secondary", textTransform: "none", pl: 0 }}>
                   {t('back')}
                 </Button>
                 <Box sx={{ flexGrow: 1 }} />
+                {isAdmin && (
+                  <>
+                    <Button
+                      variant="contained"
+                      color="secondary"
+                      size="medium"
+                      startIcon={<EditOutlinedIcon />}
+                      onClick={() => navigate(`/admin/article/${resolvedChannel}/${id}/edit`)}
+                      sx={{ textTransform: "none", fontWeight: 700 }}
+                    >
+                      Sửa bài viết
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      size="medium"
+                      startIcon={<ArticleOutlinedIcon />}
+                      onClick={() => navigate("/admin/article")}
+                      sx={{ textTransform: "none", fontWeight: 700 }}
+                    >
+                      Quản lý bài viết
+                    </Button>
+                  </>
+                )}
                 <SaveArticleButton itemId={Number(id)} />
               </Box>
 
               {/* Title */}
-              <Typography variant="h1" component="h1" fontWeight={700} color="primary.main" textAlign="center" sx={{ mb: 1, fontSize: { xs: "1.8rem", md: "2.1rem" } }}>
+              <Typography
+                variant="h1"
+                component="h1"
+                fontWeight={700}
+                color="primary.main"
+                textAlign="center"
+                sx={{
+                  mt: { xs: 2, md: 3 },
+                  mb: { xs: 4, md: 5 },
+                  fontSize: { xs: "1.65rem", md: "2.1rem" },
+                  lineHeight: 1.22,
+                  overflowWrap: "break-word",
+                  wordBreak: "normal",
+                }}
+              >
                 {article.title}
               </Typography>
 
@@ -336,13 +441,81 @@ const ArticlePage = () => {
 
               {/* Thumbnail */}
               {article.thumbnailUrl && (
-                <Box sx={{ display: "flex", justifyContent: "center", mb: 4 }}>
-                  <Box component="img" src={article.thumbnailUrl} alt={article.title} sx={{ width: { xs: "100%", md: "60%" }, borderRadius: 2, boxShadow: "0 2px 10px rgba(0,0,0,0.1)" }} />
+                <Box sx={{ display: "flex", justifyContent: "center", mt: { xs: 2, md: 3 }, mb: { xs: 5, md: 6 } }}>
+                  <Box component="img" src={article.thumbnailUrl} alt={article.title} sx={{ width: { xs: "100%", md: "72%" }, aspectRatio: "16 / 10", objectFit: "cover", borderRadius: 2, boxShadow: "0 2px 10px rgba(0,0,0,0.1)" }} />
                 </Box>
               )}
 
               {/* Article Content */}
-              <Box dangerouslySetInnerHTML={{ __html: cleanContent }} />
+              <Box
+                sx={(theme) => ({
+                  ...theme.typography.body1,
+                  color: "text.primary",
+                  fontFamily: theme.typography.fontFamily,
+                  textAlign: "justify",
+                  whiteSpace: "normal",
+                  overflowWrap: "normal",
+                  wordBreak: "normal",
+                  hyphens: "none",
+                  minWidth: 0,
+
+                  "& *": {
+                    boxSizing: "border-box",
+                    overflowWrap: "normal",
+                    wordBreak: "normal",
+                    hyphens: "none",
+                  },
+                  "& p": {
+                    ...theme.typography.body1,
+                    my: 1.25,
+                    textAlign: "justify",
+                  },
+                  "& h1": { ...theme.typography.h1, mt: 3, mb: 1.5, textAlign: "left" },
+                  "& h2": { ...theme.typography.h2, mt: 2.5, mb: 1.25, textAlign: "left" },
+                  "& h3": { ...theme.typography.h3, mt: 2.25, mb: 1.1, textAlign: "left" },
+                  "& h4": { ...theme.typography.h4, mt: 2, mb: 1, textAlign: "left" },
+                  "& h5": { ...theme.typography.h5, mt: 1.75, mb: 0.8, textAlign: "left" },
+                  "& h6": { ...theme.typography.h6, mt: 1.5, mb: 0.7, textAlign: "left" },
+                  "& .ql-size-small": {
+                    fontSize: theme.typography.body2.fontSize,
+                    lineHeight: theme.typography.body2.lineHeight,
+                  },
+                  "& .ql-size-large": {
+                    fontSize: theme.typography.h4.fontSize,
+                    lineHeight: theme.typography.h4.lineHeight,
+                    fontWeight: theme.typography.h4.fontWeight,
+                  },
+                  "& .ql-size-huge": {
+                    fontSize: theme.typography.h2.fontSize,
+                    lineHeight: theme.typography.h2.lineHeight,
+                    fontWeight: theme.typography.h2.fontWeight,
+                  },
+                  "& .ql-align-left": { textAlign: "left" },
+                  "& .ql-align-center": { textAlign: "center" },
+                  "& .ql-align-right": { textAlign: "right" },
+                  "& .ql-align-justify": { textAlign: "justify" },
+                  "& img": {
+                    maxWidth: "100%",
+                    height: "auto",
+                  },
+                  "& a": {
+                    color: "primary.main",
+                    textDecoration: "underline",
+                  },
+                  "& ul, & ol": {
+                    pl: 3,
+                    my: 1.25,
+                  },
+                  "& blockquote": {
+                    borderLeft: "4px solid",
+                    borderColor: "divider",
+                    pl: 2,
+                    my: 2,
+                    color: "text.secondary",
+                  },
+                })}
+                dangerouslySetInnerHTML={{ __html: cleanContent }}
+              />
             </Box>
           </Box>
         </Box>

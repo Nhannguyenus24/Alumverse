@@ -23,6 +23,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useOrgNavigate, useOrgPath } from '../hooks/useOrgNavigate';
 import { getNormalizedPathname } from '../utils/pathUtils';
 import useThemeModeStore from '../stores/themeModeStore';
+import { HEADER_HEIGHT } from '../constants/layout';
 
 const LOGO_SRC = '/alumverse_logo/Logo_Main_Full.svg';
 const LOGO_SRC_WHITE = '/alumverse_logo/Logo_White_Full.svg';
@@ -142,8 +143,8 @@ const Header = () => {
     : (isAdmin ? 'primary.contrastText' : 'text.primary');
 
   const navButtonSx = useMemo(() => ({
-    color: headerTextColor, fontWeight: 600, fontSize: '0.9375rem',
-    textTransform: 'none', px: 1.5, transition: 'all 0.3s ease',
+    color: headerTextColor, fontWeight: 600, fontSize: { xs: '0.875rem', xl: '0.9375rem' },
+    textTransform: 'none', px: { xs: 1, xl: 1.5 }, transition: 'all 0.3s ease',
     position: 'relative',
     borderRadius: 1,
     '&:hover': {
@@ -178,7 +179,7 @@ const Header = () => {
   const logoSrc = (isTransparent || isAdmin) ? LOGO_SRC_WHITE : LOGO_SRC;
   const logoSx = shouldUseDarkAdminLogo ? { filter: 'brightness(0)' } : undefined;
 
-  const appBarMinHeight = { xs: 56, md: 64 };
+  const appBarMinHeight = HEADER_HEIGHT;
 
   return (
     <>
@@ -193,8 +194,16 @@ const Header = () => {
           transition: 'all 0.4s ease-in-out',
         }}
       >
-        <Toolbar sx={{ minHeight: appBarMinHeight, px: { xs: 1.5, sm: 2 }, justifyContent: 'space-between', gap: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
+        <Toolbar
+          sx={{
+            minHeight: appBarMinHeight,
+            px: { xs: 1.5, sm: 2 },
+            justifyContent: 'space-between',
+            gap: 2,
+            position: 'relative',
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0, zIndex: 2 }}>
             <Link to={toOrgPath('/')} style={{ display: 'flex', alignItems: 'center' }}>
               <Logo
                 variant="image"
@@ -207,8 +216,19 @@ const Header = () => {
           </Box>
 
           {isDesktop && (
-            <Box sx={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)',
-                       display: 'flex', alignItems: 'center', gap: 1, whiteSpace: 'nowrap', zIndex: 5 }}>
+            <Box sx={{
+              position: 'absolute',
+              left: '50%',
+              top: '50%',
+              transform: 'translate(-50%, -50%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: { xs: 0.5, xl: 1 },
+              whiteSpace: 'nowrap',
+              zIndex: 1,
+              maxWidth: 'calc(100% - 520px)',
+            }}>
               {navItems.map((item) => {
                 const isLocked = item.requiresAuth && !isAuthenticated;
                 const isActive = getNavActive(item);
@@ -288,7 +308,7 @@ const Header = () => {
             </Box>
           )}
 
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5, zIndex: 2 }}>
             {isDesktop ? (
               <>
                 <Tooltip
@@ -373,7 +393,7 @@ const Header = () => {
         <Box
           sx={{
             position: 'fixed',
-            top: { xs: 72, md: 80 },
+            top: HEADER_HEIGHT,
             left: '50%',
             transform: 'translateX(-50%)',
             width: { xs: 'calc(100% - 32px)', sm: 'max-content' },

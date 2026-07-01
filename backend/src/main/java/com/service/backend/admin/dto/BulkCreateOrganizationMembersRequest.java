@@ -30,7 +30,7 @@ public class BulkCreateOrganizationMembersRequest {
         private String fullName;
         private String studentId;
         @Builder.Default
-        private String role = "ALUMNI";
+        private String role = "USER";
         private String password;
         private String program;
         private String major;
@@ -40,6 +40,8 @@ public class BulkCreateOrganizationMembersRequest {
         private String graduationStatus;
         @Builder.Default
         private Integer verificationLevel = 0;
+        @Builder.Default
+        private Boolean isTrustedVerifier = false;
         @Builder.Default
         private String status = "ACTIVE";
     }

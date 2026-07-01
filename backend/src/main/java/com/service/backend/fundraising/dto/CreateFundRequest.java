@@ -3,6 +3,7 @@ package com.service.backend.fundraising.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -72,4 +73,9 @@ public class CreateFundRequest {
 
     @Schema(example = "Học bổng sinh viên")
     private String topic;
+
+    @NotBlank
+    @Email
+    @Schema(example = "manager@hcmus.edu.vn")
+    private String managerEmail;
 }

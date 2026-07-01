@@ -93,11 +93,11 @@ public interface AuthRepository extends R2dbcRepository<User, Integer> {
     Mono<User> findPendingOrActiveByEmail(@Param("email") String email);
     
     /**
-     * Register new user with unverified status and alumni role
+     * Register new user with unverified status and default USER role
      * Returns the created user ID
      */
     @Query("INSERT INTO users (email, password_hash, role, \"status\", created_at, updated_at) " +
-           "VALUES (:email, :passwordHash, 'ALUMNI', 'UNVERIFIED', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) " +
+           "VALUES (:email, :passwordHash, 'USER', 'UNVERIFIED', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) " +
            "RETURNING id")
     Mono<Integer> registerNewUser(@Param("email") String email, @Param("passwordHash") String passwordHash);
 
@@ -106,7 +106,7 @@ public interface AuthRepository extends R2dbcRepository<User, Integer> {
      * Returns the created user ID
      */
     @Query("INSERT INTO users (email, password_hash, role, \"status\", avatar_url, created_at, updated_at) " +
-           "VALUES (:email, :passwordHash, 'GUEST', 'ACTIVE', :avatarUrl, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) " +
+           "VALUES (:email, :passwordHash, 'USER', 'ACTIVE', :avatarUrl, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) " +
            "RETURNING id")
     Mono<Integer> registerGoogleUser(
             @Param("email") String email,
@@ -121,11 +121,11 @@ public interface AuthRepository extends R2dbcRepository<User, Integer> {
     Flux<Integer> getOrganizationIdByUserId(@Param("userId") Integer userId);
 
     /**
-     * Create global profile for a newly registered user
+     * Set the display name for a newly registered user.
+     * (Profile fields now live on the users table.)
      */
     @Modifying
-    @Query("INSERT INTO global_profiles (user_id, full_name, updated_at) " +
-           "VALUES (:userId, :fullName, CURRENT_TIMESTAMP)")
+    @Query("UPDATE users SET full_name = :fullName, updated_at = CURRENT_TIMESTAMP WHERE id = :userId")
     Mono<Void> createGlobalProfile(@Param("userId") Integer userId, @Param("fullName") String fullName);
 
     /**

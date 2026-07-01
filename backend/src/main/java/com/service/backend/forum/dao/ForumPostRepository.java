@@ -173,6 +173,21 @@ public interface ForumPostRepository extends R2dbcRepository<ForumPost, Integer>
             @Param("year") int year);
 
     /**
+     * Batch variant of {@link #countPostsByAuthorInMonth}: counts posts per author in a given
+     * month/year for a set of authors in a single query.
+     */
+    @Query("SELECT author_member_id as id, COUNT(*) as count FROM forum_posts " +
+           "WHERE author_member_id IN (:authorMemberIds) " +
+           "AND EXTRACT(MONTH FROM created_at) = :month " +
+           "AND EXTRACT(YEAR FROM created_at) = :year " +
+           "AND is_banned = false " +
+           "GROUP BY author_member_id")
+    Flux<IdCountDTO> countPostsByAuthorsInMonth(
+            @Param("authorMemberIds") Collection<Integer> authorMemberIds,
+            @Param("month") int month,
+            @Param("year") int year);
+
+    /**
      * Count distinct active users (who posted) in a given month/year
      */
     @Query("SELECT COUNT(DISTINCT author_member_id) FROM forum_posts " +
@@ -198,6 +213,17 @@ public interface ForumPostRepository extends R2dbcRepository<ForumPost, Integer>
            "WHERE om.organization_id = :organizationId " +
            "AND fp.is_banned = false")
     Mono<Long> countActiveForumUsersByOrganization(@Param("organizationId") Integer organizationId);
+
+    /**
+     * Batch variant of {@link #countActiveForumUsersByOrganization}: distinct active forum user
+     * counts per organization for a set of organizations in a single query.
+     */
+    @Query("SELECT om.organization_id as id, COUNT(DISTINCT fp.author_member_id) as count FROM forum_posts fp " +
+           "JOIN organization_members om ON fp.author_member_id = om.user_id " +
+           "WHERE om.organization_id IN (:organizationIds) " +
+           "AND fp.is_banned = false " +
+           "GROUP BY om.organization_id")
+    Flux<IdCountDTO> countActiveForumUsersByOrganizations(@Param("organizationIds") Collection<Integer> organizationIds);
 
     @Query("SELECT fp.* FROM forum_posts fp " +
            "JOIN forum_topics ft ON fp.topic_id = ft.id " +
