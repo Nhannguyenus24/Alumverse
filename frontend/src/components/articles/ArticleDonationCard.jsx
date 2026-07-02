@@ -216,7 +216,7 @@ const ArticleDonationCard = ({ campaign, onNavigate, onEdit, onClose, isAdmin })
         </Stack>
       ) : (
         <Button
-          fullWidth variant="contained" color="primary" sx={{ textTransform: "none", fontWeight: 600 }}
+          fullWidth variant="contained" color="accent" sx={{ textTransform: "none", fontWeight: 600 }}
           onClick={(e) => { e.stopPropagation(); onNavigate?.(); }}
         >
           {t('donation:donate')}

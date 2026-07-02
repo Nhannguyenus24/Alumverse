@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import {
   Alert,
@@ -24,7 +23,6 @@ import { useBlockUser } from '../../hooks/network/useBlockUser';
 import { useNotification } from '../../hooks/useNotification';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import useOrganizationStore from '../../stores/organizationStore';
-import { organizationApi } from '../../utils/api';
 import { CONVERSATION_REQUEST_STATUS } from '../../constants/conversationRequestStatus';
 
 const PAGE_SIZE = 9;
@@ -69,12 +67,6 @@ const NetworkPage = () => {
   const navigate = useOrgNavigate();
   const currentMemberId = useNetworkCurrentMemberId();
 
-  const { data: organizations = [] } = useQuery({
-    queryKey: ['organizations', 'all'],
-    queryFn: () => organizationApi.getAllOrganizations(),
-    staleTime: 5 * 60 * 1000,
-  });
-
   const { showError, showInfo } = useNotification();
   const { checkStatus } = useCheckConversationRequestStatus();
   const { blockUser, isBlocking } = useBlockUser({
@@ -95,7 +87,6 @@ const NetworkPage = () => {
   useEffect(() => {
     if (pageCount === 0) return;
     if (page > pageCount) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPage(pageCount);
     }
   }, [pageCount, page]);
@@ -268,9 +259,9 @@ const NetworkPage = () => {
         message={(
           <>
             {`${t('network:block_user_confirm_message', { name: blockTarget?.fullName ?? t('network:this_user') })} `}
-            <strong style={{ color: 'rgba(0, 0, 0, 0.87)' }}>
+            <Typography component="strong" variant="inherit" sx={{ color: 'text.primary', fontWeight: 700 }}>
               {t('network:block_user_note')}
-            </strong>
+            </Typography>
             {` ${t('network:block_user_consequence')}`}
           </>
         )}

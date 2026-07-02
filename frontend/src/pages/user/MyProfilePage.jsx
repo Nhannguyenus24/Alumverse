@@ -56,11 +56,25 @@ import { getMentorProfileTabs, getMenteeProfileTabs } from '../../constants/ment
 import { useTranslation } from 'react-i18next';
 import { formatDate } from '../../utils/dateFormatter';
 import { formatRating } from '../../utils/numberFormatter';
+import { formatMentorHeadline, resolveProfileRoleLabel } from '../../utils/profileRoleUtils';
 
 const DEFAULT_COVER =
   'https://ethnasia.com/cdn/shop/articles/sean-o-KMn4VEeEPR8-unsplash_edited.jpg?v=1621585619';
+const MENTORSHIP_COVER =
+  'https://info.cognician.com/hubfs/220201%20mentorship-%20desktop.png';
 const ITEMS_PER_PAGE = 3;
 const PUBLIC_FEEDBACKS_PER_PAGE = 5;
+
+const normalizeTags = (value) => {
+  if (!value) return [];
+  if (Array.isArray(value)) {
+    return value.flatMap(normalizeTags);
+  }
+  return String(value)
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+};
 
 const getCategoryLabel = (t) => ({
   CAREER: t('profile:category_career'),
@@ -331,17 +345,20 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
   const expertise = useMemo(() => expertiseQuery.data ?? [], [expertiseQuery.data]);
   const feedbacks = useMemo(() => feedbacksQuery.data?.items ?? [], [feedbacksQuery.data]);
 
-  const shouldUseMentorDisplayData = isMentorshipPath || mentor?.status === 'APPROVED';
+  const shouldUseMentorDisplayData = isMentorshipPath;
   // Derived user details
-  const coverUrl = (shouldUseMentorDisplayData ? mentor?.coverUrl : null) || profile?.coverUrl || DEFAULT_COVER;
-  const currentJobTitle = (shouldUseMentorDisplayData ? mentor?.currentJobTitle : null) || profile?.currentJobTitle;
-  const currentCompany = (shouldUseMentorDisplayData ? mentor?.currentCompany : null) || profile?.currentCompany;
-  const bio = (shouldUseMentorDisplayData ? mentor?.bio : null) || profile?.bio;
+  const coverUrl = mentor?.coverUrl || (shouldUseMentorDisplayData ? MENTORSHIP_COVER : DEFAULT_COVER);
+  const currentJobTitle = (shouldUseMentorDisplayData ? mentor?.currentJobTitle : null) || profile?.currentJobTitle || mentor?.currentJobTitle;
+  const currentCompany = (shouldUseMentorDisplayData ? mentor?.currentCompany : null) || profile?.currentCompany || mentor?.currentCompany;
+  const personalBio = profile?.bio;
+  const mentorBio = mentor?.bio;
   const extendedProfile = (shouldUseMentorDisplayData ? mentor?.extendedProfile : null) || profile?.extendedProfile;
 
   const user = {
     name: profile?.fullName ?? t('profile:my_account'),
-    role: [currentJobTitle, currentCompany].filter(Boolean).join(' @ ') || t('profile:member_role_default'),
+    role: shouldUseMentorDisplayData
+      ? formatMentorHeadline({ jobTitle: currentJobTitle, company: currentCompany, t })
+      : resolveProfileRoleLabel({ profile, academicProfile: orgMember, t }),
     avatar: profile?.avatarUrl ?? '',
     cover: coverUrl,
   };
@@ -380,7 +397,7 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
       { icon: BusinessIcon, label: t('profile:company'), value: currentCompany },
     ];
 
-    const hasBio = !!bio?.trim();
+    const hasBio = !!personalBio?.trim();
 
     return (
       <Box>
@@ -391,7 +408,7 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
               color={hasBio ? 'text.secondary' : 'text.disabled'}
               sx={{ whiteSpace: 'pre-line', fontSize: '1.05rem', lineHeight: 1.7, fontStyle: hasBio ? 'normal' : 'italic' }}
             >
-              {bio?.trim() || t('profile:no_bio')}
+              {personalBio?.trim() || t('profile:no_bio')}
             </Typography>
           </Grid>
 
@@ -442,13 +459,16 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
     }
 
     if (access.hasMentorProfile) {
+      const mentorTopicFallback = normalizeTags(mentor?.expertiseTopics);
+      const expertiseTags = expertise.map((e) => e.tag || e.topic).flatMap(normalizeTags);
       const stats = [
-        { value: expertise.length, label: t('profile:stats_expertise') },
+        { value: expertise.length || mentorTopicFallback.length, label: t('profile:stats_expertise') },
         { value: mentor?.totalSessions ?? 0, label: t('profile:stats_sessions') },
         { value: formatRating(mentor?.ratingAvg), label: t('profile:stats_rating') },
         { value: feedbacks.length, label: t('profile:stats_feedbacks') },
       ];
-      const tags = expertise.map((e) => e.tag || e.topic).filter(Boolean);
+      const tags = Array.from(new Set([...expertiseTags, ...mentorTopicFallback]));
+      const hasMentorBio = !!mentorBio?.trim();
 
       const totalPages = Math.max(1, Math.ceil(feedbacks.length / ITEMS_PER_PAGE));
       const paginatedReviews = feedbacks.slice((feedbackPage - 1) * ITEMS_PER_PAGE, feedbackPage * ITEMS_PER_PAGE);
@@ -466,6 +486,20 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
             </Alert>
           )}
           <StatsBanner items={stats} />
+
+          {isMentorshipPath && (
+            <Box>
+              <Typography variant="h5" fontWeight={800} color="primary.main" mb={3} display="flex" alignItems="center" gap={1}>
+                <PersonIcon /> {t('profile:intro_section')}
+              </Typography>
+              <Typography
+                color={hasMentorBio ? 'text.secondary' : 'text.disabled'}
+                sx={{ whiteSpace: 'pre-line', fontSize: '1.05rem', lineHeight: 1.7, fontStyle: hasMentorBio ? 'normal' : 'italic' }}
+              >
+                {mentorBio?.trim() || t('profile:no_intro')}
+              </Typography>
+            </Box>
+          )}
 
           <ExpertiseSection expertise={expertise} t={t} />
 
@@ -538,7 +572,7 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
         cover={user.cover}
         tabs={tabs}
         onNavigate={navigate}
-        mode="user"
+        mode={isMentorshipPath ? 'mentor' : 'user'}
       >
         <Stack spacing={6}>
           {isMentorshipPath ? (
@@ -561,7 +595,6 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
                 <ExtendedProfileSections raw={extendedProfile} t={t} />
               </Box>
               <UserHighlights userId={profile?.userId || authUser?.id} navigate={navigate} />
-              {renderMentorshipSection()}
             </>
           )}
         </Stack>
@@ -624,9 +657,9 @@ const PublicMentorProfile = ({ mentorMemberId, navigate }) => {
 
   const user = {
     name: mentor.fullName ?? `Mentor #${mentor.memberId}`,
-    role: [mentor.currentJobTitle, mentor.currentCompany].filter(Boolean).join(' @ ') || t('profile:mentor_role_default'),
+    role: formatMentorHeadline({ jobTitle: mentor.currentJobTitle, company: mentor.currentCompany, t }),
     avatar: mentor.avatarUrl ?? '',
-    cover: DEFAULT_COVER,
+    cover: mentor.coverUrl || MENTORSHIP_COVER,
   };
 
   const stats = [
@@ -635,10 +668,10 @@ const PublicMentorProfile = ({ mentorMemberId, navigate }) => {
     { value: formatRating(mentor.ratingAvg), label: t('profile:stats_rating') },
   ];
 
-  const tags =
-    expertise.length > 0
-      ? expertise.map((e) => e.tag || e.topic).filter(Boolean)
-      : (mentor.expertiseTopics ?? []);
+  const tags = Array.from(new Set([
+    ...expertise.map((e) => e.tag || e.topic).flatMap(normalizeTags),
+    ...normalizeTags(mentor.expertiseTopics),
+  ]));
 
   return (
     <ProfileLayout
@@ -668,13 +701,9 @@ const PublicMentorProfile = ({ mentorMemberId, navigate }) => {
         <Typography variant="h5" fontWeight={800} color="primary.main" mb={3} display="flex" alignItems="center" gap={1}>
           <PersonIcon /> {t('profile:intro_section')}
         </Typography>
-        <Card sx={{ borderRadius: 3, boxShadow: '0 4px 20px 0 rgba(0,0,0,0.05)', border: '1px solid', borderColor: 'divider' }}>
-          <CardContent sx={{ p: { xs: 3, md: 4 } }}>
-            <Typography color={mentor.bio?.trim() ? 'text.secondary' : 'text.disabled'} sx={{ whiteSpace: 'pre-line', fontSize: '1.05rem', lineHeight: 1.7, fontStyle: mentor.bio?.trim() ? 'normal' : 'italic' }}>
-              {mentor.bio?.trim() || t('profile:no_intro')}
-            </Typography>
-          </CardContent>
-        </Card>
+        <Typography color={mentor.bio?.trim() ? 'text.secondary' : 'text.disabled'} sx={{ whiteSpace: 'pre-line', fontSize: '1.05rem', lineHeight: 1.7, fontStyle: mentor.bio?.trim() ? 'normal' : 'italic' }}>
+          {mentor.bio?.trim() || t('profile:no_intro')}
+        </Typography>
       </Box>
 
       <Box sx={{ mt: 5 }}>
@@ -711,7 +740,6 @@ const PublicMentorProfile = ({ mentorMemberId, navigate }) => {
 };
 
 const UnifiedProfilePage = () => {
-  const { t } = useTranslation('mentorship');
   const navigate = useOrgNavigate();
   const location = useLocation();
   const { mentorId, id } = useParams();

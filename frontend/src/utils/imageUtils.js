@@ -86,6 +86,7 @@ export const fileToCroppedCoverBase64 = async (
   file,
   positionY = 50,
   aspectRatio = 16 / 9,
+  options = {},
 ) => {
   if (!file) return null;
 
@@ -105,8 +106,10 @@ export const fileToCroppedCoverBase64 = async (
 
   const cropX = (sourceWidth - cropWidth) / 2;
   const cropY = ((sourceHeight - cropHeight) * safePositionY) / 100;
-  const targetWidth = Math.round(cropWidth);
-  const targetHeight = Math.round(cropHeight);
+  const maxWidth = Number(options.maxWidth) || 1920;
+  const scale = Math.min(1, maxWidth / cropWidth);
+  const targetWidth = Math.round(cropWidth * scale);
+  const targetHeight = Math.round(cropHeight * scale);
 
   const canvas = document.createElement("canvas");
   canvas.width = targetWidth;
@@ -125,7 +128,7 @@ export const fileToCroppedCoverBase64 = async (
     targetHeight,
   );
 
-  return canvas.toDataURL(file.type === "image/png" ? "image/png" : "image/jpeg", 0.92);
+  return canvas.toDataURL(options.mimeType || "image/jpeg", options.quality ?? 0.86);
 };
 
 export const getJsonPayloadByteSize = (payload) =>

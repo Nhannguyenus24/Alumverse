@@ -326,7 +326,7 @@ const AdminLoginPage = () => {
             sx={{
               position: 'absolute',
               inset: 0,
-              bgcolor: alpha(theme.palette.secondary.darker, 0.4),
+              bgcolor: alpha(theme.palette.common.black, theme.palette.mode === 'dark' ? 0.68 : 0.42),
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',

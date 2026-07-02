@@ -24,6 +24,7 @@ import { useCheckConversationRequestStatus } from '../../hooks/network/useCheckC
 import { useNetworkCurrentMemberId } from '../../hooks/network/useNetworkCurrentMemberId';
 import { useNotification } from '../../hooks/useNotification';
 import { usePublicProfile } from '../../hooks/profile/usePublicProfile';
+import { resolveProfileRoleLabel } from '../../utils/profileRoleUtils';
 
 const DEFAULT_COVER =
   'https://ethnasia.com/cdn/shop/articles/sean-o-KMn4VEeEPR8-unsplash_edited.jpg?v=1621585619';
@@ -64,7 +65,7 @@ const PublicUserProfile = ({ userId, navigate }) => {
     } catch {
       showError(t('pub_check_connection_error'));
     }
-  }, [checkStatus, currentMemberId, navigate, profile?.userId, showError, showInfo, userId]);
+  }, [checkStatus, currentMemberId, navigate, profile?.userId, showError, showInfo, t, userId]);
 
   const handleCloseMessage = useCallback(() => {
     setIsMessageDrawerOpen(false);
@@ -89,7 +90,11 @@ const PublicUserProfile = ({ userId, navigate }) => {
 
   const user = {
     name: profile.fullName ?? `User #${profile.userId}`,
-    role: [profile.currentJobTitle, profile.currentCompany].filter(Boolean).join(' @ ') || t('member_role_default'),
+    role: resolveProfileRoleLabel({
+      profile,
+      academicProfile: profile.organizationMember ?? profile,
+      t,
+    }),
     avatar: profile.avatarUrl ?? '',
     cover: profile.coverUrl || DEFAULT_COVER,
   };

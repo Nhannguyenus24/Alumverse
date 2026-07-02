@@ -4,6 +4,10 @@ import { Box, Container, Stack, Typography, Avatar, Button } from '@mui/material
 import TopTabFilter from '../components/mentorship/TopTabFilter';
 import CoverUpload from '../components/CoverUpload';
 
+const profileSurfaceColor = (theme) => (
+  theme.palette.mode === 'dark' ? theme.palette.background.default : theme.palette.background.paper
+);
+
 const ProfileLayout = ({
   user,
   tabs,
@@ -11,6 +15,8 @@ const ProfileLayout = ({
   mode = 'mentor',
   cover,
   onCoverChange,
+  coverPositionY,
+  onCoverPositionYChange,
   mentorId,
   canBook = true,
   onUserMessage,
@@ -30,7 +36,12 @@ const ProfileLayout = ({
   const BUTTON_CONFIG = useMemo(() => ({
     mentor: [
       { label: t('back_to_mentorship'), variant: 'outlined', onClick: () => onNavigate('/development/mentorship') },
-      { label: t('edit_profile'), variant: 'outlined', color: 'secondary', onClick: () => onNavigate('/development/mentorship/profile/edit') },
+      {
+        label: t('edit_profile'),
+        variant: 'outlined',
+        color: 'secondary',
+        onClick: () => onNavigate('/development/mentorship/profile/edit', { state: { profileEditContext: 'mentorship' } }),
+      },
     ],
     mentorEdit: [],
     menteeOwn: [
@@ -43,7 +54,7 @@ const ProfileLayout = ({
     ],
     user: [
       { label: t('back'), variant: 'outlined', onClick: handleBack },
-      { label: t('edit_profile'), variant: 'outlined', color: 'secondary', onClick: () => onNavigate('/profile/edit') },
+      { label: t('edit_profile'), variant: 'outlined', color: 'secondary', onClick: () => onNavigate('/profile/edit', { state: { profileEditContext: 'profile' } }) },
     ],
     userEdit: [],
     userView: [
@@ -60,11 +71,20 @@ const ProfileLayout = ({
   const isEditMode = mode === 'mentorEdit' || mode === 'userEdit';
 
   return (
-    <Box sx={{ pb: 6 }}>
+    <Box sx={{ pb: 6, backgroundColor: 'background.default' }}>
       {/* ================= COVER ================= */}
       <Box>
         {isEditMode ? (
-          <CoverUpload value={cover} onChange={onCoverChange} />
+          <CoverUpload
+            value={cover}
+            onChange={onCoverChange}
+            heightSx={{ xs: 130, md: 180 }}
+            minHeightSx={{ xs: 130, md: 180 }}
+            positionY={coverPositionY}
+            onPositionYChange={onCoverPositionYChange}
+            editLabel={t('edit_cover', { defaultValue: 'Sửa ảnh bìa' })}
+            addLabel={t('add_cover', { defaultValue: 'Thêm ảnh bìa' })}
+          />
         ) : (
           <Box
             sx={{
@@ -76,7 +96,7 @@ const ProfileLayout = ({
           />
         )}
 
-        <Box sx={{ backgroundColor: 'background.paper', pb: { xs: 3, md: 0 } }}>
+        <Box sx={{ backgroundColor: profileSurfaceColor, pb: { xs: 3, md: 0 } }}>
           <Container maxWidth="lg">
             <Box
               sx={{
@@ -97,14 +117,23 @@ const ProfileLayout = ({
                   gap: 2,
                 }}
               >
-                <Box sx={{ position: 'relative', width: 140, height: 140, mt: { xs: -7, md: '-40px', borderRadius: '50%', overflow: 'hidden', } }}>
+                <Box
+                  sx={{
+                    position: 'relative',
+                    width: 140,
+                    height: 140,
+                    mt: { xs: -7, md: '-40px' },
+                    borderRadius: '50%',
+                    overflow: 'hidden',
+                  }}
+                >
                   {avatarSlot ?? (
                     <Avatar
                       src={user.avatar}
                       sx={{
                         width: 140,
                         height: 140,
-                        border: '5px solid white',
+                        border: (theme) => `5px solid ${profileSurfaceColor(theme)}`,
                       }}
                     />
                   )}

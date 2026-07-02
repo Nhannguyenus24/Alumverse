@@ -132,7 +132,8 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
   }, [activeChat?.id]);
 
   useEffect(() => {
-    setMembersDrawerOpen(false);
+    const timer = window.setTimeout(() => setMembersDrawerOpen(false), 0);
+    return () => window.clearTimeout(timer);
   }, [activeChat?.id]);
 
   // --- Scroll ---
@@ -196,7 +197,7 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
     if (!text || !activeChat?.id || !isOpen || isMessagingBlocked || !canContribute) return;
     wsSendMessage({ groupId: activeChat.id, content: text, chatType: activeChat?.type });
     setDraft('');
-  }, [draft, activeChat?.id, activeChat?.type, isOpen, isMessagingBlocked, canContribute, wsSendMessage]);
+  }, [draft, activeChat, isOpen, isMessagingBlocked, canContribute, wsSendMessage]);
 
   const handleKeyDown = useCallback((event) => {
     if (event.key !== 'Enter' || event.shiftKey) return;
@@ -612,9 +613,9 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
           <>
             {t('network:block_dialog_message', { name: activeChat?.name ?? t('network:this_user') })}
             {' '}
-            <strong style={{ color: 'rgba(0, 0, 0, 0.87)' }}>
+            <Typography component="strong" variant="inherit" sx={{ color: 'text.primary', fontWeight: 700 }}>
               {t('network:block_note')}
-            </strong>
+            </Typography>
             {' '}{t('network:block_result_note')}
           </>
         )}

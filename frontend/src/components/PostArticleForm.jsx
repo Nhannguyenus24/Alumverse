@@ -1,5 +1,6 @@
 import { useMemo, useCallback } from 'react';
 import { Box, Stack, TextField, Typography, MenuItem, Grid, Button, FormControlLabel, Checkbox } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
 import WYSIWYG from './WYSIWYG';
 import Input from './Input';
@@ -160,7 +161,16 @@ const PostArticleForm = ({
 
       {/* 1. LAYOUT QUYÊN GÓP (Giữ nguyên cấu trúc Huy đã tweak) */}
       {channel === 'donation' && (
-        <Box sx={{ backgroundColor: '#e3f2fd', borderRadius: 2, p: { xs: 2, sm: 3, md: 4 }, my: 2 }}>
+        <Box
+          sx={(theme) => ({
+            backgroundColor: alpha(theme.palette.info.main, theme.palette.mode === 'dark' ? 0.12 : 0.08),
+            border: '1px solid',
+            borderColor: alpha(theme.palette.info.main, theme.palette.mode === 'dark' ? 0.28 : 0.18),
+            borderRadius: 2,
+            p: { xs: 2, sm: 3, md: 4 },
+            my: 2,
+          })}
+        >
           <Typography variant="h6" fontWeight={700} sx={{ mb: 3, color: 'primary.main' }}>
             {t('donation:section_title')}
           </Typography>
@@ -192,7 +202,16 @@ const PostArticleForm = ({
       {/* 2. LAYOUT SỰ KIỆN */}
       {channel === 'event' && (
       <Box>
-        <Box sx={{ backgroundColor: '#e3f2fd', borderRadius: 2, p: { xs: 2, sm: 3, md: 4 }, my: 2 }}>
+        <Box
+          sx={(theme) => ({
+            backgroundColor: alpha(theme.palette.info.main, theme.palette.mode === 'dark' ? 0.12 : 0.08),
+            border: '1px solid',
+            borderColor: alpha(theme.palette.info.main, theme.palette.mode === 'dark' ? 0.28 : 0.18),
+            borderRadius: 2,
+            p: { xs: 2, sm: 3, md: 4 },
+            my: 2,
+          })}
+        >
           <Typography variant="h6" fontWeight={700} sx={{ mb: 3, color: 'primary.main' }}>
             {t('event:section_title')}
           </Typography>
@@ -240,7 +259,16 @@ const PostArticleForm = ({
         </Box>
 
         {!hideLocalQuestions && (
-        <Box sx={{ backgroundColor: "#fff8e1", borderRadius: 2, p: { xs: 2, sm: 3, md: 4 }, my: 2 }}>
+        <Box
+          sx={(theme) => ({
+            backgroundColor: alpha(theme.palette.warning.main, theme.palette.mode === 'dark' ? 0.14 : 0.1),
+            border: '1px solid',
+            borderColor: alpha(theme.palette.warning.main, theme.palette.mode === 'dark' ? 0.32 : 0.22),
+            borderRadius: 2,
+            p: { xs: 2, sm: 3, md: 4 },
+            my: 2,
+          })}
+        >
           <Typography variant="h6" fontWeight={700} color="primary.main" sx={{ mb: 3 }}>
             {t('event:questions_section_title')}
           </Typography>
