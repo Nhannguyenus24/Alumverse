@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Box, Container, Typography, Button, Stack, TextField } from '@mui/material';
+import { Box, Container, Typography, Button, Stack, TextField, useTheme } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import Page from '../../components/Page';
 import Input from '../../components/Input';
 import Dropdown from '../../components/Dropdown';
@@ -21,6 +22,7 @@ const CONTACT_INFO = {
 
 const ContactPage = () => {
   const { t } = useTranslation('contact');
+  const theme = useTheme();
   const { organization } = useOrganization();
   const { showError, showSuccess } = useNotification();
   const [form, setForm] = useState({
@@ -31,6 +33,9 @@ const ContactPage = () => {
     content: '',
   });
   const [loading, setLoading] = useState(false);
+  const isDark = theme.palette.mode === 'dark';
+  const formBg = 'background.paper';
+  const fieldBg = isDark ? alpha(theme.palette.common.white, 0.04) : 'grey.50';
 
   const SUBJECT_OPTIONS = [
     { value: 'general', label: t('subject_general') },
@@ -127,9 +132,14 @@ const ContactPage = () => {
               sx={{
                 width: '100%',
                 maxWidth: 960,
-                backgroundColor: '#fff',
+                backgroundColor: formBg,
+                color: 'text.primary',
                 borderRadius: 1,
-                boxShadow: '0 4px 24px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06)',
+                border: '1px solid',
+                borderColor: isDark ? 'divider' : alpha(theme.palette.common.black, 0.06),
+                boxShadow: isDark
+                  ? '0 18px 48px rgba(0,0,0,0.42), 0 0 0 1px rgba(255,255,255,0.04)'
+                  : '0 4px 24px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06)',
                 overflow: 'hidden',
                 py: { xs: 5, md: 6 },
                 px: { xs: 5, md: 6 },
@@ -147,7 +157,7 @@ const ContactPage = () => {
 
               <Stack
                 direction={{ xs: 'column', md: 'row' }}
-                spacing={{ xs: 3, md: 4 }}
+                spacing={{ xs: 3, md: 7 }}
                 alignItems="stretch"
                 sx={{ flexWrap: 'wrap' }}
               >
@@ -158,10 +168,10 @@ const ContactPage = () => {
                     minWidth: 0,
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: 1.5,
+                    gap: 1.6,
                   }}
                 >
-                  <Typography variant="subtitle1" fontWeight={700} color="text.primary">
+                  <Typography variant="subtitle1" fontWeight={700} color="primary.main">
                     {t('contact_info_title')}
                   </Typography>
                   <Typography variant="body2" color="text.secondary" fontWeight={600}>
@@ -192,7 +202,7 @@ const ContactPage = () => {
                     gap: 2,
                   }}
                 >
-                  <Typography variant="subtitle1" fontWeight={700} color="text.primary">
+                  <Typography variant="subtitle1" fontWeight={700} color="primary.main">
                     {t('sender_info_title')}
                   </Typography>
                   <Box sx={{ width: '100%' }}>
@@ -222,7 +232,7 @@ const ContactPage = () => {
                     </Box>
                   </Box>
 
-                  <Typography variant="subtitle1" fontWeight={700} color="text.primary" sx={{ mt: 0.5 }}>
+                  <Typography variant="subtitle1" fontWeight={700} color="primary.main" sx={{ mt: 0.5 }}>
                     {t('content_title')}
                   </Typography>
                   <Box sx={{ width: '100%' }}>
@@ -232,6 +242,13 @@ const ContactPage = () => {
                       options={SUBJECT_OPTIONS}
                       value={form.subject}
                       onChange={(e) => setForm((prev) => ({ ...prev, subject: e.target.value }))}
+                      sx={{
+                        bgcolor: fieldBg,
+                        color: 'text.primary',
+                        '& .MuiSelect-select': {
+                          color: form.subject ? 'text.primary' : 'text.secondary',
+                        },
+                      }}
                     />
                   </Box>
                   <Box sx={{ width: '100%' }}>
@@ -243,7 +260,16 @@ const ContactPage = () => {
                       onChange={handleChange('content')}
                       fullWidth
                       variant="outlined"
-                      sx={{ '& .MuiOutlinedInput-root': { backgroundColor: 'grey.50' } }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          backgroundColor: fieldBg,
+                          color: 'text.primary',
+                        },
+                        '& .MuiOutlinedInput-input::placeholder': {
+                          color: 'text.secondary',
+                          opacity: 1,
+                        },
+                      }}
                     />
                   </Box>
                   <Box sx={{ display: 'flex', justifyContent: 'center', pt: 0.5 }}>
@@ -253,6 +279,7 @@ const ContactPage = () => {
                       color="primary"
                       size="large"
                       disabled={!canSubmit}
+                      fullWidth
                       sx={{ fontWeight: 600, px: 4 }}
                     >
                       {loading ? t('sending') : t('submit')}

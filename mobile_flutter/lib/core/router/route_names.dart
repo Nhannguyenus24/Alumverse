@@ -39,4 +39,7 @@ class RouteNames {
   // Admin/staff event check-in: picker → per-event QR scanner.
   static const String adminCheckIn = '/admin/check-in';
   static String adminCheckInScanner(int eventId) => '/admin/check-in/$eventId';
+
+  // Admin event management (stats + participants).
+  static String adminEventManage(int eventId) => '/admin/events/$eventId';
 }

@@ -12,6 +12,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/image_url.dart';
 import '../../../../shared/widgets/app_toast.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../user/presentation/providers/user_providers.dart';
 import '../../data/models/trusted_verifier.dart';
 import '../../data/repositories/organization_repository.dart';
 import '../providers/organization_provider.dart';
@@ -47,6 +48,20 @@ class _OrganizationRegistrationPageState
   bool get _hasVerifier => _selectedVerifierIds.isNotEmpty;
   bool get _isAllOptional => _hasVerifier;
   bool get _isAcademicOptional => _proofFile != null || _hasVerifier;
+
+  @override
+  void initState() {
+    super.initState();
+    // Auto-fill student code from the user's profile (set during registration).
+    // Runs after the first frame so the widget tree and ref are fully ready.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final profile = ref.read(myProfileProvider).valueOrNull;
+      if (profile?.studentId != null && _studentCodeCtl.text.isEmpty) {
+        _studentCodeCtl.text = profile!.studentId!;
+      }
+    });
+  }
 
   @override
   void dispose() {

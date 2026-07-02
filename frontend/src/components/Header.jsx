@@ -11,7 +11,6 @@ import ExpandMore from '@mui/icons-material/ExpandMore';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 import PersonIcon from '@mui/icons-material/Person';
-import Brightness6RoundedIcon from '@mui/icons-material/Brightness6Rounded';
 import { useTranslation } from 'react-i18next';
 import Iconify from './Iconify';
 import Notification from './Notification';
@@ -35,8 +34,34 @@ const VERIFICATION_LABELS = {
   3: 'Student',
 };
 
+const HEADER_TOOLTIP_SLOT_PROPS = {
+  popper: {
+    modifiers: [
+      {
+        name: 'offset',
+        options: { offset: [0, 4] },
+      },
+    ],
+  },
+};
+
+const ThemeModeIcon = ({ rotated = false }) => (
+  <Box
+    component="span"
+    sx={{
+      width: 18,
+      height: 18,
+      borderRadius: "50%",
+      border: "2px solid currentColor",
+      background: "linear-gradient(90deg, currentColor 0 50%, transparent 50% 100%)",
+      display: "inline-block",
+      transform: rotated ? "rotate(180deg)" : "rotate(0deg)",
+      transition: "transform 320ms ease",
+    }}
+  />
+);
+
 const getNavItems = (t) => [
-  { label: t('nav:home'), href: '/' },
   { label: t('nav:introduction'), href: '/introduction',
     children: [
       { label: t('nav:intro_general'), href: '/introduction' },
@@ -44,7 +69,14 @@ const getNavItems = (t) => [
       { label: t('nav:intro_team'), href: '/introduction/team' },
     ]
   },
-  { label: t('nav:network'), href: '/search', requiresAuth: true },
+  {
+    label: t('nav:network'), href: '/network', requiresAuth: true,
+    children: [
+      { label: t('nav:network_requests'), href: '/network/requests' },
+      { label: t('nav:network_connections'), href: '/network/connections' },
+      { label: t('nav:network_restricted'), href: '/network/restricted-connections' },
+    ],
+  },
   {
     label: t('nav:honors'), href: '/honors',
     children: [
@@ -52,13 +84,8 @@ const getNavItems = (t) => [
       { label: t('nav:honors_achievements'), href: '/honors/achievements' },
     ],
   },
-  {
-    label: t('nav:activities'), href: '/activities',
-    children: [
-      { label: t('nav:events'), href: '/activities/events', requiresAuth: true },
-      { label: t('nav:news'), href: '/activities/news' },
-    ],
-  },
+  { label: t('nav:news'), href: '/news' },
+  { label: t('nav:events'), href: '/events', requiresAuth: true },
   {
     label: t('nav:development'), href: '/development', requiresAuth: true,
     children: [
@@ -69,7 +96,6 @@ const getNavItems = (t) => [
   },
   { label: t('nav:forum'), href: '/forum' },
   { label: t('nav:donation'), href: '/donations' },
-  { label: t('nav:contact'), href: '/contact' },
 ];
 
 const Header = () => {
@@ -138,20 +164,17 @@ const Header = () => {
     setExpandedNav((prev) => ({ ...prev, [label]: !prev[label] }));
   }, []);
 
-  const headerTextColor = isTransparent
-    ? '#FFFFFF'
-    : (isAdmin ? 'primary.contrastText' : 'text.primary');
+  const headerTextColor = isTransparent ? '#FFFFFF' : 'text.primary';
 
   const navButtonSx = useMemo(() => ({
-    color: headerTextColor, fontWeight: 600, fontSize: { xs: '0.875rem', xl: '0.9375rem' },
-    textTransform: 'none', px: { xs: 1, xl: 1.5 }, transition: 'all 0.3s ease',
+    color: headerTextColor, fontWeight: 600, fontSize: { xs: '0.9375rem', xl: '1rem' },
+    textTransform: 'none', px: { xs: 1.5, xl: 2 }, transition: 'all 0.3s ease',
     position: 'relative',
     borderRadius: 1,
     '&:hover': {
-      backgroundColor: isTransparent ? 'rgba(255,255,255,0.1)'
-        : (isAdmin ? 'rgba(255,255,255,0.08)' : 'action.hover'),
+      backgroundColor: isTransparent ? 'rgba(255,255,255,0.1)' : 'action.hover',
     },
-  }), [headerTextColor, isTransparent, isAdmin]);
+  }), [headerTextColor, isTransparent]);
 
   const getNavActive = useCallback((item) => {
     if (item.href === '/') {
@@ -165,19 +188,14 @@ const Header = () => {
   const getNavActiveSx = useCallback((active) => {
     if (!active) return {};
 
-    const activeColor = isTransparent ? '#FFFFFF' : (isAdmin ? 'primary.contrastText' : 'primary.main');
+    const activeColor = isTransparent ? '#FFFFFF' : 'primary.main';
     return {
       color: activeColor,
       fontWeight: 800,
     };
-  }, [isAdmin, isTransparent]);
+  }, [isTransparent]);
 
-  const shouldUseDarkAdminLogo = isAdmin
-    && !isTransparent
-    && theme.palette.primary.contrastText !== '#fff'
-    && theme.palette.primary.contrastText !== '#FFFFFF';
-  const logoSrc = (isTransparent || isAdmin) ? LOGO_SRC_WHITE : LOGO_SRC;
-  const logoSx = shouldUseDarkAdminLogo ? { filter: 'brightness(0)' } : undefined;
+  const logoSrc = (isTransparent || theme.palette.mode === 'dark') ? LOGO_SRC_WHITE : LOGO_SRC;
 
   const appBarMinHeight = HEADER_HEIGHT;
 
@@ -187,9 +205,9 @@ const Header = () => {
         position="fixed"
         elevation={0}
         sx={{
-          backgroundColor: isTransparent ? 'transparent' : (isAdmin ? 'primary.main' : 'background.paper'),
+          backgroundColor: isTransparent ? 'transparent' : 'background.paper',
           color: headerTextColor,
-          borderBottom: isTransparent ? 'none' : (isAdmin ? 'transparent' : 1),
+          borderBottom: isTransparent ? 'none' : 1,
           borderColor: 'divider',
           transition: 'all 0.4s ease-in-out',
         }}
@@ -210,7 +228,6 @@ const Header = () => {
                 src={logoSrc}
                 alt="AlumVerse"
                 size="medium"
-                sx={logoSx}
               />
             </Link>
           </Box>
@@ -253,53 +270,81 @@ const Header = () => {
                     key={item.label}
                     onMouseEnter={() => !isLocked && item.children && setHoveredNav(item.label)}
                     onMouseLeave={() => setHoveredNav(null)}
-                    sx={{ position: 'relative', display: 'flex', alignItems: 'center', py: 2.5 }}
+                    sx={{ position: 'relative', display: 'flex', alignItems: 'center', py: 1.5 }}
                   >
-                    {isLocked ? (
-                      <Tooltip title={t('nav:login_required')} arrow placement="bottom">
-                        <span style={{ display: 'inline-block' }}>{buttonContent}</span>
-                      </Tooltip>
-                    ) : buttonContent}
+                    <Tooltip
+                      title={isLocked ? t('nav:login_required') : ''}
+                      arrow
+                      placement="bottom"
+                      slotProps={HEADER_TOOLTIP_SLOT_PROPS}
+                      disableHoverListener={!isLocked}
+                    >
+                      <span style={{ display: 'inline-block' }}>{buttonContent}</span>
+                    </Tooltip>
 
                     {item.children && hoveredNav === item.label && (
                       <Box
                         onMouseEnter={() => setHoveredNav(item.label)}
                         onMouseLeave={() => setHoveredNav(null)}
                         sx={{
-                          position: 'absolute', top: '100%', pt: 1, left: '50%', transform: 'translateX(-50%)',
-                          display: 'flex', flexDirection: 'column', bgcolor: 'background.paper',
-                          borderRadius: 1, boxShadow: 3, py: 0.5, px: 0.5,
-                          width: 'max-content', minWidth: 180, zIndex: 10,
-                          border: '1px solid', borderColor: 'divider'
+                          position: 'absolute',
+                          top: '100%',
+                          pt: 1.5,
+                          left: '50%',
+                          transform: 'translateX(-50%)',
+                          width: 'max-content',
+                          minWidth: 180,
+                          zIndex: 10,
                         }}
                       >
-                        {item.children.map((child) => {
-                          const isChildLocked = child.requiresAuth && !isAuthenticated;
-                          const childButtonContent = (
-                            <Button
-                              key={child.label}
-                              component={isChildLocked ? 'button' : Link}
-                              to={isChildLocked ? undefined : toOrgPath(child.href)}
-                              disabled={isChildLocked}
-                              sx={{ justifyContent: 'flex-start', textAlign: 'left', px: 2, py: 1,
-                                    textTransform: 'none', color: 'text.primary', width: '100%', fontWeight: 500,
-                                    '&:hover': { bgcolor: 'action.hover' } }}
-                            >
-                              {child.label}
-                              {isChildLocked && (
-                                <Box component="span" sx={{ ml: 1, display: 'inline-flex', verticalAlign: 'middle' }}>
-                                  <Iconify icon="eva:lock-fill" width={14} height={14} sx={{ opacity: 0.5 }} />
-                                </Box>
-                              )}
-                            </Button>
-                          );
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            bgcolor: 'background.paper',
+                            borderRadius: 1,
+                            boxShadow: 3,
+                            py: 0.5,
+                            px: 0.5,
+                            border: '1px solid',
+                            borderColor: 'divider',
+                          }}
+                        >
+                          {item.children.map((child) => {
+                            const isChildLocked = child.requiresAuth && !isAuthenticated;
+                            const childButtonContent = (
+                              <Button
+                                key={child.label}
+                                component={isChildLocked ? 'button' : Link}
+                                to={isChildLocked ? undefined : toOrgPath(child.href)}
+                                disabled={isChildLocked}
+                                sx={{ justifyContent: 'flex-start', textAlign: 'left', px: 2, py: 1,
+                                      textTransform: 'none', color: 'text.primary', width: '100%', fontWeight: 500,
+                                      '&:hover': { bgcolor: 'action.hover' } }}
+                              >
+                                {child.label}
+                                {isChildLocked && (
+                                  <Box component="span" sx={{ ml: 1, display: 'inline-flex', verticalAlign: 'middle' }}>
+                                    <Iconify icon="eva:lock-fill" width={14} height={14} sx={{ opacity: 0.5 }} />
+                                  </Box>
+                                )}
+                              </Button>
+                            );
 
-                          return isChildLocked ? (
-                            <Tooltip key={child.label} title={t('nav:login_required')} arrow placement="right">
-                              <Box component="span" sx={{ display: 'block', width: '100%' }}>{childButtonContent}</Box>
-                            </Tooltip>
-                          ) : childButtonContent;
-                        })}
+                            return (
+                              <Tooltip
+                                key={child.label}
+                                title={isChildLocked ? t('nav:login_required') : ''}
+                                arrow
+                                placement="right"
+                                slotProps={HEADER_TOOLTIP_SLOT_PROPS}
+                                disableHoverListener={!isChildLocked}
+                              >
+                                <Box component="span" sx={{ display: 'block', width: '100%' }}>{childButtonContent}</Box>
+                              </Tooltip>
+                            );
+                          })}
+                        </Box>
                       </Box>
                     )}
                   </Box>
@@ -316,28 +361,30 @@ const Header = () => {
                     ? t('nav:switch_to_light_mode', { defaultValue: 'Chuyển sang giao diện sáng' })
                     : t('nav:switch_to_dark_mode', { defaultValue: 'Chuyển sang giao diện tối' })}
                   arrow
+                  placement="bottom"
+                  slotProps={HEADER_TOOLTIP_SLOT_PROPS}
                 >
                   <IconButton
                     size="small"
                     aria-label={t('nav:toggle_theme_aria_label', { defaultValue: 'Đổi chế độ sáng tối' })}
                     onClick={toggleThemeMode}
                     sx={{
-                      color: isTransparent ? '#FFFFFF' : (isAdmin ? 'primary.contrastText' : 'primary.main'),
+                      color: headerTextColor,
                       mr: 0.25,
                       '&:hover': {
                         bgcolor: isTransparent ? 'rgba(255,255,255,0.12)' : 'action.hover',
                       },
                     }}
                   >
-                    <Brightness6RoundedIcon fontSize="small" />
+                    <ThemeModeIcon rotated={themeMode === 'dark'} />
                   </IconButton>
                 </Tooltip>
                 <LanguageSwitcher
-                  contrastMode={isTransparent || isAdmin}
+                  contrastMode={isTransparent}
                   color={headerTextColor}
                   buttonSx={{
                     '&:hover': {
-                      bgcolor: isTransparent ? 'rgba(255,255,255,0.12)' : (isAdmin ? 'rgba(255,255,255,0.08)' : 'action.hover'),
+                      bgcolor: isTransparent ? 'rgba(255,255,255,0.12)' : 'action.hover',
                     },
                   }}
                 />
@@ -348,7 +395,7 @@ const Header = () => {
                     <MessagesNavDropdown headerTextColor={headerTextColor} />
                     <AccountMenu
                     displayName={displayName} displayRole={displayRole}
-                    avatarUrl={user?.avatarUrl} contrastMode={isTransparent || isAdmin}
+                    avatarUrl={user?.avatarUrl} contrastMode={isTransparent}
                     textColor={headerTextColor} />
                   </>
                 ) : (
@@ -499,14 +546,16 @@ const Header = () => {
                 ? t('nav:switch_to_light_mode', { defaultValue: 'Chuyển sang giao diện sáng' })
                 : t('nav:switch_to_dark_mode', { defaultValue: 'Chuyển sang giao diện tối' })}
               arrow
+              placement="bottom"
+              slotProps={HEADER_TOOLTIP_SLOT_PROPS}
             >
               <IconButton
                 size="small"
                 aria-label={t('nav:toggle_theme_aria_label', { defaultValue: 'Đổi chế độ sáng tối' })}
                 onClick={toggleThemeMode}
-                sx={{ color: 'primary.main' }}
+                sx={{ color: 'text.primary' }}
               >
-                <Brightness6RoundedIcon fontSize="small" />
+                <ThemeModeIcon rotated={themeMode === 'dark'} />
               </IconButton>
             </Tooltip>
             <LanguageSwitcher />

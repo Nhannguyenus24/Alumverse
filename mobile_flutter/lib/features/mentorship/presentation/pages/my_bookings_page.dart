@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -202,6 +203,12 @@ class _SessionCard extends ConsumerWidget {
                     color: AppColors.textSecondary, fontSize: 13),
               ),
             ],
+            if (st == 'CONFIRMED' &&
+                session.meetingLink != null &&
+                session.meetingLink!.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              _MeetingLinkRow(url: session.meetingLink!),
+            ],
             const SizedBox(height: 10),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
@@ -327,6 +334,49 @@ class _InfoRow extends StatelessWidget {
                   style: const TextStyle(
                       color: AppColors.textSecondary, fontSize: 13))),
         ],
+      ),
+    );
+  }
+}
+
+class _MeetingLinkRow extends StatelessWidget {
+  const _MeetingLinkRow({required this.url});
+
+  final String url;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () async {
+        final uri = Uri.tryParse(url);
+        if (uri != null && await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        }
+      },
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+        decoration: BoxDecoration(
+          color: AppColors.primary.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.videocam_outlined, size: 16, color: AppColors.primary),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                'mentorship.join_meeting'.tr(),
+                style: const TextStyle(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+            const Icon(Icons.open_in_new, size: 14, color: AppColors.primary),
+          ],
+        ),
       ),
     );
   }

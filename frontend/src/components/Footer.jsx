@@ -1,7 +1,9 @@
-import { Box, Container, Stack, Typography, IconButton, useTheme } from '@mui/material';
+import { Link as RouterLink } from 'react-router';
+import { Box, Button, Container, Stack, Typography, IconButton, useTheme } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
 import Logo from './Logo';
+import { useOrgPath } from '../hooks/useOrgNavigate';
 
 const SOCIAL_LINKS = [
   {
@@ -56,17 +58,19 @@ const SocialIcon = ({ href, label, children }) => (
 const Footer = () => {
   const { t } = useTranslation(['footer']);
   const theme = useTheme();
+  const toOrgPath = useOrgPath();
   const isDark = theme.palette.mode === 'dark';
-  const mutedText = isDark ? 'text.secondary' : alpha(theme.palette.footer.contrastText, 0.9);
-  const strongText = isDark ? 'text.primary' : alpha(theme.palette.footer.contrastText, 0.95);
+  const footerText = theme.palette.common.white;
+  const mutedText = alpha(footerText, 0.9);
+  const strongText = alpha(footerText, 0.95);
 
   return (
     <Box
       component="footer"
       sx={{
-        backgroundColor: isDark ? 'background.paper' : 'footer.main',
-        color: isDark ? 'text.primary' : 'footer.contrastText',
-        borderTop: isDark ? '1px solid' : 'none',
+        backgroundColor: isDark ? 'primary.darker' : 'footer.main',
+        color: footerText,
+        borderTop: 'none',
         borderColor: 'divider',
         py: { xs: 6, sm: 7, md: 9 },
         mt: 'auto',
@@ -82,28 +86,44 @@ const Footer = () => {
           {/* Left: Logos + copyright */}
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, flex: { xs: 'none', md: '1 1 0' }, minWidth: 0 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-              <Logo
-                variant="image"
-                src="/alumverse_logo/Logo_White.svg"
-                alt="AlumVerse"
-                size="xlarge"
-              />
-              <Logo
-                variant="image"
-                src="/school_logo/HCMUS_Logo_White.svg"
-                alt="Trường Đại học Khoa học Tự nhiên, ĐHQG-HCM"
-                size="large"
-              />
+              <Box
+                component={RouterLink}
+                to={toOrgPath('/')}
+                aria-label="AlumVerse home"
+                sx={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none' }}
+              >
+                <Logo
+                  variant="image"
+                  src="/alumverse_logo/Logo_White.svg"
+                  alt="AlumVerse"
+                  size="xlarge"
+                />
+              </Box>
+              <Box
+                component={RouterLink}
+                to={toOrgPath('/')}
+                aria-label="HCMUS home"
+                sx={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none' }}
+              >
+                <Logo
+                  variant="image"
+                  src="/school_logo/HCMUS_Logo_White.svg"
+                  alt="Trường Đại học Khoa học Tự nhiên, ĐHQG-HCM"
+                  size="large"
+                />
+              </Box>
             </Box>
             <Typography variant="body1" fontWeight={700} sx={{ fontSize: '1.125rem' }}>
               © AlumVerse (2026)
             </Typography>
-            <Typography variant="body2" sx={{ color: mutedText, lineHeight: 1.6 }}>
-              {t('footer:tagline')}
-            </Typography>
-            <Typography variant="body2" sx={{ color: mutedText, lineHeight: 1.6 }}>
-              {t('footer:institution')}
-            </Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
+              <Typography variant="body2" sx={{ color: mutedText, lineHeight: 1.45 }}>
+                {t('footer:tagline')}
+              </Typography>
+              <Typography variant="body2" sx={{ color: mutedText, lineHeight: 1.45 }}>
+                {t('footer:institution')}
+              </Typography>
+            </Box>
           </Box>
 
           {/* Middle: Contact */}
@@ -130,6 +150,28 @@ const Footer = () => {
             <Typography variant="body2" sx={{ color: mutedText }}>
               {t('footer:admissions_label')}: 093 773 4004
             </Typography>
+            <Button
+              component={RouterLink}
+              to={toOrgPath('/contact')}
+              variant="contained"
+              size="small"
+              sx={{
+                mt: 1.5,
+                px: 2,
+                width: 'fit-content',
+                bgcolor: 'common.white',
+                color: 'primary.main',
+                textTransform: 'none',
+                fontWeight: 700,
+                boxShadow: 'none',
+                '&:hover': {
+                  bgcolor: alpha(theme.palette.common.white, 0.88),
+                  boxShadow: 'none',
+                },
+              }}
+            >
+              {t('footer:contact_link')}
+            </Button>
           </Box>
 
           {/* Right: Social */}

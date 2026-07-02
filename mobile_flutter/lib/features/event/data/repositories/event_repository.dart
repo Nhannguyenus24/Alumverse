@@ -138,6 +138,64 @@ class EventRepository {
     return EventTicket.fromJson(data);
   }
 
+  /// Full statistics for one event (admin): registered, checked-in, interested,
+  /// capacity, available slots (`GET /api/events/{id}/statistics`).
+  Future<Map<String, dynamic>> getEventStatistics(int id) async {
+    final res = await _dio.get(ApiEndpoints.eventStatistics(id));
+    final data = res.data is Map && res.data['data'] is Map
+        ? res.data['data'] as Map<String, dynamic>
+        : (res.data is Map ? res.data as Map<String, dynamic> : <String, dynamic>{});
+    return data;
+  }
+
+  /// Admin ticket list for an event (`GET /api/admin/events/{id}/tickets`).
+  Future<Map<String, dynamic>> getAdminEventTickets(
+    int eventId, {
+    int page = 0,
+    int limit = 20,
+    String? keyword,
+    String? status,
+  }) async {
+    final res = await _dio.get(
+      ApiEndpoints.adminEventTickets(eventId),
+      queryParameters: {
+        'page': page,
+        'limit': limit,
+        if (keyword != null && keyword.isNotEmpty) 'keyword': keyword,
+        if (status != null && status.isNotEmpty) 'status': status,
+      },
+    );
+    final data = res.data is Map ? res.data['data'] : res.data;
+    return data is Map ? data.cast<String, dynamic>() : <String, dynamic>{};
+  }
+
+  /// Admin interest list for an event (`GET /api/admin/events/{id}/interests`).
+  Future<Map<String, dynamic>> getAdminEventInterests(
+    int eventId, {
+    int page = 0,
+    int limit = 20,
+  }) async {
+    final res = await _dio.get(
+      ApiEndpoints.adminEventInterests(eventId),
+      queryParameters: {'page': page, 'limit': limit},
+    );
+    final data = res.data is Map ? res.data['data'] : res.data;
+    return data is Map ? data.cast<String, dynamic>() : <String, dynamic>{};
+  }
+
+  /// Publish an event (`POST /api/admin/events/{id}/publish`).
+  Future<void> publishEvent(int id) =>
+      _dio.post(ApiEndpoints.adminEventPublish(id));
+
+  /// Unpublish an event (`POST /api/admin/events/{id}/unpublish`).
+  Future<void> unpublishEvent(int id) =>
+      _dio.post(ApiEndpoints.adminEventUnpublish(id));
+
+  /// Cancel a ticket by code, admin override
+  /// (`POST /api/admin/events/tickets/{code}/cancel`).
+  Future<void> adminCancelTicket(String code) =>
+      _dio.post(ApiEndpoints.adminEventCancelTicket(code));
+
   /// All events of an organization for the admin check-in picker, including
   /// drafts and past events (`GET /api/admin/events?organizationId=...`).
   /// Requires an admin/staff session. Note the admin API uses `size`, not

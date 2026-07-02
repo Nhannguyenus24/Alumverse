@@ -3,11 +3,14 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/image_url.dart';
 import '../../../../shared/widgets/app_toast.dart';
 import '../../../../shared/widgets/error_view.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../data/models/event_summary.dart';
 import '../../data/repositories/event_repository.dart';
 import '../providers/event_provider.dart';
@@ -25,8 +28,21 @@ class EventDetailPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final detailAsync = ref.watch(eventDetailProvider(eventId));
 
+    final isStaff = ref.watch(isStaffProvider);
+
     return Scaffold(
-      appBar: AppBar(title: Text('event.detail_title'.tr())),
+      appBar: AppBar(
+        title: Text('event.detail_title'.tr()),
+        actions: [
+          if (isStaff)
+            IconButton(
+              icon: const Icon(Icons.admin_panel_settings_outlined),
+              tooltip: 'event.manage_btn'.tr(),
+              onPressed: () =>
+                  context.push(RouteNames.adminEventManage(eventId)),
+            ),
+        ],
+      ),
       body: detailAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, __) => ErrorView(
@@ -142,7 +158,8 @@ class _DetailBody extends ConsumerWidget {
                   },
                 ),
               const SizedBox(height: 24),
-              _Actions(eventId: event.id, eventTitle: event.title),
+              if (!ref.watch(isStaffProvider))
+                _Actions(eventId: event.id, eventTitle: event.title),
             ],
           ),
         ),

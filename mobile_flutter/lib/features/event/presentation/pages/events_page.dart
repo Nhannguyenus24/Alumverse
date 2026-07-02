@@ -12,6 +12,7 @@ import '../../../../core/utils/image_url.dart';
 import '../../../../shared/widgets/empty_view.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/skeleton.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../data/models/event_summary.dart';
 import '../providers/event_provider.dart';
 
@@ -24,9 +25,20 @@ class EventsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final upcomingAsync = ref.watch(allUpcomingEventsProvider);
     final pastAsync = ref.watch(pastEventsProvider);
+    final isStaff = ref.watch(isStaffProvider);
 
     return Scaffold(
-      appBar: AppBar(title: Text('event.title'.tr())),
+      appBar: AppBar(
+        title: Text('event.title'.tr()),
+        actions: [
+          if (isStaff)
+            IconButton(
+              icon: const Icon(Icons.qr_code_scanner_outlined),
+              tooltip: 'event.check_in'.tr(),
+              onPressed: () => context.push(RouteNames.adminCheckIn),
+            ),
+        ],
+      ),
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(allUpcomingEventsProvider);

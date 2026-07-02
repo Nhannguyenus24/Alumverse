@@ -62,7 +62,12 @@ final fundQueryProvider = StateProvider<FundQuery>((ref) => const FundQuery());
 
 /// Paginated list of campaigns, reactive to [fundQueryProvider]. Scoped to the
 /// currently selected organization (matches the web client).
-final fundsProvider = FutureProvider<FundPageResult<FundSummary>>((ref) {
+///
+/// `autoDispose` so the list is refetched each time the page is reopened rather
+/// than served from stale in-memory data (the filter/search state lives in the
+/// separate [fundQueryProvider], which is preserved).
+final fundsProvider =
+    FutureProvider.autoDispose<FundPageResult<FundSummary>>((ref) {
   final q = ref.watch(fundQueryProvider);
   final orgId = ref.watch(organizationStateProvider).valueOrNull?.id;
   return ref.watch(fundraisingRepositoryProvider).getFunds(
@@ -78,13 +83,21 @@ final fundsProvider = FutureProvider<FundPageResult<FundSummary>>((ref) {
 });
 
 /// Full detail for one campaign.
-final fundDetailProvider = FutureProvider.family<FundDetail, int>((ref, id) {
+///
+/// `autoDispose` so the cached detail is dropped once the user leaves the page:
+/// re-opening a fund always refetches from the API instead of showing stale
+/// in-memory data.
+final fundDetailProvider =
+    FutureProvider.autoDispose.family<FundDetail, int>((ref, id) {
   return ref.read(fundraisingRepositoryProvider).getFundDetail(id);
 });
 
 /// The signed-in user's donation history. Empty when signed out.
+///
+/// `autoDispose` so the history is refetched on each visit instead of showing a
+/// cached snapshot (e.g. after making a new donation elsewhere).
 final myDonationsProvider =
-    FutureProvider<FundPageResult<FundDonation>>((ref) async {
+    FutureProvider.autoDispose<FundPageResult<FundDonation>>((ref) async {
   final rawId = ref.watch(authStateProvider).valueOrNull?.user?.id;
   final userId = rawId != null ? int.tryParse(rawId) : null;
   if (userId == null) {

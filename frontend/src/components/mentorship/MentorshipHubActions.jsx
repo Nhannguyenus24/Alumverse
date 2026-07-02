@@ -1,5 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Button, Stack } from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
+import SchoolIcon from '@mui/icons-material/School';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useMentorshipAccessState } from '../../hooks/mentorship/useMentorshipAccessState';
 
@@ -79,15 +81,18 @@ const MentorshipHubActions = ({ tone = 'default' }) => {
       <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
         <Button
           variant="contained"
+          color="primary"
+          startIcon={<SearchIcon />}
           onClick={() => navigate('/development/mentorship/mentee-signup')}
         >
           {t('mentorship:find_mentor_for_me')}
         </Button>
         <Button
-          variant="outlined"
-          color={onPrimary ? undefined : 'primary'}
+          variant="contained"
+          color={onPrimary ? undefined : 'accent'}
+          startIcon={<SchoolIcon />}
           onClick={() => navigate('/development/mentorship/signup')}
-          sx={outlinedOnPrimarySx}
+          sx={onPrimary ? outlinedOnPrimarySx : undefined}
         >
           {t('mentorship:become_advisor')}
         </Button>

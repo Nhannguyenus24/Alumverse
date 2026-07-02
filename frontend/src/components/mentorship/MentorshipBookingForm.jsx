@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+  alpha,
   Box,
   Button,
   Chip,
@@ -52,13 +53,13 @@ const MentorshipBookingForm = ({
     <Stack spacing={3}>
       {/* SLOT SUMMARY */}
       <Box
-        sx={{
+        sx={(theme) => ({
           p: 2,
           border: '1px solid',
-          borderColor: 'primary.lighter',
+          borderColor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.34 : 0.2),
           borderRadius: 2,
-          bgcolor: 'primary.lighter',
-        }}
+          bgcolor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.14 : 0.08),
+        })}
       >
         <Typography fontWeight={700} color="primary.main" mb={1}>
           {t('mentorship:selected_slot')}

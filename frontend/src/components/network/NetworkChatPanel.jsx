@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+  alpha,
   Alert,
   Box,
   Button,
@@ -319,8 +320,8 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
           sx={{
             borderRadius: 0,
             alignItems: 'center',
-            bgcolor: 'primary.lighter',
-            color: 'primary.dark',
+            bgcolor: (theme) => alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.16 : 0.08),
+            color: 'primary.main',
             '& .MuiAlert-icon': { color: 'primary.main' },
             '& .MuiAlert-message': { flex: 1 },
           }}
@@ -352,8 +353,8 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
           sx={{
             borderRadius: 0,
             alignItems: 'center',
-            bgcolor: 'primary.lighter',
-            color: 'primary.dark',
+            bgcolor: (theme) => alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.16 : 0.08),
+            color: 'primary.main',
             '& .MuiAlert-icon': { color: 'primary.main' },
             '& .MuiAlert-message': { flex: 1 },
           }}
@@ -470,8 +471,14 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
                       px: 1.5,
                       py: 1.25,
                       borderRadius: 999,
-                      bgcolor: isOwn ? 'primary.main' : 'grey.200',
+                      bgcolor: (theme) => isOwn
+                        ? theme.palette.primary.main
+                        : alpha(theme.palette.text.primary, theme.palette.mode === 'dark' ? 0.1 : 0.06),
                       color: isOwn ? 'primary.contrastText' : 'text.primary',
+                      border: '1px solid',
+                      borderColor: (theme) => isOwn
+                        ? alpha(theme.palette.primary.main, 0.35)
+                        : alpha(theme.palette.text.primary, theme.palette.mode === 'dark' ? 0.16 : 0.1),
                     }}
                   >
                     <Typography

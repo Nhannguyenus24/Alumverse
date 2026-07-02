@@ -329,7 +329,7 @@ const MentorshipYourCalendarPage = () => {
                     key={d}
                     sx={{
                       bgcolor: 'primary.main',
-                      color: '#fff',
+                      color: 'primary.contrastText',
                       textAlign: 'center',
                       py: 1,
                       fontSize: '0.875rem',
@@ -356,7 +356,7 @@ const MentorshipYourCalendarPage = () => {
                           minHeight: 110,
                           border: '1px solid',
                           borderColor: 'divider',
-                          bgcolor: inMonth ? '#fff' : 'action.hover',
+                          bgcolor: inMonth ? 'background.paper' : 'action.hover',
                           p: 0.75,
                           display: 'flex',
                           flexDirection: 'column',
@@ -384,7 +384,7 @@ const MentorshipYourCalendarPage = () => {
                                   py: 0.25,
                                   borderRadius: 0.75,
                                   bgcolor: booked ? 'success.main' : 'primary.main',
-                                  color: '#fff',
+                                  color: booked ? 'success.contrastText' : 'primary.contrastText',
                                   fontSize: 11,
                                   whiteSpace: 'nowrap',
                                 }}
@@ -397,7 +397,7 @@ const MentorshipYourCalendarPage = () => {
                                   <>
                                     <IconButton
                                       size="small"
-                                      sx={{ color: '#fff', p: 0, mr: 0.25 }}
+                                      sx={{ color: 'primary.contrastText', p: 0, mr: 0.25 }}
                                       onClick={() => openEditSlot(slot)}
                                       aria-label="edit slot"
                                     >
@@ -405,7 +405,7 @@ const MentorshipYourCalendarPage = () => {
                                     </IconButton>
                                     <IconButton
                                       size="small"
-                                      sx={{ color: '#fff', p: 0 }}
+                                      sx={{ color: 'primary.contrastText', p: 0 }}
                                       onClick={() => handleDeleteSlot(slot.id)}
                                       disabled={deleteMutation.isPending}
                                       aria-label="delete slot"

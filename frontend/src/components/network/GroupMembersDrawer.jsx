@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+  alpha,
   Alert,
   Box,
   Button,
@@ -238,8 +239,19 @@ function GroupMembersDrawer({ open, onClose, groupId, groupName, currentUserId, 
                             <Chip
                               label={roleLabel}
                               size="small"
-                              color={member.role === 'OWNER' ? 'primary' : 'default'}
-                              sx={{ height: 22, fontSize: '0.7rem' }}
+                              variant="outlined"
+                              sx={(theme) => {
+                                const palette = member.role === 'OWNER' ? theme.palette.primary : theme.palette.text;
+                                const main = member.role === 'OWNER' ? palette.main : palette.secondary;
+                                return {
+                                  height: 22,
+                                  fontSize: '0.7rem',
+                                  bgcolor: alpha(main, theme.palette.mode === 'dark' ? 0.14 : 0.06),
+                                  color: main,
+                                  borderColor: alpha(main, theme.palette.mode === 'dark' ? 0.34 : 0.2),
+                                  fontWeight: 700,
+                                };
+                              }}
                             />
                             {member.joinedAt ? (
                               <Typography variant="caption" color="text.secondary" noWrap>

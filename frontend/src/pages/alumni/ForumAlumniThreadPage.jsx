@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useParams } from 'react-router';
-import { Avatar, Box, Button, Container, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Menu, MenuItem, Pagination, Stack, TextField, Tooltip, Typography } from '@mui/material';
+import { Avatar, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Menu, MenuItem, Pagination, Stack, TextField, Tooltip, Typography } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import FavoriteIcon from '@mui/icons-material/Favorite';
@@ -12,7 +12,6 @@ import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import FlagOutlinedIcon from '@mui/icons-material/FlagOutlined';
-import Page from '../../components/Page';
 import { useAuth } from '../../hooks/useAuth';
 import Breadcrumb from '../../components/Breadcrumb';
 import { useForumCategories } from '../../hooks/forum/useForumCategories';
@@ -21,7 +20,7 @@ import { useCreateForumPost } from '../../hooks/forum/useCreateForumPost';
 import { useAnswerToForumPost } from '../../hooks/forum/useAnswerToForumPost';
 import { useUpdateForumPost } from '../../hooks/forum/useUpdateForumPost';
 import ForumFilterPanel from '../../components/forum/ForumFilterPanel';
-import ForumSponsoredCard from '../../components/forum/ForumSponsoredCard';
+import AlumniContentLayout from '../../layouts/AlumniContentLayout';
 import { useForumPostReactionCount } from '../../hooks/forum/useForumPostReactionCount';
 import { useForumPostUserReaction } from '../../hooks/forum/useForumPostUserReaction';
 import { useReactToForumPost } from '../../hooks/forum/useReactToForumPost';
@@ -106,7 +105,7 @@ const ForumReply = ({ reply, isAdmin, memberId, onReply, parentPost, onDelete, i
         gap: 2,
         borderTop: 1,
         borderColor: 'divider',
-        ...(hasParent ? { bgcolor: 'grey.50' } : null),
+        ...(hasParent ? { bgcolor: 'background.default' } : null),
       }}
     >
       <Box
@@ -242,7 +241,7 @@ const ForumReply = ({ reply, isAdmin, memberId, onReply, parentPost, onDelete, i
               py: 1,
               borderLeft: 3,
               borderLeftColor: 'primary.main',
-              bgcolor: 'common.white',
+              bgcolor: 'background.paper',
               border: 1,
               borderColor: 'divider',
               maxWidth: '100%',
@@ -836,41 +835,88 @@ const ForumAlumniThreadPage = () => {
   }, [activeCategory, parentCategory, thread.title]);
 
   return (
-    <Page
-      title={`${thread.title}`}
+    <AlumniContentLayout
+      variant="forum"
+      pageTitle={`${thread.title}`}
       meta={<meta name="description" content={t('forum:career_topic_meta')} />}
+      sidebar={(
+        <ForumFilterPanel
+          filters={filters}
+          selectedId={selectedFilterId}
+          onChange={handleFilterChange}
+        />
+      )}
+      header={null}
+      contentSpacing={0}
+      after={(
+        <>
+          <Dialog open={isEditTopicOpen} onClose={handleCloseEditTopic} fullWidth maxWidth="sm">
+            <DialogTitle>{t('forum:edit_topic_dialog_title')}</DialogTitle>
+            <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1.5 }}>
+              <TextField
+                variant="standard"
+                size="small"
+                label={t('forum:title_field_label')}
+                value={editTopicTitle}
+                onChange={(e) => setEditTopicTitle(e.target.value)}
+                fullWidth
+                autoFocus
+              />
+              <TextField
+                select
+                variant="standard"
+                size="small"
+                label={t('forum:subcategory_field_label')}
+                value={editCategoryId}
+                onChange={(e) => setEditCategoryId(e.target.value)}
+                fullWidth
+                disabled={!categories?.length}
+              >
+                {(categories ?? []).map((category) => (
+                  <MenuItem key={category.id} value={String(category.id)}>
+                    {category.name}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleCloseEditTopic} disabled={updateTopicPending}>
+                {t('common:cancel')}
+              </Button>
+              <Button onClick={handleSaveEditTopic} variant="contained" disabled={updateTopicPending}>
+                {updateTopicPending ? t('forum:saving') : t('common:save')}
+              </Button>
+            </DialogActions>
+          </Dialog>
+          <EditPostDialog
+            open={isEditPostOpen}
+            post={editingPost}
+            onClose={handleCloseEditPost}
+            onSave={handleSaveEditPost}
+            isPending={updatePostPending}
+            isError={updatePostIsError}
+            errorMessage={updatePostErrorMessage}
+          />
+          <ConfirmDialog
+            open={isConfirmDeleteOpen}
+            title={t('forum:confirm_delete_post_title')}
+            message={t('forum:confirm_delete_post_message')}
+            confirmText={t('common:delete')}
+            cancelText={t('common:cancel')}
+            confirmColor="error"
+            loading={deletePending}
+            onConfirm={handleConfirmDeletePost}
+            onCancel={handleCloseConfirmDelete}
+          />
+          <ReportPostDialog
+            open={isReportOpen}
+            onClose={handleCloseReport}
+            onConfirm={handleConfirmReport}
+            isPending={reportPending}
+          />
+        </>
+      )}
     >
-      <Container
-        maxWidth={false}
-        disableGutters
-        sx={{
-          pb: { xs: 4, md: 6 },
-          overflowX: 'hidden',
-        }}
-      >
-        <Container maxWidth="xl" sx={{ pt: { xs: 2, sm: 3, md: 4 }, px: { xs: 2, sm: 3, lg: 6 } }}>
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: { xs: 'column', md: 'row' },
-              alignItems: 'flex-start',
-              gap: { xs: 2, md: 3 },
-            }}
-          >
-            <Stack spacing={2} sx={{ width: { xs: '100%', md: 260 }, flexShrink: 0 }}>
-              <ForumFilterPanel
-                filters={filters}
-                selectedId={selectedFilterId}
-                onChange={handleFilterChange}
-              />
-              <ForumSponsoredCard
-                title={t('forum:sponsored')}
-                imageSrc="/forum/metro_station.png"
-                imageAlt="HCMC Metro Opening"
-                caption="HCMC Metro Opening"
-              />
-            </Stack>
-
             <Stack
               spacing={0}
               sx={{
@@ -883,7 +929,7 @@ const ForumAlumniThreadPage = () => {
               <Breadcrumb items={breadcrumbItems} uppercase color="primary" />
               <Box
                 sx={{
-                  backgroundColor: '#fff',
+                  backgroundColor: 'background.paper',
                   border: 1,
                   borderColor: 'divider',
                 }}
@@ -937,9 +983,9 @@ const ForumAlumniThreadPage = () => {
                         onClick={handleToggleSubscription}
                         disabled={subStatusPending || subTogglePending}
                         sx={{
-                          bgcolor: isSubscribed ? 'primary.main' : '#374151',
-                          color: 'white',
-                          '&:hover': { bgcolor: isSubscribed ? 'primary.dark' : '#4B5563' },
+                          bgcolor: isSubscribed ? 'primary.main' : 'action.selected',
+                          color: isSubscribed ? 'primary.contrastText' : 'text.primary',
+                          '&:hover': { bgcolor: isSubscribed ? 'primary.dark' : 'action.hover' },
                           whiteSpace: 'nowrap',
                         }}
                       >
@@ -952,10 +998,10 @@ const ForumAlumniThreadPage = () => {
                         startIcon={<EditOutlinedIcon sx={{ fontSize: 18 }} />}
                         onClick={handleOpenEditTopic}
                         sx={{
-                          borderColor: 'black',
-                          color: 'black',
-                          bgcolor: 'white',
-                          '&:hover': { borderColor: 'black', bgcolor: 'grey.50' },
+                          borderColor: 'divider',
+                          color: 'text.primary',
+                          bgcolor: 'background.paper',
+                          '&:hover': { borderColor: 'text.primary', bgcolor: 'action.hover' },
                           whiteSpace: 'nowrap',
                         }}
                       >
@@ -997,9 +1043,9 @@ const ForumAlumniThreadPage = () => {
                         disabled={topicStatusPending}
                         startIcon={<LockOutlinedIcon sx={{ fontSize: 18 }} />}
                         sx={{
-                          bgcolor: isTopicInactive ? '#16A34A' : '#EAB308',
-                          color: 'white',
-                          '&:hover': { bgcolor: isTopicInactive ? '#15803D' : '#CA8A04' },
+                          bgcolor: isTopicInactive ? 'success.main' : 'warning.main',
+                          color: isTopicInactive ? 'success.contrastText' : 'warning.contrastText',
+                          '&:hover': { bgcolor: isTopicInactive ? 'success.dark' : 'warning.dark' },
                           whiteSpace: 'nowrap',
                         }}
                       >
@@ -1199,7 +1245,7 @@ const ForumAlumniThreadPage = () => {
                           mb: 1,
                           borderLeft: 3,
                           borderLeftColor: 'primary.main',
-                          bgcolor: 'grey.50',
+                          bgcolor: 'background.default',
                           border: 1,
                           borderColor: 'divider',
                           p: 1.25,
@@ -1268,74 +1314,7 @@ const ForumAlumniThreadPage = () => {
               </Box>
               </Box>
             </Stack>
-          </Box>
-        </Container>
-      </Container>
-      <Dialog open={isEditTopicOpen} onClose={handleCloseEditTopic} fullWidth maxWidth="sm">
-        <DialogTitle>{t('forum:edit_topic_dialog_title')}</DialogTitle>
-        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1.5 }}>
-          <TextField
-            variant="standard"
-            size="small"
-            label={t('forum:title_field_label')}
-            value={editTopicTitle}
-            onChange={(e) => setEditTopicTitle(e.target.value)}
-            fullWidth
-            autoFocus
-          />
-          <TextField
-            select
-            variant="standard"
-            size="small"
-            label={t('forum:subcategory_field_label')}
-            value={editCategoryId}
-            onChange={(e) => setEditCategoryId(e.target.value)}
-            fullWidth
-            disabled={!categories?.length}
-          >
-            {(categories ?? []).map((category) => (
-              <MenuItem key={category.id} value={String(category.id)}>
-                {category.name}
-              </MenuItem>
-            ))}
-          </TextField>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseEditTopic} disabled={updateTopicPending}>
-            {t('common:cancel')}
-          </Button>
-          <Button onClick={handleSaveEditTopic} variant="contained" disabled={updateTopicPending}>
-            {updateTopicPending ? t('forum:saving') : t('common:save')}
-          </Button>
-        </DialogActions>
-      </Dialog>
-      <EditPostDialog
-        open={isEditPostOpen}
-        post={editingPost}
-        onClose={handleCloseEditPost}
-        onSave={handleSaveEditPost}
-        isPending={updatePostPending}
-        isError={updatePostIsError}
-        errorMessage={updatePostErrorMessage}
-      />
-      <ConfirmDialog
-        open={isConfirmDeleteOpen}
-        title={t('forum:confirm_delete_post_title')}
-        message={t('forum:confirm_delete_post_message')}
-        confirmText={t('common:delete')}
-        cancelText={t('common:cancel')}
-        confirmColor="error"
-        loading={deletePending}
-        onConfirm={handleConfirmDeletePost}
-        onCancel={handleCloseConfirmDelete}
-      />
-      <ReportPostDialog
-        open={isReportOpen}
-        onClose={handleCloseReport}
-        onConfirm={handleConfirmReport}
-        isPending={reportPending}
-      />
-    </Page>
+    </AlumniContentLayout>
   );
 };
 

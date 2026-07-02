@@ -1,4 +1,4 @@
-import { Avatar, Box, Button, Card, Chip, CircularProgress, ListItemIcon, ListItemText, MenuItem, Stack, Typography } from '@mui/material';
+import { alpha, Avatar, Box, Button, Card, Chip, CircularProgress, ListItemIcon, ListItemText, MenuItem, Stack, Typography } from '@mui/material';
 import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
 import { useTranslation } from 'react-i18next';
 
@@ -143,10 +143,12 @@ const AcademicChip = ({ label }) => (
   <Chip
     label={label}
     size="small"
-    sx={{
+    variant="outlined"
+    sx={(theme) => ({
       maxWidth: '100%',
-      bgcolor: 'primary.light',
+      bgcolor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.14 : 0.08),
       color: 'primary.main',
+      borderColor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.34 : 0.22),
       fontWeight: 600,
       borderRadius: 999,
       '& .MuiChip-label': {
@@ -154,7 +156,7 @@ const AcademicChip = ({ label }) => (
         overflow: 'hidden',
         textOverflow: 'ellipsis',
       },
-    }}
+    })}
   />
 );
 
