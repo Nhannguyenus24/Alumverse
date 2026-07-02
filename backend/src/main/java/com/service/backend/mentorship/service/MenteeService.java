@@ -322,10 +322,10 @@ public class MenteeService {
                                                 String message = hasDefaultLink
                                                         ? "Bạn vừa nhận được một lịch hẹn cố vấn mới. Hãy xem chi tiết và chuẩn bị cho buổi trao đổi."
                                                         : "Bạn vừa nhận được một lịch hẹn cố vấn mới, nhưng buổi này chưa có link tham gia. Hãy thêm link họp cho buổi trao đổi.";
-                                        return availabilityRepository.updateStatus(
-                                                        availability.getId(), Status.BOOKED.getValue())
-                                                .then(sessionRepository.save(session))
-                                                .doOnNext(saved ->
+                                        return Mono.when(
+                                                        availabilityRepository.updateStatus(availability.getId(), Status.BOOKED.getValue()),
+                                                        sessionRepository.save(session)
+                                                ).doOnSuccess(ignored ->
                                                         notificationService.createNotificationAsync(
                                                                 availability.getMentorMemberId(),
                                                                 "Lịch hẹn mới",
@@ -381,16 +381,14 @@ public class MenteeService {
                                         ErrorCode.FORBIDDEN, "Bạn không có quyền hủy buổi mentoring này"));
                             }
                             return availabilityRepository.findById(session.getAvailabilityId())
-                                    .flatMap(avail -> availabilityRepository.updateStatus(
-                                            session.getAvailabilityId(), reopenStatusFor(avail)))
-                                    .then(sessionRepository.updateStatusWithCancelReason(
-                                            sessionId, Status.CANCELLED_BY_MENTEE.getValue(), cancelReason))
-                                    .then(availabilityRepository.findById(session.getAvailabilityId()))
-                                    .doOnNext(avail -> notificationService.createNotificationAsync(
+                                    .flatMap(avail -> Mono.when(
+                                            availabilityRepository.updateStatus(session.getAvailabilityId(), reopenStatusFor(avail)),
+                                            sessionRepository.updateStatusWithCancelReason(sessionId, Status.CANCELLED_BY_MENTEE.getValue(), cancelReason)
+                                    ).doOnSuccess(ignored -> notificationService.createNotificationAsync(
                                             avail.getMentorMemberId(),
                                             "Lịch hẹn bị hủy",
                                             "Người được cố vấn đã hủy một buổi hẹn với bạn. Khung giờ tương ứng đã được mở lại.",
-                                            "/development/mentorship/dashboard"))
+                                            "/development/mentorship/dashboard")))
                                     .then(sessionRepository.findById(sessionId));
                         })
                         .flatMap(this::enrich));
@@ -423,10 +421,10 @@ public class MenteeService {
 
     private Mono<?> acceptReschedule(MentorshipSession session, com.service.backend.shared.entity.MentorAvailability avail) {
         // Move the existing slot to the proposed time and reconfirm the session.
-        return availabilityRepository.updateTimes(
-                        avail.getId(), session.getProposedStartTime(), session.getProposedEndTime())
-                .then(sessionRepository.clearProposalWithStatus(session.getId(), Status.CONFIRMED.getValue()))
-                .doOnNext(rows -> notificationService.createNotificationAsync(
+        return Mono.when(
+                        availabilityRepository.updateTimes(avail.getId(), session.getProposedStartTime(), session.getProposedEndTime()),
+                        sessionRepository.clearProposalWithStatus(session.getId(), Status.CONFIRMED.getValue())
+                ).doOnSuccess(ignored -> notificationService.createNotificationAsync(
                         avail.getMentorMemberId(),
                         "Lịch hẹn đã được dời",
                         "Người được cố vấn đã đồng ý dời buổi hẹn sang khung giờ bạn đề xuất.",
@@ -434,9 +432,10 @@ public class MenteeService {
     }
 
     private Mono<?> rejectReschedule(MentorshipSession session, com.service.backend.shared.entity.MentorAvailability avail) {
-        return availabilityRepository.updateStatus(avail.getId(), Status.AVAILABLE.getValue())
-                .then(sessionRepository.clearProposalWithStatus(session.getId(), Status.CANCELLED_BY_MENTEE.getValue()))
-                .doOnNext(rows -> notificationService.createNotificationAsync(
+        return Mono.when(
+                        availabilityRepository.updateStatus(avail.getId(), Status.AVAILABLE.getValue()),
+                        sessionRepository.clearProposalWithStatus(session.getId(), Status.CANCELLED_BY_MENTEE.getValue())
+                ).doOnSuccess(ignored -> notificationService.createNotificationAsync(
                         avail.getMentorMemberId(),
                         "Đề nghị dời lịch bị từ chối",
                         "Người được cố vấn đã từ chối đề nghị dời lịch và buổi hẹn đã bị hủy.",

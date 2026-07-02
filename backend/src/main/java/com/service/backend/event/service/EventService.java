@@ -175,13 +175,15 @@ public class EventService {
 
     public Mono<EventInterest> addInterest(Long eventId) {
         return SecurityUtils.getCurrentUserId().flatMap(memberId ->
-                eventRepository.findEventById(eventId)
-                        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId)))
-                        .flatMap(event -> eventRepository.checkUserInterest(eventId, memberId))
-                        .flatMap(already -> {
-                            if (already) return Mono.error(new ApplicationException(ErrorCode.ALREADY_INTERESTED, "Already interested"));
-                            return eventRepository.addEventInterest(eventId, memberId);
-                        }));
+                Mono.zip(
+                        eventRepository.findEventById(eventId)
+                                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId))),
+                        eventRepository.checkUserInterest(eventId, memberId)
+                ).flatMap(tuple -> {
+                    Boolean already = tuple.getT2();
+                    if (already) return Mono.error(new ApplicationException(ErrorCode.ALREADY_INTERESTED, "Already interested"));
+                    return eventRepository.addEventInterest(eventId, memberId);
+                }));
     }
 
     public Mono<Boolean> removeInterest(Long eventId) {
@@ -280,12 +282,15 @@ public class EventService {
 
     public Mono<EventTicket> registerForEvent(Long eventId, RegisterTicketRequest request) {
         return SecurityUtils.getCurrentUserId().flatMap(memberId ->
-                eventRepository.findEventById(eventId)
-                        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId)))
-                        .flatMap(event -> eventRepository.hasRegistered(eventId, memberId)
-                                .flatMap(already -> {
-                                    if (already) return Mono.error(new ApplicationException(ErrorCode.TICKET_ALREADY_REGISTERED, "Already registered"));
-                                    return validateRegistrationAnswers(eventId, request != null ? request.getAnswers() : null)
+                Mono.zip(
+                        eventRepository.findEventById(eventId)
+                                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId))),
+                        eventRepository.hasRegistered(eventId, memberId)
+                ).flatMap(tuple -> {
+                    Event event = tuple.getT1();
+                    Boolean already = tuple.getT2();
+                    if (already) return Mono.error(new ApplicationException(ErrorCode.TICKET_ALREADY_REGISTERED, "Already registered"));
+                    return validateRegistrationAnswers(eventId, request != null ? request.getAnswers() : null)
                                             .flatMap(answersJson -> {
                                                 EventTicket ticket = EventTicket.builder()
                                                         .eventId(eventId)

@@ -395,16 +395,15 @@ public class MentorService {
                                         boolean slotPast = avail.getEndTime() == null
                                                 || avail.getEndTime().isBefore(LocalDateTime.now());
                                         String slotStatus = (slotPast ? Status.EXPIRED : Status.AVAILABLE).getValue();
-                                        return availabilityRepository
-                                                .updateStatus(session.getAvailabilityId(), slotStatus)
-                                                .then(sessionRepository.updateStatusWithCancelReason(
-                                                        sessionId, Status.CANCELLED_BY_MENTOR.getValue(), cancelReason))
-                                                .doOnNext(rows -> notificationService.createNotificationAsync(
-                                                        session.getMenteeMemberId(),
-                                                        "Lịch hẹn bị hủy",
-                                                        "Cố vấn đã hủy một buổi hẹn với bạn. Bạn có thể chọn một cố vấn hoặc khung giờ khác phù hợp hơn.",
-                                                        "/development/mentorship/my-bookings"))
-                                                .then(sessionRepository.findById(sessionId));
+                                        return Mono.when(
+                                                availabilityRepository.updateStatus(session.getAvailabilityId(), slotStatus),
+                                                sessionRepository.updateStatusWithCancelReason(sessionId, Status.CANCELLED_BY_MENTOR.getValue(), cancelReason)
+                                        ).doOnSuccess(ignored -> notificationService.createNotificationAsync(
+                                                session.getMenteeMemberId(),
+                                                "Lịch hẹn bị hủy",
+                                                "Cố vấn đã hủy một buổi hẹn với bạn. Bạn có thể chọn một cố vấn hoặc khung giờ khác phù hợp hơn.",
+                                                "/development/mentorship/my-bookings"))
+                                        .then(sessionRepository.findById(sessionId));
                                     });
                         })
                         .flatMap(this::enrich));
@@ -477,8 +476,8 @@ public class MentorService {
                             Mono<Integer> updateLink = request.getMeetingLink() != null
                                     ? sessionRepository.updateMeetingLink(sessionId, request.getMeetingLink())
                                     : Mono.just(0);
-                            return updateStatus.then(updateLink)
-                                    .doOnNext(ignored -> {
+                            return Mono.when(updateStatus, updateLink)
+                                    .doOnSuccess(ignored -> {
                                         if ("COMPLETED".equals(request.getStatus())) {
                                             notificationService.createNotificationAsync(
                                                     session.getMenteeMemberId(),
