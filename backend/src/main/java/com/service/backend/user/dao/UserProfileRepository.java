@@ -3,6 +3,7 @@ package com.service.backend.user.dao;
 import org.springframework.data.r2dbc.repository.Modifying;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.r2dbc.repository.R2dbcRepository;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.service.backend.shared.entity.User;
@@ -38,15 +39,20 @@ public interface UserProfileRepository extends R2dbcRepository<User, Integer> {
             LEFT JOIN organization_members om ON om.user_id = u.id
             WHERE u.id = :userId
             """)
-    Mono<UserProfileResponse> findProfileByUserId(Integer userId);
+    Mono<UserProfileResponse> findProfileByUserId(@Param("userId") Integer userId);
 
     @Modifying
     @Query("""
             UPDATE users
             SET phone = COALESCE(:phone, phone),
                 gender = COALESCE(:gender, gender),
+                bio = COALESCE(:bio, bio),
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = :userId
             """)
-    Mono<Integer> upsertPhoneAndGender(Integer userId, String phone, String gender);
+    Mono<Integer> upsertProfileInfo(
+            @Param("userId") Integer userId,
+            @Param("phone") String phone,
+            @Param("gender") String gender,
+            @Param("bio") String bio);
 }

@@ -147,9 +147,9 @@ const NetworkConnectionsSection = ({ enableBlock = true }) => {
         message={(
           <>
             {`${t('network:block_user_confirm_message', { name: blockTarget?.fullName ?? t('network:this_user') })} `}
-            <strong style={{ color: 'rgba(0, 0, 0, 0.87)' }}>
+            <Typography component="strong" variant="inherit" sx={{ color: 'text.primary', fontWeight: 700 }}>
               {t('network:block_user_note')}
-            </strong>
+            </Typography>
             {` ${t('network:block_user_consequence')}`}
           </>
         )}

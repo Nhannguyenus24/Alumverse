@@ -46,7 +46,7 @@ import { useTranslation } from 'react-i18next';
 import StatsBanner from '../../components/StatsBanner'
 
 const DEFAULT_COVER =
-  'https://ethnasia.com/cdn/shop/articles/sean-o-KMn4VEeEPR8-unsplash_edited.jpg?v=1621585619';
+  'https://info.cognician.com/hubfs/220201%20mentorship-%20desktop.png';
 
 const PAGE_SIZE = 50;
 

@@ -8,6 +8,7 @@ import NavigateBeforeIcon from "@mui/icons-material/NavigateBefore";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
+import EventOutlinedIcon from "@mui/icons-material/EventOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import Page from "../../components/Page";
 import { useArticleById } from "../../hooks/articles/useArticleById";
@@ -122,39 +123,42 @@ const SaveArticleButton = ({ itemId }) => {
   );
 };
 
-const ArticleHighlightCard = ({ data, channel, eventId }) => {
+const ArticleHighlightCard = ({ data, channel, eventId, isAdmin = false }) => {
   const { enqueueSnackbar } = useSnackbar();
   const { t } = useTranslation(['common', 'article', 'event', 'donation']);
   const { canContribute } = useCanContribute();
   const [isInterested, setIsInterested] = useState(false);
-  const [isJoined, setIsJoined] = useState(false);
+  const [isJoined, setIsJoined] = useState(() => getEventRegisteredState(data));
   const [interestedCount, setInterestedCount] = useState(data.stats?.[0]?.value ?? 0);
   const [joinedCount, setJoinedCount] = useState(data.stats?.[1]?.value ?? 0);
   const [loadingInterest, setLoadingInterest] = useState(false);
   const [loadingJoin, setLoadingJoin] = useState(false);
+  const [checkingRegistration, setCheckingRegistration] = useState(false);
   const [openJoinDialog, setOpenJoinDialog] = useState(false);
-  const { data: questions = [] } = useEventQuestions(eventId, channel === "event" && Boolean(eventId));
+  const { data: questions = [] } = useEventQuestions(eventId, !isAdmin && channel === "event" && Boolean(eventId));
 
   useEffect(() => {
-    if (channel !== "event" || !eventId) return;
+    if (isAdmin || channel !== "event" || !eventId) return;
     eventApi.checkInterest(eventId)
       .then((res) => {
         const checked = res?.isInterested ?? res?.data?.isInterested ?? false;
         setIsInterested(checked);
       })
       .catch(() => {});
+    setCheckingRegistration(true);
     eventApi.checkRegistered(eventId)
       .then((res) => {
         setIsJoined(getEventRegisteredState(res));
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setCheckingRegistration(false));
     eventApi.getEventStatisticsById(eventId)
       .then((res) => {
         if (res?.interestedCount != null) setInterestedCount(res.interestedCount);
         if (res?.registeredCount != null) setJoinedCount(res.registeredCount);
       })
       .catch(() => {});
-  }, [channel, eventId]);
+  }, [channel, eventId, isAdmin]);
 
   const handleInterest = async () => {
     if (loadingInterest || !canContribute) return;
@@ -177,12 +181,12 @@ const ArticleHighlightCard = ({ data, channel, eventId }) => {
   };
 
   const handleJoinClick = () => {
-    if (loadingJoin || isJoined || !canContribute) return;
+    if (loadingJoin || checkingRegistration || isJoined || !canContribute) return;
     setOpenJoinDialog(true);
   };
 
   const handleConfirmJoin = async (answerMap) => {
-    if (loadingJoin || isJoined || !canContribute) return;
+    if (loadingJoin || checkingRegistration || isJoined || !canContribute) return;
     setLoadingJoin(true);
     try {
       const payload = questions.length > 0
@@ -246,10 +250,10 @@ const ArticleHighlightCard = ({ data, channel, eventId }) => {
         </Box>
 
         {/* BUTTONS */}
-        <VerificationRequiredAlert sx={{ mb: 1 }} />
-        {channel === "donation" ? (
+        {!isAdmin && <VerificationRequiredAlert sx={{ mb: 1 }} />}
+        {isAdmin ? null : channel === "donation" ? (
           <ContributeGuardTooltip sx={{ width: "100%" }}>
-            <Button fullWidth variant="contained" disabled={!canContribute}>{t('donation:donate_button')}</Button>
+            <Button fullWidth variant="contained" color="accent" disabled={!canContribute}>{t('donation:donate_button')}</Button>
           </ContributeGuardTooltip>
         ) : (
           <Stack direction="row" spacing={1}>
@@ -268,17 +272,11 @@ const ArticleHighlightCard = ({ data, channel, eventId }) => {
               <Button
                 fullWidth
                 variant={isJoined ? "outlined" : "contained"}
-                disabled={loadingJoin || isJoined || !canContribute}
-                sx={{
-                  bgcolor: isJoined ? "transparent" : "success.main",
-                  color: isJoined ? "success.main" : "common.white",
-                  "&:hover": {
-                    bgcolor: isJoined ? "transparent" : "success.dark",
-                  },
-                }}
+                color="accent"
+                disabled={loadingJoin || checkingRegistration || isJoined || !canContribute}
                 onClick={handleJoinClick}
               >
-                {isJoined ? t('event:registered') : t('event:register_action')}
+                {isJoined ? t('event:joined') : t('event:register_action')}
               </Button>
             </ContributeGuardTooltip>
           </Stack>
@@ -369,6 +367,7 @@ const ArticlePage = () => {
   }
 
   const resolvedChannel = article.channel;
+  const isEventArticle = resolvedChannel === "event";
 
   const highlightData =
     resolvedChannel === "event"
@@ -378,6 +377,7 @@ const ArticlePage = () => {
           organizer: article.organizer ?? article.location ?? "",
           date: formatDateRange(article.eventDate, article.eventEndDate),
           stats: [{ value: article.interestedCount ?? 0, label: t('article:stat_interested') }, { value: article.joinedCount ?? 0, label: t('event:stat_joined') }],
+          isRegistered: article.isRegistered,
         }
       : resolvedChannel === "donation"
       ? {
@@ -412,19 +412,19 @@ const ArticlePage = () => {
                       color="secondary"
                       size="medium"
                       startIcon={<EditOutlinedIcon />}
-                      onClick={() => navigate(`/admin/article/${resolvedChannel}/${id}/edit`)}
+                      onClick={() => navigate(isEventArticle ? `/post/event/${id}` : `/admin/article/${resolvedChannel}/${id}/edit`)}
                       sx={{ textTransform: "none", fontWeight: 700 }}
                     >
-                      Sửa bài viết
+                      {isEventArticle ? "Sửa sự kiện" : "Sửa bài viết"}
                     </Button>
                     <Button
                       variant="outlined"
                       size="medium"
-                      startIcon={<ArticleOutlinedIcon />}
-                      onClick={() => navigate("/admin/article")}
+                      startIcon={isEventArticle ? <EventOutlinedIcon /> : <ArticleOutlinedIcon />}
+                      onClick={() => navigate(isEventArticle ? "/admin/events" : "/admin/article")}
                       sx={{ textTransform: "none", fontWeight: 700 }}
                     >
-                      Quản lý bài viết
+                      {isEventArticle ? "Quản lý sự kiện" : "Quản lý bài viết"}
                     </Button>
                   </>
                 )}
@@ -440,7 +440,7 @@ const ArticlePage = () => {
                 textAlign="center"
                 sx={{
                   mt: { xs: 2, md: 3 },
-                  mb: { xs: 4, md: 5 },
+                  mb: { xs: 1.5, md: 2 },
                   fontSize: { xs: "1.65rem", md: "2.1rem" },
                   lineHeight: 1.22,
                   overflowWrap: "break-word",
@@ -452,14 +452,14 @@ const ArticlePage = () => {
 
               {/* Date */}
               {article.publishedAt && (
-                <Typography variant="body2" sx={{ textAlign: "center", color: "text.secondary", mb: 4 }}>
+                <Typography variant="body2" sx={{ textAlign: "center", color: "text.secondary", mb: { xs: 5, md: 6 } }}>
                   {formatDate(article.publishedAt)}
                 </Typography>
               )}
 
               {/* HIGHLIGHT */}
               {highlightData && (
-                <ArticleHighlightCard data={highlightData} channel={resolvedChannel} eventId={id} />
+                <ArticleHighlightCard data={highlightData} channel={resolvedChannel} eventId={id} isAdmin={isAdmin} />
               )}
 
               {/* Thumbnail */}

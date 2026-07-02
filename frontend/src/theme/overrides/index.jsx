@@ -5,6 +5,8 @@ import Card from './Card';
 import Paper from './Paper';
 import TextField from './TextField';
 import LayoutStability from './LayoutStability';
+import Alert from './Alert';
+import Dialog from './Dialog';
 
 const ComponentsOverrides = (theme) => {
   return Object.assign(
@@ -14,7 +16,9 @@ const ComponentsOverrides = (theme) => {
     Button(theme),
     Card(theme),
     Paper(theme),
-    TextField(theme)
+    TextField(theme),
+    Alert(theme),
+    Dialog(theme)
   );
 };
 

@@ -12,29 +12,30 @@ import IconButtonAnimate from './IconButtonAnimate';
 
 import { MaterialDesignContent } from 'notistack';
 
-const StyledMaterialDesignContent = styled(MaterialDesignContent)(() => ({
+const StyledMaterialDesignContent = styled(MaterialDesignContent)(({ theme }) => ({
   '&.notistack-MuiContent': {
     borderRadius: 12,
     padding: '2px 8px',
-    color: '#111111 !important',
+    backgroundColor: `${theme.palette.background.paper} !important`,
+    color: `${theme.palette.text.primary} !important`,
     '& .SnackbarItem-message': {
-      color: '#111111 !important',
+      color: `${theme.palette.text.primary} !important`,
     },
     '& .notistack-MuiContent-message': {
-      color: '#111111 !important',
+      color: `${theme.palette.text.primary} !important`,
     },
   },
   '&.notistack-MuiContent-success': {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: `${theme.palette.background.paper} !important`,
   },
   '&.notistack-MuiContent-error': {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: `${theme.palette.background.paper} !important`,
   },
   '&.notistack-MuiContent-warning': {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: `${theme.palette.background.paper} !important`,
   },
   '&.notistack-MuiContent-info': {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: `${theme.palette.background.paper} !important`,
   },
 }));
 
@@ -50,13 +51,13 @@ function SnackbarStyles() {
           '& .SnackbarItem-message': {
             padding: '0 !important',
             fontWeight: theme.typography.fontWeightMedium,
-            color: '#111111 !important',
+            color: `${theme.palette.text.primary} !important`,
           },
           '& .notistack-MuiContent': {
-            color: '#111111 !important',
+            color: `${theme.palette.text.primary} !important`,
           },
           '& .notistack-MuiContent-message': {
-            color: '#111111 !important',
+            color: `${theme.palette.text.primary} !important`,
           },
           '& .SnackbarItem-action': {
             marginRight: 0,

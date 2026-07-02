@@ -16,12 +16,19 @@ const MentorshipCard = ({
   bookDisabledReason,
 }) => {
   const { t } = useTranslation('mentorship');
+
+  const stopCardClick = (handler) => (event) => {
+    event.stopPropagation();
+    handler?.(event);
+  };
+
   const bookButton = (
     <Button
       variant="contained"
       fullWidth
       disabled={!canBook}
-      onClick={canBook ? onBook : undefined}
+      onClick={canBook ? stopCardClick(onBook) : stopCardClick()}
+      sx={{ flex: 1, minWidth: 0, whiteSpace: "nowrap" }}
     >
       {t('book_slot')}
     </Button>
@@ -39,18 +46,30 @@ const MentorshipCard = ({
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
+        height: "100%",
+        cursor: onViewProfile ? "pointer" : "default",
         transition: "transform 0.2s",
         "&:hover": { transform: "translateY(-4px)" },
       }}
+      onClick={onViewProfile}
     >
       <Stack spacing={2} alignItems="center">
         <Avatar src={avatar} sx={{ width: 80, height: 80 }} />
 
-        <Box>
-          <Typography fontWeight={700} variant="subtitle1">
+        <Box sx={{ minHeight: 54 }}>
+          <Typography fontWeight={700} variant="subtitle1" noWrap>
             {name}
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{
+              display: "-webkit-box",
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+            }}
+          >
             {role}
           </Typography>
         </Box>
@@ -71,6 +90,7 @@ const MentorshipCard = ({
             flexWrap: "wrap",
             justifyContent: "center",
             gap: 1,
+            minHeight: 34,
           }}
         >
           {tags.map((tag, idx) => (
@@ -79,23 +99,27 @@ const MentorshipCard = ({
         </Box>
       </Stack>
 
-      <Stack direction="row" spacing={1} sx={{ mt: 3 }}>
+      <Box sx={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 1, mt: 3, width: "100%" }}>
         <Button
           variant="outlined"
           fullWidth
-          onClick={onViewProfile}
-          sx={{ flex: 1 }}
+          onClick={stopCardClick(onViewProfile)}
+          sx={{ minWidth: 0, width: "100%", whiteSpace: "nowrap" }}
         >
           {t('profile')}
         </Button>
         {!canBook && bookDisabledReason ? (
           <Tooltip title={bookDisabledReason}>
-            <Box sx={{ flex: 1, display: 'flex', minWidth: 0 }}>{bookButton}</Box>
+            <Box onClick={(event) => event.stopPropagation()} sx={{ display: 'flex', minWidth: 0, width: '100%' }}>
+              {bookButton}
+            </Box>
           </Tooltip>
         ) : (
-          <Box sx={{ flex: 1, display: 'flex', minWidth: 0 }}>{bookButton}</Box>
+          <Box onClick={(event) => event.stopPropagation()} sx={{ display: 'flex', minWidth: 0, width: '100%' }}>
+            {bookButton}
+          </Box>
         )}
-      </Stack>
+      </Box>
     </Card>
   );
 };
