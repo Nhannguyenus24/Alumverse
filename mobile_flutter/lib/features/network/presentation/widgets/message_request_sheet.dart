@@ -18,10 +18,18 @@ import '../../data/repositories/network_repository.dart';
 ///  - ACCEPTED → navigate to /chat
 ///  - REJECTED + cooldown remaining → locked, show countdown
 ///  - REJECTED + cooldown expired   → can send one more message
+///
+/// [title] and [contextNote] enable the "connect" variant (used by the
+/// fundraising fund-manager contact flow, mirroring web `variant="connect"`):
+/// [title] overrides the header text and [contextNote] renders an info banner
+/// at the top explaining the interaction. Both default to `null` = the original
+/// network behavior, so existing call sites are unaffected.
 Future<void> showMessageRequestSheet(
   BuildContext context, {
   required int targetMemberId,
   required String targetName,
+  String? title,
+  String? contextNote,
 }) {
   return showModalBottomSheet(
     context: context,
@@ -30,6 +38,8 @@ Future<void> showMessageRequestSheet(
     builder: (_) => _MessageRequestSheet(
       targetMemberId: targetMemberId,
       targetName: targetName,
+      title: title,
+      contextNote: contextNote,
     ),
   );
 }
@@ -38,10 +48,14 @@ class _MessageRequestSheet extends ConsumerStatefulWidget {
   const _MessageRequestSheet({
     required this.targetMemberId,
     required this.targetName,
+    this.title,
+    this.contextNote,
   });
 
   final int targetMemberId;
   final String targetName;
+  final String? title;
+  final String? contextNote;
 
   @override
   ConsumerState<_MessageRequestSheet> createState() =>
@@ -109,10 +123,13 @@ class _MessageRequestSheetState extends ConsumerState<_MessageRequestSheet> {
 
   @override
   Widget build(BuildContext context) {
+    // The "connect" variant carries an extra context banner, so it needs a
+    // taller initial size for the composer + send button to be visible.
+    final initialSize = widget.contextNote != null ? 0.62 : 0.5;
     return DraggableScrollableSheet(
-      initialChildSize: 0.5,
+      initialChildSize: initialSize,
       minChildSize: 0.35,
-      maxChildSize: 0.85,
+      maxChildSize: 0.9,
       builder: (_, scrollCtrl) => Container(
         decoration: const BoxDecoration(
           color: AppColors.surface,
@@ -136,7 +153,9 @@ class _MessageRequestSheetState extends ConsumerState<_MessageRequestSheet> {
                 children: [
                   Expanded(
                     child: Text(
-                      'network.message_to'.tr(namedArgs: {'name': widget.targetName}),
+                      widget.title ??
+                          'network.message_to'
+                              .tr(namedArgs: {'name': widget.targetName}),
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -162,11 +181,24 @@ class _MessageRequestSheetState extends ConsumerState<_MessageRequestSheet> {
                   left: 16,
                   right: 16,
                   top: 16,
-                  bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+                  // Clear the keyboard when open, plus the home-indicator inset
+                  // so the send button is never tucked under the gesture bar.
+                  bottom: MediaQuery.of(context).viewInsets.bottom +
+                      MediaQuery.of(context).padding.bottom +
+                      16,
                 ),
                 child: _loadingStatus
                     ? const Center(child: CircularProgressIndicator())
-                    : _buildContent(),
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          if (widget.contextNote != null) ...[
+                            _buildContextNote(widget.contextNote!),
+                            const SizedBox(height: 16),
+                          ],
+                          _buildContent(),
+                        ],
+                      ),
               ),
             ),
           ],
@@ -301,6 +333,31 @@ class _MessageRequestSheetState extends ConsumerState<_MessageRequestSheet> {
           ),
         ],
       ],
+    );
+  }
+
+  /// Info banner shown at the top of the sheet in the "connect" variant to
+  /// clarify the interaction (e.g. "this is a connection request, not instant
+  /// chat"). Reuses the composer's primary-tinted style.
+  Widget _buildContextNote(String text) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.primaryLighter,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.info_outline, color: AppColors.primary, size: 18),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(text,
+                style: const TextStyle(
+                    color: AppColors.primary, fontSize: 13, height: 1.4)),
+          ),
+        ],
+      ),
     );
   }
 

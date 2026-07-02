@@ -18,7 +18,7 @@ import '../../data/repositories/chat_repository.dart';
 import '../providers/chat_group_provider.dart';
 import '../providers/chat_list_provider.dart';
 
-class GroupMembersPage extends ConsumerWidget {
+class GroupMembersPage extends ConsumerStatefulWidget {
   const GroupMembersPage({
     super.key,
     required this.groupId,
@@ -29,16 +29,25 @@ class GroupMembersPage extends ConsumerWidget {
   final String? groupTitle;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final membersAsync = ref.watch(chatGroupMembersProvider(groupId));
+  ConsumerState<GroupMembersPage> createState() => _GroupMembersPageState();
+}
+
+class _GroupMembersPageState extends ConsumerState<GroupMembersPage> {
+  /// Locally tracked title so the app bar updates immediately after a rename.
+  /// (The title arrives via route `extra`, not from a provider.)
+  late String? _title = widget.groupTitle;
+
+  @override
+  Widget build(BuildContext context) {
+    final membersAsync = ref.watch(chatGroupMembersProvider(widget.groupId));
     final currentMemberId = int.tryParse(
         ref.watch(authStateProvider).valueOrNull?.user?.id ?? '');
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          groupTitle != null
-              ? 'chat.group_members_title'.tr(namedArgs: {'name': groupTitle!})
+          _title != null
+              ? 'chat.group_members_title'.tr(namedArgs: {'name': _title!})
               : 'chat.members'.tr(),
         ),
       ),
@@ -46,7 +55,8 @@ class GroupMembersPage extends ConsumerWidget {
         loading: () => const LoadingView(),
         error: (e, _) => ErrorView(
           message: '$e',
-          onRetry: () => ref.invalidate(chatGroupMembersProvider(groupId)),
+          onRetry: () =>
+              ref.invalidate(chatGroupMembersProvider(widget.groupId)),
         ),
         data: (members) {
           final currentMember = members.firstWhere(
@@ -80,6 +90,19 @@ class GroupMembersPage extends ConsumerWidget {
                   },
                 ),
               ),
+              // Rename group (owner only)
+              if (isOwner)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: OutlinedButton.icon(
+                    onPressed: _showRenameDialog,
+                    icon: const Icon(Icons.drive_file_rename_outline),
+                    label: Text('chat.rename_group'.tr()),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(44),
+                    ),
+                  ),
+                ),
               // Add members (owner only, max 10 total)
               if (isOwner && members.length < 10)
                 Padding(
@@ -152,7 +175,7 @@ class GroupMembersPage extends ConsumerWidget {
     if (confirmed != true) return;
     try {
       await ref
-          .read(chatGroupMembersProvider(groupId).notifier)
+          .read(chatGroupMembersProvider(widget.groupId).notifier)
           .removeMember(member.memberId);
       if (context.mounted) {
         AppToast.success(
@@ -188,13 +211,70 @@ class GroupMembersPage extends ConsumerWidget {
     );
     if (confirmed != true) return;
     try {
-      await ref.read(chatRepositoryProvider).leaveGroup(groupId);
+      await ref.read(chatRepositoryProvider).leaveGroup(widget.groupId);
       ref.invalidate(chatListProvider);
       if (context.mounted) {
         context.go(RouteNames.chat);
       }
     } catch (e) {
       if (context.mounted) AppToast.fromError(context, e);
+    }
+  }
+
+  /// Owner-only: rename the group. Mirrors the web `GroupMembersDrawer` rename
+  /// dialog. On success updates the local title, refreshes the chat list, and
+  /// toasts. Backend enforces owner-only (403 otherwise) → surfaced via toast.
+  Future<void> _showRenameDialog() async {
+    // Track the value in a local var (no external TextEditingController) so we
+    // never dispose a controller while the dialog is still animating out —
+    // that triggers the `_dependents.isEmpty` assertion. The StatefulBuilder
+    // wraps the whole dialog so the Save button's enabled state stays reactive.
+    var value = _title ?? '';
+    final newTitle = await showDialog<String>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setInner) => AlertDialog(
+          title: Text('chat.rename_group'.tr()),
+          content: TextFormField(
+            initialValue: value,
+            autofocus: true,
+            maxLength: 100,
+            textInputAction: TextInputAction.done,
+            decoration: InputDecoration(labelText: 'chat.group_name'.tr()),
+            onChanged: (v) => setInner(() => value = v),
+            onFieldSubmitted: (v) {
+              if (v.trim().isNotEmpty) Navigator.pop(ctx, v.trim());
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text('common.cancel'.tr()),
+            ),
+            TextButton(
+              onPressed: value.trim().isEmpty
+                  ? null
+                  : () => Navigator.pop(ctx, value.trim()),
+              child: Text('common.save'.tr()),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    final trimmed = newTitle?.trim() ?? '';
+    if (trimmed.isEmpty || trimmed == _title) return;
+    try {
+      await ref.read(chatRepositoryProvider).updateGroup(widget.groupId, trimmed);
+      ref.invalidate(chatListProvider);
+      if (!mounted) return;
+      setState(() => _title = trimmed);
+      AppToast.success(
+        context,
+        'chat.group_renamed'.tr(namedArgs: {'name': trimmed}),
+      );
+    } catch (e) {
+      if (mounted) AppToast.fromError(context, e);
     }
   }
 
@@ -223,7 +303,7 @@ class GroupMembersPage extends ConsumerWidget {
     if (added == null || added.isEmpty) return;
     try {
       await ref
-          .read(chatGroupMembersProvider(groupId).notifier)
+          .read(chatGroupMembersProvider(widget.groupId).notifier)
           .addMembers(added);
       if (context.mounted) {
         AppToast.success(
