@@ -43,6 +43,21 @@ class FundDetail {
   final String? topic;
   final FundReceivingInfo? receivingInfo;
 
+  /// Contact email of the fund manager (always present — the column is NOT NULL
+  /// on the backend, but kept nullable here to be safe with older data).
+  final String? managerEmail;
+
+  /// User id of the manager, derived server-side by matching [managerEmail]
+  /// against the `users` table. `null` when the email is not a system member —
+  /// in that case only the email is shown, without a "Connect" action.
+  /// This equals `users.id`, which is the same id the chat module calls
+  /// "memberId", so it can be passed straight into a connection request.
+  final int? managerUserId;
+
+  /// Avatar of the manager (from the `users` table); `null` when [managerUserId]
+  /// is `null`.
+  final String? managerAvatarUrl;
+
   const FundDetail({
     required this.id,
     required this.name,
@@ -58,7 +73,14 @@ class FundDetail {
     this.timeEnded,
     this.topic,
     this.receivingInfo,
+    this.managerEmail,
+    this.managerUserId,
+    this.managerAvatarUrl,
   });
+
+  /// Whether the manager is a system member that can receive a connection
+  /// request (i.e. their email matched a user account).
+  bool get hasSystemManager => managerUserId != null;
 
   double get progress =>
       targetAmount <= 0 ? 0 : (currentAmount / targetAmount).clamp(0, 1);
@@ -90,6 +112,9 @@ class FundDetail {
       receivingInfo: info is Map<String, dynamic>
           ? FundReceivingInfo.fromJson(info)
           : null,
+      managerEmail: json['managerEmail'] as String?,
+      managerUserId: (json['managerUserId'] as num?)?.toInt(),
+      managerAvatarUrl: json['managerAvatarUrl'] as String?,
     );
   }
 
