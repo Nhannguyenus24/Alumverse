@@ -43,7 +43,7 @@ import { getMentorProfileTabs } from '../../constants/mentorshipNav';
 import { useTranslation } from 'react-i18next';
 
 const DEFAULT_COVER =
-  'https://ethnasia.com/cdn/shop/articles/sean-o-KMn4VEeEPR8-unsplash_edited.jpg?v=1621585619';
+  'https://info.cognician.com/hubfs/220201%20mentorship-%20desktop.png';
 
 const WEEK_DAYS_KEYS = ['cal_day_mon', 'cal_day_tue', 'cal_day_wed', 'cal_day_thu', 'cal_day_fri', 'cal_day_sat', 'cal_day_sun'];
 const WEEK_DAYS_SHORT_KEYS = ['cal_day_short_mon', 'cal_day_short_tue', 'cal_day_short_wed', 'cal_day_short_thu', 'cal_day_short_fri', 'cal_day_short_sat', 'cal_day_short_sun'];
@@ -291,7 +291,7 @@ const MentorshipYourCalendarPage = () => {
         ? [profile.currentJobTitle, profile.currentCompany].filter(Boolean).join(' @ ')
         : t('mentor'),
     avatar: profile?.avatarUrl ?? '',
-    cover: DEFAULT_COVER,
+    cover: profile?.coverUrl ?? DEFAULT_COVER,
   }), [profile, t]);
 
   return (

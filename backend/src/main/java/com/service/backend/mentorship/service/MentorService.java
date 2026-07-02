@@ -116,9 +116,19 @@ public class MentorService {
 
     private Mono<MentorProfileResponse> attachProfileDisplay(MentorProfileResponse single) {
         if (single.getMemberId() == null) return Mono.just(single);
-        return userDisplayInfoRepository.findByUserId(single.getMemberId())
+        Mono<MentorProfileResponse> displayMono = userDisplayInfoRepository.findByUserId(single.getMemberId())
                 .map(info -> single.withDisplay(info.getFullName(), info.getAvatarUrl()))
                 .defaultIfEmpty(single);
+        Mono<List<String>> topicsMono = expertiseRepository.findByMentorMemberId(single.getMemberId())
+                .map(MentorExpertise::getTopic)
+                .filter(topic -> topic != null && !topic.isBlank())
+                .collectList();
+        return Mono.zip(displayMono, topicsMono)
+                .map(tuple -> {
+                    MentorProfileResponse profile = tuple.getT1();
+                    profile.setExpertiseTopics(tuple.getT2());
+                    return profile;
+                });
     }
 
     // ===================== PROFILE =====================

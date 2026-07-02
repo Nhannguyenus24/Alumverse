@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button, Box, Pagination, Stack, Typography } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
 import dayjs from "dayjs";
@@ -202,14 +203,32 @@ export default function DonationPage() {
     >
 
             {errorMessage && (
-              <Box sx={{ mb: 3, p: 2, borderRadius: 2, border: "1px solid #f2b8b5", backgroundColor: "#fff4f2" }}>
-                <Typography sx={{ color: "#9f2f2f", fontWeight: 600 }}>{errorMessage}</Typography>
+              <Box
+                sx={(theme) => ({
+                  mb: 3,
+                  p: 2,
+                  borderRadius: 2,
+                  border: "1px solid",
+                  borderColor: alpha(theme.palette.error.main, theme.palette.mode === "dark" ? 0.32 : 0.22),
+                  backgroundColor: alpha(theme.palette.error.main, theme.palette.mode === "dark" ? 0.14 : 0.08),
+                })}
+              >
+                <Typography sx={{ color: "error.main", fontWeight: 600 }}>{errorMessage}</Typography>
               </Box>
             )}
 
             {!isLoading && !errorMessage && !featuredCampaign && campaigns.length === 0 && (
-              <Box sx={{ mb: 3, p: 2.2, borderRadius: 2, border: "1px solid #dbe6f8", backgroundColor: "#f8fbff" }}>
-                <Typography sx={{ color: "#43608e", fontWeight: 600 }}>{t("donation:no_funds_filtered")}</Typography>
+              <Box
+                sx={(theme) => ({
+                  mb: 3,
+                  p: 2.2,
+                  borderRadius: 2,
+                  border: "1px solid",
+                  borderColor: alpha(theme.palette.info.main, theme.palette.mode === "dark" ? 0.28 : 0.18),
+                  backgroundColor: alpha(theme.palette.info.main, theme.palette.mode === "dark" ? 0.12 : 0.08),
+                })}
+              >
+                <Typography sx={{ color: "info.main", fontWeight: 600 }}>{t("donation:no_funds_filtered")}</Typography>
               </Box>
             )}
 

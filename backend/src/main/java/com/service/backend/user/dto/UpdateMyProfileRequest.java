@@ -12,6 +12,8 @@ public class UpdateMyProfileRequest {
 
     private String gender;
 
+    private String bio;
+
     @NotNull(message = "Organization ID is required")
     @Min(value = 1, message = "Organization ID must be greater than 0")
     private Integer organizationId;

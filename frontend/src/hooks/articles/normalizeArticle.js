@@ -41,6 +41,7 @@ export const normalizeEvent = (data) => {
     location: data.location,
     interestedCount: data.interestedCount ?? 0,
     joinedCount: data.joinedCount ?? 0,
+    isRegistered: data.isRegistered ?? data.registered ?? data.hasRegistered ?? false,
     maxCapacity: data.maxCapacity,
     topic: data.topic,
   };
