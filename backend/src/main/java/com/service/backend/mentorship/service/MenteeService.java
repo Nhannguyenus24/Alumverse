@@ -322,10 +322,9 @@ public class MenteeService {
                                                 String message = hasDefaultLink
                                                         ? "Bạn vừa nhận được một lịch hẹn cố vấn mới. Hãy xem chi tiết và chuẩn bị cho buổi trao đổi."
                                                         : "Bạn vừa nhận được một lịch hẹn cố vấn mới, nhưng buổi này chưa có link tham gia. Hãy thêm link họp cho buổi trao đổi.";
-                                        return Mono.when(
-                                                        availabilityRepository.updateStatus(availability.getId(), Status.BOOKED.getValue()),
-                                                        sessionRepository.save(session)
-                                                ).doOnSuccess(ignored ->
+                                        return availabilityRepository.updateStatus(availability.getId(), Status.BOOKED.getValue())
+                                                .then(sessionRepository.save(session))
+                                                .doOnSuccess(ignored ->
                                                         notificationService.createNotificationAsync(
                                                                 availability.getMentorMemberId(),
                                                                 "Lịch hẹn mới",
