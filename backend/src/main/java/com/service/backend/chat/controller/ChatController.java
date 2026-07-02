@@ -9,6 +9,7 @@ import com.service.backend.chat.dto.GroupBlockedMembersContextResponse;
 import com.service.backend.chat.dto.GroupChatListItemResponse;
 import com.service.backend.chat.dto.PrivateChatListItemResponse;
 import com.service.backend.chat.dto.PrivateChatRequest;
+import com.service.backend.chat.dto.UpdateGroupAvatarRequest;
 import com.service.backend.chat.dto.UpdateGroupRequest;
 import com.service.backend.shared.entity.ChatGroup;
 import com.service.backend.chat.service.ChatService;
@@ -212,6 +213,20 @@ public class ChatController {
                 .flatMap(currentMemberId -> this.chatService.updateGroupInfo(groupId, currentMemberId, request.getTitle()))
                 .map(updatedGroup -> ResponseEntity
                         .ok(new ApiResponse<>("Group updated successfully", updatedGroup)));
+    }
+
+
+    /*
+        Update a chat group avatar (owner-only, group chats only)
+    */
+    @PutMapping("/groups/{groupId}/avatar")
+    public Mono<ResponseEntity<ApiResponse<ChatGroup>>> updateGroupAvatar(
+            @PathVariable("groupId") @Min(1) Long groupId,
+            @Valid @RequestBody UpdateGroupAvatarRequest request) {
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(currentMemberId -> this.chatService.updateGroupAvatar(groupId, currentMemberId, request.getAvatarUrl()))
+                .map(updatedGroup -> ResponseEntity
+                        .ok(new ApiResponse<>("Group avatar updated successfully", updatedGroup)));
     }
 
 

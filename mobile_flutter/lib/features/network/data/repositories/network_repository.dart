@@ -61,6 +61,7 @@ class NetworkRepository {
     String? fullName,
     String? program,
     String? major,
+    List<int>? organizationIds,
     int page = 0,
     int size = 10,
   }) async {
@@ -70,6 +71,11 @@ class NetworkRepository {
         if (fullName != null && fullName.isNotEmpty) 'fullName': fullName,
         if (program != null && program.isNotEmpty) 'program': program,
         if (major != null && major.isNotEmpty) 'major': major,
+        // Dio's default ListFormat.multiCompatible serializes this as
+        // organizationIds=1&organizationIds=2, which the backend binds to
+        // List<Integer> organizationIds. Omit when empty → all organizations.
+        if (organizationIds != null && organizationIds.isNotEmpty)
+          'organizationIds': organizationIds,
         'page': page,
         'size': size,
       },

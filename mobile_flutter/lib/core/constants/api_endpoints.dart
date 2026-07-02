@@ -26,6 +26,7 @@ class ApiEndpoints {
   static const String meProfile = '/api/users/me/profile';
   static const String meAvatar = '/api/users/me/avatar';
   static const String imageUpload = '/api/images/upload';
+  static const String fileUpload = '/api/files/upload';
   static String publicProfile(int userId) => '/api/users/$userId/public-profile';
   static const String mePassword = '/api/users/me/password';
   static const String meOrganizationMember = '/api/users/me/organization-member';
@@ -54,6 +55,7 @@ class ApiEndpoints {
   static String chatGroupMember(int groupId, int memberId) => '/api/chat/groups/$groupId/members/$memberId';
   static String chatGroupLeave(int groupId) => '/api/chat/groups/$groupId/leave';
   static String chatGroupUpdate(int groupId) => '/api/chat/groups/$groupId';
+  static String chatGroupAvatarUpdate(int groupId) => '/api/chat/groups/$groupId/avatar';
 
   static const String chatConnectionStatus = '/api/chat/conversation-requests/connection-status';
   static const String chatConversationRequests = '/api/chat/conversation-requests';
