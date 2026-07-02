@@ -96,22 +96,23 @@ public interface AuthRepository extends R2dbcRepository<User, Integer> {
      * Register new user with unverified status and default USER role
      * Returns the created user ID
      */
-    @Query("INSERT INTO users (email, password_hash, role, \"status\", created_at, updated_at) " +
-           "VALUES (:email, :passwordHash, 'USER', 'UNVERIFIED', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) " +
+    @Query("INSERT INTO users (email, password_hash, role, \"status\", full_name, created_at, updated_at) " +
+           "VALUES (:email, :passwordHash, 'USER', 'UNVERIFIED', :fullName, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) " +
            "RETURNING id")
-    Mono<Integer> registerNewUser(@Param("email") String email, @Param("passwordHash") String passwordHash);
+    Mono<Integer> registerNewUser(@Param("email") String email, @Param("passwordHash") String passwordHash, @Param("fullName") String fullName);
 
     /**
      * Register new user from Google login with active status
-     * Returns the created user ID
+     * Returns the created User object
      */
-    @Query("INSERT INTO users (email, password_hash, role, \"status\", avatar_url, created_at, updated_at) " +
-           "VALUES (:email, :passwordHash, 'USER', 'ACTIVE', :avatarUrl, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) " +
-           "RETURNING id")
-    Mono<Integer> registerGoogleUser(
+    @Query("INSERT INTO users (email, password_hash, role, \"status\", avatar_url, full_name, created_at, updated_at) " +
+           "VALUES (:email, :passwordHash, 'USER', 'ACTIVE', :avatarUrl, :fullName, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) " +
+           "RETURNING *")
+    Mono<User> registerGoogleUser(
             @Param("email") String email,
             @Param("passwordHash") String passwordHash,
-            @Param("avatarUrl") String avatarUrl);
+            @Param("avatarUrl") String avatarUrl,
+            @Param("fullName") String fullName);
     
     /**
      * Get organization IDs for a user from organization_members table
@@ -119,14 +120,6 @@ public interface AuthRepository extends R2dbcRepository<User, Integer> {
      */
     @Query("SELECT om.organization_id FROM organization_members om WHERE om.user_id = :userId")
     Flux<Integer> getOrganizationIdByUserId(@Param("userId") Integer userId);
-
-    /**
-     * Set the display name for a newly registered user.
-     * (Profile fields now live on the users table.)
-     */
-    @Modifying
-    @Query("UPDATE users SET full_name = :fullName, updated_at = CURRENT_TIMESTAMP WHERE id = :userId")
-    Mono<Void> createGlobalProfile(@Param("userId") Integer userId, @Param("fullName") String fullName);
 
     /**
      * Create a default organization_members record when a user registers under an organization

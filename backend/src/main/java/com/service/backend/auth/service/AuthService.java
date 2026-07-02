@@ -6,7 +6,6 @@ import java.time.Duration;
 import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 import java.util.Collections;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
@@ -18,11 +17,9 @@ import com.service.backend.shared.exception.ApplicationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
-import org.springframework.web.reactive.function.client.WebClient;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.service.backend.auth.dto.LoginResponse;
@@ -44,9 +41,6 @@ import com.service.backend.user.service.NotificationService;
 public class AuthService {
     private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
     private static final Duration OTP_TTL = Duration.ofMinutes(5);
-    private static final String GOOGLE_TOKEN_INFO_PATH = "/tokeninfo";
-    private static final String GOOGLE_ISSUER = "accounts.google.com";
-    private static final String GOOGLE_ISSUER_HTTPS = "https://accounts.google.com";
     private static final String GOOGLE_LOGIN_METHOD = "GOOGLE";
     private static final String OTP_CACHE_KEY = "otp_verification";
     private static final String OTP_EMAIL_SUBJECT = "Email Verification - OTP Code";
@@ -63,7 +57,6 @@ public class AuthService {
     private final CacheUtils cacheUtils;
     private final JwtUtils jwtUtils;
     private final UserLoginHistoryRepository userLoginHistoryRepository;
-    private final WebClient googleApiClient;
     private final String googleClientId;
     private final SecureRandom secureRandom;
     private final NotificationService notificationService;
@@ -73,7 +66,6 @@ public class AuthService {
                       EmailService emailService, CacheUtils cacheUtils,
                       JwtUtils jwtUtils,
                       UserLoginHistoryRepository userLoginHistoryRepository,
-                      WebClient.Builder webClientBuilder,
                       @Value("${google.oauth.client-id:}") String googleClientId,
                       NotificationService notificationService) {
         this.authRepository = authRepository;
@@ -82,7 +74,6 @@ public class AuthService {
         this.cacheUtils = cacheUtils;
         this.jwtUtils = jwtUtils;
         this.userLoginHistoryRepository = userLoginHistoryRepository;
-        this.googleApiClient = webClientBuilder.baseUrl("https://oauth2.googleapis.com").build();
         this.googleClientId = googleClientId == null ? "" : googleClientId.trim();
         this.secureRandom = new SecureRandom();
         this.notificationService = notificationService;
@@ -101,10 +92,9 @@ public class AuthService {
                     return Mono.fromCallable(() -> passwordEncoder.encode(password))
                             .subscribeOn(Schedulers.boundedElastic())
                             .flatMap(hashedPassword ->
-                                    authRepository.registerNewUser(email, hashedPassword)
+                                    authRepository.registerNewUser(email, hashedPassword, fullName)
                                             .flatMap(userId ->
-                                                authRepository.createGlobalProfile(userId, fullName)
-                                                        .then(authRepository.createOrganizationMember(organizationId, userId, studentId))
+                                                authRepository.createOrganizationMember(organizationId, userId, studentId)
                             ));
                 })
                 .doOnError(e -> logger.error("Registration failed: {}", e.getMessage()));
@@ -487,18 +477,14 @@ public class AuthService {
                 ? tokenInfo.name().trim()
                 : tokenInfo.email();
 
-        return Mono.fromCallable(() -> passwordEncoder.encode(UUID.randomUUID().toString()))
-                .subscribeOn(Schedulers.boundedElastic())
-                .flatMap(passwordHash -> authRepository.registerGoogleUser(
-                                tokenInfo.email(),
-                                passwordHash,
-                                tokenInfo.picture())
-                        .flatMap(userId -> authRepository.createGlobalProfile(userId, fullName)
-                                .then(authRepository.createOrganizationMember(organizationId, userId, null))
-                                .thenReturn(userId))
-                        .flatMap(authRepository::findById)
-                        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND))))
-                .doOnNext(u -> recordLoginSuccessAsync(u.getId(), GOOGLE_LOGIN_METHOD, userAgent, loginIp));
+        return authRepository.registerGoogleUser(
+                        tokenInfo.email(),
+                        null,
+                        tokenInfo.picture(), 
+                        fullName)
+                .flatMap(user -> authRepository.createOrganizationMember(organizationId, user.getId(), null)
+                        .thenReturn(user))
+                .doOnNext(user -> recordLoginSuccessAsync(user.getId(), GOOGLE_LOGIN_METHOD, userAgent, loginIp));
     }
 
 
