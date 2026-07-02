@@ -14,6 +14,8 @@ class EventSummary {
   final int? maxCapacity;
   final String? organizer;
   final String? topic;
+  final bool requiresCheckIn;
+  final bool isPublished;
 
   const EventSummary({
     required this.id,
@@ -30,6 +32,8 @@ class EventSummary {
     this.maxCapacity,
     this.organizer,
     this.topic,
+    this.requiresCheckIn = false,
+    this.isPublished = false,
   });
 
   factory EventSummary.fromJson(Map<String, dynamic> json) {
@@ -48,6 +52,8 @@ class EventSummary {
       maxCapacity: (json['maxCapacity'] as num?)?.toInt(),
       organizer: json['organizer'] as String?,
       topic: json['topic'] as String?,
+      requiresCheckIn: (json['requiresCheckIn'] as bool?) ?? false,
+      isPublished: (json['isPublished'] as bool?) ?? false,
     );
   }
 

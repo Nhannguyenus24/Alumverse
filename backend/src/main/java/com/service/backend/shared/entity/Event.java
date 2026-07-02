@@ -63,6 +63,10 @@ public class Event {
     @Builder.Default
     private Boolean isPublished = false;
 
+    @Column("requires_check_in")
+    @Builder.Default
+    private Boolean requiresCheckIn = false;
+
     @CreatedDate
     @Column("created_at")
     private LocalDateTime createdAt;
