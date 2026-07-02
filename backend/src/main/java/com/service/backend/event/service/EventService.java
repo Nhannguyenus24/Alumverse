@@ -303,7 +303,7 @@ public class EventService {
                                                 return checkCapacityAndRegister(event, ticket, answersJson)
                                                         .doOnNext(saved -> notifyRegistration(event, saved));
                                             });
-                                })));
+                                }));
     }
 
     private Mono<List<Map<String, Object>>> validateRegistrationAnswers(Long eventId, List<AnswerItem> answers) {

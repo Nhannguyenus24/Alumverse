@@ -99,7 +99,7 @@ public class FundService {
                                             .build();
 
                                     return fundR2dbcRepository.save(fund);
-                                })));
+                                }));
     }
 
     public Mono<FundReceivingInfos> createFundReceivingInfos(CreateFundReceivingInfosRequest request) {
