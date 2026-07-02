@@ -1,5 +1,6 @@
 package com.service.backend.user.service;
 
+import com.service.backend.user.dto.*;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -21,15 +22,8 @@ import com.service.backend.user.dao.UserOrganizationMemberRepository;
 import com.service.backend.user.dao.UserProfileRepository;
 import com.service.backend.user.dao.PeerVerificationRepository;
 import com.service.backend.shared.entity.PeerVerification;
-import com.service.backend.user.dto.CreateVerificationRequest;
 import com.service.backend.shared.service.FileUploadService;
 import com.service.backend.shared.service.OCRService;
-import com.service.backend.user.dto.NotificationSettingsResponse;
-import com.service.backend.user.dto.UpdateMyProfileRequest;
-import com.service.backend.user.dto.UpdateNotificationSettingsRequest;
-import com.service.backend.user.dto.UserLoginHistoryResponse;
-import com.service.backend.user.dto.UserOrganizationMemberResponse;
-import com.service.backend.user.dto.UserProfileResponse;
 import com.service.backend.shared.entity.UserNotificationSettings;
 
 import lombok.RequiredArgsConstructor;
@@ -89,28 +83,31 @@ public class UserService {
                                 if (exists) {
                                     return Mono.error(new ApplicationException(ErrorCode.RESOURCES_DUPLICATE, "Pending verification request already exists"));
                                 }
-                                return peerVerificationRepository.save(PeerVerification.builder()
-                                        .targetMemberId(targetMember.getUserId())
-                                        .verifierMemberId(verifierMember.getUserId())
-                                        .status(Status.PENDING)
-                                        .createdAt(LocalDateTime.now())
-                                        .build())
-                                        .doOnSuccess(saved -> {
-                                            if (Boolean.TRUE.equals(verifierMember.getIsTrustedVerifier())) {
-                                                notificationService.createNotificationAsync(
-                                                        verifierUserId,
-                                                        "Yêu cầu xác thực đồng nghiệp",
-                                                        String.format("Người dùng %s đã gửi yêu cầu xác thực đồng nghiệp cho bạn.", targetMember.getUserId()),
-                                                        "/profile/" + targetMember.getUserId()
-                                                );
-                                            }
-                                        })
-                                        .then(userOrganizationMemberRepository.updateVerificationLevel(targetMember.getUserId(), 1));
+                                return Mono.when(
+                                        peerVerificationRepository.save(PeerVerification.builder()
+                                                .targetMemberId(targetMember.getUserId())
+                                                .verifierMemberId(verifierMember.getUserId())
+                                                .status(Status.PENDING)
+                                                .createdAt(LocalDateTime.now())
+                                                .build())
+                                                .doOnSuccess(saved -> {
+                                                    if (Boolean.TRUE.equals(verifierMember.getIsTrustedVerifier())) {
+                                                        notificationService.createNotificationAsync(
+                                                                verifierUserId,
+                                                                "Yêu cầu xác thực đồng nghiệp",
+                                                                String.format("Người dùng %s đã gửi yêu cầu xác thực đồng nghiệp cho bạn.", targetMember.getUserId()),
+                                                                "/profile/" + targetMember.getUserId()
+                                                        );
+                                                    }
+                                                }),
+                                        userOrganizationMemberRepository.updateVerificationLevel(targetMember.getUserId(), 1)
+                                );
                             });
                 })
                 .then();
     }
 
+    @Transactional
     public Mono<Void> acceptPeerVerification(Long currentUserId, Integer requestId) {
         return peerVerificationRepository.findById(requestId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.RESOURCES_NOT_FOUND, "Verification request not found")))
@@ -128,8 +125,10 @@ public class UserService {
                                     return Mono.error(new ApplicationException(ErrorCode.FORBIDDEN, "Only trusted verifiers can accept verification requests"));
                                 }
 
-                                return peerVerificationRepository.updateStatus(requestId, Status.APPROVED)
-                                        .then(userOrganizationMemberRepository.incrementVerificationLevelByUserId(request.getTargetMemberId()));
+                                return Mono.when(
+                                        peerVerificationRepository.updateStatus(requestId, Status.APPROVED),
+                                        userOrganizationMemberRepository.incrementVerificationLevelByUserId(request.getTargetMemberId())
+                                );
                             });
                 })
                 .then();
@@ -148,20 +147,22 @@ public class UserService {
                         return Mono.error(new ApplicationException(ErrorCode.FORBIDDEN, "Only trusted verifiers can perform direct verification"));
                     }
 
-                    return peerVerificationRepository.save(PeerVerification.builder()
+                    return Mono.when(
+                            peerVerificationRepository.save(PeerVerification.builder()
                                     .targetMemberId(targetMember.getUserId())
                                     .verifierMemberId(verifierMember.getUserId())
                                     .status(Status.ACCEPTED)
-                                    .build())
-                            .then(Mono.defer(() -> {
+                                    .build()),
+                            Mono.defer(() -> {
                                 targetMember.setVerificationLevel(targetMember.getVerificationLevel() + 1);
                                 return userOrganizationMemberRepository.save(targetMember);
-                            }));
+                            })
+                    );
                 })
                 .then();
     }
 
-    public Mono<List<com.service.backend.user.dto.PendingPeerVerificationResponse>> getPendingPeerVerifications(Long currentUserId, Integer organizationId) {
+    public Mono<List<PendingPeerVerificationResponse>> getPendingPeerVerifications(Long currentUserId, Integer organizationId) {
         return userOrganizationMemberRepository.findByOrganizationIdAndUserId(organizationId, currentUserId.intValue())
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.ORGANIZATION_MEMBER_NOT_FOUND)))
                 .flatMap(member -> {
@@ -290,7 +291,7 @@ public class UserService {
                     return Mono.just(updatedRows);
                 });
 
-        return updateGlobalProfile.then(updateOrganizationMember).then()
+        return Mono.when(updateGlobalProfile, updateOrganizationMember)
                 .doOnSuccess(v -> logger.info("updateMyProfile: userId={} updated", userId));
     }
 

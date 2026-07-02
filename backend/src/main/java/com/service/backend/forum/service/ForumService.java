@@ -417,29 +417,30 @@ public class ForumService {
 
     @Transactional
     public Mono<ForumTopicSubscriptionDTO> subscribeToTopic(CreateForumTopicSubscriptionRequest request) {
-        return forumTopicRepository.findById(request.getTopicId())
-                .switchIfEmpty(Mono.defer(() -> {
-                    log.error("Topic not found with ID: {}", request.getTopicId());
-                    return Mono.error(new ApplicationException(ErrorCode.FORUM_TOPIC_NOT_FOUND));
-                }))
-                .flatMap(topic -> forumTopicSubscriptionRepository.findByTopicIdAndMemberId(
-                            request.getTopicId(), request.getMemberId())
-                        .flatMap(existingSubscription -> {
-                            log.info("Removing existing subscription from topic ID: {}, member: {}",
-                                    request.getTopicId(), request.getMemberId());
-                            return forumTopicSubscriptionRepository.deleteByTopicIdAndMemberId(
-                                    request.getTopicId(), request.getMemberId())
-                                    .then(Mono.<ForumTopicSubscription>empty());
-                        })
-                        .switchIfEmpty(Mono.defer(() -> {
-                            log.info("Creating new subscription for topic ID: {}, member: {}",
-                                    request.getTopicId(), request.getMemberId());
-                            ForumTopicSubscription subscription = ForumTopicSubscription.builder()
-                                    .topicId(request.getTopicId())
-                                    .memberId(request.getMemberId())
-                                    .build();
-                            return forumTopicSubscriptionRepository.save(subscription);
-                        })))
+        return Mono.zip(
+                forumTopicRepository.findById(request.getTopicId())
+                        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.FORUM_TOPIC_NOT_FOUND))),
+                forumTopicSubscriptionRepository.findByTopicIdAndMemberId(request.getTopicId(), request.getMemberId())
+                        .map(Optional::of)
+                        .defaultIfEmpty(Optional.empty())
+        ).flatMap(tuple -> {
+            Optional<ForumTopicSubscription> existingSubscriptionOpt = tuple.getT2();
+            if (existingSubscriptionOpt.isPresent()) {
+                log.info("Removing existing subscription from topic ID: {}, member: {}",
+                        request.getTopicId(), request.getMemberId());
+                return forumTopicSubscriptionRepository.deleteByTopicIdAndMemberId(
+                        request.getTopicId(), request.getMemberId())
+                        .then(Mono.<ForumTopicSubscription>empty());
+            } else {
+                log.info("Creating new subscription for topic ID: {}, member: {}",
+                        request.getTopicId(), request.getMemberId());
+                ForumTopicSubscription subscription = ForumTopicSubscription.builder()
+                        .topicId(request.getTopicId())
+                        .memberId(request.getMemberId())
+                        .build();
+                return forumTopicSubscriptionRepository.save(subscription);
+            }
+        })
                 .map(this::convertToSubscriptionDTO)
                 .doOnSuccess(result -> log.info("subscribeToTopic result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error toggling subscription for topic ID: {}", request.getTopicId(), error));

@@ -70,19 +70,20 @@ public class FundService {
         Integer organizationId = request.getOrganizationId();
         Integer fundReceivingInfoId = request.getFundReceivingInfoId();
 
-        return organizationRepository.findById(organizationId)
-                .switchIfEmpty(Mono.error(new ApplicationException(
-                        ErrorCode.FUND_NOT_FOUND,
-                        "Organization not found with id: " + organizationId)))
-                .flatMap(existingOrganization -> fundReceivingInfosRepository.findById(fundReceivingInfoId)
+        return Mono.zip(
+                organizationRepository.findById(organizationId)
+                        .switchIfEmpty(Mono.error(new ApplicationException(
+                                ErrorCode.FUND_NOT_FOUND,
+                                "Organization not found with id: " + organizationId))),
+                fundReceivingInfosRepository.findById(fundReceivingInfoId)
                         .switchIfEmpty(Mono.error(new ApplicationException(
                                 ErrorCode.FUND_RECEIVING_INFO_NOT_FOUND,
                                 "Fund receiving info not found with id: " + fundReceivingInfoId)))
-                        .flatMap(existingFundReceivingInfo -> imageService.uploadBase64IfPresent(request.getLogoBase64())
-                                .defaultIfEmpty(request.getLogoUrl() == null ? "" : request.getLogoUrl())
-                                .flatMap(logoUrl -> {
-                                    Funds fund = Funds.builder()
-                                            .organizationId(organizationId)
+        ).flatMap(tuple -> imageService.uploadBase64IfPresent(request.getLogoBase64())
+                .defaultIfEmpty(request.getLogoUrl() == null ? "" : request.getLogoUrl())
+                .flatMap(logoUrl -> {
+                    Funds fund = Funds.builder()
+                            .organizationId(organizationId)
                                             .fundReceivingInfoId(fundReceivingInfoId)
                                             .name(request.getName())
                                             .logoUrl(logoUrl.isEmpty() ? null : logoUrl)
@@ -480,11 +481,15 @@ public class FundService {
     }
 
     public Mono<FundDonationCheckoutResponse> createFundDonationAndPaymentLink(CreateFundDonationRequest request) {
-        return createFundDonation(request)
-                .flatMap(savedDonation -> getFundReceivingInfoByFundId(savedDonation.getFundId())
-                        .flatMap(receivingInfo -> resolveBankCode(receivingInfo.getBankName())
-                        .map(bankCode -> {
-                            long amountInVnd = normalizeAmountToVnd(request.getAmount());
+        return Mono.zip(
+                createFundDonation(request),
+                getFundReceivingInfoByFundId(request.getFundId())
+        ).flatMap(tuple -> {
+            FundDonations savedDonation = tuple.getT1();
+            FundReceivingInfos receivingInfo = tuple.getT2();
+            return resolveBankCode(receivingInfo.getBankName())
+                    .map(bankCode -> {
+                        long amountInVnd = normalizeAmountToVnd(request.getAmount());
                             String description = buildDescription(request.getMessage(), savedDonation.getId());
 
                             // VietQR Quick Link format:
@@ -501,7 +506,8 @@ public class FundService {
                             }
                             String qrUrl = builder.encode(StandardCharsets.UTF_8).build().toUriString();
                             return new FundDonationCheckoutResponse(qrUrl);
-                        })));
+                    });
+        });
     }
 
     private Mono<FundReceivingInfos> getFundReceivingInfoByFundId(Integer fundId) {
