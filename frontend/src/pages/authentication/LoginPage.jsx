@@ -260,6 +260,8 @@ const LoginPage = () => {
             justifyContent: 'center',
             width: '100%',
             ...thirdPartyControlSx,
+            '& > div': { width: '100% !important' },
+            '& iframe': { width: '100% !important' },
           }}>
             <GoogleLogin
               onSuccess={handleGoogleSuccess}

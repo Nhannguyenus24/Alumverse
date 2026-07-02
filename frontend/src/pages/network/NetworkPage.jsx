@@ -157,7 +157,7 @@ const NetworkPage = () => {
   }, []);
 
   return (
-    <NetworkSectionLayout title="Network">
+    <NetworkSectionLayout title={t('network:title')}>
       <Stack spacing={2}>
         <Typography
           variant="h1"

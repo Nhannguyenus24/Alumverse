@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import {
+  alpha,
   Alert,
   Box,
   Button,
@@ -131,7 +132,18 @@ const MentorSignupTabContent = ({ values, onChange }) => {
             {tags.length > 0 ? (
               <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
                 {tags.map((tag) => (
-                  <Chip key={tag} label={`#${tag}`} onDelete={() => removeTag(tag)} color="primary" variant="outlined" />
+                  <Chip
+                    key={tag}
+                    label={tag}
+                    onDelete={() => removeTag(tag)}
+                    color="primary"
+                    variant="outlined"
+                    sx={(theme) => ({
+                      bgcolor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.14 : 0.08),
+                      borderColor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.34 : 0.22),
+                      fontWeight: 700,
+                    })}
+                  />
                 ))}
               </Stack>
             ) : (

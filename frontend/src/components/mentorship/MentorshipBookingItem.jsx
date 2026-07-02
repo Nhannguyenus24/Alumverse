@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import {
+  alpha,
   Avatar,
   Box,
   Button,
@@ -30,6 +31,21 @@ const STATUS_COLOR = {
   REJECTED: 'error',
   REPORTED: 'warning',
 };
+
+const softChipSx = (colorKey = 'primary') => (theme) => {
+  const palette = theme.palette[colorKey]?.main ? theme.palette[colorKey] : theme.palette.primary;
+  return {
+    bgcolor: alpha(palette.main, theme.palette.mode === 'dark' ? 0.16 : 0.08),
+    color: palette.main,
+    borderColor: alpha(palette.main, theme.palette.mode === 'dark' ? 0.36 : 0.24),
+    fontWeight: 700,
+  };
+};
+
+const warningPanelSx = (theme) => ({
+  bgcolor: alpha(theme.palette.warning.main, theme.palette.mode === 'dark' ? 0.14 : 0.08),
+  borderColor: alpha(theme.palette.warning.main, theme.palette.mode === 'dark' ? 0.46 : 0.34),
+});
 
 const formatRange = (start, end) => {
   const s = dayjs(start);
@@ -131,14 +147,16 @@ const MentorshipBookingItem = ({
             <Typography fontWeight={700}>{counterpartName}</Typography>
             <Chip
               size="small"
-              color={STATUS_COLOR[session.status] ?? 'default'}
+              variant="outlined"
               label={getStatusLabel(session.status)}
+              sx={softChipSx(STATUS_COLOR[session.status] ?? 'primary')}
             />
             {session.sessionType && (
               <Chip
                 size="small"
                 variant="outlined"
                 label={getSessionTypeLabel(session.sessionType)}
+                sx={softChipSx('primary')}
               />
             )}
           </Stack>
@@ -184,7 +202,7 @@ const MentorshipBookingItem = ({
         )}
 
         {isRescheduleProposed && (
-          <Box sx={{ p: 1.5, borderRadius: 1, bgcolor: 'warning.lighter', border: '1px dashed', borderColor: 'warning.main' }}>
+          <Box sx={(theme) => ({ p: 1.5, borderRadius: 1, border: '1px dashed', ...warningPanelSx(theme) })}>
             <Typography variant="caption" color="text.secondary" display="block">
               {view === 'mentee' ? t('mentorship:advisor_proposed_reschedule') : t('mentorship:you_proposed_reschedule')}
             </Typography>
@@ -238,13 +256,12 @@ const MentorshipBookingItem = ({
             direction="row"
             spacing={0.75}
             alignItems="center"
-            sx={{
+            sx={(theme) => ({
               p: 1,
               borderRadius: 1,
-              bgcolor: 'warning.lighter',
               border: '1px dashed',
-              borderColor: 'warning.main',
-            }}
+              ...warningPanelSx(theme),
+            })}
           >
             <WarningAmberOutlinedIcon fontSize="small" color="warning" />
             <Typography variant="body2" color="warning.dark">

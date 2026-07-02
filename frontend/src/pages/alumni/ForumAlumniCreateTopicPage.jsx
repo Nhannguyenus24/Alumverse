@@ -5,16 +5,13 @@ import {
   Alert,
   Box,
   Button,
-  Container,
   MenuItem,
-  Stack,
   TextField,
   Typography,
 } from '@mui/material';
-import Page from '../../components/Page';
 import ForumFilterPanel from '../../components/forum/ForumFilterPanel';
-import ForumSponsoredCard from '../../components/forum/ForumSponsoredCard';
 import WYSIWYG from '../../components/WYSIWYG';
+import AlumniContentLayout from '../../layouts/AlumniContentLayout';
 import { useAuth } from '../../hooks/useAuth';
 import { useOrganization } from '../../hooks/useOrganization';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
@@ -213,38 +210,20 @@ const ForumAlumniCreateTopicPage = () => {
   };
 
   return (
-    <Page
-      title={t('forum:page_title_create_topic')}
+    <AlumniContentLayout
+      variant="forum"
+      pageTitle={t('forum:page_title_create_topic')}
       meta={<meta name="description" content={t('forum:page_meta_create_topic')} />}
+      sidebar={(
+        <ForumFilterPanel
+          filters={filters}
+          selectedId={selectedSidebarFilterId}
+          onChange={handleFilterChange}
+        />
+      )}
+      header={null}
+      contentSpacing={0}
     >
-      <Container
-        maxWidth={false}
-        disableGutters
-        sx={{ pb: { xs: 4, md: 6 }, overflowX: 'hidden' }}
-      >
-        <Container maxWidth="xl" sx={{ pt: { xs: 2, sm: 3, md: 4 }, px: { xs: 2, sm: 3, lg: 6 } }}>
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: { xs: 'column', md: 'row' },
-              alignItems: 'flex-start',
-              gap: { xs: 2, md: 3 },
-            }}
-          >
-            <Stack spacing={2} sx={{ width: { xs: '100%', md: 260 }, flexShrink: 0 }}>
-              <ForumFilterPanel
-                filters={filters}
-                selectedId={selectedSidebarFilterId}
-                onChange={handleFilterChange}
-              />
-              <ForumSponsoredCard
-                title="Sponsored"
-                imageSrc="/forum/metro_station.png"
-                imageAlt="HCMC Metro Opening"
-                caption="HCMC Metro Opening"
-              />
-            </Stack>
-
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <Typography
                 variant="h4"
@@ -319,7 +298,7 @@ const ForumAlumniCreateTopicPage = () => {
               </Box>
 
               {/* Editor card */}
-              <Box sx={{ border: 1, borderColor: 'divider', backgroundColor: '#fff' }}>
+              <Box sx={{ border: 1, borderColor: 'divider', backgroundColor: 'background.paper' }}>
                 <Box
                   sx={{
                     display: 'flex',
@@ -408,10 +387,7 @@ const ForumAlumniCreateTopicPage = () => {
                 </Box>
               </Box>
             </Box>
-          </Box>
-        </Container>
-      </Container>
-    </Page>
+    </AlumniContentLayout>
   );
 };
 

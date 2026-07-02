@@ -1,4 +1,4 @@
-import { Box } from "@mui/material";
+import { alpha, Box } from "@mui/material";
 import { useMemo, useRef } from "react";
 import ReactQuill, { Quill } from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
@@ -67,11 +67,12 @@ const WYSIWYG = ({
 
   return (
     <Box
-      sx={{
+      sx={(theme) => ({
         border: "1px solid",
         borderColor: "divider",
         borderRadius: 1,
         overflow: "hidden",
+        backgroundColor: "background.paper",
         "& .quill": {
           display: "flex",
           flexDirection: "column",
@@ -80,21 +81,49 @@ const WYSIWYG = ({
           borderLeft: "none",
           borderRight: "none",
           borderTop: "none",
+          borderColor: theme.palette.divider,
+          backgroundColor: theme.palette.background.default,
+          color: theme.palette.text.primary,
           flexShrink: 0,
+        },
+        "& .ql-toolbar .ql-picker-label, & .ql-toolbar .ql-picker-item": {
+          color: theme.palette.text.primary,
+        },
+        "& .ql-toolbar .ql-stroke": {
+          stroke: theme.palette.text.primary,
+        },
+        "& .ql-toolbar .ql-fill": {
+          fill: theme.palette.text.primary,
+        },
+        "& .ql-toolbar button:hover .ql-stroke, & .ql-toolbar button.ql-active .ql-stroke, & .ql-toolbar .ql-picker-label:hover .ql-stroke, & .ql-toolbar .ql-picker-label.ql-active .ql-stroke": {
+          stroke: theme.palette.primary.main,
+        },
+        "& .ql-toolbar button:hover .ql-fill, & .ql-toolbar button.ql-active .ql-fill, & .ql-toolbar .ql-picker-label:hover .ql-fill, & .ql-toolbar .ql-picker-label.ql-active .ql-fill": {
+          fill: theme.palette.primary.main,
+        },
+        "& .ql-toolbar button:hover, & .ql-toolbar button.ql-active, & .ql-toolbar .ql-picker-label:hover, & .ql-toolbar .ql-picker-label.ql-active": {
+          color: theme.palette.primary.main,
         },
         "& .ql-container": {
           height: `${height}px`,
           fontSize: "1rem",
           border: "none",
+          backgroundColor: theme.palette.background.paper,
+          color: theme.palette.text.primary,
         },
         "& .ql-editor": {
           height: "100%",
           fontFamily: "Nunito, 'sans-serif'",
+          color: theme.palette.text.primary,
           overflowY: "auto",
           textAlign: "justify",
           overflowWrap: "normal",
           wordBreak: "normal",
           hyphens: "none",
+        },
+        "& .ql-editor.ql-blank::before": {
+          color: theme.palette.text.disabled,
+          fontStyle: "normal",
         },
         "& .ql-editor *": {
           fontFamily: "Nunito, sans-serif !important",
@@ -109,7 +138,23 @@ const WYSIWYG = ({
           overflowWrap: "normal",
           wordBreak: "normal",
         },
-      }}
+        "& .ql-tooltip": {
+          backgroundColor: theme.palette.background.paper,
+          borderColor: theme.palette.divider,
+          boxShadow: theme.palette.mode === "dark"
+            ? `0 12px 28px ${alpha(theme.palette.common.black, 0.42)}`
+            : `0 10px 24px ${alpha(theme.palette.common.black, 0.14)}`,
+          color: theme.palette.text.primary,
+        },
+        "& .ql-tooltip input[type=text]": {
+          backgroundColor: theme.palette.background.default,
+          borderColor: theme.palette.divider,
+          color: theme.palette.text.primary,
+        },
+        "& .ql-tooltip a": {
+          color: theme.palette.primary.main,
+        },
+      })}
     >
       <ReactQuill
         ref={quillRef}
