@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router";
 import { Box, Button, Container, Divider, Stack, Typography } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import VolunteerActivismOutlinedIcon from "@mui/icons-material/VolunteerActivismOutlined";
 import DOMPurify from "dompurify";
@@ -148,8 +149,16 @@ export default function DonationArticlePage() {
             </Box>
 
             {errorMessage && (
-              <Box sx={{ p: 3, borderRadius: 2, border: "1px solid #f2b8b5", backgroundColor: "#fff4f2" }}>
-                <Typography sx={{ color: "#9f2f2f", fontWeight: 600 }}>{errorMessage}</Typography>
+              <Box
+                sx={(theme) => ({
+                  p: 3,
+                  borderRadius: 2,
+                  border: "1px solid",
+                  borderColor: alpha(theme.palette.error.main, theme.palette.mode === "dark" ? 0.32 : 0.22),
+                  backgroundColor: alpha(theme.palette.error.main, theme.palette.mode === "dark" ? 0.14 : 0.08),
+                })}
+              >
+                <Typography sx={{ color: "error.main", fontWeight: 600 }}>{errorMessage}</Typography>
               </Box>
             )}
 

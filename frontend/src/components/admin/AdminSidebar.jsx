@@ -58,9 +58,9 @@ const NAV_GROUPS = (adminBase, t) => [
   {
     title: t('admin:nav_group_forum'),
     items: [
-      { to: `${adminBase}/forum/posts`, icon: <ForumOutlinedIcon />, label: t('admin:nav_forum_posts') },
-      { to: `${adminBase}/forum/topics`, icon: <TopicOutlinedIcon />, label: t('admin:nav_forum_topics') },
       { to: `${adminBase}/forum/categories`, icon: <AccountTreeOutlinedIcon />, label: t('admin:nav_forum_categories') },
+      { to: `${adminBase}/forum/topics`, icon: <TopicOutlinedIcon />, label: t('admin:nav_forum_topics') },
+      { to: `${adminBase}/forum/posts`, icon: <ForumOutlinedIcon />, label: t('admin:nav_forum_posts') },
       { to: `${adminBase}/forum/reports`, icon: <FlagOutlinedIcon />, label: t('admin:nav_forum_reports') },
     ],
   },

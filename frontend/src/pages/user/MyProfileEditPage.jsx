@@ -39,7 +39,6 @@ import useAvatarCrop from '../../hooks/profile/useAvatarCrop';
 import AvatarUploadDialog from '../../components/profile/AvatarUploadDialog';
 
 import { useMyMentorProfile } from '../../hooks/mentorship/useMyMentorProfile';
-import { useMyMenteeProfile } from '../../hooks/mentorship/useMyMenteeProfile';
 import { useMyExpertise } from '../../hooks/mentorship/useMyExpertise';
 import { useUpdateMentorProfile } from '../../hooks/mentorship/useUpdateMentorProfile';
 import {
@@ -49,14 +48,25 @@ import {
 } from '../../hooks/mentorship/useExpertiseMutations';
 import { useMentorshipAccessState } from '../../hooks/mentorship/useMentorshipAccessState';
 
-import { useUploadImage } from '../../utils/imageUtils';
+import {
+  fileToCroppedCoverBase64,
+  getJsonPayloadByteSize,
+  MAX_JSON_PAYLOAD_BYTES,
+  useUploadImage,
+  validateImageFile,
+} from '../../utils/imageUtils';
 import { userSettingsApi } from '../../utils/api';
 import { validateVietnamPhone } from '../../utils/regexUtils';
 import { getMentorProfileTabs, getMenteeProfileTabs } from '../../constants/mentorshipNav';
 import { useTranslation } from 'react-i18next';
+import { useSnackbar } from 'notistack';
+import { formatMentorHeadline, resolveProfileRoleLabel } from '../../utils/profileRoleUtils';
+import { buildAcademicRecords } from '../../utils/academicUtils';
 
 const DEFAULT_COVER =
   'https://ethnasia.com/cdn/shop/articles/sean-o-KMn4VEeEPR8-unsplash_edited.jpg?v=1621585619';
+const MENTORSHIP_COVER =
+  'https://info.cognician.com/hubfs/220201%20mentorship-%20desktop.png';
 
 // TOP_TABS is computed inside component using t() — see getTopTabs()
 
@@ -94,6 +104,58 @@ const parseExtended = (raw) => {
 const emptyExperience = () => ({ company: '', title: '', from: '', to: '', description: '' });
 const emptyEducation = () => ({ school: '', degree: '', from: '', to: '' });
 
+const getCoverUploadErrorMessage = (error, t) => {
+  const status = error?.response?.status;
+
+  if (status === 413) {
+    return t('profile:cover_upload_too_large', {
+      defaultValue: 'Ảnh bìa quá lớn. Vui lòng chọn ảnh nhỏ hơn rồi thử lại.',
+    });
+  }
+
+  if (status === 429) {
+    return t('profile:cover_upload_rate_limited', {
+      defaultValue: 'Backend đang giới hạn quá nhiều yêu cầu. Vui lòng chờ một lát rồi thử lại.',
+    });
+  }
+
+  if (error?.code === 'ERR_NETWORK' || !error?.response) {
+    return t('profile:cover_upload_network_error', {
+      defaultValue: 'Không upload được ảnh bìa. Có thể backend đang chặn CORS, mất kết nối hoặc từ chối ảnh quá lớn.',
+    });
+  }
+
+  return (
+    error?.response?.data?.message ||
+    error?.message ||
+    t('profile:cover_upload_failed', {
+      defaultValue: 'Không upload được ảnh bìa. Vui lòng thử lại.',
+    })
+  );
+};
+
+const buildPreservedAcademicPayload = (academicProfile) => {
+  const records = buildAcademicRecords(academicProfile).filter((record) =>
+    ['faculty', 'department', 'program', 'major', 'startedYear', 'graduatedYear', 'graduationStatus']
+      .some((key) => record[key] != null && record[key] !== ''),
+  );
+
+  if (records.length === 0) return {};
+
+  return {
+    faculty: records.map((record) => record.faculty ?? ''),
+    department: records.map((record) => record.department ?? ''),
+    program: records.map((record) => record.program ?? ''),
+    major: records.map((record) => record.major ?? ''),
+    startedYear: records.map((record) => record.startedYear ?? ''),
+    graduatedYear: records.map((record) => {
+      const numericYear = Number(record.graduatedYear);
+      return Number.isFinite(numericYear) ? numericYear : null;
+    }),
+    graduationStatus: records.map((record) => record.graduationStatus ?? ''),
+  };
+};
+
 const ProfileItem = ({ label, value, notUpdatedLabel = '—' }) => (
   <Box
     sx={{
@@ -115,10 +177,13 @@ const ProfileItem = ({ label, value, notUpdatedLabel = '—' }) => (
 
 const UnifiedProfileEditPage = () => {
   const { t } = useTranslation(['mentorship', 'profile']);
+  const { enqueueSnackbar } = useSnackbar();
   const TOP_TABS = [{ label: t('mentorship:profile'), path: '/profile' }];
   const navigate = useOrgNavigate();
   const location = useLocation();
-  const isMentorshipPath = location.pathname.includes('/mentorship');
+  const isMentorshipEdit =
+    location.pathname.includes('/mentorship') ||
+    location.state?.profileEditContext === 'mentorship';
 
   const profileQuery = useMyProfile();
   const queryClient = useQueryClient();
@@ -134,13 +199,15 @@ const UnifiedProfileEditPage = () => {
   const addExpertise = useAddExpertise();
   const updateExpertise = useUpdateExpertise();
   const deleteExpertise = useDeleteExpertise();
-  const { uploadFile, uploadBase64, isPending: uploadingCover } = useUploadImage();
+  const { uploadBase64, isPending: uploadingImage } = useUploadImage();
 
   const [coverPreview, setCoverPreview] = useState(DEFAULT_COVER);
   const [coverFile, setCoverFile] = useState(null);
+  const [coverPositionY, setCoverPositionY] = useState(50);
   const [currentJobTitle, setCurrentJobTitle] = useState('');
   const [currentCompany, setCurrentCompany] = useState('');
   const [bio, setBio] = useState('');
+  const [mentorBio, setMentorBio] = useState('');
   const [defaultMeetingLink, setDefaultMeetingLink] = useState('');
   const [experiences, setExperiences] = useState([]);
   const [educations, setEducations] = useState([]);
@@ -168,22 +235,24 @@ const UnifiedProfileEditPage = () => {
     const m = mentorQuery.data;
     
     if (p || m) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCurrentJobTitle(m?.currentJobTitle ?? p?.currentJobTitle ?? '');
       setCurrentCompany(m?.currentCompany ?? p?.currentCompany ?? '');
-      setBio(m?.bio ?? p?.bio ?? '');
+      setBio(p?.bio ?? '');
+      setMentorBio(m?.bio ?? '');
       setDefaultMeetingLink(m?.defaultMeetingLink ?? '');
       setEmail(p?.email ?? '');
       setPhone(p?.phone ?? '');
 
-      const cover = m?.coverUrl ?? p?.coverUrl;
-      if (cover) setCoverPreview(cover);
+      setCoverPreview(m?.coverUrl || (isMentorshipEdit ? MENTORSHIP_COVER : DEFAULT_COVER));
+      setCoverFile(null);
       
       const extStr = m?.extendedProfile ?? p?.extendedProfile;
       const ext = parseExtended(extStr);
       setExperiences(Array.isArray(ext.experiences) ? ext.experiences : []);
       setEducations(Array.isArray(ext.educations) ? ext.educations : []);
     }
-  }, [profileQuery.data, mentorQuery.data]);
+  }, [isMentorshipEdit, profileQuery.data, mentorQuery.data]);
 
   useEffect(() => {
     const url = coverPreview;
@@ -193,22 +262,25 @@ const UnifiedProfileEditPage = () => {
   }, [coverPreview]);
 
   const handleCoverUpload = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      setCoverFile(file);
-      setCoverPreview(URL.createObjectURL(file));
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const validation = validateImageFile(file);
+    if (!validation.valid) {
+      enqueueSnackbar(validation.message, { variant: 'warning' });
+      event.target.value = '';
+      return;
     }
+
+    setCoverFile(file);
+    setCoverPreview(URL.createObjectURL(file));
+    setCoverPositionY(50);
   };
 
   const handleSave = async () => {
     setSuccess(false);
     if (phoneError) return; // invalid phone — error already shown under field
     try {
-      let uploadedCoverUrl;
-      if (coverFile) {
-        uploadedCoverUrl = await uploadFile(coverFile);
-      }
-
       // Persist a newly-cropped avatar: upload the base64 data URL, then point
       // the user's profile at the returned image URL.
       if (avatarCrop.avatarUrl && avatarCrop.avatarUrl.startsWith('data:')) {
@@ -224,35 +296,84 @@ const UnifiedProfileEditPage = () => {
       
       const previousExt = parseExtended(mentorQuery.data?.extendedProfile ?? profileQuery.data?.extendedProfile);
       const nextExt = { ...previousExt, experiences, educations };
+      let uploadedCoverUrl = null;
+
+      if (coverFile) {
+        if (!access.hasMentorProfile) {
+          enqueueSnackbar(
+            t('profile:cover_requires_mentor_profile', {
+              defaultValue: 'Hiện backend chỉ lưu ảnh bìa qua hồ sơ cố vấn. Vui lòng tạo hồ sơ cố vấn trước.',
+            }),
+            { variant: 'warning' },
+          );
+          return;
+        }
+
+        try {
+          const coverBase64 = await fileToCroppedCoverBase64(coverFile, coverPositionY);
+          if (getJsonPayloadByteSize({ base64String: coverBase64 }) > MAX_JSON_PAYLOAD_BYTES) {
+            enqueueSnackbar(
+              t('profile:cover_upload_too_large', {
+                defaultValue: 'Ảnh bìa quá lớn. Vui lòng chọn ảnh nhỏ hơn rồi thử lại.',
+              }),
+              { variant: 'error' },
+            );
+            return;
+          }
+
+          uploadedCoverUrl = await uploadBase64(coverBase64);
+          if (!uploadedCoverUrl) throw new Error('empty_upload_response');
+        } catch (error) {
+          enqueueSnackbar(getCoverUploadErrorMessage(error, t), { variant: 'error' });
+          return;
+        }
+      }
       
-      // Update mentor profile if exists
-      if (access.hasMentorProfile) {
+      // The mentor profile owns the reusable cover/job data. Updating the cover
+      // from /profile/edit keeps MyProfile and Mentorship Profile in sync.
+      if (access.hasMentorProfile && (isMentorshipEdit || uploadedCoverUrl)) {
         await updateMentorProfile({
-          currentJobTitle: currentJobTitle.trim(),
-          currentCompany: currentCompany.trim(),
-          bio: bio.trim(),
+          currentJobTitle: isMentorshipEdit
+            ? currentJobTitle.trim()
+            : mentorQuery.data?.currentJobTitle,
+          currentCompany: isMentorshipEdit
+            ? currentCompany.trim()
+            : mentorQuery.data?.currentCompany,
+          bio: isMentorshipEdit
+            ? mentorBio.trim()
+            : mentorQuery.data?.bio,
           coverUrl: uploadedCoverUrl ?? undefined,
-          defaultMeetingLink: defaultMeetingLink.trim() || undefined,
-          extendedProfile: JSON.stringify(nextExt),
+          defaultMeetingLink: isMentorshipEdit
+            ? (defaultMeetingLink.trim() || undefined)
+            : mentorQuery.data?.defaultMeetingLink,
+          extendedProfile: isMentorshipEdit
+            ? JSON.stringify(nextExt)
+            : mentorQuery.data?.extendedProfile,
         });
       }
       
       // Also update base profile (even if it ignores some fields, we send what we can)
       await updateBaseProfile({
         ...(organizationId ? { organizationId } : {}),
-        email: email.trim(),
         bio: bio.trim(),
         phone: phone.trim() || undefined,
-        coverUrl: uploadedCoverUrl ?? undefined,
+        ...buildPreservedAcademicPayload(orgMemberQuery.data),
       });
 
       queryClient.invalidateQueries({ queryKey: ['user', 'me', 'profile'] });
+      queryClient.invalidateQueries({ queryKey: ['user', 'me', 'organization-member'] });
+      queryClient.invalidateQueries({ queryKey: ['mentorship', 'mentor', 'me', 'profile'] });
       queryClient.invalidateQueries({ queryKey: ['publicProfile'] });
 
       setSuccess(true);
-      setTimeout(() => navigate(isMentorshipPath ? '/development/mentorship/profile' : '/profile'), 800);
-    } catch {
-      // surfaced via errorMessage
+      setTimeout(() => navigate(isMentorshipEdit ? '/development/mentorship/profile' : '/profile'), 800);
+    } catch (error) {
+      enqueueSnackbar(
+        error?.response?.data?.message ||
+          error?.message ||
+          t('profile:save_error', { defaultValue: 'Không thể lưu hồ sơ. Vui lòng thử lại.' }),
+        { variant: 'error' },
+      );
     }
   };
 
@@ -330,7 +451,9 @@ const UnifiedProfileEditPage = () => {
 
   const user = {
     name: profile?.fullName ?? t('profile:my_account'),
-    role: [currentJobTitle, currentCompany].filter(Boolean).join(' @ ') || t('profile:member_role_default'),
+    role: isMentorshipEdit
+      ? formatMentorHeadline({ jobTitle: currentJobTitle, company: currentCompany, t })
+      : resolveProfileRoleLabel({ profile, academicProfile: orgMemberQuery.data, t }),
     avatar: profile?.avatarUrl ?? '',
     cover: coverPreview,
   };
@@ -352,7 +475,7 @@ const UnifiedProfileEditPage = () => {
         sx={{
           width: 140,
           height: 140,
-          border: '5px solid white',
+          border: (theme) => `5px solid ${theme.palette.mode === 'dark' ? theme.palette.background.default : theme.palette.background.paper}`,
         }}
       />
 
@@ -376,7 +499,7 @@ const UnifiedProfileEditPage = () => {
     </Box>
   );
 
-  const tabs = isMentorshipPath
+  const tabs = isMentorshipEdit
     ? (access.hasMentorProfile ? getMentorProfileTabs(t) : (access.hasMenteeProfile ? getMenteeProfileTabs(t) : TOP_TABS))
     : TOP_TABS;
 
@@ -406,7 +529,8 @@ const UnifiedProfileEditPage = () => {
       <TextField
         fullWidth
         value={email}
-        onChange={(e) => setEmail(e.target.value)}
+        disabled
+        helperText={t('profile:email_change_hint', { defaultValue: 'Email được quản lý ở phần cài đặt tài khoản.' })}
       />
 
       <Typography variant="h5" fontWeight={800} color="primary.main" mb={2} mt={4} display="flex" alignItems="center" gap={1}>
@@ -428,7 +552,7 @@ const UnifiedProfileEditPage = () => {
 
   const renderMentorshipSection = () => {
     if (!access.hasMentorProfile) {
-      if (isMentorshipPath) {
+      if (isMentorshipEdit) {
         return (
           <Box sx={{ maxWidth: 720, mx: 'auto', py: 6, px: 2 }}>
             <Alert severity="warning" sx={{ mb: 2 }}>
@@ -451,14 +575,14 @@ const UnifiedProfileEditPage = () => {
     }
 
     return (
-      <Stack spacing={4} sx={{ pt: isMentorshipPath ? 0 : 4, borderTop: isMentorshipPath ? 'none' : '1px solid', borderColor: 'divider' }}>
-        {!isMentorshipPath && (
+      <Stack spacing={4} sx={{ pt: isMentorshipEdit ? 0 : 4, borderTop: isMentorshipEdit ? 'none' : '1px solid', borderColor: 'divider' }}>
+        {!isMentorshipEdit && (
           <Typography variant="h3" fontWeight={800} color="primary.main">
             {t('profile:edit_mentor_heading')}
           </Typography>
         )}
 
-        {mentor.status !== STATUS_APPROVED && isMentorshipPath && (
+        {mentor.status !== STATUS_APPROVED && isMentorshipEdit && (
           <Alert severity="warning">
             {t('profile:mentor_pending_edit_warning')}
           </Alert>
@@ -484,6 +608,15 @@ const UnifiedProfileEditPage = () => {
               size="small"
             />
           </Stack>
+          <TextField
+            label={t('profile:mentor_public_bio_label', { defaultValue: 'Giới thiệu cố vấn' })}
+            value={mentorBio}
+            onChange={(e) => setMentorBio(e.target.value.slice(0, 5000))}
+            fullWidth
+            multiline
+            minRows={4}
+            placeholder={t('profile:mentor_public_bio_placeholder', { defaultValue: 'Giới thiệu kinh nghiệm, định hướng chia sẻ và phong cách cố vấn của bạn...' })}
+          />
         </Stack>
 
         <SectionTitle hint={t('profile:section_exp_edu_hint')}>
@@ -623,7 +756,7 @@ const UnifiedProfileEditPage = () => {
         </Stack>
 
         <SectionTitle hint={t('profile:section_expertise_hint')}>
-          {t('profile:section_expertise')}
+          {t('profile:section_skills_expertise', { defaultValue: 'Kỹ năng / Nội dung chia sẻ' })}
         </SectionTitle>
         {(addExpertise.errorMessage || updateExpertise.errorMessage || deleteExpertise.errorMessage) && (
           <Alert severity="error">
@@ -786,15 +919,17 @@ const UnifiedProfileEditPage = () => {
         user={user}
         cover={coverPreview}
         onCoverChange={handleCoverUpload}
+        coverPositionY={coverPositionY}
+        onCoverPositionYChange={setCoverPositionY}
         tabs={tabs}
         onNavigate={navigate}
-        mode={isMentorshipPath ? 'mentorEdit' : 'userEdit'}
+        mode={isMentorshipEdit ? 'mentorEdit' : 'userEdit'}
         avatarSlot={avatarEditor}
       >
         <Stack spacing={4}>
           <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={2}>
             <Typography variant="h2" fontWeight={800} color="primary.main">
-              {isMentorshipPath
+              {isMentorshipEdit
                 ? (access.hasMentorProfile ? t('profile:edit_mentor_heading') : t('profile:edit_page_heading'))
                 : t('profile:edit_page_heading')}
             </Typography>
@@ -803,14 +938,14 @@ const UnifiedProfileEditPage = () => {
               <Button
                 variant="outlined"
                 color="inherit"
-                onClick={() => navigate(isMentorshipPath ? '/development/mentorship/profile' : '/profile')}
+                onClick={() => navigate(isMentorshipEdit ? '/development/mentorship/profile' : '/profile')}
                 disabled={saving}
               >
                 {t('profile:cancel_btn')}
               </Button>
 
-              <Button variant="contained" onClick={handleSave} disabled={saving || uploadingCover}>
-                {saving || uploadingCover ? t('profile:saving_btn') : t('profile:save_btn')}
+              <Button variant="contained" onClick={handleSave} disabled={saving || uploadingImage}>
+                {saving || uploadingImage ? t('profile:saving_btn') : t('profile:save_btn')}
               </Button>
             </Stack>
           </Box>
@@ -825,7 +960,7 @@ const UnifiedProfileEditPage = () => {
             <Alert severity="error">{errorMessage}</Alert>
           )}
 
-          {isMentorshipPath ? (
+          {isMentorshipEdit ? (
             <>
               {renderMentorshipSection()}
               <Box sx={{ pt: 4, borderTop: '1px solid', borderColor: 'divider' }}>
@@ -838,7 +973,6 @@ const UnifiedProfileEditPage = () => {
           ) : (
             <>
               {renderPersonalSection()}
-              {renderMentorshipSection()}
             </>
           )}
         </Stack>

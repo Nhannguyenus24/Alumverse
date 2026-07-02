@@ -7,7 +7,7 @@ const ACADEMIC_EMPTY_LABEL = 'Chưa cập nhật';
  * @param {Function} [t] - optional i18next t function
  * @returns {string}
  */
-const getAcademicEmptyLabel = (t) => t ? t('common:not_updated') : ACADEMIC_EMPTY_LABEL;
+export const getAcademicEmptyLabel = (t) => t ? t('common:not_updated') : ACADEMIC_EMPTY_LABEL;
 
 function parseAcademicList(value) {
   if (value == null) return [];
@@ -43,6 +43,7 @@ export function buildAcademicRecords(source = {}) {
     startedYear: parseAcademicList(academicSource.startedYear),
     graduatedYear: parseAcademicList(academicSource.graduatedYear),
     graduationStatus: parseAcademicList(academicSource.graduationStatus),
+    department: parseAcademicList(academicSource.department),
   };
 
   const recordCount = Math.max(
@@ -57,6 +58,7 @@ export function buildAcademicRecords(source = {}) {
     startedYear: lists.startedYear[index] ?? null,
     graduatedYear: lists.graduatedYear[index] ?? null,
     graduationStatus: lists.graduationStatus[index] ?? null,
+    department: lists.department[index] ?? null,
   }));
 }
 

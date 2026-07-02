@@ -16,9 +16,10 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
   const { enqueueSnackbar } = useSnackbar();
   const { canContribute } = useCanContribute();
   const [isInterested, setIsInterested] = useState(false);
-  const [isJoined, setIsJoined] = useState(false);
+  const [isJoined, setIsJoined] = useState(() => getEventRegisteredState(article));
   const [loadingInterest, setLoadingInterest] = useState(false);
   const [loadingJoin, setLoadingJoin] = useState(false);
+  const [checkingRegistration, setCheckingRegistration] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [openJoinDialog, setOpenJoinDialog] = useState(false);
   const { data: questions = [] } = useEventQuestions(article?.id, !isAdmin && Boolean(article?.id));
@@ -28,9 +29,11 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
     eventApi.checkInterest(article.id)
       .then((res) => setIsInterested(res?.isInterested ?? false))
       .catch(() => {});
+    setCheckingRegistration(true);
     eventApi.checkRegistered(article.id)
       .then((res) => setIsJoined(getEventRegisteredState(res)))
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setCheckingRegistration(false));
   }, [article?.id, isAdmin]);
 
   const handleInterest = async (e) => {
@@ -54,12 +57,12 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
 
   const handleJoinClick = (e) => {
     e.stopPropagation();
-    if (loadingJoin || isJoined || !canContribute) return;
+    if (loadingJoin || checkingRegistration || isJoined || !canContribute) return;
     setOpenJoinDialog(true);
   };
 
   const handleConfirmJoin = async (answerMap) => {
-    if (loadingJoin || isJoined || !canContribute) return;
+    if (loadingJoin || checkingRegistration || isJoined || !canContribute) return;
     setLoadingJoin(true);
     try {
       const payload = questions.length > 0
@@ -200,7 +203,6 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
                 variant={isInterested ? 'outlined' : 'contained'}
                 color="primary"
                 disabled={loadingInterest || !canContribute}
-                sx={{ bgcolor: isInterested ? 'white' : 'primary.main' }}
                 onClick={handleInterest}
               >
                 {isInterested ? t('event:interested') : t('event:mark_interested')}
@@ -211,9 +213,8 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
               <Button
                 fullWidth
                 variant={isJoined ? 'outlined' : 'contained'}
-                color="success"
-                disabled={loadingJoin || isJoined || !canContribute}
-                sx={{ bgcolor: isJoined ? 'white' : 'success.main' }}
+                color="accent"
+                disabled={loadingJoin || checkingRegistration || isJoined || !canContribute}
                 onClick={handleJoinClick}
               >
                 {isJoined ? t('event:joined') : t('event:join')}

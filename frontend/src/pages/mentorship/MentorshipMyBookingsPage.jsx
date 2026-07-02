@@ -46,10 +46,11 @@ import {
 import { reasonsForStatus } from '../../components/mentorship/reportReasons';
 import { getMentorProfileTabs, getMenteeProfileTabs } from '../../constants/mentorshipNav';
 import { validateMeetingLink, meetingLinkPasswordWarning } from '../../utils/meetingLink';
+import { formatMentorHeadline } from '../../utils/profileRoleUtils';
 import { useTranslation } from 'react-i18next';
 
 const DEFAULT_COVER =
-  'https://ethnasia.com/cdn/shop/articles/sean-o-KMn4VEeEPR8-unsplash_edited.jpg?v=1621585619';
+  'https://info.cognician.com/hubfs/220201%20mentorship-%20desktop.png';
 
 const ACTIVE_STATUSES = new Set(['PENDING', 'CONFIRMED', 'IN_PROGRESS', 'RESCHEDULE_PROPOSED']);
 const PAST_STATUSES = new Set(['COMPLETED', 'EXPIRED']);
@@ -66,11 +67,12 @@ const PAGE_SIZE = 50;
 
 const MentorshipMyBookingsPage = () => {
   const { t } = useTranslation('mentorship');
-  const STATUS_FILTERS = getStatusFilters(t);
+  const STATUS_FILTERS = useMemo(() => getStatusFilters(t), [t]);
   const navigate = useOrgNavigate();
   const access = useMentorshipAccessState();
 
-  const isMentor = access.isMentorApproved;
+  const isMentorProfile = access.hasMentorProfile;
+  const canUseMentorSessions = access.isMentorApproved;
 
   const mentorProfileQuery = useMyMentorProfile();
   const menteeProfileQuery = useMyMenteeProfile();
@@ -123,31 +125,34 @@ const MentorshipMyBookingsPage = () => {
       ...s,
       _role: 'mentee',
     }));
-    const mentorItems = isMentor
+    const mentorItems = canUseMentorSessions
       ? (mentorSessionsQuery.data?.items ?? []).map((s) => ({ ...s, _role: 'mentor' }))
       : [];
     return [...menteeItems, ...mentorItems].sort(
       (a, b) => dayjs(b.startTime).valueOf() - dayjs(a.startTime).valueOf(),
     );
-  }, [menteeSessionsQuery.data, mentorSessionsQuery.data, isMentor]);
+  }, [menteeSessionsQuery.data, mentorSessionsQuery.data, canUseMentorSessions]);
 
   const visibleItems = useMemo(() => {
     const matcher = STATUS_FILTERS.find((t) => t.key === statusKey)?.match ?? (() => true);
     return items.filter(matcher);
-  }, [items, statusKey]);
+  }, [STATUS_FILTERS, items, statusKey]);
 
   const isLoading =
-    menteeSessionsQuery.isLoading || (isMentor && mentorSessionsQuery.isLoading);
+    access.isLoading ||
+    (isMentorProfile ? mentorProfileQuery.isLoading : menteeProfileQuery.isLoading) ||
+    menteeSessionsQuery.isLoading ||
+    (canUseMentorSessions && mentorSessionsQuery.isLoading);
   // Only treat as a hard error when we have nothing to show AND every source we
   // depend on failed. A mentor without a mentee profile (or vice versa) gets a
   // 403/404 on one source — that must not blank out the whole page.
   const menteeFailed = menteeSessionsQuery.isError;
-  const mentorFailed = !isMentor || mentorSessionsQuery.isError;
+  const mentorFailed = canUseMentorSessions ? mentorSessionsQuery.isError : !isMentorProfile;
   const isError = items.length === 0 && menteeFailed && mentorFailed;
 
   const refetchActive = () => {
     menteeSessionsQuery.refetch?.();
-    if (isMentor) mentorSessionsQuery.refetch?.();
+    if (canUseMentorSessions) mentorSessionsQuery.refetch?.();
   };
 
   const handleJoin = async (session) => {
@@ -381,20 +386,17 @@ const MentorshipMyBookingsPage = () => {
     }
   };
 
-  const profile = isMentor ? mentorProfileQuery.data : menteeProfileQuery.data;
+  const profile = isMentorProfile ? mentorProfileQuery.data : menteeProfileQuery.data;
   const user = {
     name: profile?.fullName ?? t('my_account_fallback'),
-    role:
-      profile && (profile.currentJobTitle || profile.currentCompany)
-        ? [profile.currentJobTitle, profile.currentCompany].filter(Boolean).join(' @ ')
-        : isMentor
-          ? t('mentor')
-          : t('mentee'),
+    role: isMentorProfile
+      ? formatMentorHeadline({ jobTitle: profile?.currentJobTitle, company: profile?.currentCompany, t })
+      : t('mentee'),
     avatar: profile?.avatarUrl ?? '',
     cover: profile?.coverUrl ?? DEFAULT_COVER,
   };
 
-  const tabs = isMentor ? getMentorProfileTabs(t) : getMenteeProfileTabs(t);
+  const tabs = isMentorProfile ? getMentorProfileTabs(t) : getMenteeProfileTabs(t);
 
   const renderItem = (session) => {
     if (session._role === 'mentor') {
@@ -439,7 +441,7 @@ const MentorshipMyBookingsPage = () => {
         cover={user.cover}
         tabs={tabs}
         onNavigate={navigate}
-        mode={isMentor ? 'mentor' : 'menteeOwn'}
+        mode={isMentorProfile ? 'mentor' : 'menteeOwn'}
       >
         <Stack spacing={3}>
           <Box>
@@ -447,7 +449,7 @@ const MentorshipMyBookingsPage = () => {
               {t('bookings_heading')}
             </Typography>
             <Typography color="text.secondary">
-              {isMentor
+              {isMentorProfile
                 ? t('bookings_desc_mentor')
                 : t('bookings_desc_mentee')}
             </Typography>

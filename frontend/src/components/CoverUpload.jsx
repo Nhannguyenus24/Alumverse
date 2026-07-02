@@ -8,8 +8,11 @@ const CoverUpload = ({
   onChange,
   accept = "image/*",
   heightSx,
+  minHeightSx,
   positionY = 50,
   onPositionYChange,
+  editLabel = 'Sửa ảnh đại diện',
+  addLabel = 'Thêm ảnh đại diện',
 }) => {
   const dragRef = useRef(null);
   const updatePosition = (nextPosition) => {
@@ -42,7 +45,7 @@ const CoverUpload = ({
       onPointerCancel={handlePointerUp}
       sx={{
         height: heightSx ?? { xs: '42vh', md: '56vh' },
-        minHeight: { xs: 260, md: 420 },
+        minHeight: minHeightSx ?? { xs: 260, md: 420 },
         backgroundColor: 'primary.dark',
         backgroundImage: value ? `url(${value})` : 'none',
         backgroundSize: 'cover',
@@ -69,7 +72,7 @@ const CoverUpload = ({
             py: 0.75,
             borderRadius: 1,
             backgroundColor: 'rgba(255, 255, 255, 0.9)',
-            color: 'text.primary',
+            color: 'grey.900',
             boxShadow: 2,
             pointerEvents: 'none',
             zIndex: 1,
@@ -99,8 +102,9 @@ const CoverUpload = ({
         onPointerUp={(event) => event.stopPropagation()}
         sx={{
           backgroundColor: 'rgba(255, 255, 255, 0.9)',
-          color: 'text.primary',
-          '&:hover': { backgroundColor: '#fff' },
+          color: 'grey.900',
+          borderColor: 'rgba(0, 0, 0, 0.22)',
+          '&:hover': { backgroundColor: '#fff', borderColor: 'primary.main' },
           textTransform: 'none',
           fontWeight: 600,
           position: 'absolute',
@@ -109,16 +113,16 @@ const CoverUpload = ({
           zIndex: 2,
         }}
       >
-        {value ? 'Sửa ảnh đại diện' : 'Thêm ảnh đại diện'}
+        {value ? editLabel : addLabel}
         <input
           hidden
           type="file"
           accept={accept}
           onChange={(e) => {
             onChange(e);
-          e.target.value = null;
-        }}
-      />
+            e.target.value = null;
+          }}
+        />
       </Button>
     </Box>
   );
