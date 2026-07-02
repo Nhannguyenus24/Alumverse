@@ -134,6 +134,15 @@ class ChatApi {
     await _dio.delete(ApiEndpoints.chatGroupLeave(groupId));
   }
 
+  /// Updates a group's title (owner only). Backend returns the updated group;
+  /// the caller already knows the new title, so the response is ignored.
+  Future<void> updateGroup(int groupId, String title) async {
+    await _dio.put(
+      ApiEndpoints.chatGroupUpdate(groupId),
+      data: {'title': title},
+    );
+  }
+
   /// Recent chat previews for the current user.
   Future<List<ChatRecentPreview>> recentPreviews() async {
     final res = await _dio.get(ApiEndpoints.chatRecentPreviews);

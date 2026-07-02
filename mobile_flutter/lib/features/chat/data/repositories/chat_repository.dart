@@ -63,5 +63,8 @@ class ChatRepository {
 
   Future<void> leaveGroup(int groupId) => _api.leaveGroup(groupId);
 
+  Future<void> updateGroup(int groupId, String title) =>
+      _api.updateGroup(groupId, title);
+
   Future<List<ChatRecentPreview>> recentPreviews() => _api.recentPreviews();
 }
