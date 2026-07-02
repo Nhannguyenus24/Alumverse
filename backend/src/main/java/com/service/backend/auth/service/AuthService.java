@@ -7,6 +7,12 @@ import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.Collections;
+
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
 
 import com.service.backend.shared.exception.ApplicationException;
 import org.slf4j.Logger;
@@ -61,6 +67,7 @@ public class AuthService {
     private final String googleClientId;
     private final SecureRandom secureRandom;
     private final NotificationService notificationService;
+    private final GoogleIdTokenVerifier googleIdTokenVerifier;
 
     public AuthService(AuthRepository authRepository, PasswordEncoder passwordEncoder,
                       EmailService emailService, CacheUtils cacheUtils,
@@ -79,6 +86,11 @@ public class AuthService {
         this.googleClientId = googleClientId == null ? "" : googleClientId.trim();
         this.secureRandom = new SecureRandom();
         this.notificationService = notificationService;
+        this.googleIdTokenVerifier = new GoogleIdTokenVerifier.Builder(
+                new NetHttpTransport(),
+                GsonFactory.getDefaultInstance())
+                .setAudience(Collections.singletonList(this.googleClientId))
+                .build();
     }
 
     @Transactional
@@ -405,39 +417,43 @@ public class AuthService {
                 });
     }
 
-    private Mono<GoogleTokenInfo> verifyGoogleToken(String idToken) {
-        return googleApiClient.get()
-                .uri(uriBuilder -> uriBuilder.path(GOOGLE_TOKEN_INFO_PATH)
-                        .queryParam("id_token", idToken)
-                        .build())
-                .retrieve()
-                .onStatus(HttpStatusCode::isError, response ->
-                        response.bodyToMono(String.class)
-                                .defaultIfEmpty("Google token validation failed")
-                                .flatMap(body -> Mono.error(new ApplicationException(ErrorCode.GOOGLE_TOKEN_INVALID))))
-                .bodyToMono(GoogleTokenInfo.class)
-                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.GOOGLE_TOKEN_INVALID)))
-                .flatMap(this::validateGoogleTokenInfo);
-    }
+    private Mono<GoogleTokenInfo> verifyGoogleToken(String idTokenString) {
+        return Mono.fromCallable(() -> {
+            GoogleIdToken idToken = googleIdTokenVerifier.verify(idTokenString);
+            if (idToken != null) {
+                GoogleIdToken.Payload payload = idToken.getPayload();
 
-    private Mono<GoogleTokenInfo> validateGoogleTokenInfo(GoogleTokenInfo tokenInfo) {
-        if (tokenInfo == null) {
-            return Mono.error(new ApplicationException(ErrorCode.GOOGLE_TOKEN_INVALID));
-        }
-        if (!StringUtils.hasText(tokenInfo.aud()) || !googleClientId.equals(tokenInfo.aud())) {
-            return Mono.error(new ApplicationException(ErrorCode.GOOGLE_TOKEN_AUDIENCE_INVALID));
-        }
-        if (!StringUtils.hasText(tokenInfo.iss())
-                || (!GOOGLE_ISSUER.equals(tokenInfo.iss()) && !GOOGLE_ISSUER_HTTPS.equals(tokenInfo.iss()))) {
-            return Mono.error(new ApplicationException(ErrorCode.GOOGLE_TOKEN_ISSUER_INVALID));
-        }
-        if (!"true".equalsIgnoreCase(tokenInfo.emailVerified())) {
-            return Mono.error(new ApplicationException(ErrorCode.GOOGLE_EMAIL_NOT_VERIFIED));
-        }
-        if (!StringUtils.hasText(tokenInfo.email())) {
-            return Mono.error(new ApplicationException(ErrorCode.GOOGLE_ACCOUNT_EMAIL_MISSING));
-        }
-        return Mono.just(tokenInfo);
+                String email = payload.getEmail();
+                boolean emailVerified = Boolean.TRUE.equals(payload.getEmailVerified());
+                String name = (String) payload.get("name");
+                String pictureUrl = (String) payload.get("picture");
+
+                if (!emailVerified) {
+                    throw new ApplicationException(ErrorCode.GOOGLE_EMAIL_NOT_VERIFIED);
+                }
+                if (!StringUtils.hasText(email)) {
+                    throw new ApplicationException(ErrorCode.GOOGLE_ACCOUNT_EMAIL_MISSING);
+                }
+
+                return new GoogleTokenInfo(
+                        Collections.singletonList(this.googleClientId).toString(),
+                        payload.getIssuer(),
+                        email,
+                        "true",
+                        name,
+                        pictureUrl
+                );
+            } else {
+                throw new ApplicationException(ErrorCode.GOOGLE_TOKEN_INVALID);
+            }
+        })
+        .subscribeOn(Schedulers.boundedElastic())
+        .onErrorMap(e -> {
+            if (e instanceof ApplicationException) {
+                return e;
+            }
+            return new ApplicationException(ErrorCode.GOOGLE_TOKEN_INVALID, e);
+        });
     }
 
     private Mono<User> loginExistingGoogleUser(User user, String pictureUrl, Integer organizationId, String userAgent, String loginIp) {
