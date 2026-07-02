@@ -138,7 +138,7 @@ export default function DonationArticlePage() {
                     color="primary"
                     size="medium"
                     startIcon={<VolunteerActivismOutlinedIcon />}
-                    onClick={() => navigate("/admin/fundraising")}
+                    onClick={() => navigate("/admin/donations")}
                     sx={{ textTransform: "none", fontWeight: 700 }}
                   >
                     Quản lý quỹ

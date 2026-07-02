@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+  alpha,
   Alert,
   Avatar,
   Box,
@@ -57,8 +58,14 @@ function NetworkMessageBubble({ message, isOwn }) {
           px: 1.25,
           py: 1,
           borderRadius: 2,
-          bgcolor: isOwn ? 'primary.main' : 'grey.200',
+          bgcolor: (theme) => isOwn
+            ? theme.palette.primary.main
+            : alpha(theme.palette.text.primary, theme.palette.mode === 'dark' ? 0.1 : 0.06),
           color: isOwn ? 'primary.contrastText' : 'text.primary',
+          border: '1px solid',
+          borderColor: (theme) => isOwn
+            ? alpha(theme.palette.primary.main, 0.35)
+            : alpha(theme.palette.text.primary, theme.palette.mode === 'dark' ? 0.16 : 0.1),
         }}
       >
         <Typography variant="body2" sx={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>

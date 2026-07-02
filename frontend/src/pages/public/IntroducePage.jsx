@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation, useParams } from "react-router";
 import {
@@ -9,7 +9,9 @@ import {
   Stack,
   Grid,
   Paper,
+  useTheme,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import Page from "../../components/Page";
 import { useOrganization } from "../../hooks/useOrganization";
 import { getIntroduction } from "../../utils/api";
@@ -18,11 +20,15 @@ const BANNER_IMG = "/home_page/home_page.png";
 
 const IntroducePage = () => {
   const { t } = useTranslation('home');
+  const theme = useTheme();
   const { organization } = useOrganization();
   const location = useLocation();
   const [introduction, setIntroduction] = useState(null);
   const [loading, setLoading] = useState(true);
   const [mode, setMode] = useState("general"); // general, leaders, team
+  const contentRef = useRef(null);
+  const heroRef = useRef(null);
+  const [placeholderHeight, setPlaceholderHeight] = useState(600);
 
   useEffect(() => {
     const path = location.pathname;
@@ -64,6 +70,26 @@ const IntroducePage = () => {
   };
 
   const config = getPageConfig();
+  const isDark = theme.palette.mode === "dark";
+  const contentFrameShadow = isDark
+    ? `0 18px 46px ${alpha(theme.palette.common.black, 0.46)}, 0 0 0 1px ${alpha(theme.palette.common.white, 0.08)}`
+    : "0 4px 24px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06)";
+
+  const recalcPlaceholder = useCallback(() => {
+    if (!contentRef.current || !heroRef.current) return;
+    const heroH = heroRef.current.getBoundingClientRect().height;
+    const contentH = contentRef.current.getBoundingClientRect().height;
+    const contentTopInHero = heroH * 0.54;
+    const overflow = contentH - (heroH - contentTopInHero);
+    setPlaceholderHeight(Math.max(overflow + 140, 140));
+  }, []);
+
+  useEffect(() => {
+    if (!contentRef.current) return;
+    const ro = new ResizeObserver(recalcPlaceholder);
+    ro.observe(contentRef.current);
+    return () => ro.disconnect();
+  }, [introduction, mode, loading, recalcPlaceholder]);
 
   const renderHTML = (html) => {
     if (!html) return null;
@@ -340,61 +366,75 @@ const IntroducePage = () => {
       }
     >
       <Container maxWidth={false} disableGutters sx={{ display: "flex", flexDirection: "column" }}>
-        {/* HERO COVER */}
+        {/* Hero + absolute content frame wrapper */}
         <Box
+          ref={heroRef}
           sx={{
-            height: { xs: 260, md: 500 },
-            backgroundImage: `url(${introduction?.bannerUrl || BANNER_IMG})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            backgroundRepeat: "no-repeat",
-            position: 'relative',
-            '&::after': {
-              content: '""',
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: 'rgba(0,0,0,0.3)',
-            }
-          }}
-        />
-
-        {/* CONTENT WRAPPER */}
-        <Box
-          sx={{
-            px: { xs: 2, sm: 3 },
-            mt: { xs: -10, md: -20 },
-            mb: 8,
             position: "relative",
-            zIndex: 1,
+            top: "-1px",
+            pt: "1px",
+            height: { xs: "42vh", sm: "50vh", md: "62vh" },
+            minHeight: { xs: 300, sm: 380, md: 480 },
           }}
         >
+          {/* Hero banner */}
           <Box
             sx={{
-              width: "100%",
-              maxWidth: 1200,
-              mx: "auto",
-              backgroundColor: "#fff",
-              borderRadius: 3,
-              boxShadow: "0 10px 40px rgba(0,0,0,0.1)",
-              overflow: "hidden",
-              p: { xs: 3, md: 8 },
+              position: "absolute",
+              inset: 0,
+              top: "-1px",
+              backgroundColor: "primary.dark",
+              backgroundImage: `url(${introduction?.bannerUrl || BANNER_IMG})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat",
+              "&::after": {
+                content: '""',
+                position: "absolute",
+                inset: 0,
+                backgroundColor: "rgba(0,0,0,0.3)",
+              },
+            }}
+          />
+
+          {/* Main content frame */}
+          <Box
+            ref={contentRef}
+            sx={{
+              position: "absolute",
+              top: { xs: "54%", sm: "56%", md: "54%" },
+              left: 0,
+              right: 0,
+              display: "flex",
+              justifyContent: "center",
+              px: { xs: 2, sm: 3 },
             }}
           >
+            <Box
+              sx={{
+                width: "100%",
+                maxWidth: 1200,
+                backgroundColor: "background.paper",
+                borderRadius: 2,
+                boxShadow: contentFrameShadow,
+                overflow: "hidden",
+                py: { xs: 6, md: 8 },
+                px: { xs: 3, sm: 4, md: 6 },
+              }}
+            >
 
             <Typography
-              variant="h3"
+              variant="h1"
               component="h1"
               fontWeight={800}
               color="primary.main"
               textAlign="center"
               sx={{
-                mb: 6,
-                fontSize: { xs: "2rem", md: "3rem" },
-                textTransform: "uppercase",
-                letterSpacing: 1
+                mb: { xs: 4, md: 5 },
+                fontSize: { xs: "1.65rem", md: "2.1rem" },
+                lineHeight: 1.22,
+                overflowWrap: "break-word",
+                wordBreak: "normal",
               }}
             >
               {config.title}
@@ -420,8 +460,12 @@ const IntroducePage = () => {
                 )}
               </Box>
             )}
+            </Box>
           </Box>
         </Box>
+
+        {/* Placeholder space */}
+        <Box sx={{ height: placeholderHeight }} />
       </Container>
     </Page>
   );

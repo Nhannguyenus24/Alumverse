@@ -1,19 +1,12 @@
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Box, Button, Container, Pagination, Stack, Typography } from '@mui/material';
-
-import { getActivitiesSidebar } from '../../constants/activitiesNav';
+import { Box, Button, Pagination, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 
-import Page from '../../components/Page';
-
-import ForumSponsoredCard from '../../components/forum/ForumSponsoredCard';
-import DynamicFilterBar from '../../components/DynamicFilterBar';
-import SearchBar from '../../components/SearchBar';
 import FeaturedArticleCard from '../../components/articles/FeaturedArticleCard';
 import ArticleCard from '../../components/articles/ArticleCard';
-import Sidebar from '../../components/Sidebar';
 import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
+import AlumniContentLayout from '../../layouts/AlumniContentLayout';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { usePublishedNews } from '../../hooks/news/usePublishedNews';
 import { normalizeNews } from '../../hooks/articles/normalizeArticle';
@@ -102,68 +95,34 @@ const ActivitiesPage = () => {
   };
 
   return (
-    <Page title={t('article:news')}>
-      <Container
-        maxWidth={false}
-        disableGutters
-        sx={{ pb: 6 }}
-      >
-        <Container maxWidth="xl" sx={{ pt: { xs: 2, sm: 3, md: 4 }, px: { xs: 2, sm: 3, lg: 6 } }}>
-          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: { xs: 2, md: 3 } }}>
-            {/* SIDEBAR */}
-            <Stack spacing={2} sx={{ width: { xs: '100%', md: 260 } }}>
-              <Sidebar items={getActivitiesSidebar(t)} />
-              <ForumSponsoredCard
-                title="Sponsored"
-                imageSrc="/forum/metro_station.png"
-                imageAlt="HCMC Metro Opening"
-                caption="HCMC Metro Opening"
-              />
-            </Stack>
-
-            {/* MAIN CONTENT */}
-            <Stack spacing={5}
-                   sx={{ flex: 1, minWidth: 0, width: '100%', px: { xs: 1.5, sm: 2, md: 2.75 }}}
-            >
-              <Stack gap={2}>
-                {/* HEADER */}
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Typography
-                    variant="h1"
-                    fontWeight={800}
-                    color="primary.main"
-                    sx={{ fontSize: { xs: '1.8rem', md: '2.3rem' } }}
-                    >
-                    {t('article:news').toUpperCase()}
-                  </Typography>
-                  {isAdmin && (
-                    <Button
-                      variant="outlined"
-                      color="primary"
-                      startIcon={<ArticleOutlinedIcon />}
-                      onClick={() => navigate('/admin/article')}
-                    >
-                      {t('article:manage_news')}
-                    </Button>
-                  )}
-                </Box>
-
-                {/* FILTERS */}
-                <DynamicFilterBar
-                  config={getNewsFilters(t)}
-                  value={filters}
-                  onChange={setFilters}
-                />
-
-                {/* SEARCH */}
-                <SearchBar
-                  value={filters.search}
-                  onChange={(val) =>
-                    setFilters((prev) => ({ ...prev, search: val }))
-                  }
-                />
-              </Stack>
-
+    <AlumniContentLayout
+      variant="one"
+      maxWidth="lg"
+      pageTitle={t('article:news')}
+      meta={<meta name="description" content={t('article:news_description')} />}
+      title={t('article:news')}
+      description={t('article:news_description')}
+      uppercaseTitle
+      actions={isAdmin && (
+        <Button
+          variant="outlined"
+          color="primary"
+          startIcon={<ArticleOutlinedIcon />}
+          onClick={() => navigate('/admin/article')}
+        >
+          {t('article:manage_news')}
+        </Button>
+      )}
+      filters={{
+        config: getNewsFilters(t),
+        value: filters,
+        onChange: setFilters,
+      }}
+      search={{
+        value: filters.search,
+        onChange: (val) => setFilters((prev) => ({ ...prev, search: val })),
+      }}
+    >
               {/* FEATURED ARTICLE */}
               {featuredCard && (
                 <Box sx={{ cursor: 'pointer' }} onClick={() => openArticle(featured)}>
@@ -253,10 +212,6 @@ const ActivitiesPage = () => {
                   />
                 </Box>
               )}
-            </Stack>
-          </Box>
-        </Container>
-      </Container>
 
       <AdminConfirmDeleteDialog
         open={!!deleteTarget}
@@ -266,7 +221,7 @@ const ActivitiesPage = () => {
         onConfirm={handleConfirmDelete}
         loading={deleting}
       />
-    </Page>
+    </AlumniContentLayout>
   );
 };
 

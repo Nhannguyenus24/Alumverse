@@ -8,6 +8,17 @@ const LANGUAGES = [
   { code: 'en', label: 'English', flag: '🇺🇸' },
 ];
 
+const TOOLTIP_SLOT_PROPS = {
+  popper: {
+    modifiers: [
+      {
+        name: 'offset',
+        options: { offset: [0, 4] },
+      },
+    ],
+  },
+};
+
 const LanguageSwitcher = ({ contrastMode = false, color, buttonSx }) => {
   const { i18n } = useTranslation();
   const [anchorEl, setAnchorEl] = useState(null);
@@ -24,7 +35,7 @@ const LanguageSwitcher = ({ contrastMode = false, color, buttonSx }) => {
 
   return (
     <>
-      <Tooltip title={current.label}>
+      <Tooltip title={current.label} arrow placement="bottom" slotProps={TOOLTIP_SLOT_PROPS}>
         <IconButton
           onClick={handleOpen}
           size="small"
@@ -58,14 +69,19 @@ const LanguageSwitcher = ({ contrastMode = false, color, buttonSx }) => {
         slotProps={{
           paper: {
             sx: {
-              mt: 1,
-              minWidth: 158,
+              mt: 3,
+              minWidth: 176,
               borderRadius: 1,
               border: '1px solid',
               borderColor: 'divider',
               boxShadow: 3,
-              px: 0.5,
-              py: 0.5,
+              p: 0.75,
+              '& .MuiMenu-list': {
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 0.5,
+                p: 0,
+              },
             },
           },
         }}
@@ -79,13 +95,17 @@ const LanguageSwitcher = ({ contrastMode = false, color, buttonSx }) => {
               gap: 1,
               borderRadius: 1,
               mx: 0,
-              my: 0.25,
-              px: 1.5,
+              my: 0,
+              px: 1.75,
               py: 1,
               minHeight: 36,
               '&.Mui-selected': {
                 bgcolor: 'action.selected',
-                '&:hover': { bgcolor: 'action.hover' },
+                borderRadius: 1,
+                '&:hover': { bgcolor: 'action.hover', borderRadius: 1 },
+              },
+              '&:hover': {
+                borderRadius: 1,
               },
             }}
           >

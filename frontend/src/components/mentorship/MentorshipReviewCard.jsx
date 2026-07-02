@@ -9,7 +9,7 @@ const MentorshipReviewCard = ({ avatar, name, date, rating, content }) => {
         borderRadius: 2,
         border: '1px solid',
         borderColor: 'divider',
-        backgroundColor: '#fff',
+        backgroundColor: 'background.paper',
       }}
     >
       <Box 

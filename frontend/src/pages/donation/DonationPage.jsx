@@ -1,23 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Button, Box, Container, LinearProgress, Pagination, Stack, Typography } from "@mui/material";
+import { Button, Box, Pagination, Stack, Typography } from "@mui/material";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
 import dayjs from "dayjs";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
-import Page from "../../components/Page";
 import { useAuth } from "../../hooks/useAuth";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
 import usePaginationScrollToTop from "../../hooks/usePaginationScrollToTop";
 import useOrganizationStore from "../../stores/organizationStore";
 import { fundApi } from "../../utils/api";
-import SearchBar from "../../components/SearchBar";
-import Sidebar from "../../components/Sidebar";
-import DynamicFilterBar from "../../components/DynamicFilterBar";
 import ArticleDonationCard from "../../components/articles/ArticleDonationCard";
 import FeaturedArticleDonationCard from "../../components/articles/FeaturedArticleDonationCard";
 import DonationCloseDialog from "../../components/donation/DonationCloseDialog";
 import StatsBanner from "../../components/StatsBanner";
+import AlumniContentLayout from "../../layouts/AlumniContentLayout";
 
 const DEFAULT_ADMIN_STATS = { totalCurrentAmount: 0, totalFunds: 0, totalDonations: 0, totalDonationsAmountThisMonth: 0 };
 const DEFAULT_FILTERS = { all: true, timeStartedFrom: "", timeStartedTo: "", trending: "", amountMin: "", amountMax: "" };
@@ -55,11 +52,6 @@ export default function DonationPage() {
   const [refreshToken, setRefreshToken] = useState(0);
   const [adminStats, setAdminStats] = useState(DEFAULT_ADMIN_STATS);
   const warningSetRef = useRef(new Set());
-
-  const donationSidebarItems = useMemo(() => [
-    { id: "list", label: t("donation:sidebar_list"), icon: <FormatListBulletedIcon /> },
-    { id: "create", label: t("donation:create_fund"), icon: <AddCircleOutlineIcon /> },
-  ], [t]);
 
   const gridPageSize = 4;
   const handlePageChange = usePaginationScrollToTop({ currentPage: page, setPage });
@@ -183,45 +175,31 @@ export default function DonationPage() {
   };
 
   return (
-    <Page title={t("donation:title")} meta={<meta name="description" content={t("donation:meta_description")} />}>
-      <Container maxWidth={isAdmin ? "xl" : "lg"} sx={{ pt: { xs: 2, sm: 3, md: 4 }, pb: 6, px: { xs: 2, sm: 3, lg: 6 } }}>
-        <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, gap: { xs: 2, md: 3 } }}>
-          {isAdmin && (
-            <Stack spacing={2} sx={{ width: { xs: "100%", md: 260 }, flexShrink: 0 }}>
-              <Sidebar items={donationSidebarItems} useRouting={false} value="list" onChange={(itemId) => { if (itemId === "create") navigate("/post/donation"); }} />
-            </Stack>
-          )}
-
-          <Stack spacing={5} sx={{ flex: 1, minWidth: 0, width: "100%", px: { xs: 1.5, sm: 2, md: 2.75 } }}>
-            <Stack spacing={2}>
-              <Box sx={{ display: "flex", alignItems: { xs: "flex-start", sm: "center" }, justifyContent: "space-between", flexDirection: { xs: "column", sm: "row" }, gap: 2 }}>
-                <Typography variant="h1" fontWeight={800} color="primary.main" sx={{ fontSize: { xs: "1.8rem", md: "2.3rem" } }}>
-                  {t("donation:title").toUpperCase()}
-                </Typography>
-
-                {isAdmin && (
-                  <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="flex-end" useFlexGap>
-                    <Button variant="contained" startIcon={<AddCircleOutlineIcon />} onClick={() => navigate("/post/donation")} sx={{ textTransform: "none", fontWeight: 700 }}>
-                      {t("donation:create_fund")}
-                    </Button>
-                    <Button variant="outlined" color="primary" startIcon={<FormatListBulletedIcon />} onClick={() => navigate("/admin/fundraising")} sx={{ textTransform: "none", fontWeight: 700 }}>
-                      {t("donation:manage_funds")}
-                    </Button>
-                  </Stack>
-                )}
-              </Box>
-
-              <Typography color="text.secondary">
-                {t("donation:page_description")}
-              </Typography>
-
-              {isAdmin && (
-                <StatsBanner items={adminBannerItems} />
-              )}
-
-              <DynamicFilterBar config={donationFilters} value={filters} onChange={handleFiltersChange} />
-              <SearchBar value={search} onChange={handleSearchChange} placeholder={t("donation:search_placeholder")} />
-            </Stack>
+    <AlumniContentLayout
+      variant="one"
+      maxWidth="lg"
+      pageTitle={t("donation:title")}
+      meta={<meta name="description" content={t("donation:meta_description")} />}
+      title={t("donation:title")}
+      description={t("donation:page_description")}
+      uppercaseTitle
+      actions={isAdmin && (
+        <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="flex-end" useFlexGap>
+          <Button variant="contained" startIcon={<AddCircleOutlineIcon />} onClick={() => navigate("/post/donation")} sx={{ textTransform: "none", fontWeight: 700 }}>
+            {t("donation:create_fund")}
+          </Button>
+          <Button variant="outlined" color="primary" startIcon={<FormatListBulletedIcon />} onClick={() => navigate("/admin/donations")} sx={{ textTransform: "none", fontWeight: 700 }}>
+            {t("donation:manage_funds")}
+          </Button>
+        </Stack>
+      )}
+      stats={isAdmin ? <StatsBanner items={adminBannerItems} /> : null}
+      filters={{ config: donationFilters, value: filters, onChange: handleFiltersChange }}
+      search={{ value: search, onChange: handleSearchChange, placeholder: t("donation:search_placeholder") }}
+      after={(
+        <DonationCloseDialog open={Boolean(closeDialogCampaign)} campaign={closeDialogCampaign} onClose={() => setCloseDialogCampaign(null)} onConfirm={handleConfirmCloseFund} isSubmitting={isClosingFund} />
+      )}
+    >
 
             {errorMessage && (
               <Box sx={{ mb: 3, p: 2, borderRadius: 2, border: "1px solid #f2b8b5", backgroundColor: "#fff4f2" }}>
@@ -273,11 +251,6 @@ export default function DonationPage() {
                 <Pagination count={pageCount || 1} page={page} onChange={handlePageChange} color="primary" shape="rounded" size="large" sx={{ "& .MuiPaginationItem-root": { fontWeight: 700, minWidth: 38, height: 38 } }} />
               </Stack>
             )}
-          </Stack>
-        </Box>
-
-        <DonationCloseDialog open={Boolean(closeDialogCampaign)} campaign={closeDialogCampaign} onClose={() => setCloseDialogCampaign(null)} onConfirm={handleConfirmCloseFund} isSubmitting={isClosingFund} />
-      </Container>
-    </Page>
+    </AlumniContentLayout>
   );
 }

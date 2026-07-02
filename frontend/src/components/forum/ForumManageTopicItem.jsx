@@ -23,7 +23,7 @@ const ForumManageTopicItem = ({
         borderColor: 'divider',
         borderRadius: 0,
         overflow: 'hidden',
-        backgroundColor: '#fff',
+        backgroundColor: 'background.paper',
       }}
     >
       <Box
@@ -35,16 +35,16 @@ const ForumManageTopicItem = ({
           alignItems: { xs: 'flex-start', sm: 'center' },
           justifyContent: 'space-between',
           gap: 1,
-          backgroundColor: '#0B4D8D',
-          color: '#fff',
+          backgroundColor: 'primary.main',
+          color: 'primary.contrastText',
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <ChatBubbleOutlineOutlinedIcon
             sx={{
               fontSize: 22,
-              color: '#fff',
-              '& path': { fill: 'none', stroke: '#fff', strokeWidth: 1.5 },
+              color: 'primary.contrastText',
+              '& path': { fill: 'none', stroke: 'currentColor', strokeWidth: 1.5 },
             }}
           />
           <Typography
@@ -56,12 +56,12 @@ const ForumManageTopicItem = ({
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 0.5 }}>
-          <IconButton size="small" sx={{ color: '#fff' }} aria-label={t('edit_topic_aria')}>
+          <IconButton size="small" sx={{ color: 'primary.contrastText' }} aria-label={t('edit_topic_aria')}>
             <EditOutlinedIcon fontSize="small" />
           </IconButton>
           <IconButton
             size="small"
-            sx={{ color: '#fff' }}
+            sx={{ color: 'primary.contrastText' }}
             onClick={() => onDeleteTopic(topic.id)}
             aria-label={t('delete_topic_aria')}
           >
@@ -135,13 +135,13 @@ const ForumManageTopicItem = ({
                 onChange={(e) => onNewSubTopicChange(topic.id, e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && onAddSubTopic(topic.id)}
                 size="small"
-                InputProps={{ sx: { backgroundColor: 'grey.50' } }}
+                InputProps={{ sx: { backgroundColor: 'background.default' } }}
               />
               <TextField
                 fullWidth
                 placeholder={t('subtopic_desc_placeholder')}
                 size="small"
-                InputProps={{ sx: { backgroundColor: 'grey.50' } }}
+                InputProps={{ sx: { backgroundColor: 'background.default' } }}
               />
             </Box>
             <IconButton

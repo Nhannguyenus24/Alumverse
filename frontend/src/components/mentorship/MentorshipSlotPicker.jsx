@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Box, Button, IconButton, Stack, Typography } from '@mui/material';
+import { alpha, Box, Button, IconButton, Stack, Typography } from '@mui/material';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { useTranslation } from 'react-i18next';
@@ -162,7 +162,15 @@ const MentorshipSlotPicker = ({
                       : isSelected
                         ? 'common.white'
                         : 'text.primary',
-                    bgcolor: isSelected ? 'primary.main' : hasAny && inMonth ? 'primary.lighter' : 'transparent',
+                    bgcolor: (theme) => {
+                      if (isSelected) return theme.palette.primary.main;
+                      if (hasAny && inMonth) return alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.16 : 0.08);
+                      return 'transparent';
+                    },
+                    border: hasAny && inMonth && !isSelected ? '1px solid' : '1px solid transparent',
+                    borderColor: (theme) => hasAny && inMonth && !isSelected
+                      ? alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.34 : 0.2)
+                      : 'transparent',
                     borderRadius: '50%',
                     textDecoration: isPast && inMonth ? 'line-through' : 'none',
                     fontWeight: isSelected ? 700 : 500,

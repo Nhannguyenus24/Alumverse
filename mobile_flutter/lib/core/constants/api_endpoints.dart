@@ -53,6 +53,7 @@ class ApiEndpoints {
   static String chatGroupMembers(int groupId) => '/api/chat/groups/$groupId/members';
   static String chatGroupMember(int groupId, int memberId) => '/api/chat/groups/$groupId/members/$memberId';
   static String chatGroupLeave(int groupId) => '/api/chat/groups/$groupId/leave';
+  static String chatGroupUpdate(int groupId) => '/api/chat/groups/$groupId';
 
   static const String chatConnectionStatus = '/api/chat/conversation-requests/connection-status';
   static const String chatConversationRequests = '/api/chat/conversation-requests';

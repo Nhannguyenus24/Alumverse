@@ -19,7 +19,7 @@ const ForumFilterPanel = ({ filters, selectedId, onChange }) => {
         borderColor: 'divider',
         borderRadius: 0,
         overflow: 'hidden',
-        backgroundColor: 'white',
+        backgroundColor: 'background.paper',
       }}
     >
       <Box sx={{ p: 1 }}>

@@ -9,7 +9,10 @@ import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/currency.dart';
 import '../../../../core/utils/image_url.dart';
+import '../../../../shared/widgets/app_toast.dart';
 import '../../../../shared/widgets/error_view.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../network/presentation/widgets/message_request_sheet.dart';
 import '../../data/models/fund_detail.dart';
 import '../providers/fundraising_provider.dart';
 
@@ -185,12 +188,16 @@ class _ProgressPanel extends StatelessWidget {
               formatVnd(fund.averageDonation)),
           if (fund.managerName != null && fund.managerName!.isNotEmpty)
             _row(Icons.person_outline, 'donation.manager'.tr(), fund.managerName!),
+          if (fund.managerEmail != null && fund.managerEmail!.isNotEmpty)
+            _row(Icons.email_outlined, 'donation.manager_email'.tr(),
+                fund.managerEmail!),
           if (fund.timeStarted != null)
             _row(Icons.play_circle_outline, 'donation.start_date'.tr(),
                 df.format(fund.timeStarted!)),
           if (fund.timeEnded != null)
             _row(Icons.stop_circle_outlined, 'donation.end_date'.tr(),
                 df.format(fund.timeEnded!)),
+          _ManagerContact(fund: fund),
         ],
       ),
     );
@@ -214,6 +221,96 @@ class _ProgressPanel extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// "Connect with the fund manager" action inside the progress panel.
+///
+/// Mirrors the web `DonationFundInfoPanel` rules:
+///  - manager not a system member (`managerUserId == null`) → nothing (email only)
+///  - manager is the current user                          → "you manage this fund" chip
+///  - manager is another member                            → "Connect" button
+///  - not logged in                                        → button, tap prompts login
+class _ManagerContact extends ConsumerWidget {
+  const _ManagerContact({required this.fund});
+
+  final FundDetail fund;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Only relevant when the email matched a system member.
+    if (!fund.hasSystemManager) return const SizedBox.shrink();
+
+    final rawId = ref.watch(authStateProvider).valueOrNull?.user?.id;
+    final currentUserId = rawId != null ? int.tryParse(rawId) : null;
+    final isSelf =
+        currentUserId != null && currentUserId == fund.managerUserId;
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 14),
+      child: isSelf
+          ? _selfChip()
+          : _connectButton(context, loggedIn: currentUserId != null),
+    );
+  }
+
+  Widget _selfChip() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.success.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.verified_user_outlined,
+              size: 16, color: AppColors.success),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text('donation.you_are_manager'.tr(),
+                style: const TextStyle(
+                    color: AppColors.success,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _connectButton(BuildContext context, {required bool loggedIn}) {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: () => _onTap(context, loggedIn: loggedIn),
+        icon: const Icon(Icons.connect_without_contact, size: 18),
+        label: Text('donation.connect'.tr()),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.primary,
+          side: const BorderSide(color: AppColors.primary),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+        ),
+      ),
+    );
+  }
+
+  void _onTap(BuildContext context, {required bool loggedIn}) {
+    if (!loggedIn) {
+      AppToast.info(context, 'donation.login_to_connect'.tr());
+      context.push(RouteNames.login);
+      return;
+    }
+    showMessageRequestSheet(
+      context,
+      targetMemberId: fund.managerUserId!,
+      targetName: (fund.managerName?.isNotEmpty ?? false)
+          ? fund.managerName!
+          : 'donation.fund_manager'.tr(),
+      title: 'donation.contact_manager_title'.tr(),
+      contextNote: 'donation.contact_manager_note'.tr(),
     );
   }
 }

@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
-import { Box, Button, CircularProgress, Container, Paper, Stack, Typography } from '@mui/material';
+import { Box, Button, CircularProgress, Paper, Stack, Typography } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { useSnackbar } from 'notistack';
 
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
@@ -9,14 +10,9 @@ import SchoolIcon from '@mui/icons-material/School';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import WorkIcon from '@mui/icons-material/Work';
 
-import Page from '../../components/Page';
-
-import ForumSponsoredCard from '../../components/forum/ForumSponsoredCard';
-import DynamicFilterBar from '../../components/DynamicFilterBar';
-import SearchBar from '../../components/SearchBar';
 import ArticleCard from '../../components/articles/ArticleCard';
-import Sidebar from '../../components/Sidebar';
 import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
+import AlumniContentLayout from '../../layouts/AlumniContentLayout';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useAuth } from '../../hooks/useAuth';
 import { usePublishedJobs } from '../../hooks/articles/usePublishedJobs';
@@ -195,69 +191,36 @@ const DevelopmentPage = () => {
   };
 
   return (
-    <Page title={t('dev:title')}>
-      <Container maxWidth={false} disableGutters sx={{ pb: 6 }}>
-        <Container maxWidth="xl" sx={{ pt: { xs: 2, sm: 3, md: 4 }, px: { xs: 2, sm: 3, lg: 6 } }}>
-          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: { xs: 2, md: 3 } }}>
-            {/* SIDEBAR */}
-            <Stack spacing={2} sx={{ width: { xs: '100%', md: 260 } }}>
-              <Sidebar items={sidebar} />
-              <ForumSponsoredCard
-                title="Sponsored"
-                imageSrc="/forum/metro_station.png"
-                imageAlt="HCMC Metro Opening"
-                caption="HCMC Metro Opening"
-              />
-            </Stack>
-
-            {/* MAIN CONTENT */}
-            <Stack
-              spacing={5}
-              sx={{ flex: 1, minWidth: 0, width: '100%', px: { xs: 1.5, sm: 2, md: 2.75 } }}
-            >
-              <Stack gap={2}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Typography
-                    variant="h1"
-                    fontWeight={800}
-                    color="primary.main"
-                    sx={{ fontSize: { xs: '1.8rem', md: '2.3rem' } }}
-                  >
-                    {t('dev:title').toUpperCase()}
-                  </Typography>
-                  {isAdmin && (
-                    <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="flex-end" useFlexGap>
-                      <Button
-                        variant="outlined"
-                        color="primary"
-                        startIcon={<SchoolIcon />}
-                        onClick={() => navigate('/admin/mentorship')}
-                      >
-                        {t('dev:manage_mentorship')}
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        color="primary"
-                        startIcon={<WorkIcon />}
-                        onClick={() => navigate('/admin/article')}
-                      >
-                        {t('dev:manage_opportunities')}
-                      </Button>
-                    </Stack>
-                  )}
-                </Box>
-
-                <Typography color="text.secondary">
-                  {t('dev:subtitle')}
-                </Typography>
-
-                <DynamicFilterBar config={filters} value={filterValues} onChange={setFilterValues} />
-
-                <SearchBar
-                  value={filterValues.search}
-                  onChange={(val) => setFilterValues((prev) => ({ ...prev, search: val }))}
-                />
-              </Stack>
+    <AlumniContentLayout
+      variant="two"
+      pageTitle={t('dev:title')}
+      sidebarItems={sidebar}
+      title={t('dev:title')}
+      description={t('dev:subtitle')}
+      uppercaseTitle
+      actions={isAdmin && (
+        <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="flex-end" useFlexGap>
+          <Button
+            variant="outlined"
+            color="accent"
+            startIcon={<SchoolIcon />}
+            onClick={() => navigate('/admin/mentorship')}
+          >
+            {t('dev:manage_mentorship')}
+          </Button>
+          <Button
+            variant="outlined"
+            color="primary"
+            startIcon={<WorkIcon />}
+            onClick={() => navigate('/admin/article')}
+          >
+            {t('dev:manage_opportunities')}
+          </Button>
+        </Stack>
+      )}
+      filters={{ config: filters, value: filterValues, onChange: setFilterValues }}
+      search={{ value: filterValues.search, onChange: (val) => setFilterValues((prev) => ({ ...prev, search: val })) }}
+    >
 
               {/* MENTORSHIP SECTION */}
               <Box>
@@ -268,7 +231,17 @@ const DevelopmentPage = () => {
                   elevation={0}
                   sx={{
                     p: 4,
-                    bgcolor: 'primary.light',
+                    bgcolor: (theme) => theme.palette.mode === 'dark'
+                      ? alpha(theme.palette.primary.main, 0.18)
+                      : 'primary.light',
+                    color: (theme) => theme.palette.mode === 'dark' ? 'common.white' : 'text.primary',
+                    border: '1px solid',
+                    borderColor: (theme) => theme.palette.mode === 'dark'
+                      ? alpha(theme.palette.primary.main, 0.32)
+                      : alpha(theme.palette.primary.main, 0.18),
+                    boxShadow: (theme) => theme.palette.mode === 'dark'
+                      ? `0 0 34px ${alpha(theme.palette.primary.main, 0.16)}`
+                      : 'none',
                     borderRadius: 1,
                     display: 'flex',
                     alignItems: 'center',
@@ -321,10 +294,6 @@ const DevelopmentPage = () => {
                 onEdit={handleEdit}
                 onDelete={handleDelete}
               />
-            </Stack>
-          </Box>
-        </Container>
-      </Container>
 
       <AdminConfirmDeleteDialog
         open={!!deleteTarget}
@@ -334,7 +303,7 @@ const DevelopmentPage = () => {
         onConfirm={handleConfirmDelete}
         loading={deleting}
       />
-    </Page>
+    </AlumniContentLayout>
   );
 };
 
