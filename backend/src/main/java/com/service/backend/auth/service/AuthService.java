@@ -1,6 +1,7 @@
 package com.service.backend.auth.service;
 
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.dao.DataIntegrityViolationException;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.AbstractMap;
@@ -86,48 +87,54 @@ public class AuthService {
 
     @Transactional
     public Mono<Void> register(String email, String studentId, String password, String fullName, Integer organizationId) {
-        return authRepository.existsByEmail(email)
-                .flatMap(exists -> {
-                    if (exists) return Mono.error(new ApplicationException(ErrorCode.EMAIL_ALREADY_EXISTS));
-                    return Mono.fromCallable(() -> passwordEncoder.encode(password))
-                            .subscribeOn(Schedulers.boundedElastic())
-                            .flatMap(hashedPassword ->
-                                    authRepository.registerNewUser(email, hashedPassword, fullName)
-                                            .flatMap(userId ->
-                                                authRepository.createOrganizationMember(organizationId, userId, studentId)
-                            ));
+        return Mono.fromCallable(() -> passwordEncoder.encode(password))
+                .subscribeOn(Schedulers.boundedElastic())
+                .flatMap(hashedPassword ->
+                        authRepository.registerNewUser(email, hashedPassword, fullName)
+                                .flatMap(userId -> authRepository.createOrganizationMember(organizationId, userId, studentId))
+                )
+                .onErrorResume(DataIntegrityViolationException.class, e -> {
+                    String errorMsg = e.getMessage() != null ? e.getMessage().toLowerCase() : "";
+                    if (errorMsg.contains("uk_organization_members_student_id") || errorMsg.contains("student_id")) {
+                        logger.warn("Registration failed - student ID already exists: {}", studentId);
+                        return Mono.error(new ApplicationException(ErrorCode.STUDENT_ID_ALREADY_EXISTS));
+                    }
+                    logger.warn("Registration failed - email already exists: {}", email);
+                    return Mono.error(new ApplicationException(ErrorCode.EMAIL_ALREADY_EXISTS));
                 })
                 .doOnError(e -> logger.error("Registration failed: {}", e.getMessage()));
     }
 
     public Mono<User> loginByEmail(String email, String password, Integer organizationId, String userAgent, String loginIp) {
         return authRepository.findByEmail(email)
-                .flatMap(user -> {
-                    if (!passwordEncoder.matches(password, user.getPasswordHash())) {
-                        logger.warn("Login failed - invalid password for email: {}", email);
-                        return Mono.error(new ApplicationException(ErrorCode.INVALID_CREDENTIALS));
-                    }
+                .flatMap(user -> Mono.fromCallable(() -> passwordEncoder.matches(password, user.getPasswordHash()))
+                        .subscribeOn(Schedulers.boundedElastic())
+                        .flatMap(isMatch -> {
+                            if (!isMatch) {
+                                logger.warn("Login failed - invalid password for email: {}", email);
+                                return Mono.error(new ApplicationException(ErrorCode.INVALID_CREDENTIALS));
+                            }
 
-                    if (user.getStatus() != Status.ACTIVE) {
-                        logger.warn("Login failed - account not active for email: {}. Status: {}", email, user.getStatus());
-                        return Mono.error(new ApplicationException(ErrorCode.ACCOUNT_NOT_VERIFIED));
-                    }
+                            if (user.getStatus() != Status.ACTIVE) {
+                                logger.warn("Login failed - account not active for email: {}. Status: {}", email, user.getStatus());
+                                return Mono.error(new ApplicationException(ErrorCode.ACCOUNT_NOT_VERIFIED));
+                            }
 
-                    if (organizationId != null) {
-                        return authRepository.existsOrganizationMemberByUserIdAndOrgId(user.getId(), organizationId)
-                                .flatMap(isMember -> {
-                                    if (Boolean.FALSE.equals(isMember)) {
-                                        logger.warn("Login failed - user {} is not a member of organization {}", email, organizationId);
-                                        return Mono.error(new ApplicationException(ErrorCode.USER_NOT_MEMBER_OF_ORGANIZATION));
-                                    }
-                                    recordLoginSuccessAsync(user.getId(), "EMAIL", userAgent, loginIp);
-                                    return Mono.just(user);
-                                });
-                    } else {
-                        recordLoginSuccessAsync(user.getId(), "EMAIL", userAgent, loginIp);
-                        return Mono.just(user);
-                    }
-                })
+                            if (organizationId != null) {
+                                return authRepository.existsOrganizationMemberByUserIdAndOrgId(user.getId(), organizationId)
+                                        .flatMap(isMember -> {
+                                            if (Boolean.FALSE.equals(isMember)) {
+                                                logger.warn("Login failed - user {} is not a member of organization {}", email, organizationId);
+                                                return Mono.error(new ApplicationException(ErrorCode.USER_NOT_MEMBER_OF_ORGANIZATION));
+                                            }
+                                            recordLoginSuccessAsync(user.getId(), "EMAIL", userAgent, loginIp);
+                                            return Mono.just(user);
+                                        });
+                            } else {
+                                recordLoginSuccessAsync(user.getId(), "EMAIL", userAgent, loginIp);
+                                return Mono.just(user);
+                            }
+                        }))
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND)))
                 .doOnSuccess(u -> logger.info("loginByEmail result: {}", JsonUtils.toJson(u)))
                 .doOnError(error -> logger.error("Login error for email: {} - {}", email, error.getMessage()));
@@ -187,17 +194,19 @@ public class AuthService {
     public Mono<Void> changePassword(Integer userId, String oldPassword, String newPassword) {
         return authRepository.findById(userId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND)))
-                .flatMap(user -> {
-                    if (!passwordEncoder.matches(oldPassword, user.getPasswordHash())) {
-                        logger.warn("Password change failed - invalid old password for user id: {}", userId);
-                        return Mono.error(new ApplicationException(ErrorCode.INVALID_OLD_PASSWORD));
-                    }
+                .flatMap(user -> Mono.fromCallable(() -> passwordEncoder.matches(oldPassword, user.getPasswordHash()))
+                        .subscribeOn(Schedulers.boundedElastic())
+                        .flatMap(isMatch -> {
+                            if (!isMatch) {
+                                logger.warn("Password change failed - invalid old password for user id: {}", userId);
+                                return Mono.error(new ApplicationException(ErrorCode.INVALID_OLD_PASSWORD));
+                            }
 
-                    return Mono.fromCallable(() -> passwordEncoder.encode(newPassword))
-                            .subscribeOn(Schedulers.boundedElastic())
-                            .flatMap(hashedPassword -> authRepository.updatePasswordById(userId, hashedPassword))
-                            .doOnSuccess(v -> logger.info("changePassword: userId={} password changed", userId));
-                })
+                            return Mono.fromCallable(() -> passwordEncoder.encode(newPassword))
+                                    .subscribeOn(Schedulers.boundedElastic())
+                                    .flatMap(hashedPassword -> authRepository.updatePasswordById(userId, hashedPassword))
+                                    .doOnSuccess(v -> logger.info("changePassword: userId={} password changed", userId));
+                        }))
                 .doOnError(error -> logger.error("Password change error for user id: {}", error.getMessage()));
     }
 
@@ -297,28 +306,24 @@ public class AuthService {
     }
 
     public Mono<Void> requestChangeEmailOtpNew(Integer userId, String newEmail) {
-        return authRepository.existsByEmail(newEmail)
-            .flatMap(exists -> {
-                if (exists) return Mono.error(new ApplicationException(ErrorCode.EMAIL_ALREADY_EXISTS));
-                return cacheUtils.get("change_email_verified", String.valueOf(userId))
-                    .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.FORBIDDEN)))
-                    .flatMap(verified -> {
-                        String otp = String.format("%0" + OTP_LENGTH + "d", secureRandom.nextInt(OTP_MAX_VALUE));
-                        Map<String, Object> cacheData = new HashMap<>();
-                        cacheData.put(OTP_CACHE_OTP_FIELD, otp);
-                        cacheData.put(OTP_CACHE_USER_ID_FIELD, userId);
-                        cacheData.put("newEmail", newEmail);
-                        
-                        return cacheUtils.putWithTtl("change_email_new", String.valueOf(userId), cacheData, OTP_TTL)
-                                .then(Mono.defer(() -> {
-                                    Map<String, Object> variables = new HashMap<>();
-                                    variables.put(OTP_CACHE_OTP_FIELD, otp);
-                                    variables.put("email", newEmail);
-                                    return emailService.sendHtmlEmail(newEmail, OTP_EMAIL_SUBJECT, OTP_EMAIL_TEMPLATE, variables);
-                                }))
-                                .doOnSuccess(v -> logger.info("requestChangeEmailOtpNew: OTP sent to new email={}", newEmail));
-                    });
-            });
+        return cacheUtils.get("change_email_verified", String.valueOf(userId))
+                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.FORBIDDEN)))
+                .flatMap(verified -> {
+                    String otp = String.format("%0" + OTP_LENGTH + "d", secureRandom.nextInt(OTP_MAX_VALUE));
+                    Map<String, Object> cacheData = new HashMap<>();
+                    cacheData.put(OTP_CACHE_OTP_FIELD, otp);
+                    cacheData.put(OTP_CACHE_USER_ID_FIELD, userId);
+                    cacheData.put("newEmail", newEmail);
+                    
+                    return cacheUtils.putWithTtl("change_email_new", String.valueOf(userId), cacheData, OTP_TTL)
+                            .then(Mono.defer(() -> {
+                                Map<String, Object> variables = new HashMap<>();
+                                variables.put(OTP_CACHE_OTP_FIELD, otp);
+                                variables.put("email", newEmail);
+                                return emailService.sendHtmlEmail(newEmail, OTP_EMAIL_SUBJECT, OTP_EMAIL_TEMPLATE, variables);
+                            }))
+                            .doOnSuccess(v -> logger.info("requestChangeEmailOtpNew: OTP sent to new email={}", newEmail));
+                });
     }
 
     public Mono<Void> verifyChangeEmailOtpNew(Integer userId, String newEmail, String otp) {
@@ -335,21 +340,21 @@ public class AuthService {
                     if (!cachedNewEmail.equals(newEmail)) {
                         return Mono.error(new ApplicationException(ErrorCode.BAD_REQUEST));
                     }
-                    return authRepository.existsByEmail(newEmail)
-                        .flatMap(exists -> {
-                            if (exists) return Mono.error(new ApplicationException(ErrorCode.EMAIL_ALREADY_EXISTS));
-                            return authRepository.updateEmailById(userId, newEmail)
-                                    .then(cacheUtils.evict("change_email_new", String.valueOf(userId)))
-                                    .then(cacheUtils.evict("change_email_verified", String.valueOf(userId)))
-                                    .doOnSuccess(v -> {
-                                        logger.info("verifyChangeEmailOtpNew: Email updated successfully for user={}", userId);
-                                        notificationService.createNotificationAsync(
-                                                userId,
-                                                "Đổi email thành công",
-                                                "Địa chỉ email của bạn đã được cập nhật thành " + newEmail
-                                        );
-                                    });
-                        });
+                    return authRepository.updateEmailById(userId, newEmail)
+                            .then(cacheUtils.evict("change_email_new", String.valueOf(userId)))
+                            .then(cacheUtils.evict("change_email_verified", String.valueOf(userId)))
+                            .onErrorResume(DataIntegrityViolationException.class, e -> {
+                                logger.warn("Email already exists: {}", newEmail);
+                                return Mono.error(new ApplicationException(ErrorCode.EMAIL_ALREADY_EXISTS));
+                            })
+                            .doOnSuccess(v -> {
+                                logger.info("verifyChangeEmailOtpNew: Email updated successfully for user={}", userId);
+                                notificationService.createNotificationAsync(
+                                        userId,
+                                        "Đổi email thành công",
+                                        "Địa chỉ email của bạn đã được cập nhật thành " + newEmail
+                                );
+                            });
                 });
     }
 
@@ -464,11 +469,16 @@ public class AuthService {
 
         Mono<Void> ensureOrgMembership = ensureOrganizationMembership(user.getId(), organizationId);
 
-        return activateIfNeeded
-                .then(updateAvatarIfNeeded)
-                .then(ensureOrgMembership)
-                .then(authRepository.findById(user.getId()))
-                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND)))
+        return Mono.when(activateIfNeeded, updateAvatarIfNeeded, ensureOrgMembership)
+                .then(Mono.defer(() -> {
+                    if (user.getStatus() != Status.ACTIVE) {
+                        user.setStatus(Status.ACTIVE);
+                    }
+                    if (!StringUtils.hasText(user.getAvatarUrl()) && StringUtils.hasText(pictureUrl)) {
+                        user.setAvatarUrl(pictureUrl);
+                    }
+                    return Mono.just(user);
+                }))
                 .doOnNext(existing -> recordLoginSuccessAsync(existing.getId(), GOOGLE_LOGIN_METHOD, userAgent, loginIp));
     }
 
