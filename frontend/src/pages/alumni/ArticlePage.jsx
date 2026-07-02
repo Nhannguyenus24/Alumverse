@@ -2,7 +2,8 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useParams } from "react-router";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
-import { Box, Container, Typography, CircularProgress, Button, Stack, IconButton, Tooltip } from "@mui/material";
+import { Box, Container, Typography, CircularProgress, Button, Stack, IconButton, Tooltip, useTheme } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import NavigateBeforeIcon from "@mui/icons-material/NavigateBefore";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
@@ -69,13 +70,18 @@ const SaveArticleButton = ({ itemId }) => {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      setSaved(false);
+      return undefined;
+    }
+
     let active = true;
     savedItemApi
       .check("NEWS", itemId)
       .then((v) => { if (active) setSaved(Boolean(v)); })
       .catch(() => {});
     return () => { active = false; };
-  }, [itemId]);
+  }, [isAuthenticated, itemId]);
 
   const toggle = async () => {
     if (busy || !canContribute) return;
@@ -207,7 +213,18 @@ const ArticleHighlightCard = ({ data, channel, eventId }) => {
     : data.stats;
 
   return (
-    <Box sx={{ mt: 3, mb: 6, p: 5, bgcolor: "primary.light", borderRadius: 2, display: "flex", flexDirection: { xs: "column", md: "row" }, gap: 3 }}>
+    <Box
+      sx={(theme) => ({
+        mt: 3,
+        mb: 6,
+        p: 5,
+        bgcolor: theme.palette.mode === "dark" ? alpha(theme.palette.primary.main, 0.16) : "primary.light",
+        borderRadius: 2,
+        display: "flex",
+        flexDirection: { xs: "column", md: "row" },
+        gap: 3,
+      })}
+    >
       {/* LEFT */}
       <Box sx={{ flex: 1 }}>
         <Typography variant="h4" sx={{ color: "primary.main" }}>{data.channel}</Typography>
@@ -286,6 +303,7 @@ const ArticlePage = () => {
   const { t } = useTranslation(['common', 'article', 'event', 'donation']);
   const { channel, id } = useParams();
   const { enqueueSnackbar } = useSnackbar();
+  const theme = useTheme();
   const { user } = useAuth();
   const loadErrorShownRef = useRef(false);
   const { article, isPending, isError, errorMessage } = useArticleById(channel, id);
@@ -300,12 +318,17 @@ const ArticlePage = () => {
   const heroRef = useRef(null);
   const [placeholderHeight, setPlaceholderHeight] = useState(600);
   const isAdmin = user?.role === "ADMIN";
+  const isDark = theme.palette.mode === "dark";
+  const contentFrameBg = "background.paper";
+  const contentFrameShadow = isDark
+    ? `0 18px 46px ${alpha(theme.palette.common.black, 0.46)}, 0 0 0 1px ${alpha(theme.palette.common.white, 0.08)}`
+    : "0 4px 24px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06)";
 
   const recalcPlaceholder = useCallback(() => {
     if (!contentRef.current || !heroRef.current) return;
     const heroH = heroRef.current.getBoundingClientRect().height;
     const contentH = contentRef.current.getBoundingClientRect().height;
-    const contentTopInHero = heroH * 0.58;
+    const contentTopInHero = heroH * 0.54;
     const overflow = contentH - (heroH - contentTopInHero);
     setPlaceholderHeight(Math.max(overflow + 140, 140));
   }, []);
@@ -374,8 +397,8 @@ const ArticlePage = () => {
           {/* Hero banner */}
           <Box sx={{ position: "absolute", inset: 0, top: "-1px", backgroundColor: "primary.dark", backgroundImage: article.thumbnailUrl ? `url(${article.thumbnailUrl})` : "none", backgroundSize: "cover", backgroundPosition: "center", backgroundRepeat: "no-repeat" }} />
           {/* Main content frame */}
-          <Box ref={contentRef} sx={{ position: "absolute", top: { xs: "58%", sm: "60%", md: "58%" }, left: 0, right: 0, display: "flex", justifyContent: "center", px: { xs: 2, sm: 3 } }}>
-            <Box sx={{ width: "100%", maxWidth: 1200, backgroundColor: "#fff", borderRadius: 2, boxShadow: "0 4px 24px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06)", overflow: "hidden", py: { xs: 5, md: 6 }, px: { xs: 3, sm: 4, md: 6 } }}>
+          <Box ref={contentRef} sx={{ position: "absolute", top: { xs: "54%", sm: "56%", md: "54%" }, left: 0, right: 0, display: "flex", justifyContent: "center", px: { xs: 2, sm: 3 } }}>
+            <Box sx={{ width: "100%", maxWidth: 1200, backgroundColor: contentFrameBg, borderRadius: 2, boxShadow: contentFrameShadow, overflow: "hidden", py: { xs: 5, md: 6 }, px: { xs: 3, sm: 4, md: 6 } }}>
               {/* Breadcrumb */}
               <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: { xs: 4, md: 5 } }}>
                 <Button startIcon={<NavigateBeforeIcon />} onClick={() => navigate(-1)} size="small" sx={{ color: "text.secondary", textTransform: "none", pl: 0 }}>

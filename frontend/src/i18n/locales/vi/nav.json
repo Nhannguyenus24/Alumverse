@@ -5,6 +5,9 @@
   "intro_leaders": "Ban lãnh đạo",
   "intro_team": "Đội ngũ",
   "network": "Kết nối",
+  "network_requests": "Yêu cầu kết nối",
+  "network_connections": "Kết nối hiện tại",
+  "network_restricted": "Kết nối bị hạn chế",
   "honors": "Vinh danh",
   "honors_alumni": "Cựu sinh viên",
   "honors_achievements": "Kênh thành tựu",
@@ -19,6 +22,6 @@
   "donation": "Quyên góp",
   "contact": "Liên hệ",
   "admin": "Trang quản trị",
-  "login_required": "Vui lòng đăng nhập để sử dụng",
+  "login_required": "Đăng nhập để xem tính năng này",
   "language": "Ngôn ngữ"
 }

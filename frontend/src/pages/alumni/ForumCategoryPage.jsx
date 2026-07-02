@@ -3,8 +3,8 @@ import { useTranslation } from 'react-i18next';
 import Page from '../../components/Page';
 import Breadcrumb from '../../components/Breadcrumb';
 import ForumFilterPanel from '../../components/forum/ForumFilterPanel';
-import ForumSponsoredCard from '../../components/forum/ForumSponsoredCard';
 import ForumTopicListItem from '../../components/forum/ForumTopicListItem';
+import AlumniContentLayout from '../../layouts/AlumniContentLayout';
 
 import { useOrganization } from '../../hooks/useOrganization';
 import { useForumCategoryLogic } from '../../hooks/forum/useForumCategoryLogic';
@@ -64,37 +64,14 @@ const ForumCategoryPage = () => {
   }
 
   return (
-    <Page
-      title={pageTitle}
+    <AlumniContentLayout
+      variant="forum"
+      pageTitle={pageTitle}
       meta={<meta name="description" content={t('forum:topics_in_category', { name: activeCategory?.name ?? t('forum:category') })} />}
+      sidebar={<ForumFilterPanel filters={filters} selectedId={selectedSidebarId} onChange={handleFilterChange} />}
+      header={null}
+      contentSpacing={0}
     >
-      <Container
-        maxWidth={false}
-        disableGutters
-        sx={{
-          pb: { xs: 4, md: 6 },
-          overflowX: 'hidden',
-        }}
-      >
-        <Container maxWidth="xl" sx={{ pt: { xs: 2, sm: 3, md: 4 }, px: { xs: 2, sm: 3, lg: 6 } }}>
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: { xs: 'column', md: 'row' },
-              alignItems: 'flex-start',
-              gap: { xs: 2, md: 3 },
-            }}
-          >
-            <Stack spacing={2} sx={{ width: { xs: '100%', md: 260 }, flexShrink: 0 }}>
-              <ForumFilterPanel filters={filters} selectedId={selectedSidebarId} onChange={handleFilterChange} />
-              <ForumSponsoredCard
-                title="Sponsored"
-                imageSrc="/forum/metro_station.png"
-                imageAlt="HCMC Metro Opening"
-                caption="HCMC Metro Opening"
-              />
-            </Stack>
-
             <Stack
               spacing={0}
               sx={{
@@ -109,7 +86,7 @@ const ForumCategoryPage = () => {
                 sx={{
                   flex: 1,
                   minWidth: 0,
-                  backgroundColor: '#fff',
+                  backgroundColor: 'background.paper',
                   border: 1,
                   borderColor: 'divider',
                 }}
@@ -196,10 +173,7 @@ const ForumCategoryPage = () => {
                 </Box>
               </Box>
             </Stack>
-          </Box>
-        </Container>
-      </Container>
-    </Page>
+    </AlumniContentLayout>
   );
 };
 

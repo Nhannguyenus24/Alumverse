@@ -1,12 +1,11 @@
-import { Box, Button, Container, Stack, Typography } from '@mui/material';
+import { Box, Button, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
-import Page from '../../components/Page';
 import { useAuth } from '../../hooks/useAuth';
 import { useOrganization } from '../../hooks/useOrganization';
 import { useNotification } from '../../hooks/useNotification';
 import ForumFilterPanel from '../../components/forum/ForumFilterPanel';
-import ForumSponsoredCard from '../../components/forum/ForumSponsoredCard';
 import ForumSection from '../../components/forum/ForumSection';
+import AlumniContentLayout from '../../layouts/AlumniContentLayout';
 
 import { useForumPageLogic } from '../../hooks/forum/useForumPageLogic';
 import { useForumManageMode } from '../../hooks/forum/useForumManageMode';
@@ -48,46 +47,13 @@ const ForumPage = () => {
   } = useForumManageMode({ visibleSections, ...notification });
 
   return (
-    <Page
-      title={t('forum:page_title')}
+    <AlumniContentLayout
+      variant="forum"
+      pageTitle={t('forum:page_title')}
       meta={<meta name="description" content={t('forum:page_meta_description')} />}
+      sidebar={<ForumFilterPanel filters={filters} selectedId={selectedFilterId} onChange={handleFilterChange} />}
+      contentSpacing={3}
     >
-      <Container
-        maxWidth={false}
-        disableGutters
-        sx={{
-          pb: { xs: 4, md: 6 },
-          overflowX: 'hidden',
-        }}
-      >
-        <Container maxWidth="xl" sx={{ pt: { xs: 2, sm: 3, md: 4 }, px: { xs: 2, sm: 3, lg: 6 } }}>
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: { xs: 'column', md: 'row' },
-              alignItems: 'flex-start',
-              gap: { xs: 2, md: 3 },
-            }}
-          >
-            <Stack spacing={2} sx={{ width: { xs: '100%', md: 260 }, flexShrink: 0 }}>
-              <ForumFilterPanel filters={filters} selectedId={selectedFilterId} onChange={handleFilterChange} />
-              <ForumSponsoredCard
-                title={t('forum:sponsored')}
-                imageSrc="/forum/metro_station.png"
-                imageAlt="HCMC Metro Opening"
-                caption="HCMC Metro Opening"
-              />
-            </Stack>
-
-            <Stack
-              spacing={3}
-              sx={{
-                flex: 1,
-                minWidth: 0,
-                width: '100%',
-                px: { xs: 1.5, sm: 2, md: 2.75 },
-              }}
-            >
               <Box
                 sx={{
                   display: 'flex',
@@ -153,11 +119,7 @@ const ForumPage = () => {
                   />
                 ))
               )}
-            </Stack>
-          </Box>
-        </Container>
-      </Container>
-    </Page>
+    </AlumniContentLayout>
   );
 };
 

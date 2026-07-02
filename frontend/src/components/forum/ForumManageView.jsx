@@ -30,7 +30,7 @@ const ForumManageView = ({
           borderColor: 'divider',
           borderRadius: 0,
           p: { xs: 1.5, sm: 2 },
-          backgroundColor: '#fff',
+          backgroundColor: 'background.paper',
         }}
       >
         <Box
@@ -50,13 +50,13 @@ const ForumManageView = ({
               onChange={(e) => setNewMainTopic(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleAddMainTopic()}
               size="small"
-              InputProps={{ sx: { backgroundColor: 'grey.50' } }}
+              InputProps={{ sx: { backgroundColor: 'background.default' } }}
             />
             <TextField
               fullWidth
               placeholder={t('main_topic_desc_placeholder')}
               size="small"
-              InputProps={{ sx: { backgroundColor: 'grey.50' } }}
+              InputProps={{ sx: { backgroundColor: 'background.default' } }}
             />
           </Box>
           <IconButton

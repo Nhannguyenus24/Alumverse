@@ -69,7 +69,7 @@ const AdminFundReceivingInfosPage = () => {
 
   useEffect(() => {
     setBreadcrumbs?.([
-      { label: t('nav_fundraising'), path: '/admin/fundraising' },
+      { label: t('nav_fundraising'), path: '/admin/donations' },
       { label: t('nav_bank_accounts'), active: true },
     ]);
   }, [setBreadcrumbs, t]);
