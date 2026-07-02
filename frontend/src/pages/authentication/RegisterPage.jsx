@@ -94,10 +94,6 @@ const RegisterPage = () => {
       enqueueSnackbar(t('auth:register_success'), {
         variant: 'success',
       });
-      const fp = await forgotPassword({ email: data.email });
-      if (!fp?.ok) {
-        enqueueSnackbar(fp?.error ?? t('auth:register_verify_send_failed'), { variant: 'error' });
-      }
       navigate('/auth/signup-code', { state: { email: data.email }, replace: true });
     } else if (result?.error) {
       enqueueSnackbar(result.error, { variant: 'error' });

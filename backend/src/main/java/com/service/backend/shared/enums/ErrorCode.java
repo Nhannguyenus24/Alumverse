@@ -12,6 +12,7 @@ public enum ErrorCode {
 
     // Auth module
     EMAIL_ALREADY_EXISTS("Email đã được sử dụng bởi một tài khoản khác", 409),
+    STUDENT_ID_ALREADY_EXISTS("Mã số sinh viên này đã được sử dụng trong tổ chức", 409),
     INVALID_CREDENTIALS("Invalid email or password", 401),
     INVALID_OLD_PASSWORD("Invalid old password", 400),
     OTP_EXPIRED_NOT_FOUND("OTP expired or not found", 404),

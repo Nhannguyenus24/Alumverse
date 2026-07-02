@@ -78,6 +78,7 @@ public class AuthController {
     public Mono<ResponseEntity<ApiResponse<Boolean>>> register(
             @Valid @RequestBody RegisterRequest request) {
         return authService.register(request.getEmail(), request.getStudentId(), request.getPassword(), request.getFullName(), request.getOrganizationId())
+                .then(authService.sendOtpVerification(request.getEmail()))
                 .thenReturn(ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("User registered successfully", true)));
     }
 
