@@ -21,10 +21,13 @@ public interface UserProfileRepository extends R2dbcRepository<User, Integer> {
                    u.role,
                    u.status,
                    u.avatar_url,
+                   u.cover_url,
                    u.created_at,
                    u.full_name,
                    u.phone,
                    u.bio,
+                   u.current_job_title,
+                   u.current_company,
                    u.dob,
                    u.gender,
                    u.updated_at AS profile_updated_at,
@@ -47,6 +50,9 @@ public interface UserProfileRepository extends R2dbcRepository<User, Integer> {
             SET phone = COALESCE(:phone, phone),
                 gender = COALESCE(:gender, gender),
                 bio = COALESCE(:bio, bio),
+                cover_url = COALESCE(:coverUrl, cover_url),
+                current_job_title = COALESCE(:currentJobTitle, current_job_title),
+                current_company = COALESCE(:currentCompany, current_company),
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = :userId
             """)
@@ -54,5 +60,8 @@ public interface UserProfileRepository extends R2dbcRepository<User, Integer> {
             @Param("userId") Integer userId,
             @Param("phone") String phone,
             @Param("gender") String gender,
-            @Param("bio") String bio);
+            @Param("bio") String bio,
+            @Param("coverUrl") String coverUrl,
+            @Param("currentJobTitle") String currentJobTitle,
+            @Param("currentCompany") String currentCompany);
 }

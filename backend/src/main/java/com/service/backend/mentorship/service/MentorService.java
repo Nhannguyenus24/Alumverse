@@ -56,6 +56,24 @@ public class MentorService {
                 .then();
     }
 
+    private Mono<Void> updateUserWorkInfo(Integer userId, String currentJobTitle, String currentCompany) {
+        if (userId == null) return Mono.empty();
+        DatabaseClient.GenericExecuteSpec spec = databaseClient
+                .sql("""
+                        UPDATE users
+                        SET current_job_title = COALESCE(:currentJobTitle, current_job_title),
+                            current_company = COALESCE(:currentCompany, current_company),
+                            updated_at = CURRENT_TIMESTAMP
+                        WHERE id = :id
+                        """)
+                .bind("id", userId);
+        spec = currentJobTitle != null ? spec.bind("currentJobTitle", currentJobTitle) : spec.bindNull("currentJobTitle", String.class);
+        spec = currentCompany != null ? spec.bind("currentCompany", currentCompany) : spec.bindNull("currentCompany", String.class);
+        return spec.fetch()
+                .rowsUpdated()
+                .then();
+    }
+
     private Mono<Integer> currentMemberId() {
         return SecurityUtils.getCurrentUserId().map(Long::intValue);
     }
@@ -117,7 +135,13 @@ public class MentorService {
     private Mono<MentorProfileResponse> attachProfileDisplay(MentorProfileResponse single) {
         if (single.getMemberId() == null) return Mono.just(single);
         Mono<MentorProfileResponse> displayMono = userDisplayInfoRepository.findByUserId(single.getMemberId())
-                .map(info -> single.withDisplay(info.getFullName(), info.getAvatarUrl()))
+                .map(info -> single.withUserProfile(
+                        info.getFullName(),
+                        info.getAvatarUrl(),
+                        info.getCoverUrl(),
+                        info.getBio(),
+                        info.getCurrentJobTitle(),
+                        info.getCurrentCompany()))
                 .defaultIfEmpty(single);
         Mono<List<String>> topicsMono = expertiseRepository.findByMentorMemberId(single.getMemberId())
                 .map(MentorExpertise::getTopic)
@@ -156,8 +180,6 @@ public class MentorService {
                             }
                             if (request.getCurrentJobTitle() != null) existing.setCurrentJobTitle(request.getCurrentJobTitle());
                             if (request.getCurrentCompany() != null) existing.setCurrentCompany(request.getCurrentCompany());
-                            if (request.getBio() != null) existing.setBio(request.getBio());
-                            if (request.getCoverUrl() != null) existing.setCoverUrl(request.getCoverUrl());
                             if (request.getDefaultMeetingLink() != null) existing.setDefaultMeetingLink(request.getDefaultMeetingLink());
                             if (request.getBookingWindowSettings() != null) existing.setBookingWindowSettings(request.getBookingWindowSettings());
                             if (request.getExtendedProfile() != null) existing.setExtendedProfile(request.getExtendedProfile());
@@ -169,7 +191,9 @@ public class MentorService {
                             }
                             existing.setUpdatedAt(LocalDateTime.now());
                             existing.setNew(false);
-                            return updateUserAvatar(memberId, request.getAvatarUrl())
+                            return Mono.when(
+                                            updateUserAvatar(memberId, request.getAvatarUrl()),
+                                            updateUserWorkInfo(memberId, request.getCurrentJobTitle(), request.getCurrentCompany()))
                                     .then(profileRepository.save(existing));
                         })
                         .switchIfEmpty(Mono.defer(() -> {
@@ -177,18 +201,18 @@ public class MentorService {
                                     .memberId(memberId)
                                     .currentJobTitle(request.getCurrentJobTitle())
                                     .currentCompany(request.getCurrentCompany())
-                                    .bio(request.getBio())
                                     .ratingAvg(java.math.BigDecimal.ZERO)
                                     .totalSessions(0)
                                     .status(targetStatus)
-                                    .coverUrl(request.getCoverUrl())
                                     .defaultMeetingLink(request.getDefaultMeetingLink())
                                     .bookingWindowSettings(request.getBookingWindowSettings())
                                     .extendedProfile(request.getExtendedProfile())
                                     .createdAt(LocalDateTime.now())
                                     .updatedAt(LocalDateTime.now())
                                     .build();
-                            return updateUserAvatar(memberId, request.getAvatarUrl())
+                            return Mono.when(
+                                            updateUserAvatar(memberId, request.getAvatarUrl()),
+                                            updateUserWorkInfo(memberId, request.getCurrentJobTitle(), request.getCurrentCompany()))
                                     .then(profileRepository.save(profile));
                         }))
                         .map(MentorProfileResponse::from)
@@ -202,13 +226,13 @@ public class MentorService {
                         .flatMap(existing -> {
                             if (request.getCurrentJobTitle() != null) existing.setCurrentJobTitle(request.getCurrentJobTitle());
                             if (request.getCurrentCompany() != null) existing.setCurrentCompany(request.getCurrentCompany());
-                            if (request.getBio() != null) existing.setBio(request.getBio());
-                            if (request.getCoverUrl() != null) existing.setCoverUrl(request.getCoverUrl());
                             if (request.getDefaultMeetingLink() != null) existing.setDefaultMeetingLink(request.getDefaultMeetingLink());
                             if (request.getBookingWindowSettings() != null) existing.setBookingWindowSettings(request.getBookingWindowSettings());
                             if (request.getExtendedProfile() != null) existing.setExtendedProfile(request.getExtendedProfile());
                             existing.setNew(false);
-                            return updateUserAvatar(memberId, request.getAvatarUrl())
+                            return Mono.when(
+                                            updateUserAvatar(memberId, request.getAvatarUrl()),
+                                            updateUserWorkInfo(memberId, request.getCurrentJobTitle(), request.getCurrentCompany()))
                                     .then(profileRepository.save(existing));
                         })
                         .map(MentorProfileResponse::from)

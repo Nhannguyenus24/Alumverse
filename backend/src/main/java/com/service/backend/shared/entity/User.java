@@ -42,6 +42,9 @@ public class User {
     @Column("avatar_url")
     private String avatarUrl;
 
+    @Column("cover_url")
+    private String coverUrl;
+
     @Column("full_name")
     private String fullName;
 
@@ -50,6 +53,12 @@ public class User {
 
     @Column("bio")
     private String bio;
+
+    @Column("current_job_title")
+    private String currentJobTitle;
+
+    @Column("current_company")
+    private String currentCompany;
 
     @Column("dob")
     private LocalDate dob;

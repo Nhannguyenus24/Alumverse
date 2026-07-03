@@ -25,6 +25,7 @@ import { useNotification } from '../../hooks/useNotification';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import useOrganizationStore from '../../stores/organizationStore';
 import { CONVERSATION_REQUEST_STATUS } from '../../constants/conversationRequestStatus';
+import { organizationApi } from '../../utils/api';
 
 const PAGE_SIZE = 9;
 
@@ -48,7 +49,23 @@ const NetworkPage = () => {
   const [checkingUserId, setCheckingUserId] = useState(null);
   const [blockTarget, setBlockTarget] = useState(null);
 
+  const { data: organizations = [] } = useQuery({
+    queryKey: ['organizations', 'all'],
+    queryFn: () => organizationApi.getAllOrganizations(),
+    staleTime: 5 * 60 * 1000,
+  });
+
   const filters_config = useMemo(() => [
+    {
+      type: 'dropdown',
+      key: 'organizationIds',
+      label: t('network:filter_organization_label'),
+      multiple: true,
+      options: organizations.map((org) => ({
+        value: org.id,
+        label: org.name || org.organizationName || org.slug || `#${org.id}`,
+      })),
+    },
     {
       type: 'input',
       key: 'program',
@@ -63,16 +80,10 @@ const NetworkPage = () => {
       inputMode: 'text',
       placeholder: t('network:filter_major_placeholder'),
     },
-  ], [t]);
+  ], [organizations, t]);
 
   const navigate = useOrgNavigate();
   const currentMemberId = useNetworkCurrentMemberId();
-
-  const { data: organizations = [] } = useQuery({
-    queryKey: ['organizations', 'all'],
-    queryFn: () => organizationApi.getAllOrganizations(),
-    staleTime: 5 * 60 * 1000,
-  });
 
   const { showError, showInfo } = useNotification();
   const { checkStatus } = useCheckConversationRequestStatus();

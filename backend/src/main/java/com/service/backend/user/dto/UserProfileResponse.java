@@ -19,11 +19,14 @@ public class UserProfileResponse {
     private String role;
     private String status;
     private String avatarUrl;
+    private String coverUrl;
     private LocalDateTime createdAt;
 
     private String fullName;
     private String phone;
     private String bio;
+    private String currentJobTitle;
+    private String currentCompany;
     private LocalDate dob;
     private String gender;
     private LocalDateTime profileUpdatedAt;

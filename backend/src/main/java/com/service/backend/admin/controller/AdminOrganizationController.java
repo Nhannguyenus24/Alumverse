@@ -18,9 +18,13 @@ import com.service.backend.admin.dto.FeedbackStatisticsDTO;
 import com.service.backend.admin.dto.OrganizationOptionRequest;
 import com.service.backend.admin.dto.UpdateOrganizationOptionRequest;
 import com.service.backend.admin.dto.UpdateOrganizationRequest;
+import com.service.backend.admin.dto.UpdateFeaturedAlumniRequest;
+import com.service.backend.admin.dto.UpdateOrganizationSiteSettingsRequest;
 import com.service.backend.admin.dto.UpsertOrganizationIntroductionRequest;
 import com.service.backend.admin.dto.config.FeatureConfig;
+import com.service.backend.organization.dto.FeaturedAlumniResponse;
 import com.service.backend.organization.dto.OrganizationIntroductionResponse;
+import com.service.backend.organization.dto.OrganizationSiteSettingsResponse;
 
 import java.util.Map;
 import com.service.backend.shared.entity.Organization;
@@ -163,6 +167,42 @@ public class AdminOrganizationController {
         return organizationService.upsertIntroduction(organizationId, request)
                 .map(intro -> ResponseEntity.ok(
                         new ApiResponse<>("Introduction saved successfully", intro)));
+    }
+
+    @GetMapping("/{organizationId}/site-settings")
+    public Mono<ResponseEntity<ApiResponse<OrganizationSiteSettingsResponse>>> getSiteSettings(
+            @PathVariable Integer organizationId) {
+        return organizationService.getSiteSettings(organizationId)
+                .map(settings -> ResponseEntity.ok(
+                        new ApiResponse<>("Site settings fetched successfully", settings)));
+    }
+
+    @PutMapping("/{organizationId}/site-settings")
+    public Mono<ResponseEntity<ApiResponse<OrganizationSiteSettingsResponse>>> updateSiteSettings(
+            @PathVariable Integer organizationId,
+            @Valid @RequestBody UpdateOrganizationSiteSettingsRequest request) {
+        return organizationService.updateSiteSettings(organizationId, request)
+                .map(settings -> ResponseEntity.ok(
+                        new ApiResponse<>("Site settings saved successfully", settings)));
+    }
+
+    @GetMapping("/{organizationId}/featured-alumni")
+    public Mono<ResponseEntity<ApiResponse<List<FeaturedAlumniResponse>>>> getFeaturedAlumni(
+            @PathVariable Integer organizationId) {
+        return organizationService.getFeaturedAlumni(organizationId)
+                .collectList()
+                .map(alumni -> ResponseEntity.ok(
+                        new ApiResponse<>("Featured alumni fetched successfully", alumni)));
+    }
+
+    @PutMapping("/{organizationId}/featured-alumni")
+    public Mono<ResponseEntity<ApiResponse<List<FeaturedAlumniResponse>>>> updateFeaturedAlumni(
+            @PathVariable Integer organizationId,
+            @Valid @RequestBody UpdateFeaturedAlumniRequest request) {
+        return organizationService.updateFeaturedAlumni(organizationId, request)
+                .collectList()
+                .map(alumni -> ResponseEntity.ok(
+                        new ApiResponse<>("Featured alumni saved successfully", alumni)));
     }
 
     @GetMapping("/{organizationId}/programs")

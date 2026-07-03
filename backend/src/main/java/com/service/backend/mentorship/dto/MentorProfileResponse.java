@@ -42,13 +42,11 @@ public class MentorProfileResponse {
                 .memberId(profile.getMemberId())
                 .currentJobTitle(profile.getCurrentJobTitle())
                 .currentCompany(profile.getCurrentCompany())
-                .bio(profile.getBio())
                 .ratingAvg(profile.getRatingAvg())
                 .totalSessions(profile.getTotalSessions())
                 .status(profile.getStatus() != null ? profile.getStatus().getValue() : null)
                 .reviewNote(profile.getReviewNote())
                 .reviewedAt(profile.getReviewedAt())
-                .coverUrl(profile.getCoverUrl())
                 .defaultMeetingLink(profile.getDefaultMeetingLink())
                 .bookingWindowSettings(profile.getBookingWindowSettings())
                 .extendedProfile(profile.getExtendedProfile())
@@ -60,6 +58,21 @@ public class MentorProfileResponse {
     public MentorProfileResponse withDisplay(String fullName, String avatarUrl) {
         this.fullName = fullName;
         this.avatarUrl = avatarUrl;
+        return this;
+    }
+
+    public MentorProfileResponse withUserProfile(String fullName, String avatarUrl, String coverUrl,
+            String bio, String currentJobTitle, String currentCompany) {
+        this.fullName = fullName;
+        this.avatarUrl = avatarUrl;
+        this.coverUrl = coverUrl;
+        this.bio = bio;
+        if (this.currentJobTitle == null || this.currentJobTitle.isBlank()) {
+            this.currentJobTitle = currentJobTitle;
+        }
+        if (this.currentCompany == null || this.currentCompany.isBlank()) {
+            this.currentCompany = currentCompany;
+        }
         return this;
     }
 

@@ -12,13 +12,19 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.service.backend.admin.dto.FeedbackStatisticsDTO;
+import com.service.backend.admin.dto.UpdateFeaturedAlumniRequest;
+import com.service.backend.admin.dto.UpdateOrganizationSiteSettingsRequest;
 import com.service.backend.admin.dto.UpdateOrganizationRequest;
 import com.service.backend.admin.dto.UpsertOrganizationIntroductionRequest;
 import com.service.backend.admin.dto.config.FeatureConfig;
+import com.service.backend.organization.dao.OrganizationFeaturedAlumniRepository;
 import com.service.backend.organization.dao.OrganizationIntroductionRepository;
+import com.service.backend.organization.dao.OrganizationSiteSettingsRepository;
 import com.service.backend.organization.dao.SchoolFeedbackRepository;
+import com.service.backend.organization.dto.FeaturedAlumniResponse;
 import com.service.backend.organization.dto.OrgIntroductionMemberResponse;
 import com.service.backend.organization.dto.OrganizationIntroductionResponse;
+import com.service.backend.organization.dto.OrganizationSiteSettingsResponse;
 import com.service.backend.shared.entity.Organization;
 import com.service.backend.shared.entity.OrganizationIntroduction;
 import com.service.backend.shared.entity.SchoolFeedback;
@@ -31,6 +37,7 @@ import com.service.backend.shared.service.ImageService;
 import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.shared.utils.CacheUtils;
+import com.service.backend.shared.utils.SecurityUtils;
 import reactor.core.publisher.Flux;
 
 import lombok.RequiredArgsConstructor;
@@ -45,6 +52,8 @@ public class AdminOrganizationService {
     private final AdminOrganizationRepository organizationRepository;
     private final SchoolFeedbackRepository schoolFeedbackRepository;
     private final OrganizationIntroductionRepository introductionRepository;
+    private final OrganizationSiteSettingsRepository siteSettingsRepository;
+    private final OrganizationFeaturedAlumniRepository featuredAlumniRepository;
     private final ImageService imageService;
     private final CacheUtils cacheUtils;
 
@@ -192,7 +201,7 @@ public class AdminOrganizationService {
         Mono<List<OrgIntroductionMemberResponse>> uploadedLeaders = uploadMemberImages(request.getLeaders());
         Mono<List<OrgIntroductionMemberResponse>> uploadedTeamMembers = uploadMemberImages(request.getTeamMembers());
 
-        return requireOrganization(orgaId)
+        return requireManageableOrganization(orgaId)
                 .flatMap(org -> Mono.zip(uploadedUrls, uploadedBanner, uploadedLeaders, uploadedTeamMembers))
                 .flatMap(tuple -> {
                     List<String> urls = tuple.getT1();
@@ -240,6 +249,67 @@ public class AdminOrganizationService {
                 .delayUntil(res -> cacheUtils.clear(ORG_CACHE))
                 .doOnSuccess(r -> logger.info("upsertIntroduction result: {}", JsonUtils.toJson(r)))
                 .doOnError(error -> logger.error("Failed to upsert introduction for organization: {}", error.getMessage()));
+    }
+
+    public Mono<OrganizationSiteSettingsResponse> getSiteSettings(Integer organizationId) {
+        return requireManageableOrganization(organizationId)
+                .then(siteSettingsRepository.findById(organizationId)
+                        .map(OrganizationSiteSettingsResponse::from)
+                        .defaultIfEmpty(OrganizationSiteSettingsResponse.empty(organizationId)));
+    }
+
+    public Mono<OrganizationSiteSettingsResponse> updateSiteSettings(
+            Integer organizationId,
+            UpdateOrganizationSiteSettingsRequest request) {
+        String socialLinksJson = JsonUtils.toJson(request.getSocialLinks() != null ? request.getSocialLinks() : Map.of());
+        return requireManageableOrganization(organizationId)
+                .then(siteSettingsRepository.upsert(
+                        organizationId,
+                        request.getContactOffice(),
+                        request.getContactAddress(),
+                        request.getContactEmail(),
+                        request.getContactPhone(),
+                        request.getContactAdmissionsPhone(),
+                        socialLinksJson))
+                .then(cacheUtils.clear(ORG_CACHE))
+                .then(siteSettingsRepository.findById(organizationId))
+                .map(OrganizationSiteSettingsResponse::from);
+    }
+
+    public Flux<FeaturedAlumniResponse> getFeaturedAlumni(Integer organizationId) {
+        return requireManageableOrganization(organizationId)
+                .thenMany(featuredAlumniRepository.findFeaturedByOrganizationId(organizationId));
+    }
+
+    @Transactional
+    public Flux<FeaturedAlumniResponse> updateFeaturedAlumni(
+            Integer organizationId,
+            UpdateFeaturedAlumniRequest request) {
+        List<UpdateFeaturedAlumniRequest.Item> items = request.getAlumni() != null
+                ? request.getAlumni()
+                : List.of();
+        if (items.size() > 8) {
+            return Flux.error(new ApplicationException(ErrorCode.BAD_REQUEST, "Featured alumni is limited to 8 users"));
+        }
+        return requireManageableOrganization(organizationId)
+                .then(featuredAlumniRepository.deleteByOrganizationId(organizationId))
+                .thenMany(Flux.fromIterable(items)
+                        .index()
+                        .concatMap(tuple -> {
+                            long index = tuple.getT1();
+                            UpdateFeaturedAlumniRequest.Item item = tuple.getT2();
+                            int displayOrder = item.getDisplayOrder() != null ? item.getDisplayOrder() : (int) index;
+                            if (displayOrder < 0 || displayOrder >= 8) {
+                                return Mono.error(new ApplicationException(ErrorCode.BAD_REQUEST, "displayOrder must be between 0 and 7"));
+                            }
+                            return featuredAlumniRepository.upsert(
+                                    organizationId,
+                                    item.getUserId(),
+                                    displayOrder,
+                                    item.getNote());
+                        }))
+                .then(cacheUtils.clear(ORG_CACHE))
+                .thenMany(featuredAlumniRepository.findFeaturedByOrganizationId(organizationId));
     }
 
     private OrganizationIntroductionResponse toResponse(OrganizationIntroduction intro) {
@@ -304,6 +374,7 @@ public class AdminOrganizationService {
             return Mono.just(List.of());
         }
         return Flux.fromIterable(base64Images)
+                .take(5)
                 .flatMapSequential(imageService::uploadBase64IfPresent)
                 .collectList();
     }
@@ -437,6 +508,22 @@ public class AdminOrganizationService {
                 .switchIfEmpty(Mono.error(new ApplicationException(
                         ErrorCode.ORGANIZATION_NOT_FOUND,
                         "Organization not found with id: " + organizationId)));
+    }
+
+    private Mono<Organization> requireManageableOrganization(Integer organizationId) {
+        return SecurityUtils.getCurrentUserRole()
+                .flatMap(role -> {
+                    if ("STAFF".equalsIgnoreCase(role)) {
+                        return SecurityUtils.getCurrentOrganizationId()
+                                .filter(orgId -> orgId.equals(organizationId))
+                                .switchIfEmpty(Mono.error(new ApplicationException(
+                                        ErrorCode.FORBIDDEN,
+                                        "Staff can only manage their own organization")));
+                    }
+                    return Mono.just(organizationId);
+                })
+                .switchIfEmpty(Mono.just(organizationId))
+                .then(requireOrganization(organizationId));
     }
 
     private Mono<List<String>> appendOption(Integer organizationId, String rawValue, boolean isProgram) {

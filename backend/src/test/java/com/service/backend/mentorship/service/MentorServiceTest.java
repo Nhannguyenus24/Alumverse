@@ -64,7 +64,7 @@ class MentorServiceTest {
         @DisplayName("should fail when mentor profile not found")
         void updateProfile_notFound() {
             UpdateMentorProfileRequest request = new UpdateMentorProfileRequest();
-            request.setBio("Updated bio");
+            request.setCurrentJobTitle("Updated title");
 
             when(profileRepository.findById(5)).thenReturn(Mono.empty());
 

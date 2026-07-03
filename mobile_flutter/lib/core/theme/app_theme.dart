@@ -19,14 +19,14 @@ class AppTheme {
           surface: AppColors.surface,
         ),
         scaffoldBackgroundColor: AppColors.background,
-        textTheme: GoogleFonts.robotoTextTheme(),
-        appBarTheme: const AppBarTheme(
+        textTheme: GoogleFonts.nunitoTextTheme(),
+        appBarTheme: AppBarTheme(
           centerTitle: false,
           elevation: 0,
           scrolledUnderElevation: 0.5,
           backgroundColor: AppColors.surface,
           foregroundColor: AppColors.textPrimary,
-          titleTextStyle: TextStyle(
+          titleTextStyle: GoogleFonts.nunito(
             color: AppColors.textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.w700,
@@ -69,7 +69,7 @@ class AppTheme {
               borderRadius: BorderRadius.circular(AppRadius.sm),
             ),
             textStyle:
-                const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                GoogleFonts.nunito(fontSize: 16, fontWeight: FontWeight.w600),
           ),
         ),
         outlinedButtonTheme: OutlinedButtonThemeData(
@@ -108,6 +108,6 @@ class AppTheme {
           seedColor: AppColors.primary,
           brightness: Brightness.dark,
         ),
-        textTheme: GoogleFonts.robotoTextTheme(ThemeData.dark().textTheme),
+        textTheme: GoogleFonts.nunitoTextTheme(ThemeData.dark().textTheme),
       );
 }

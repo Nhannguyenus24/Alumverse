@@ -38,10 +38,9 @@ public interface AchievementR2dbcRepository extends ReactiveCrudRepository<Achie
 
     @Query("SELECT a.id, a.member_id, a.title, a.description, a.image_url, a.awarded_date, a.topic, a.status, " +
            "u.full_name as member_name, u.avatar_url as member_avatar, " +
-           "mp.current_job_title as member_job_title, mp.current_company as member_company " +
+           "u.current_job_title as member_job_title, u.current_company as member_company " +
            "FROM achievements a " +
            "LEFT JOIN users u ON a.member_id = u.id " +
-           "LEFT JOIN mentor_profiles mp ON a.member_id = mp.member_id " +
            "WHERE a.status = :status " +
            "ORDER BY a.awarded_date DESC LIMIT :limit OFFSET :offset")
     Flux<AchievementDetailDTO> findDetailsByStatus(Status status, int limit, int offset);

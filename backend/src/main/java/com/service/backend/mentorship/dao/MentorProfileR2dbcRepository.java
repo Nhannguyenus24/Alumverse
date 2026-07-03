@@ -30,10 +30,10 @@ public interface MentorProfileR2dbcRepository extends ReactiveCrudRepository<Men
 
     // ===================== Search by keyword =====================
 
-    @Query("SELECT * FROM mentor_profiles WHERE status = 'APPROVED' AND (LOWER(current_job_title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(current_company) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(bio) LIKE LOWER(CONCAT('%', :keyword, '%'))) ORDER BY rating_avg DESC LIMIT :limit OFFSET :offset")
+    @Query("SELECT mp.* FROM mentor_profiles mp LEFT JOIN users u ON u.id = mp.member_id WHERE mp.status = 'APPROVED' AND (LOWER(mp.current_job_title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(mp.current_company) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(u.bio) LIKE LOWER(CONCAT('%', :keyword, '%'))) ORDER BY mp.rating_avg DESC LIMIT :limit OFFSET :offset")
     Flux<MentorProfile> searchMentors(String keyword, int limit, int offset);
 
-    @Query("SELECT COUNT(*) FROM mentor_profiles WHERE status = 'APPROVED' AND (LOWER(current_job_title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(current_company) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(bio) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    @Query("SELECT COUNT(*) FROM mentor_profiles mp LEFT JOIN users u ON u.id = mp.member_id WHERE mp.status = 'APPROVED' AND (LOWER(mp.current_job_title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(mp.current_company) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(u.bio) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     Mono<Long> countSearchMentors(String keyword);
 
     // ===================== Combined filter =====================
@@ -46,7 +46,7 @@ public interface MentorProfileR2dbcRepository extends ReactiveCrudRepository<Men
             "WHERE mp.status = 'APPROVED' " +
             "AND (:search IS NULL OR LOWER(mp.current_job_title) LIKE LOWER(CONCAT('%', :search, '%')) " +
             "     OR LOWER(mp.current_company) LIKE LOWER(CONCAT('%', :search, '%')) " +
-            "     OR LOWER(mp.bio) LIKE LOWER(CONCAT('%', :search, '%')) " +
+            "     OR LOWER(gp.bio) LIKE LOWER(CONCAT('%', :search, '%')) " +
             "     OR LOWER(gp.full_name) LIKE LOWER(CONCAT('%', :search, '%'))) " +
             "AND (:category IS NULL OR LOWER(me.category) = LOWER(:category)) " +
             "AND (:expertise IS NULL OR LOWER(me.topic) LIKE LOWER(CONCAT('%', :expertise, '%'))) " +
@@ -68,7 +68,7 @@ public interface MentorProfileR2dbcRepository extends ReactiveCrudRepository<Men
             "WHERE mp.status = 'APPROVED' " +
             "AND (:search IS NULL OR LOWER(mp.current_job_title) LIKE LOWER(CONCAT('%', :search, '%')) " +
             "     OR LOWER(mp.current_company) LIKE LOWER(CONCAT('%', :search, '%')) " +
-            "     OR LOWER(mp.bio) LIKE LOWER(CONCAT('%', :search, '%')) " +
+            "     OR LOWER(gp.bio) LIKE LOWER(CONCAT('%', :search, '%')) " +
             "     OR LOWER(gp.full_name) LIKE LOWER(CONCAT('%', :search, '%'))) " +
             "AND (:category IS NULL OR LOWER(me.category) = LOWER(:category)) " +
             "AND (:expertise IS NULL OR LOWER(me.topic) LIKE LOWER(CONCAT('%', :expertise, '%'))) " +
@@ -86,7 +86,7 @@ public interface MentorProfileR2dbcRepository extends ReactiveCrudRepository<Men
             "WHERE mp.status = 'APPROVED' " +
             "AND (LOWER(mp.current_job_title) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
             "     OR LOWER(mp.current_company) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
-            "     OR LOWER(mp.bio) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+            "     OR LOWER(gp.bio) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
             "     OR LOWER(gp.full_name) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
             "ORDER BY mp.rating_avg DESC LIMIT :limit OFFSET :offset")
     Flux<MentorProfile> searchMentorsWithName(String keyword, int limit, int offset);
@@ -97,7 +97,7 @@ public interface MentorProfileR2dbcRepository extends ReactiveCrudRepository<Men
             "WHERE mp.status = 'APPROVED' " +
             "AND (LOWER(mp.current_job_title) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
             "     OR LOWER(mp.current_company) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
-            "     OR LOWER(mp.bio) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+            "     OR LOWER(gp.bio) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
             "     OR LOWER(gp.full_name) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     Mono<Long> countSearchMentorsWithName(String keyword);
 

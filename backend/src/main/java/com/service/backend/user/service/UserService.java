@@ -271,7 +271,14 @@ public class UserService {
         Integer userId = currentUserId.intValue();
 
         Mono<Integer> updateGlobalProfile = userProfileRepository
-                .upsertProfileInfo(userId, request.getPhone(), request.getGender(), request.getBio());
+                .upsertProfileInfo(
+                        userId,
+                        request.getPhone(),
+                        request.getGender(),
+                        request.getBio(),
+                        request.getCoverUrl(),
+                        request.getCurrentJobTitle(),
+                        request.getCurrentCompany());
 
         Mono<Integer> updateOrganizationMember = userOrganizationMemberRepository
                 .updateAcademicProfileByOrganizationAndUserId(

@@ -33,8 +33,6 @@ public class MentorProfile implements Persistable<Integer> {
     @Column("current_company")
     private String currentCompany;
 
-    private String bio;
-
     @Column("rating_avg")
     @Builder.Default
     private BigDecimal ratingAvg = BigDecimal.ZERO;
@@ -55,9 +53,6 @@ public class MentorProfile implements Persistable<Integer> {
 
     @Column("reviewed_by")
     private Integer reviewedBy;
-
-    @Column("cover_url")
-    private String coverUrl;
 
     @Column("default_meeting_link")
     private String defaultMeetingLink;

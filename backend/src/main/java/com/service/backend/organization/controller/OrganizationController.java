@@ -1,7 +1,9 @@
 package com.service.backend.organization.controller;
 
 import com.service.backend.organization.dto.CreateSchoolFeedbackRequest;
+import com.service.backend.organization.dto.FeaturedAlumniResponse;
 import com.service.backend.organization.dto.OrganizationIntroductionResponse;
+import com.service.backend.organization.dto.OrganizationSiteSettingsResponse;
 import com.service.backend.organization.dto.TrustedVerifierResponse;
 import com.service.backend.shared.entity.Organization;
 import com.service.backend.shared.entity.SchoolFeedback;
@@ -66,6 +68,31 @@ public class OrganizationController {
         return organizationService.getIntroduction(organizationId)
                 .map(intro -> ResponseEntity.ok(
                         new ApiResponse<>("Introduction retrieved successfully", intro)));
+    }
+
+    @GetMapping("/{organizationId}/site-settings")
+    @Operation(
+            summary = "Get organization site settings",
+            description = "Retrieve contact/footer/social settings for an organization"
+    )
+    public Mono<ResponseEntity<ApiResponse<OrganizationSiteSettingsResponse>>> getSiteSettings(
+            @PathVariable Integer organizationId) {
+        return organizationService.getSiteSettings(organizationId)
+                .map(settings -> ResponseEntity.ok(
+                        new ApiResponse<>("Site settings retrieved successfully", settings)));
+    }
+
+    @GetMapping("/{organizationId}/featured-alumni")
+    @Operation(
+            summary = "Get featured alumni",
+            description = "Retrieve admin-curated featured alumni for the home page"
+    )
+    public Mono<ResponseEntity<ApiResponse<List<FeaturedAlumniResponse>>>> getFeaturedAlumni(
+            @PathVariable Integer organizationId) {
+        return organizationService.getFeaturedAlumni(organizationId)
+                .collectList()
+                .map(alumni -> ResponseEntity.ok(
+                        new ApiResponse<>("Featured alumni retrieved successfully", alumni)));
     }
 
     @PostMapping("/{organizationId}/feedbacks")

@@ -3,9 +3,13 @@ package com.service.backend.organization.service;
 import java.util.List;
 
 import com.service.backend.organization.dao.OrganizationIntroductionRepository;
+import com.service.backend.organization.dao.OrganizationFeaturedAlumniRepository;
+import com.service.backend.organization.dao.OrganizationSiteSettingsRepository;
 import com.service.backend.organization.dto.CreateSchoolFeedbackRequest;
+import com.service.backend.organization.dto.FeaturedAlumniResponse;
 import com.service.backend.organization.dto.OrgIntroductionMemberResponse;
 import com.service.backend.organization.dto.OrganizationIntroductionResponse;
+import com.service.backend.organization.dto.OrganizationSiteSettingsResponse;
 import com.service.backend.organization.dto.TrustedVerifierResponse;
 import com.service.backend.shared.entity.OrganizationIntroduction;
 import com.service.backend.shared.entity.SchoolFeedback;
@@ -33,6 +37,8 @@ public class OrganizationService {
     private final OrganizationRepository organizationRepository;
     private final SchoolFeedbackRepository schoolFeedbackRepository;
     private final OrganizationIntroductionRepository introductionRepository;
+    private final OrganizationSiteSettingsRepository siteSettingsRepository;
+    private final OrganizationFeaturedAlumniRepository featuredAlumniRepository;
     private final CacheUtils cacheUtils;
 
     public Mono<Organization> getOrganizationById(Integer id) {
@@ -100,6 +106,19 @@ public class OrganizationService {
                         .doOnSuccess(r -> logger.info("getIntroduction result: {}", JsonUtils.toJson(r)));
         })
                 .doOnError(error -> logger.error("Failed to fetch introduction for organization id {}: {}", orgaId, error.getMessage()));
+    }
+
+    public Mono<OrganizationSiteSettingsResponse> getSiteSettings(Integer organizationId) {
+        return cacheUtils.getOrCompute(ORG_CACHE, "siteSettings:" + organizationId, Duration.ofDays(1), () ->
+                siteSettingsRepository.findById(organizationId)
+                        .map(OrganizationSiteSettingsResponse::from)
+                        .defaultIfEmpty(OrganizationSiteSettingsResponse.empty(organizationId)));
+    }
+
+    public Flux<FeaturedAlumniResponse> getFeaturedAlumni(Integer organizationId) {
+        return cacheUtils.getOrCompute(ORG_CACHE, "featuredAlumni:" + organizationId, Duration.ofMinutes(10), () ->
+                featuredAlumniRepository.findFeaturedByOrganizationId(organizationId).collectList())
+                .flatMapMany(Flux::fromIterable);
     }
 
     private OrganizationIntroductionResponse toResponse(OrganizationIntroduction intro) {
