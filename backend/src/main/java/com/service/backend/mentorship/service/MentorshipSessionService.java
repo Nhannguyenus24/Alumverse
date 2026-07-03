@@ -37,13 +37,14 @@ public class MentorshipSessionService {
     @Transactional
     public Mono<JoinSessionResponse> joinSession(Integer sessionId, boolean isMentor) {
         return currentMemberId().flatMap(memberId ->
-                sessionRepository.findById(sessionId)
-                        .switchIfEmpty(Mono.error(new ApplicationException(
-                                ErrorCode.SESSION_NOT_FOUND, "Không tìm thấy buổi mentoring")))
-                        .zipWhen(session -> sessionRepository.findWindowBySessionId(sessionId)
+                Mono.zip(
+                        sessionRepository.findById(sessionId)
                                 .switchIfEmpty(Mono.error(new ApplicationException(
-                                        ErrorCode.AVAILABILITY_NOT_FOUND, "Không tìm thấy khung giờ của buổi mentoring"))))
-                        .flatMap(t -> {
+                                        ErrorCode.SESSION_NOT_FOUND, "Không tìm thấy buổi mentoring"))),
+                        sessionRepository.findWindowBySessionId(sessionId)
+                                .switchIfEmpty(Mono.error(new ApplicationException(
+                                        ErrorCode.AVAILABILITY_NOT_FOUND, "Không tìm thấy khung giờ của buổi mentoring")))
+                ).flatMap(t -> {
                             MentorshipSession session = t.getT1();
                             SessionWindowProjection window = t.getT2();
                             LocalDateTime now = LocalDateTime.now();

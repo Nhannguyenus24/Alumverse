@@ -2,6 +2,8 @@
     <uses-permission android:name="android.permission.INTERNET"/>
     <!-- Camera dùng cho màn quét QR vé check-in (admin/staff). -->
     <uses-permission android:name="android.permission.CAMERA"/>
+    <!-- Lưu ảnh QR quyên góp vào gallery (chỉ cần cho Android <= 9 / API 28). -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28"/>
     <uses-feature android:name="android.hardware.camera" android:required="false"/>
     <application
         android:label="AlumVerse"

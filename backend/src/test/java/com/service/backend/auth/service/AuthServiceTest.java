@@ -61,7 +61,7 @@ class AuthServiceTest {
 
         authService = new AuthService(
                 authRepository, passwordEncoder, emailService, cacheUtils,
-                jwtUtils, userLoginHistoryRepository, webClientBuilder,
+                jwtUtils, userLoginHistoryRepository,
                 "test-client-id", notificationService
         );
     }
@@ -77,8 +77,7 @@ class AuthServiceTest {
         void register_success() {
             when(authRepository.existsByEmail("test@email.com")).thenReturn(Mono.just(false));
             when(passwordEncoder.encode("password")).thenReturn("hashed");
-            when(authRepository.registerNewUser("test@email.com", "hashed")).thenReturn(Mono.just(1));
-            when(authRepository.createGlobalProfile(1, "Test User")).thenReturn(Mono.empty());
+            when(authRepository.registerNewUser("test@email.com", "hashed", "full name")).thenReturn(Mono.just(1));
             when(authRepository.createOrganizationMember(1, 1, "S001")).thenReturn(Mono.empty());
 
             StepVerifier.create(authService.register("test@email.com", "S001", "password", "Test User", 1))
@@ -204,7 +203,7 @@ class AuthServiceTest {
             // AuthService built with empty googleClientId
             AuthService serviceNoGoogle = new AuthService(
                     authRepository, passwordEncoder, emailService, cacheUtils,
-                    jwtUtils, userLoginHistoryRepository, webClientBuilder,
+                    jwtUtils, userLoginHistoryRepository,
                     "", notificationService
             );
 

@@ -1,8 +1,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:dio/dio.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gal/gal.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -117,59 +119,99 @@ class _FundraisingDonatePageState
   }
 
   Future<void> _showQrDialog(String url) {
+    var downloading = false;
     return showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (_) => AlertDialog(
-        title: Text('donation.qr_title'.tr()),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 280),
-              child: CachedNetworkImage(
-                imageUrl: url,
-                fit: BoxFit.contain,
-                placeholder: (_, __) => const SizedBox(
-                  height: 200,
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-                errorWidget: (_, __, ___) => Column(
-                  children: [
-                    Text(
-                      'donation.qr_load_failed'.tr(),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 12),
-                    OutlinedButton.icon(
-                      onPressed: () => launchUrl(
-                        Uri.parse(url),
-                        mode: LaunchMode.externalApplication,
+      builder: (_) => StatefulBuilder(
+        builder: (context, setLocalState) => AlertDialog(
+          title: Text('donation.qr_title'.tr()),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 280),
+                child: CachedNetworkImage(
+                  imageUrl: url,
+                  fit: BoxFit.contain,
+                  placeholder: (_, __) => const SizedBox(
+                    height: 200,
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                  errorWidget: (_, __, ___) => Column(
+                    children: [
+                      Text(
+                        'donation.qr_load_failed'.tr(),
+                        textAlign: TextAlign.center,
                       ),
-                      icon: const Icon(Icons.open_in_new),
-                      label: Text('donation.qr_open_link'.tr()),
-                    ),
-                  ],
+                      const SizedBox(height: 12),
+                      OutlinedButton.icon(
+                        onPressed: () => launchUrl(
+                          Uri.parse(url),
+                          mode: LaunchMode.externalApplication,
+                        ),
+                        icon: const Icon(Icons.open_in_new),
+                        label: Text('donation.qr_open_link'.tr()),
+                      ),
+                    ],
+                  ),
                 ),
               ),
+              const SizedBox(height: 12),
+              Text(
+                'donation.qr_instruction'.tr(),
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                    fontSize: 12.5, color: AppColors.textSecondary),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton.icon(
+              onPressed: downloading
+                  ? null
+                  : () async {
+                      setLocalState(() => downloading = true);
+                      await _downloadQr(url);
+                      if (context.mounted) {
+                        setLocalState(() => downloading = false);
+                      }
+                    },
+              icon: downloading
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.download_rounded),
+              label: Text('donation.qr_download'.tr()),
             ),
-            const SizedBox(height: 12),
-            Text(
-              'donation.qr_instruction'.tr(),
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                  fontSize: 12.5, color: AppColors.textSecondary),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('donation.done'.tr()),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text('donation.done'.tr()),
-          ),
-        ],
       ),
     );
+  }
+
+  /// Tải ảnh QR (network image từ SePay) về gallery của máy.
+  Future<void> _downloadQr(String url) async {
+    try {
+      // Dio riêng, không dùng dioProvider để tránh base URL / auth interceptor
+      // của backend chen vào request tới URL ảnh bên ngoài.
+      final res = await Dio().get<List<int>>(
+        url,
+        options: Options(responseType: ResponseType.bytes),
+      );
+      final bytes = Uint8List.fromList(res.data ?? const <int>[]);
+      if (bytes.isEmpty) throw Exception('empty image');
+      await Gal.putImageBytes(bytes, name: 'qr_donation_${widget.fundId}');
+      if (mounted) AppToast.success(context, 'donation.qr_saved'.tr());
+    } catch (_) {
+      if (mounted) AppToast.error(context, 'donation.qr_save_failed'.tr());
+    }
   }
 
   @override

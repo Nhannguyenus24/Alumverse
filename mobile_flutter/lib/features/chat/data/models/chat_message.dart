@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 /// A single chat message. The same shape is returned by the REST history
 /// endpoint (`GET /api/chat/groups/{id}/messages`, `ChatMessageResponse`) and
 /// by the WebSocket `MESSAGE_CREATED` broadcast payload — so one [fromJson]
@@ -30,6 +32,23 @@ class ChatMessage {
   });
 
   bool get isDeleted => deletedAt != null;
+
+  /// [metadata] as returned by the WS/REST layer may be a JSON-encoded
+  /// string instead of a decoded map — parse it safely either way.
+  Map<String, dynamic>? get metadataMap {
+    final raw = metadata;
+    if (raw is Map<String, dynamic>) return raw;
+    if (raw is Map) return raw.cast<String, dynamic>();
+    if (raw is String && raw.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(raw);
+        if (decoded is Map) return decoded.cast<String, dynamic>();
+      } catch (_) {
+        // ignore malformed metadata
+      }
+    }
+    return null;
+  }
 
   DateTime? get createdAtDate =>
       createdAt == null ? null : DateTime.tryParse(createdAt!);

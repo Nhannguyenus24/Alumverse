@@ -7,6 +7,7 @@ import '../../../../../core/router/route_names.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../shared/widgets/app_toast.dart';
 import '../../../../../shared/widgets/empty_view.dart';
+import '../../../organization/presentation/providers/organization_provider.dart';
 import '../../data/repositories/network_repository.dart';
 import '../providers/network_provider.dart';
 import '../widgets/message_request_sheet.dart';
@@ -20,6 +21,8 @@ class NetworkSearchTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final query = ref.watch(networkSearchQueryProvider);
     final async = ref.watch(networkSearchProvider);
+    final organizations =
+        ref.watch(organizationListProvider).valueOrNull ?? const [];
 
     return Column(
       children: [
@@ -29,6 +32,8 @@ class NetworkSearchTab extends ConsumerWidget {
           showFilters: true,
           programValue: query.program,
           majorValue: query.major,
+          organizations: organizations,
+          selectedOrganizationIds: query.organizationIds,
           onSubmit: (v) => ref
               .read(networkSearchQueryProvider.notifier)
               .state = query.copyWith(fullName: v).resetPage(),
@@ -38,6 +43,9 @@ class NetworkSearchTab extends ConsumerWidget {
           onMajorSubmit: (v) => ref
               .read(networkSearchQueryProvider.notifier)
               .state = query.copyWith(major: v).resetPage(),
+          onOrganizationsChanged: (ids) => ref
+              .read(networkSearchQueryProvider.notifier)
+              .state = query.copyWith(organizationIds: ids).resetPage(),
         ),
         Expanded(
           child: async.when(

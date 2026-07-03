@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   alpha,
@@ -29,6 +29,7 @@ import PersonRemoveIcon from '@mui/icons-material/PersonRemove';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
+import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import ChatAvatar from '../ChatAvatar';
@@ -37,6 +38,7 @@ import AddGroupMemberDialog from '../AddGroupMemberDialog';
 import { useGroupMembers } from '../../hooks/chat/useGroupMembers';
 import { invalidateChatListQueries, invalidateGroupBlockedMembersQueries } from '../../hooks/chat/invalidateChatQueries';
 import { chatApi } from '../../utils/api';
+import { fileToBase64, IMAGE_ACCEPT, validateImageFile } from '../../utils/imageUtils';
 
 const MAX_GROUP_SIZE = 10;
 
@@ -78,6 +80,7 @@ function GroupMembersDrawer({ open, onClose, groupId, groupName, currentUserId, 
   const [addMemberDialogOpen, setAddMemberDialogOpen] = useState(false);
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const [renameValue, setRenameValue] = useState('');
+  const imageInputRef = useRef(null);
 
   const { members, totalItem, isPending, isError, errorMessage } = useGroupMembers(groupId, {
     enabled: open && Boolean(groupId),
@@ -115,6 +118,31 @@ function GroupMembersDrawer({ open, onClose, groupId, groupName, currentUserId, 
     },
   });
 
+  const changeImageMutation = useMutation({
+    mutationFn: async ({ gId, file }) => {
+      const validation = validateImageFile(file, t);
+      if (!validation.valid) {
+        throw new Error(validation.message);
+      }
+      const base64 = await fileToBase64(file);
+      const avatarUrl = await chatApi.uploadChatImage(base64);
+      if (!avatarUrl) {
+        throw new Error(t('network:chat.image_update_failed'));
+      }
+      return chatApi.updateGroupImage(gId, avatarUrl);
+    },
+    onSuccess: () => {
+      invalidateChatListQueries(queryClient);
+    },
+  });
+
+  const handleImageSelected = (event) => {
+    const file = event.target.files?.[0] ?? null;
+    event.target.value = '';
+    if (!file || !groupId) return;
+    changeImageMutation.mutate({ gId: groupId, file });
+  };
+
   const openRenameDialog = () => {
     setRenameValue(groupName ?? '');
     setRenameDialogOpen(true);
@@ -138,7 +166,8 @@ function GroupMembersDrawer({ open, onClose, groupId, groupName, currentUserId, 
   const mutationError =
     (removeMutation.isError ? removeMutation.error?.response?.data?.message ?? removeMutation.error?.message : null) ??
     (leaveMutation.isError ? leaveMutation.error?.response?.data?.message ?? leaveMutation.error?.message : null) ??
-    (renameMutation.isError ? renameMutation.error?.response?.data?.message ?? renameMutation.error?.message : null);
+    (renameMutation.isError ? renameMutation.error?.response?.data?.message ?? renameMutation.error?.message : null) ??
+    (changeImageMutation.isError ? changeImageMutation.error?.response?.data?.message ?? changeImageMutation.error?.message : null);
 
   return (
     <>
@@ -296,6 +325,28 @@ function GroupMembersDrawer({ open, onClose, groupId, groupName, currentUserId, 
                   >
                     {t('network:rename_group')}
                   </Button>
+                ) : null}
+                {isOwner ? (
+                  <>
+                    <input
+                      ref={imageInputRef}
+                      type="file"
+                      accept={IMAGE_ACCEPT}
+                      onChange={handleImageSelected}
+                      style={{ display: 'none' }}
+                    />
+                    <Button
+                      fullWidth
+                      variant="outlined"
+                      color="primary"
+                      title={t('network:change_group_image_title')}
+                      startIcon={changeImageMutation.isPending ? <CircularProgress size={14} /> : <PhotoCameraIcon />}
+                      onClick={() => imageInputRef.current?.click()}
+                      disabled={changeImageMutation.isPending}
+                    >
+                      {t('network:change_group_image')}
+                    </Button>
+                  </>
                 ) : null}
                 {isOwner && totalItem < MAX_GROUP_SIZE ? (
                   <Button

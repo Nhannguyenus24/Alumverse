@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import {
   Alert,
@@ -66,6 +67,12 @@ const NetworkPage = () => {
 
   const navigate = useOrgNavigate();
   const currentMemberId = useNetworkCurrentMemberId();
+
+  const { data: organizations = [] } = useQuery({
+    queryKey: ['organizations', 'all'],
+    queryFn: () => organizationApi.getAllOrganizations(),
+    staleTime: 5 * 60 * 1000,
+  });
 
   const { showError, showInfo } = useNotification();
   const { checkStatus } = useCheckConversationRequestStatus();

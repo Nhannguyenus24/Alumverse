@@ -54,7 +54,7 @@ dependencies:
   easy_localization: ^3.0.7
 
   # Utils
-  intl: ^0.19.0
+  intl: ^0.20.2
   logger: ^2.5.0
   equatable: ^2.0.7
   url_launcher: ^6.3.1
@@ -65,6 +65,10 @@ dependencies:
   # Rich text & images
   #flutter_quill: ^11.5.1
   image_picker: ^1.1.2
+
+  # Chat video attachments
+  video_player: ^2.9.2
+  chewie: ^1.8.5
 
   # Render ReactQuill HTML article bodies (no WebView)
   flutter_widget_from_html_core: ^0.16.0
@@ -78,6 +82,9 @@ dependencies:
 
   # Quét QR vé khi admin/staff check-in tại sự kiện (camera, xử lý on-device)
   mobile_scanner: ^5.2.3
+
+  # Lưu ảnh QR quyên góp về gallery của máy
+  gal: ^2.3.2
 
 dev_dependencies:
   flutter_test:

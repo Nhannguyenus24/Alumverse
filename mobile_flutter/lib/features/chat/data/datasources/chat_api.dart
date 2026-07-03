@@ -143,6 +143,15 @@ class ChatApi {
     );
   }
 
+  /// Updates a group's avatar (owner only). Backend returns the updated
+  /// group; the caller already knows the new URL, so the response is ignored.
+  Future<void> updateGroupAvatar(int groupId, String avatarUrl) async {
+    await _dio.put(
+      ApiEndpoints.chatGroupAvatarUpdate(groupId),
+      data: {'avatarUrl': avatarUrl},
+    );
+  }
+
   /// Recent chat previews for the current user.
   Future<List<ChatRecentPreview>> recentPreviews() async {
     final res = await _dio.get(ApiEndpoints.chatRecentPreviews);
@@ -151,6 +160,39 @@ class ChatApi {
     return data
         .map((e) => ChatRecentPreview.fromJson(e as Map<String, dynamic>))
         .toList();
+  }
+
+  /// Uploads a static image (jpg/jpeg/png/webp) as Base64; converted to WebP
+  /// server-side. Returns the public URL. Longer timeouts accommodate the
+  /// larger Base64 payload of chat attachments (see [uploadMedia]).
+  Future<String> uploadImage(String base64String) async {
+    final res = await _dio.post(
+      ApiEndpoints.imageUpload,
+      data: {'base64String': base64String},
+      options: Options(
+        sendTimeout: const Duration(seconds: 60),
+        receiveTimeout: const Duration(seconds: 60),
+      ),
+    );
+    final data = res.data is Map ? res.data['data'] : res.data;
+    return data?.toString() ?? '';
+  }
+
+  /// Uploads a raw file (gif or video) as Base64. Returns the public URL.
+  Future<String> uploadMedia({
+    required String base64String,
+    required String fileName,
+  }) async {
+    final res = await _dio.post(
+      ApiEndpoints.fileUpload,
+      data: {'base64String': base64String, 'fileName': fileName},
+      options: Options(
+        sendTimeout: const Duration(seconds: 60),
+        receiveTimeout: const Duration(seconds: 60),
+      ),
+    );
+    final data = res.data is Map ? res.data['data'] : res.data;
+    return data?.toString() ?? '';
   }
 
   List<T> _items<T>(dynamic body, T Function(Map<String, dynamic>) fromJson) {

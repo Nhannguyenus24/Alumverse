@@ -87,6 +87,7 @@ public interface ChatGroupRepository extends ReactiveCrudRepository<ChatGroup, L
                 cg.id AS id,
                 cg.type AS type,
                 cg.title AS title,
+                cg.avatar_url AS avatar_url,
                 cg.created_by AS created_by,
                 cg.created_at AS created_at,
                 cg.updated_at AS updated_at,

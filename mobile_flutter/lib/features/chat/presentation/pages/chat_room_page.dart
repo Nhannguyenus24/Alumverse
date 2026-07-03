@@ -165,6 +165,8 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
               valueListenable: socket.status,
               builder: (context, status, _) {
                 return ChatComposer(
+                  groupId: args.groupId,
+                  chatType: args.type,
                   enabled: status == ChatSocketStatus.open,
                   onSend: (text) => ref
                       .read(chatMessagesProvider(args.groupId).notifier)
