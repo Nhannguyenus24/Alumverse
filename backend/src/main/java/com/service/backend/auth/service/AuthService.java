@@ -37,6 +37,7 @@ import com.service.backend.shared.enums.Status;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import com.service.backend.user.service.NotificationService;
+import reactor.util.function.Tuple3;
 
 @Service
 public class AuthService {
@@ -385,13 +386,7 @@ public class AuthService {
                                 return orgMono.defaultIfEmpty(-1)
                                         .flatMap(orgId -> {
                                             Integer finalOrgId = (orgId == -1) ? null : orgId;
-                                            String newAccessToken = jwtUtils.generateAccessToken(
-                                                    user.getId(),
-                                                    user.getEmail(),
-                                                    user.getRole().name(),
-                                                    user.getAvatarUrl(),
-                                                    finalOrgId
-                                            );
+                                            String newAccessToken = jwtUtils.generateAccessToken(user, finalOrgId);
 
                                             if (finalOrgId == null) {
                                                 return Mono.just(LoginResponse.builder()
@@ -410,6 +405,41 @@ public class AuthService {
                             })
                             .doOnSuccess(res -> logger.info("refreshAccessToken: userId={} token refreshed", userId));
                 });
+    }
+
+    public Mono<Tuple3<String, String, Integer>> switchOrganization(String refreshToken, Integer newOrganizationId) {
+        if (!StringUtils.hasText(refreshToken)) {
+            return Mono.error(new ApplicationException(ErrorCode.REFRESH_TOKEN_NOT_FOUND));
+        }
+
+        return Mono.fromCallable(() -> {
+            com.nimbusds.jwt.JWTClaimsSet claims = jwtUtils.validateToken(refreshToken);
+            return Integer.valueOf(claims.getSubject());
+        })
+        .onErrorMap(e -> new ApplicationException(ErrorCode.INVALID_REFRESH_TOKEN, e))
+        .flatMap(userId -> authRepository.findById(userId)
+                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND)))
+                .flatMap(user -> {
+                    // Allow switching to any organization. Membership is not required:
+                    // non-members simply receive verificationLevel 0 (guest) for that org.
+                    jwtUtils.revokeRefreshToken(refreshToken);
+
+                    long expiration = 604800000L;
+                    String newAccessToken = jwtUtils.generateAccessToken(user, newOrganizationId);
+                    String newRefreshToken = jwtUtils.generateRefreshToken(user.getId(), newOrganizationId, expiration);
+
+                    return getVerificationLevel(user.getId(), newOrganizationId)
+                            .defaultIfEmpty(0)
+                            .map(level -> reactor.util.function.Tuples.of(newAccessToken, newRefreshToken, level))
+                            .doOnSuccess(tuple -> {
+                                Integer level = tuple.getT3();
+                                if (level == 0) {
+                                    logger.info("switchOrganization: userId={} switched to organizationId={} as GUEST (not a member, verificationLevel=0)", userId, newOrganizationId);
+                                } else {
+                                    logger.info("switchOrganization: userId={} switched to organizationId={} as MEMBER (verificationLevel={})", userId, newOrganizationId, level);
+                                }
+                            });
+                }));
     }
 
     private Mono<GoogleTokenInfo> verifyGoogleToken(String idTokenString) {
