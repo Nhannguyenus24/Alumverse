@@ -58,6 +58,7 @@ class ChatConversation {
       name: (json['title'] as String?)?.trim().isNotEmpty == true
           ? json['title'] as String
           : 'Group chat',
+      avatarUrl: json['avatarUrl'] as String?,
       memberCount: (json['memberCount'] as num?)?.toInt(),
       preview: json['lastMessagePreview'] as String?,
       lastMessageAt: json['lastMessageAt'] as String?,

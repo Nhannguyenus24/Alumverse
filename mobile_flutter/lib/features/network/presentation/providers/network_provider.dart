@@ -19,12 +19,14 @@ class NetworkSearchQuery {
   final String fullName;
   final String program;
   final String major;
+  final List<int> organizationIds;
   final int page;
 
   const NetworkSearchQuery({
     this.fullName = '',
     this.program = '',
     this.major = '',
+    this.organizationIds = const [],
     this.page = 0,
   });
 
@@ -32,12 +34,14 @@ class NetworkSearchQuery {
     String? fullName,
     String? program,
     String? major,
+    List<int>? organizationIds,
     int? page,
   }) {
     return NetworkSearchQuery(
       fullName: fullName ?? this.fullName,
       program: program ?? this.program,
       major: major ?? this.major,
+      organizationIds: organizationIds ?? this.organizationIds,
       page: page ?? this.page,
     );
   }
@@ -55,6 +59,7 @@ final networkSearchProvider =
         fullName: q.fullName,
         program: q.program,
         major: q.major,
+        organizationIds: q.organizationIds,
         page: q.page,
         size: 10,
       );

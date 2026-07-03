@@ -20,6 +20,7 @@ import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
 import LockOpenOutlinedIcon from '@mui/icons-material/LockOpen';
 import SendIcon from '@mui/icons-material/Send';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import AttachFileIcon from '@mui/icons-material/AttachFile';
 
 import Scrollbar from '../Scrollbar';
 import ChatEmojiPickerButton from '../ChatEmojiPickerButton';
@@ -31,10 +32,22 @@ import { useChatMessages } from '../../hooks/chat/useChatMessages';
 import { useGroupBlockedMembersContext } from '../../hooks/chat/useGroupBlockedMembersContext';
 import { useChatWebSocket } from '../../hooks/mentorship/useChatWebSocket';
 import { useBlockUser } from '../../hooks/network/useBlockUser';
+import { useNotification } from '../../hooks/useNotification';
 import useAuthStore from '../../stores/authStore';
 import ChatAvatar from '../ChatAvatar';
 import { buildGroupBlockedMembersBannerMessage } from '../../utils/formatBlockedMemberNames';
 import { useCanContribute } from '../../hooks/useCanContribute';
+import { chatApi } from '../../utils/api';
+import {
+  CHAT_ATTACHMENT_ACCEPT,
+  fileToBase64,
+  isAnimatedGif,
+  isChatImageExtension,
+  isChatVideoExtension,
+  validateChatImageFile,
+  validateVideoFile,
+} from '../../utils/imageUtils';
+import ChatMessageMedia from './ChatMessageMedia';
 
 function formatTime(isoString) {
   if (!isoString) return '';
@@ -54,8 +67,11 @@ const SCROLL_TOP_THRESHOLD = 8;
 const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
   const { t } = useTranslation(['network', 'common']);
   const { canContribute, isAuthenticated } = useCanContribute();
+  const { showError } = useNotification();
   const [draft, setDraft] = useState('');
   const draftInputRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const [isUploadingAttachment, setIsUploadingAttachment] = useState(false);
   const [membersDrawerOpen, setMembersDrawerOpen] = useState(false);
   const [blockConfirmOpen, setBlockConfirmOpen] = useState(false);
   const token = useAuthStore((state) => state.token ?? null);
@@ -208,6 +224,56 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
   const handleEmojiSelect = useCallback((emoji) => {
     insertTextAtInputSelection(draftInputRef, setDraft, emoji);
   }, []);
+
+  const isAttachDisabled = isInputDisabled || isUploadingAttachment;
+
+  const handleAttachClick = useCallback(() => {
+    if (isAttachDisabled) return;
+    fileInputRef.current?.click();
+  }, [isAttachDisabled]);
+
+  const handleFileSelected = useCallback(async (event) => {
+    const file = event.target.files?.[0] ?? null;
+    event.target.value = '';
+    if (!file || !activeChat?.id) return;
+
+    const isVideo = isChatVideoExtension(file.name);
+    const isImage = !isVideo && isChatImageExtension(file.name);
+
+    if (!isVideo && !isImage) {
+      showError(t('network:chat.file_type_unsupported'));
+      return;
+    }
+
+    const validation = isVideo ? validateVideoFile(file, t) : validateChatImageFile(file, t);
+    if (!validation.valid) {
+      showError(validation.message);
+      return;
+    }
+
+    setIsUploadingAttachment(true);
+    try {
+      const base64 = await fileToBase64(file);
+      const useRawUpload = isVideo || isAnimatedGif(file.name);
+      const url = useRawUpload
+        ? await chatApi.uploadChatMedia({ base64String: base64, fileName: file.name })
+        : await chatApi.uploadChatImage(base64);
+
+      if (!url) throw new Error('upload_failed');
+
+      wsSendMessage({
+        groupId: activeChat.id,
+        content: url,
+        chatType: activeChat?.type,
+        messageType: isVideo ? 'VIDEO' : 'IMAGE',
+        metadata: { fileName: file.name, size: file.size, mimeType: file.type },
+      });
+    } catch (error) {
+      showError(error?.response?.data?.message ?? t('network:chat.upload_failed'));
+    } finally {
+      setIsUploadingAttachment(false);
+    }
+  }, [activeChat?.id, activeChat?.type, showError, t, wsSendMessage]);
 
   return (
     <Box
@@ -463,36 +529,44 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
                       {msg.senderFullName ?? `User ${msg.senderMemberId}`}
                     </Typography>
                   )}
-                  <Box
-                    sx={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      width: 'fit-content',
-                      maxWidth: '100%',
-                      px: 1.5,
-                      py: 1.25,
-                      borderRadius: 999,
-                      bgcolor: (theme) => isOwn
-                        ? theme.palette.primary.main
-                        : alpha(theme.palette.text.primary, theme.palette.mode === 'dark' ? 0.1 : 0.06),
-                      color: isOwn ? 'primary.contrastText' : 'text.primary',
-                      border: '1px solid',
-                      borderColor: (theme) => isOwn
-                        ? alpha(theme.palette.primary.main, 0.35)
-                        : alpha(theme.palette.text.primary, theme.palette.mode === 'dark' ? 0.16 : 0.1),
-                    }}
-                  >
-                    <Typography
-                      variant="body2"
+                  {msg.messageType === 'IMAGE' || msg.messageType === 'VIDEO' ? (
+                    <ChatMessageMedia
+                      messageType={msg.messageType}
+                      url={msg.content}
+                      metadata={msg.metadata}
+                    />
+                  ) : (
+                    <Box
                       sx={{
-                        lineHeight: 1.35,
-                        wordBreak: 'break-word',
-                        whiteSpace: 'pre-wrap',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        width: 'fit-content',
+                        maxWidth: '100%',
+                        px: 1.5,
+                        py: 1.25,
+                        borderRadius: 999,
+                        bgcolor: (theme) => isOwn
+                          ? theme.palette.primary.main
+                          : alpha(theme.palette.text.primary, theme.palette.mode === 'dark' ? 0.1 : 0.06),
+                        color: isOwn ? 'primary.contrastText' : 'text.primary',
+                        border: '1px solid',
+                        borderColor: (theme) => isOwn
+                          ? alpha(theme.palette.primary.main, 0.35)
+                          : alpha(theme.palette.text.primary, theme.palette.mode === 'dark' ? 0.16 : 0.1),
                       }}
                     >
-                      {msg.content}
-                    </Typography>
-                  </Box>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          lineHeight: 1.35,
+                          wordBreak: 'break-word',
+                          whiteSpace: 'pre-wrap',
+                        }}
+                      >
+                        {msg.content}
+                      </Typography>
+                    </Box>
+                  )}
                   <Typography
                     variant="caption"
                     color="text.disabled"
@@ -529,6 +603,30 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
           gap: 1,
         }}
       >
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept={CHAT_ATTACHMENT_ACCEPT}
+          onChange={handleFileSelected}
+          style={{ display: 'none' }}
+        />
+        <Tooltip title={t('network:chat.attach_file')} placement="top">
+          <span>
+            <IconButton
+              size="small"
+              aria-label={t('network:chat.attach_file')}
+              onClick={handleAttachClick}
+              disabled={isAttachDisabled}
+              sx={{ flexShrink: 0 }}
+            >
+              {isUploadingAttachment ? (
+                <CircularProgress size={20} />
+              ) : (
+                <AttachFileIcon fontSize="small" />
+              )}
+            </IconButton>
+          </span>
+        </Tooltip>
         <Tooltip
           title={
             blockedByMe

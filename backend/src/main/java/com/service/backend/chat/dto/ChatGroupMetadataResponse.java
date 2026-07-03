@@ -18,6 +18,7 @@ public class ChatGroupMetadataResponse {
     private Long id;
     private ChatType type;
     private String title;
+    private String avatarUrl;
     private Long createdBy;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

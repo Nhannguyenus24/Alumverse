@@ -502,7 +502,12 @@
     "send_message_btn": "Send message",
     "connection_request_sent": "Connection message sent",
     "program_filter_hint": "e.g. Regular, Advanced…",
-    "major_filter_hint": "e.g. Computer Science…"
+    "major_filter_hint": "e.g. Computer Science…",
+    "faculty_filter_label": "Faculty",
+    "faculty_sheet_title": "Filter by faculty",
+    "faculty_selected_count": "{count} faculties",
+    "faculty_apply": "Apply",
+    "faculty_clear": "Clear"
   },
   "forum": {
     "title": "Forum",
@@ -583,6 +588,9 @@
     "qr_load_failed": "Failed to load QR code. Please open the payment link.",
     "qr_open_link": "Open payment link",
     "qr_instruction": "Use your banking app to scan the code and complete the donation. The transaction will be recorded after successful payment.",
+    "qr_download": "Save QR image",
+    "qr_saved": "QR image saved to your gallery.",
+    "qr_save_failed": "Couldn't save the QR image. Please try again.",
     "done": "Done",
     "select_amount": "Select amount",
     "custom_amount": "Custom",
@@ -640,6 +648,8 @@
     "group_members_title": "Members — {name}",
     "rename_group": "Rename group",
     "group_renamed": "Group renamed to \"{name}\"",
+    "change_group_image": "Change group photo",
+    "group_image_updated": "Group photo updated",
     "leave_group": "Leave group",
     "leave_group_confirm": "Are you sure you want to leave this group? You will no longer be able to view messages after leaving.",
     "blocked": "Blocked",
@@ -668,7 +678,15 @@
     "cannot_send": "Cannot send message",
     "load_failed": "Could not load messages.",
     "see_all": "See all",
-    "unblocked": "Unblocked {name}"
+    "unblocked": "Unblocked {name}",
+    "attach_image": "Image",
+    "attach_video": "Video",
+    "image_too_large": "Image exceeds 10MB. Please choose a smaller file.",
+    "video_too_large": "Video exceeds 30MB. Please choose a smaller file.",
+    "file_type_unsupported": "This file type is not supported.",
+    "upload_failed": "Failed to upload the attachment. Please try again.",
+    "attachment_unavailable": "Attachment unavailable",
+    "open_externally": "Open externally"
   },
   "profile": {
     "title": "Profile",

@@ -409,6 +409,7 @@ public class ChatService {
                                 .id(group.getId())
                                 .type(group.getType())
                                 .title(group.getTitle())
+                                .avatarUrl(group.getAvatarUrl())
                                 .createdBy(group.getCreatedBy())
                                 .createdAt(group.getCreatedAt())
                                 .updatedAt(group.getUpdatedAt())
@@ -435,6 +436,34 @@ public class ChatService {
                     }
 
                     group.setTitle(title);
+                    group.setUpdatedAt(LocalDateTime.now());
+                    return chatGroupRepository.save(group);
+                });
+    }
+
+    /**
+     * Update group avatar.
+     * Only owner (createdBy) can update, and only for GROUP chats (not PRIVATE).
+     */
+    public Mono<ChatGroup> updateGroupAvatar(Long groupId, Long requesterId, String avatarUrl) {
+        if (groupId == null || requesterId == null) {
+            return Mono.error(new ApplicationException(ErrorCode.RESOURCES_NOT_FOUND, "Group ID and requester ID must not be null"));
+        }
+
+        return chatGroupRepository.findById(groupId)
+                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.RESOURCES_NOT_FOUND, "Chat group not found")))
+                .flatMap(group -> {
+                    if (!requesterId.equals(group.getCreatedBy())) {
+                        return Mono.error(new ApplicationException(ErrorCode.FORBIDDEN, "Only group owner can update group info"));
+                    }
+
+                    if (!ChatType.GROUP.equals(group.getType())) {
+                        return Mono.error(new ApplicationException(
+                                ErrorCode.RESOURCES_NOT_FOUND,
+                                "Group avatar update is only available for group chats"));
+                    }
+
+                    group.setAvatarUrl(avatarUrl);
                     group.setUpdatedAt(LocalDateTime.now());
                     return chatGroupRepository.save(group);
                 });
