@@ -47,25 +47,46 @@ const NetworkPage = () => {
   const [checkingUserId, setCheckingUserId] = useState(null);
   const [blockTarget, setBlockTarget] = useState(null);
 
-  const filters_config = useMemo(() => [
-    {
-      type: 'input',
-      key: 'program',
-      label: t('network:filter_program_label'),
-      inputMode: 'text',
-      placeholder: t('network:filter_program_placeholder'),
-    },
-    {
-      type: 'input',
-      key: 'major',
-      label: t('network:filter_major_label'),
-      inputMode: 'text',
-      placeholder: t('network:filter_major_placeholder'),
-    },
-  ], [t]);
-
   const navigate = useOrgNavigate();
   const currentMemberId = useNetworkCurrentMemberId();
+
+  const { data: organizations = [] } = useQuery({
+    queryKey: ['organizations', 'all'],
+    queryFn: () => organizationApi.getAllOrganizations(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const filters_config = useMemo(() => {
+    const baseFilters = [
+      {
+        type: 'input',
+        key: 'program',
+        label: t('network:filter_program_label'),
+        inputMode: 'text',
+        placeholder: t('network:filter_program_placeholder'),
+      },
+      {
+        type: 'input',
+        key: 'major',
+        label: t('network:filter_major_label'),
+        inputMode: 'text',
+        placeholder: t('network:filter_major_placeholder'),
+      },
+    ];
+
+    if (organizations.length === 0) return baseFilters;
+
+    return [
+      {
+        type: 'dropdown',
+        key: 'organizationIds',
+        label: t('network:filter_organization_label'),
+        multiple: true,
+        options: organizations.map((org) => ({ value: org.id, label: org.name })),
+      },
+      ...baseFilters,
+    ];
+  }, [t, organizations]);
 
   const { showError, showInfo } = useNotification();
   const { checkStatus } = useCheckConversationRequestStatus();

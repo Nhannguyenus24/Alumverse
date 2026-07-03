@@ -334,6 +334,11 @@ export const chatApi = {
 		return unwrap(response);
 	},
 
+	async updateGroupImage(groupId, avatarUrl) {
+		const response = await apiClient.put(`/chat/groups/${groupId}/avatar`, { avatarUrl });
+		return unwrap(response);
+	},
+
 	async getGroupMembers(groupId, { text = '', page = 0, size = 50 } = {}) {
 		const response = await apiClient.get(`/chat/groups/${groupId}/members`, {
 			params: { text, page, size },
@@ -429,6 +434,16 @@ export const chatApi = {
 		const response = await apiClient.get('/chat/blocks', {
 			params: { fullName, page, size },
 		});
+		return unwrap(response);
+	},
+
+	async uploadChatImage(base64String) {
+		const response = await apiClient.post('/images/upload', { base64String });
+		return unwrap(response);
+	},
+
+	async uploadChatMedia({ base64String, fileName }) {
+		const response = await apiClient.post('/files/upload', { base64String, fileName });
 		return unwrap(response);
 	},
 };

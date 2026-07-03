@@ -9,6 +9,7 @@ import reactor.core.scheduler.Schedulers;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Base64;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -31,8 +32,25 @@ public class FileUploadService {
         this.meterRegistry = meterRegistry;
     }
 
-    private static final long MAX_BYTES = 10L * 1024 * 1024;
-    private static final Set<String> ALLOWED_EXTENSIONS = Set.of("pdf", "doc", "docx", "png", "jpg", "jpeg");
+    private static final long DOC_MAX_BYTES = 10L * 1024 * 1024;
+    private static final long IMAGE_MAX_BYTES = 10L * 1024 * 1024;
+    private static final long VIDEO_MAX_BYTES = 30L * 1024 * 1024;
+
+    private static final Set<String> DOC_EXTENSIONS = Set.of("pdf", "doc", "docx");
+    private static final Set<String> IMAGE_EXTENSIONS = Set.of("png", "jpg", "jpeg", "webp", "gif");
+    private static final Set<String> VIDEO_EXTENSIONS = Set.of("mp4", "mov", "webm", "m4v");
+    private static final Set<String> ALLOWED_EXTENSIONS = Set.of(
+            "pdf", "doc", "docx", "png", "jpg", "jpeg", "webp", "gif", "mp4", "mov", "webm", "m4v");
+
+    private static final Map<String, Long> MAX_BYTES_BY_EXTENSION = buildMaxBytesByExtension();
+
+    private static Map<String, Long> buildMaxBytesByExtension() {
+        Map<String, Long> map = new java.util.HashMap<>();
+        DOC_EXTENSIONS.forEach(ext -> map.put(ext, DOC_MAX_BYTES));
+        IMAGE_EXTENSIONS.forEach(ext -> map.put(ext, IMAGE_MAX_BYTES));
+        VIDEO_EXTENSIONS.forEach(ext -> map.put(ext, VIDEO_MAX_BYTES));
+        return Map.copyOf(map);
+    }
 
     public Mono<String> uploadBase64File(String base64String, String originalFileName) {
         return Mono.fromCallable(() -> doUpload(base64String, originalFileName))
@@ -57,14 +75,17 @@ public class FileUploadService {
             String extension = resolveExtension(originalFileName);
             if (!ALLOWED_EXTENSIONS.contains(extension)) {
                 throw new IllegalArgumentException(
-                        "Unsupported file type: ." + extension + ". Allowed: pdf, doc, docx");
+                        "Unsupported file type: ." + extension + ". Allowed: "
+                                + String.join(", ", ALLOWED_EXTENSIONS));
             }
 
             String pure = base64String.contains(",") ? base64String.split(",", 2)[1] : base64String;
             byte[] bytes = Base64.getDecoder().decode(pure);
 
-            if (bytes.length > MAX_BYTES) {
-                throw new IllegalArgumentException("File exceeds 10MB limit");
+            long maxBytes = MAX_BYTES_BY_EXTENSION.get(extension);
+            if (bytes.length > maxBytes) {
+                throw new IllegalArgumentException(
+                        "File exceeds " + (maxBytes / (1024 * 1024)) + "MB limit for ." + extension + " files");
             }
 
             String fileName = UUID.randomUUID() + "." + extension;

@@ -120,11 +120,15 @@ class ChatSocketService {
     required int groupId,
     required String content,
     required String chatType,
+    String messageType = 'TEXT',
+    Map<String, dynamic>? metadata,
   }) {
     final frame = ChatSocketOutbound.sendMessage(
       groupId: groupId,
       content: content,
       chatType: chatType,
+      messageType: messageType,
+      metadata: metadata,
     );
     if (status.value == ChatSocketStatus.open) {
       _rawSend(frame);

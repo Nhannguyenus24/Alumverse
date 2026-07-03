@@ -70,6 +70,22 @@ class ChatMessagesNotifier
     );
   }
 
+  /// Sends an already-uploaded image/video attachment over the socket.
+  void sendMedia({
+    required String url,
+    required String messageType,
+    required Map<String, dynamic> metadata,
+    required String chatType,
+  }) {
+    _socket.sendMessage(
+      groupId: _groupId,
+      content: url,
+      chatType: chatType,
+      messageType: messageType,
+      metadata: metadata,
+    );
+  }
+
   /// Loads the next older page and appends it (older messages have higher
   /// indices in our newest-first list).
   Future<void> loadOlder() async {
