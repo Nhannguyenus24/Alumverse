@@ -134,6 +134,103 @@ export const fileToCroppedCoverBase64 = async (
 export const getJsonPayloadByteSize = (payload) =>
   new Blob([JSON.stringify(payload)]).size;
 
+// ── Chat attachments (image/video) ──────────────────────────────────────────
+
+export const CHAT_IMAGE_MAX_BYTES = 10 * 1024 * 1024;
+export const CHAT_VIDEO_MAX_BYTES = 30 * 1024 * 1024;
+
+const CHAT_IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
+const CHAT_IMAGE_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+
+const CHAT_VIDEO_EXTENSIONS = [".mp4", ".mov", ".webm", ".m4v"];
+const CHAT_VIDEO_MIME_TYPES = [
+  "video/mp4",
+  "video/quicktime",
+  "video/webm",
+  "video/x-m4v",
+];
+
+export const CHAT_IMAGE_ACCEPT = "image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif";
+export const CHAT_VIDEO_ACCEPT = "video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm,.m4v";
+export const CHAT_ATTACHMENT_ACCEPT = `${CHAT_IMAGE_ACCEPT},${CHAT_VIDEO_ACCEPT}`;
+
+const getFileExtension = (file) => file.name.toLowerCase().match(/\.[^.]+$/)?.[0] ?? "";
+
+/**
+ * Validate an image file for chat attachments (jpg/jpeg/png/webp/gif, ≤10MB).
+ * @param {File} file
+ * @param {Function} [t] - optional i18next t function for translated messages
+ * @returns {{ valid: true } | { valid: false, message: string }}
+ */
+export const validateChatImageFile = (file, t = null) => {
+  if (!file) {
+    return { valid: false, message: t ? t("common:no_file_selected") : "Không có file được chọn." };
+  }
+
+  const extension = getFileExtension(file);
+  const isAllowedType =
+    CHAT_IMAGE_MIME_TYPES.includes(file.type) || CHAT_IMAGE_EXTENSIONS.includes(extension);
+
+  if (!isAllowedType) {
+    return {
+      valid: false,
+      message: t ? t("network:chat.file_type_unsupported") : "Định dạng ảnh không được hỗ trợ.",
+    };
+  }
+
+  if (file.size > CHAT_IMAGE_MAX_BYTES) {
+    return {
+      valid: false,
+      message: t ? t("network:chat.image_too_large") : "Ảnh vượt quá 10MB. Vui lòng chọn file nhỏ hơn.",
+    };
+  }
+
+  return { valid: true };
+};
+
+/**
+ * Validate a video file for chat attachments (mp4/mov/webm/m4v, ≤30MB).
+ * @param {File} file
+ * @param {Function} [t] - optional i18next t function for translated messages
+ * @returns {{ valid: true } | { valid: false, message: string }}
+ */
+export const validateVideoFile = (file, t = null) => {
+  if (!file) {
+    return { valid: false, message: t ? t("common:no_file_selected") : "Không có file được chọn." };
+  }
+
+  const extension = getFileExtension(file);
+  const isAllowedType =
+    CHAT_VIDEO_MIME_TYPES.includes(file.type) || CHAT_VIDEO_EXTENSIONS.includes(extension);
+
+  if (!isAllowedType) {
+    return {
+      valid: false,
+      message: t ? t("network:chat.file_type_unsupported") : "Định dạng video không được hỗ trợ.",
+    };
+  }
+
+  if (file.size > CHAT_VIDEO_MAX_BYTES) {
+    return {
+      valid: false,
+      message: t ? t("network:chat.video_too_large") : "Video vượt quá 30MB. Vui lòng chọn file nhỏ hơn.",
+    };
+  }
+
+  return { valid: true };
+};
+
+/** Is this an image file allowed for chat, based on extension? */
+export const isChatImageExtension = (fileName = "") =>
+  CHAT_IMAGE_EXTENSIONS.some((ext) => fileName.toLowerCase().endsWith(ext));
+
+/** Is this a video file allowed for chat, based on extension? */
+export const isChatVideoExtension = (fileName = "") =>
+  CHAT_VIDEO_EXTENSIONS.some((ext) => fileName.toLowerCase().endsWith(ext));
+
+/** gif must go through the raw /files/upload endpoint to preserve animation. */
+export const isAnimatedGif = (fileName = "") => fileName.toLowerCase().endsWith(".gif");
+
 /**
  * Upload an image as a Base64 string to the server.
  * @param {string} base64String 

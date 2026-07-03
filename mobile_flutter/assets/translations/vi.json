@@ -502,7 +502,12 @@
     "send_message_btn": "Gửi lời nhắn",
     "connection_request_sent": "Đã gửi lời nhắn kết nối",
     "program_filter_hint": "VD: Regular, Advanced…",
-    "major_filter_hint": "VD: Computer Science…"
+    "major_filter_hint": "VD: Computer Science…",
+    "faculty_filter_label": "Khoa",
+    "faculty_sheet_title": "Lọc theo khoa",
+    "faculty_selected_count": "{count} khoa",
+    "faculty_apply": "Áp dụng",
+    "faculty_clear": "Bỏ chọn"
   },
   "forum": {
     "title": "Diễn đàn",
@@ -583,6 +588,9 @@
     "qr_load_failed": "Không tải được mã QR. Vui lòng mở liên kết thanh toán.",
     "qr_open_link": "Mở liên kết thanh toán",
     "qr_instruction": "Dùng app ngân hàng quét mã để hoàn tất đóng góp. Giao dịch sẽ được ghi nhận sau khi thanh toán thành công.",
+    "qr_download": "Tải ảnh QR",
+    "qr_saved": "Đã lưu ảnh QR vào thư viện ảnh.",
+    "qr_save_failed": "Không lưu được ảnh QR. Vui lòng thử lại.",
     "done": "Hoàn tất",
     "select_amount": "Chọn số tiền",
     "custom_amount": "Tùy chọn",
@@ -640,6 +648,8 @@
     "group_members_title": "Thành viên — {name}",
     "rename_group": "Đổi tên nhóm",
     "group_renamed": "Đã đổi tên nhóm thành \"{name}\"",
+    "change_group_image": "Đổi ảnh nhóm",
+    "group_image_updated": "Đã cập nhật ảnh nhóm",
     "leave_group": "Rời nhóm",
     "leave_group_confirm": "Bạn có chắc muốn rời khỏi nhóm này? Bạn sẽ không thể xem tin nhắn sau khi rời.",
     "blocked": "Đã bị chặn",
@@ -668,7 +678,15 @@
     "cannot_send": "Không thể gửi tin nhắn",
     "load_failed": "Không thể tải tin nhắn.",
     "see_all": "Xem tất cả",
-    "unblocked": "Đã bỏ chặn {name}"
+    "unblocked": "Đã bỏ chặn {name}",
+    "attach_image": "Ảnh",
+    "attach_video": "Video",
+    "image_too_large": "Ảnh vượt quá 10MB. Vui lòng chọn file nhỏ hơn.",
+    "video_too_large": "Video vượt quá 30MB. Vui lòng chọn file nhỏ hơn.",
+    "file_type_unsupported": "Định dạng file này không được hỗ trợ.",
+    "upload_failed": "Tải lên thất bại. Vui lòng thử lại.",
+    "attachment_unavailable": "Không thể hiển thị tệp đính kèm",
+    "open_externally": "Mở bằng ứng dụng khác"
   },
   "profile": {
     "title": "Hồ sơ",

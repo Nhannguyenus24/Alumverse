@@ -1,8 +1,11 @@
+import 'dart:io';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -13,6 +16,7 @@ import '../../../../shared/widgets/loading_view.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../network/data/models/connection.dart';
 import '../../../network/data/repositories/network_repository.dart';
+import '../../data/models/chat_attachment_upload.dart';
 import '../../data/models/chat_group_member.dart';
 import '../../data/repositories/chat_repository.dart';
 import '../providers/chat_group_provider.dart';
@@ -36,6 +40,7 @@ class _GroupMembersPageState extends ConsumerState<GroupMembersPage> {
   /// Locally tracked title so the app bar updates immediately after a rename.
   /// (The title arrives via route `extra`, not from a provider.)
   late String? _title = widget.groupTitle;
+  bool _isUploadingImage = false;
 
   @override
   Widget build(BuildContext context) {
@@ -98,6 +103,25 @@ class _GroupMembersPageState extends ConsumerState<GroupMembersPage> {
                     onPressed: _showRenameDialog,
                     icon: const Icon(Icons.drive_file_rename_outline),
                     label: Text('chat.rename_group'.tr()),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(44),
+                    ),
+                  ),
+                ),
+              // Change group image (owner only)
+              if (isOwner)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: OutlinedButton.icon(
+                    onPressed: _isUploadingImage ? null : _pickAndChangeImage,
+                    icon: _isUploadingImage
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.photo_camera_outlined),
+                    label: Text('chat.change_group_image'.tr()),
                     style: OutlinedButton.styleFrom(
                       minimumSize: const Size.fromHeight(44),
                     ),
@@ -275,6 +299,35 @@ class _GroupMembersPageState extends ConsumerState<GroupMembersPage> {
       );
     } catch (e) {
       if (mounted) AppToast.fromError(context, e);
+    }
+  }
+
+  /// Owner-only: change the group avatar. Mirrors the web `GroupMembersDrawer`
+  /// change-image flow. Backend enforces owner-only + group-only (surfaced
+  /// via toast on failure).
+  Future<void> _pickAndChangeImage() async {
+    final picker = ImagePicker();
+    final XFile? picked =
+        await picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
+    if (picked == null || !mounted) return;
+
+    setState(() => _isUploadingImage = true);
+    try {
+      final repo = ref.read(chatRepositoryProvider);
+      final url = await repo.uploadGroupImage(File(picked.path));
+      await repo.updateGroupAvatar(widget.groupId, url);
+      ref.invalidate(chatListProvider);
+      if (mounted) {
+        AppToast.success(context, 'chat.group_image_updated'.tr());
+      }
+    } on ChatAttachmentException catch (e) {
+      if (mounted) AppToast.error(context, e.messageKey.tr());
+    } catch (e) {
+      if (mounted) {
+        AppToast.fromError(context, e, fallback: 'chat.upload_failed'.tr());
+      }
+    } finally {
+      if (mounted) setState(() => _isUploadingImage = false);
     }
   }
 

@@ -32,6 +32,8 @@
   "you_label": "(Bạn)",
   "remove_from_group_tooltip": "Xóa khỏi nhóm",
   "rename_group": "Đổi tên nhóm",
+  "change_group_image": "Đổi ảnh nhóm",
+  "change_group_image_title": "Đổi ảnh đại diện nhóm",
   "add_member": "Thêm thành viên",
   "leave_group": "Rời khỏi nhóm",
   "kick_member_title": "Xóa thành viên",
@@ -76,6 +78,7 @@
   "create_group": "Tạo nhóm",
   "page_heading": "KẾT NỐI",
   "page_subtitle": "Tìm và kết nối với sinh viên và cựu sinh viên trên nền tảng.",
+  "filter_organization_label": "Khoa",
   "filter_program_label": "Program",
   "filter_program_placeholder": "VD: Regular, Advanced Program…",
   "filter_major_label": "Major",
@@ -180,5 +183,14 @@
   "block_success": "Đã chặn người dùng.",
   "block_failed": "Không thể chặn người dùng.",
   "unblock_success": "Đã bỏ chặn người dùng.",
-  "unblock_failed": "Không thể bỏ chặn người dùng."
+  "unblock_failed": "Không thể bỏ chặn người dùng.",
+  "chat": {
+    "attach_file": "Đính kèm ảnh hoặc video",
+    "image_too_large": "Ảnh vượt quá 10MB. Vui lòng chọn file nhỏ hơn.",
+    "video_too_large": "Video vượt quá 30MB. Vui lòng chọn file nhỏ hơn.",
+    "file_type_unsupported": "Định dạng file này không được hỗ trợ.",
+    "upload_failed": "Tải lên thất bại. Vui lòng thử lại.",
+    "attachment_unavailable": "Không thể hiển thị tệp đính kèm",
+    "image_update_failed": "Cập nhật ảnh nhóm thất bại. Vui lòng thử lại."
+  }
 }

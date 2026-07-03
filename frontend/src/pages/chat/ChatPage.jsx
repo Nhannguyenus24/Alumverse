@@ -16,6 +16,7 @@ function normalizeGroupChat(item) {
   return {
     id: item.id,
     name: item.title ?? '(No name)',
+    avatarUrl: item.avatarUrl ?? null,
     preview: item.lastMessagePreview ?? '',
     lastMessageAt: item.lastMessageAt ?? null,
     type: 'GROUP',
