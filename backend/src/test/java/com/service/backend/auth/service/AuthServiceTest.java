@@ -19,7 +19,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -47,18 +46,12 @@ class AuthServiceTest {
     @Mock
     private UserLoginHistoryRepository userLoginHistoryRepository;
     @Mock
-    private WebClient.Builder webClientBuilder;
-    @Mock
     private NotificationService notificationService;
 
     private AuthService authService;
 
     @BeforeEach
     void setUp() {
-        WebClient mockWebClient = mock(WebClient.class);
-        when(webClientBuilder.baseUrl(anyString())).thenReturn(webClientBuilder);
-        when(webClientBuilder.build()).thenReturn(mockWebClient);
-
         authService = new AuthService(
                 authRepository, passwordEncoder, emailService, cacheUtils,
                 jwtUtils, userLoginHistoryRepository,
@@ -75,9 +68,8 @@ class AuthServiceTest {
         @Test
         @DisplayName("should register new user successfully")
         void register_success() {
-            when(authRepository.existsByEmail("test@email.com")).thenReturn(Mono.just(false));
             when(passwordEncoder.encode("password")).thenReturn("hashed");
-            when(authRepository.registerNewUser("test@email.com", "hashed", "full name")).thenReturn(Mono.just(1));
+            when(authRepository.registerNewUser("test@email.com", "hashed", "Test User")).thenReturn(Mono.just(1));
             when(authRepository.createOrganizationMember(1, 1, "S001")).thenReturn(Mono.empty());
 
             StepVerifier.create(authService.register("test@email.com", "S001", "password", "Test User", 1))
@@ -87,7 +79,9 @@ class AuthServiceTest {
         @Test
         @DisplayName("should fail when email already exists")
         void register_emailAlreadyExists() {
-            when(authRepository.existsByEmail("test@email.com")).thenReturn(Mono.just(true));
+            when(passwordEncoder.encode("password")).thenReturn("hashed");
+            when(authRepository.registerNewUser("test@email.com", "hashed", "Test User"))
+                    .thenReturn(Mono.error(new org.springframework.dao.DataIntegrityViolationException("duplicate email")));
 
             StepVerifier.create(authService.register("test@email.com", "S001", "password", "Test User", 1))
                     .expectErrorMatches(err -> err instanceof ApplicationException &&

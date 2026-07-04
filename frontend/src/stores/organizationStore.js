@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { organizationApi } from '../utils/api';
+import useAuthStore from './authStore';
+import apiClient, { syncAuthStoreFromAccessToken } from '../utils/axios';
 
 const organizationDefaults = {
   id: null,
@@ -31,7 +33,7 @@ const initialState = {
   statusCode: null,
 };
 
-const useOrganizationStore = create((set) => ({
+const useOrganizationStore = create((set, get) => ({
   ...initialState,
 
   setOrganization: (organization) => set({ organization: normalizeOrganization(organization) }),
@@ -48,6 +50,8 @@ const useOrganizationStore = create((set) => ({
       set(initialState);
       return;
     }
+
+    const { currentSlug: oldSlug } = get();
 
     set((state) => ({
       loading: true,
@@ -69,6 +73,25 @@ const useOrganizationStore = create((set) => ({
           statusCode: 404,
         });
         return;
+      }
+
+      const authState = useAuthStore.getState();
+      const userOrgId = authState.user?.organizationId;
+
+      if (authState.user && authState.user.role !== 'ADMIN') {
+        // Switch organization if the user's token belongs to a different organization
+        // This handles both direct navigation (oldSlug is null) and React Router navigation
+        if (Number(userOrgId) !== Number(organization.id)) {
+          try {
+            const res = await apiClient.post(`/auth/switch-organization/${organization.id}`);
+            syncAuthStoreFromAccessToken(res.data.data);
+          } catch (err) {
+            console.error("Failed to switch organization", err);
+            // Do not force logout here.
+            // If it's a 401, the axios interceptor handles session refresh/logout automatically.
+            // If it's a 403 (e.g. user not a member of this new org), they should just remain logged in to their previous org.
+          }
+        }
       }
 
       set({

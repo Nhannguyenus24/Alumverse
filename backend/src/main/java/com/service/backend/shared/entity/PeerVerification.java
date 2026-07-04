@@ -24,6 +24,9 @@ public class PeerVerification {
     @Id
     private Integer id;
 
+    @Column("organization_id")
+    private Integer organizationId;
+
     @Column("target_member_id")
     private Integer targetMemberId;
 
