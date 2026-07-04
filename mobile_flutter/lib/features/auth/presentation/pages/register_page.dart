@@ -272,6 +272,11 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                     Text('auth.have_account'.tr()),
                     TextButton(
                       onPressed: () => context.pop(),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.only(left: 4),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
                       child: Text(
                         'auth.login_now'.tr(),
                         style: const TextStyle(fontWeight: FontWeight.bold),
@@ -344,4 +349,3 @@ class _PasswordRules extends StatelessWidget {
     );
   }
 }
-

@@ -21,9 +21,9 @@ class SectionTitle extends StatelessWidget {
               text.toUpperCase(),
               style: const TextStyle(
                 color: AppColors.primary,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.5,
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 0.2,
               ),
             ),
           ),

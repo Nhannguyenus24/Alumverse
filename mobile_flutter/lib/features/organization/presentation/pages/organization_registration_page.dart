@@ -636,7 +636,7 @@ class _VerifierTile extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 20,
-                backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                backgroundColor: AppColors.primaryLighter,
                 backgroundImage: avatarUrl != null
                     ? CachedNetworkImageProvider(avatarUrl!)
                     : null,

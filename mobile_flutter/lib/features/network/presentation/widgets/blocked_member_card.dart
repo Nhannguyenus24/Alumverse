@@ -35,7 +35,7 @@ class BlockedMemberCard extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 24,
-            backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+            backgroundColor: AppColors.primaryLighter,
             backgroundImage:
                 avatar != null ? CachedNetworkImageProvider(avatar) : null,
             child: avatar == null

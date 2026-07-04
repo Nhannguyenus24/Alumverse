@@ -30,7 +30,7 @@ class FeaturePlaceholderPage extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.1),
+                  color: AppColors.primaryLighter,
                   shape: BoxShape.circle,
                 ),
                 child: Icon(icon, size: 48, color: AppColors.primary),

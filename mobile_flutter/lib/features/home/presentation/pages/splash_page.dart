@@ -22,7 +22,7 @@ class SplashPage extends ConsumerWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            AlumverseLogo(size: 96),
+            AlumverseLogo(size: 84, full: false),
             SizedBox(height: 32),
             CircularProgressIndicator(),
           ],
