@@ -33,10 +33,11 @@ class MyProfileEditPage extends ConsumerWidget {
       appBar: AppBar(title: Text('profile.edit_profile'.tr())),
       body: async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => ErrorView(
-          message: 'profile.load_failed'.tr(),
-          onRetry: () => ref.invalidate(myProfileProvider),
-        ),
+        error:
+            (_, __) => ErrorView(
+              message: 'profile.load_failed'.tr(),
+              onRetry: () => ref.invalidate(myProfileProvider),
+            ),
         data: (p) => _EditForm(profile: p),
       ),
     );
@@ -66,10 +67,10 @@ class _EditFormState extends ConsumerState<_EditForm> {
   static const _genderKeys = ['male', 'female', 'other'];
 
   Map<String, String> get _genders => {
-        'male': 'profile.gender_male'.tr(),
-        'female': 'profile.gender_female'.tr(),
-        'other': 'profile.gender_other'.tr(),
-      };
+    'male': 'profile.gender_male'.tr(),
+    'female': 'profile.gender_female'.tr(),
+    'other': 'profile.gender_other'.tr(),
+  };
 
   @override
   void initState() {
@@ -102,8 +103,9 @@ class _EditFormState extends ConsumerState<_EditForm> {
     try {
       final bytes = await file.readAsBytes();
       final base64 = 'data:image/jpeg;base64,${base64Encode(bytes)}';
-      final url =
-          await ref.read(userRepositoryProvider).updateAvatarFromBase64(base64);
+      final url = await ref
+          .read(userRepositoryProvider)
+          .updateAvatarFromBase64(base64);
       ref.invalidate(myProfileProvider);
       if (!mounted) return;
       setState(() => _avatarUrl = url);
@@ -130,15 +132,16 @@ class _EditFormState extends ConsumerState<_EditForm> {
       AppToast.error(context, 'profile.org_missing'.tr());
       return;
     }
-    final phoneError =
-        Validators.vietnamPhone(_phoneCtl.text, optional: true);
+    final phoneError = Validators.vietnamPhone(_phoneCtl.text, optional: true);
     if (phoneError != null) {
       AppToast.error(context, phoneError);
       return;
     }
     setState(() => _submitting = true);
     try {
-      await ref.read(userRepositoryProvider).updateProfile(
+      await ref
+          .read(userRepositoryProvider)
+          .updateProfile(
             organizationId: orgId,
             bio: _bioCtl.text.trim(),
             phone: _phoneCtl.text.trim(),
@@ -150,9 +153,10 @@ class _EditFormState extends ConsumerState<_EditForm> {
       context.pop();
     } catch (e) {
       if (!mounted) return;
-      final message = e is Exception
-          ? e.toString().replaceFirst('Exception: ', '')
-          : 'profile.update_failed'.tr();
+      final message =
+          e is Exception
+              ? e.toString().replaceFirst('Exception: ', '')
+              : 'profile.update_failed'.tr();
       AppToast.error(context, message);
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -167,7 +171,10 @@ class _EditFormState extends ConsumerState<_EditForm> {
       children: [
         Center(child: _avatarEditor()),
         const SizedBox(height: 20),
-        _ReadOnlyField(label: 'profile.full_name'.tr(), value: p.fullName ?? '—'),
+        _ReadOnlyField(
+          label: 'profile.full_name'.tr(),
+          value: p.fullName ?? '—',
+        ),
         const SizedBox(height: 12),
         _ReadOnlyField(label: 'profile.email'.tr(), value: p.email),
         const SizedBox(height: 12),
@@ -210,9 +217,7 @@ class _EditFormState extends ConsumerState<_EditForm> {
           textStyle: const TextStyle(fontSize: 16),
           menuStyle: MenuStyle(
             shape: WidgetStatePropertyAll(
-              RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             backgroundColor: const WidgetStatePropertyAll(Colors.white),
           ),
@@ -249,15 +254,20 @@ class _EditFormState extends ConsumerState<_EditForm> {
           style: ElevatedButton.styleFrom(
             padding: const EdgeInsets.symmetric(vertical: 16),
           ),
-          child: _submitting
-              ? const SizedBox(
-                  height: 20,
-                  width: 20,
-                  child: CircularProgressIndicator(
-                      strokeWidth: 2, color: Colors.white),
-                )
-              : Text('profile.save_changes'.tr(),
-                  style: const TextStyle(fontSize: 16)),
+          child:
+              _submitting
+                  ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                  : Text(
+                    'profile.save_changes'.tr(),
+                    style: const TextStyle(fontSize: 16),
+                  ),
         ),
       ],
     );
@@ -270,11 +280,11 @@ class _EditFormState extends ConsumerState<_EditForm> {
         CircleAvatar(
           radius: 48,
           backgroundColor: AppColors.primaryLighter,
-          backgroundImage:
-              url != null ? CachedNetworkImageProvider(url) : null,
-          child: url == null
-              ? const Icon(Icons.person, size: 52, color: AppColors.primary)
-              : null,
+          backgroundImage: url != null ? CachedNetworkImageProvider(url) : null,
+          child:
+              url == null
+                  ? const Icon(Icons.person, size: 52, color: AppColors.primary)
+                  : null,
         ),
         if (_uploadingAvatar)
           const Positioned.fill(
@@ -285,7 +295,9 @@ class _EditFormState extends ConsumerState<_EditForm> {
                 width: 24,
                 height: 24,
                 child: CircularProgressIndicator(
-                    strokeWidth: 2, color: Colors.white),
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
               ),
             ),
           ),

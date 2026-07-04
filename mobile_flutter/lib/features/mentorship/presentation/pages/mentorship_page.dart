@@ -32,8 +32,9 @@ class _MentorshipPageState extends ConsumerState<MentorshipPage> {
 
   void _applyKeyword() {
     final q = ref.read(mentorQueryProvider);
-    ref.read(mentorQueryProvider.notifier).state =
-        q.copyWith(keyword: _searchCtl.text.trim());
+    ref.read(mentorQueryProvider.notifier).state = q.copyWith(
+      keyword: _searchCtl.text.trim(),
+    );
   }
 
   @override
@@ -73,7 +74,9 @@ class _MentorshipPageState extends ConsumerState<MentorshipPage> {
             Text(
               'mentorship.desc'.tr(),
               style: const TextStyle(
-                  color: AppColors.textSecondary, height: 1.5),
+                color: AppColors.textSecondary,
+                height: 1.5,
+              ),
             ),
             const SizedBox(height: 12),
             const _BecomeMentorBanner(),
@@ -97,39 +100,51 @@ class _MentorshipPageState extends ConsumerState<MentorshipPage> {
             const _FilterBar(),
             const SizedBox(height: 16),
             mentorsAsync.when(
-              loading: () => Column(
-                children: List.generate(4, (_) => const SkeletonTile()),
-              ),
-              error: (e, _) => _ErrorBox(
-                error: e,
-                onRetry: () => ref.invalidate(mentorListProvider),
-              ),
+              loading:
+                  () => Column(
+                    children: List.generate(4, (_) => const SkeletonTile()),
+                  ),
+              error:
+                  (e, _) => _ErrorBox(
+                    error: e,
+                    onRetry: () => ref.invalidate(mentorListProvider),
+                  ),
               data: (mentors) {
                 if (mentors.isEmpty) {
                   return EmptyView(
                     icon: Icons.person_search_outlined,
-                    title: query.keyword.isNotEmpty
-                        ? 'mentorship.no_mentor_found'.tr()
-                        : 'mentorship.no_mentor'.tr(),
-                    message: query.keyword.isNotEmpty
-                        ? 'mentorship.no_mentor_keyword'.tr(
-                            namedArgs: {'keyword': query.keyword})
-                        : 'mentorship.no_mentor_desc'.tr(),
+                    title:
+                        query.keyword.isNotEmpty
+                            ? 'mentorship.no_mentor_found'.tr()
+                            : 'mentorship.no_mentor'.tr(),
+                    message:
+                        query.keyword.isNotEmpty
+                            ? 'mentorship.no_mentor_keyword'.tr(
+                              namedArgs: {'keyword': query.keyword},
+                            )
+                            : 'mentorship.no_mentor_desc'.tr(),
                   );
                 }
                 return Column(
-                  children: mentors
-                      .map((m) => Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: MentorCard(
-                              mentor: m,
-                              onViewProfile: () => context.push(
-                                  '${RouteNames.mentorship}/mentors/${m.memberId}'),
-                              onBook: () => context.push(
-                                  '${RouteNames.mentorship}/mentors/${m.memberId}/book'),
+                  children:
+                      mentors
+                          .map(
+                            (m) => Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: MentorCard(
+                                mentor: m,
+                                onViewProfile:
+                                    () => context.push(
+                                      '${RouteNames.mentorship}/mentors/${m.memberId}',
+                                    ),
+                                onBook:
+                                    () => context.push(
+                                      '${RouteNames.mentorship}/mentors/${m.memberId}/book',
+                                    ),
+                              ),
                             ),
-                          ))
-                      .toList(),
+                          )
+                          .toList(),
                 );
               },
             ),
@@ -185,9 +200,10 @@ class _BecomeMentorBanner extends ConsumerWidget {
           _ => ('mentorship.banner_registered'.tr(), AppColors.info),
         };
         return GestureDetector(
-          onTap: st == 'REJECTED'
-              ? () => context.push(RouteNames.mentorshipSignup)
-              : null,
+          onTap:
+              st == 'REJECTED'
+                  ? () => context.push(RouteNames.mentorshipSignup)
+                  : null,
           child: Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -199,9 +215,10 @@ class _BecomeMentorBanner extends ConsumerWidget {
                 Icon(Icons.verified_user_outlined, color: color, size: 20),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(label,
-                      style: TextStyle(
-                          color: color, fontWeight: FontWeight.w600)),
+                  child: Text(
+                    label,
+                    style: TextStyle(color: color, fontWeight: FontWeight.w600),
+                  ),
                 ),
               ],
             ),
@@ -244,20 +261,30 @@ class _StatsBanner extends StatelessWidget {
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: stats
-            .map((s) => Column(
-                  children: [
-                    Text(s.$1,
+        children:
+            stats
+                .map(
+                  (s) => Column(
+                    children: [
+                      Text(
+                        s.$1,
                         style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold)),
-                    Text(s.$2,
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        s.$2,
                         style: const TextStyle(
-                            color: Colors.white70, fontSize: 12)),
-                  ],
-                ))
-            .toList(),
+                          color: Colors.white70,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+                .toList(),
       ),
     );
   }
@@ -281,9 +308,12 @@ class _FilterBar extends ConsumerWidget {
             hint: 'mentorship.category'.tr(),
             value: query.category,
             options: categories,
-            onChanged: (v) => notifier.state = v == null
-                ? query.copyWith(clearCategory: true)
-                : query.copyWith(category: v),
+            onChanged:
+                (v) =>
+                    notifier.state =
+                        v == null
+                            ? query.copyWith(clearCategory: true)
+                            : query.copyWith(category: v),
           ),
         ),
         const SizedBox(width: 12),
@@ -292,9 +322,12 @@ class _FilterBar extends ConsumerWidget {
             hint: 'mentorship.topic'.tr(),
             value: query.expertise,
             options: topics,
-            onChanged: (v) => notifier.state = v == null
-                ? query.copyWith(clearExpertise: true)
-                : query.copyWith(expertise: v),
+            onChanged:
+                (v) =>
+                    notifier.state =
+                        v == null
+                            ? query.copyWith(clearExpertise: true)
+                            : query.copyWith(expertise: v),
           ),
         ),
       ],
@@ -318,7 +351,7 @@ class _Dropdown extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DropdownButtonFormField<String>(
-      value: value,
+      initialValue: value,
       isExpanded: true,
       decoration: InputDecoration(
         labelText: hint,
@@ -326,9 +359,12 @@ class _Dropdown extends StatelessWidget {
       ),
       items: [
         DropdownMenuItem(value: null, child: Text('common.all'.tr())),
-        ...options.map((o) => DropdownMenuItem(
+        ...options.map(
+          (o) => DropdownMenuItem(
             value: o,
-            child: Text(o, overflow: TextOverflow.ellipsis))),
+            child: Text(o, overflow: TextOverflow.ellipsis),
+          ),
+        ),
       ],
       onChanged: onChanged,
     );
@@ -366,14 +402,13 @@ class _ErrorBox extends StatelessWidget {
             const SizedBox(height: 8),
             if (needsVerification)
               ElevatedButton.icon(
-                onPressed: () =>
-                    context.push(RouteNames.organizationRegistration),
+                onPressed:
+                    () => context.push(RouteNames.organizationRegistration),
                 icon: const Icon(Icons.verified_user_outlined, size: 18),
                 label: Text('mentorship.verify_account'.tr()),
               )
             else
-              TextButton(
-                  onPressed: onRetry, child: Text('common.retry'.tr())),
+              TextButton(onPressed: onRetry, child: Text('common.retry'.tr())),
           ],
         ),
       ),

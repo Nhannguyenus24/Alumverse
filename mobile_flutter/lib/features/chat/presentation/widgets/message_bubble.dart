@@ -25,36 +25,45 @@ class MessageBubble extends StatelessWidget {
   /// Whether to show the sender's name + avatar (group chats, others' messages).
   final bool showSender;
 
-  bool get _isMedia => message.messageType == 'IMAGE' || message.messageType == 'VIDEO';
+  bool get _isMedia =>
+      message.messageType == 'IMAGE' || message.messageType == 'VIDEO';
 
   Widget _buildTimestamp(DateTime time) => Text(
-        DateFormat('HH:mm').format(time.toLocal()),
-        style: TextStyle(
-          fontSize: 10.5,
-          color: isMine ? Colors.white.withValues(alpha: 0.8) : AppColors.textSecondary,
-        ),
-      );
+    DateFormat('HH:mm').format(time.toLocal()),
+    style: TextStyle(
+      fontSize: 10.5,
+      color:
+          isMine
+              ? Colors.white.withValues(alpha: 0.8)
+              : AppColors.textSecondary,
+    ),
+  );
 
   Widget _buildSenderName() => Padding(
-        padding: const EdgeInsets.only(bottom: 2),
-        child: Text(
-          message.senderFullName!,
-          style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: AppColors.primary,
-          ),
-        ),
-      );
+    padding: const EdgeInsets.only(bottom: 2),
+    child: Text(
+      message.senderFullName!,
+      style: const TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        color: AppColors.primary,
+      ),
+    ),
+  );
 
-  Widget _buildImageAttachment(BuildContext context, String url, String? fileName) {
+  Widget _buildImageAttachment(
+    BuildContext context,
+    String url,
+    String? fileName,
+  ) {
     final heroTag = 'chat_image_${message.id}';
     return GestureDetector(
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => ImageViewerPage(imageUrl: url, heroTag: heroTag),
-        ),
-      ),
+      onTap:
+          () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => ImageViewerPage(imageUrl: url, heroTag: heroTag),
+            ),
+          ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: Hero(
@@ -63,34 +72,42 @@ class MessageBubble extends StatelessWidget {
             imageUrl: url,
             width: 220,
             fit: BoxFit.cover,
-            placeholder: (context, _) => Container(
-              width: 220,
-              height: 160,
-              color: AppColors.background,
-              alignment: Alignment.center,
-              child: const CircularProgressIndicator(strokeWidth: 2),
-            ),
-            errorWidget: (context, _, __) => Container(
-              width: 220,
-              height: 120,
-              color: AppColors.background,
-              alignment: Alignment.center,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.broken_image_outlined, color: AppColors.textSecondary),
-                  if (fileName != null) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      fileName,
-                      style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ],
-              ),
-            ),
+            placeholder:
+                (context, _) => Container(
+                  width: 220,
+                  height: 160,
+                  color: AppColors.background,
+                  alignment: Alignment.center,
+                  child: const CircularProgressIndicator(strokeWidth: 2),
+                ),
+            errorWidget:
+                (context, _, __) => Container(
+                  width: 220,
+                  height: 120,
+                  color: AppColors.background,
+                  alignment: Alignment.center,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.broken_image_outlined,
+                        color: AppColors.textSecondary,
+                      ),
+                      if (fileName != null) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          fileName,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: AppColors.textSecondary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
           ),
         ),
       ),
@@ -109,13 +126,17 @@ class MessageBubble extends StatelessWidget {
       final fileName = meta?['fileName'] as String?;
       final resolvedUrl = resolveImageUrl(message.content);
       bubble = Column(
-        crossAxisAlignment: isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        crossAxisAlignment:
+            isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
           if (showName) _buildSenderName(),
           if (resolvedUrl == null)
             Text(
               fileName ?? 'chat.attachment_unavailable'.tr(),
-              style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.textSecondary,
+              ),
             )
           else if (message.messageType == 'IMAGE')
             _buildImageAttachment(context, resolvedUrl, fileName)
@@ -171,9 +192,14 @@ class MessageBubble extends StatelessWidget {
               backgroundColor: AppColors.primaryLighter,
               backgroundImage:
                   avatar != null ? CachedNetworkImageProvider(avatar) : null,
-              child: avatar == null
-                  ? const Icon(Icons.person, size: 16, color: AppColors.primary)
-                  : null,
+              child:
+                  avatar == null
+                      ? const Icon(
+                        Icons.person,
+                        size: 16,
+                        color: AppColors.primary,
+                      )
+                      : null,
             ),
             const SizedBox(width: 6),
           ],

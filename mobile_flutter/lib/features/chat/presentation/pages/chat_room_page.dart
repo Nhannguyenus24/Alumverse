@@ -94,11 +94,11 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
   @override
   Widget build(BuildContext context) {
     final args = widget.args;
-    final messagesAsync = ref.watch(chatMessagesProvider(args.groupId));
     final socket = ref.watch(chatSocketServiceProvider);
 
-    final currentMemberId =
-        int.tryParse(ref.watch(authStateProvider).valueOrNull?.user?.id ?? '');
+    final currentMemberId = int.tryParse(
+      ref.watch(authStateProvider).valueOrNull?.user?.id ?? '',
+    );
 
     // Messaging is blocked in a private chat if either side blocked the other.
     final privateBlocked =
@@ -112,10 +112,11 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
             IconButton(
               icon: const Icon(Icons.group_outlined),
               tooltip: 'chat.members'.tr(),
-              onPressed: () => context.push(
-                '${RouteNames.chat}/${args.groupId}/members',
-                extra: args.title,
-              ),
+              onPressed:
+                  () => context.push(
+                    '${RouteNames.chat}/${args.groupId}/members',
+                    extra: args.title,
+                  ),
             ),
         ],
       ),
@@ -123,35 +124,43 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
         children: [
           _buildBanner(args),
           Expanded(
-            child: messagesAsync.when(
-              loading: () => const LoadingView(),
-              error: (e, _) => ErrorView(
-                message: '$e',
-                onRetry: () =>
-                    ref.invalidate(chatMessagesProvider(args.groupId)),
-              ),
-              data: (messages) {
-                if (messages.isEmpty) {
-                  return Center(
-                    child: Text(
-                      'chat.no_messages'.tr(),
-                      style: const TextStyle(color: AppColors.textSecondary),
-                    ),
-                  );
-                }
-                return ListView.builder(
-                  controller: _scrollController,
-                  reverse: true,
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  itemCount: messages.length,
-                  itemBuilder: (context, i) {
-                    final msg = messages[i];
-                    final isMine = currentMemberId != null &&
-                        msg.senderMemberId == currentMemberId;
-                    return MessageBubble(
-                      message: msg,
-                      isMine: isMine,
-                      showSender: args.type == 'GROUP' && !isMine,
+            child: Consumer(
+              builder: (context, ref, _) {
+                final messagesAsync = ref.watch(chatMessagesProvider(args.groupId));
+                return messagesAsync.when(
+                  loading: () => const LoadingView(),
+                  error:
+                      (e, _) => ErrorView(
+                        message: '$e',
+                        onRetry:
+                            () =>
+                                ref.invalidate(chatMessagesProvider(args.groupId)),
+                      ),
+                  data: (messages) {
+                    if (messages.isEmpty) {
+                      return Center(
+                        child: Text(
+                          'chat.no_messages'.tr(),
+                          style: const TextStyle(color: AppColors.textSecondary),
+                        ),
+                      );
+                    }
+                    return ListView.builder(
+                      controller: _scrollController,
+                      reverse: true,
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      itemCount: messages.length,
+                      itemBuilder: (context, i) {
+                        final msg = messages[i];
+                        final isMine =
+                            currentMemberId != null &&
+                            msg.senderMemberId == currentMemberId;
+                        return MessageBubble(
+                          message: msg,
+                          isMine: isMine,
+                          showSender: args.type == 'GROUP' && !isMine,
+                        );
+                      },
                     );
                   },
                 );
@@ -168,9 +177,10 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
                   groupId: args.groupId,
                   chatType: args.type,
                   enabled: status == ChatSocketStatus.open,
-                  onSend: (text) => ref
-                      .read(chatMessagesProvider(args.groupId).notifier)
-                      .send(text, chatType: args.type),
+                  onSend:
+                      (text) => ref
+                          .read(chatMessagesProvider(args.groupId).notifier)
+                          .send(text, chatType: args.type),
                 );
               },
             ),
@@ -196,8 +206,11 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
     // Group: fetch blocked-members context lazily.
     final blockedAsync = ref.watch(groupBlockedContextProvider(args.groupId));
     return blockedAsync.maybeWhen(
-      data: (ctx) =>
-          ctx.hasBlocked ? ChatBlockedBanner.group(ctx) : const SizedBox.shrink(),
+      data:
+          (ctx) =>
+              ctx.hasBlocked
+                  ? ChatBlockedBanner.group(ctx)
+                  : const SizedBox.shrink(),
       orElse: () => const SizedBox.shrink(),
     );
   }

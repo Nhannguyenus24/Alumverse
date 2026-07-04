@@ -47,9 +47,9 @@ class ChatPreviewSheet extends ConsumerWidget {
               Text(
                 'chat.title'.tr(),
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.primary,
-                    ),
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.primary,
+                ),
               ),
             ],
           ),
@@ -59,19 +59,21 @@ class ChatPreviewSheet extends ConsumerWidget {
         ConstrainedBox(
           constraints: const BoxConstraints(maxHeight: 380),
           child: async.when(
-            loading: () => const Padding(
-              padding: EdgeInsets.symmetric(vertical: 40),
-              child: Center(child: CircularProgressIndicator()),
-            ),
-            error: (_, __) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 40),
-              child: Center(
-                child: Text(
-                  'chat.load_failed'.tr(),
-                  style: const TextStyle(color: AppColors.textSecondary),
+            loading:
+                () => const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 40),
+                  child: Center(child: CircularProgressIndicator()),
                 ),
-              ),
-            ),
+            error:
+                (_, __) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 40),
+                  child: Center(
+                    child: Text(
+                      'chat.load_failed'.tr(),
+                      style: const TextStyle(color: AppColors.textSecondary),
+                    ),
+                  ),
+                ),
             data: (items) {
               if (items.isEmpty) {
                 return Padding(
@@ -87,15 +89,17 @@ class ChatPreviewSheet extends ConsumerWidget {
               return ListView.separated(
                 shrinkWrap: true,
                 itemCount: items.length,
-                separatorBuilder: (_, __) => const Divider(
-                  height: 1,
-                  indent: 72,
-                  color: AppColors.divider,
-                ),
-                itemBuilder: (context, i) => _PreviewTile(
-                  item: items[i],
-                  onTap: () => _goToChat(context),
-                ),
+                separatorBuilder:
+                    (_, __) => const Divider(
+                      height: 1,
+                      indent: 72,
+                      color: AppColors.divider,
+                    ),
+                itemBuilder:
+                    (context, i) => _PreviewTile(
+                      item: items[i],
+                      onTap: () => _goToChat(context),
+                    ),
               );
             },
           ),
@@ -130,9 +134,10 @@ class _PreviewTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final avatarUrl = resolveImageUrl(item.avatarUrl);
-    final time = item.updatedAtDate != null
-        ? DateFormat('HH:mm').format(item.updatedAtDate!)
-        : '';
+    final time =
+        item.updatedAtDate != null
+            ? DateFormat('HH:mm').format(item.updatedAtDate!)
+            : '';
 
     return InkWell(
       onTap: onTap,
@@ -144,14 +149,19 @@ class _PreviewTile extends StatelessWidget {
               radius: 22,
               backgroundColor: AppColors.primaryLighter,
               backgroundImage:
-                  avatarUrl != null ? CachedNetworkImageProvider(avatarUrl) : null,
-              child: avatarUrl == null
-                  ? Text(
-                      item.name.isNotEmpty ? item.name[0].toUpperCase() : '?',
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w600, color: AppColors.primary),
-                    )
-                  : null,
+                  avatarUrl != null
+                      ? CachedNetworkImageProvider(avatarUrl)
+                      : null,
+              child:
+                  avatarUrl == null
+                      ? Text(
+                        item.name.isNotEmpty ? item.name[0].toUpperCase() : '?',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primary,
+                        ),
+                      )
+                      : null,
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -172,7 +182,9 @@ class _PreviewTile extends StatelessWidget {
                         Text(
                           time,
                           style: const TextStyle(
-                              fontSize: 12, color: AppColors.textSecondary),
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                     ],
                   ),
@@ -181,7 +193,9 @@ class _PreviewTile extends StatelessWidget {
                     Text(
                       item.preview!,
                       style: const TextStyle(
-                          color: AppColors.textSecondary, fontSize: 13),
+                        color: AppColors.textSecondary,
+                        fontSize: 13,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),

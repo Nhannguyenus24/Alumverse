@@ -18,8 +18,6 @@ class ForumCategoriesPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final async = ref.watch(forumCategoriesProvider);
-
     return Scaffold(
       appBar: AppBar(title: Text('forum.title'.tr())),
       body: RefreshIndicator(
@@ -27,42 +25,48 @@ class ForumCategoriesPage extends ConsumerWidget {
           ref.invalidate(forumCategoriesProvider);
           await ref.read(forumCategoriesProvider.future);
         },
-        child: async.when(
-          loading: () => ListView(
-            children: List.generate(6, (_) => const SkeletonTile()),
-          ),
-          error: (_, __) => ErrorView(
-            message: 'forum.load_failed'.tr(),
-            onRetry: () => ref.invalidate(forumCategoriesProvider),
-          ),
-          data: (categories) {
-            if (categories.isEmpty) {
-              return EmptyView(
-                icon: Icons.forum_outlined,
-                title: 'forum.no_categories'.tr(),
-                message: 'forum.no_categories_desc'.tr(),
-              );
-            }
-            final parents = categories.where((c) => c.isParent).toList();
-            final children = categories.where((c) => !c.isParent).toList();
-            // Categories with no parent grouping still need to be reachable.
-            final orphanParents = parents.isEmpty ? categories : parents;
+        child: Consumer(
+          builder: (context, ref, _) {
+            final async = ref.watch(forumCategoriesProvider);
+            return async.when(
+              loading:
+                  () => ListView(
+                    children: List.generate(6, (_) => const SkeletonTile()),
+                  ),
+              error:
+                  (_, __) => ErrorView(
+                    message: 'forum.load_failed'.tr(),
+                    onRetry: () => ref.invalidate(forumCategoriesProvider),
+                  ),
+              data: (categories) {
+                if (categories.isEmpty) {
+                  return EmptyView(
+                    icon: Icons.forum_outlined,
+                    title: 'forum.no_categories'.tr(),
+                    message: 'forum.no_categories_desc'.tr(),
+                  );
+                }
+                final parents = categories.where((c) => c.isParent).toList();
+                final children = categories.where((c) => !c.isParent).toList();
+                // Categories with no parent grouping still need to be reachable.
+                final orphanParents = parents.isEmpty ? categories : parents;
 
-            return ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                for (final parent in orphanParents) ...[
-                  _ParentHeader(parent.name),
-                  ...children
-                      .where((c) => c.parentId == parent.id)
-                      .map((c) => _CategoryTile(category: c)),
-                  // If this "parent" is actually a leaf (no children), make it
-                  // tappable itself.
-                  if (children.every((c) => c.parentId != parent.id))
-                    _CategoryTile(category: parent),
-                  const SizedBox(height: 8),
-                ],
-              ],
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    for (final parent in orphanParents) ...[
+                      _ParentHeader(parent.name),
+                      ...children
+                          .where((c) => c.parentId == parent.id)
+                          .map((c) => _CategoryTile(category: c)),
+                      // If this "parent" is actually a leaf (no children), make it
+                      // tappable itself.
+                      if (children.every((c) => c.parentId != parent.id))
+                        _CategoryTile(category: parent),
+                      const SizedBox(height: 8),
+                    ],
+                  ],
+                );
+              },
             );
           },
         ),
@@ -124,40 +128,57 @@ class _CategoryTile extends StatelessWidget {
           ),
           child: const Icon(Icons.forum_outlined, color: AppColors.primary),
         ),
-        title: Text(category.name,
-            style: const TextStyle(fontWeight: FontWeight.w900)),
+        title: Text(
+          category.name,
+          style: const TextStyle(fontWeight: FontWeight.w900),
+        ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (category.description != null &&
                 category.description!.isNotEmpty)
-              Text(category.description!,
-                  maxLines: 2, overflow: TextOverflow.ellipsis),
+              Text(
+                category.description!,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
             if (hasStats)
               Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Row(
                   children: [
-                    const Icon(Icons.forum_outlined,
-                        size: 13, color: AppColors.textSecondary),
+                    const Icon(
+                      Icons.forum_outlined,
+                      size: 13,
+                      color: AppColors.textSecondary,
+                    ),
                     const SizedBox(width: 4),
                     Text(
-                      'forum.posts_count'.tr(namedArgs: {
-                        'count': '${category.topicCount ?? 0}',
-                      }),
+                      'forum.posts_count'.tr(
+                        namedArgs: {'count': '${category.topicCount ?? 0}'},
+                      ),
                       style: const TextStyle(
-                          fontSize: 12, color: AppColors.textSecondary),
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                     const SizedBox(width: 12),
-                    const Icon(Icons.people_outline,
-                        size: 13, color: AppColors.textSecondary),
+                    const Icon(
+                      Icons.people_outline,
+                      size: 13,
+                      color: AppColors.textSecondary,
+                    ),
                     const SizedBox(width: 4),
                     Text(
-                      'forum.members_count'.tr(namedArgs: {
-                        'count': '${category.participantCount ?? 0}',
-                      }),
+                      'forum.members_count'.tr(
+                        namedArgs: {
+                          'count': '${category.participantCount ?? 0}',
+                        },
+                      ),
                       style: const TextStyle(
-                          fontSize: 12, color: AppColors.textSecondary),
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                   ],
                 ),
@@ -166,10 +187,11 @@ class _CategoryTile extends StatelessWidget {
         ),
         isThreeLine: hasStats,
         trailing: const Icon(Icons.chevron_right),
-        onTap: () => context.push(
-          '${RouteNames.forum}/category/${category.id}',
-          extra: category.name,
-        ),
+        onTap:
+            () => context.push(
+              '${RouteNames.forum}/category/${category.id}',
+              extra: category.name,
+            ),
       ),
     );
   }

@@ -97,9 +97,10 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       context.push(RouteNames.signupCode, extra: email);
     } catch (e) {
       if (!mounted) return;
-      final message = e is Exception
-          ? e.toString().replaceFirst('Exception: ', '')
-          : 'auth.register_failed'.tr();
+      final message =
+          e is Exception
+              ? e.toString().replaceFirst('Exception: ', '')
+              : 'auth.register_failed'.tr();
       AppToast.error(context, message);
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -130,16 +131,17 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 Text(
                   'auth.create_account'.tr(),
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).primaryColor,
-                      ),
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).primaryColor,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 24),
                 BlurValidatedField(
                   controller: _fullNameCtl,
-                  validator: (v) =>
-                      Validators.required(v, field: 'auth.full_name'.tr()),
+                  validator:
+                      (v) =>
+                          Validators.required(v, field: 'auth.full_name'.tr()),
                   decoration: InputDecoration(
                     labelText: 'auth.full_name'.tr(),
                     prefixIcon: const Icon(Icons.person_outline),
@@ -213,8 +215,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                       icon: Icon(
                         _obscurePass ? Icons.visibility_off : Icons.visibility,
                       ),
-                      onPressed: () =>
-                          setState(() => _obscurePass = !_obscurePass),
+                      onPressed:
+                          () => setState(() => _obscurePass = !_obscurePass),
                     ),
                   ),
                 ),
@@ -223,16 +225,17 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 // placed below the field instead of beside it).
                 AnimatedSize(
                   duration: const Duration(milliseconds: 150),
-                  child: (_passFocused && !_allRulesMet)
-                      ? _PasswordRules(rules: _passwordRules)
-                      : const SizedBox.shrink(),
+                  child:
+                      (_passFocused && !_allRulesMet)
+                          ? _PasswordRules(rules: _passwordRules)
+                          : const SizedBox.shrink(),
                 ),
                 const SizedBox(height: 16),
                 BlurValidatedField(
                   controller: _confirmPassCtl,
                   obscureText: _obscureConfirm,
-                  validator: (v) =>
-                      Validators.confirmPassword(v, _passCtl.text),
+                  validator:
+                      (v) => Validators.confirmPassword(v, _passCtl.text),
                   decoration: InputDecoration(
                     labelText: 'auth.repeat_password'.tr(),
                     prefixIcon: const Icon(Icons.lock_clock_outlined),
@@ -242,8 +245,10 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                             ? Icons.visibility_off
                             : Icons.visibility,
                       ),
-                      onPressed: () =>
-                          setState(() => _obscureConfirm = !_obscureConfirm),
+                      onPressed:
+                          () => setState(
+                            () => _obscureConfirm = !_obscureConfirm,
+                          ),
                     ),
                   ),
                 ),
@@ -253,17 +258,20 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
-                  child: _submitting
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
+                  child:
+                      _submitting
+                          ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                          : Text(
+                            'common.next'.tr(),
+                            style: const TextStyle(fontSize: 16),
                           ),
-                        )
-                      : Text('common.next'.tr(),
-                          style: const TextStyle(fontSize: 16)),
                 ),
                 const SizedBox(height: 24),
                 Row(
@@ -324,9 +332,10 @@ class _PasswordRules extends StatelessWidget {
                   Icon(
                     e.value ? Icons.check_circle : Icons.cancel,
                     size: 16,
-                    color: e.value
-                        ? const Color(0xFF00A500)
-                        : const Color(0xFFE70000),
+                    color:
+                        e.value
+                            ? const Color(0xFF00A500)
+                            : const Color(0xFFE70000),
                   ),
                   const SizedBox(width: 6),
                   Expanded(
@@ -334,9 +343,10 @@ class _PasswordRules extends StatelessWidget {
                       e.key,
                       style: TextStyle(
                         fontSize: 12.5,
-                        color: e.value
-                            ? const Color(0xFF00A500)
-                            : const Color(0xFFE70000),
+                        color:
+                            e.value
+                                ? const Color(0xFF00A500)
+                                : const Color(0xFFE70000),
                       ),
                     ),
                   ),

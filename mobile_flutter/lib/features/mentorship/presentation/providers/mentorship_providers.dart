@@ -14,8 +14,13 @@ class MentorQuery {
 
   const MentorQuery({this.keyword = '', this.category, this.expertise});
 
-  MentorQuery copyWith({String? keyword, String? category, String? expertise,
-      bool clearCategory = false, bool clearExpertise = false}) {
+  MentorQuery copyWith({
+    String? keyword,
+    String? category,
+    String? expertise,
+    bool clearCategory = false,
+    bool clearExpertise = false,
+  }) {
     return MentorQuery(
       keyword: keyword ?? this.keyword,
       category: clearCategory ? null : (category ?? this.category),
@@ -24,13 +29,16 @@ class MentorQuery {
   }
 }
 
-final mentorQueryProvider =
-    StateProvider<MentorQuery>((ref) => const MentorQuery());
+final mentorQueryProvider = StateProvider<MentorQuery>(
+  (ref) => const MentorQuery(),
+);
 
 /// Mentor list, reacting to the current [mentorQueryProvider].
 final mentorListProvider = FutureProvider<List<MentorProfile>>((ref) async {
   final q = ref.watch(mentorQueryProvider);
-  return ref.watch(mentorshipRepositoryProvider).browseMentors(
+  return ref
+      .watch(mentorshipRepositoryProvider)
+      .browseMentors(
         keyword: q.keyword,
         category: q.category,
         expertise: q.expertise,
@@ -46,15 +54,19 @@ final expertiseTopicsProvider = FutureProvider<List<String>>((ref) {
   return ref.watch(mentorshipRepositoryProvider).getExpertiseTopics();
 });
 
-final mentorProfileProvider =
-    FutureProvider.family<MentorProfile, int>((ref, memberId) {
+final mentorProfileProvider = FutureProvider.family<MentorProfile, int>((
+  ref,
+  memberId,
+) {
   return ref.watch(mentorshipRepositoryProvider).getMentorProfile(memberId);
 });
 
 final mentorAvailabilityProvider =
     FutureProvider.family<List<MentorAvailability>, int>((ref, memberId) {
-  return ref.watch(mentorshipRepositoryProvider).getMentorAvailability(memberId);
-});
+      return ref
+          .watch(mentorshipRepositoryProvider)
+          .getMentorAvailability(memberId);
+    });
 
 final mySessionsProvider = FutureProvider<List<MentorshipSession>>((ref) {
   return ref.watch(mentorshipRepositoryProvider).getMySessions();
@@ -84,15 +96,16 @@ final myMentorFeedbacksProvider = FutureProvider<List<SessionFeedback>>((ref) {
 /// Public feedback list for a mentor's profile page.
 final mentorFeedbacksProvider =
     FutureProvider.family<List<SessionFeedback>, int>((ref, memberId) {
-  return ref
-      .watch(mentorshipRepositoryProvider)
-      .getMentorFeedbacks(memberId, page: 0, limit: 20);
-});
+      return ref
+          .watch(mentorshipRepositoryProvider)
+          .getMentorFeedbacks(memberId, page: 0, limit: 20);
+    });
 
 /// Single mentee session by ID — used by the session detail screen.
-final menteeSessionByIdProvider =
-    FutureProvider.family<MentorshipSession, int>((ref, sessionId) {
-  return ref
-      .watch(mentorshipRepositoryProvider)
-      .getMenteeSessionById(sessionId);
-});
+final menteeSessionByIdProvider = FutureProvider.family<MentorshipSession, int>(
+  (ref, sessionId) {
+    return ref
+        .watch(mentorshipRepositoryProvider)
+        .getMenteeSessionById(sessionId);
+  },
+);

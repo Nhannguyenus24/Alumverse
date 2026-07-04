@@ -1,6 +1,5 @@
 package com.service.backend.admin.service;
 
-import com.service.backend.admin.dao.AdminEventRepository;
 import com.service.backend.admin.dto.EventStatisticsDTO;
 import com.service.backend.event.dao.EventInterestR2dbcRepository;
 import com.service.backend.event.dao.EventR2dbcRepository;
@@ -34,18 +33,15 @@ public class AdminEventService {
     private static final String STATUS_CHECKED_IN = "CHECKED_IN";
     private static final String STATUS_CANCELLED = "CANCELLED";
 
-    private final AdminEventRepository adminEventRepository;
     private final EventR2dbcRepository eventRepo;
     private final EventTicketR2dbcRepository ticketRepo;
     private final EventInterestR2dbcRepository interestRepo;
     private final ImageService imageService;
 
-    public AdminEventService(AdminEventRepository adminEventRepository,
-                             EventR2dbcRepository eventRepo,
+    public AdminEventService(EventR2dbcRepository eventRepo,
                              EventTicketR2dbcRepository ticketRepo,
                              EventInterestR2dbcRepository interestRepo,
                              ImageService imageService) {
-        this.adminEventRepository = adminEventRepository;
         this.eventRepo = eventRepo;
         this.ticketRepo = ticketRepo;
         this.interestRepo = interestRepo;
@@ -56,15 +52,15 @@ public class AdminEventService {
         int offset = page * size;
         if (organizationId != null) {
             return PaginationHelper.paginate(
-                        adminEventRepository.findEventsByOrganization(organizationId, size, offset),
-                        adminEventRepository.countEventsByOrganization(organizationId),
+                        eventRepo.findEventsByOrganization(organizationId, size, offset),
+                        eventRepo.countEventsByOrganization(organizationId),
                         page, size)
                     .doOnSuccess(r -> log.info("getAllEvents (org={}) result: {}", organizationId, JsonUtils.toJson(r)))
                     .doOnError(error -> log.error("Error fetching events for org {}", organizationId, error));
         }
         return PaginationHelper.paginate(
-                    adminEventRepository.findAllEventsWithPagination(size, offset),
-                    adminEventRepository.countAllEvents(),
+                    eventRepo.findAllEventsWithPagination(size, offset),
+                    eventRepo.countAllEvents(),
                     page, size)
                 .doOnSuccess(r -> log.info("getAllEvents result: {}", JsonUtils.toJson(r)))
                 .doOnError(error -> log.error("Error fetching all events", error));
@@ -74,15 +70,15 @@ public class AdminEventService {
         int offset = page * size;
         if (organizationId != null) {
             return PaginationHelper.paginate(
-                        adminEventRepository.searchEventsByOrganization(organizationId, keyword, size, offset),
-                        adminEventRepository.countSearchEventsByOrganization(organizationId, keyword),
+                        eventRepo.searchEventsByOrganization(organizationId, keyword, size, offset),
+                        eventRepo.countSearchEventsByOrganization(organizationId, keyword),
                         page, size)
                     .doOnSuccess(r -> log.info("searchAllEvents (org={}) result: {}", organizationId, JsonUtils.toJson(r)))
                     .doOnError(error -> log.error("Error searching events for org {}", organizationId, error));
         }
         return PaginationHelper.paginate(
-                    adminEventRepository.searchAllEvents(keyword, size, offset),
-                    adminEventRepository.countSearchAllEvents(keyword),
+                    eventRepo.searchAllEvents(keyword, size, offset),
+                    eventRepo.countSearchAllEvents(keyword),
                     page, size)
                 .doOnSuccess(r -> log.info("searchAllEvents result: {}", JsonUtils.toJson(r)))
                 .doOnError(error -> log.error("Error searching events with keyword {}", keyword, error));
@@ -92,29 +88,29 @@ public class AdminEventService {
         int offset = page * size;
         if (organizationId != null) {
             return PaginationHelper.paginate(
-                        adminEventRepository.findEventsByOrganizationAndPublishStatus(organizationId, isPublished, size, offset),
-                        adminEventRepository.countEventsByOrganizationAndPublishStatus(organizationId, isPublished),
+                        eventRepo.findEventsByOrganizationAndPublishStatus(organizationId, isPublished, size, offset),
+                        eventRepo.countEventsByOrganizationAndPublishStatus(organizationId, isPublished),
                         page, size)
                     .doOnSuccess(r -> log.info("getEventsByPublishStatus (org={}) result: {}", organizationId, JsonUtils.toJson(r)))
                     .doOnError(error -> log.error("Error fetching events by status for org {}", organizationId, error));
         }
         return PaginationHelper.paginate(
-                    adminEventRepository.findEventsByPublishStatus(isPublished, size, offset),
-                    adminEventRepository.countEventsByPublishStatus(isPublished),
+                    eventRepo.findEventsByPublishStatus(isPublished, size, offset),
+                    eventRepo.countEventsByPublishStatus(isPublished),
                     page, size)
                 .doOnSuccess(r -> log.info("getEventsByPublishStatus result: {}", JsonUtils.toJson(r)))
                 .doOnError(error -> log.error("Error fetching events by publish status {}", isPublished, error));
     }
 
     public Mono<Event> getEventById(Long eventId) {
-        return adminEventRepository.findById(eventId)
+        return eventRepo.findById(eventId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND,
                         "Event not found with id: " + eventId)))
                 .doOnSuccess(e -> log.info("getEventById result: {}", JsonUtils.toJson(e)));
     }
 
     public Mono<Event> updateEvent(Long eventId, UpdateEventRequest request) {
-        return adminEventRepository.findById(eventId)
+        return eventRepo.findById(eventId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND,
                         "Event not found with id: " + eventId)))
                 .flatMap(existing -> imageService.uploadBase64IfPresent(request.getBannerBase64())
@@ -136,7 +132,7 @@ public class AdminEventService {
     }
 
     public Mono<Void> deleteEvent(Long eventId) {
-        return adminEventRepository.findById(eventId)
+        return eventRepo.findById(eventId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND,
                         "Event not found with id: " + eventId)))
                 .flatMap(event -> eventRepo.deleteById(eventId))
@@ -145,7 +141,7 @@ public class AdminEventService {
     }
 
     public Mono<Event> publishEvent(Long eventId) {
-        return adminEventRepository.findById(eventId)
+        return eventRepo.findById(eventId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND,
                         "Event not found with id: " + eventId)))
                 .flatMap(event -> eventRepo.publishEvent(eventId).then(eventRepo.findById(eventId)))
@@ -153,7 +149,7 @@ public class AdminEventService {
     }
 
     public Mono<Event> unpublishEvent(Long eventId) {
-        return adminEventRepository.findById(eventId)
+        return eventRepo.findById(eventId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND,
                         "Event not found with id: " + eventId)))
                 .flatMap(event -> eventRepo.unpublishEvent(eventId).then(eventRepo.findById(eventId)))
@@ -161,7 +157,7 @@ public class AdminEventService {
     }
 
     public Mono<PaginatedResponse<EventTicket>> getTicketsByEvent(Long eventId, int page, int size) {
-        return adminEventRepository.findById(eventId)
+        return eventRepo.findById(eventId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND,
                         "Event not found with id: " + eventId)))
                 .flatMap(event -> {
@@ -189,7 +185,7 @@ public class AdminEventService {
     }
 
     public Mono<PaginatedResponse<EventInterest>> getInterestsByEvent(Long eventId, int page, int size) {
-        return adminEventRepository.findById(eventId)
+        return eventRepo.findById(eventId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND,
                         "Event not found with id: " + eventId)))
                 .flatMap(event -> {
@@ -207,13 +203,13 @@ public class AdminEventService {
         LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
         LocalDateTime endOfDay = startOfDay.plusDays(1);
 
-        Mono<Long> totalEvents = adminEventRepository.countAllEvents().defaultIfEmpty(0L);
-        Mono<Long> publishedEvents = adminEventRepository.countPublishedEvents().defaultIfEmpty(0L);
-        Mono<Long> unpublishedEvents = adminEventRepository.countUnpublishedEvents().defaultIfEmpty(0L);
-        Mono<Long> upcomingEvents = adminEventRepository.countUpcomingEvents(now).defaultIfEmpty(0L);
-        Mono<Long> ongoingEvents = adminEventRepository.countOngoingEvents(now).defaultIfEmpty(0L);
-        Mono<Long> pastEvents = adminEventRepository.countPastEvents(now).defaultIfEmpty(0L);
-        Mono<Long> newEventsToday = adminEventRepository.countEventsCreatedToday(startOfDay, endOfDay).defaultIfEmpty(0L);
+        Mono<Long> totalEvents = eventRepo.countAllEvents().defaultIfEmpty(0L);
+        Mono<Long> publishedEvents = eventRepo.countPublishedEvents().defaultIfEmpty(0L);
+        Mono<Long> unpublishedEvents = eventRepo.countUnpublishedEvents().defaultIfEmpty(0L);
+        Mono<Long> upcomingEvents = eventRepo.countUpcomingEvents(now).defaultIfEmpty(0L);
+        Mono<Long> ongoingEvents = eventRepo.countOngoingEvents(now).defaultIfEmpty(0L);
+        Mono<Long> pastEvents = eventRepo.countPastEvents(now).defaultIfEmpty(0L);
+        Mono<Long> newEventsToday = eventRepo.countEventsCreatedToday(startOfDay, endOfDay).defaultIfEmpty(0L);
 
         Mono<EventStatisticsDTO> overviewMono = Mono.zip(
                 List.of(totalEvents, publishedEvents, unpublishedEvents, upcomingEvents,
@@ -229,20 +225,20 @@ public class AdminEventService {
                         .build());
 
         Mono<long[]> ticketCountsMono = Mono.zip(
-                adminEventRepository.countAllTickets().defaultIfEmpty(0L),
-                adminEventRepository.countTicketsByStatus(STATUS_REGISTERED).defaultIfEmpty(0L),
-                adminEventRepository.countTicketsByStatus(STATUS_CHECKED_IN).defaultIfEmpty(0L),
-                adminEventRepository.countTicketsByStatus(STATUS_CANCELLED).defaultIfEmpty(0L),
-                adminEventRepository.countAllInterests().defaultIfEmpty(0L)
+                eventRepo.countAllTickets().defaultIfEmpty(0L),
+                eventRepo.countTicketsByStatus(STATUS_REGISTERED).defaultIfEmpty(0L),
+                eventRepo.countTicketsByStatus(STATUS_CHECKED_IN).defaultIfEmpty(0L),
+                eventRepo.countTicketsByStatus(STATUS_CANCELLED).defaultIfEmpty(0L),
+                eventRepo.countAllInterests().defaultIfEmpty(0L)
         ).map(tuple -> new long[]{tuple.getT1(), tuple.getT2(), tuple.getT3(), tuple.getT4(), tuple.getT5()});
 
         Mono<List<EventStatisticsDTO.EventSummary>> topByRegistrationMono =
-                adminEventRepository.findTopEventsByRegistrationSummary(5)
+                eventRepo.findTopEventsByRegistrationSummary(5)
                         .collectList()
                         .defaultIfEmpty(Collections.emptyList());
 
         Mono<List<EventStatisticsDTO.EventSummary>> topByInterestMono =
-                adminEventRepository.findTopEventsByInterestSummary(5)
+                eventRepo.findTopEventsByInterestSummary(5)
                         .collectList()
                         .defaultIfEmpty(Collections.emptyList());
 

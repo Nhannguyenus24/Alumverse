@@ -27,9 +27,10 @@ String? resolveImageUrl(String? raw) {
     return raw;
   }
 
-  final base = Env.imageBaseUrl.endsWith('/')
-      ? Env.imageBaseUrl
-      : '${Env.imageBaseUrl}/';
+  final base =
+      Env.imageBaseUrl.endsWith('/')
+          ? Env.imageBaseUrl
+          : '${Env.imageBaseUrl}/';
   final path = raw.startsWith('/') ? raw.substring(1) : raw;
   return '$base$path';
 }

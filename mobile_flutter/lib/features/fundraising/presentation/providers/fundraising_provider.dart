@@ -66,11 +66,14 @@ final fundQueryProvider = StateProvider<FundQuery>((ref) => const FundQuery());
 /// `autoDispose` so the list is refetched each time the page is reopened rather
 /// than served from stale in-memory data (the filter/search state lives in the
 /// separate [fundQueryProvider], which is preserved).
-final fundsProvider =
-    FutureProvider.autoDispose<FundPageResult<FundSummary>>((ref) {
+final fundsProvider = FutureProvider.autoDispose<FundPageResult<FundSummary>>((
+  ref,
+) {
   final q = ref.watch(fundQueryProvider);
   final orgId = ref.watch(organizationStateProvider).valueOrNull?.id;
-  return ref.watch(fundraisingRepositoryProvider).getFunds(
+  return ref
+      .watch(fundraisingRepositoryProvider)
+      .getFunds(
         page: q.page,
         limit: kFundPageSize,
         q: q.q,
@@ -87,8 +90,10 @@ final fundsProvider =
 /// `autoDispose` so the cached detail is dropped once the user leaves the page:
 /// re-opening a fund always refetches from the API instead of showing stale
 /// in-memory data.
-final fundDetailProvider =
-    FutureProvider.autoDispose.family<FundDetail, int>((ref, id) {
+final fundDetailProvider = FutureProvider.autoDispose.family<FundDetail, int>((
+  ref,
+  id,
+) {
   return ref.read(fundraisingRepositoryProvider).getFundDetail(id);
 });
 
@@ -98,13 +103,16 @@ final fundDetailProvider =
 /// cached snapshot (e.g. after making a new donation elsewhere).
 final myDonationsProvider =
     FutureProvider.autoDispose<FundPageResult<FundDonation>>((ref) async {
-  final rawId = ref.watch(authStateProvider).valueOrNull?.user?.id;
-  final userId = rawId != null ? int.tryParse(rawId) : null;
-  if (userId == null) {
-    return const FundPageResult<FundDonation>(
-        items: [], totalPage: 1, totalItem: 0);
-  }
-  return ref
-      .read(fundraisingRepositoryProvider)
-      .getMyDonations(userId: userId, page: 0, limit: 30);
-});
+      final rawId = ref.watch(authStateProvider).valueOrNull?.user?.id;
+      final userId = rawId != null ? int.tryParse(rawId) : null;
+      if (userId == null) {
+        return const FundPageResult<FundDonation>(
+          items: [],
+          totalPage: 1,
+          totalItem: 0,
+        );
+      }
+      return ref
+          .read(fundraisingRepositoryProvider)
+          .getMyDonations(userId: userId, page: 0, limit: 30);
+    });

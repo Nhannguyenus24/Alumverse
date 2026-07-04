@@ -66,7 +66,8 @@ class _NetworkSearchBarState extends State<NetworkSearchBar> {
 
   @override
   Widget build(BuildContext context) {
-    final showFaculty = widget.showFilters &&
+    final showFaculty =
+        widget.showFilters &&
         widget.organizations.isNotEmpty &&
         widget.onOrganizationsChanged != null;
 
@@ -102,10 +103,7 @@ class _NetworkSearchBarState extends State<NetworkSearchBar> {
               ],
             ),
           ],
-          if (showFaculty) ...[
-            const SizedBox(height: 8),
-            _buildFacultyField(),
-          ],
+          if (showFaculty) ...[const SizedBox(height: 8), _buildFacultyField()],
         ],
       ),
     );
@@ -119,16 +117,16 @@ class _NetworkSearchBarState extends State<NetworkSearchBar> {
     if (selected.isEmpty) {
       label = 'network.faculty_filter_label'.tr();
     } else if (selected.length == 1) {
-      final match = widget.organizations
-          .where((o) => o.id == selected.first)
-          .toList();
-      label = match.isNotEmpty
-          ? match.first.name
-          : 'network.faculty_selected_count'
-              .tr(namedArgs: {'count': '1'});
+      final match =
+          widget.organizations.where((o) => o.id == selected.first).toList();
+      label =
+          match.isNotEmpty
+              ? match.first.name
+              : 'network.faculty_selected_count'.tr(namedArgs: {'count': '1'});
     } else {
-      label = 'network.faculty_selected_count'
-          .tr(namedArgs: {'count': selected.length.toString()});
+      label = 'network.faculty_selected_count'.tr(
+        namedArgs: {'count': selected.length.toString()},
+      );
     }
 
     return InkWell(
@@ -157,21 +155,28 @@ class _NetworkSearchBarState extends State<NetworkSearchBar> {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 14,
-                  color: hasSelection
-                      ? AppColors.textPrimary
-                      : AppColors.textSecondary,
+                  color:
+                      hasSelection
+                          ? AppColors.textPrimary
+                          : AppColors.textSecondary,
                 ),
               ),
             ),
             if (hasSelection)
               GestureDetector(
                 onTap: () => widget.onOrganizationsChanged?.call(const []),
-                child: const Icon(Icons.clear,
-                    size: 18, color: AppColors.textSecondary),
+                child: const Icon(
+                  Icons.clear,
+                  size: 18,
+                  color: AppColors.textSecondary,
+                ),
               )
             else
-              const Icon(Icons.arrow_drop_down,
-                  size: 22, color: AppColors.textSecondary),
+              const Icon(
+                Icons.arrow_drop_down,
+                size: 22,
+                color: AppColors.textSecondary,
+              ),
           ],
         ),
       ),
@@ -185,10 +190,11 @@ class _NetworkSearchBarState extends State<NetworkSearchBar> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      builder: (ctx) => _FacultyPickerSheet(
-        organizations: widget.organizations,
-        initialSelected: widget.selectedOrganizationIds,
-      ),
+      builder:
+          (ctx) => _FacultyPickerSheet(
+            organizations: widget.organizations,
+            initialSelected: widget.selectedOrganizationIds,
+          ),
     );
     if (result != null) {
       widget.onOrganizationsChanged?.call(result);
@@ -210,18 +216,25 @@ class _NetworkSearchBarState extends State<NetworkSearchBar> {
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: const TextStyle(color: AppColors.textSecondary),
-        prefixIcon: Icon(prefixIcon,
-            size: dense ? 18 : 20, color: AppColors.textSecondary),
-        suffixIcon: controller.text.isNotEmpty
-            ? IconButton(
-                icon: const Icon(Icons.clear,
-                    size: 18, color: AppColors.textSecondary),
-                onPressed: () {
-                  controller.clear();
-                  onSubmit('');
-                },
-              )
-            : null,
+        prefixIcon: Icon(
+          prefixIcon,
+          size: dense ? 18 : 20,
+          color: AppColors.textSecondary,
+        ),
+        suffixIcon:
+            controller.text.isNotEmpty
+                ? IconButton(
+                  icon: const Icon(
+                    Icons.clear,
+                    size: 18,
+                    color: AppColors.textSecondary,
+                  ),
+                  onPressed: () {
+                    controller.clear();
+                    onSubmit('');
+                  },
+                )
+                : null,
         contentPadding: EdgeInsets.symmetric(
           horizontal: 12,
           vertical: dense ? 8 : 12,
@@ -312,8 +325,7 @@ class _FacultyPickerSheetState extends State<_FacultyPickerSheet> {
                   final checked = _selected.contains(org.id);
                   return CheckboxListTile(
                     value: checked,
-                    title: Text(org.name,
-                        style: const TextStyle(fontSize: 14)),
+                    title: Text(org.name, style: const TextStyle(fontSize: 14)),
                     controlAffinity: ListTileControlAffinity.leading,
                     activeColor: AppColors.primary,
                     dense: true,
@@ -344,8 +356,8 @@ class _FacultyPickerSheetState extends State<_FacultyPickerSheet> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () =>
-                          Navigator.pop(context, _selected.toList()),
+                      onPressed:
+                          () => Navigator.pop(context, _selected.toList()),
                       child: Text('network.faculty_apply'.tr()),
                     ),
                   ),

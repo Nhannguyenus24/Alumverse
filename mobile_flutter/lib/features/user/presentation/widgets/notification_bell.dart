@@ -101,7 +101,10 @@ class _NotificationDropdown extends ConsumerWidget {
   }
 
   Future<void> _onTap(
-      BuildContext context, WidgetRef ref, NotificationItem n) async {
+    BuildContext context,
+    WidgetRef ref,
+    NotificationItem n,
+  ) async {
     onClose();
     if (!n.isRead) {
       try {
@@ -144,9 +147,13 @@ class _NotificationDropdown extends ConsumerWidget {
             child: Row(
               children: [
                 Expanded(
-                  child: Text('common.notifications'.tr(),
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w700, fontSize: 16)),
+                  child: Text(
+                    'common.notifications'.tr(),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                    ),
+                  ),
                 ),
                 if (unread > 0)
                   TextButton(
@@ -156,8 +163,10 @@ class _NotificationDropdown extends ConsumerWidget {
                       minimumSize: const Size(0, 32),
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
-                    child: Text('notification.mark_read'.tr(),
-                        style: const TextStyle(fontSize: 12)),
+                    child: Text(
+                      'notification.mark_read'.tr(),
+                      style: const TextStyle(fontSize: 12),
+                    ),
                   ),
               ],
             ),
@@ -169,23 +178,28 @@ class _NotificationDropdown extends ConsumerWidget {
             const Padding(
               padding: EdgeInsets.all(24),
               child: Center(
-                  child: SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(strokeWidth: 2))),
+                child: SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
             )
           else if (recent.isEmpty)
             Padding(
-              padding:
-                  const EdgeInsets.symmetric(vertical: 28, horizontal: 16),
+              padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 16),
               child: Column(
                 children: [
-                  const Icon(Icons.notifications_none_rounded,
-                      size: 36, color: AppColors.textSecondary),
+                  const Icon(
+                    Icons.notifications_none_rounded,
+                    size: 36,
+                    color: AppColors.textSecondary,
+                  ),
                   const SizedBox(height: 8),
-                  Text('notification.empty_title'.tr(),
-                      style:
-                          const TextStyle(color: AppColors.textSecondary)),
+                  Text(
+                    'notification.empty_title'.tr(),
+                    style: const TextStyle(color: AppColors.textSecondary),
+                  ),
                 ],
               ),
             )
@@ -215,10 +229,13 @@ class _NotificationDropdown extends ConsumerWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 12),
               child: Center(
-                child: Text('common.all'.tr(),
-                    style: const TextStyle(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w600)),
+                child: Text(
+                  'common.all'.tr(),
+                  style: const TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
             ),
           ),
@@ -235,15 +252,17 @@ class _DropdownTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final time = item.createdAt != null
-        ? DateFormat('dd/MM • HH:mm').format(item.createdAt!)
-        : '';
+    final time =
+        item.createdAt != null
+            ? DateFormat('dd/MM • HH:mm').format(item.createdAt!)
+            : '';
     return InkWell(
       onTap: onTap,
       child: Container(
-        color: item.isRead
-            ? Colors.transparent
-            : AppColors.primary.withValues(alpha: 0.05),
+        color:
+            item.isRead
+                ? Colors.transparent
+                : AppColors.primary.withValues(alpha: 0.05),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -262,31 +281,40 @@ class _DropdownTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (item.title != null && item.title!.isNotEmpty)
-                    Text(item.title!,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                            fontWeight: item.isRead
-                                ? FontWeight.w600
-                                : FontWeight.w700,
-                            fontSize: 13.5)),
+                    Text(
+                      item.title!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontWeight:
+                            item.isRead ? FontWeight.w600 : FontWeight.w700,
+                        fontSize: 13.5,
+                      ),
+                    ),
                   if (item.message.isNotEmpty)
-                    Text(item.message,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                            fontSize: 12.5,
-                            height: 1.35,
-                            color: item.isRead
+                    Text(
+                      item.message,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        height: 1.35,
+                        color:
+                            item.isRead
                                 ? AppColors.textSecondary
-                                : AppColors.textPrimary)),
+                                : AppColors.textPrimary,
+                      ),
+                    ),
                   if (time.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: 2),
-                      child: Text(time,
-                          style: const TextStyle(
-                              fontSize: 11,
-                              color: AppColors.textSecondary)),
+                      child: Text(
+                        time,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
                     ),
                 ],
               ),

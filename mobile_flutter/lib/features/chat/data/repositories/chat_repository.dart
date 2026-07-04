@@ -64,9 +64,13 @@ class ChatRepository {
     final base64String = 'data:$mimeType;base64,${base64Encode(bytes)}';
     final useRawUpload = isVideo || extension == 'gif';
 
-    final url = useRawUpload
-        ? await _api.uploadMedia(base64String: base64String, fileName: fileName)
-        : await _api.uploadImage(base64String);
+    final url =
+        useRawUpload
+            ? await _api.uploadMedia(
+              base64String: base64String,
+              fileName: fileName,
+            )
+            : await _api.uploadImage(base64String);
 
     if (url.isEmpty) {
       throw const ChatAttachmentException('chat.upload_failed');
@@ -75,7 +79,11 @@ class ChatRepository {
     return ChatAttachmentUpload(
       url: url,
       messageType: isVideo ? 'VIDEO' : 'IMAGE',
-      metadata: {'fileName': fileName, 'size': bytes.length, 'mimeType': mimeType},
+      metadata: {
+        'fileName': fileName,
+        'size': bytes.length,
+        'mimeType': mimeType,
+      },
     );
   }
 
@@ -139,8 +147,7 @@ class ChatRepository {
     int groupId, {
     int page = 0,
     int size = 20,
-  }) =>
-      _api.getMessages(groupId, page: page, size: size);
+  }) => _api.getMessages(groupId, page: page, size: size);
 
   Future<GroupBlockedContext> getBlockedContext(int groupId) =>
       _api.getBlockedContext(groupId);
@@ -148,8 +155,7 @@ class ChatRepository {
   Future<ChatConversation> createGroup({
     String? title,
     required List<int> memberIds,
-  }) =>
-      _api.createGroup(title: title, memberIds: memberIds);
+  }) => _api.createGroup(title: title, memberIds: memberIds);
 
   Future<List<ChatGroupMember>> listMembers(int groupId) =>
       _api.listMembers(groupId);

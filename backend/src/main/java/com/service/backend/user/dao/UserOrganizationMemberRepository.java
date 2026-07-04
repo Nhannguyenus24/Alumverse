@@ -1,5 +1,7 @@
 package com.service.backend.user.dao;
 
+import java.util.Collection;
+
 import org.springframework.data.r2dbc.repository.Modifying;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.r2dbc.repository.R2dbcRepository;
@@ -8,10 +10,22 @@ import org.springframework.stereotype.Repository;
 
 import com.service.backend.shared.entity.OrganizationMember;
 
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Repository
 public interface UserOrganizationMemberRepository extends R2dbcRepository<OrganizationMember, Integer> {
+
+    public record PrimaryOrg(Integer userId, Integer organizationId, String organizationName) {}
+
+    @Query("""
+            SELECT om.user_id, om.organization_id, o.name AS organization_name
+            FROM organization_members om
+            LEFT JOIN organizations o ON o.id = om.organization_id
+            WHERE om.user_id IN (:userIds)
+            ORDER BY om.user_id ASC, om.id ASC
+            """)
+    Flux<PrimaryOrg> findPrimaryOrgByUserIds(@Param("userIds") Collection<Integer> userIds);
 
     @Query("SELECT * FROM organization_members WHERE organization_id = :organizationId AND user_id = :userId")
     Mono<OrganizationMember> findByOrganizationIdAndUserId(@Param("organizationId") Integer organizationId, @Param("userId") Integer userId);

@@ -33,19 +33,26 @@ class MentorshipRepository {
 
     final Response res;
     if (hasAdvanced) {
-      res = await _dio.get(ApiEndpoints.menteeMentorFilter, queryParameters: {
-        if (kw.isNotEmpty) 'search': kw,
-        if (category != null && category.isNotEmpty) 'category': category,
-        if (expertise != null && expertise.isNotEmpty) 'expertise': expertise,
-        'page': page,
-        'limit': limit,
-      });
+      res = await _dio.get(
+        ApiEndpoints.menteeMentorFilter,
+        queryParameters: {
+          if (kw.isNotEmpty) 'search': kw,
+          if (category != null && category.isNotEmpty) 'category': category,
+          if (expertise != null && expertise.isNotEmpty) 'expertise': expertise,
+          'page': page,
+          'limit': limit,
+        },
+      );
     } else if (kw.isNotEmpty) {
-      res = await _dio.get(ApiEndpoints.menteeMentorSearch,
-          queryParameters: {'keyword': kw, 'page': page, 'limit': limit});
+      res = await _dio.get(
+        ApiEndpoints.menteeMentorSearch,
+        queryParameters: {'keyword': kw, 'page': page, 'limit': limit},
+      );
     } else {
-      res = await _dio.get(ApiEndpoints.menteeMentors,
-          queryParameters: {'page': page, 'limit': limit});
+      res = await _dio.get(
+        ApiEndpoints.menteeMentors,
+        queryParameters: {'page': page, 'limit': limit},
+      );
     }
     return _items(res.data, MentorProfile.fromJson);
   }
@@ -79,19 +86,29 @@ class MentorshipRepository {
     String? description,
     String? bookingNote,
   }) async {
-    final res = await _dio.post(ApiEndpoints.menteeBookSession, data: {
-      'availabilityId': availabilityId,
-      'sessionType': sessionType,
-      'introduction': introduction,
-      if (description != null && description.isNotEmpty) 'description': description,
-      if (bookingNote != null && bookingNote.isNotEmpty) 'bookingNote': bookingNote,
-    });
+    final res = await _dio.post(
+      ApiEndpoints.menteeBookSession,
+      data: {
+        'availabilityId': availabilityId,
+        'sessionType': sessionType,
+        'introduction': introduction,
+        if (description != null && description.isNotEmpty)
+          'description': description,
+        if (bookingNote != null && bookingNote.isNotEmpty)
+          'bookingNote': bookingNote,
+      },
+    );
     return MentorshipSession.fromJson(_dataMap(res.data));
   }
 
-  Future<List<MentorshipSession>> getMySessions({int page = 0, int limit = 20}) async {
-    final res = await _dio.get(ApiEndpoints.menteeSessions,
-        queryParameters: {'page': page, 'limit': limit});
+  Future<List<MentorshipSession>> getMySessions({
+    int page = 0,
+    int limit = 20,
+  }) async {
+    final res = await _dio.get(
+      ApiEndpoints.menteeSessions,
+      queryParameters: {'page': page, 'limit': limit},
+    );
     return _items(res.data, MentorshipSession.fromJson);
   }
 
@@ -102,11 +119,14 @@ class MentorshipRepository {
     String? comment,
     bool isPublic = true,
   }) async {
-    final res = await _dio.post(ApiEndpoints.menteeSessionFeedback(sessionId), data: {
-      'rating': rating,
-      if (comment != null && comment.isNotEmpty) 'comment': comment,
-      'isPublic': isPublic,
-    });
+    final res = await _dio.post(
+      ApiEndpoints.menteeSessionFeedback(sessionId),
+      data: {
+        'rating': rating,
+        if (comment != null && comment.isNotEmpty) 'comment': comment,
+        'isPublic': isPublic,
+      },
+    );
     return SessionFeedback.fromJson(_dataMap(res.data));
   }
 
@@ -155,13 +175,16 @@ class MentorshipRepository {
     required String bio,
     String? defaultMeetingLink,
   }) async {
-    final res = await _dio.post(ApiEndpoints.mentorProfile, data: {
-      'currentJobTitle': currentJobTitle,
-      'currentCompany': currentCompany,
-      'bio': bio,
-      if (defaultMeetingLink != null && defaultMeetingLink.isNotEmpty)
-        'defaultMeetingLink': defaultMeetingLink,
-    });
+    final res = await _dio.post(
+      ApiEndpoints.mentorProfile,
+      data: {
+        'currentJobTitle': currentJobTitle,
+        'currentCompany': currentCompany,
+        'bio': bio,
+        if (defaultMeetingLink != null && defaultMeetingLink.isNotEmpty)
+          'defaultMeetingLink': defaultMeetingLink,
+      },
+    );
     return MentorProfile.fromJson(_dataMap(res.data));
   }
 
@@ -171,8 +194,10 @@ class MentorshipRepository {
     int page = 0,
     int limit = 50,
   }) async {
-    final res = await _dio.get(ApiEndpoints.mentorSessions,
-        queryParameters: {'page': page, 'limit': limit});
+    final res = await _dio.get(
+      ApiEndpoints.mentorSessions,
+      queryParameters: {'page': page, 'limit': limit},
+    );
     return _items(res.data, MentorshipSession.fromJson);
   }
 
@@ -207,10 +232,13 @@ class MentorshipRepository {
     required DateTime startTime,
     required DateTime endTime,
   }) async {
-    final res = await _dio.post(ApiEndpoints.mentorAvailability, data: {
-      'startTime': startTime.toIso8601String(),
-      'endTime': endTime.toIso8601String(),
-    });
+    final res = await _dio.post(
+      ApiEndpoints.mentorAvailability,
+      data: {
+        'startTime': startTime.toIso8601String(),
+        'endTime': endTime.toIso8601String(),
+      },
+    );
     return MentorAvailability.fromJson(_dataMap(res.data));
   }
 
@@ -223,8 +251,10 @@ class MentorshipRepository {
     int page = 0,
     int limit = 20,
   }) async {
-    final res = await _dio.get(ApiEndpoints.mentorFeedbacks,
-        queryParameters: {'page': page, 'limit': limit});
+    final res = await _dio.get(
+      ApiEndpoints.mentorFeedbacks,
+      queryParameters: {'page': page, 'limit': limit},
+    );
     return _items(res.data, SessionFeedback.fromJson);
   }
 
@@ -235,12 +265,16 @@ class MentorshipRepository {
     int? yearsExperience,
     String? description,
   }) async {
-    await _dio.post(ApiEndpoints.mentorExpertise, data: {
-      'topic': topic,
-      'category': category,
-      if (yearsExperience != null) 'yearsExperience': yearsExperience,
-      if (description != null && description.isNotEmpty) 'description': description,
-    });
+    await _dio.post(
+      ApiEndpoints.mentorExpertise,
+      data: {
+        'topic': topic,
+        'category': category,
+        if (yearsExperience != null) 'yearsExperience': yearsExperience,
+        if (description != null && description.isNotEmpty)
+          'description': description,
+      },
+    );
   }
 
   // --- helpers ---

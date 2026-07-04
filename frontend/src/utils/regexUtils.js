@@ -78,7 +78,7 @@ export const getRegisterSchema = (t) => z
 export const registerSchema = getRegisterSchema(null);
 
 /** Send OTP: backend SendOtpRequest — email (forgot password / resend code) */
-export const getSendOtpSchema = (t) => z.object({
+const getSendOtpSchema = (t) => z.object({
   email: z.email(t ? t('auth:email_required') : "Email là bắt buộc"),
 });
 
@@ -86,7 +86,7 @@ export const getSendOtpSchema = (t) => z.object({
 export const sendOtpSchema = getSendOtpSchema(null);
 
 /** Verify OTP: backend VerifyOtpRequest — email, otp */
-export const getVerifyOtpSchema = (t) => z.object({
+const getVerifyOtpSchema = (t) => z.object({
   email: z.email(t ? t('auth:email_required') : "Email là bắt buộc"),
   otp: z.string().min(1, t ? t('auth:otp_required') : 'Mã OTP là bắt buộc').regex(OTP_REGEX, t ? t('auth:otp_format') : 'Mã OTP phải là 6 chữ số'),
 });
@@ -95,7 +95,7 @@ export const getVerifyOtpSchema = (t) => z.object({
 export const verifyOtpSchema = getVerifyOtpSchema(null);
 
 /** Change password: backend ChangePasswordRequest — oldPassword, newPassword (userId from store) */
-export const getChangePasswordSchema = (t) => z.object({
+const getChangePasswordSchema = (t) => z.object({
   oldPassword: z.string().min(1, t ? t('auth:old_password_required') : 'Mật khẩu hiện tại là bắt buộc'),
   newPassword: z
     .string()
@@ -123,7 +123,7 @@ export const getDonationSearchOptions = (t) => [
 ];
 
 /** @deprecated Use getDonationSearchOptions(t) instead */
-export const DONATION_SEARCH_OPTIONS = getDonationSearchOptions(null);
+const DONATION_SEARCH_OPTIONS = getDonationSearchOptions(null);
 
 export const DONATION_AVATAR_FALLBACK = "/school_logo/HCMUS_Logo_Main.svg";
 

@@ -17,7 +17,7 @@ import { useAuth } from './useAuth';
  *  - isPrivileged: boolean — ADMIN or STAFF
  *  - verificationLevel: number
  */
-export const MIN_CONTRIBUTE_VERIFICATION_LEVEL = 2;
+const MIN_CONTRIBUTE_VERIFICATION_LEVEL = 2;
 
 export const useCanContribute = () => {
   const { isAuthenticated, user, verificationLevel } = useAuth();
@@ -37,5 +37,3 @@ export const useCanContribute = () => {
     };
   }, [isAuthenticated, user?.role, verificationLevel]);
 };
-
-export default useCanContribute;

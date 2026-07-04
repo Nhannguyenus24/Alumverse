@@ -117,15 +117,16 @@ class _FundraisingListPageState extends ConsumerState<FundraisingListPage> {
               },
               child: fundsAsync.when(
                 loading: () => const SkeletonList(count: 3),
-                error: (_, __) => ListView(
-                  children: [
-                    const SizedBox(height: 80),
-                    ErrorView(
-                      message: 'donation.load_failed'.tr(),
-                      onRetry: () => ref.invalidate(fundsProvider),
+                error:
+                    (_, __) => ListView(
+                      children: [
+                        const SizedBox(height: 80),
+                        ErrorView(
+                          message: 'donation.load_failed'.tr(),
+                          onRetry: () => ref.invalidate(fundsProvider),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
                 data: (page) {
                   final funds = page.items;
                   if (funds.isEmpty) {
@@ -203,15 +204,16 @@ class _FundCard extends StatelessWidget {
           children: [
             AspectRatio(
               aspectRatio: 16 / 9,
-              child: logo != null
-                  ? CachedNetworkImage(
-                      imageUrl: logo,
-                      fit: BoxFit.cover,
-                      placeholder: (_, __) =>
-                          Container(color: AppColors.divider),
-                      errorWidget: (_, __, ___) => const _FundFallback(),
-                    )
-                  : const _FundFallback(),
+              child:
+                  logo != null
+                      ? CachedNetworkImage(
+                        imageUrl: logo,
+                        fit: BoxFit.cover,
+                        placeholder:
+                            (_, __) => Container(color: AppColors.divider),
+                        errorWidget: (_, __, ___) => const _FundFallback(),
+                      )
+                      : const _FundFallback(),
             ),
             Padding(
               padding: const EdgeInsets.all(14),
@@ -223,13 +225,17 @@ class _FundCard extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 17),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 17,
+                    ),
                   ),
                   if (fund.managerName != null &&
                       fund.managerName!.isNotEmpty) ...[
                     const SizedBox(height: 6),
                     _IconLine(
-                        icon: Icons.person_outline, text: fund.managerName!),
+                      icon: Icons.person_outline,
+                      text: fund.managerName!,
+                    ),
                   ],
                   const SizedBox(height: 10),
                   _FundProgress(fund: fund),
@@ -238,16 +244,18 @@ class _FundCard extends StatelessWidget {
                     children: [
                       Expanded(
                         child: _IconLine(
-                            icon: Icons.favorite_border,
-                            text: 'donation.supporter_count'.tr(
-                                namedArgs: {
-                                  'count': '${fund.donorCount}'
-                                })),
+                          icon: Icons.favorite_border,
+                          text: 'donation.supporter_count'.tr(
+                            namedArgs: {'count': '${fund.donorCount}'},
+                          ),
+                        ),
                       ),
                       if (range.isNotEmpty)
                         Expanded(
                           child: _IconLine(
-                              icon: Icons.event_outlined, text: range),
+                            icon: Icons.event_outlined,
+                            text: range,
+                          ),
                         ),
                     ],
                   ),
@@ -292,20 +300,26 @@ class _FundProgress extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13.5,
-                    color: AppColors.primary),
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13.5,
+                  color: AppColors.primary,
+                ),
               ),
             ),
-            Text('$pct%',
-                style: const TextStyle(
-                    fontSize: 12, color: AppColors.textSecondary)),
+            Text(
+              '$pct%',
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppColors.textSecondary,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 6),
         Text(
-          'donation.goal_amount'
-              .tr(namedArgs: {'amount': formatVnd(fund.targetAmount)}),
+          'donation.goal_amount'.tr(
+            namedArgs: {'amount': formatVnd(fund.targetAmount)},
+          ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(
@@ -346,10 +360,12 @@ class _Pagination extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(
-            'donation.page_of'.tr(namedArgs: {
-              'current': '${currentPage + 1}',
-              'total': '$totalPage',
-            }),
+            'donation.page_of'.tr(
+              namedArgs: {
+                'current': '${currentPage + 1}',
+                'total': '$totalPage',
+              },
+            ),
             style: const TextStyle(fontWeight: FontWeight.w600),
           ),
         ),
@@ -370,8 +386,11 @@ class _FundFallback extends StatelessWidget {
     return Container(
       color: AppColors.primaryLighter,
       child: const Center(
-        child: Icon(Icons.volunteer_activism,
-            size: 40, color: AppColors.primary),
+        child: Icon(
+          Icons.volunteer_activism,
+          size: 40,
+          color: AppColors.primary,
+        ),
       ),
     );
   }
@@ -394,8 +413,10 @@ class _IconLine extends StatelessWidget {
             text,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style:
-                const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 12,
+            ),
           ),
         ),
       ],

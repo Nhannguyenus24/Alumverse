@@ -39,7 +39,8 @@ class _OrganizationSelectPageState
       data: (org) {
         if (org != null) context.go(RouteNames.login);
       },
-      error: (e, _) => AppToast.error(context, 'organization.cannot_enter'.tr()),
+      error:
+          (e, _) => AppToast.error(context, 'organization.cannot_enter'.tr()),
     );
   }
 
@@ -75,8 +76,8 @@ class _OrganizationSelectPageState
               Text(
                 'organization.select'.tr(),
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                  fontWeight: FontWeight.bold,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
@@ -86,17 +87,19 @@ class _OrganizationSelectPageState
               ),
               const SizedBox(height: 32),
               listAsync.when(
-                loading: () => const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 24),
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-                error: (_, __) => _Fallback(
-                  formKey: _formKey,
-                  controller: _slugCtl,
-                  loading: loading,
-                  onSubmit: _submitFallback,
-                  onRetry: () => ref.invalidate(organizationListProvider),
-                ),
+                loading:
+                    () => const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 24),
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
+                error:
+                    (_, __) => _Fallback(
+                      formKey: _formKey,
+                      controller: _slugCtl,
+                      loading: loading,
+                      onSubmit: _submitFallback,
+                      onRetry: () => ref.invalidate(organizationListProvider),
+                    ),
                 data: (orgs) {
                   if (orgs.isEmpty) {
                     return _Fallback(
@@ -126,8 +129,9 @@ class _OrganizationSelectPageState
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          backgroundColor:
-                              const WidgetStatePropertyAll(Colors.white),
+                          backgroundColor: const WidgetStatePropertyAll(
+                            Colors.white,
+                          ),
                         ),
                         inputDecorationTheme: const InputDecorationTheme(
                           border: OutlineInputBorder(),
@@ -136,9 +140,10 @@ class _OrganizationSelectPageState
                           for (final o in orgs)
                             DropdownMenuEntry(value: o.slug, label: o.name),
                         ],
-                        onSelected: loading
-                            ? null
-                            : (v) => setState(() => _selectedSlug = v),
+                        onSelected:
+                            loading
+                                ? null
+                                : (v) => setState(() => _selectedSlug = v),
                       ),
                       const SizedBox(height: 24),
                       ElevatedButton(
@@ -146,15 +151,20 @@ class _OrganizationSelectPageState
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
-                        child: loading
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                    strokeWidth: 2, color: Colors.white),
-                              )
-                            : Text('common.next'.tr(),
-                                style: const TextStyle(fontSize: 16)),
+                        child:
+                            loading
+                                ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                                : Text(
+                                  'common.next'.tr(),
+                                  style: const TextStyle(fontSize: 16),
+                                ),
                       ),
                     ],
                   );
@@ -199,9 +209,11 @@ class _Fallback extends StatelessWidget {
           const SizedBox(height: 8),
           TextFormField(
             controller: controller,
-            validator: (v) => (v == null || v.trim().isEmpty)
-                ? 'organization.org_identifier_required'.tr()
-                : null,
+            validator:
+                (v) =>
+                    (v == null || v.trim().isEmpty)
+                        ? 'organization.org_identifier_required'.tr()
+                        : null,
             decoration: InputDecoration(
               labelText: 'organization.org_identifier'.tr(),
               hintText: 'organization.org_identifier_hint'.tr(),
@@ -215,14 +227,20 @@ class _Fallback extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
             ),
-            child: loading
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2, color: Colors.white),
-                  )
-                : Text('common.next'.tr(), style: const TextStyle(fontSize: 16)),
+            child:
+                loading
+                    ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                    : Text(
+                      'common.next'.tr(),
+                      style: const TextStyle(fontSize: 16),
+                    ),
           ),
         ],
       ),

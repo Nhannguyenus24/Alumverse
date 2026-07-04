@@ -38,14 +38,6 @@ export function formatCurrency(value) {
   return new Intl.NumberFormat("vi-VN").format(Number(value ?? 0));
 }
 
-/**
- * Formats a number as a currency string with "VND" suffix.
- * @param {number|string} value - The value to format.
- * @returns {string} The formatted string (e.g., "1.000.000 VND").
- */
-function formatVND(value) {
-  return `${formatCurrency(value)} VND`;
-}
 
 const ONES = ['không', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín'];
 // Bậc cho từng nhóm 3 chữ số: '', nghìn, triệu rồi lặp lại kèm 'tỷ'.

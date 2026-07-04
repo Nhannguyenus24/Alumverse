@@ -30,15 +30,16 @@ class MyDonationsPage extends ConsumerWidget {
         },
         child: async.when(
           loading: () => const SkeletonList(count: 5),
-          error: (_, __) => ListView(
-            children: [
-              const SizedBox(height: 80),
-              ErrorView(
-                message: 'donation.history_load_failed'.tr(),
-                onRetry: () => ref.invalidate(myDonationsProvider),
+          error:
+              (_, __) => ListView(
+                children: [
+                  const SizedBox(height: 80),
+                  ErrorView(
+                    message: 'donation.history_load_failed'.tr(),
+                    onRetry: () => ref.invalidate(myDonationsProvider),
+                  ),
+                ],
               ),
-            ],
-          ),
           data: (page) {
             if (page.items.isEmpty) {
               return ListView(
@@ -53,7 +54,10 @@ class MyDonationsPage extends ConsumerWidget {
                   Center(
                     child: ElevatedButton.icon(
                       onPressed: () => context.push(RouteNames.fundraising),
-                      icon: const Icon(Icons.volunteer_activism_outlined, size: 18),
+                      icon: const Icon(
+                        Icons.volunteer_activism_outlined,
+                        size: 18,
+                      ),
                       label: Text('donation.explore_funds'.tr()),
                     ),
                   ),
@@ -82,49 +86,60 @@ class _DonationCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final df = DateFormat('dd/MM/yyyy • HH:mm');
     return InkWell(
-      onTap: donation.fundId != null
-          ? () => context.push('${RouteNames.fundraising}/${donation.fundId}')
-          : null,
+      onTap:
+          donation.fundId != null
+              ? () =>
+                  context.push('${RouteNames.fundraising}/${donation.fundId}')
+              : null,
       borderRadius: BorderRadius.circular(12),
       child: Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.divider),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(formatVnd(donation.amount),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.divider),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    formatVnd(donation.amount),
                     style: const TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 16,
-                        color: AppColors.primary)),
-                if (donation.message != null &&
-                    donation.message!.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(donation.message!,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 16,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  if (donation.message != null &&
+                      donation.message!.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      donation.message!,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 13)),
-                ],
-                if (donation.createdAt != null) ...[
-                  const SizedBox(height: 4),
-                  Text(df.format(donation.createdAt!),
+                      style: const TextStyle(fontSize: 13),
+                    ),
+                  ],
+                  if (donation.createdAt != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      df.format(donation.createdAt!),
                       style: TextStyle(
-                          fontSize: 11.5, color: AppColors.textSecondary)),
+                        fontSize: 11.5,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          _StatusChip(status: donation.status),
-        ],
-      ),
+            const SizedBox(width: 12),
+            _StatusChip(status: donation.status),
+          ],
+        ),
       ),
     );
   }
@@ -148,9 +163,14 @@ class _StatusChip extends StatelessWidget {
         color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Text(label,
-          style: TextStyle(
-              color: color, fontSize: 12, fontWeight: FontWeight.w600)),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 }

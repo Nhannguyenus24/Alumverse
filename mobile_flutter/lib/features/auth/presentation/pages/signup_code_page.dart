@@ -24,10 +24,7 @@ class _SignupCodePageState extends ConsumerState<SignupCodePage> {
     6,
     (_) => TextEditingController(),
   );
-  final List<FocusNode> _focusNodes = List.generate(
-    6,
-    (_) => FocusNode(),
-  );
+  final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
 
   bool _verifying = false;
   bool _resending = false;
@@ -76,9 +73,10 @@ class _SignupCodePageState extends ConsumerState<SignupCodePage> {
       context.go(RouteNames.login);
     } catch (e) {
       if (!mounted) return;
-      final message = e is Exception
-          ? e.toString().replaceFirst('Exception: ', '')
-          : 'auth.verify_failed'.tr();
+      final message =
+          e is Exception
+              ? e.toString().replaceFirst('Exception: ', '')
+              : 'auth.verify_failed'.tr();
       AppToast.error(context, message);
     } finally {
       if (mounted) setState(() => _verifying = false);
@@ -93,9 +91,10 @@ class _SignupCodePageState extends ConsumerState<SignupCodePage> {
       AppToast.success(context, 'auth.resend_success'.tr());
     } catch (e) {
       if (!mounted) return;
-      final message = e is Exception
-          ? e.toString().replaceFirst('Exception: ', '')
-          : 'auth.resend_failed'.tr();
+      final message =
+          e is Exception
+              ? e.toString().replaceFirst('Exception: ', '')
+              : 'auth.resend_failed'.tr();
       AppToast.error(context, message);
     } finally {
       if (mounted) setState(() => _resending = false);
@@ -124,9 +123,9 @@ class _SignupCodePageState extends ConsumerState<SignupCodePage> {
               Text(
                 'auth.enter_code'.tr(),
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).primaryColor,
-                    ),
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).primaryColor,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
@@ -152,8 +151,9 @@ class _SignupCodePageState extends ConsumerState<SignupCodePage> {
                       ],
                       onChanged: (v) => _onChanged(v, index),
                       decoration: InputDecoration(
-                        contentPadding:
-                            const EdgeInsets.symmetric(vertical: 12),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -168,17 +168,20 @@ class _SignupCodePageState extends ConsumerState<SignupCodePage> {
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
-                child: _verifying
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
+                child:
+                    _verifying
+                        ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                        : Text(
+                          'common.next'.tr(),
+                          style: const TextStyle(fontSize: 16),
                         ),
-                      )
-                    : Text('common.next'.tr(),
-                        style: const TextStyle(fontSize: 16)),
               ),
               const SizedBox(height: 24),
               Center(

@@ -46,13 +46,18 @@ class ConversationRequestCard extends StatelessWidget {
                   child: CircleAvatar(
                     radius: 26,
                     backgroundColor: AppColors.primaryLighter,
-                    backgroundImage: avatar != null
-                        ? CachedNetworkImageProvider(avatar)
-                        : null,
-                    child: avatar == null
-                        ? const Icon(Icons.person,
-                            size: 28, color: AppColors.primary)
-                        : null,
+                    backgroundImage:
+                        avatar != null
+                            ? CachedNetworkImageProvider(avatar)
+                            : null,
+                    child:
+                        avatar == null
+                            ? const Icon(
+                              Icons.person,
+                              size: 28,
+                              color: AppColors.primary,
+                            )
+                            : null,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -83,8 +88,7 @@ class ConversationRequestCard extends StatelessWidget {
           ),
           if (request.message != null && request.message!.isNotEmpty)
             Padding(
-              padding:
-                  const EdgeInsets.only(left: 12, right: 12, bottom: 12),
+              padding: const EdgeInsets.only(left: 12, right: 12, bottom: 12),
               child: Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(10),
@@ -107,40 +111,41 @@ class ConversationRequestCard extends StatelessWidget {
           if (request.isPending) ...[
             const Divider(height: 1, color: AppColors.divider),
             Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              child: isLoading
-                  ? const Center(
-                      child: SizedBox(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              child:
+                  isLoading
+                      ? const Center(
+                        child: SizedBox(
                           width: 24,
                           height: 24,
-                          child: CircularProgressIndicator(strokeWidth: 2)))
-                  : Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: onReject,
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: AppColors.error,
-                              side: const BorderSide(
-                                  color: AppColors.error),
-                            ),
-                            child: Text('network.reject'.tr()),
-                          ),
+                          child: CircularProgressIndicator(strokeWidth: 2),
                         ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: onAccept,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primary,
-                              foregroundColor: Colors.white,
+                      )
+                      : Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: onReject,
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: AppColors.error,
+                                side: const BorderSide(color: AppColors.error),
+                              ),
+                              child: Text('network.reject'.tr()),
                             ),
-                            child: Text('network.accept'.tr()),
                           ),
-                        ),
-                      ],
-                    ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: onAccept,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                foregroundColor: Colors.white,
+                              ),
+                              child: Text('network.accept'.tr()),
+                            ),
+                          ),
+                        ],
+                      ),
             ),
           ],
         ],
@@ -171,8 +176,7 @@ class _StatusChip extends StatelessWidget {
         style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w500,
-          color:
-              isPending ? AppColors.warning : AppColors.textSecondary,
+          color: isPending ? AppColors.warning : AppColors.textSecondary,
         ),
       ),
     );

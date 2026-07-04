@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 import com.service.backend.shared.dto.IdCountDTO;
 
 import com.service.backend.admin.dao.AdminAuditLogRepository;
-import com.service.backend.admin.dao.AdminOrganizationRepository;
+import com.service.backend.organization.dao.OrganizationRepository;
 import com.service.backend.admin.dao.AdminUserRepository;
 import com.service.backend.user.service.NotificationService;
 import com.service.backend.admin.dto.ForumStatisticsDTO;
@@ -58,7 +58,7 @@ public class AdminForumService {
     private final ForumCategoryRepository forumCategoryRepository;
     private final ForumPostReportRepository forumPostReportRepository;
     private final CacheUtils cacheUtils;
-    private final AdminOrganizationRepository adminOrganizationRepository;
+    private final OrganizationRepository organizationRepository;
     private final AdminUserRepository adminUserRepository;
     private final AdminAuditLogRepository adminAuditLogRepository;
     private final NotificationService notificationService;
@@ -620,7 +620,7 @@ public class AdminForumService {
     // ========== ORGANIZATION ENGAGEMENT RATE ==========
 
     public Mono<List<OrganizationEngagementDTO>> getOrganizationEngagement() {
-        return adminOrganizationRepository.findAll()
+        return organizationRepository.findAll()
                 .collectList()
                 .flatMap(orgs -> {
                     if (orgs.isEmpty()) return Mono.just(Collections.<OrganizationEngagementDTO>emptyList());
@@ -632,7 +632,7 @@ public class AdminForumService {
 
                     // Two batch queries instead of two count queries per organization.
                     Mono<Map<Integer, Long>> totalMembersMapMono =
-                            adminOrganizationRepository.countActiveMembersByOrganizations(orgIds)
+                            organizationRepository.countActiveMembersByOrganizations(orgIds)
                                     .collectMap(IdCountDTO::getId, IdCountDTO::getCount);
                     Mono<Map<Integer, Long>> activeForumUsersMapMono =
                             forumPostRepository.countActiveForumUsersByOrganizations(orgIds)

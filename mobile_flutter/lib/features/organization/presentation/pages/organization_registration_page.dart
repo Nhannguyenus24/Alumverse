@@ -141,7 +141,9 @@ class _OrganizationRegistrationPageState
       final major = _major(majorOptions);
       final gradYear = int.tryParse(_graduatedYearCtl.text.trim());
 
-      await ref.read(organizationRepositoryProvider).joinOrganization(
+      await ref
+          .read(organizationRepositoryProvider)
+          .joinOrganization(
             organizationId: orgId,
             userId: parsedUserId,
             program: (program != null && program.isNotEmpty) ? [program] : null,
@@ -181,7 +183,9 @@ class _OrganizationRegistrationPageState
       if (_proofFile != null) {
         try {
           final bytes = await _proofFile!.readAsBytes();
-          await ref.read(organizationRepositoryProvider).createVerificationRequest(
+          await ref
+              .read(organizationRepositoryProvider)
+              .createVerificationRequest(
                 base64File: base64Encode(bytes),
                 originalFileName: _proofFile!.name,
                 documentType: 'image',
@@ -201,9 +205,10 @@ class _OrganizationRegistrationPageState
       context.go(RouteNames.home);
     } catch (e) {
       if (!mounted) return;
-      final message = e is Exception
-          ? e.toString().replaceFirst('Exception: ', '')
-          : 'organization.join_failed'.tr();
+      final message =
+          e is Exception
+              ? e.toString().replaceFirst('Exception: ', '')
+              : 'organization.join_failed'.tr();
       AppToast.error(context, message);
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -234,9 +239,9 @@ class _OrganizationRegistrationPageState
                 Text(
                   'organization.academic_verification_upper'.tr(),
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
-                      ),
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -255,11 +260,13 @@ class _OrganizationRegistrationPageState
                 ),
                 TextFormField(
                   controller: _studentCodeCtl,
-                  validator: _isAllOptional
-                      ? null
-                      : (v) => (v == null || v.trim().isEmpty)
-                          ? 'organization.student_code_required'.tr()
-                          : null,
+                  validator:
+                      _isAllOptional
+                          ? null
+                          : (v) =>
+                              (v == null || v.trim().isEmpty)
+                                  ? 'organization.student_code_required'.tr()
+                                  : null,
                   decoration: InputDecoration(
                     labelText: 'organization.student_code'.tr(),
                     hintText: 'organization.student_code_hint'.tr(),
@@ -290,8 +297,9 @@ class _OrganizationRegistrationPageState
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      backgroundColor:
-                          const WidgetStatePropertyAll(Colors.white),
+                      backgroundColor: const WidgetStatePropertyAll(
+                        Colors.white,
+                      ),
                     ),
                     inputDecorationTheme: const InputDecorationTheme(
                       border: OutlineInputBorder(),
@@ -311,11 +319,13 @@ class _OrganizationRegistrationPageState
                 else
                   TextFormField(
                     controller: _programCtl,
-                    validator: _isAcademicOptional
-                        ? null
-                        : (v) => (v == null || v.trim().isEmpty)
-                            ? 'organization.program_required'.tr()
-                            : null,
+                    validator:
+                        _isAcademicOptional
+                            ? null
+                            : (v) =>
+                                (v == null || v.trim().isEmpty)
+                                    ? 'organization.program_required'.tr()
+                                    : null,
                     decoration: InputDecoration(
                       labelText: 'organization.program'.tr(),
                       hintText: 'organization.program_hint'.tr(),
@@ -329,11 +339,13 @@ class _OrganizationRegistrationPageState
                       child: TextFormField(
                         controller: _startYearCtl,
                         keyboardType: TextInputType.number,
-                        validator: _isAcademicOptional
-                            ? null
-                            : (v) => (v == null || v.trim().isEmpty)
-                                ? 'common.required_field'.tr()
-                                : null,
+                        validator:
+                            _isAcademicOptional
+                                ? null
+                                : (v) =>
+                                    (v == null || v.trim().isEmpty)
+                                        ? 'common.required_field'.tr()
+                                        : null,
                         decoration: InputDecoration(
                           labelText: 'organization.start_year'.tr(),
                           hintText: '2015',
@@ -345,11 +357,13 @@ class _OrganizationRegistrationPageState
                       child: TextFormField(
                         controller: _graduatedYearCtl,
                         keyboardType: TextInputType.number,
-                        validator: _isAcademicOptional
-                            ? null
-                            : (v) => (v == null || v.trim().isEmpty)
-                                ? 'common.required_field'.tr()
-                                : null,
+                        validator:
+                            _isAcademicOptional
+                                ? null
+                                : (v) =>
+                                    (v == null || v.trim().isEmpty)
+                                        ? 'common.required_field'.tr()
+                                        : null,
                         decoration: InputDecoration(
                           labelText: 'profile.graduation_year'.tr(),
                           hintText: '2019',
@@ -374,8 +388,9 @@ class _OrganizationRegistrationPageState
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      backgroundColor:
-                          const WidgetStatePropertyAll(Colors.white),
+                      backgroundColor: const WidgetStatePropertyAll(
+                        Colors.white,
+                      ),
                     ),
                     inputDecorationTheme: const InputDecorationTheme(
                       border: OutlineInputBorder(),
@@ -395,11 +410,13 @@ class _OrganizationRegistrationPageState
                 else
                   TextFormField(
                     controller: _majorCtl,
-                    validator: _isAcademicOptional
-                        ? null
-                        : (v) => (v == null || v.trim().isEmpty)
-                            ? 'organization.major_required'.tr()
-                            : null,
+                    validator:
+                        _isAcademicOptional
+                            ? null
+                            : (v) =>
+                                (v == null || v.trim().isEmpty)
+                                    ? 'organization.major_required'.tr()
+                                    : null,
                     decoration: InputDecoration(
                       labelText: 'profile.major'.tr(),
                       hintText: 'organization.major_hint'.tr(),
@@ -409,7 +426,10 @@ class _OrganizationRegistrationPageState
                 const SizedBox(height: 24),
 
                 // --- Proof upload (optional) ---
-                _SectionLabel('organization.proof_optional'.tr(), required: false),
+                _SectionLabel(
+                  'organization.proof_optional'.tr(),
+                  required: false,
+                ),
                 OutlinedButton.icon(
                   onPressed: _submitting ? null : _pickProof,
                   icon: const Icon(Icons.cloud_upload_outlined),
@@ -427,8 +447,8 @@ class _OrganizationRegistrationPageState
                   child: Text(
                     _proofFile != null
                         ? 'organization.proof_selected'.tr(
-                            namedArgs: {'name': _proofFile!.name},
-                          )
+                          namedArgs: {'name': _proofFile!.name},
+                        )
                         : 'organization.proof_hint'.tr(),
                     style: const TextStyle(
                       fontSize: 12,
@@ -439,11 +459,16 @@ class _OrganizationRegistrationPageState
                 const SizedBox(height: 24),
 
                 // --- Trusted verifiers ---
-                _SectionLabel('organization.trusted_verifiers'.tr(), required: false),
+                _SectionLabel(
+                  'organization.trusted_verifiers'.tr(),
+                  required: false,
+                ),
                 Text(
                   'organization.trusted_verifiers_desc'.tr(),
                   style: const TextStyle(
-                      fontSize: 13, color: AppColors.textSecondary),
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 if (org != null)
@@ -459,9 +484,10 @@ class _OrganizationRegistrationPageState
                   children: [
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: _submitting
-                            ? null
-                            : () => context.go(RouteNames.login),
+                        onPressed:
+                            _submitting
+                                ? null
+                                : () => context.go(RouteNames.login),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
@@ -475,16 +501,19 @@ class _OrganizationRegistrationPageState
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
-                        child: _submitting
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
+                        child:
+                            _submitting
+                                ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                                : Text(
+                                  'organization.academic_verification'.tr(),
                                 ),
-                              )
-                            : Text('organization.academic_verification'.tr()),
                       ),
                     ),
                   ],
@@ -538,9 +567,7 @@ class _InfoBanner extends StatelessWidget {
         children: [
           const Icon(Icons.info_outline, size: 20, color: AppColors.info),
           const SizedBox(width: 8),
-          Expanded(
-            child: Text(text, style: const TextStyle(fontSize: 13)),
-          ),
+          Expanded(child: Text(text, style: const TextStyle(fontSize: 13))),
         ],
       ),
     );
@@ -563,21 +590,26 @@ class _VerifierList extends ConsumerWidget {
     final async = ref.watch(trustedVerifiersProvider(organizationId));
 
     return async.when(
-      loading: () => const Padding(
-        padding: EdgeInsets.symmetric(vertical: 24),
-        child: Center(child: CircularProgressIndicator()),
-      ),
-      error: (_, __) => Text(
-        'organization.verifiers_load_failed'.tr(),
-        style: const TextStyle(color: AppColors.textSecondary),
-      ),
+      loading:
+          () => const Padding(
+            padding: EdgeInsets.symmetric(vertical: 24),
+            child: Center(child: CircularProgressIndicator()),
+          ),
+      error:
+          (_, __) => Text(
+            'organization.verifiers_load_failed'.tr(),
+            style: const TextStyle(color: AppColors.textSecondary),
+          ),
       data: (verifiers) {
         if (verifiers.isEmpty) {
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 12),
             child: Text(
               'organization.no_verifiers'.tr(),
-              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppColors.textSecondary,
+              ),
             ),
           );
         }
@@ -628,21 +660,24 @@ class _VerifierTile extends StatelessWidget {
               color: selected ? AppColors.primary : AppColors.divider,
               width: 1.5,
             ),
-            color: selected
-                ? AppColors.primary.withValues(alpha: 0.06)
-                : Colors.transparent,
+            color:
+                selected
+                    ? AppColors.primary.withValues(alpha: 0.06)
+                    : Colors.transparent,
           ),
           child: Row(
             children: [
               CircleAvatar(
                 radius: 20,
                 backgroundColor: AppColors.primaryLighter,
-                backgroundImage: avatarUrl != null
-                    ? CachedNetworkImageProvider(avatarUrl!)
-                    : null,
-                child: avatarUrl == null
-                    ? const Icon(Icons.person, color: AppColors.primary)
-                    : null,
+                backgroundImage:
+                    avatarUrl != null
+                        ? CachedNetworkImageProvider(avatarUrl!)
+                        : null,
+                child:
+                    avatarUrl == null
+                        ? const Icon(Icons.person, color: AppColors.primary)
+                        : null,
               ),
               const SizedBox(width: 12),
               Expanded(

@@ -44,15 +44,17 @@ class MyProfilePage extends ConsumerWidget {
         },
         child: async.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (_, __) => ErrorView(
-            message: 'profile.load_failed'.tr(),
-            onRetry: () => ref.invalidate(myProfileProvider),
-          ),
-          data: (p) => _ProfileView(
-            profile: p,
-            showVerifier: isVerifier,
-            showEducationVerify: !isStaff,
-          ),
+          error:
+              (_, __) => ErrorView(
+                message: 'profile.load_failed'.tr(),
+                onRetry: () => ref.invalidate(myProfileProvider),
+              ),
+          data:
+              (p) => _ProfileView(
+                profile: p,
+                showVerifier: isVerifier,
+                showEducationVerify: !isStaff,
+              ),
         ),
       ),
     );
@@ -85,29 +87,38 @@ class _ProfileView extends StatelessWidget {
                 backgroundColor: AppColors.primaryLighter,
                 backgroundImage:
                     avatar != null ? CachedNetworkImageProvider(avatar) : null,
-                child: avatar == null
-                    ? const Icon(Icons.person, size: 52, color: AppColors.primary)
-                    : null,
+                child:
+                    avatar == null
+                        ? const Icon(
+                          Icons.person,
+                          size: 52,
+                          color: AppColors.primary,
+                        )
+                        : null,
               ),
               const SizedBox(height: 12),
               Text(
                 profile.fullName ?? 'profile.not_updated'.tr(),
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               if (profile.studentId != null && profile.studentId!.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(top: 2),
                   child: Text(
-                    'profile.student_id_label'
-                        .tr(namedArgs: {'id': profile.studentId!}),
+                    'profile.student_id_label'.tr(
+                      namedArgs: {'id': profile.studentId!},
+                    ),
                     style: const TextStyle(color: AppColors.textSecondary),
                   ),
                 ),
               const SizedBox(height: 12),
               if (showEducationVerify)
                 OutlinedButton.icon(
-                  onPressed: () =>
-                      context.push(RouteNames.organizationRegistration),
+                  onPressed:
+                      () => context.push(RouteNames.organizationRegistration),
                   icon: const Icon(Icons.verified_user_outlined, size: 18),
                   label: Text('profile.verify_education'.tr()),
                   style: OutlinedButton.styleFrom(
@@ -129,24 +140,28 @@ class _ProfileView extends StatelessWidget {
         ],
         _SectionTitle('profile.basic_info'.tr()),
         _InfoRow(
-            icon: Icons.email_outlined,
-            label: 'profile.email'.tr(),
-            value: profile.email),
+          icon: Icons.email_outlined,
+          label: 'profile.email'.tr(),
+          value: profile.email,
+        ),
         if (profile.phone != null && profile.phone!.isNotEmpty)
           _InfoRow(
-              icon: Icons.phone_outlined,
-              label: 'profile.phone'.tr(),
-              value: profile.phone!),
+            icon: Icons.phone_outlined,
+            label: 'profile.phone'.tr(),
+            value: profile.phone!,
+          ),
         if (profile.gender != null && profile.gender!.isNotEmpty)
           _InfoRow(
-              icon: Icons.wc_outlined,
-              label: 'profile.gender'.tr(),
-              value: _genderLabel(profile.gender!)),
+            icon: Icons.wc_outlined,
+            label: 'profile.gender'.tr(),
+            value: _genderLabel(profile.gender!),
+          ),
         if (profile.dob != null && profile.dob!.isNotEmpty)
           _InfoRow(
-              icon: Icons.cake_outlined,
-              label: 'profile.dob'.tr(),
-              value: profile.dob!),
+            icon: Icons.cake_outlined,
+            label: 'profile.dob'.tr(),
+            value: profile.dob!,
+          ),
         const SizedBox(height: 20),
         _SectionTitle('profile.activities'.tr()),
         _ActivityTile(
@@ -206,8 +221,11 @@ class _SectionTitle extends StatelessWidget {
 }
 
 class _ActivityTile extends StatelessWidget {
-  const _ActivityTile(
-      {required this.icon, required this.title, required this.onTap});
+  const _ActivityTile({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+  });
 
   final IconData icon;
   final String title;
@@ -233,7 +251,11 @@ class _ActivityTile extends StatelessWidget {
 }
 
 class _InfoRow extends StatelessWidget {
-  const _InfoRow({required this.icon, required this.label, required this.value});
+  const _InfoRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
 
   final IconData icon;
   final String label;
@@ -252,9 +274,13 @@ class _InfoRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label,
-                    style: const TextStyle(
-                        fontSize: 12, color: AppColors.textSecondary)),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
                 const SizedBox(height: 2),
                 Text(value, style: const TextStyle(fontSize: 15)),
               ],

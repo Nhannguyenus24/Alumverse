@@ -33,10 +33,11 @@ class NewsListPage extends ConsumerWidget {
         },
         child: async.when(
           loading: () => const SkeletonList(count: 4),
-          error: (_, __) => ErrorView(
-            message: 'article.load_failed'.tr(),
-            onRetry: () => ref.invalidate(publishedNewsProvider),
-          ),
+          error:
+              (_, __) => ErrorView(
+                message: 'article.load_failed'.tr(),
+                onRetry: () => ref.invalidate(publishedNewsProvider),
+              ),
           data: (news) {
             if (news.isEmpty) {
               return const _NewsEmpty();
@@ -44,47 +45,67 @@ class NewsListPage extends ConsumerWidget {
             final featured = news.first;
             final rest = news.length > 1 ? news.sublist(1) : <Article>[];
 
-            return ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                Text(
-                  'article.title_upper'.tr(),
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.primary,
+            return CustomScrollView(
+              slivers: [
+                SliverPadding(
+                  padding: const EdgeInsets.all(16),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
+                      Text(
+                        'article.title_upper'.tr(),
+                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.primary,
+                        ),
                       ),
-                ),
-                const SizedBox(height: 16),
-                _FeaturedNewsCard(article: featured)
-                    .animate()
-                    .fadeIn(duration: 300.ms)
-                    .slideY(begin: 0.08, curve: Curves.easeOut),
-                if (rest.isNotEmpty) ...[
-                  const SizedBox(height: 24),
-                  Text(
-                    'article.suggestions'.tr(),
-                    style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.w700),
+                      const SizedBox(height: 16),
+                      _FeaturedNewsCard(article: featured)
+                          .animate()
+                          .fadeIn(duration: 300.ms)
+                          .slideY(begin: 0.08, curve: Curves.easeOut),
+                    ]),
                   ),
-                  const SizedBox(height: 12),
-                  GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: rest.length,
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 12,
-                      crossAxisSpacing: 12,
-                      childAspectRatio: 0.68,
+                ),
+                if (rest.isNotEmpty) ...[
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    sliver: SliverToBoxAdapter(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 24),
+                          Text(
+                            'article.suggestions'.tr(),
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+                      ),
                     ),
-                    itemBuilder: (_, i) => _NewsCard(article: rest[i])
-                        .animate()
-                        .fadeIn(duration: 300.ms, delay: (40 * i).ms)
-                        .slideY(begin: 0.1, curve: Curves.easeOut),
+                  ),
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    sliver: SliverGrid(
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 12,
+                        childAspectRatio: 0.68,
+                      ),
+                      delegate: SliverChildBuilderDelegate(
+                        (_, i) => _NewsCard(article: rest[i])
+                            .animate()
+                            .fadeIn(duration: 300.ms, delay: (40 * i).ms)
+                            .slideY(begin: 0.1, curve: Curves.easeOut),
+                        childCount: rest.length,
+                      ),
+                    ),
                   ),
                 ],
-                const SizedBox(height: 24),
+                const SliverToBoxAdapter(child: SizedBox(height: 24)),
               ],
             );
           },
@@ -103,9 +124,10 @@ class _FeaturedNewsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final thumb = resolveImageUrl(article.thumbnailUrl);
     final snippet = HtmlUtils.toPlainText(article.content);
-    final date = article.publishedAt != null
-        ? DateFormat('dd/MM/yyyy').format(article.publishedAt!)
-        : null;
+    final date =
+        article.publishedAt != null
+            ? DateFormat('dd/MM/yyyy').format(article.publishedAt!)
+            : null;
 
     return InkWell(
       onTap: () => context.push('${RouteNames.articles}/${article.id}'),
@@ -122,15 +144,16 @@ class _FeaturedNewsCard extends StatelessWidget {
           children: [
             AspectRatio(
               aspectRatio: 16 / 9,
-              child: thumb != null
-                  ? CachedNetworkImage(
-                      imageUrl: thumb,
-                      fit: BoxFit.cover,
-                      placeholder: (_, __) =>
-                          Container(color: AppColors.divider),
-                      errorWidget: (_, __, ___) => const _NewsFallback(),
-                    )
-                  : const _NewsFallback(),
+              child:
+                  thumb != null
+                      ? CachedNetworkImage(
+                        imageUrl: thumb,
+                        fit: BoxFit.cover,
+                        placeholder:
+                            (_, __) => Container(color: AppColors.divider),
+                        errorWidget: (_, __, ___) => const _NewsFallback(),
+                      )
+                      : const _NewsFallback(),
             ),
             Padding(
               padding: const EdgeInsets.all(14),
@@ -154,7 +177,9 @@ class _FeaturedNewsCard extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.bold),
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   if (snippet.isNotEmpty) ...[
                     const SizedBox(height: 6),
@@ -192,9 +217,10 @@ class _NewsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final thumb = resolveImageUrl(article.thumbnailUrl);
     final snippet = HtmlUtils.toPlainText(article.content);
-    final date = article.publishedAt != null
-        ? DateFormat('dd/MM/yyyy').format(article.publishedAt!)
-        : null;
+    final date =
+        article.publishedAt != null
+            ? DateFormat('dd/MM/yyyy').format(article.publishedAt!)
+            : null;
 
     return InkWell(
       onTap: () => context.push('${RouteNames.articles}/${article.id}'),
@@ -211,15 +237,16 @@ class _NewsCard extends StatelessWidget {
           children: [
             AspectRatio(
               aspectRatio: 16 / 10,
-              child: thumb != null
-                  ? CachedNetworkImage(
-                      imageUrl: thumb,
-                      fit: BoxFit.cover,
-                      placeholder: (_, __) =>
-                          Container(color: AppColors.divider),
-                      errorWidget: (_, __, ___) => const _NewsFallback(),
-                    )
-                  : const _NewsFallback(),
+              child:
+                  thumb != null
+                      ? CachedNetworkImage(
+                        imageUrl: thumb,
+                        fit: BoxFit.cover,
+                        placeholder:
+                            (_, __) => Container(color: AppColors.divider),
+                        errorWidget: (_, __, ___) => const _NewsFallback(),
+                      )
+                      : const _NewsFallback(),
             ),
             Expanded(
               child: Padding(
@@ -232,7 +259,9 @@ class _NewsCard extends StatelessWidget {
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                          fontWeight: FontWeight.w800, fontSize: 13.5),
+                        fontWeight: FontWeight.w800,
+                        fontSize: 13.5,
+                      ),
                     ),
                     if (snippet.isNotEmpty) ...[
                       const SizedBox(height: 5),
@@ -269,8 +298,11 @@ class _DateLine extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        const Icon(Icons.calendar_today_outlined,
-            size: 13, color: AppColors.textSecondary),
+        const Icon(
+          Icons.calendar_today_outlined,
+          size: 13,
+          color: AppColors.textSecondary,
+        ),
         const SizedBox(width: 4),
         Text(
           date,
@@ -289,8 +321,11 @@ class _NewsFallback extends StatelessWidget {
     return Container(
       color: AppColors.primaryLighter,
       child: const Center(
-        child: Icon(Icons.image_outlined,
-            color: AppColors.primary, size: 40),
+        child: const Icon(
+          Icons.image_outlined,
+          color: AppColors.primary,
+          size: 40,
+        ),
       ),
     );
   }
