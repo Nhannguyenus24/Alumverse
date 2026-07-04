@@ -20,14 +20,14 @@ final forumCategoriesProvider = FutureProvider<List<ForumCategory>>((
   return ref.read(forumRepositoryProvider).getCategories(orgId);
 });
 
-final forumTopicsProvider = FutureProvider.family<List<ForumTopic>, int>((
+final forumTopicsProvider = FutureProvider.autoDispose.family<List<ForumTopic>, int>((
   ref,
   categoryId,
 ) {
   return ref.read(forumRepositoryProvider).getTopics(categoryId);
 });
 
-final forumPostsProvider = FutureProvider.family<List<ForumPost>, int>((
+final forumPostsProvider = FutureProvider.autoDispose.family<List<ForumPost>, int>((
   ref,
   topicId,
 ) {

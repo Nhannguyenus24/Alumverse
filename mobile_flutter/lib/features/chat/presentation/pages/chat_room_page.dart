@@ -94,7 +94,6 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
   @override
   Widget build(BuildContext context) {
     final args = widget.args;
-    final messagesAsync = ref.watch(chatMessagesProvider(args.groupId));
     final socket = ref.watch(chatSocketServiceProvider);
 
     final currentMemberId = int.tryParse(
@@ -125,38 +124,43 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
         children: [
           _buildBanner(args),
           Expanded(
-            child: messagesAsync.when(
-              loading: () => const LoadingView(),
-              error:
-                  (e, _) => ErrorView(
-                    message: '$e',
-                    onRetry:
-                        () =>
-                            ref.invalidate(chatMessagesProvider(args.groupId)),
-                  ),
-              data: (messages) {
-                if (messages.isEmpty) {
-                  return Center(
-                    child: Text(
-                      'chat.no_messages'.tr(),
-                      style: const TextStyle(color: AppColors.textSecondary),
-                    ),
-                  );
-                }
-                return ListView.builder(
-                  controller: _scrollController,
-                  reverse: true,
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  itemCount: messages.length,
-                  itemBuilder: (context, i) {
-                    final msg = messages[i];
-                    final isMine =
-                        currentMemberId != null &&
-                        msg.senderMemberId == currentMemberId;
-                    return MessageBubble(
-                      message: msg,
-                      isMine: isMine,
-                      showSender: args.type == 'GROUP' && !isMine,
+            child: Consumer(
+              builder: (context, ref, _) {
+                final messagesAsync = ref.watch(chatMessagesProvider(args.groupId));
+                return messagesAsync.when(
+                  loading: () => const LoadingView(),
+                  error:
+                      (e, _) => ErrorView(
+                        message: '$e',
+                        onRetry:
+                            () =>
+                                ref.invalidate(chatMessagesProvider(args.groupId)),
+                      ),
+                  data: (messages) {
+                    if (messages.isEmpty) {
+                      return Center(
+                        child: Text(
+                          'chat.no_messages'.tr(),
+                          style: const TextStyle(color: AppColors.textSecondary),
+                        ),
+                      );
+                    }
+                    return ListView.builder(
+                      controller: _scrollController,
+                      reverse: true,
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      itemCount: messages.length,
+                      itemBuilder: (context, i) {
+                        final msg = messages[i];
+                        final isMine =
+                            currentMemberId != null &&
+                            msg.senderMemberId == currentMemberId;
+                        return MessageBubble(
+                          message: msg,
+                          isMine: isMine,
+                          showSender: args.type == 'GROUP' && !isMine,
+                        );
+                      },
                     );
                   },
                 );

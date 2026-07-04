@@ -58,44 +58,78 @@ class EventsPage extends ConsumerWidget {
                 upcoming.length > 1 ? upcoming.sublist(1) : <EventSummary>[];
             final past = pastAsync.valueOrNull ?? const <EventSummary>[];
 
-            return ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                Text(
-                  'event.title_upper'.tr(),
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.primary,
+            return CustomScrollView(
+              slivers: [
+                SliverPadding(
+                  padding: const EdgeInsets.all(16),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
+                      Text(
+                        'event.title_upper'.tr(),
+                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      if (featured != null)
+                        _FeaturedEventCard(event: featured)
+                            .animate()
+                            .fadeIn(duration: 300.ms)
+                            .slideY(begin: 0.08, curve: Curves.easeOut),
+                    ]),
                   ),
                 ),
-                const SizedBox(height: 16),
-                if (featured != null)
-                  _FeaturedEventCard(event: featured)
-                      .animate()
-                      .fadeIn(duration: 300.ms)
-                      .slideY(begin: 0.08, curve: Curves.easeOut),
                 if (rest.isNotEmpty) ...[
-                  const SizedBox(height: 24),
-                  _SectionHeader('event.upcoming'.tr()),
-                  const SizedBox(height: 12),
-                  _EventGrid(events: rest),
-                ],
-                if (past.isNotEmpty) ...[
-                  const SizedBox(height: 24),
-                  _SectionHeader('event.past'.tr()),
-                  const SizedBox(height: 12),
-                  _EventGrid(events: past),
-                ],
-                if (featured == null && past.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 40),
-                    child: EmptyView(
-                      icon: Icons.event_busy_outlined,
-                      title: 'event.no_events'.tr(),
-                      message: 'event.no_events_desc'.tr(),
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    sliver: SliverToBoxAdapter(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 8),
+                          _SectionHeader('event.upcoming'.tr()),
+                          const SizedBox(height: 12),
+                        ],
+                      ),
                     ),
                   ),
-                const SizedBox(height: 24),
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    sliver: _EventGrid(events: rest),
+                  ),
+                ],
+                if (past.isNotEmpty) ...[
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    sliver: SliverToBoxAdapter(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 24),
+                          _SectionHeader('event.past'.tr()),
+                          const SizedBox(height: 12),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    sliver: _EventGrid(events: past),
+                  ),
+                ],
+                if (featured == null && past.isEmpty)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 40),
+                      child: EmptyView(
+                        icon: Icons.event_busy_outlined,
+                        title: 'event.no_events'.tr(),
+                        message: 'event.no_events_desc'.tr(),
+                      ),
+                    ),
+                  ),
+                const SliverToBoxAdapter(child: SizedBox(height: 24)),
               ],
             );
           },
@@ -126,17 +160,17 @@ class _EventGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: events.length,
+    return SliverGrid(
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         mainAxisSpacing: 12,
         crossAxisSpacing: 12,
         childAspectRatio: 0.72,
       ),
-      itemBuilder: (_, i) => _EventCard(event: events[i]),
+      delegate: SliverChildBuilderDelegate(
+        (_, i) => _EventCard(event: events[i]),
+        childCount: events.length,
+      ),
     );
   }
 }

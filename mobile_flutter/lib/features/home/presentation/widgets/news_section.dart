@@ -52,6 +52,7 @@ class NewsSection extends ConsumerWidget {
             }
             return Column(
               children: news
+                  .take(5)
                   .map((a) => _NewsCard(article: a))
                   .toList(growable: false),
             );

@@ -22,14 +22,15 @@ final pastEventsProvider = FutureProvider<List<EventSummary>>((ref) async {
 });
 
 /// Full detail for one event.
-final eventDetailProvider = FutureProvider.family<EventSummary, int>((ref, id) {
+final eventDetailProvider =
+    FutureProvider.autoDispose.family<EventSummary, int>((ref, id) {
   return ref.read(eventRepositoryProvider).getDetail(id);
 });
 
 /// Events of an organization for the admin check-in picker (drafts + past
 /// included). Keyed by organization id. Admin/staff session required.
 final adminCheckInEventsProvider =
-    FutureProvider.family<List<EventSummary>, int>((ref, organizationId) {
+    FutureProvider.autoDispose.family<List<EventSummary>, int>((ref, organizationId) {
       return ref
           .watch(eventRepositoryProvider)
           .getOrganizationEvents(organizationId);
@@ -41,7 +42,7 @@ final myTicketsProvider = FutureProvider<List<EventTicket>>((ref) {
 });
 
 /// A ticket's full detail by its code (used by the ticket detail screen).
-final ticketByCodeProvider = FutureProvider.family<EventTicket, String>((
+final ticketByCodeProvider = FutureProvider.autoDispose.family<EventTicket, String>((
   ref,
   code,
 ) {

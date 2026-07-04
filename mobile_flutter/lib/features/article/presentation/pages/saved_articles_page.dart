@@ -22,39 +22,42 @@ class SavedArticlesPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final async = ref.watch(savedArticlesProvider);
-
     return Scaffold(
       appBar: AppBar(title: Text('article.saved'.tr())),
-      body: async.when(
-        loading:
-            () => ListView(
-              children: List.generate(5, (_) => const SkeletonTile()),
-            ),
-        error:
-            (_, __) => ErrorView(
-              message: 'article.saved_load_failed'.tr(),
-              onRetry: () => ref.invalidate(savedArticlesProvider),
-            ),
-        data: (items) {
-          if (items.isEmpty) {
-            return EmptyView(
-              icon: Icons.favorite_border_rounded,
-              title: 'article.no_saved'.tr(),
-              message: 'article.no_saved_desc'.tr(),
-            );
-          }
-          return RefreshIndicator(
-            onRefresh: () async {
-              ref.invalidate(savedArticlesProvider);
-              await ref.read(savedArticlesProvider.future);
+      body: Consumer(
+        builder: (context, ref, _) {
+          final async = ref.watch(savedArticlesProvider);
+          return async.when(
+            loading:
+                () => ListView(
+                  children: List.generate(5, (_) => const SkeletonTile()),
+                ),
+            error:
+                (_, __) => ErrorView(
+                  message: 'article.saved_load_failed'.tr(),
+                  onRetry: () => ref.invalidate(savedArticlesProvider),
+                ),
+            data: (items) {
+              if (items.isEmpty) {
+                return EmptyView(
+                  icon: Icons.favorite_border_rounded,
+                  title: 'article.no_saved'.tr(),
+                  message: 'article.no_saved_desc'.tr(),
+                );
+              }
+              return RefreshIndicator(
+                onRefresh: () async {
+                  ref.invalidate(savedArticlesProvider);
+                  await ref.read(savedArticlesProvider.future);
+                },
+                child: ListView.separated(
+                  padding: const EdgeInsets.all(12),
+                  itemCount: items.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 10),
+                  itemBuilder: (_, i) => _SavedCard(item: items[i]),
+                ),
+              );
             },
-            child: ListView.separated(
-              padding: const EdgeInsets.all(12),
-              itemCount: items.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 10),
-              itemBuilder: (_, i) => _SavedCard(item: items[i]),
-            ),
           );
         },
       ),

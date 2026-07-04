@@ -46,8 +46,6 @@ class _ChatListPageState extends ConsumerState<ChatListPage> {
 
   @override
   Widget build(BuildContext context) {
-    final async = ref.watch(chatListProvider);
-
     return Scaffold(
       appBar: AppBar(
         title: Text('chat.title'.tr()),
@@ -83,38 +81,43 @@ class _ChatListPageState extends ConsumerState<ChatListPage> {
             ),
           ),
           Expanded(
-            child: async.when(
-              loading: () => const LoadingView(),
-              error:
-                  (e, _) => ErrorView(
-                    message: '$e',
-                    onRetry: () => ref.invalidate(chatListProvider),
-                  ),
-              data: (items) {
-                if (items.isEmpty) {
-                  return EmptyView(
-                    icon: Icons.forum_outlined,
-                    title: 'chat.no_conversations'.tr(),
-                    message: 'chat.empty_desc'.tr(),
-                  );
-                }
-                return RefreshIndicator(
-                  onRefresh: () async => ref.invalidate(chatListProvider),
-                  child: ListView.separated(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    itemCount: items.length,
-                    separatorBuilder:
-                        (_, __) => const Divider(
-                          height: 1,
-                          indent: 72,
-                          color: AppColors.divider,
-                        ),
-                    itemBuilder:
-                        (context, i) => ConversationTile(
-                          conversation: items[i],
-                          onTap: () => _openConversation(items[i]),
-                        ),
-                  ),
+            child: Consumer(
+              builder: (context, ref, _) {
+                final async = ref.watch(chatListProvider);
+                return async.when(
+                  loading: () => const LoadingView(),
+                  error:
+                      (e, _) => ErrorView(
+                        message: '$e',
+                        onRetry: () => ref.invalidate(chatListProvider),
+                      ),
+                  data: (items) {
+                    if (items.isEmpty) {
+                      return EmptyView(
+                        icon: Icons.forum_outlined,
+                        title: 'chat.no_conversations'.tr(),
+                        message: 'chat.empty_desc'.tr(),
+                      );
+                    }
+                    return RefreshIndicator(
+                      onRefresh: () async => ref.invalidate(chatListProvider),
+                      child: ListView.separated(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        itemCount: items.length,
+                        separatorBuilder:
+                            (_, __) => const Divider(
+                              height: 1,
+                              indent: 72,
+                              color: AppColors.divider,
+                            ),
+                        itemBuilder:
+                            (context, i) => ConversationTile(
+                              conversation: items[i],
+                              onTap: () => _openConversation(items[i]),
+                            ),
+                      ),
+                    );
+                  },
                 );
               },
             ),

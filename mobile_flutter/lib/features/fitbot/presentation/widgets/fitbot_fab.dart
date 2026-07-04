@@ -28,7 +28,14 @@ class _FitBotFabState extends State<FitBotFab>
     super.dispose();
   }
 
-  void _toggle() => setState(() => _open = !_open);
+  void _toggle() {
+    setState(() => _open = !_open);
+    if (_open) {
+      _pulse.stop();
+    } else {
+      _pulse.repeat(reverse: true);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

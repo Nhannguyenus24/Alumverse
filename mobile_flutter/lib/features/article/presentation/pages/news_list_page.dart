@@ -45,50 +45,67 @@ class NewsListPage extends ConsumerWidget {
             final featured = news.first;
             final rest = news.length > 1 ? news.sublist(1) : <Article>[];
 
-            return ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                Text(
-                  'article.title_upper'.tr(),
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.primary,
+            return CustomScrollView(
+              slivers: [
+                SliverPadding(
+                  padding: const EdgeInsets.all(16),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
+                      Text(
+                        'article.title_upper'.tr(),
+                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _FeaturedNewsCard(article: featured)
+                          .animate()
+                          .fadeIn(duration: 300.ms)
+                          .slideY(begin: 0.08, curve: Curves.easeOut),
+                    ]),
                   ),
                 ),
-                const SizedBox(height: 16),
-                _FeaturedNewsCard(article: featured)
-                    .animate()
-                    .fadeIn(duration: 300.ms)
-                    .slideY(begin: 0.08, curve: Curves.easeOut),
                 if (rest.isNotEmpty) ...[
-                  const SizedBox(height: 24),
-                  Text(
-                    'article.suggestions'.tr(),
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    sliver: SliverToBoxAdapter(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 24),
+                          Text(
+                            'article.suggestions'.tr(),
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: rest.length,
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          mainAxisSpacing: 12,
-                          crossAxisSpacing: 12,
-                          childAspectRatio: 0.68,
-                        ),
-                    itemBuilder:
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    sliver: SliverGrid(
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 12,
+                        childAspectRatio: 0.68,
+                      ),
+                      delegate: SliverChildBuilderDelegate(
                         (_, i) => _NewsCard(article: rest[i])
                             .animate()
                             .fadeIn(duration: 300.ms, delay: (40 * i).ms)
                             .slideY(begin: 0.1, curve: Curves.easeOut),
+                        childCount: rest.length,
+                      ),
+                    ),
                   ),
                 ],
-                const SizedBox(height: 24),
+                const SliverToBoxAdapter(child: SizedBox(height: 24)),
               ],
             );
           },
