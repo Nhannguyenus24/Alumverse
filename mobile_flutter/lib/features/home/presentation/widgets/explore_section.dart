@@ -15,24 +15,42 @@ class _ExploreItem {
 }
 
 const _items = <_ExploreItem>[
-  _ExploreItem(Icons.newspaper_rounded,
-      'home.explore_news_title', 'home.explore_news_desc',
-      RouteNames.news),
-  _ExploreItem(Icons.support_agent_rounded,
-      'home.explore_mentorship_title', 'home.explore_mentorship_desc',
-      RouteNames.mentorship),
-  _ExploreItem(Icons.groups_rounded,
-      'home.explore_network_title', 'home.explore_network_desc',
-      RouteNames.network),
-  _ExploreItem(Icons.event_available_rounded,
-      'home.explore_events_title', 'home.explore_events_desc',
-      RouteNames.events),
-  _ExploreItem(Icons.forum_rounded,
-      'home.explore_forum_title', 'home.explore_forum_desc',
-      RouteNames.forum),
-  _ExploreItem(Icons.volunteer_activism_rounded,
-      'home.explore_donation_title', 'home.explore_donation_desc',
-      RouteNames.fundraising),
+  _ExploreItem(
+    Icons.newspaper_rounded,
+    'home.explore_news_title',
+    'home.explore_news_desc',
+    RouteNames.news,
+  ),
+  _ExploreItem(
+    Icons.support_agent_rounded,
+    'home.explore_mentorship_title',
+    'home.explore_mentorship_desc',
+    RouteNames.mentorship,
+  ),
+  _ExploreItem(
+    Icons.groups_rounded,
+    'home.explore_network_title',
+    'home.explore_network_desc',
+    RouteNames.network,
+  ),
+  _ExploreItem(
+    Icons.event_available_rounded,
+    'home.explore_events_title',
+    'home.explore_events_desc',
+    RouteNames.events,
+  ),
+  _ExploreItem(
+    Icons.forum_rounded,
+    'home.explore_forum_title',
+    'home.explore_forum_desc',
+    RouteNames.forum,
+  ),
+  _ExploreItem(
+    Icons.volunteer_activism_rounded,
+    'home.explore_donation_title',
+    'home.explore_donation_desc',
+    RouteNames.fundraising,
+  ),
 ];
 
 /// "Khám phá" — 2-column grid of feature cards (web shows 4 across on desktop,
@@ -83,7 +101,10 @@ class _ExploreCard extends StatelessWidget {
             border: Border.all(color: AppColors.divider),
             boxShadow: const [
               BoxShadow(
-                  color: Color(0x14000000), blurRadius: 6, offset: Offset(0, 2)),
+                color: Color(0x14000000),
+                blurRadius: 6,
+                offset: Offset(0, 2),
+              ),
             ],
           ),
           child: Column(

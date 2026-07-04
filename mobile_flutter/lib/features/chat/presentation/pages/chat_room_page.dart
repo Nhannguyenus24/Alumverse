@@ -97,8 +97,9 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
     final messagesAsync = ref.watch(chatMessagesProvider(args.groupId));
     final socket = ref.watch(chatSocketServiceProvider);
 
-    final currentMemberId =
-        int.tryParse(ref.watch(authStateProvider).valueOrNull?.user?.id ?? '');
+    final currentMemberId = int.tryParse(
+      ref.watch(authStateProvider).valueOrNull?.user?.id ?? '',
+    );
 
     // Messaging is blocked in a private chat if either side blocked the other.
     final privateBlocked =
@@ -112,10 +113,11 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
             IconButton(
               icon: const Icon(Icons.group_outlined),
               tooltip: 'chat.members'.tr(),
-              onPressed: () => context.push(
-                '${RouteNames.chat}/${args.groupId}/members',
-                extra: args.title,
-              ),
+              onPressed:
+                  () => context.push(
+                    '${RouteNames.chat}/${args.groupId}/members',
+                    extra: args.title,
+                  ),
             ),
         ],
       ),
@@ -125,11 +127,13 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
           Expanded(
             child: messagesAsync.when(
               loading: () => const LoadingView(),
-              error: (e, _) => ErrorView(
-                message: '$e',
-                onRetry: () =>
-                    ref.invalidate(chatMessagesProvider(args.groupId)),
-              ),
+              error:
+                  (e, _) => ErrorView(
+                    message: '$e',
+                    onRetry:
+                        () =>
+                            ref.invalidate(chatMessagesProvider(args.groupId)),
+                  ),
               data: (messages) {
                 if (messages.isEmpty) {
                   return Center(
@@ -146,7 +150,8 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
                   itemCount: messages.length,
                   itemBuilder: (context, i) {
                     final msg = messages[i];
-                    final isMine = currentMemberId != null &&
+                    final isMine =
+                        currentMemberId != null &&
                         msg.senderMemberId == currentMemberId;
                     return MessageBubble(
                       message: msg,
@@ -168,9 +173,10 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
                   groupId: args.groupId,
                   chatType: args.type,
                   enabled: status == ChatSocketStatus.open,
-                  onSend: (text) => ref
-                      .read(chatMessagesProvider(args.groupId).notifier)
-                      .send(text, chatType: args.type),
+                  onSend:
+                      (text) => ref
+                          .read(chatMessagesProvider(args.groupId).notifier)
+                          .send(text, chatType: args.type),
                 );
               },
             ),
@@ -196,8 +202,11 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
     // Group: fetch blocked-members context lazily.
     final blockedAsync = ref.watch(groupBlockedContextProvider(args.groupId));
     return blockedAsync.maybeWhen(
-      data: (ctx) =>
-          ctx.hasBlocked ? ChatBlockedBanner.group(ctx) : const SizedBox.shrink(),
+      data:
+          (ctx) =>
+              ctx.hasBlocked
+                  ? ChatBlockedBanner.group(ctx)
+                  : const SizedBox.shrink(),
       orElse: () => const SizedBox.shrink(),
     );
   }

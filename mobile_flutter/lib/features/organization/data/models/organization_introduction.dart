@@ -31,7 +31,8 @@ class OrganizationIntroduction {
       vision: json['vision'] as String?,
       mission: json['mission'] as String?,
       coreValues: json['coreValues'] as String?,
-      imageUrls: (json['imageUrls'] as List?)
+      imageUrls:
+          (json['imageUrls'] as List?)
               ?.map((e) => e.toString())
               .where((e) => e.isNotEmpty)
               .toList() ??

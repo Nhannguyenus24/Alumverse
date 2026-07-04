@@ -98,10 +98,7 @@ class _LanguageSwitchButton extends StatelessWidget {
         await context.setLocale(next);
         if (context.mounted) AppRoot.of(context).rebuild();
       },
-      icon: Text(
-        isVi ? '🇻🇳' : '🇺🇸',
-        style: const TextStyle(fontSize: 20),
-      ),
+      icon: Text(isVi ? '🇻🇳' : '🇺🇸', style: const TextStyle(fontSize: 20)),
     );
   }
 }
@@ -117,57 +114,60 @@ class _AccountMenuButton extends ConsumerWidget {
     await showAnchoredDropdown<void>(
       anchorContext: context,
       width: 240,
-      builder: (_, close) => Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
-            child: Text(
-              userLabel,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontWeight: FontWeight.w700),
-            ),
+      builder:
+          (_, close) => Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+                child: Text(
+                  userLabel,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.person_outline),
+                title: Text('profile.my_profile'.tr()),
+                onTap: () {
+                  close();
+                  context.go(RouteNames.profile);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.favorite_border_rounded),
+                title: Text('article.saved'.tr()),
+                onTap: () {
+                  close();
+                  context.push(RouteNames.savedArticles);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.settings_outlined),
+                title: Text('common.settings'.tr()),
+                onTap: () {
+                  close();
+                  context.push(RouteNames.settings);
+                },
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.logout, color: AppColors.error),
+                title: Text(
+                  'common.logout'.tr(),
+                  style: const TextStyle(color: AppColors.error),
+                ),
+                onTap: () async {
+                  close();
+                  await ref.read(authStateProvider.notifier).logout();
+                  if (context.mounted) context.go(RouteNames.login);
+                },
+              ),
+            ],
           ),
-          const Divider(height: 1),
-          ListTile(
-            leading: const Icon(Icons.person_outline),
-            title: Text('profile.my_profile'.tr()),
-            onTap: () {
-              close();
-              context.go(RouteNames.profile);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.favorite_border_rounded),
-            title: Text('article.saved'.tr()),
-            onTap: () {
-              close();
-              context.push(RouteNames.savedArticles);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.settings_outlined),
-            title: Text('common.settings'.tr()),
-            onTap: () {
-              close();
-              context.push(RouteNames.settings);
-            },
-          ),
-          const Divider(height: 1),
-          ListTile(
-            leading: const Icon(Icons.logout, color: AppColors.error),
-            title: Text('common.logout'.tr(),
-                style: const TextStyle(color: AppColors.error)),
-            onTap: () async {
-              close();
-              await ref.read(authStateProvider.notifier).logout();
-              if (context.mounted) context.go(RouteNames.login);
-            },
-          ),
-        ],
-      ),
     );
   }
 
@@ -186,9 +186,10 @@ class _AccountMenuButton extends ConsumerWidget {
         backgroundColor: AppColors.primary.withValues(alpha: 0.12),
         backgroundImage:
             avatar != null ? CachedNetworkImageProvider(avatar) : null,
-        child: avatar == null
-            ? const Icon(Icons.person, size: 18, color: AppColors.primary)
-            : null,
+        child:
+            avatar == null
+                ? const Icon(Icons.person, size: 18, color: AppColors.primary)
+                : null,
       ),
     );
   }
@@ -213,68 +214,82 @@ class _OrgSwitchButton extends ConsumerWidget {
     showAnchoredDropdown<void>(
       anchorContext: context,
       width: 260,
-      builder: (_, close) => Consumer(
-        builder: (ctx, r, __) {
-          final async = r.watch(organizationListProvider);
-          final current = r.watch(organizationStateProvider).valueOrNull;
-          return async.when(
-            loading: () => const Padding(
-              padding: EdgeInsets.all(20),
-              child: Center(
-                  child: SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(strokeWidth: 2))),
-            ),
-            error: (_, __) => Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text('organization.load_failed'.tr()),
-            ),
-            data: (orgs) => Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
-                  child: Text('organization.select'.tr(),
-                      style: const TextStyle(fontWeight: FontWeight.w700)),
-                ),
-                const Divider(height: 1),
-                for (final o in orgs)
-                  ListTile(
-                    dense: true,
-                    leading: Icon(
-                      o.id == current?.id
-                          ? Icons.radio_button_checked
-                          : Icons.radio_button_unchecked,
-                      color: o.id == current?.id
-                          ? AppColors.primary
-                          : AppColors.textSecondary,
-                      size: 20,
+      builder:
+          (_, close) => Consumer(
+            builder: (ctx, r, __) {
+              final async = r.watch(organizationListProvider);
+              final current = r.watch(organizationStateProvider).valueOrNull;
+              return async.when(
+                loading:
+                    () => const Padding(
+                      padding: EdgeInsets.all(20),
+                      child: Center(
+                        child: SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      ),
                     ),
-                    title: Text(o.name,
-                        maxLines: 1, overflow: TextOverflow.ellipsis),
-                    onTap: o.id == current?.id
-                        ? null
-                        : () {
-                            close();
-                            _switch(ref, o.slug);
-                          },
-                  ),
-              ],
-            ),
-          );
-        },
-      ),
+                error:
+                    (_, __) => Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Text('organization.load_failed'.tr()),
+                    ),
+                data:
+                    (orgs) => Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+                          child: Text(
+                            'organization.select'.tr(),
+                            style: const TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                        const Divider(height: 1),
+                        for (final o in orgs)
+                          ListTile(
+                            dense: true,
+                            leading: Icon(
+                              o.id == current?.id
+                                  ? Icons.radio_button_checked
+                                  : Icons.radio_button_unchecked,
+                              color:
+                                  o.id == current?.id
+                                      ? AppColors.primary
+                                      : AppColors.textSecondary,
+                              size: 20,
+                            ),
+                            title: Text(
+                              o.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            onTap:
+                                o.id == current?.id
+                                    ? null
+                                    : () {
+                                      close();
+                                      _switch(ref, o.slug);
+                                    },
+                          ),
+                      ],
+                    ),
+              );
+            },
+          ),
     );
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return IconButton(
-      tooltip: currentName != null
-          ? 'home.org_tooltip'.tr(namedArgs: {'name': currentName!})
-          : 'common.change_org'.tr(),
+      tooltip:
+          currentName != null
+              ? 'home.org_tooltip'.tr(namedArgs: {'name': currentName!})
+              : 'common.change_org'.tr(),
       onPressed: () => _open(context, ref),
       icon: const Icon(Icons.apartment_rounded),
     );

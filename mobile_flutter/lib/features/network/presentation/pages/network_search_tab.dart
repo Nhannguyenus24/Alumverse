@@ -34,43 +34,50 @@ class NetworkSearchTab extends ConsumerWidget {
           majorValue: query.major,
           organizations: organizations,
           selectedOrganizationIds: query.organizationIds,
-          onSubmit: (v) => ref
-              .read(networkSearchQueryProvider.notifier)
-              .state = query.copyWith(fullName: v).resetPage(),
-          onProgramSubmit: (v) => ref
-              .read(networkSearchQueryProvider.notifier)
-              .state = query.copyWith(program: v).resetPage(),
-          onMajorSubmit: (v) => ref
-              .read(networkSearchQueryProvider.notifier)
-              .state = query.copyWith(major: v).resetPage(),
-          onOrganizationsChanged: (ids) => ref
-              .read(networkSearchQueryProvider.notifier)
-              .state = query.copyWith(organizationIds: ids).resetPage(),
+          onSubmit:
+              (v) =>
+                  ref.read(networkSearchQueryProvider.notifier).state =
+                      query.copyWith(fullName: v).resetPage(),
+          onProgramSubmit:
+              (v) =>
+                  ref.read(networkSearchQueryProvider.notifier).state =
+                      query.copyWith(program: v).resetPage(),
+          onMajorSubmit:
+              (v) =>
+                  ref.read(networkSearchQueryProvider.notifier).state =
+                      query.copyWith(major: v).resetPage(),
+          onOrganizationsChanged:
+              (ids) =>
+                  ref.read(networkSearchQueryProvider.notifier).state =
+                      query.copyWith(organizationIds: ids).resetPage(),
         ),
         Expanded(
           child: async.when(
-            loading: () =>
-                const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.error_outline,
-                      color: AppColors.error, size: 40),
-                  const SizedBox(height: 8),
-                  Text('$e',
-                      style: const TextStyle(
-                          color: AppColors.textSecondary),
-                      textAlign: TextAlign.center),
-                  const SizedBox(height: 12),
-                  ElevatedButton(
-                    onPressed: () =>
-                        ref.invalidate(networkSearchProvider),
-                    child: Text('common.retry'.tr()),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error:
+                (e, _) => Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        color: AppColors.error,
+                        size: 40,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '$e',
+                        style: const TextStyle(color: AppColors.textSecondary),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 12),
+                      ElevatedButton(
+                        onPressed: () => ref.invalidate(networkSearchProvider),
+                        child: Text('common.retry'.tr()),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
+                ),
             data: (result) {
               if (result.items.isEmpty) {
                 return EmptyView(
@@ -80,8 +87,7 @@ class NetworkSearchTab extends ConsumerWidget {
                 );
               }
               return RefreshIndicator(
-                onRefresh: () async =>
-                    ref.invalidate(networkSearchProvider),
+                onRefresh: () async => ref.invalidate(networkSearchProvider),
                 child: ListView.builder(
                   padding: const EdgeInsets.only(bottom: 16),
                   itemCount: result.items.length + 1,
@@ -90,26 +96,42 @@ class NetworkSearchTab extends ConsumerWidget {
                       return _PaginationBar(
                         page: query.page,
                         totalPage: result.totalPage,
-                        onPrev: () => ref
-                            .read(networkSearchQueryProvider.notifier)
-                            .state = query.copyWith(page: query.page - 1),
-                        onNext: () => ref
-                            .read(networkSearchQueryProvider.notifier)
-                            .state = query.copyWith(page: query.page + 1),
+                        onPrev:
+                            () =>
+                                ref
+                                    .read(networkSearchQueryProvider.notifier)
+                                    .state = query.copyWith(
+                                  page: query.page - 1,
+                                ),
+                        onNext:
+                            () =>
+                                ref
+                                    .read(networkSearchQueryProvider.notifier)
+                                    .state = query.copyWith(
+                                  page: query.page + 1,
+                                ),
                       );
                     }
                     final member = result.items[i];
                     return NetworkMemberCard(
                       member: member,
-                      onMessage: () => showMessageRequestSheet(
-                        context,
-                        targetMemberId: member.userId,
-                        targetName: member.fullName,
-                      ),
-                      onViewProfile: () =>
-                          context.push('${RouteNames.profile}/${member.userId}'),
-                      onBlock: () =>
-                          _confirmBlock(context, ref, member.userId, member.fullName),
+                      onMessage:
+                          () => showMessageRequestSheet(
+                            context,
+                            targetMemberId: member.userId,
+                            targetName: member.fullName,
+                          ),
+                      onViewProfile:
+                          () => context.push(
+                            '${RouteNames.profile}/${member.userId}',
+                          ),
+                      onBlock:
+                          () => _confirmBlock(
+                            context,
+                            ref,
+                            member.userId,
+                            member.fullName,
+                          ),
                     );
                   },
                 ),
@@ -129,26 +151,37 @@ class NetworkSearchTab extends ConsumerWidget {
   ) async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('network.block_member_title'.tr()),
-        content: Text('network.confirm_block_member'.tr(namedArgs: {'name': name})),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: Text('common.cancel'.tr())),
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: Text('network.block'.tr(),
-                  style: const TextStyle(color: AppColors.error))),
-        ],
-      ),
+      builder:
+          (ctx) => AlertDialog(
+            title: Text('network.block_member_title'.tr()),
+            content: Text(
+              'network.confirm_block_member'.tr(namedArgs: {'name': name}),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text('common.cancel'.tr()),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: Text(
+                  'network.block'.tr(),
+                  style: const TextStyle(color: AppColors.error),
+                ),
+              ),
+            ],
+          ),
     );
     if (confirm != true) return;
     try {
       await ref.read(networkRepositoryProvider).block(memberId);
       ref.invalidate(networkSearchProvider);
       ref.invalidate(networkBlockedProvider);
-      if (context.mounted) AppToast.success(context, 'network.blocked_toast'.tr(namedArgs: {'name': name}));
+      if (context.mounted)
+        AppToast.success(
+          context,
+          'network.blocked_toast'.tr(namedArgs: {'name': name}),
+        );
     } catch (e) {
       if (context.mounted) AppToast.fromError(context, e);
     }
@@ -181,10 +214,12 @@ class _PaginationBar extends StatelessWidget {
             icon: const Icon(Icons.chevron_left),
           ),
           Text(
-            'common.page_indicator'.tr(namedArgs: {
-              'current': (page + 1).toString(),
-              'total': totalPage.toString(),
-            }),
+            'common.page_indicator'.tr(
+              namedArgs: {
+                'current': (page + 1).toString(),
+                'total': totalPage.toString(),
+              },
+            ),
             style: const TextStyle(color: AppColors.textSecondary),
           ),
           IconButton(

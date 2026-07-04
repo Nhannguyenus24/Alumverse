@@ -87,8 +87,8 @@ class _HeroBannerState extends State<HeroBanner> {
                 _AlumverseSlide(organizationName: widget.organizationName),
                 _IntroSlide(
                   organizationName: widget.organizationName,
-                  onTap: () =>
-                      context.push(RouteNames.organizationIntroduction),
+                  onTap:
+                      () => context.push(RouteNames.organizationIntroduction),
                 ),
               ],
             ),
@@ -111,9 +111,10 @@ class _HeroBannerState extends State<HeroBanner> {
                     width: active ? 22 : 8,
                     height: 8,
                     decoration: BoxDecoration(
-                      color: active
-                          ? Colors.white
-                          : Colors.white.withValues(alpha: 0.45),
+                      color:
+                          active
+                              ? Colors.white
+                              : Colors.white.withValues(alpha: 0.45),
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),
@@ -154,7 +155,11 @@ class _AlumverseSlide extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             'home.hero_tagline'.tr(),
-            style: const TextStyle(color: Colors.white70, height: 1.5, fontSize: 14),
+            style: const TextStyle(
+              color: Colors.white70,
+              height: 1.5,
+              fontSize: 14,
+            ),
           ),
           if (organizationName != null) ...[
             const SizedBox(height: 14),
@@ -207,13 +212,17 @@ class _IntroSlide extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.info_outline_rounded,
-                color: Colors.white, size: 40),
+            const Icon(
+              Icons.info_outline_rounded,
+              color: Colors.white,
+              size: 40,
+            ),
             const SizedBox(height: 10),
             Text(
               organizationName != null
-                  ? 'home.intro_title_with_org'
-                      .tr(namedArgs: {'name': organizationName!})
+                  ? 'home.intro_title_with_org'.tr(
+                    namedArgs: {'name': organizationName!},
+                  )
                   : 'organization.introduction'.tr(),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -227,15 +236,20 @@ class _IntroSlide extends StatelessWidget {
             Text(
               'home.intro_subtitle'.tr(),
               style: const TextStyle(
-                  color: Colors.white70, height: 1.5, fontSize: 14),
+                color: Colors.white70,
+                height: 1.5,
+                fontSize: 14,
+              ),
             ),
             const SizedBox(height: 14),
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 7,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.18),
                     borderRadius: BorderRadius.circular(20),
@@ -243,14 +257,20 @@ class _IntroSlide extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text('home.view_intro'.tr(),
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600)),
+                      Text(
+                        'home.view_intro'.tr(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                       const SizedBox(width: 4),
-                      const Icon(Icons.arrow_forward_rounded,
-                          color: Colors.white, size: 16),
+                      const Icon(
+                        Icons.arrow_forward_rounded,
+                        color: Colors.white,
+                        size: 16,
+                      ),
                     ],
                   ),
                 ),

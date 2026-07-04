@@ -11,7 +11,8 @@ class Env {
 
   static const String googleClientId = String.fromEnvironment(
     'GOOGLE_CLIENT_ID',
-    defaultValue: '584357169064-1d0uvdlmnl7hk2n66qf37r2asekcdg7j.apps.googleusercontent.com',
+    defaultValue:
+        '584357169064-1d0uvdlmnl7hk2n66qf37r2asekcdg7j.apps.googleusercontent.com',
   );
 
   static const String imageBaseUrl = String.fromEnvironment(

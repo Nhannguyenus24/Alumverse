@@ -21,18 +21,24 @@ class OrganizationIntroductionPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: Text('organization.introduction'.tr())),
-      body: org == null
-          ? ErrorView(message: 'organization.not_found'.tr())
-          : ref.watch(organizationIntroductionProvider(org.id)).when(
-                loading: () =>
-                    const Center(child: CircularProgressIndicator()),
-                error: (_, __) => ErrorView(
-                  message: 'organization.intro_load_failed'.tr(),
-                  onRetry: () => ref
-                      .invalidate(organizationIntroductionProvider(org.id)),
-                ),
-                data: (intro) => _Content(intro: intro, orgName: org.name),
-              ),
+      body:
+          org == null
+              ? ErrorView(message: 'organization.not_found'.tr())
+              : ref
+                  .watch(organizationIntroductionProvider(org.id))
+                  .when(
+                    loading:
+                        () => const Center(child: CircularProgressIndicator()),
+                    error:
+                        (_, __) => ErrorView(
+                          message: 'organization.intro_load_failed'.tr(),
+                          onRetry:
+                              () => ref.invalidate(
+                                organizationIntroductionProvider(org.id),
+                              ),
+                        ),
+                    data: (intro) => _Content(intro: intro, orgName: org.name),
+                  ),
     );
   }
 }
@@ -69,10 +75,11 @@ class _Content extends StatelessWidget {
             height: 200,
             width: double.infinity,
             fit: BoxFit.cover,
-            placeholder: (_, __) =>
-                Container(height: 200, color: AppColors.divider),
-            errorWidget: (_, __, ___) =>
-                Container(height: 200, color: AppColors.divider),
+            placeholder:
+                (_, __) => Container(height: 200, color: AppColors.divider),
+            errorWidget:
+                (_, __, ___) =>
+                    Container(height: 200, color: AppColors.divider),
           ),
         Padding(
           padding: const EdgeInsets.all(16),
@@ -82,15 +89,17 @@ class _Content extends StatelessWidget {
               Text(
                 'organization.introduction_upper'.tr(),
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.primary,
-                    ),
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.primary,
+                ),
               ),
               const SizedBox(height: 4),
               Text(
                 orgName,
                 style: const TextStyle(
-                    color: AppColors.textSecondary, fontSize: 14),
+                  color: AppColors.textSecondary,
+                  fontSize: 14,
+                ),
               ),
               const SizedBox(height: 16),
               if (intro.content != null && intro.content!.isNotEmpty)
@@ -112,24 +121,35 @@ class _Content extends StatelessWidget {
                   },
                 ),
               if (intro.vision != null && intro.vision!.isNotEmpty)
-                _InfoBlock(title: 'organization.vision'.tr(), body: intro.vision!),
+                _InfoBlock(
+                  title: 'organization.vision'.tr(),
+                  body: intro.vision!,
+                ),
               if (intro.mission != null && intro.mission!.isNotEmpty)
-                _InfoBlock(title: 'organization.mission'.tr(), body: intro.mission!),
+                _InfoBlock(
+                  title: 'organization.mission'.tr(),
+                  body: intro.mission!,
+                ),
               if (intro.coreValues != null && intro.coreValues!.isNotEmpty)
-                _InfoBlock(title: 'organization.core_values'.tr(), body: intro.coreValues!),
+                _InfoBlock(
+                  title: 'organization.core_values'.tr(),
+                  body: intro.coreValues!,
+                ),
               if (intro.imageUrls.isNotEmpty) ...[
                 const SizedBox(height: 20),
                 Text(
                   'organization.activity_photos'.tr(),
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 GridView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: intro.imageUrls.length,
-                  gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
                     mainAxisSpacing: 10,
                     crossAxisSpacing: 10,
@@ -139,16 +159,19 @@ class _Content extends StatelessWidget {
                     final url = resolveImageUrl(intro.imageUrls[i]);
                     return ClipRRect(
                       borderRadius: BorderRadius.circular(8),
-                      child: url != null
-                          ? CachedNetworkImage(
-                              imageUrl: url,
-                              fit: BoxFit.cover,
-                              placeholder: (_, __) =>
-                                  Container(color: AppColors.divider),
-                              errorWidget: (_, __, ___) =>
-                                  Container(color: AppColors.divider),
-                            )
-                          : Container(color: AppColors.divider),
+                      child:
+                          url != null
+                              ? CachedNetworkImage(
+                                imageUrl: url,
+                                fit: BoxFit.cover,
+                                placeholder:
+                                    (_, __) =>
+                                        Container(color: AppColors.divider),
+                                errorWidget:
+                                    (_, __, ___) =>
+                                        Container(color: AppColors.divider),
+                              )
+                              : Container(color: AppColors.divider),
                     );
                   },
                 ),
@@ -187,7 +210,10 @@ class _InfoBlock extends StatelessWidget {
           Text(
             body,
             style: const TextStyle(
-                fontSize: 14, height: 1.7, color: AppColors.textSecondary),
+              fontSize: 14,
+              height: 1.7,
+              color: AppColors.textSecondary,
+            ),
           ),
         ],
       ),

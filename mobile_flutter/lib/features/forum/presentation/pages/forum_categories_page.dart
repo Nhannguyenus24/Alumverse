@@ -28,13 +28,15 @@ class ForumCategoriesPage extends ConsumerWidget {
           await ref.read(forumCategoriesProvider.future);
         },
         child: async.when(
-          loading: () => ListView(
-            children: List.generate(6, (_) => const SkeletonTile()),
-          ),
-          error: (_, __) => ErrorView(
-            message: 'forum.load_failed'.tr(),
-            onRetry: () => ref.invalidate(forumCategoriesProvider),
-          ),
+          loading:
+              () => ListView(
+                children: List.generate(6, (_) => const SkeletonTile()),
+              ),
+          error:
+              (_, __) => ErrorView(
+                message: 'forum.load_failed'.tr(),
+                onRetry: () => ref.invalidate(forumCategoriesProvider),
+              ),
           data: (categories) {
             if (categories.isEmpty) {
               return EmptyView(
@@ -46,8 +48,7 @@ class ForumCategoriesPage extends ConsumerWidget {
             final parents = categories.where((c) => c.isParent).toList();
             final children = categories.where((c) => !c.isParent).toList();
             // Categories with no parent grouping still need to be reachable.
-            final orphanParents =
-                parents.isEmpty ? categories : parents;
+            final orphanParents = parents.isEmpty ? categories : parents;
 
             return ListView(
               padding: const EdgeInsets.all(16),
@@ -109,41 +110,58 @@ class _CategoryTile extends StatelessWidget {
           backgroundColor: Color(0x1A013F83),
           child: Icon(Icons.forum_outlined, color: AppColors.primary),
         ),
-        title: Text(category.name,
-            style: const TextStyle(fontWeight: FontWeight.w600)),
+        title: Text(
+          category.name,
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (category.description != null &&
                 category.description!.isNotEmpty)
-              Text(category.description!,
-                  maxLines: 2, overflow: TextOverflow.ellipsis),
+              Text(
+                category.description!,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
             if (category.topicCount != null ||
                 category.participantCount != null)
               Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Row(
                   children: [
-                    const Icon(Icons.forum_outlined,
-                        size: 13, color: AppColors.textSecondary),
+                    const Icon(
+                      Icons.forum_outlined,
+                      size: 13,
+                      color: AppColors.textSecondary,
+                    ),
                     const SizedBox(width: 4),
                     Text(
-                      'forum.posts_count'.tr(namedArgs: {
-                        'count': '${category.topicCount ?? 0}',
-                      }),
+                      'forum.posts_count'.tr(
+                        namedArgs: {'count': '${category.topicCount ?? 0}'},
+                      ),
                       style: const TextStyle(
-                          fontSize: 12, color: AppColors.textSecondary),
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                     const SizedBox(width: 12),
-                    const Icon(Icons.people_outline,
-                        size: 13, color: AppColors.textSecondary),
+                    const Icon(
+                      Icons.people_outline,
+                      size: 13,
+                      color: AppColors.textSecondary,
+                    ),
                     const SizedBox(width: 4),
                     Text(
-                      'forum.members_count'.tr(namedArgs: {
-                        'count': '${category.participantCount ?? 0}',
-                      }),
+                      'forum.members_count'.tr(
+                        namedArgs: {
+                          'count': '${category.participantCount ?? 0}',
+                        },
+                      ),
                       style: const TextStyle(
-                          fontSize: 12, color: AppColors.textSecondary),
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                   ],
                 ),
@@ -152,10 +170,11 @@ class _CategoryTile extends StatelessWidget {
         ),
         isThreeLine: category.topicCount != null,
         trailing: const Icon(Icons.chevron_right),
-        onTap: () => context.push(
-          '${RouteNames.forum}/category/${category.id}',
-          extra: category.name,
-        ),
+        onTap:
+            () => context.push(
+              '${RouteNames.forum}/category/${category.id}',
+              extra: category.name,
+            ),
       ),
     );
   }

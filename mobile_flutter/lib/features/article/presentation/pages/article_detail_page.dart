@@ -29,30 +29,36 @@ class ArticleDetailPage extends ConsumerWidget {
       ),
       body: async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.cloud_off_rounded,
-                    size: 48, color: AppColors.textSecondary),
-                const SizedBox(height: 12),
-                Text('article.load_failed_detail'.tr()),
-                const SizedBox(height: 12),
-                TextButton(
-                  onPressed: () => ref.invalidate(newsDetailProvider(articleId)),
-                  child: Text('common.retry'.tr()),
+        error:
+            (e, _) => Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.cloud_off_rounded,
+                      size: 48,
+                      color: AppColors.textSecondary,
+                    ),
+                    const SizedBox(height: 12),
+                    Text('article.load_failed_detail'.tr()),
+                    const SizedBox(height: 12),
+                    TextButton(
+                      onPressed:
+                          () => ref.invalidate(newsDetailProvider(articleId)),
+                      child: Text('common.retry'.tr()),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
-          ),
-        ),
         data: (article) {
           final thumb = resolveImageUrl(article.thumbnailUrl);
-          final date = article.publishedAt != null
-              ? DateFormat('dd/MM/yyyy').format(article.publishedAt!)
-              : null;
+          final date =
+              article.publishedAt != null
+                  ? DateFormat('dd/MM/yyyy').format(article.publishedAt!)
+                  : null;
 
           return ListView(
             padding: EdgeInsets.zero,
@@ -63,10 +69,12 @@ class ArticleDetailPage extends ConsumerWidget {
                   width: double.infinity,
                   height: 220,
                   fit: BoxFit.cover,
-                  placeholder: (_, __) =>
-                      Container(height: 220, color: AppColors.divider),
-                  errorWidget: (_, __, ___) =>
-                      Container(height: 220, color: AppColors.divider),
+                  placeholder:
+                      (_, __) =>
+                          Container(height: 220, color: AppColors.divider),
+                  errorWidget:
+                      (_, __, ___) =>
+                          Container(height: 220, color: AppColors.divider),
                 ),
               Padding(
                 padding: const EdgeInsets.all(16),
@@ -96,12 +104,19 @@ class ArticleDetailPage extends ConsumerWidget {
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          const Icon(Icons.calendar_today_outlined,
-                              size: 14, color: AppColors.textSecondary),
+                          const Icon(
+                            Icons.calendar_today_outlined,
+                            size: 14,
+                            color: AppColors.textSecondary,
+                          ),
                           const SizedBox(width: 4),
-                          Text(date,
-                              style: const TextStyle(
-                                  color: AppColors.textSecondary, fontSize: 13)),
+                          Text(
+                            date,
+                            style: const TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 13,
+                            ),
+                          ),
                         ],
                       ),
                     ],
@@ -120,11 +135,15 @@ class ArticleDetailPage extends ConsumerWidget {
                           child: CachedNetworkImage(
                             imageUrl: src,
                             fit: BoxFit.contain,
-                            placeholder: (_, __) => const SizedBox(
-                              height: 160,
-                              child: Center(child: CircularProgressIndicator()),
-                            ),
-                            errorWidget: (_, __, ___) => const SizedBox.shrink(),
+                            placeholder:
+                                (_, __) => const SizedBox(
+                                  height: 160,
+                                  child: Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                ),
+                            errorWidget:
+                                (_, __, ___) => const SizedBox.shrink(),
                           ),
                         );
                       },
@@ -177,7 +196,7 @@ class _SaveButtonState extends ConsumerState<_SaveButton> {
   Widget build(BuildContext context) {
     final saved =
         ref.watch(isArticleSavedProvider(widget.articleId)).valueOrNull ??
-            false;
+        false;
     return IconButton(
       tooltip: saved ? 'article.unsave'.tr() : 'article.save_action'.tr(),
       onPressed: _busy ? null : () => _toggle(saved),

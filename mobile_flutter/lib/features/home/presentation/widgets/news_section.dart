@@ -32,15 +32,17 @@ class NewsSection extends ConsumerWidget {
           ),
         ),
         newsAsync.when(
-          loading: () => const Padding(
-            padding: EdgeInsets.all(24),
-            child: Center(child: CircularProgressIndicator()),
-          ),
-          error: (e, _) => _Message(
-            icon: Icons.cloud_off_rounded,
-            text: 'article.load_failed'.tr(),
-            onRetry: () => ref.invalidate(publishedNewsProvider),
-          ),
+          loading:
+              () => const Padding(
+                padding: EdgeInsets.all(24),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+          error:
+              (e, _) => _Message(
+                icon: Icons.cloud_off_rounded,
+                text: 'article.load_failed'.tr(),
+                onRetry: () => ref.invalidate(publishedNewsProvider),
+              ),
           data: (news) {
             if (news.isEmpty) {
               return _Message(
@@ -69,9 +71,10 @@ class _NewsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final thumb = resolveImageUrl(article.thumbnailUrl);
     final snippet = HtmlUtils.toPlainText(article.content);
-    final date = article.publishedAt != null
-        ? DateFormat('dd/MM/yyyy').format(article.publishedAt!)
-        : null;
+    final date =
+        article.publishedAt != null
+            ? DateFormat('dd/MM/yyyy').format(article.publishedAt!)
+            : null;
 
     return Card(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
@@ -85,15 +88,16 @@ class _NewsCard extends StatelessWidget {
           children: [
             AspectRatio(
               aspectRatio: 16 / 9,
-              child: thumb != null
-                  ? CachedNetworkImage(
-                      imageUrl: thumb,
-                      fit: BoxFit.cover,
-                      placeholder: (_, __) =>
-                          Container(color: AppColors.divider),
-                      errorWidget: (_, __, ___) => const _ImageFallback(),
-                    )
-                  : const _ImageFallback(),
+              child:
+                  thumb != null
+                      ? CachedNetworkImage(
+                        imageUrl: thumb,
+                        fit: BoxFit.cover,
+                        placeholder:
+                            (_, __) => Container(color: AppColors.divider),
+                        errorWidget: (_, __, ___) => const _ImageFallback(),
+                      )
+                      : const _ImageFallback(),
             ),
             Padding(
               padding: const EdgeInsets.all(12),
@@ -138,8 +142,11 @@ class _NewsCard extends StatelessWidget {
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        const Icon(Icons.calendar_today_outlined,
-                            size: 13, color: AppColors.textSecondary),
+                        const Icon(
+                          Icons.calendar_today_outlined,
+                          size: 13,
+                          color: AppColors.textSecondary,
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           date,
@@ -169,7 +176,11 @@ class _ImageFallback extends StatelessWidget {
     return Container(
       color: AppColors.divider,
       child: const Center(
-        child: Icon(Icons.image_outlined, color: AppColors.textSecondary, size: 40),
+        child: Icon(
+          Icons.image_outlined,
+          color: AppColors.textSecondary,
+          size: 40,
+        ),
       ),
     );
   }

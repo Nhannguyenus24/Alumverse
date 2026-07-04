@@ -36,14 +36,20 @@ class TrustedVerifier {
   /// The backend may send program/major as a JSON-encoded string or a list.
   static List<String> _asStringList(Object? value) {
     if (value is List) {
-      return value.map((e) => e.toString().trim()).where((e) => e.isNotEmpty).toList();
+      return value
+          .map((e) => e.toString().trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
     }
     if (value is String && value.trim().isNotEmpty) {
       final trimmed = value.trim();
       try {
         final decoded = jsonDecode(trimmed);
         if (decoded is List) {
-          return decoded.map((e) => e.toString().trim()).where((e) => e.isNotEmpty).toList();
+          return decoded
+              .map((e) => e.toString().trim())
+              .where((e) => e.isNotEmpty)
+              .toList();
         }
       } catch (_) {}
       return [trimmed];

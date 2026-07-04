@@ -23,9 +23,8 @@ class MentorCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final avatar = resolveImageUrl(mentor.avatarUrl);
-    final rating = mentor.ratingAvg != null
-        ? mentor.ratingAvg!.toStringAsFixed(1)
-        : '0.0';
+    final rating =
+        mentor.ratingAvg != null ? mentor.ratingAvg!.toStringAsFixed(1) : '0.0';
     final tags = mentor.expertiseTopics.take(3).toList();
 
     return Container(
@@ -42,9 +41,14 @@ class MentorCard extends StatelessWidget {
             backgroundColor: AppColors.primary.withValues(alpha: 0.1),
             backgroundImage:
                 avatar != null ? CachedNetworkImageProvider(avatar) : null,
-            child: avatar == null
-                ? const Icon(Icons.person, size: 44, color: AppColors.primary)
-                : null,
+            child:
+                avatar == null
+                    ? const Icon(
+                      Icons.person,
+                      size: 44,
+                      color: AppColors.primary,
+                    )
+                    : null,
           ),
           const SizedBox(height: 12),
           Text(
@@ -61,7 +65,9 @@ class MentorCard extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
-                color: AppColors.textSecondary, fontSize: 13),
+              color: AppColors.textSecondary,
+              fontSize: 13,
+            ),
           ),
           const SizedBox(height: 8),
           Row(
@@ -69,15 +75,22 @@ class MentorCard extends StatelessWidget {
             children: [
               const Icon(Icons.star, color: AppColors.secondary, size: 18),
               const SizedBox(width: 4),
-              Text(rating,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, color: AppColors.primary)),
+              Text(
+                rating,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
+                ),
+              ),
               const SizedBox(width: 4),
               Text(
                 'mentorship.sessions_count'.tr(
-                    namedArgs: {'count': mentor.totalSessions.toString()}),
+                  namedArgs: {'count': mentor.totalSessions.toString()},
+                ),
                 style: const TextStyle(
-                    color: AppColors.textSecondary, fontSize: 13),
+                  color: AppColors.textSecondary,
+                  fontSize: 13,
+                ),
               ),
             ],
           ),
@@ -87,19 +100,28 @@ class MentorCard extends StatelessWidget {
               alignment: WrapAlignment.center,
               spacing: 6,
               runSpacing: 6,
-              children: tags
-                  .map((t) => Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(t,
+              children:
+                  tags
+                      .map(
+                        (t) => Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            t,
                             style: const TextStyle(
-                                fontSize: 11.5, color: AppColors.primary)),
-                      ))
-                  .toList(),
+                              fontSize: 11.5,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ),
+                      )
+                      .toList(),
             ),
           ],
           const SizedBox(height: 16),

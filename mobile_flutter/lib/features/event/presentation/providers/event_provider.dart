@@ -10,8 +10,9 @@ final upcomingEventsProvider = FutureProvider<List<EventSummary>>((ref) async {
 });
 
 /// Full upcoming list for the Events screen.
-final allUpcomingEventsProvider =
-    FutureProvider<List<EventSummary>>((ref) async {
+final allUpcomingEventsProvider = FutureProvider<List<EventSummary>>((
+  ref,
+) async {
   return ref.watch(eventRepositoryProvider).getUpcoming(page: 0, limit: 20);
 });
 
@@ -21,8 +22,7 @@ final pastEventsProvider = FutureProvider<List<EventSummary>>((ref) async {
 });
 
 /// Full detail for one event.
-final eventDetailProvider =
-    FutureProvider.family<EventSummary, int>((ref, id) {
+final eventDetailProvider = FutureProvider.family<EventSummary, int>((ref, id) {
   return ref.read(eventRepositoryProvider).getDetail(id);
 });
 
@@ -30,8 +30,10 @@ final eventDetailProvider =
 /// included). Keyed by organization id. Admin/staff session required.
 final adminCheckInEventsProvider =
     FutureProvider.family<List<EventSummary>, int>((ref, organizationId) {
-  return ref.watch(eventRepositoryProvider).getOrganizationEvents(organizationId);
-});
+      return ref
+          .watch(eventRepositoryProvider)
+          .getOrganizationEvents(organizationId);
+    });
 
 /// The current user's registration tickets ("Vé của tôi").
 final myTicketsProvider = FutureProvider<List<EventTicket>>((ref) {
@@ -39,8 +41,10 @@ final myTicketsProvider = FutureProvider<List<EventTicket>>((ref) {
 });
 
 /// A ticket's full detail by its code (used by the ticket detail screen).
-final ticketByCodeProvider =
-    FutureProvider.family<EventTicket, String>((ref, code) {
+final ticketByCodeProvider = FutureProvider.family<EventTicket, String>((
+  ref,
+  code,
+) {
   return ref.read(eventRepositoryProvider).getTicketByCode(code);
 });
 
@@ -109,8 +113,7 @@ class EventInteractionNotifier
     );
   }
 
-  void _setOptimistic(EventInteraction next) =>
-      state = AsyncData(next);
+  void _setOptimistic(EventInteraction next) => state = AsyncData(next);
 
   Future<void> _resync() async {
     final next = await _load(arg);
@@ -119,10 +122,13 @@ class EventInteractionNotifier
 
   Future<void> addInterest() async {
     final cur = state.valueOrNull ?? const EventInteraction();
-    _setOptimistic(cur.copyWith(
-      interested: true,
-      interestedCount: cur.interested ? cur.interestedCount : cur.interestedCount + 1,
-    ));
+    _setOptimistic(
+      cur.copyWith(
+        interested: true,
+        interestedCount:
+            cur.interested ? cur.interestedCount : cur.interestedCount + 1,
+      ),
+    );
     try {
       await _repo.addInterest(arg);
     } catch (_) {
@@ -133,12 +139,15 @@ class EventInteractionNotifier
 
   Future<void> removeInterest() async {
     final cur = state.valueOrNull ?? const EventInteraction();
-    _setOptimistic(cur.copyWith(
-      interested: false,
-      interestedCount: cur.interested && cur.interestedCount > 0
-          ? cur.interestedCount - 1
-          : cur.interestedCount,
-    ));
+    _setOptimistic(
+      cur.copyWith(
+        interested: false,
+        interestedCount:
+            cur.interested && cur.interestedCount > 0
+                ? cur.interestedCount - 1
+                : cur.interestedCount,
+      ),
+    );
     try {
       await _repo.removeInterest(arg);
     } catch (_) {}
@@ -148,30 +157,37 @@ class EventInteractionNotifier
   Future<void> register(List<Map<String, dynamic>>? answers) async {
     await _repo.register(arg, answers: answers);
     final cur = state.valueOrNull ?? const EventInteraction();
-    _setOptimistic(cur.copyWith(
-      registered: true,
-      registeredCount: cur.registered ? cur.registeredCount : cur.registeredCount + 1,
-      // Registering implies interest on the backend; reflect it locally too.
-      interested: true,
-      interestedCount: cur.interested ? cur.interestedCount : cur.interestedCount + 1,
-    ));
+    _setOptimistic(
+      cur.copyWith(
+        registered: true,
+        registeredCount:
+            cur.registered ? cur.registeredCount : cur.registeredCount + 1,
+        // Registering implies interest on the backend; reflect it locally too.
+        interested: true,
+        interestedCount:
+            cur.interested ? cur.interestedCount : cur.interestedCount + 1,
+      ),
+    );
     await _resync();
   }
 
   Future<void> cancelRegistration(String reason) async {
     await _repo.cancelRegistration(arg, reason);
     final cur = state.valueOrNull ?? const EventInteraction();
-    _setOptimistic(cur.copyWith(
-      registered: false,
-      registeredCount: cur.registered && cur.registeredCount > 0
-          ? cur.registeredCount - 1
-          : cur.registeredCount,
-    ));
+    _setOptimistic(
+      cur.copyWith(
+        registered: false,
+        registeredCount:
+            cur.registered && cur.registeredCount > 0
+                ? cur.registeredCount - 1
+                : cur.registeredCount,
+      ),
+    );
     await _resync();
   }
 }
 
 final eventInteractionProvider = AsyncNotifierProvider.autoDispose
     .family<EventInteractionNotifier, EventInteraction, int>(
-  EventInteractionNotifier.new,
-);
+      EventInteractionNotifier.new,
+    );

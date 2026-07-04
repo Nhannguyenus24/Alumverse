@@ -71,14 +71,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final orgState = ref.read(organizationStateProvider);
       final isSplash = state.matchedLocation == RouteNames.splash;
 
-      final isOrgSelectRoute = state.matchedLocation == RouteNames.organizationSelect;
+      final isOrgSelectRoute =
+          state.matchedLocation == RouteNames.organizationSelect;
       // Public auth routes (signed-out only). Note: reset-password is the
       // "change password" flow and requires an active session — like the web,
       // it lives behind the auth gate, NOT here.
       // organization-registration requires a logged-in user (joins org with the
       // user id from the JWT), so it is NOT a signed-out-only auth route — it
       // lives behind the auth gate and is reachable from Settings.
-      final isAuthRoute = state.matchedLocation == RouteNames.login ||
+      final isAuthRoute =
+          state.matchedLocation == RouteNames.login ||
           state.matchedLocation == RouteNames.register ||
           state.matchedLocation == RouteNames.forgotPassword ||
           state.matchedLocation == RouteNames.signupCode;
@@ -120,18 +122,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
-      GoRoute(
-        path: RouteNames.splash,
-        builder: (_, __) => const SplashPage(),
-      ),
+      GoRoute(path: RouteNames.splash, builder: (_, __) => const SplashPage()),
       GoRoute(
         path: RouteNames.organizationSelect,
         builder: (_, __) => const OrganizationSelectPage(),
       ),
-      GoRoute(
-        path: RouteNames.login,
-        builder: (_, __) => const LoginPage(),
-      ),
+      GoRoute(path: RouteNames.login, builder: (_, __) => const LoginPage()),
       GoRoute(
         path: RouteNames.register,
         builder: (_, __) => const RegisterPage(),
@@ -142,7 +138,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: RouteNames.signupCode,
-        builder: (_, state) => SignupCodePage(email: state.extra as String? ?? ''),
+        builder:
+            (_, state) => SignupCodePage(email: state.extra as String? ?? ''),
       ),
       GoRoute(
         path: RouteNames.resetPassword,
@@ -154,13 +151,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: RouteNames.home,
-        builder: (_, __) =>
-            const MainScaffold(currentIndex: 0, child: HomePage()),
+        builder:
+            (_, __) => const MainScaffold(currentIndex: 0, child: HomePage()),
       ),
       GoRoute(
         path: RouteNames.chat,
-        builder: (_, __) =>
-            const MainScaffold(currentIndex: 4, child: ChatListPage()),
+        builder:
+            (_, __) =>
+                const MainScaffold(currentIndex: 4, child: ChatListPage()),
       ),
       // '/chat/new' must be declared BEFORE '/chat/:groupId' so the literal
       // segment 'new' isn't captured as a groupId.
@@ -176,9 +174,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (_, state) {
           final groupId =
               int.tryParse(state.pathParameters['groupId'] ?? '') ?? 0;
-          final args = state.extra is ChatRoomArgs
-              ? state.extra as ChatRoomArgs
-              : ChatRoomArgs(groupId: groupId);
+          final args =
+              state.extra is ChatRoomArgs
+                  ? state.extra as ChatRoomArgs
+                  : ChatRoomArgs(groupId: groupId);
           return ChatRoomPage(args: args);
         },
       ),
@@ -194,27 +193,26 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '${RouteNames.articles}/:id',
-        builder: (_, state) => ArticleDetailPage(
-          articleId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
-        ),
+        builder:
+            (_, state) => ArticleDetailPage(
+              articleId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
+            ),
       ),
       // Feature destinations from the home menu. These are placeholders until
       // each feature screen is built; routing works end-to-end now.
       GoRoute(
         path: RouteNames.events,
-        builder: (_, __) =>
-            const MainScaffold(currentIndex: 3, child: EventsPage()),
+        builder:
+            (_, __) => const MainScaffold(currentIndex: 3, child: EventsPage()),
       ),
       GoRoute(
         path: '${RouteNames.events}/:id',
-        builder: (_, state) => EventDetailPage(
-          eventId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
-        ),
+        builder:
+            (_, state) => EventDetailPage(
+              eventId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
+            ),
       ),
-      GoRoute(
-        path: RouteNames.news,
-        builder: (_, __) => const NewsListPage(),
-      ),
+      GoRoute(path: RouteNames.news, builder: (_, __) => const NewsListPage()),
       GoRoute(
         path: RouteNames.organizationIntroduction,
         builder: (_, __) => const OrganizationIntroductionPage(),
@@ -241,27 +239,31 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: RouteNames.mentorship,
-        builder: (_, __) =>
-            const MainScaffold(currentIndex: 2, child: MentorshipPage()),
+        builder:
+            (_, __) =>
+                const MainScaffold(currentIndex: 2, child: MentorshipPage()),
       ),
       GoRoute(
         path: '${RouteNames.mentorship}/mentors/:id',
-        builder: (_, state) => MentorProfilePage(
-          memberId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
-        ),
+        builder:
+            (_, state) => MentorProfilePage(
+              memberId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
+            ),
       ),
       GoRoute(
         path: '${RouteNames.mentorship}/mentors/:id/book',
-        builder: (_, state) => MentorBookingPage(
-          memberId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
-        ),
+        builder:
+            (_, state) => MentorBookingPage(
+              memberId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
+            ),
       ),
       GoRoute(
         path: RouteNames.profile,
         // Profile is opened from the header avatar, not a bottom-nav tab, so it
         // highlights no tab (currentIndex: -1).
-        builder: (_, __) =>
-            const MainScaffold(currentIndex: -1, child: MyProfilePage()),
+        builder:
+            (_, __) =>
+                const MainScaffold(currentIndex: -1, child: MyProfilePage()),
       ),
       GoRoute(
         path: RouteNames.profileEdit,
@@ -270,9 +272,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // ⚠️ Must be declared AFTER profileEdit so ':id' doesn't match 'edit'.
       GoRoute(
         path: '${RouteNames.profile}/:id',
-        builder: (_, state) => PublicProfilePage(
-          userId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
-        ),
+        builder:
+            (_, state) => PublicProfilePage(
+              userId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
+            ),
       ),
       GoRoute(
         path: RouteNames.settings,
@@ -298,12 +301,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // when navigated from the list (fast path); otherwise it's fetched.
       GoRoute(
         path: '${RouteNames.myTickets}/:code',
-        builder: (_, state) => TicketDetailPage(
-          code: state.pathParameters['code'] ?? '',
-          initial: state.extra is EventTicket
-              ? state.extra as EventTicket
-              : null,
-        ),
+        builder:
+            (_, state) => TicketDetailPage(
+              code: state.pathParameters['code'] ?? '',
+              initial:
+                  state.extra is EventTicket
+                      ? state.extra as EventTicket
+                      : null,
+            ),
       ),
       // Admin/staff event check-in. The auth gate keeps these behind login;
       // the picker page itself hides its content from non-staff roles.
@@ -313,42 +318,50 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '${RouteNames.adminCheckIn}/:eventId',
-        builder: (_, state) => EventCheckInScannerPage(
-          eventId: int.tryParse(state.pathParameters['eventId'] ?? '') ?? 0,
-          eventTitle: state.extra as String?,
-        ),
+        builder:
+            (_, state) => EventCheckInScannerPage(
+              eventId: int.tryParse(state.pathParameters['eventId'] ?? '') ?? 0,
+              eventTitle: state.extra as String?,
+            ),
       ),
       GoRoute(
         path: '/admin/events/:eventId',
-        builder: (_, state) => AdminEventManagePage(
-          eventId: int.tryParse(state.pathParameters['eventId'] ?? '') ?? 0,
-        ),
+        builder:
+            (_, state) => AdminEventManagePage(
+              eventId: int.tryParse(state.pathParameters['eventId'] ?? '') ?? 0,
+            ),
       ),
       GoRoute(
         path: RouteNames.forum,
-        builder: (_, __) =>
-            const MainScaffold(currentIndex: 1, child: ForumCategoriesPage()),
+        builder:
+            (_, __) => const MainScaffold(
+              currentIndex: 1,
+              child: ForumCategoriesPage(),
+            ),
       ),
       GoRoute(
         path: '${RouteNames.forum}/category/:id',
-        builder: (_, state) => ForumTopicsPage(
-          categoryId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
-          categoryName: state.extra as String?,
-        ),
+        builder:
+            (_, state) => ForumTopicsPage(
+              categoryId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
+              categoryName: state.extra as String?,
+            ),
       ),
       GoRoute(
         path: '${RouteNames.forum}/category/:id/new',
-        builder: (_, state) => ForumCreateTopicPage(
-          categoryId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
-          categoryName: state.extra as String?,
-        ),
+        builder:
+            (_, state) => ForumCreateTopicPage(
+              categoryId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
+              categoryName: state.extra as String?,
+            ),
       ),
       GoRoute(
         path: '${RouteNames.forum}/topic/:id',
-        builder: (_, state) => ForumThreadPage(
-          topicId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
-          topicTitle: state.extra as String?,
-        ),
+        builder:
+            (_, state) => ForumThreadPage(
+              topicId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
+              topicTitle: state.extra as String?,
+            ),
       ),
       GoRoute(
         path: RouteNames.fundraising,
@@ -360,20 +373,25 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '${RouteNames.fundraising}/:id',
-        builder: (_, state) => FundraisingDetailPage(
-          fundId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
-        ),
+        builder:
+            (_, state) => FundraisingDetailPage(
+              fundId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
+            ),
       ),
       GoRoute(
         path: '${RouteNames.fundraising}/:id/donate',
-        builder: (_, state) => FundraisingDonatePage(
-          fundId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
-        ),
+        builder:
+            (_, state) => FundraisingDonatePage(
+              fundId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
+            ),
       ),
     ],
-    errorBuilder: (_, state) => Scaffold(
-      body: Center(child: Text('Route not found: ${state.matchedLocation}')),
-    ),
+    errorBuilder:
+        (_, state) => Scaffold(
+          body: Center(
+            child: Text('Route not found: ${state.matchedLocation}'),
+          ),
+        ),
   );
 });
 
@@ -384,7 +402,8 @@ class _RouterRefresh extends ChangeNotifier {
   _RouterRefresh(Ref ref) {
     _subs.add(ref.listen(authStateProvider, (_, __) => notifyListeners()));
     _subs.add(
-        ref.listen(organizationStateProvider, (_, __) => notifyListeners()));
+      ref.listen(organizationStateProvider, (_, __) => notifyListeners()),
+    );
   }
 
   final List<ProviderSubscription> _subs = [];

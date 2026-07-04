@@ -25,13 +25,12 @@ class UserRepository {
     String? phone,
     String? gender,
     String? bio,
-  }) =>
-      _api.updateProfile(
-        organizationId: organizationId,
-        phone: phone,
-        gender: gender,
-        bio: bio,
-      );
+  }) => _api.updateProfile(
+    organizationId: organizationId,
+    phone: phone,
+    gender: gender,
+    bio: bio,
+  );
 
   /// Upload an avatar image (base64) then point the user's profile at it.
   /// Returns the new avatar URL.

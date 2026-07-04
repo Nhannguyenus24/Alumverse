@@ -48,7 +48,9 @@ class EventSummary {
       registrationStartAt: _date(json['registrationStartAt']),
       registrationEndAt: _date(json['registrationEndAt']),
       interestedCount: (json['interestedCount'] as num?)?.toInt() ?? 0,
-      joinedCount: ((json['joinedCount'] ?? json['registeredCount']) as num?)?.toInt() ?? 0,
+      joinedCount:
+          ((json['joinedCount'] ?? json['registeredCount']) as num?)?.toInt() ??
+          0,
       maxCapacity: (json['maxCapacity'] as num?)?.toInt(),
       organizer: json['organizer'] as String?,
       topic: json['topic'] as String?,
@@ -69,7 +71,13 @@ class EventSummary {
       int at(int i) => i < v.length ? (v[i] as num).toInt() : 0;
       final ns = v.length > 6 ? (v[6] as num).toInt() : 0;
       return DateTime(
-        at(0), at(1), at(2), at(3), at(4), at(5), (ns / 1000000).round(),
+        at(0),
+        at(1),
+        at(2),
+        at(3),
+        at(4),
+        at(5),
+        (ns / 1000000).round(),
       );
     }
     return null;

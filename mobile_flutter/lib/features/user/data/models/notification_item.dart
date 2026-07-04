@@ -17,13 +17,13 @@ class NotificationItem {
   });
 
   NotificationItem copyWith({bool? isRead}) => NotificationItem(
-        id: id,
-        title: title,
-        message: message,
-        isRead: isRead ?? this.isRead,
-        createdAt: createdAt,
-        link: link,
-      );
+    id: id,
+    title: title,
+    message: message,
+    isRead: isRead ?? this.isRead,
+    createdAt: createdAt,
+    link: link,
+  );
 
   factory NotificationItem.fromJson(Map<String, dynamic> json) {
     return NotificationItem(
@@ -31,9 +31,10 @@ class NotificationItem {
       title: json['title'] as String?,
       message: json['message'] as String? ?? '',
       isRead: json['isRead'] as bool? ?? false,
-      createdAt: json['createdAt'] is String
-          ? DateTime.tryParse(json['createdAt'] as String)
-          : null,
+      createdAt:
+          json['createdAt'] is String
+              ? DateTime.tryParse(json['createdAt'] as String)
+              : null,
       link: json['link'] as String?,
     );
   }

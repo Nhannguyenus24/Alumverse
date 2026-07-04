@@ -86,8 +86,7 @@ class FundDetail {
       targetAmount <= 0 ? 0 : (currentAmount / targetAmount).clamp(0, 1);
 
   /// True if the campaign cannot accept donations: the end time has passed.
-  bool get isClosed =>
-      timeEnded != null && timeEnded!.isBefore(DateTime.now());
+  bool get isClosed => timeEnded != null && timeEnded!.isBefore(DateTime.now());
 
   /// Average donation amount, 0 when there are no donors yet.
   double get averageDonation =>
@@ -109,9 +108,10 @@ class FundDetail {
       timeStarted: _date(json['timeStarted']),
       timeEnded: _date(json['timeEnded']),
       topic: json['topic'] as String?,
-      receivingInfo: info is Map<String, dynamic>
-          ? FundReceivingInfo.fromJson(info)
-          : null,
+      receivingInfo:
+          info is Map<String, dynamic>
+              ? FundReceivingInfo.fromJson(info)
+              : null,
       managerEmail: json['managerEmail'] as String?,
       managerUserId: (json['managerUserId'] as num?)?.toInt(),
       managerAvatarUrl: json['managerAvatarUrl'] as String?,

@@ -40,9 +40,10 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
       context.push(RouteNames.signupCode, extra: _emailCtl.text.trim());
     } catch (e) {
       if (!mounted) return;
-      final message = e is Exception
-          ? e.toString().replaceFirst('Exception: ', '')
-          : 'auth.send_code_failed'.tr();
+      final message =
+          e is Exception
+              ? e.toString().replaceFirst('Exception: ', '')
+              : 'auth.send_code_failed'.tr();
       AppToast.error(context, message);
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -71,9 +72,9 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                 Text(
                   'auth.forgot_password_title'.tr(),
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).primaryColor,
-                      ),
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).primaryColor,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
@@ -98,17 +99,20 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
-                  child: _submitting
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
+                  child:
+                      _submitting
+                          ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                          : Text(
+                            'auth.send_code'.tr(),
+                            style: const TextStyle(fontSize: 16),
                           ),
-                        )
-                      : Text('auth.send_code'.tr(),
-                          style: const TextStyle(fontSize: 16)),
                 ),
               ],
             ),

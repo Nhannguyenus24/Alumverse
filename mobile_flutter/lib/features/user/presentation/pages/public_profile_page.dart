@@ -29,9 +29,10 @@ class PublicProfilePage extends ConsumerWidget {
       backgroundColor: AppColors.background,
       body: async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => _ErrorView(
-          onRetry: () => ref.invalidate(publicProfileProvider(userId)),
-        ),
+        error:
+            (e, _) => _ErrorView(
+              onRetry: () => ref.invalidate(publicProfileProvider(userId)),
+            ),
         data: (profile) => _ProfileBody(profile: profile),
       ),
     );
@@ -46,9 +47,10 @@ class _ProfileBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final avatar = resolveImageUrl(profile.avatarUrl);
-    final name = profile.fullName?.isNotEmpty == true
-        ? profile.fullName!
-        : 'User #${profile.userId}';
+    final name =
+        profile.fullName?.isNotEmpty == true
+            ? profile.fullName!
+            : 'User #${profile.userId}';
     // Web role = `currentJobTitle @ currentCompany` || 'Member'. Those
     // fields are not in the DTO, so this always shows 'Member' (same as web).
     final role = 'profile.member'.tr();
@@ -68,7 +70,8 @@ class _ProfileBody extends StatelessWidget {
                 decoration: const BoxDecoration(
                   image: DecorationImage(
                     image: CachedNetworkImageProvider(
-                        PublicProfilePage._defaultCover),
+                      PublicProfilePage._defaultCover,
+                    ),
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -94,13 +97,18 @@ class _ProfileBody extends StatelessWidget {
                   child: CircleAvatar(
                     radius: 50,
                     backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                    backgroundImage: avatar != null
-                        ? CachedNetworkImageProvider(avatar)
-                        : null,
-                    child: avatar == null
-                        ? const Icon(Icons.person,
-                            size: 54, color: AppColors.primary)
-                        : null,
+                    backgroundImage:
+                        avatar != null
+                            ? CachedNetworkImageProvider(avatar)
+                            : null,
+                    child:
+                        avatar == null
+                            ? const Icon(
+                              Icons.person,
+                              size: 54,
+                              color: AppColors.primary,
+                            )
+                            : null,
                   ),
                 ),
               ),
@@ -144,12 +152,14 @@ class _ProfileBody extends StatelessWidget {
                     : 'profile.bio_empty'.tr(),
                 style: TextStyle(
                   height: 1.6,
-                  fontStyle: profile.bio?.trim().isNotEmpty == true
-                      ? FontStyle.normal
-                      : FontStyle.italic,
-                  color: profile.bio?.trim().isNotEmpty == true
-                      ? AppColors.textPrimary
-                      : AppColors.textSecondary,
+                  fontStyle:
+                      profile.bio?.trim().isNotEmpty == true
+                          ? FontStyle.normal
+                          : FontStyle.italic,
+                  color:
+                      profile.bio?.trim().isNotEmpty == true
+                          ? AppColors.textPrimary
+                          : AppColors.textSecondary,
                 ),
               ),
             ),
@@ -310,9 +320,10 @@ class _InfoTile extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: hasValue
-                        ? AppColors.textPrimary
-                        : AppColors.textSecondary,
+                    color:
+                        hasValue
+                            ? AppColors.textPrimary
+                            : AppColors.textSecondary,
                   ),
                 ),
               ],
@@ -342,8 +353,7 @@ class _ErrorView extends StatelessWidget {
             style: const TextStyle(color: AppColors.textSecondary),
           ),
           const SizedBox(height: 12),
-          ElevatedButton(
-              onPressed: onRetry, child: Text('common.retry'.tr())),
+          ElevatedButton(onPressed: onRetry, child: Text('common.retry'.tr())),
         ],
       ),
     );

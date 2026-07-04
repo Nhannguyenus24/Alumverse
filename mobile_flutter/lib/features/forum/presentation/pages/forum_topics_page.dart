@@ -47,13 +47,15 @@ class ForumTopicsPage extends ConsumerWidget {
           await ref.read(forumTopicsProvider(categoryId).future);
         },
         child: async.when(
-          loading: () => ListView(
-            children: List.generate(6, (_) => const SkeletonTile()),
-          ),
-          error: (_, __) => ErrorView(
-            message: 'forum.load_topics_failed'.tr(),
-            onRetry: () => ref.invalidate(forumTopicsProvider(categoryId)),
-          ),
+          loading:
+              () => ListView(
+                children: List.generate(6, (_) => const SkeletonTile()),
+              ),
+          error:
+              (_, __) => ErrorView(
+                message: 'forum.load_topics_failed'.tr(),
+                onRetry: () => ref.invalidate(forumTopicsProvider(categoryId)),
+              ),
           data: (topics) {
             if (topics.isEmpty) {
               return EmptyView(
@@ -83,10 +85,11 @@ class _TopicTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: () => context.push(
-        '${RouteNames.forum}/topic/${topic.id}',
-        extra: topic.title,
-      ),
+      onTap:
+          () => context.push(
+            '${RouteNames.forum}/topic/${topic.id}',
+            extra: topic.title,
+          ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Column(
@@ -102,18 +105,19 @@ class _TopicTile extends StatelessWidget {
             Text(
               '${'forum.created_at'.tr()} · ${formatRelativeTimeVi(topic.createdAt)}',
               style: const TextStyle(
-                  fontSize: 12, color: AppColors.textSecondary),
+                fontSize: 12,
+                color: AppColors.textSecondary,
+              ),
             ),
             const SizedBox(height: 10),
             Row(
               children: [
-                _Stat(
-                    label: 'forum.topic_views'.tr(),
-                    value: topic.viewCount),
+                _Stat(label: 'forum.topic_views'.tr(), value: topic.viewCount),
                 const SizedBox(width: 24),
                 _Stat(
-                    label: 'forum.topic_replies'.tr(),
-                    value: topic.replyCount),
+                  label: 'forum.topic_replies'.tr(),
+                  value: topic.replyCount,
+                ),
                 const Spacer(),
                 _AuthorChip(
                   memberId: topic.createdByMemberId,
@@ -139,12 +143,15 @@ class _Stat extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Text(label,
-            style: const TextStyle(
-                fontSize: 11, color: AppColors.textSecondary)),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+        ),
         const SizedBox(height: 2),
-        Text('$value',
-            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+        Text(
+          '$value',
+          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+        ),
       ],
     );
   }
@@ -171,14 +178,16 @@ class _AuthorChip extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'forum.member_id'.tr(
-                  namedArgs: {'id': '${memberId ?? '—'}'}),
-              style: const TextStyle(
-                  fontWeight: FontWeight.w600, fontSize: 13),
+              'forum.member_id'.tr(namedArgs: {'id': '${memberId ?? '—'}'}),
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
             ),
-            Text(formatRelativeTimeVi(updatedAt),
-                style: const TextStyle(
-                    fontSize: 11, color: AppColors.textSecondary)),
+            Text(
+              formatRelativeTimeVi(updatedAt),
+              style: const TextStyle(
+                fontSize: 11,
+                color: AppColors.textSecondary,
+              ),
+            ),
           ],
         ),
       ],

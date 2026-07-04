@@ -58,18 +58,21 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
   Future<void> _deleteAll() async {
     final ok = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('notification.delete_all_title'.tr()),
-        content: Text('notification.delete_all_confirm'.tr()),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: Text('common.cancel'.tr())),
-          ElevatedButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: Text('notification.delete_all_btn'.tr())),
-        ],
-      ),
+      builder:
+          (ctx) => AlertDialog(
+            title: Text('notification.delete_all_title'.tr()),
+            content: Text('notification.delete_all_confirm'.tr()),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text('common.cancel'.tr()),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: Text('notification.delete_all_btn'.tr()),
+              ),
+            ],
+          ),
     );
     if (ok != true) return;
     try {
@@ -92,25 +95,30 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
               if (v == 'read_all') _markAllRead(items);
               if (v == 'delete_all') _deleteAll();
             },
-            itemBuilder: (_) => [
-              PopupMenuItem(
-                  value: 'read_all',
-                  child: Text('notification.mark_all_read'.tr())),
-              PopupMenuItem(
-                  value: 'delete_all',
-                  child: Text('notification.delete_all_btn'.tr())),
-            ],
+            itemBuilder:
+                (_) => [
+                  PopupMenuItem(
+                    value: 'read_all',
+                    child: Text('notification.mark_all_read'.tr()),
+                  ),
+                  PopupMenuItem(
+                    value: 'delete_all',
+                    child: Text('notification.delete_all_btn'.tr()),
+                  ),
+                ],
           ),
         ],
       ),
       body: async.when(
-        loading: () => ListView(
-          children: List.generate(6, (_) => const SkeletonTile()),
-        ),
-        error: (_, __) => ErrorView(
-          message: 'notification.load_failed'.tr(),
-          onRetry: () => ref.invalidate(notificationsProvider),
-        ),
+        loading:
+            () => ListView(
+              children: List.generate(6, (_) => const SkeletonTile()),
+            ),
+        error:
+            (_, __) => ErrorView(
+              message: 'notification.load_failed'.tr(),
+              onRetry: () => ref.invalidate(notificationsProvider),
+            ),
         data: (all) {
           final unreadCount = all.where((n) => !n.isRead).length;
           final items =
@@ -130,7 +138,8 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                     const SizedBox(width: 8),
                     _FilterChip(
                       label: 'notification.unread_count'.tr(
-                          namedArgs: {'count': unreadCount.toString()}),
+                        namedArgs: {'count': unreadCount.toString()},
+                      ),
                       selected: _unreadOnly,
                       onTap: () => setState(() => _unreadOnly = true),
                     ),
@@ -138,23 +147,25 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                 ),
               ),
               Expanded(
-                child: items.isEmpty
-                    ? const _Empty()
-                    : RefreshIndicator(
-                        onRefresh: () async {
-                          ref.invalidate(notificationsProvider);
-                          await ref.read(notificationsProvider.future);
-                        },
-                        child: ListView.separated(
-                          itemCount: items.length,
-                          separatorBuilder: (_, __) =>
-                              const Divider(height: 1),
-                          itemBuilder: (_, i) => _NotificationTile(
-                            item: items[i],
-                            onTap: () => _onTap(items[i]),
+                child:
+                    items.isEmpty
+                        ? const _Empty()
+                        : RefreshIndicator(
+                          onRefresh: () async {
+                            ref.invalidate(notificationsProvider);
+                            await ref.read(notificationsProvider.future);
+                          },
+                          child: ListView.separated(
+                            itemCount: items.length,
+                            separatorBuilder:
+                                (_, __) => const Divider(height: 1),
+                            itemBuilder:
+                                (_, i) => _NotificationTile(
+                                  item: items[i],
+                                  onTap: () => _onTap(items[i]),
+                                ),
                           ),
                         ),
-                      ),
               ),
             ],
           );
@@ -165,8 +176,11 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
 }
 
 class _FilterChip extends StatelessWidget {
-  const _FilterChip(
-      {required this.label, required this.selected, required this.onTap});
+  const _FilterChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
 
   final String label;
   final bool selected;
@@ -195,16 +209,18 @@ class _NotificationTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final time = item.createdAt != null
-        ? DateFormat('dd/MM/yyyy • HH:mm').format(item.createdAt!)
-        : '';
+    final time =
+        item.createdAt != null
+            ? DateFormat('dd/MM/yyyy • HH:mm').format(item.createdAt!)
+            : '';
 
     return InkWell(
       onTap: onTap,
       child: Container(
-        color: item.isRead
-            ? Colors.transparent
-            : AppColors.primary.withValues(alpha: 0.05),
+        color:
+            item.isRead
+                ? Colors.transparent
+                : AppColors.primary.withValues(alpha: 0.05),
         padding: const EdgeInsets.all(16),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -217,7 +233,9 @@ class _NotificationTile extends StatelessWidget {
                     Text(
                       item.title!,
                       style: const TextStyle(
-                          fontWeight: FontWeight.w700, fontSize: 15),
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                      ),
                     ),
                   if (item.message.isNotEmpty)
                     Padding(
@@ -227,9 +245,10 @@ class _NotificationTile extends StatelessWidget {
                         style: TextStyle(
                           fontWeight:
                               item.isRead ? FontWeight.w400 : FontWeight.w600,
-                          color: item.isRead
-                              ? AppColors.textSecondary
-                              : AppColors.textPrimary,
+                          color:
+                              item.isRead
+                                  ? AppColors.textSecondary
+                                  : AppColors.textPrimary,
                           height: 1.4,
                         ),
                       ),
@@ -241,9 +260,10 @@ class _NotificationTile extends StatelessWidget {
                         time,
                         style: TextStyle(
                           fontSize: 12,
-                          color: item.isRead
-                              ? AppColors.textSecondary
-                              : AppColors.primary,
+                          color:
+                              item.isRead
+                                  ? AppColors.textSecondary
+                                  : AppColors.primary,
                         ),
                       ),
                     ),

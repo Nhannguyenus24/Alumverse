@@ -77,8 +77,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authStateProvider);
     final loading = authState.isLoading;
-    final orgName =
-        ref.watch(organizationStateProvider).valueOrNull?.name;
+    final orgName = ref.watch(organizationStateProvider).valueOrNull?.name;
 
     return Scaffold(
       body: SafeArea(
@@ -94,18 +93,18 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 Text(
                   'auth.login'.tr(),
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).primaryColor,
-                      ),
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).primaryColor,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 if (orgName != null) ...[
                   const SizedBox(height: 8),
                   Text(
                     orgName,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey[600],
-                        ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -125,8 +124,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 BlurValidatedField(
                   controller: _passCtl,
                   obscureText: _obscure,
-                  validator: (v) =>
-                      Validators.required(v, field: 'auth.password'.tr()),
+                  validator:
+                      (v) =>
+                          Validators.required(v, field: 'auth.password'.tr()),
                   textInputAction: TextInputAction.done,
                   onFieldSubmitted: (_) => loading ? null : _submit(),
                   decoration: InputDecoration(
@@ -154,17 +154,20 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
-                  child: loading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
+                  child:
+                      loading
+                          ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                          : Text(
+                            'auth.login'.tr(),
+                            style: const TextStyle(fontSize: 16),
                           ),
-                        )
-                      : Text('auth.login'.tr(),
-                          style: const TextStyle(fontSize: 16)),
                 ),
                 const SizedBox(height: 24),
                 Row(
@@ -182,15 +185,18 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 ),
                 const SizedBox(height: 24),
                 OutlinedButton.icon(
-                  onPressed: loading
-                      ? null
-                      : () {
-                          // TODO: Google Sign-In — gọi google_sign_in để lấy
-                          // idToken rồi ref.read(authStateProvider.notifier)
-                          // .loginWithGoogle(idToken).
-                          AppToast.info(
-                              context, 'auth.google_coming_soon'.tr());
-                        },
+                  onPressed:
+                      loading
+                          ? null
+                          : () {
+                            // TODO: Google Sign-In — gọi google_sign_in để lấy
+                            // idToken rồi ref.read(authStateProvider.notifier)
+                            // .loginWithGoogle(idToken).
+                            AppToast.info(
+                              context,
+                              'auth.google_coming_soon'.tr(),
+                            );
+                          },
                   icon: const Icon(Icons.g_mobiledata, size: 30),
                   label: Text('auth.continue_with_google'.tr()),
                   style: OutlinedButton.styleFrom(

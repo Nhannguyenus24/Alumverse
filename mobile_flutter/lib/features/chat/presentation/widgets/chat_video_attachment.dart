@@ -37,7 +37,9 @@ class _ChatVideoAttachmentState extends State<ChatVideoAttachment> {
   Future<void> _play() async {
     setState(() => _isLoading = true);
     try {
-      final controller = VideoPlayerController.networkUrl(Uri.parse(widget.url));
+      final controller = VideoPlayerController.networkUrl(
+        Uri.parse(widget.url),
+      );
       await controller.initialize();
       if (!mounted) {
         controller.dispose();
@@ -53,7 +55,11 @@ class _ChatVideoAttachmentState extends State<ChatVideoAttachment> {
         _isLoading = false;
       });
     } catch (_) {
-      if (mounted) setState(() { _failed = true; _isLoading = false; });
+      if (mounted)
+        setState(() {
+          _failed = true;
+          _isLoading = false;
+        });
     }
   }
 
@@ -81,11 +87,17 @@ class _ChatVideoAttachmentState extends State<ChatVideoAttachment> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.videocam_off_outlined, color: AppColors.textSecondary),
+            const Icon(
+              Icons.videocam_off_outlined,
+              color: AppColors.textSecondary,
+            ),
             const SizedBox(height: 6),
             Text(
               widget.fileName ?? 'chat.attachment_unavailable'.tr(),
-              style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+              style: const TextStyle(
+                fontSize: 11,
+                color: AppColors.textSecondary,
+              ),
               textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -94,7 +106,10 @@ class _ChatVideoAttachmentState extends State<ChatVideoAttachment> {
             TextButton.icon(
               onPressed: _openExternally,
               icon: const Icon(Icons.open_in_new, size: 16),
-              label: Text('chat.open_externally'.tr(), style: const TextStyle(fontSize: 12)),
+              label: Text(
+                'chat.open_externally'.tr(),
+                style: const TextStyle(fontSize: 12),
+              ),
             ),
           ],
         ),
@@ -122,9 +137,14 @@ class _ChatVideoAttachmentState extends State<ChatVideoAttachment> {
           borderRadius: BorderRadius.circular(12),
         ),
         alignment: Alignment.center,
-        child: _isLoading
-            ? const CircularProgressIndicator(color: Colors.white)
-            : const Icon(Icons.play_circle_fill, color: Colors.white, size: 48),
+        child:
+            _isLoading
+                ? const CircularProgressIndicator(color: Colors.white)
+                : const Icon(
+                  Icons.play_circle_fill,
+                  color: Colors.white,
+                  size: 48,
+                ),
       ),
     );
   }

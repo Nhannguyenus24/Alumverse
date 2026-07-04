@@ -13,25 +13,25 @@ class FitBotMessage {
   });
 
   FitBotMessage copyWith({String? text}) => FitBotMessage(
-        id: id,
-        text: text ?? this.text,
-        isBot: isBot,
-        timestamp: timestamp,
-      );
+    id: id,
+    text: text ?? this.text,
+    isBot: isBot,
+    timestamp: timestamp,
+  );
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'text': text,
-        'isBot': isBot,
-        'timestamp': timestamp.toIso8601String(),
-      };
+    'id': id,
+    'text': text,
+    'isBot': isBot,
+    'timestamp': timestamp.toIso8601String(),
+  };
 
   factory FitBotMessage.fromJson(Map<String, dynamic> json) => FitBotMessage(
-        id: json['id']?.toString() ?? '',
-        text: json['text']?.toString() ?? '',
-        isBot: json['isBot'] == true,
-        timestamp:
-            DateTime.tryParse(json['timestamp']?.toString() ?? '') ??
-                DateTime.fromMillisecondsSinceEpoch(0),
-      );
+    id: json['id']?.toString() ?? '',
+    text: json['text']?.toString() ?? '',
+    isBot: json['isBot'] == true,
+    timestamp:
+        DateTime.tryParse(json['timestamp']?.toString() ?? '') ??
+        DateTime.fromMillisecondsSinceEpoch(0),
+  );
 }

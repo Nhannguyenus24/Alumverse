@@ -42,10 +42,14 @@ class ConnectionCard extends StatelessWidget {
               backgroundColor: AppColors.primary.withValues(alpha: 0.1),
               backgroundImage:
                   avatar != null ? CachedNetworkImageProvider(avatar) : null,
-              child: avatar == null
-                  ? const Icon(Icons.person,
-                      size: 28, color: AppColors.primary)
-                  : null,
+              child:
+                  avatar == null
+                      ? const Icon(
+                        Icons.person,
+                        size: 28,
+                        color: AppColors.primary,
+                      )
+                      : null,
             ),
           ),
           const SizedBox(width: 12),
@@ -70,7 +74,9 @@ class ConnectionCard extends StatelessWidget {
                     Text(
                       connection.subtitle,
                       style: const TextStyle(
-                          color: AppColors.textSecondary, fontSize: 13),
+                        color: AppColors.textSecondary,
+                        fontSize: 13,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -82,29 +88,42 @@ class ConnectionCard extends StatelessWidget {
           const SizedBox(width: 8),
           IconButton(
             onPressed: onChat,
-            icon: const Icon(Icons.chat_rounded,
-                color: AppColors.primary, size: 22),
+            icon: const Icon(
+              Icons.chat_rounded,
+              color: AppColors.primary,
+              size: 22,
+            ),
             tooltip: 'network.message'.tr(),
           ),
           PopupMenuButton<_Action>(
             onSelected: (action) {
               if (action == _Action.block) onBlock();
             },
-            itemBuilder: (_) => [
-              PopupMenuItem(
-                value: _Action.block,
-                child: Row(
-                  children: [
-                    const Icon(Icons.block, color: AppColors.error, size: 18),
-                    const SizedBox(width: 8),
-                    Text('network.block'.tr(),
-                        style: const TextStyle(color: AppColors.error)),
-                  ],
-                ),
-              ),
-            ],
-            icon: const Icon(Icons.more_vert,
-                color: AppColors.textSecondary, size: 20),
+            itemBuilder:
+                (_) => [
+                  PopupMenuItem(
+                    value: _Action.block,
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.block,
+                          color: AppColors.error,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'network.block'.tr(),
+                          style: const TextStyle(color: AppColors.error),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+            icon: const Icon(
+              Icons.more_vert,
+              color: AppColors.textSecondary,
+              size: 20,
+            ),
           ),
         ],
       ),

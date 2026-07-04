@@ -39,7 +39,9 @@ class FeaturePlaceholderPage extends StatelessWidget {
               Text(
                 title,
                 style: const TextStyle(
-                    fontSize: 18, fontWeight: FontWeight.w600),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),

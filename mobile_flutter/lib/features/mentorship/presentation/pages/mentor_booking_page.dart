@@ -85,7 +85,9 @@ class _MentorBookingPageState extends ConsumerState<MentorBookingPage> {
 
     setState(() => _submitting = true);
     try {
-      await ref.read(mentorshipRepositoryProvider).bookSession(
+      await ref
+          .read(mentorshipRepositoryProvider)
+          .bookSession(
             availabilityId: _slot!.id,
             sessionType: _sessionType!,
             introduction: _introCtl.text.trim(),
@@ -120,45 +122,59 @@ class _MentorBookingPageState extends ConsumerState<MentorBookingPage> {
             _Label('1. ${'mentorship.booking_step_slot'.tr()}'),
             const SizedBox(height: 8),
             slotsAsync.when(
-              loading: () => const Center(
-                  child: Padding(
+              loading:
+                  () => const Center(
+                    child: Padding(
                       padding: EdgeInsets.all(20),
-                      child: CircularProgressIndicator())),
+                      child: CircularProgressIndicator(),
+                    ),
+                  ),
               error: (e, _) => _SlotsError(error: e),
               data: (slots) {
-                final allOpen = slots
-                    .where((s) =>
-                        (s.status == null || s.status == 'AVAILABLE') &&
-                        s.startTime.isAfter(DateTime.now()))
-                    .toList()
-                  ..sort((a, b) => a.startTime.compareTo(b.startTime));
+                final allOpen =
+                    slots
+                        .where(
+                          (s) =>
+                              (s.status == null || s.status == 'AVAILABLE') &&
+                              s.startTime.isAfter(DateTime.now()),
+                        )
+                        .toList()
+                      ..sort((a, b) => a.startTime.compareTo(b.startTime));
                 if (allOpen.isEmpty) {
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: Text('mentorship.no_open_slots'.tr(),
-                        style: const TextStyle(color: AppColors.textSecondary)),
+                    child: Text(
+                      'mentorship.no_open_slots'.tr(),
+                      style: const TextStyle(color: AppColors.textSecondary),
+                    ),
                   );
                 }
 
                 // Apply the optional date-range filter (inclusive of both ends).
-                final open = allOpen.where((s) {
-                  final d = DateTime(
-                      s.startTime.year, s.startTime.month, s.startTime.day);
-                  if (_rangeStart != null && d.isBefore(_rangeStart!)) {
-                    return false;
-                  }
-                  if (_rangeEnd != null && d.isAfter(_rangeEnd!)) return false;
-                  return true;
-                }).toList();
+                final open =
+                    allOpen.where((s) {
+                      final d = DateTime(
+                        s.startTime.year,
+                        s.startTime.month,
+                        s.startTime.day,
+                      );
+                      if (_rangeStart != null && d.isBefore(_rangeStart!)) {
+                        return false;
+                      }
+                      if (_rangeEnd != null && d.isAfter(_rangeEnd!))
+                        return false;
+                      return true;
+                    }).toList();
 
                 final rangeRow = _RangeFilter(
                   start: _rangeStart,
                   end: _rangeEnd,
                   onPickStart: () => _pickRange(true),
                   onPickEnd: () => _pickRange(false),
-                  onClear: (_rangeStart == null && _rangeEnd == null)
-                      ? null
-                      : () => setState(() {
+                  onClear:
+                      (_rangeStart == null && _rangeEnd == null)
+                          ? null
+                          : () => setState(() {
                             _rangeStart = null;
                             _rangeEnd = null;
                             _selectedDay = null;
@@ -172,8 +188,10 @@ class _MentorBookingPageState extends ConsumerState<MentorBookingPage> {
                     children: [
                       rangeRow,
                       const SizedBox(height: 10),
-                      Text('mentorship.no_slots_in_range'.tr(),
-                          style: const TextStyle(color: AppColors.textSecondary)),
+                      Text(
+                        'mentorship.no_slots_in_range'.tr(),
+                        style: const TextStyle(color: AppColors.textSecondary),
+                      ),
                     ],
                   );
                 }
@@ -182,15 +200,18 @@ class _MentorBookingPageState extends ConsumerState<MentorBookingPage> {
                 final byDay = <DateTime, List<MentorAvailability>>{};
                 for (final s in open) {
                   final d = DateTime(
-                      s.startTime.year, s.startTime.month, s.startTime.day);
+                    s.startTime.year,
+                    s.startTime.month,
+                    s.startTime.day,
+                  );
                   byDay.putIfAbsent(d, () => []).add(s);
                 }
                 final days = byDay.keys.toList()..sort();
                 // Default the expanded day to the first available one.
-                final selectedDay = (_selectedDay != null &&
-                        byDay.containsKey(_selectedDay))
-                    ? _selectedDay!
-                    : days.first;
+                final selectedDay =
+                    (_selectedDay != null && byDay.containsKey(_selectedDay))
+                        ? _selectedDay!
+                        : days.first;
                 final dayDf = DateFormat('dd/MM');
                 final daySlots = byDay[selectedDay] ?? const [];
 
@@ -211,12 +232,14 @@ class _MentorBookingPageState extends ConsumerState<MentorBookingPage> {
                           final sel = d == selectedDay;
                           return ChoiceChip(
                             label: Text(
-                                '${dayDf.format(d)} (${byDay[d]!.length})'),
+                              '${dayDf.format(d)} (${byDay[d]!.length})',
+                            ),
                             selected: sel,
-                            onSelected: (_) => setState(() {
-                              _selectedDay = d;
-                              _slot = null; // reset slot when day changes
-                            }),
+                            onSelected:
+                                (_) => setState(() {
+                                  _selectedDay = d;
+                                  _slot = null; // reset slot when day changes
+                                }),
                             selectedColor: AppColors.primary,
                             labelStyle: TextStyle(
                               color: sel ? Colors.white : AppColors.textPrimary,
@@ -244,20 +267,23 @@ class _MentorBookingPageState extends ConsumerState<MentorBookingPage> {
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
-              children: sessionTypes.map((t) {
-                final selected = _sessionType == t.$1;
-                return ChoiceChip(
-                  label: Text(t.$2),
-                  selected: selected,
-                  onSelected: (_) => setState(() => _sessionType = t.$1),
-                );
-              }).toList(),
+              children:
+                  sessionTypes.map((t) {
+                    final selected = _sessionType == t.$1;
+                    return ChoiceChip(
+                      label: Text(t.$2),
+                      selected: selected,
+                      onSelected: (_) => setState(() => _sessionType = t.$1),
+                    );
+                  }).toList(),
             ),
             if (_sessionType == null)
               Padding(
                 padding: const EdgeInsets.only(top: 6),
-                child: Text('mentorship.booking_select_type'.tr(),
-                    style: const TextStyle(color: AppColors.error, fontSize: 12)),
+                child: Text(
+                  'mentorship.booking_select_type'.tr(),
+                  style: const TextStyle(color: AppColors.error, fontSize: 12),
+                ),
               ),
             const SizedBox(height: 20),
             _Label('3. ${'mentorship.booking_step_info'.tr()}'),
@@ -265,9 +291,11 @@ class _MentorBookingPageState extends ConsumerState<MentorBookingPage> {
             TextFormField(
               controller: _introCtl,
               maxLines: 3,
-              validator: (v) => (v == null || v.trim().isEmpty)
-                  ? 'mentorship.booking_intro_required'.tr()
-                  : null,
+              validator:
+                  (v) =>
+                      (v == null || v.trim().isEmpty)
+                          ? 'mentorship.booking_intro_required'.tr()
+                          : null,
               decoration: InputDecoration(
                 labelText: 'mentorship.booking_intro_label'.tr(),
                 hintText: 'mentorship.booking_intro_hint'.tr(),
@@ -287,18 +315,25 @@ class _MentorBookingPageState extends ConsumerState<MentorBookingPage> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: (_submitting || _sessionType == null) ? null : _submit,
+                onPressed:
+                    (_submitting || _sessionType == null) ? null : _submit,
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
-                child: _submitting
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white))
-                    : Text('mentorship.booking_confirm'.tr(),
-                        style: const TextStyle(fontSize: 16)),
+                child:
+                    _submitting
+                        ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                        : Text(
+                          'mentorship.booking_confirm'.tr(),
+                          style: const TextStyle(fontSize: 16),
+                        ),
               ),
             ),
           ],
@@ -346,8 +381,8 @@ class _SlotsError extends StatelessWidget {
             Align(
               alignment: Alignment.centerLeft,
               child: ElevatedButton.icon(
-                onPressed: () =>
-                    context.push(RouteNames.organizationRegistration),
+                onPressed:
+                    () => context.push(RouteNames.organizationRegistration),
                 icon: const Icon(Icons.verified_user_outlined, size: 18),
                 label: Text('mentorship.verify_academic'.tr()),
               ),
@@ -356,8 +391,10 @@ class _SlotsError extends StatelessWidget {
         ),
       );
     }
-    return Text('mentorship.slots_load_failed'.tr(),
-        style: const TextStyle(color: AppColors.textSecondary));
+    return Text(
+      'mentorship.slots_load_failed'.tr(),
+      style: const TextStyle(color: AppColors.textSecondary),
+    );
   }
 }
 
@@ -409,8 +446,11 @@ class _RangeFilter extends StatelessWidget {
 }
 
 class _DateButton extends StatelessWidget {
-  const _DateButton(
-      {required this.label, required this.value, required this.onTap});
+  const _DateButton({
+    required this.label,
+    required this.value,
+    required this.onTap,
+  });
   final String label;
   final String? value;
   final VoidCallback onTap;
@@ -424,7 +464,8 @@ class _DateButton extends StatelessWidget {
         value ?? label,
         overflow: TextOverflow.ellipsis,
         style: TextStyle(
-          color: value != null ? AppColors.textPrimary : AppColors.textSecondary,
+          color:
+              value != null ? AppColors.textPrimary : AppColors.textSecondary,
           fontWeight: value != null ? FontWeight.w600 : FontWeight.w400,
         ),
       ),
@@ -469,11 +510,16 @@ class _SlotTile extends StatelessWidget {
           color: selected ? AppColors.primary : AppColors.textSecondary,
         ),
         title: Text(
-            '${tf.format(slot.startTime)} - ${tf.format(slot.endTime)}'),
-        subtitle: mins > 0
-            ? Text('mentorship.slot_duration_minutes'.tr(
-                namedArgs: {'count': mins.toString()}))
-            : null,
+          '${tf.format(slot.startTime)} - ${tf.format(slot.endTime)}',
+        ),
+        subtitle:
+            mins > 0
+                ? Text(
+                  'mentorship.slot_duration_minutes'.tr(
+                    namedArgs: {'count': mins.toString()},
+                  ),
+                )
+                : null,
       ),
     );
   }
@@ -485,8 +531,13 @@ class _Label extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(text,
-        style: const TextStyle(
-            fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.primary));
+    return Text(
+      text,
+      style: const TextStyle(
+        fontWeight: FontWeight.w700,
+        fontSize: 15,
+        color: AppColors.primary,
+      ),
+    );
   }
 }

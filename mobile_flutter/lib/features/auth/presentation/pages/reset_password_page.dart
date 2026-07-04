@@ -40,7 +40,9 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
 
     setState(() => _submitting = true);
     try {
-      await ref.read(authStateProvider.notifier).changePassword(
+      await ref
+          .read(authStateProvider.notifier)
+          .changePassword(
             oldPassword: _oldPassCtl.text,
             newPassword: _newPassCtl.text,
           );
@@ -49,9 +51,10 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
       context.go(RouteNames.home);
     } catch (e) {
       if (!mounted) return;
-      final message = e is Exception
-          ? e.toString().replaceFirst('Exception: ', '')
-          : 'auth.change_password_failed'.tr();
+      final message =
+          e is Exception
+              ? e.toString().replaceFirst('Exception: ', '')
+              : 'auth.change_password_failed'.tr();
       AppToast.error(context, message);
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -80,17 +83,20 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                 Text(
                   'auth.change_password'.tr(),
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).primaryColor,
-                      ),
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).primaryColor,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
                 BlurValidatedField(
                   controller: _oldPassCtl,
                   obscureText: _obscureOld,
-                  validator: (v) => Validators.required(
-                      v, field: 'auth.current_password'.tr()),
+                  validator:
+                      (v) => Validators.required(
+                        v,
+                        field: 'auth.current_password'.tr(),
+                      ),
                   decoration: InputDecoration(
                     labelText: 'auth.current_password'.tr(),
                     prefixIcon: const Icon(Icons.lock_outline),
@@ -98,8 +104,8 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                       icon: Icon(
                         _obscureOld ? Icons.visibility_off : Icons.visibility,
                       ),
-                      onPressed: () =>
-                          setState(() => _obscureOld = !_obscureOld),
+                      onPressed:
+                          () => setState(() => _obscureOld = !_obscureOld),
                     ),
                   ),
                 ),
@@ -115,8 +121,8 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                       icon: Icon(
                         _obscureNew ? Icons.visibility_off : Icons.visibility,
                       ),
-                      onPressed: () =>
-                          setState(() => _obscureNew = !_obscureNew),
+                      onPressed:
+                          () => setState(() => _obscureNew = !_obscureNew),
                     ),
                   ),
                 ),
@@ -124,8 +130,8 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                 BlurValidatedField(
                   controller: _confirmNewPassCtl,
                   obscureText: _obscureConfirm,
-                  validator: (v) =>
-                      Validators.confirmPassword(v, _newPassCtl.text),
+                  validator:
+                      (v) => Validators.confirmPassword(v, _newPassCtl.text),
                   decoration: InputDecoration(
                     labelText: 'auth.repeat_new_password'.tr(),
                     prefixIcon: const Icon(Icons.lock_clock_outlined),
@@ -135,8 +141,10 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                             ? Icons.visibility_off
                             : Icons.visibility,
                       ),
-                      onPressed: () =>
-                          setState(() => _obscureConfirm = !_obscureConfirm),
+                      onPressed:
+                          () => setState(
+                            () => _obscureConfirm = !_obscureConfirm,
+                          ),
                     ),
                   ),
                 ),
@@ -152,17 +160,20 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
-                  child: _submitting
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
+                  child:
+                      _submitting
+                          ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                          : Text(
+                            'auth.change_password'.tr(),
+                            style: const TextStyle(fontSize: 16),
                           ),
-                        )
-                      : Text('auth.change_password'.tr(),
-                          style: const TextStyle(fontSize: 16)),
                 ),
                 const SizedBox(height: 16),
                 Center(

@@ -10,7 +10,8 @@ import '../../data/repositories/organization_repository.dart';
 
 final organizationStateProvider =
     AsyncNotifierProvider<OrganizationNotifier, Organization?>(
-        OrganizationNotifier.new);
+      OrganizationNotifier.new,
+    );
 
 class OrganizationNotifier extends AsyncNotifier<Organization?> {
   @override
@@ -19,9 +20,10 @@ class OrganizationNotifier extends AsyncNotifier<Organization?> {
     // Use the saved slug, or fall back to the default tenant so the app boots
     // straight into the organization without a picker (matches the web client).
     final saved = await storage.readOrganizationSlug();
-    final slug = (saved != null && saved.isNotEmpty)
-        ? saved
-        : Env.defaultOrganizationSlug;
+    final slug =
+        (saved != null && saved.isNotEmpty)
+            ? saved
+            : Env.defaultOrganizationSlug;
     try {
       final org = await ref
           .read(organizationRepositoryProvider)
@@ -53,18 +55,18 @@ class OrganizationNotifier extends AsyncNotifier<Organization?> {
 /// Trusted verifiers for a given organization, used by the registration page.
 final trustedVerifiersProvider =
     FutureProvider.family<List<TrustedVerifier>, int>((ref, organizationId) {
-  return ref
-      .read(organizationRepositoryProvider)
-      .getTrustedVerifiers(organizationId);
-});
+      return ref
+          .read(organizationRepositoryProvider)
+          .getTrustedVerifiers(organizationId);
+    });
 
 /// Introduction content for a given organization (view-only screen).
 final organizationIntroductionProvider =
     FutureProvider.family<OrganizationIntroduction, int>((ref, organizationId) {
-  return ref
-      .read(organizationRepositoryProvider)
-      .getIntroduction(organizationId);
-});
+      return ref
+          .read(organizationRepositoryProvider)
+          .getIntroduction(organizationId);
+    });
 
 /// All organizations, for the org-select dropdown. Public endpoint — works
 /// before login.
@@ -76,9 +78,9 @@ final organizationListProvider = FutureProvider<List<Organization>>((ref) {
 /// Re-watches the current organization so it scopes to the active tenant.
 final pendingPeerVerificationsProvider =
     FutureProvider<List<PendingPeerVerification>>((ref) async {
-  final org = ref.watch(organizationStateProvider).valueOrNull;
-  if (org == null) return const [];
-  return ref
-      .read(organizationRepositoryProvider)
-      .getPendingPeerVerifications(org.id);
-});
+      final org = ref.watch(organizationStateProvider).valueOrNull;
+      if (org == null) return const [];
+      return ref
+          .read(organizationRepositoryProvider)
+          .getPendingPeerVerifications(org.id);
+    });

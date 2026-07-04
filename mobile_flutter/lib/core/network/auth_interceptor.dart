@@ -49,7 +49,8 @@ class AuthInterceptor extends Interceptor {
     // Only a token problem should trigger a refresh. A 401 can also be a
     // business rule (e.g. ACCOUNT_NOT_VERIFIED when browsing mentors) — those
     // must surface to the UI as-is, not loop through a pointless refresh.
-    final shouldRefresh = response?.statusCode == 401 &&
+    final shouldRefresh =
+        response?.statusCode == 401 &&
         !alreadyRetried &&
         !_whitelist.contains(requestPath) &&
         _isTokenError(response?.data);
@@ -90,9 +91,10 @@ class AuthInterceptor extends Interceptor {
   bool _isTokenError(dynamic body) {
     // ApplicationException bodies carry `errorCode`; the security filter's
     // token errors use `error`. Check both.
-    final code = body is Map
-        ? (body['errorCode'] ?? body['error'] ?? body['code'])
-        : null;
+    final code =
+        body is Map
+            ? (body['errorCode'] ?? body['error'] ?? body['code'])
+            : null;
     if (code is! String) return true; // unknown → keep old refresh behaviour
     const tokenCodes = {
       'TOKEN_EXPIRED',
@@ -109,7 +111,8 @@ class AuthInterceptor extends Interceptor {
   Future<String?> _refresh() async {
     final res = await refreshDio.post(ApiEndpoints.authRefresh);
     final body = res.data;
-    final data = body is Map && body['data'] is Map ? body['data'] as Map : body;
+    final data =
+        body is Map && body['data'] is Map ? body['data'] as Map : body;
     final token = (data is Map ? data['accessToken'] : null) as String?;
     if (token == null || token.isEmpty) return null;
     await _storage.writeAccessToken(token);

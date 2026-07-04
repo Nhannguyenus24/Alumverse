@@ -31,8 +31,9 @@ class EventRegisterSheet extends StatefulWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
       ),
-      builder: (_) =>
-          EventRegisterSheet(eventTitle: eventTitle, questions: questions),
+      builder:
+          (_) =>
+              EventRegisterSheet(eventTitle: eventTitle, questions: questions),
     );
   }
 
@@ -99,71 +100,82 @@ class _EventRegisterSheetState extends State<EventRegisterSheet> {
         initialChildSize: 0.7,
         maxChildSize: 0.92,
         minChildSize: 0.4,
-        builder: (_, scrollCtl) => Column(
-          children: [
-            const SizedBox(height: AppSpacing.sm),
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.divider,
-                borderRadius: BorderRadius.circular(AppRadius.pill),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('event.register_sheet_title'.tr(),
-                      style: const TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 2),
-                  Text(widget.eventTitle,
-                      style: const TextStyle(color: AppColors.textSecondary)),
-                ],
-              ),
-            ),
-            const Divider(height: 1),
-            Expanded(
-              child: Form(
-                key: _formKey,
-                child: ListView(
-                  controller: scrollCtl,
-                  padding: const EdgeInsets.all(AppSpacing.lg),
-                  children: [
-                    for (final q in widget.questions) ...[
-                      _QuestionField(
-                        question: q,
-                        value: _answers[q.id],
-                        onChanged: (v) => setState(() => _answers[q.id] = v),
-                      ),
-                      const SizedBox(height: AppSpacing.lg),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-            SafeArea(
-              top: false,
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.lg),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _submit,
-                    style: ElevatedButton.styleFrom(
-                      padding:
-                          const EdgeInsets.symmetric(vertical: AppSpacing.md),
-                    ),
-                    child: Text('event.confirm_join'.tr(),
-                        style: const TextStyle(fontSize: 16)),
+        builder:
+            (_, scrollCtl) => Column(
+              children: [
+                const SizedBox(height: AppSpacing.sm),
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.divider,
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
                   ),
                 ),
-              ),
+                Padding(
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'event.register_sheet_title'.tr(),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        widget.eventTitle,
+                        style: const TextStyle(color: AppColors.textSecondary),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1),
+                Expanded(
+                  child: Form(
+                    key: _formKey,
+                    child: ListView(
+                      controller: scrollCtl,
+                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      children: [
+                        for (final q in widget.questions) ...[
+                          _QuestionField(
+                            question: q,
+                            value: _answers[q.id],
+                            onChanged:
+                                (v) => setState(() => _answers[q.id] = v),
+                          ),
+                          const SizedBox(height: AppSpacing.lg),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+                SafeArea(
+                  top: false,
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSpacing.lg),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _submit,
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: AppSpacing.md,
+                          ),
+                        ),
+                        child: Text(
+                          'event.confirm_join'.tr(),
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
       ),
     );
   }
@@ -185,8 +197,10 @@ class _QuestionField extends StatelessWidget {
     final label = Row(
       children: [
         Flexible(
-          child: Text(question.label,
-              style: const TextStyle(fontWeight: FontWeight.w600)),
+          child: Text(
+            question.label,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
         ),
         if (question.required)
           const Text(' *', style: TextStyle(color: AppColors.error)),
@@ -201,11 +215,13 @@ class _QuestionField extends StatelessWidget {
           const SizedBox(height: AppSpacing.sm),
           TextFormField(
             initialValue: value as String?,
-            validator: question.required
-                ? (v) => (v == null || v.trim().isEmpty)
-                    ? 'event.required'.tr()
-                    : null
-                : null,
+            validator:
+                question.required
+                    ? (v) =>
+                        (v == null || v.trim().isEmpty)
+                            ? 'event.required'.tr()
+                            : null
+                    : null,
             decoration: InputDecoration(
               hintText: 'event.answer_hint'.tr(),
               border: const OutlineInputBorder(),

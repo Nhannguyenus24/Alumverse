@@ -66,8 +66,9 @@ class _ChatListPageState extends ConsumerState<ChatListPage> {
             child: TextField(
               controller: _searchController,
               textInputAction: TextInputAction.search,
-              onSubmitted: (v) =>
-                  ref.read(chatListQueryProvider.notifier).state = v.trim(),
+              onSubmitted:
+                  (v) =>
+                      ref.read(chatListQueryProvider.notifier).state = v.trim(),
               decoration: InputDecoration(
                 hintText: 'chat.search_hint'.tr(),
                 prefixIcon: const Icon(Icons.search),
@@ -84,10 +85,11 @@ class _ChatListPageState extends ConsumerState<ChatListPage> {
           Expanded(
             child: async.when(
               loading: () => const LoadingView(),
-              error: (e, _) => ErrorView(
-                message: '$e',
-                onRetry: () => ref.invalidate(chatListProvider),
-              ),
+              error:
+                  (e, _) => ErrorView(
+                    message: '$e',
+                    onRetry: () => ref.invalidate(chatListProvider),
+                  ),
               data: (items) {
                 if (items.isEmpty) {
                   return EmptyView(
@@ -101,15 +103,17 @@ class _ChatListPageState extends ConsumerState<ChatListPage> {
                   child: ListView.separated(
                     padding: const EdgeInsets.only(bottom: 16),
                     itemCount: items.length,
-                    separatorBuilder: (_, __) => const Divider(
-                      height: 1,
-                      indent: 72,
-                      color: AppColors.divider,
-                    ),
-                    itemBuilder: (context, i) => ConversationTile(
-                      conversation: items[i],
-                      onTap: () => _openConversation(items[i]),
-                    ),
+                    separatorBuilder:
+                        (_, __) => const Divider(
+                          height: 1,
+                          indent: 72,
+                          color: AppColors.divider,
+                        ),
+                    itemBuilder:
+                        (context, i) => ConversationTile(
+                          conversation: items[i],
+                          onTap: () => _openConversation(items[i]),
+                        ),
                   ),
                 );
               },

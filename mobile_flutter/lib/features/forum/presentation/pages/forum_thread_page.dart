@@ -34,7 +34,8 @@ class _ForumThreadPageState extends ConsumerState<ForumThreadPage> {
   }
 
   int? get _memberId => currentMemberIdFromUserId(
-      ref.read(authStateProvider).valueOrNull?.user?.id);
+    ref.read(authStateProvider).valueOrNull?.user?.id,
+  );
 
   Future<void> _send() async {
     final text = _commentCtl.text.trim();
@@ -46,7 +47,9 @@ class _ForumThreadPageState extends ConsumerState<ForumThreadPage> {
     }
     setState(() => _sending = true);
     try {
-      await ref.read(forumRepositoryProvider).createPost(
+      await ref
+          .read(forumRepositoryProvider)
+          .createPost(
             topicId: widget.topicId,
             authorMemberId: memberId,
             // Wrap as a paragraph so it renders consistently with web HTML.
@@ -83,52 +86,55 @@ class _ForumThreadPageState extends ConsumerState<ForumThreadPage> {
     final async = ref.watch(forumPostsProvider(widget.topicId));
 
     return Scaffold(
-      appBar: AppBar(
-          title: Text(widget.topicTitle ?? 'forum.discussion'.tr())),
+      appBar: AppBar(title: Text(widget.topicTitle ?? 'forum.discussion'.tr())),
       body: Column(
         children: [
           Expanded(
             child: async.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (_, __) => ErrorView(
-                message: 'forum.load_comments_failed'.tr(),
-                onRetry: () =>
-                    ref.invalidate(forumPostsProvider(widget.topicId)),
-              ),
-              data: (posts) => RefreshIndicator(
-                onRefresh: () async {
-                  ref.invalidate(forumPostsProvider(widget.topicId));
-                  await ref.read(forumPostsProvider(widget.topicId).future);
-                },
-                child: posts.isEmpty
-                    ? ListView(
-                        children: [
-                          const SizedBox(height: 120),
-                          Center(
-                            child: Text('forum.no_comments'.tr(),
-                                style: const TextStyle(
-                                    color: AppColors.textSecondary)),
-                          ),
-                        ],
-                      )
-                    : ListView.separated(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: posts.length,
-                        separatorBuilder: (_, __) =>
-                            const SizedBox(height: 12),
-                        itemBuilder: (_, i) => _PostCard(
-                          post: posts[i],
-                          onLike: () => _toggleLike(posts[i]),
-                        ),
-                      ),
-              ),
+              error:
+                  (_, __) => ErrorView(
+                    message: 'forum.load_comments_failed'.tr(),
+                    onRetry:
+                        () =>
+                            ref.invalidate(forumPostsProvider(widget.topicId)),
+                  ),
+              data:
+                  (posts) => RefreshIndicator(
+                    onRefresh: () async {
+                      ref.invalidate(forumPostsProvider(widget.topicId));
+                      await ref.read(forumPostsProvider(widget.topicId).future);
+                    },
+                    child:
+                        posts.isEmpty
+                            ? ListView(
+                              children: [
+                                const SizedBox(height: 120),
+                                Center(
+                                  child: Text(
+                                    'forum.no_comments'.tr(),
+                                    style: const TextStyle(
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            )
+                            : ListView.separated(
+                              padding: const EdgeInsets.all(16),
+                              itemCount: posts.length,
+                              separatorBuilder:
+                                  (_, __) => const SizedBox(height: 12),
+                              itemBuilder:
+                                  (_, i) => _PostCard(
+                                    post: posts[i],
+                                    onLike: () => _toggleLike(posts[i]),
+                                  ),
+                            ),
+                  ),
             ),
           ),
-          _Composer(
-            controller: _commentCtl,
-            sending: _sending,
-            onSend: _send,
-          ),
+          _Composer(controller: _commentCtl, sending: _sending, onSend: _send),
         ],
       ),
     );
@@ -143,12 +149,14 @@ class _PostCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final date = post.createdAt != null
-        ? DateFormat('dd/MM/yyyy • HH:mm').format(post.createdAt!)
-        : '';
-    final name = (post.authorName?.isNotEmpty ?? false)
-        ? post.authorName!
-        : 'forum.member'.tr();
+    final date =
+        post.createdAt != null
+            ? DateFormat('dd/MM/yyyy • HH:mm').format(post.createdAt!)
+            : '';
+    final name =
+        (post.authorName?.isNotEmpty ?? false)
+            ? post.authorName!
+            : 'forum.member'.tr();
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -168,7 +176,9 @@ class _PostCard extends StatelessWidget {
                 child: Text(
                   name.characters.first.toUpperCase(),
                   style: const TextStyle(
-                      color: AppColors.primary, fontWeight: FontWeight.bold),
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               const SizedBox(width: 10),
@@ -176,13 +186,18 @@ class _PostCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(name,
-                        style:
-                            const TextStyle(fontWeight: FontWeight.w600)),
+                    Text(
+                      name,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
                     if (date.isNotEmpty)
-                      Text(date,
-                          style: const TextStyle(
-                              fontSize: 11, color: AppColors.textSecondary)),
+                      Text(
+                        date,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -201,10 +216,13 @@ class _PostCard extends StatelessWidget {
               icon: Icon(
                 post.likedByMe ? Icons.favorite : Icons.favorite_border,
                 size: 18,
-                color: post.likedByMe ? AppColors.error : AppColors.textSecondary,
+                color:
+                    post.likedByMe ? AppColors.error : AppColors.textSecondary,
               ),
-              label: Text('${post.likeCount}',
-                  style: const TextStyle(color: AppColors.textSecondary)),
+              label: Text(
+                '${post.likeCount}',
+                style: const TextStyle(color: AppColors.textSecondary),
+              ),
               style: TextButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 minimumSize: const Size(0, 32),
@@ -257,16 +275,17 @@ class _Composer extends StatelessWidget {
             const SizedBox(width: 8),
             sending
                 ? const Padding(
-                    padding: EdgeInsets.all(8),
-                    child: SizedBox(
-                        height: 22,
-                        width: 22,
-                        child: CircularProgressIndicator(strokeWidth: 2)),
-                  )
-                : IconButton.filled(
-                    onPressed: onSend,
-                    icon: const Icon(Icons.send),
+                  padding: EdgeInsets.all(8),
+                  child: SizedBox(
+                    height: 22,
+                    width: 22,
+                    child: CircularProgressIndicator(strokeWidth: 2),
                   ),
+                )
+                : IconButton.filled(
+                  onPressed: onSend,
+                  icon: const Icon(Icons.send),
+                ),
           ],
         ),
       ),

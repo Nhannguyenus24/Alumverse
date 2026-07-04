@@ -11,8 +11,7 @@ final publishedNewsProvider = FutureProvider<List<Article>>((ref) async {
   return repo.getPublishedNews(page: 0, limit: 10);
 });
 
-final newsDetailProvider =
-    FutureProvider.family<Article, int>((ref, id) async {
+final newsDetailProvider = FutureProvider.family<Article, int>((ref, id) async {
   return ref.watch(articleRepositoryProvider).getNewsDetail(id);
 });
 
@@ -22,7 +21,9 @@ final savedArticlesProvider = FutureProvider<List<SavedItem>>((ref) async {
 });
 
 /// Whether a given article is saved by the current user.
-final isArticleSavedProvider =
-    FutureProvider.family<bool, int>((ref, id) async {
+final isArticleSavedProvider = FutureProvider.family<bool, int>((
+  ref,
+  id,
+) async {
   return ref.read(articleRepositoryProvider).isSaved(id);
 });

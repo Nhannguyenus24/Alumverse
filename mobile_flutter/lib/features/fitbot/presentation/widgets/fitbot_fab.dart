@@ -48,29 +48,31 @@ class _FitBotFabState extends State<FitBotFab>
             ),
           ),
         ScaleTransition(
-          scale: _open
-              ? const AlwaysStoppedAnimation(1.0)
-              : Tween(begin: 1.0, end: 1.2).animate(_pulse),
-          child: _open
-              ? FloatingActionButton(
-                  heroTag: 'fitbot-fab',
-                  onPressed: _toggle,
-                  backgroundColor: Colors.white,
-                  foregroundColor: AppColors.primary,
-                  tooltip: 'common.close'.tr(),
-                  child: const Icon(Icons.close),
-                )
-              : GestureDetector(
-                  onTap: _toggle,
-                  child: SizedBox(
-                    width: 60,
-                    height: 60,
-                    child: Image.asset(
-                      'assets/fitbot/FITBOT.png',
-                      fit: BoxFit.contain,
+          scale:
+              _open
+                  ? const AlwaysStoppedAnimation(1.0)
+                  : Tween(begin: 1.0, end: 1.2).animate(_pulse),
+          child:
+              _open
+                  ? FloatingActionButton(
+                    heroTag: 'fitbot-fab',
+                    onPressed: _toggle,
+                    backgroundColor: Colors.white,
+                    foregroundColor: AppColors.primary,
+                    tooltip: 'common.close'.tr(),
+                    child: const Icon(Icons.close),
+                  )
+                  : GestureDetector(
+                    onTap: _toggle,
+                    child: SizedBox(
+                      width: 60,
+                      height: 60,
+                      child: Image.asset(
+                        'assets/fitbot/FITBOT.png',
+                        fit: BoxFit.contain,
+                      ),
                     ),
                   ),
-                ),
         ),
       ],
     );

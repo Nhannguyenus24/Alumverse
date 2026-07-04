@@ -23,7 +23,10 @@ class AuthApi {
     return LoginResponse.fromJson(res.data as Map<String, dynamic>);
   }
 
-  Future<LoginResponse> loginWithGoogle(String idToken, int organizationId) async {
+  Future<LoginResponse> loginWithGoogle(
+    String idToken,
+    int organizationId,
+  ) async {
     final res = await _dio.post(
       ApiEndpoints.authGoogleLogin,
       data: {'idToken': idToken, 'organizationId': organizationId},
@@ -56,11 +59,10 @@ class AuthApi {
     required int userId,
     required String oldPassword,
     required String newPassword,
-  }) =>
-      _dio.put(
-        ApiEndpoints.authChangePassword(userId),
-        data: {'oldPassword': oldPassword, 'newPassword': newPassword},
-      );
+  }) => _dio.put(
+    ApiEndpoints.authChangePassword(userId),
+    data: {'oldPassword': oldPassword, 'newPassword': newPassword},
+  );
 
   Future<void> logout() => _dio.post(ApiEndpoints.authLogout);
 }

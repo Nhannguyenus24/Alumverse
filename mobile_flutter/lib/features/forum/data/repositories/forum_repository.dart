@@ -21,9 +21,7 @@ class ForumRepository {
       ApiEndpoints.forumCategory,
       queryParameters: {'organizationId': organizationId},
     );
-    return _list(res.data)
-        .map((e) => ForumCategory.fromJson(e))
-        .toList();
+    return _list(res.data).map((e) => ForumCategory.fromJson(e)).toList();
   }
 
   Future<List<ForumTopic>> getTopics(
@@ -80,15 +78,19 @@ class ForumRepository {
     required int createdByMemberId,
     required int categoryId,
   }) async {
-    final res = await _dio.post(ApiEndpoints.forumTopic, data: {
-      'organizationId': organizationId,
-      'title': title,
-      'createdByMemberId': createdByMemberId,
-      'categoryId': categoryId,
-    });
-    final data = res.data is Map && res.data['data'] is Map
-        ? res.data['data'] as Map
-        : res.data;
+    final res = await _dio.post(
+      ApiEndpoints.forumTopic,
+      data: {
+        'organizationId': organizationId,
+        'title': title,
+        'createdByMemberId': createdByMemberId,
+        'categoryId': categoryId,
+      },
+    );
+    final data =
+        res.data is Map && res.data['data'] is Map
+            ? res.data['data'] as Map
+            : res.data;
     return data is Map ? (data['id'] as num?)?.toInt() : null;
   }
 
@@ -98,29 +100,30 @@ class ForumRepository {
     required String content,
     int? answerToPostId,
   }) {
-    return _dio.post(ApiEndpoints.forumPost, data: {
-      'topicId': topicId,
-      'authorMemberId': authorMemberId,
-      'content': content,
-      'answerToPostId': answerToPostId,
-    });
+    return _dio.post(
+      ApiEndpoints.forumPost,
+      data: {
+        'topicId': topicId,
+        'authorMemberId': authorMemberId,
+        'content': content,
+        'answerToPostId': answerToPostId,
+      },
+    );
   }
 
-  Future<void> toggleReaction({
-    required int postId,
-    required int memberId,
-  }) {
-    return _dio.post(ApiEndpoints.forumPostReact, data: {
-      'postId': postId,
-      'memberId': memberId,
-    });
+  Future<void> toggleReaction({required int postId, required int memberId}) {
+    return _dio.post(
+      ApiEndpoints.forumPostReact,
+      data: {'postId': postId, 'memberId': memberId},
+    );
   }
 
   Future<int> reactionCount(int postId) async {
     final res = await _dio.get(ApiEndpoints.forumPostReactionCount(postId));
-    final data = res.data is Map && res.data['data'] != null
-        ? res.data['data']
-        : res.data;
+    final data =
+        res.data is Map && res.data['data'] != null
+            ? res.data['data']
+            : res.data;
     if (data is Map) {
       return ((data['likes'] ?? data['count']) as num?)?.toInt() ?? 0;
     }

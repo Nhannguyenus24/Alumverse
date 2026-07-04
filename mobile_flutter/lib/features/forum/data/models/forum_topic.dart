@@ -26,14 +26,17 @@ class ForumTopic {
       title: json['title'] as String? ?? '',
       categoryId: (json['categoryId'] as num?)?.toInt(),
       createdByMemberId: (json['createdByMemberId'] as num?)?.toInt(),
-      createdAt: json['createdAt'] is String
-          ? DateTime.tryParse(json['createdAt'] as String)
-          : null,
-      updatedAt: json['updatedAt'] is String
-          ? DateTime.tryParse(json['updatedAt'] as String)
-          : null,
+      createdAt:
+          json['createdAt'] is String
+              ? DateTime.tryParse(json['createdAt'] as String)
+              : null,
+      updatedAt:
+          json['updatedAt'] is String
+              ? DateTime.tryParse(json['updatedAt'] as String)
+              : null,
       viewCount: (json['viewCount'] as num?)?.toInt() ?? 0,
-      replyCount: ((json['postCount'] ?? json['replyCount']) as num?)?.toInt() ?? 0,
+      replyCount:
+          ((json['postCount'] ?? json['replyCount']) as num?)?.toInt() ?? 0,
     );
   }
 }

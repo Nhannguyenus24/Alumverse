@@ -4,11 +4,7 @@ class AlumverseLogo extends StatelessWidget {
   final double size;
   final Color? color;
 
-  const AlumverseLogo({
-    super.key,
-    this.size = 120,
-    this.color,
-  });
+  const AlumverseLogo({super.key, this.size = 120, this.color});
 
   @override
   Widget build(BuildContext context) {

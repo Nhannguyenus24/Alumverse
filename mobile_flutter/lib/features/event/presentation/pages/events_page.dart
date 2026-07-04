@@ -47,13 +47,15 @@ class EventsPage extends ConsumerWidget {
         },
         child: upcomingAsync.when(
           loading: () => const SkeletonList(count: 3),
-          error: (_, __) => ErrorView(
-            message: 'event.load_failed'.tr(),
-            onRetry: () => ref.invalidate(allUpcomingEventsProvider),
-          ),
+          error:
+              (_, __) => ErrorView(
+                message: 'event.load_failed'.tr(),
+                onRetry: () => ref.invalidate(allUpcomingEventsProvider),
+              ),
           data: (upcoming) {
             final featured = upcoming.isNotEmpty ? upcoming.first : null;
-            final rest = upcoming.length > 1 ? upcoming.sublist(1) : <EventSummary>[];
+            final rest =
+                upcoming.length > 1 ? upcoming.sublist(1) : <EventSummary>[];
             final past = pastAsync.valueOrNull ?? const <EventSummary>[];
 
             return ListView(
@@ -62,9 +64,9 @@ class EventsPage extends ConsumerWidget {
                 Text(
                   'event.title_upper'.tr(),
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.primary,
-                      ),
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.primary,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 if (featured != null)
@@ -147,9 +149,10 @@ class _EventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final banner = resolveImageUrl(event.bannerUrl);
-    final date = event.startTime != null
-        ? DateFormat('dd/MM/yyyy • HH:mm').format(event.startTime!)
-        : null;
+    final date =
+        event.startTime != null
+            ? DateFormat('dd/MM/yyyy • HH:mm').format(event.startTime!)
+            : null;
 
     return InkWell(
       onTap: () => context.push('${RouteNames.events}/${event.id}'),
@@ -166,14 +169,16 @@ class _EventCard extends StatelessWidget {
           children: [
             AspectRatio(
               aspectRatio: 16 / 10,
-              child: banner != null
-                  ? CachedNetworkImage(
-                      imageUrl: banner,
-                      fit: BoxFit.cover,
-                      placeholder: (_, __) => Container(color: AppColors.divider),
-                      errorWidget: (_, __, ___) => const _EventFallback(),
-                    )
-                  : const _EventFallback(),
+              child:
+                  banner != null
+                      ? CachedNetworkImage(
+                        imageUrl: banner,
+                        fit: BoxFit.cover,
+                        placeholder:
+                            (_, __) => Container(color: AppColors.divider),
+                        errorWidget: (_, __, ___) => const _EventFallback(),
+                      )
+                      : const _EventFallback(),
             ),
             Expanded(
               child: Padding(
@@ -186,7 +191,9 @@ class _EventCard extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                          fontWeight: FontWeight.w600, fontSize: 13.5),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13.5,
+                      ),
                     ),
                     const Spacer(),
                     if (date != null)
@@ -195,7 +202,9 @@ class _EventCard extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.only(top: 3),
                         child: _IconLine(
-                            icon: Icons.place_outlined, text: event.location!),
+                          icon: Icons.place_outlined,
+                          text: event.location!,
+                        ),
                       ),
                   ],
                 ),
@@ -216,9 +225,10 @@ class _FeaturedEventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final banner = resolveImageUrl(event.bannerUrl);
-    final date = event.startTime != null
-        ? DateFormat('dd/MM/yyyy • HH:mm').format(event.startTime!)
-        : null;
+    final date =
+        event.startTime != null
+            ? DateFormat('dd/MM/yyyy • HH:mm').format(event.startTime!)
+            : null;
 
     return InkWell(
       onTap: () => context.push('${RouteNames.events}/${event.id}'),
@@ -235,14 +245,16 @@ class _FeaturedEventCard extends StatelessWidget {
           children: [
             AspectRatio(
               aspectRatio: 16 / 9,
-              child: banner != null
-                  ? CachedNetworkImage(
-                      imageUrl: banner,
-                      fit: BoxFit.cover,
-                      placeholder: (_, __) => Container(color: AppColors.divider),
-                      errorWidget: (_, __, ___) => const _EventFallback(),
-                    )
-                  : const _EventFallback(),
+              child:
+                  banner != null
+                      ? CachedNetworkImage(
+                        imageUrl: banner,
+                        fit: BoxFit.cover,
+                        placeholder:
+                            (_, __) => Container(color: AppColors.divider),
+                        errorWidget: (_, __, ___) => const _EventFallback(),
+                      )
+                      : const _EventFallback(),
             ),
             Padding(
               padding: const EdgeInsets.all(14),
@@ -254,7 +266,9 @@ class _FeaturedEventCard extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 18),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
                   ),
                   if (date != null) ...[
                     const SizedBox(height: 8),
@@ -263,7 +277,9 @@ class _FeaturedEventCard extends StatelessWidget {
                   if (event.location != null && event.location!.isNotEmpty) ...[
                     const SizedBox(height: 4),
                     _IconLine(
-                        icon: Icons.place_outlined, text: event.location!),
+                      icon: Icons.place_outlined,
+                      text: event.location!,
+                    ),
                   ],
                 ],
               ),
@@ -306,7 +322,10 @@ class _IconLine extends StatelessWidget {
             text,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 12,
+            ),
           ),
         ),
       ],

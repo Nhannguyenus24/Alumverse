@@ -60,71 +60,82 @@ class _EventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final banner = resolveImageUrl(event.bannerUrl);
-    final date = event.startTime != null
-        ? DateFormat('dd/MM/yyyy • HH:mm').format(event.startTime!)
-        : null;
+    final date =
+        event.startTime != null
+            ? DateFormat('dd/MM/yyyy • HH:mm').format(event.startTime!)
+            : null;
 
     return InkWell(
       onTap: () => context.push(RouteNames.events),
       borderRadius: BorderRadius.circular(12),
       child: Container(
-      width: 260,
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.divider),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            height: 110,
-            width: double.infinity,
-            child: banner != null
-                ? CachedNetworkImage(
-                    imageUrl: banner,
-                    fit: BoxFit.cover,
-                    placeholder: (_, __) =>
-                        Container(color: AppColors.divider),
-                    errorWidget: (_, __, ___) => Container(
-                      color: AppColors.divider,
-                      child: const Icon(Icons.event, size: 36),
-                    ),
-                  )
-                : Container(
-                    color: AppColors.primary.withValues(alpha: 0.08),
-                    child: const Center(
-                      child: Icon(Icons.event,
-                          size: 40, color: AppColors.primary),
+        width: 260,
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.divider),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              height: 110,
+              width: double.infinity,
+              child:
+                  banner != null
+                      ? CachedNetworkImage(
+                        imageUrl: banner,
+                        fit: BoxFit.cover,
+                        placeholder:
+                            (_, __) => Container(color: AppColors.divider),
+                        errorWidget:
+                            (_, __, ___) => Container(
+                              color: AppColors.divider,
+                              child: const Icon(Icons.event, size: 36),
+                            ),
+                      )
+                      : Container(
+                        color: AppColors.primary.withValues(alpha: 0.08),
+                        child: const Center(
+                          child: Icon(
+                            Icons.event,
+                            size: 40,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    event.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
                     ),
                   ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  event.title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.w600, fontSize: 14),
-                ),
-                if (date != null) ...[
-                  const SizedBox(height: 6),
-                  _IconLine(icon: Icons.schedule, text: date),
+                  if (date != null) ...[
+                    const SizedBox(height: 6),
+                    _IconLine(icon: Icons.schedule, text: date),
+                  ],
+                  if (event.location != null && event.location!.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    _IconLine(
+                      icon: Icons.place_outlined,
+                      text: event.location!,
+                    ),
+                  ],
                 ],
-                if (event.location != null && event.location!.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  _IconLine(icon: Icons.place_outlined, text: event.location!),
-                ],
-              ],
+              ),
             ),
-          ),
-        ],
-      ),
+          ],
+        ),
       ),
     );
   }
@@ -148,7 +159,9 @@ class _IconLine extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
-                color: AppColors.textSecondary, fontSize: 12),
+              color: AppColors.textSecondary,
+              fontSize: 12,
+            ),
           ),
         ),
       ],

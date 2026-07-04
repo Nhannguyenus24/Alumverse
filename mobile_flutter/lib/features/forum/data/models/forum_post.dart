@@ -25,17 +25,17 @@ class ForumPost {
   });
 
   ForumPost copyWith({int? likeCount, bool? likedByMe}) => ForumPost(
-        id: id,
-        topicId: topicId,
-        content: content,
-        authorMemberId: authorMemberId,
-        authorName: authorName,
-        role: role,
-        createdAt: createdAt,
-        answerToPostId: answerToPostId,
-        likeCount: likeCount ?? this.likeCount,
-        likedByMe: likedByMe ?? this.likedByMe,
-      );
+    id: id,
+    topicId: topicId,
+    content: content,
+    authorMemberId: authorMemberId,
+    authorName: authorName,
+    role: role,
+    createdAt: createdAt,
+    answerToPostId: answerToPostId,
+    likeCount: likeCount ?? this.likeCount,
+    likedByMe: likedByMe ?? this.likedByMe,
+  );
 
   factory ForumPost.fromJson(Map<String, dynamic> json) {
     return ForumPost(
@@ -45,11 +45,13 @@ class ForumPost {
       authorMemberId: (json['authorMemberId'] as num?)?.toInt(),
       authorName: json['authorName'] as String?,
       role: json['role'] as String?,
-      createdAt: json['createdAt'] is String
-          ? DateTime.tryParse(json['createdAt'] as String)
-          : null,
+      createdAt:
+          json['createdAt'] is String
+              ? DateTime.tryParse(json['createdAt'] as String)
+              : null,
       answerToPostId: (json['answerToPostId'] as num?)?.toInt(),
-      likeCount: ((json['likeCount'] ?? json['reactionCount']) as num?)?.toInt() ?? 0,
+      likeCount:
+          ((json['likeCount'] ?? json['reactionCount']) as num?)?.toInt() ?? 0,
       // Backend returns the current user's like state as `isLike`.
       likedByMe: (json['isLike'] ?? json['likedByMe']) as bool? ?? false,
     );
