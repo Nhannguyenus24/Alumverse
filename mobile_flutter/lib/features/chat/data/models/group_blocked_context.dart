@@ -16,11 +16,14 @@ class GroupBlockedContext {
   factory GroupBlockedContext.fromJson(Map<String, dynamic> json) {
     final raw = json['blockedMembers'];
     return GroupBlockedContext(
-      blockedMembers: raw is List
-          ? raw
-              .map((e) => BlockedInGroup.fromJson(e as Map<String, dynamic>))
-              .toList()
-          : const [],
+      blockedMembers:
+          raw is List
+              ? raw
+                  .map(
+                    (e) => BlockedInGroup.fromJson(e as Map<String, dynamic>),
+                  )
+                  .toList()
+              : const [],
       currentUserRole: json['currentUserRole'] as String?,
     );
   }

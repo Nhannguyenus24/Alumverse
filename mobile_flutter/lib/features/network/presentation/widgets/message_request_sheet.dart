@@ -35,12 +35,13 @@ Future<void> showMessageRequestSheet(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (_) => _MessageRequestSheet(
-      targetMemberId: targetMemberId,
-      targetName: targetName,
-      title: title,
-      contextNote: contextNote,
-    ),
+    builder:
+        (_) => _MessageRequestSheet(
+          targetMemberId: targetMemberId,
+          targetName: targetName,
+          title: title,
+          contextNote: contextNote,
+        ),
   );
 }
 
@@ -105,7 +106,9 @@ class _MessageRequestSheetState extends ConsumerState<_MessageRequestSheet> {
       await ref
           .read(networkRepositoryProvider)
           .sendConnectionRequest(
-              targetMemberId: widget.targetMemberId, message: msg);
+            targetMemberId: widget.targetMemberId,
+            message: msg,
+          );
       if (mounted) {
         setState(() {
           _sending = false;
@@ -130,80 +133,88 @@ class _MessageRequestSheetState extends ConsumerState<_MessageRequestSheet> {
       initialChildSize: initialSize,
       minChildSize: 0.35,
       maxChildSize: 0.9,
-      builder: (_, scrollCtrl) => Container(
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: Column(
-          children: [
-            const SizedBox(height: 8),
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.divider,
-                borderRadius: BorderRadius.circular(2),
-              ),
+      builder:
+          (_, scrollCtrl) => Container(
+            decoration: const BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
             ),
-            Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      widget.title ??
-                          'network.message_to'
-                              .tr(namedArgs: {'name': widget.targetName}),
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+            child: Column(
+              children: [
+                const SizedBox(height: 8),
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.divider,
+                    borderRadius: BorderRadius.circular(2),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.close,
-                        color: AppColors.textSecondary),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                ],
-              ),
-            ),
-            const Divider(height: 1, color: AppColors.divider),
-            Expanded(
-              child: SingleChildScrollView(
-                controller: scrollCtrl,
-                padding: EdgeInsets.only(
-                  left: 16,
-                  right: 16,
-                  top: 16,
-                  // Clear the keyboard when open, plus the home-indicator inset
-                  // so the send button is never tucked under the gesture bar.
-                  bottom: MediaQuery.of(context).viewInsets.bottom +
-                      MediaQuery.of(context).padding.bottom +
-                      16,
                 ),
-                child: _loadingStatus
-                    ? const Center(child: CircularProgressIndicator())
-                    : Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          if (widget.contextNote != null) ...[
-                            _buildContextNote(widget.contextNote!),
-                            const SizedBox(height: 16),
-                          ],
-                          _buildContent(),
-                        ],
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          widget.title ??
+                              'network.message_to'.tr(
+                                namedArgs: {'name': widget.targetName},
+                              ),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-              ),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.close,
+                          color: AppColors.textSecondary,
+                        ),
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1, color: AppColors.divider),
+                Expanded(
+                  child: SingleChildScrollView(
+                    controller: scrollCtrl,
+                    padding: EdgeInsets.only(
+                      left: 16,
+                      right: 16,
+                      top: 16,
+                      // Clear the keyboard when open, plus the home-indicator inset
+                      // so the send button is never tucked under the gesture bar.
+                      bottom:
+                          MediaQuery.of(context).viewInsets.bottom +
+                          MediaQuery.of(context).padding.bottom +
+                          16,
+                    ),
+                    child:
+                        _loadingStatus
+                            ? const Center(child: CircularProgressIndicator())
+                            : Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                if (widget.contextNote != null) ...[
+                                  _buildContextNote(widget.contextNote!),
+                                  const SizedBox(height: 16),
+                                ],
+                                _buildContent(),
+                              ],
+                            ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
     );
   }
 
@@ -212,9 +223,7 @@ class _MessageRequestSheetState extends ConsumerState<_MessageRequestSheet> {
       return _buildComposer(
         banner: 'network.send_first_message_banner'.tr(),
         enabled: !_sentThisSession,
-        lockedHint: _sentThisSession
-            ? 'network.message_sent_hint'.tr()
-            : null,
+        lockedHint: _sentThisSession ? 'network.message_sent_hint'.tr() : null,
       );
     }
 
@@ -222,7 +231,9 @@ class _MessageRequestSheetState extends ConsumerState<_MessageRequestSheet> {
       return _buildBanner(
         icon: Icons.hourglass_top_rounded,
         color: AppColors.warning,
-        text: 'network.waiting_reply_banner'.tr(namedArgs: {'name': widget.targetName}),
+        text: 'network.waiting_reply_banner'.tr(
+          namedArgs: {'name': widget.targetName},
+        ),
       );
     }
 
@@ -242,9 +253,7 @@ class _MessageRequestSheetState extends ConsumerState<_MessageRequestSheet> {
       return _buildComposer(
         banner: 'network.resend_banner'.tr(),
         enabled: !_sentThisSession,
-        lockedHint: _sentThisSession
-            ? 'network.message_sent_hint'.tr()
-            : null,
+        lockedHint: _sentThisSession ? 'network.message_sent_hint'.tr() : null,
       );
     }
 
@@ -267,22 +276,33 @@ class _MessageRequestSheetState extends ConsumerState<_MessageRequestSheet> {
           ),
           child: Row(
             children: [
-              const Icon(Icons.info_outline,
-                  color: AppColors.primary, size: 18),
+              const Icon(
+                Icons.info_outline,
+                color: AppColors.primary,
+                size: 18,
+              ),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(banner,
-                    style: const TextStyle(
-                        color: AppColors.primary, fontSize: 13)),
+                child: Text(
+                  banner,
+                  style: const TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 13,
+                  ),
+                ),
               ),
             ],
           ),
         ),
         const SizedBox(height: 16),
         if (lockedHint != null) ...[
-          Text(lockedHint,
-              style: const TextStyle(
-                  color: AppColors.textSecondary, fontSize: 13)),
+          Text(
+            lockedHint,
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 13,
+            ),
+          ),
         ] else ...[
           TextField(
             controller: _ctrl,
@@ -291,8 +311,7 @@ class _MessageRequestSheetState extends ConsumerState<_MessageRequestSheet> {
             enabled: enabled,
             decoration: InputDecoration(
               hintText: 'network.message_hint'.tr(),
-              hintStyle:
-                  const TextStyle(color: AppColors.textSecondary),
+              hintStyle: const TextStyle(color: AppColors.textSecondary),
               filled: true,
               fillColor: AppColors.background,
               border: OutlineInputBorder(
@@ -319,16 +338,20 @@ class _MessageRequestSheetState extends ConsumerState<_MessageRequestSheet> {
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
-              child: _sending
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
+              child:
+                  _sending
+                      ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor:
-                              AlwaysStoppedAnimation(Colors.white)))
-                  : Text('network.send_message_btn'.tr(),
-                      style: const TextStyle(fontWeight: FontWeight.w600)),
+                          valueColor: AlwaysStoppedAnimation(Colors.white),
+                        ),
+                      )
+                      : Text(
+                        'network.send_message_btn'.tr(),
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
             ),
           ),
         ],
@@ -352,9 +375,14 @@ class _MessageRequestSheetState extends ConsumerState<_MessageRequestSheet> {
           const Icon(Icons.info_outline, color: AppColors.primary, size: 18),
           const SizedBox(width: 8),
           Expanded(
-            child: Text(text,
-                style: const TextStyle(
-                    color: AppColors.primary, fontSize: 13, height: 1.4)),
+            child: Text(
+              text,
+              style: const TextStyle(
+                color: AppColors.primary,
+                fontSize: 13,
+                height: 1.4,
+              ),
+            ),
           ),
         ],
       ),
@@ -379,8 +407,10 @@ class _MessageRequestSheetState extends ConsumerState<_MessageRequestSheet> {
           Icon(icon, color: color, size: 24),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(text,
-                style: TextStyle(color: color, fontSize: 14, height: 1.4)),
+            child: Text(
+              text,
+              style: TextStyle(color: color, fontSize: 14, height: 1.4),
+            ),
           ),
         ],
       ),

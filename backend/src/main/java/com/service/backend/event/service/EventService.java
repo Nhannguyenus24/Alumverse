@@ -1,7 +1,7 @@
 package com.service.backend.event.service;
 
 import com.service.backend.shared.entity.*;
-import com.service.backend.event.dao.AttendeeLookupRepository;
+import com.service.backend.user.dao.UserProfileRepository;
 import com.service.backend.event.dao.IEventRepository;
 import com.service.backend.event.dto.*;
 import com.service.backend.shared.dto.PaginatedResponse;
@@ -37,7 +37,7 @@ public class EventService {
     private final OrganizationRepository organizationRepository;
     private final CacheUtils cacheUtils;
     private final EventQrService eventQrService;
-    private final AttendeeLookupRepository attendeeLookupRepository;
+    private final UserProfileRepository userProfileRepository;
 
     /**
      * Concurrency bound for bulk email loops. flatMap defaults to 256 in-flight subscriptions,
@@ -593,7 +593,7 @@ public class EventService {
         if (ticket.getMemberId() == null) {
             return Mono.just(builder.build());
         }
-        return attendeeLookupRepository.findByUserId(ticket.getMemberId().intValue())
+        return userProfileRepository.findAttendeeProfileByUserId(ticket.getMemberId().intValue())
                 .map(profile -> builder
                         .attendeeName(profile.fullName())
                         .attendeeEmail(profile.email())

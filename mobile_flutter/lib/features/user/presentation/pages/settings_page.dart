@@ -60,22 +60,26 @@ class SettingsPage extends ConsumerWidget {
           const Divider(),
           _GroupHeader('profile.notification_settings'.tr()),
           settingsAsync.when(
-            loading: () => const Padding(
-              padding: EdgeInsets.all(24),
-              child: Center(child: CircularProgressIndicator()),
-            ),
-            error: (_, __) => ErrorView(
-              message: 'settings.load_notif_failed'.tr(),
-              onRetry: () => ref.invalidate(notificationSettingsProvider),
-            ),
+            loading:
+                () => const Padding(
+                  padding: EdgeInsets.all(24),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+            error:
+                (_, __) => ErrorView(
+                  message: 'settings.load_notif_failed'.tr(),
+                  onRetry: () => ref.invalidate(notificationSettingsProvider),
+                ),
             data: (s) => _NotificationToggles(initial: s),
           ),
           const Divider(),
           _GroupHeader('settings.session'.tr()),
           ListTile(
             leading: const Icon(Icons.logout, color: AppColors.error),
-            title: Text('auth.logout'.tr(),
-                style: const TextStyle(color: AppColors.error)),
+            title: Text(
+              'auth.logout'.tr(),
+              style: const TextStyle(color: AppColors.error),
+            ),
             onTap: () async {
               await ref.read(authStateProvider.notifier).logout();
               if (context.mounted) context.go(RouteNames.login);
@@ -124,16 +128,31 @@ class _NotificationTogglesState extends ConsumerState<_NotificationToggles> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        _toggle('settings.notif_forum_reply'.tr(), _s.forumReplyEnabled,
-            (v) => _update(_s.copyWith(forumReplyEnabled: v))),
-        _toggle('settings.notif_event_reminder'.tr(), _s.eventReminderEnabled,
-            (v) => _update(_s.copyWith(eventReminderEnabled: v))),
-        _toggle('settings.notif_news'.tr(), _s.newsEnabled,
-            (v) => _update(_s.copyWith(newsEnabled: v))),
-        _toggle('settings.notif_email'.tr(), _s.emailEnabled,
-            (v) => _update(_s.copyWith(emailEnabled: v))),
-        _toggle('settings.notif_push'.tr(), _s.pushEnabled,
-            (v) => _update(_s.copyWith(pushEnabled: v))),
+        _toggle(
+          'settings.notif_forum_reply'.tr(),
+          _s.forumReplyEnabled,
+          (v) => _update(_s.copyWith(forumReplyEnabled: v)),
+        ),
+        _toggle(
+          'settings.notif_event_reminder'.tr(),
+          _s.eventReminderEnabled,
+          (v) => _update(_s.copyWith(eventReminderEnabled: v)),
+        ),
+        _toggle(
+          'settings.notif_news'.tr(),
+          _s.newsEnabled,
+          (v) => _update(_s.copyWith(newsEnabled: v)),
+        ),
+        _toggle(
+          'settings.notif_email'.tr(),
+          _s.emailEnabled,
+          (v) => _update(_s.copyWith(emailEnabled: v)),
+        ),
+        _toggle(
+          'settings.notif_push'.tr(),
+          _s.pushEnabled,
+          (v) => _update(_s.copyWith(pushEnabled: v)),
+        ),
       ],
     );
   }
@@ -142,7 +161,7 @@ class _NotificationTogglesState extends ConsumerState<_NotificationToggles> {
     return SwitchListTile(
       title: Text(title),
       value: value,
-      activeColor: AppColors.primary,
+      activeThumbColor: AppColors.primary,
       onChanged: _saving ? null : onChanged,
     );
   }

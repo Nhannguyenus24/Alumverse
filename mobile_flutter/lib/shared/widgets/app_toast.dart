@@ -43,8 +43,11 @@ class AppToast {
   /// Show an error toast from a thrown error, extracting the clean backend
   /// message (the error interceptor wraps it as [ApiException] inside a
   /// [DioException]) instead of dumping the raw exception toString().
-  static void fromError(BuildContext context, Object error,
-      {String? fallback}) {
+  static void fromError(
+    BuildContext context,
+    Object error, {
+    String? fallback,
+  }) {
     _show(context, _messageOf(error, fallback), ToastType.error);
   }
 
@@ -72,11 +75,12 @@ class AppToast {
 
     late OverlayEntry entry;
     entry = OverlayEntry(
-      builder: (_) => _ToastWidget(
-        message: message,
-        type: type,
-        onDismissed: () => entry.remove(),
-      ),
+      builder:
+          (_) => _ToastWidget(
+            message: message,
+            type: type,
+            onDismissed: () => entry.remove(),
+          ),
     );
     overlay.insert(entry);
   }
@@ -107,8 +111,10 @@ class _ToastWidgetState extends State<_ToastWidget>
     begin: const Offset(1.15, 0), // off-screen to the right
     end: Offset.zero,
   ).animate(CurvedAnimation(parent: _ctl, curve: Curves.easeOutCubic));
-  late final Animation<double> _fade =
-      CurvedAnimation(parent: _ctl, curve: Curves.easeOut);
+  late final Animation<double> _fade = CurvedAnimation(
+    parent: _ctl,
+    curve: Curves.easeOut,
+  );
 
   bool _dismissing = false;
 
@@ -136,11 +142,23 @@ class _ToastWidgetState extends State<_ToastWidget>
   ({Color bg, Color fg, IconData icon}) get _style {
     switch (widget.type) {
       case ToastType.success:
-        return (bg: AppColors.success, fg: Colors.white, icon: Icons.check_circle_rounded);
+        return (
+          bg: AppColors.success,
+          fg: Colors.white,
+          icon: Icons.check_circle_rounded,
+        );
       case ToastType.error:
-        return (bg: AppColors.error, fg: Colors.white, icon: Icons.error_rounded);
+        return (
+          bg: AppColors.error,
+          fg: Colors.white,
+          icon: Icons.error_rounded,
+        );
       case ToastType.warning:
-        return (bg: AppColors.warning, fg: Colors.black87, icon: Icons.warning_rounded);
+        return (
+          bg: AppColors.warning,
+          fg: Colors.black87,
+          icon: Icons.warning_rounded,
+        );
       case ToastType.info:
         return (bg: AppColors.info, fg: Colors.white, icon: Icons.info_rounded);
     }
@@ -168,7 +186,9 @@ class _ToastWidgetState extends State<_ToastWidget>
                   onTap: _dismiss,
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.md, vertical: AppSpacing.md),
+                      horizontal: AppSpacing.md,
+                      vertical: AppSpacing.md,
+                    ),
                     decoration: BoxDecoration(
                       color: s.bg,
                       borderRadius: BorderRadius.circular(AppRadius.md),

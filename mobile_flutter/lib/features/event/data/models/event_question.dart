@@ -26,9 +26,8 @@ class EventQuestion {
       id: (json['id'] as num).toInt(),
       type: json['type'] as String? ?? 'SHORT_TEXT',
       label: json['label'] as String? ?? '',
-      options: (json['options'] as List?)
-              ?.map((e) => e.toString())
-              .toList() ??
+      options:
+          (json['options'] as List?)?.map((e) => e.toString()).toList() ??
           const [],
       required: json['required'] as bool? ?? false,
       orderIndex: (json['orderIndex'] as num?)?.toInt() ?? 0,

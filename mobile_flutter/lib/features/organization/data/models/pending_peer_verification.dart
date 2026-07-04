@@ -22,9 +22,10 @@ class PendingPeerVerification {
       requesterUserId: (json['requesterUserId'] as num?)?.toInt() ?? 0,
       requesterName: json['requesterName'] as String? ?? 'User',
       organizationId: (json['organizationId'] as num?)?.toInt() ?? 0,
-      createdAt: json['createdAt'] is String
-          ? DateTime.tryParse(json['createdAt'] as String)
-          : null,
+      createdAt:
+          json['createdAt'] is String
+              ? DateTime.tryParse(json['createdAt'] as String)
+              : null,
     );
   }
 }

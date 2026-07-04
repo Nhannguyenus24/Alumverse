@@ -60,9 +60,10 @@ class _EventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final banner = resolveImageUrl(event.bannerUrl);
-    final date = event.startTime != null
-        ? DateFormat('dd/MM/yyyy • HH:mm').format(event.startTime!)
-        : null;
+    final date =
+        event.startTime != null
+            ? DateFormat('dd/MM/yyyy • HH:mm').format(event.startTime!)
+            : null;
 
     return InkWell(
       onTap: () => context.push(RouteNames.events),
@@ -81,31 +82,33 @@ class _EventCard extends StatelessWidget {
             SizedBox(
               height: 110,
               width: double.infinity,
-              child: banner != null
-                  ? CachedNetworkImage(
-                      imageUrl: banner,
-                      fit: BoxFit.cover,
-                      placeholder: (_, __) =>
-                          Container(color: AppColors.divider),
-                      errorWidget: (_, __, ___) => Container(
+              child:
+                  banner != null
+                      ? CachedNetworkImage(
+                        imageUrl: banner,
+                        fit: BoxFit.cover,
+                        placeholder:
+                            (_, __) => Container(color: AppColors.divider),
+                        errorWidget:
+                            (_, __, ___) => Container(
+                              color: AppColors.primaryLighter,
+                              child: const Icon(
+                                Icons.event,
+                                size: 36,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                      )
+                      : Container(
                         color: AppColors.primaryLighter,
-                        child: const Icon(
-                          Icons.event,
-                          size: 36,
-                          color: AppColors.primary,
+                        child: const Center(
+                          child: Icon(
+                            Icons.event,
+                            size: 40,
+                            color: AppColors.primary,
+                          ),
                         ),
                       ),
-                    )
-                  : Container(
-                      color: AppColors.primaryLighter,
-                      child: const Center(
-                        child: Icon(
-                          Icons.event,
-                          size: 40,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                    ),
             ),
             Padding(
               padding: const EdgeInsets.all(10),

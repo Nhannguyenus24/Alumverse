@@ -17,34 +17,6 @@ import reactor.core.publisher.Mono;
 
 @Repository
 public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
-    
-    /**
-     * Get users in organization with pagination
-     * @param organizationId The organization ID
-     * @param limit The maximum number of results
-     * @param offset The offset for pagination
-     * @return Flux of users
-     */
-    @Query("SELECT u.* FROM users u " +
-           "INNER JOIN organization_members om ON u.id = om.user_id " +
-           "WHERE om.organization_id = :organizationId " +
-           "ORDER BY u.created_at DESC " +
-           "LIMIT :limit OFFSET :offset")
-    Flux<User> findUsersByOrganizationWithPagination(
-        @Param("organizationId") Integer organizationId, 
-        @Param("limit") int limit, 
-        @Param("offset") int offset
-    );
-    
-    /**
-     * Count users in organization
-     * @param organizationId The organization ID
-     * @return Mono of count
-     */
-    @Query("SELECT COUNT(*) FROM users u " +
-           "INNER JOIN organization_members om ON u.id = om.user_id " +
-           "WHERE om.organization_id = :organizationId")
-    Mono<Long> countUsersByOrganization(@Param("organizationId") Integer organizationId);
 
     /**
      * Ban a user by setting "status" to {@code Status.BANNED}
@@ -66,23 +38,7 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
            "WHERE om.user_id = :userId " +
            "ORDER BY vr.created_at DESC")
     Flux<Object> findVerificationRequestsByUserId(@Param("userId") Integer userId);
-    
-    /**
-     * Get all users
-     * @return Flux of all users
-     */
-    @Query("SELECT * FROM users ORDER BY created_at DESC")
-    Flux<User> findAllUsers();
-    
-    /**
-     * Get all users with pagination
-     * @param limit The maximum number of results
-     * @param offset The offset for pagination
-     * @return Flux of users
-     */
-    @Query("SELECT * FROM users ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
-    Flux<User> findAllUsersWithPagination(@Param("limit") int limit, @Param("offset") int offset);
-    
+
     /**
      * Count all users
      * @return Mono of total user count
@@ -196,19 +152,6 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
     @Query("SELECT organization_id FROM verification_requests WHERE id = :requestId")
     Mono<Integer> findOrganizationIdByRequestId(@Param("requestId") Integer requestId);
 
-    /**
-     * Create organization members for a list of users
-     * Note: This uses a batch insert approach
-     * @param organizationId The organization ID
-     * @param userId The user ID to add to organization
-        * @param graduatedYear Graduated year
-        * @param graduationStatus Graduation "status"
-        * @param program Training program
-        * @param major Major
-     * @param verificationLevel The verification level (default 0)
-     * @param status The member "status" (default 'ACTIVE')
-     * @return Mono of created member ID
-     */
     @Query("SELECT EXISTS(SELECT 1 FROM organization_members WHERE user_id = :userId)")
     Mono<Boolean> existsOrganizationMemberByUserId(@Param("userId") Integer userId);
 
@@ -246,10 +189,9 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
            @Param("status") String status);
 
     @Query("SELECT ulh.id, ulh.user_id, ulh.login_at, ulh.login_method, ulh.login_ip, ulh.user_agent, " +
-           "u.email, om.student_id as student_id " +
+           "u.email " +
            "FROM user_login_histories ulh " +
            "INNER JOIN users u ON ulh.user_id = u.id " +
-           "LEFT JOIN organization_members om ON u.id = om.user_id " +
            "WHERE ulh.user_id = :userId " +
            "ORDER BY ulh.login_at DESC " +
            "LIMIT :limit")
@@ -284,7 +226,7 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
     @Query("""
             INSERT INTO organization_members (
                 organization_id, user_id, graduated_year, graduation_status, program, major,
-                verification_level, is_trusted_verifier, \"status\", created_at, updated_at)
+                verification_level, is_trusted_verifier, "status", created_at, updated_at)
             VALUES (
                 :organizationId, :userId, NULL, NULL, NULL, NULL, 0, false, 'ACTIVE',
                 CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
@@ -311,7 +253,7 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
         LEFT JOIN organization_members om ON u.id = om.user_id
         WHERE (:search IS NULL OR u.email ILIKE :search OR om.student_id ILIKE :search OR u.full_name ILIKE :search)
           AND (:role IS NULL OR u.role = :role)
-          AND (:status IS NULL OR u.\"status\" = :status)
+          AND (:status IS NULL OR u."status" = :status)
           AND (:organizationId IS NULL OR om.organization_id = :organizationId)
         ORDER BY u.created_at DESC
         LIMIT :limit OFFSET :offset
@@ -330,7 +272,7 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
         LEFT JOIN organization_members om ON u.id = om.user_id
         WHERE (:search IS NULL OR u.email ILIKE :search OR om.student_id ILIKE :search OR u.full_name ILIKE :search)
           AND (:role IS NULL OR u.role = :role)
-          AND (:status IS NULL OR u.\"status\" = :status)
+          AND (:status IS NULL OR u."status" = :status)
           AND (:organizationId IS NULL OR om.organization_id = :organizationId)
         """)
     Mono<Long> countUsersWithFilters(

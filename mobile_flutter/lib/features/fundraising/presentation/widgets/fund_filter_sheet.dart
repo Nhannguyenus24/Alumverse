@@ -30,9 +30,11 @@ class _FundFilterSheetState extends ConsumerState<FundFilterSheet> {
     _dateFrom = widget.initial.dateFrom;
     _dateTo = widget.initial.dateTo;
     _minController = TextEditingController(
-        text: widget.initial.amountMin?.toString() ?? '');
+      text: widget.initial.amountMin?.toString() ?? '',
+    );
     _maxController = TextEditingController(
-        text: widget.initial.amountMax?.toString() ?? '');
+      text: widget.initial.amountMax?.toString() ?? '',
+    );
   }
 
   @override
@@ -108,13 +110,18 @@ class _FundFilterSheetState extends ConsumerState<FundFilterSheet> {
             children: [
               Row(
                 children: [
-                  Text('donation.filter_title'.tr(),
-                      style: const TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.w700)),
+                  Text(
+                    'donation.filter_title'.tr(),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                   const Spacer(),
                   TextButton(
-                      onPressed: _reset,
-                      child: Text('donation.filter_reset'.tr())),
+                    onPressed: _reset,
+                    child: Text('donation.filter_reset'.tr()),
+                  ),
                 ],
               ),
               const SizedBox(height: 8),
@@ -129,9 +136,10 @@ class _FundFilterSheetState extends ConsumerState<FundFilterSheet> {
                       label: 'donation.filter_date_from'.tr(),
                       value: _dateFrom != null ? df.format(_dateFrom!) : null,
                       onTap: () => _pickDate(from: true),
-                      onClear: _dateFrom != null
-                          ? () => setState(() => _dateFrom = null)
-                          : null,
+                      onClear:
+                          _dateFrom != null
+                              ? () => setState(() => _dateFrom = null)
+                              : null,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -140,9 +148,10 @@ class _FundFilterSheetState extends ConsumerState<FundFilterSheet> {
                       label: 'donation.filter_date_to'.tr(),
                       value: _dateTo != null ? df.format(_dateTo!) : null,
                       onTap: () => _pickDate(from: false),
-                      onClear: _dateTo != null
-                          ? () => setState(() => _dateTo = null)
-                          : null,
+                      onClear:
+                          _dateTo != null
+                              ? () => setState(() => _dateTo = null)
+                              : null,
                     ),
                   ),
                 ],
@@ -158,9 +167,7 @@ class _FundFilterSheetState extends ConsumerState<FundFilterSheet> {
                     child: TextField(
                       controller: _minController,
                       keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly
-                      ],
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       decoration: InputDecoration(
                         labelText: 'donation.filter_amount_min'.tr(),
                         border: const OutlineInputBorder(),
@@ -173,9 +180,7 @@ class _FundFilterSheetState extends ConsumerState<FundFilterSheet> {
                     child: TextField(
                       controller: _maxController,
                       keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly
-                      ],
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       decoration: InputDecoration(
                         labelText: 'donation.filter_amount_max'.tr(),
                         border: const OutlineInputBorder(),
@@ -194,9 +199,13 @@ class _FundFilterSheetState extends ConsumerState<FundFilterSheet> {
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
-                  child: Text('donation.filter_apply'.tr(),
-                      style: const TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.w700)),
+                  child: Text(
+                    'donation.filter_apply'.tr(),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -213,8 +222,10 @@ class _Label extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(text,
-        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14));
+    return Text(
+      text,
+      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+    );
   }
 }
 
@@ -241,14 +252,17 @@ class _DateField extends StatelessWidget {
           labelText: label,
           border: const OutlineInputBorder(),
           isDense: true,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-          suffixIcon: onClear != null
-              ? InkWell(
-                  onTap: onClear,
-                  child: const Icon(Icons.clear, size: 18),
-                )
-              : const Icon(Icons.calendar_today_outlined, size: 16),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 14,
+          ),
+          suffixIcon:
+              onClear != null
+                  ? InkWell(
+                    onTap: onClear,
+                    child: const Icon(Icons.clear, size: 18),
+                  )
+                  : const Icon(Icons.calendar_today_outlined, size: 16),
         ),
         child: Text(
           value ?? '—',

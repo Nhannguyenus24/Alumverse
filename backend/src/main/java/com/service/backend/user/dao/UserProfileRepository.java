@@ -1,5 +1,11 @@
 package com.service.backend.user.dao;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import reactor.core.publisher.Flux;
+import com.service.backend.shared.dao.UserDisplayInfo;
+
 import org.springframework.data.r2dbc.repository.Modifying;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.r2dbc.repository.R2dbcRepository;
@@ -13,6 +19,34 @@ import reactor.core.publisher.Mono;
 
 @Repository
 public interface UserProfileRepository extends R2dbcRepository<User, Integer> {
+
+    @Query("SELECT id AS user_id, avatar_url, full_name FROM users WHERE id IN (:userIds)")
+    Flux<UserDisplayInfo> streamByUserIds(@Param("userIds") Collection<Integer> userIds);
+
+    @Query("SELECT om.id AS user_id, u.avatar_url, u.full_name FROM organization_members om JOIN users u ON om.user_id = u.id WHERE om.id IN (:memberIds)")
+    Flux<UserDisplayInfo> streamByMemberIds(@Param("memberIds") Collection<Integer> memberIds);
+
+    default Mono<Map<Integer, UserDisplayInfo>> findByUserIds(Collection<Integer> userIds) {
+        if (userIds == null || userIds.isEmpty()) return Mono.just(Map.of());
+        return streamByUserIds(userIds.stream().distinct().toList())
+                .collectMap(UserDisplayInfo::getUserId, info -> info);
+    }
+
+    default Mono<Map<Integer, UserDisplayInfo>> findByMemberIds(Collection<Integer> memberIds) {
+        if (memberIds == null || memberIds.isEmpty()) return Mono.just(Map.of());
+        return streamByMemberIds(memberIds.stream().distinct().toList())
+                .collectMap(UserDisplayInfo::getUserId, info -> info);
+    }
+
+    default Mono<UserDisplayInfo> findDisplayInfoByUserId(Integer userId) {
+        if (userId == null) return Mono.empty();
+        return streamByUserIds(List.of(userId)).next();
+    }
+
+    public record AttendeeProfile(Integer id, String fullName, String email, String avatarUrl) {}
+
+    @Query("SELECT id, full_name, email, avatar_url FROM users WHERE id = :userId")
+    Mono<AttendeeProfile> findAttendeeProfileByUserId(@Param("userId") Integer userId);
 
     @Query("""
             SELECT u.id AS user_id,
@@ -55,4 +89,10 @@ public interface UserProfileRepository extends R2dbcRepository<User, Integer> {
             @Param("phone") String phone,
             @Param("gender") String gender,
             @Param("bio") String bio);
+
+    @Modifying
+    @Query("UPDATE users SET avatar_url = :avatarUrl WHERE id = :userId")
+    Mono<Void> updateUserAvatar(
+            @Param("userId") Integer userId,
+            @Param("avatarUrl") String avatarUrl);
 }

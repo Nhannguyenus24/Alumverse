@@ -1,7 +1,7 @@
 // Canonical gender enum. Gender is free-text in the DB (legacy rows use "Male",
 // the settings form saves "male", seed data has "Other"...), so all reads must be
 // normalized to exactly these three values.
-export const GENDER = Object.freeze({
+const GENDER = Object.freeze({
   MALE: 'male',
   FEMALE: 'female',
   OTHER: 'other',

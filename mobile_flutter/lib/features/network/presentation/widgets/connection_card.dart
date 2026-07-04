@@ -43,10 +43,14 @@ class ConnectionCard extends StatelessWidget {
               backgroundColor: AppColors.primaryLighter,
               backgroundImage:
                   avatar != null ? CachedNetworkImageProvider(avatar) : null,
-              child: avatar == null
-                  ? const Icon(Icons.person,
-                      size: 28, color: AppColors.primary)
-                  : null,
+              child:
+                  avatar == null
+                      ? const Icon(
+                        Icons.person,
+                        size: 28,
+                        color: AppColors.primary,
+                      )
+                      : null,
             ),
           ),
           const SizedBox(width: 12),
@@ -66,6 +70,18 @@ class ConnectionCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
+                  if (connection.subtitle.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      connection.subtitle,
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 13,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                   if (educationLines.isNotEmpty) ...[
                     const SizedBox(height: 6),
                     _EducationLines(lines: educationLines),

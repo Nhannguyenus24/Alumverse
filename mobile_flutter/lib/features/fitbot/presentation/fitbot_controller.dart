@@ -13,11 +13,11 @@ const _ttl = Duration(days: 7);
 const _maxMessages = 30;
 
 FitBotMessage _welcomeMessage() => FitBotMessage(
-      id: 'welcome',
-      text: 'fitbot.greeting'.tr(),
-      isBot: true,
-      timestamp: DateTime.now(),
-    );
+  id: 'welcome',
+  text: 'fitbot.greeting'.tr(),
+  isBot: true,
+  timestamp: DateTime.now(),
+);
 
 class FitBotState {
   final List<FitBotMessage> messages;
@@ -75,8 +75,10 @@ class FitBotController extends StateNotifier<FitBotState> {
 
     final buffer = StringBuffer();
     try {
-      await for (final chunk
-          in _repo.streamAnswer(trimmed, cancelToken: _cancel)) {
+      await for (final chunk in _repo.streamAnswer(
+        trimmed,
+        cancelToken: _cancel,
+      )) {
         buffer.write(chunk);
         _updateBot(botId, buffer.toString());
       }
@@ -119,11 +121,14 @@ class FitBotController extends StateNotifier<FitBotState> {
 
   List<FitBotMessage> _prune(List<FitBotMessage> messages) {
     final now = DateTime.now();
-    final kept = messages
-        .where((m) =>
-            m.text.trim().isNotEmpty &&
-            now.difference(m.timestamp) <= _ttl)
-        .toList();
+    final kept =
+        messages
+            .where(
+              (m) =>
+                  m.text.trim().isNotEmpty &&
+                  now.difference(m.timestamp) <= _ttl,
+            )
+            .toList();
     if (kept.length <= _maxMessages) return kept;
     return kept.sublist(kept.length - _maxMessages);
   }
@@ -146,10 +151,11 @@ class FitBotController extends StateNotifier<FitBotState> {
       if (raw == null || raw.isEmpty) return [];
       final decoded = jsonDecode(raw);
       if (decoded is! List) return [];
-      final msgs = decoded
-          .whereType<Map>()
-          .map((m) => FitBotMessage.fromJson(m.cast<String, dynamic>()))
-          .toList();
+      final msgs =
+          decoded
+              .whereType<Map>()
+              .map((m) => FitBotMessage.fromJson(m.cast<String, dynamic>()))
+              .toList();
       return _prune(msgs);
     } catch (_) {
       return [];
@@ -165,5 +171,5 @@ class FitBotController extends StateNotifier<FitBotState> {
 
 final fitBotControllerProvider =
     StateNotifierProvider<FitBotController, FitBotState>((ref) {
-  return FitBotController(ref.watch(fitBotRepositoryProvider));
-});
+      return FitBotController(ref.watch(fitBotRepositoryProvider));
+    });

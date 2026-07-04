@@ -23,13 +23,15 @@ class MyTicketsPage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: Text('event.my_tickets'.tr())),
       body: async.when(
-        loading: () => ListView(
-          children: List.generate(5, (_) => const SkeletonTile()),
-        ),
-        error: (_, __) => ErrorView(
-          message: 'event.tickets_load_failed'.tr(),
-          onRetry: () => ref.invalidate(myTicketsProvider),
-        ),
+        loading:
+            () => ListView(
+              children: List.generate(5, (_) => const SkeletonTile()),
+            ),
+        error:
+            (_, __) => ErrorView(
+              message: 'event.tickets_load_failed'.tr(),
+              onRetry: () => ref.invalidate(myTicketsProvider),
+            ),
         data: (tickets) {
           if (tickets.isEmpty) {
             return EmptyView(
@@ -63,21 +65,29 @@ class _TicketCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Resolve the event title (the ticket may not embed it).
-    final titleAsync = ticket.eventTitle != null
-        ? AsyncValue.data(ticket.eventTitle!)
-        : ref.watch(eventDetailProvider(ticket.eventId).select(
-            (a) => a.whenData((e) => e.title),
-          ));
-    final title = titleAsync.valueOrNull ??
+    final titleAsync =
+        ticket.eventTitle != null
+            ? AsyncValue.data(ticket.eventTitle!)
+            : ref.watch(
+              eventDetailProvider(
+                ticket.eventId,
+              ).select((a) => a.whenData((e) => e.title)),
+            );
+    final title =
+        titleAsync.valueOrNull ??
         'event.event_number'.tr(namedArgs: {'id': ticket.eventId.toString()});
-    final date = ticket.registeredAt != null
-        ? DateFormat('dd/MM/yyyy • HH:mm').format(ticket.registeredAt!)
-        : '';
+    final date =
+        ticket.registeredAt != null
+            ? DateFormat('dd/MM/yyyy • HH:mm').format(ticket.registeredAt!)
+            : '';
 
     return InkWell(
       borderRadius: BorderRadius.circular(12),
-      onTap: () =>
-          context.push(RouteNames.ticketDetail(ticket.ticketCode), extra: ticket),
+      onTap:
+          () => context.push(
+            RouteNames.ticketDetail(ticket.ticketCode),
+            extra: ticket,
+          ),
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
@@ -94,34 +104,52 @@ class _TicketCard extends ConsumerWidget {
                 color: AppColors.primaryLighter,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.confirmation_number_outlined,
-                  color: AppColors.primary),
+              child: const Icon(
+                Icons.confirmation_number_outlined,
+                color: AppColors.primary,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w700, fontSize: 15)),
+                  Text(
+                    title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                    ),
+                  ),
                   const SizedBox(height: 4),
                   Row(
                     children: [
                       Text(
-                          'event.ticket_code_label'.tr(namedArgs: {'code': ticket.ticketCode}),
-                          style: const TextStyle(
-                              fontSize: 12, color: AppColors.textSecondary)),
+                        'event.ticket_code_label'.tr(
+                          namedArgs: {'code': ticket.ticketCode},
+                        ),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
                       if (date.isNotEmpty) ...[
-                        const Text(' • ',
-                            style: TextStyle(
-                                fontSize: 12, color: AppColors.textSecondary)),
-                        Text(date,
-                            style: const TextStyle(
-                                fontSize: 12,
-                                color: AppColors.textSecondary)),
+                        const Text(
+                          ' • ',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        Text(
+                          date,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
                       ],
                     ],
                   ),
@@ -166,7 +194,10 @@ class TicketStatusBadge extends StatelessWidget {
       child: Text(
         ticket.statusKey.tr(),
         style: TextStyle(
-            color: color, fontSize: 12, fontWeight: FontWeight.w700),
+          color: color,
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }

@@ -38,17 +38,18 @@ class EventDetailPage extends ConsumerWidget {
             IconButton(
               icon: const Icon(Icons.admin_panel_settings_outlined),
               tooltip: 'event.manage_btn'.tr(),
-              onPressed: () =>
-                  context.push(RouteNames.adminEventManage(eventId)),
+              onPressed:
+                  () => context.push(RouteNames.adminEventManage(eventId)),
             ),
         ],
       ),
       body: detailAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => ErrorView(
-          message: 'event.load_failed'.tr(),
-          onRetry: () => ref.invalidate(eventDetailProvider(eventId)),
-        ),
+        error:
+            (_, __) => ErrorView(
+              message: 'event.load_failed'.tr(),
+              onRetry: () => ref.invalidate(eventDetailProvider(eventId)),
+            ),
         data: (event) => _DetailBody(event: event),
       ),
     );
@@ -75,10 +76,11 @@ class _DetailBody extends ConsumerWidget {
             height: 200,
             width: double.infinity,
             fit: BoxFit.cover,
-            placeholder: (_, __) =>
-                Container(height: 200, color: AppColors.divider),
-            errorWidget: (_, __, ___) =>
-                Container(height: 200, color: AppColors.divider),
+            placeholder:
+                (_, __) => Container(height: 200, color: AppColors.divider),
+            errorWidget:
+                (_, __, ___) =>
+                    Container(height: 200, color: AppColors.divider),
           ),
         Padding(
           padding: const EdgeInsets.all(16),
@@ -86,28 +88,32 @@ class _DetailBody extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (event.topic != null && event.topic!.isNotEmpty)
-                Text(event.topic!.toUpperCase(),
-                    style: const TextStyle(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 12,
-                        letterSpacing: 0.5)),
-              const SizedBox(height: 6),
-              Text(event.title,
+                Text(
+                  event.topic!.toUpperCase(),
                   style: const TextStyle(
-                      fontSize: 22, fontWeight: FontWeight.bold, height: 1.3)),
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              const SizedBox(height: 6),
+              Text(
+                event.title,
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  height: 1.3,
+                ),
+              ),
               const SizedBox(height: 12),
               if (event.startTime != null)
-                _InfoLine(
-                  Icons.schedule,
-                  () {
-                    final start = df.format(event.startTime!);
-                    return event.endTime != null
-                        ? '$start → ${df.format(event.endTime!)}'
-                        : start;
-                  }(),
-                  label: 'event.time_label'.tr(),
-                ),
+                _InfoLine(Icons.schedule, () {
+                  final start = df.format(event.startTime!);
+                  return event.endTime != null
+                      ? '$start → ${df.format(event.endTime!)}'
+                      : start;
+                }(), label: 'event.time_label'.tr()),
               if (event.registrationEndAt != null)
                 _InfoLine(
                   Icons.event_available_outlined,
@@ -115,30 +121,39 @@ class _DetailBody extends ConsumerWidget {
                   label: 'event.registration_deadline'.tr(),
                 ),
               if (event.location != null && event.location!.isNotEmpty)
-                _InfoLine(Icons.place_outlined, event.location!,
-                    label: 'event.location'.tr()),
+                _InfoLine(
+                  Icons.place_outlined,
+                  event.location!,
+                  label: 'event.location'.tr(),
+                ),
               if (event.organizer != null && event.organizer!.isNotEmpty)
-                _InfoLine(Icons.groups_outlined, event.organizer!,
-                    label: 'event.organizer_label'.tr()),
+                _InfoLine(
+                  Icons.groups_outlined,
+                  event.organizer!,
+                  label: 'event.organizer_label'.tr(),
+                ),
 
               // Stats (live from interaction provider, fallback to summary).
               const SizedBox(height: 8),
               interaction.when(
-                loading: () => _StatsRow(
-                  interested: event.interestedCount,
-                  registered: event.joinedCount,
-                  capacity: event.maxCapacity,
-                ),
-                error: (_, __) => _StatsRow(
-                  interested: event.interestedCount,
-                  registered: event.joinedCount,
-                  capacity: event.maxCapacity,
-                ),
-                data: (s) => _StatsRow(
-                  interested: s.interestedCount,
-                  registered: s.registeredCount,
-                  capacity: event.maxCapacity,
-                ),
+                loading:
+                    () => _StatsRow(
+                      interested: event.interestedCount,
+                      registered: event.joinedCount,
+                      capacity: event.maxCapacity,
+                    ),
+                error:
+                    (_, __) => _StatsRow(
+                      interested: event.interestedCount,
+                      registered: event.joinedCount,
+                      capacity: event.maxCapacity,
+                    ),
+                data:
+                    (s) => _StatsRow(
+                      interested: s.interestedCount,
+                      registered: s.registeredCount,
+                      capacity: event.maxCapacity,
+                    ),
               ),
 
               const Divider(height: 28),
@@ -153,7 +168,9 @@ class _DetailBody extends ConsumerWidget {
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       child: CachedNetworkImage(
-                          imageUrl: src, fit: BoxFit.contain),
+                        imageUrl: src,
+                        fit: BoxFit.contain,
+                      ),
                     );
                   },
                 ),
@@ -215,19 +232,25 @@ class _ActionsState extends ConsumerState<_Actions> {
       if (questions.isEmpty) {
         final ok = await showDialog<bool>(
           context: context,
-          builder: (ctx) => AlertDialog(
-            title: Text('event.join_event_title'.tr()),
-            content: Text(
-                'event.join_confirm_message'.tr(namedArgs: {'title': widget.eventTitle})),
-            actions: [
-              TextButton(
-                  onPressed: () => Navigator.pop(ctx, false),
-                  child: Text('common.cancel'.tr())),
-              ElevatedButton(
-                  onPressed: () => Navigator.pop(ctx, true),
-                  child: Text('event.join'.tr())),
-            ],
-          ),
+          builder:
+              (ctx) => AlertDialog(
+                title: Text('event.join_event_title'.tr()),
+                content: Text(
+                  'event.join_confirm_message'.tr(
+                    namedArgs: {'title': widget.eventTitle},
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx, false),
+                    child: Text('common.cancel'.tr()),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(ctx, true),
+                    child: Text('event.join'.tr()),
+                  ),
+                ],
+              ),
         );
         if (ok != true) {
           if (mounted) setState(() => _busyRegister = false);
@@ -279,48 +302,54 @@ class _ActionsState extends ConsumerState<_Actions> {
     final formKey = GlobalKey<FormState>();
     return showDialog<String>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('event.cancel_join'.tr()),
-        content: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('event.cancel_reason_prompt'.tr()),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: controller,
-                autofocus: true,
-                minLines: 2,
-                maxLines: 4,
-                validator: (v) => (v == null || v.trim().isEmpty)
-                    ? 'event.cancel_reason_required'.tr()
-                    : null,
-                decoration: InputDecoration(
-                  hintText: 'event.cancel_reason_hint'.tr(),
-                  border: const OutlineInputBorder(),
-                  isDense: true,
+      builder:
+          (ctx) => AlertDialog(
+            title: Text('event.cancel_join'.tr()),
+            content: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('event.cancel_reason_prompt'.tr()),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: controller,
+                    autofocus: true,
+                    minLines: 2,
+                    maxLines: 4,
+                    validator:
+                        (v) =>
+                            (v == null || v.trim().isEmpty)
+                                ? 'event.cancel_reason_required'.tr()
+                                : null,
+                    decoration: InputDecoration(
+                      hintText: 'event.cancel_reason_hint'.tr(),
+                      border: const OutlineInputBorder(),
+                      isDense: true,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text('common.close'.tr()),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  if (formKey.currentState?.validate() ?? false) {
+                    Navigator.pop(ctx, controller.text.trim());
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.error,
                 ),
+                child: Text('event.confirm_cancel'.tr()),
               ),
             ],
           ),
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text('common.close'.tr())),
-          ElevatedButton(
-            onPressed: () {
-              if (formKey.currentState?.validate() ?? false) {
-                Navigator.pop(ctx, controller.text.trim());
-              }
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-            child: Text('event.confirm_cancel'.tr()),
-          ),
-        ],
-      ),
     );
   }
 
@@ -335,8 +364,16 @@ class _ActionsState extends ConsumerState<_Actions> {
         Expanded(
           child: OutlinedButton.icon(
             onPressed: _busyInterest ? null : () => _toggleInterest(interested),
-            icon: Icon(interested ? Icons.notifications_active : Icons.notifications_none),
-            label: Text(interested ? 'event.already_interested'.tr() : 'event.interested'.tr()),
+            icon: Icon(
+              interested
+                  ? Icons.notifications_active
+                  : Icons.notifications_none,
+            ),
+            label: Text(
+              interested
+                  ? 'event.already_interested'.tr()
+                  : 'event.interested'.tr(),
+            ),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 14),
               foregroundColor:
@@ -346,25 +383,26 @@ class _ActionsState extends ConsumerState<_Actions> {
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: registered
-              ? OutlinedButton.icon(
-                  onPressed: _busyRegister ? null : _onCancelPressed,
-                  icon: const Icon(Icons.cancel_outlined),
-                  label: Text('event.cancel_join'.tr()),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    foregroundColor: AppColors.error,
-                    side: const BorderSide(color: AppColors.error),
+          child:
+              registered
+                  ? OutlinedButton.icon(
+                    onPressed: _busyRegister ? null : _onCancelPressed,
+                    icon: const Icon(Icons.cancel_outlined),
+                    label: Text('event.cancel_join'.tr()),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      foregroundColor: AppColors.error,
+                      side: const BorderSide(color: AppColors.error),
+                    ),
+                  )
+                  : ElevatedButton.icon(
+                    onPressed: _busyRegister ? null : _onRegisterPressed,
+                    icon: const Icon(Icons.event_available),
+                    label: Text('event.join'.tr()),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
                   ),
-                )
-              : ElevatedButton.icon(
-                  onPressed: _busyRegister ? null : _onRegisterPressed,
-                  icon: const Icon(Icons.event_available),
-                  label: Text('event.join'.tr()),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                  ),
-                ),
         ),
       ],
     );
@@ -393,15 +431,21 @@ class _InfoLine extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (label != null)
-                  Text(label!,
-                      style: const TextStyle(
-                          fontSize: 11, color: AppColors.textSecondary)),
-                Text(text,
-                    style: TextStyle(
-                      color: AppColors.textPrimary,
-                      fontWeight:
-                          label != null ? FontWeight.w600 : FontWeight.w400,
-                    )),
+                  Text(
+                    label!,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                Text(
+                  text,
+                  style: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontWeight:
+                        label != null ? FontWeight.w600 : FontWeight.w400,
+                  ),
+                ),
               ],
             ),
           ),
@@ -430,8 +474,10 @@ class _StatsRow extends StatelessWidget {
         children: [
           _stat('event.interested'.tr(), '$interested'),
           const SizedBox(width: 24),
-          _stat('event.registered'.tr(),
-              capacity != null ? '$registered/$capacity' : '$registered'),
+          _stat(
+            'event.registered'.tr(),
+            capacity != null ? '$registered/$capacity' : '$registered',
+          ),
         ],
       ),
     );
@@ -441,11 +487,14 @@ class _StatsRow extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label,
-            style: const TextStyle(
-                fontSize: 11, color: AppColors.textSecondary)),
-        Text(value,
-            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+        ),
+        Text(
+          value,
+          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+        ),
       ],
     );
   }

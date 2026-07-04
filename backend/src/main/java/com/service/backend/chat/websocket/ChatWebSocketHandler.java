@@ -5,7 +5,7 @@ import com.service.backend.shared.entity.ChatMessage;
 import com.service.backend.chat.dao.ChatGroupMemberRepository;
 import com.service.backend.chat.service.ChatService;
 import com.service.backend.shared.dao.UserDisplayInfo;
-import com.service.backend.shared.dao.UserDisplayInfoRepository;
+import com.service.backend.user.dao.UserProfileRepository;
 import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.utils.JwtUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +32,7 @@ public class ChatWebSocketHandler implements WebSocketHandler {
 
     private final ChatService chatService;
     private final ChatGroupMemberRepository chatGroupMemberRepository;
-    private final UserDisplayInfoRepository userDisplayInfoRepository;
+    private final UserProfileRepository userProfileRepository;
     private final JwtUtils jwtUtils;
 
     // Map: sessionId -> memberId
@@ -44,11 +44,11 @@ public class ChatWebSocketHandler implements WebSocketHandler {
     public ChatWebSocketHandler(
             ChatService chatService,
             ChatGroupMemberRepository chatGroupMemberRepository,
-            UserDisplayInfoRepository userDisplayInfoRepository,
+            UserProfileRepository userProfileRepository,
             JwtUtils jwtUtils) {
         this.chatService = chatService;
         this.chatGroupMemberRepository = chatGroupMemberRepository;
-        this.userDisplayInfoRepository = userDisplayInfoRepository;
+        this.userProfileRepository = userProfileRepository;
         this.jwtUtils = jwtUtils;
     }
 
@@ -171,8 +171,8 @@ public class ChatWebSocketHandler implements WebSocketHandler {
         String chatType = json.has("chatType") ? json.get("chatType").asText() : null;
 
         return chatService.sendMessage(groupId, memberId, content, messageType, metadata, chatType)
-                .flatMap(savedMessage -> userDisplayInfoRepository
-                        .findByUserId(savedMessage.getSenderMemberId().intValue()) // N + 1 query cho nay ne, co thoi gian thi sua
+                .flatMap(savedMessage -> userProfileRepository
+                        .findDisplayInfoByUserId(savedMessage.getSenderMemberId().intValue()) // N + 1 query cho nay ne, co thoi gian thi sua
                         .defaultIfEmpty(UserDisplayInfo.builder()
                                 .userId(savedMessage.getSenderMemberId().intValue())
                                 .build())

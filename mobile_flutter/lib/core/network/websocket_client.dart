@@ -17,8 +17,8 @@ class WebSocketClient {
 
     _channel!.stream.listen(
       (event) => _controller?.add(event),
-      onError: (Object error, StackTrace st) =>
-          _controller?.addError(error, st),
+      onError:
+          (Object error, StackTrace st) => _controller?.addError(error, st),
       onDone: () => _controller?.close(),
       cancelOnError: false,
     );

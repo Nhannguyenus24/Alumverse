@@ -22,9 +22,10 @@ class SavedItem {
       itemType: json['itemType']?.toString() ?? 'NEWS',
       itemId: (json['itemId'] as num?)?.toInt() ?? 0,
       note: json['note'] as String?,
-      savedAt: json['savedAt'] is String
-          ? DateTime.tryParse(json['savedAt'] as String)
-          : null,
+      savedAt:
+          json['savedAt'] is String
+              ? DateTime.tryParse(json['savedAt'] as String)
+              : null,
     );
   }
 }

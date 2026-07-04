@@ -31,10 +31,11 @@ class FundraisingDetailPage extends ConsumerWidget {
       appBar: AppBar(title: Text('donation.fund_detail'.tr())),
       body: detailAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => ErrorView(
-          message: 'donation.fund_load_failed'.tr(),
-          onRetry: () => ref.invalidate(fundDetailProvider(fundId)),
-        ),
+        error:
+            (_, __) => ErrorView(
+              message: 'donation.fund_load_failed'.tr(),
+              onRetry: () => ref.invalidate(fundDetailProvider(fundId)),
+            ),
         data: (fund) => _DetailBody(fund: fund),
       ),
     );
@@ -63,10 +64,12 @@ class _DetailBody extends StatelessWidget {
                   height: 200,
                   width: double.infinity,
                   fit: BoxFit.cover,
-                  placeholder: (_, __) =>
-                      Container(height: 200, color: AppColors.divider),
-                  errorWidget: (_, __, ___) =>
-                      Container(height: 200, color: AppColors.divider),
+                  placeholder:
+                      (_, __) =>
+                          Container(height: 200, color: AppColors.divider),
+                  errorWidget:
+                      (_, __, ___) =>
+                          Container(height: 200, color: AppColors.divider),
                 ),
               Padding(
                 padding: const EdgeInsets.all(16),
@@ -74,18 +77,24 @@ class _DetailBody extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (fund.topic != null && fund.topic!.isNotEmpty)
-                      Text(fund.topic!.toUpperCase(),
-                          style: const TextStyle(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 12,
-                              letterSpacing: 0.5)),
-                    const SizedBox(height: 6),
-                    Text(fund.name,
+                      Text(
+                        fund.topic!.toUpperCase(),
                         style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            height: 1.3)),
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    const SizedBox(height: 6),
+                    Text(
+                      fund.name,
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        height: 1.3,
+                      ),
+                    ),
                     const SizedBox(height: 14),
                     _ProgressPanel(fund: fund),
                     const Divider(height: 28),
@@ -101,13 +110,17 @@ class _DetailBody extends StatelessWidget {
                           return Padding(
                             padding: const EdgeInsets.symmetric(vertical: 8),
                             child: CachedNetworkImage(
-                                imageUrl: src, fit: BoxFit.contain),
+                              imageUrl: src,
+                              fit: BoxFit.contain,
+                            ),
                           );
                         },
                       )
                     else if (fund.descriptionShort != null)
-                      Text(fund.descriptionShort!,
-                          style: const TextStyle(fontSize: 15, height: 1.6)),
+                      Text(
+                        fund.descriptionShort!,
+                        style: const TextStyle(fontSize: 15, height: 1.6),
+                      ),
                     const SizedBox(height: 16),
                   ],
                 ),
@@ -148,21 +161,31 @@ class _ProgressPanel extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('donation.raised'.tr(),
-                        style: TextStyle(
-                            fontSize: 12,
-                            color: AppColors.textSecondary)),
-                    Text(formatVnd(fund.currentAmount),
-                        style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.primary)),
+                    Text(
+                      'donation.raised'.tr(),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    Text(
+                      formatVnd(fund.currentAmount),
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.primary,
+                      ),
+                    ),
                   ],
                 ),
               ),
-              Text('$pct%',
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.w700)),
+              Text(
+                '$pct%',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 8),
@@ -177,26 +200,46 @@ class _ProgressPanel extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'donation.goal_amount'
-                .tr(namedArgs: {'amount': formatVnd(fund.targetAmount)}),
-            style: TextStyle(
-                fontSize: 12.5, color: AppColors.textSecondary)),
+            'donation.goal_amount'.tr(
+              namedArgs: {'amount': formatVnd(fund.targetAmount)},
+            ),
+            style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
+          ),
           const Divider(height: 24),
-          _row(Icons.favorite_border, 'donation.donor_count'.tr(),
-              '${fund.donorCount}'),
-          _row(Icons.payments_outlined, 'donation.avg_donation'.tr(),
-              formatVnd(fund.averageDonation)),
+          _row(
+            Icons.favorite_border,
+            'donation.donor_count'.tr(),
+            '${fund.donorCount}',
+          ),
+          _row(
+            Icons.payments_outlined,
+            'donation.avg_donation'.tr(),
+            formatVnd(fund.averageDonation),
+          ),
           if (fund.managerName != null && fund.managerName!.isNotEmpty)
-            _row(Icons.person_outline, 'donation.manager'.tr(), fund.managerName!),
+            _row(
+              Icons.person_outline,
+              'donation.manager'.tr(),
+              fund.managerName!,
+            ),
           if (fund.managerEmail != null && fund.managerEmail!.isNotEmpty)
-            _row(Icons.email_outlined, 'donation.manager_email'.tr(),
-                fund.managerEmail!),
+            _row(
+              Icons.email_outlined,
+              'donation.manager_email'.tr(),
+              fund.managerEmail!,
+            ),
           if (fund.timeStarted != null)
-            _row(Icons.play_circle_outline, 'donation.start_date'.tr(),
-                df.format(fund.timeStarted!)),
+            _row(
+              Icons.play_circle_outline,
+              'donation.start_date'.tr(),
+              df.format(fund.timeStarted!),
+            ),
           if (fund.timeEnded != null)
-            _row(Icons.stop_circle_outlined, 'donation.end_date'.tr(),
-                df.format(fund.timeEnded!)),
+            _row(
+              Icons.stop_circle_outlined,
+              'donation.end_date'.tr(),
+              df.format(fund.timeEnded!),
+            ),
           _ManagerContact(fund: fund),
         ],
       ),
@@ -210,14 +253,20 @@ class _ProgressPanel extends StatelessWidget {
         children: [
           Icon(icon, size: 16, color: AppColors.textSecondary),
           const SizedBox(width: 8),
-          Text(label,
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+          Text(
+            label,
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+          ),
           const Spacer(),
           Flexible(
-            child: Text(value,
-                textAlign: TextAlign.right,
-                style: const TextStyle(
-                    fontWeight: FontWeight.w600, fontSize: 13.5)),
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 13.5,
+              ),
+            ),
           ),
         ],
       ),
@@ -244,14 +293,14 @@ class _ManagerContact extends ConsumerWidget {
 
     final rawId = ref.watch(authStateProvider).valueOrNull?.user?.id;
     final currentUserId = rawId != null ? int.tryParse(rawId) : null;
-    final isSelf =
-        currentUserId != null && currentUserId == fund.managerUserId;
+    final isSelf = currentUserId != null && currentUserId == fund.managerUserId;
 
     return Padding(
       padding: const EdgeInsets.only(top: 14),
-      child: isSelf
-          ? _selfChip()
-          : _connectButton(context, loggedIn: currentUserId != null),
+      child:
+          isSelf
+              ? _selfChip()
+              : _connectButton(context, loggedIn: currentUserId != null),
     );
   }
 
@@ -266,15 +315,21 @@ class _ManagerContact extends ConsumerWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.verified_user_outlined,
-              size: 16, color: AppColors.success),
+          const Icon(
+            Icons.verified_user_outlined,
+            size: 16,
+            color: AppColors.success,
+          ),
           const SizedBox(width: 8),
           Flexible(
-            child: Text('donation.you_are_manager'.tr(),
-                style: const TextStyle(
-                    color: AppColors.success,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600)),
+            child: Text(
+              'donation.you_are_manager'.tr(),
+              style: const TextStyle(
+                color: AppColors.success,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ],
       ),
@@ -306,9 +361,10 @@ class _ManagerContact extends ConsumerWidget {
     showMessageRequestSheet(
       context,
       targetMemberId: fund.managerUserId!,
-      targetName: (fund.managerName?.isNotEmpty ?? false)
-          ? fund.managerName!
-          : 'donation.fund_manager'.tr(),
+      targetName:
+          (fund.managerName?.isNotEmpty ?? false)
+              ? fund.managerName!
+              : 'donation.fund_manager'.tr(),
       title: 'donation.contact_manager_title'.tr(),
       contextNote: 'donation.contact_manager_note'.tr(),
     );
@@ -330,17 +386,22 @@ class _DonateBar extends StatelessWidget {
         child: SizedBox(
           width: double.infinity,
           child: ElevatedButton.icon(
-            onPressed: closed
-                ? null
-                : () => context
-                    .push('${RouteNames.fundraising}/${fund.id}/donate'),
+            onPressed:
+                closed
+                    ? null
+                    : () => context.push(
+                      '${RouteNames.fundraising}/${fund.id}/donate',
+                    ),
             icon: const Icon(Icons.volunteer_activism),
             label: Text(
-                closed ? 'donation.fund_closed'.tr() : 'donation.donate'.tr()),
+              closed ? 'donation.fund_closed'.tr() : 'donation.donate'.tr(),
+            ),
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
-              textStyle:
-                  const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+              textStyle: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ),

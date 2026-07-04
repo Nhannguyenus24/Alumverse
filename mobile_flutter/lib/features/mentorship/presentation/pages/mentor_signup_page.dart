@@ -54,9 +54,8 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    final validExpertises = _expertises
-        .where((e) => e.topic.trim().isNotEmpty)
-        .toList();
+    final validExpertises =
+        _expertises.where((e) => e.topic.trim().isNotEmpty).toList();
     if (validExpertises.isEmpty) {
       AppToast.info(context, 'mentorship.signup_expertise_required'.tr());
       return;
@@ -110,9 +109,11 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
             const SizedBox(height: 12),
             TextFormField(
               controller: _jobCtl,
-              validator: (v) => (v == null || v.trim().isEmpty)
-                  ? 'mentorship.signup_job_required'.tr()
-                  : null,
+              validator:
+                  (v) =>
+                      (v == null || v.trim().isEmpty)
+                          ? 'mentorship.signup_job_required'.tr()
+                          : null,
               decoration: InputDecoration(
                 labelText: 'mentorship.signup_job_label'.tr(),
                 hintText: 'VD: Senior Software Engineer',
@@ -122,9 +123,11 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
             const SizedBox(height: 12),
             TextFormField(
               controller: _companyCtl,
-              validator: (v) => (v == null || v.trim().isEmpty)
-                  ? 'mentorship.signup_company_required'.tr()
-                  : null,
+              validator:
+                  (v) =>
+                      (v == null || v.trim().isEmpty)
+                          ? 'mentorship.signup_company_required'.tr()
+                          : null,
               decoration: InputDecoration(
                 labelText: 'mentorship.signup_company_label'.tr(),
                 hintText: 'VD: FPT Software',
@@ -135,9 +138,11 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
             TextFormField(
               controller: _bioCtl,
               maxLines: 4,
-              validator: (v) => (v == null || v.trim().isEmpty)
-                  ? 'mentorship.signup_bio_required'.tr()
-                  : null,
+              validator:
+                  (v) =>
+                      (v == null || v.trim().isEmpty)
+                          ? 'mentorship.signup_bio_required'.tr()
+                          : null,
               decoration: InputDecoration(
                 labelText: 'mentorship.signup_bio_label'.tr(),
                 hintText: 'mentorship.signup_bio_hint'.tr(),
@@ -159,8 +164,8 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
               children: [
                 Expanded(child: _Label('mentorship.expertise'.tr())),
                 TextButton.icon(
-                  onPressed: () =>
-                      setState(() => _expertises.add(_ExpertiseDraft())),
+                  onPressed:
+                      () => setState(() => _expertises.add(_ExpertiseDraft())),
                   icon: const Icon(Icons.add, size: 18),
                   label: Text('common.add'.tr()),
                 ),
@@ -168,15 +173,14 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
             ),
             const SizedBox(height: 8),
             ..._expertises.asMap().entries.map(
-                  (e) => _ExpertiseCard(
-                    draft: e.value,
-                    index: e.key,
-                    categories: categories,
-                    canRemove: _expertises.length > 1,
-                    onRemove: () =>
-                        setState(() => _expertises.removeAt(e.key)),
-                  ),
-                ),
+              (e) => _ExpertiseCard(
+                draft: e.value,
+                index: e.key,
+                categories: categories,
+                canRemove: _expertises.length > 1,
+                onRemove: () => setState(() => _expertises.removeAt(e.key)),
+              ),
+            ),
             const SizedBox(height: 16),
             CheckboxListTile(
               value: _termsAccepted,
@@ -196,14 +200,20 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
-                child: _submitting
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white))
-                    : Text('mentorship.signup_submit'.tr(),
-                        style: const TextStyle(fontSize: 16)),
+                child:
+                    _submitting
+                        ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                        : Text(
+                          'mentorship.signup_submit'.tr(),
+                          style: const TextStyle(fontSize: 16),
+                        ),
               ),
             ),
             const SizedBox(height: 8),
@@ -211,7 +221,9 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
               'mentorship.signup_pending_notice'.tr(),
               textAlign: TextAlign.center,
               style: const TextStyle(
-                  color: AppColors.textSecondary, fontSize: 12.5),
+                color: AppColors.textSecondary,
+                fontSize: 12.5,
+              ),
             ),
           ],
         ),
@@ -264,8 +276,10 @@ class _ExpertiseCard extends StatelessWidget {
                 if (canRemove)
                   IconButton(
                     onPressed: onRemove,
-                    icon: const Icon(Icons.delete_outline,
-                        color: AppColors.error),
+                    icon: const Icon(
+                      Icons.delete_outline,
+                      color: AppColors.error,
+                    ),
                   ),
               ],
             ),
@@ -275,14 +289,21 @@ class _ExpertiseCard extends StatelessWidget {
                 Expanded(
                   flex: 3,
                   child: DropdownButtonFormField<String>(
-                    value: draft.category,
+                    initialValue: draft.category,
                     isExpanded: true,
                     decoration: InputDecoration(
-                        labelText: 'mentorship.category'.tr(), isDense: true),
-                    items: categories
-                        .map((c) => DropdownMenuItem(
-                            value: c.$1, child: Text(c.$2)))
-                        .toList(),
+                      labelText: 'mentorship.category'.tr(),
+                      isDense: true,
+                    ),
+                    items:
+                        categories
+                            .map(
+                              (c) => DropdownMenuItem(
+                                value: c.$1,
+                                child: Text(c.$2),
+                              ),
+                            )
+                            .toList(),
                     onChanged: (v) => draft.category = v ?? 'CAREER',
                   ),
                 ),
@@ -294,8 +315,9 @@ class _ExpertiseCard extends StatelessWidget {
                     keyboardType: TextInputType.number,
                     onChanged: (v) => draft.years = int.tryParse(v),
                     decoration: InputDecoration(
-                        labelText: 'mentorship.expertise_years_label'.tr(),
-                        isDense: true),
+                      labelText: 'mentorship.expertise_years_label'.tr(),
+                      isDense: true,
+                    ),
                   ),
                 ),
               ],
@@ -313,10 +335,13 @@ class _Label extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(text,
-        style: const TextStyle(
-            fontWeight: FontWeight.w700,
-            fontSize: 15,
-            color: AppColors.primary));
+    return Text(
+      text,
+      style: const TextStyle(
+        fontWeight: FontWeight.w700,
+        fontSize: 15,
+        color: AppColors.primary,
+      ),
+    );
   }
 }

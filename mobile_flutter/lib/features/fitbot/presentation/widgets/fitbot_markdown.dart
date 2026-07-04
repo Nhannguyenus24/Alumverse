@@ -74,22 +74,30 @@ String _inline(String text) {
       .replaceAll('>', '&gt;');
 
   // Inline code `code`
-  s = s.replaceAllMapped(RegExp(r'`([^`]+)`'),
-      (m) => '<code>${m.group(1)}</code>');
+  s = s.replaceAllMapped(
+    RegExp(r'`([^`]+)`'),
+    (m) => '<code>${m.group(1)}</code>',
+  );
   // Bold **text** or __text__
   s = s.replaceAllMapped(
-      RegExp(r'\*\*([^*]+)\*\*'), (m) => '<b>${m.group(1)}</b>');
-  s = s.replaceAllMapped(
-      RegExp(r'__([^_]+)__'), (m) => '<b>${m.group(1)}</b>');
+    RegExp(r'\*\*([^*]+)\*\*'),
+    (m) => '<b>${m.group(1)}</b>',
+  );
+  s = s.replaceAllMapped(RegExp(r'__([^_]+)__'), (m) => '<b>${m.group(1)}</b>');
   // Italic *text* or _text_
   s = s.replaceAllMapped(
-      RegExp(r'(?<!\*)\*([^*]+)\*(?!\*)'), (m) => '<i>${m.group(1)}</i>');
+    RegExp(r'(?<!\*)\*([^*]+)\*(?!\*)'),
+    (m) => '<i>${m.group(1)}</i>',
+  );
   s = s.replaceAllMapped(
-      RegExp(r'(?<!_)_([^_]+)_(?!_)'), (m) => '<i>${m.group(1)}</i>');
+    RegExp(r'(?<!_)_([^_]+)_(?!_)'),
+    (m) => '<i>${m.group(1)}</i>',
+  );
   // Links [text](url)
   s = s.replaceAllMapped(
-      RegExp(r'\[([^\]]+)\]\((https?:\/\/[^)]+)\)'),
-      (m) => '<a href="${m.group(2)}">${m.group(1)}</a>');
+    RegExp(r'\[([^\]]+)\]\((https?:\/\/[^)]+)\)'),
+    (m) => '<a href="${m.group(2)}">${m.group(1)}</a>',
+  );
 
   return s;
 }

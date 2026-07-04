@@ -44,7 +44,8 @@ class _ForumThreadPageState extends ConsumerState<ForumThreadPage> {
   }
 
   int? get _memberId => currentMemberIdFromUserId(
-      ref.read(authStateProvider).valueOrNull?.user?.id);
+    ref.read(authStateProvider).valueOrNull?.user?.id,
+  );
 
   Future<void> _send() async {
     final text = _commentCtl.text.trim();
@@ -56,7 +57,9 @@ class _ForumThreadPageState extends ConsumerState<ForumThreadPage> {
     }
     setState(() => _sending = true);
     try {
-      await ref.read(forumRepositoryProvider).createPost(
+      await ref
+          .read(forumRepositoryProvider)
+          .createPost(
             topicId: widget.topicId,
             authorMemberId: memberId,
             // Wrap as a paragraph so it renders consistently with web HTML.
@@ -93,19 +96,19 @@ class _ForumThreadPageState extends ConsumerState<ForumThreadPage> {
     final async = ref.watch(forumPostsProvider(widget.topicId));
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.topicTitle ?? 'forum.discussion'.tr()),
-      ),
+      appBar: AppBar(title: Text(widget.topicTitle ?? 'forum.discussion'.tr())),
       body: Column(
         children: [
           Expanded(
             child: async.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (_, __) => ErrorView(
-                message: 'forum.load_comments_failed'.tr(),
-                onRetry: () =>
-                    ref.invalidate(forumPostsProvider(widget.topicId)),
-              ),
+              error:
+                  (_, __) => ErrorView(
+                    message: 'forum.load_comments_failed'.tr(),
+                    onRetry:
+                        () =>
+                            ref.invalidate(forumPostsProvider(widget.topicId)),
+                  ),
               data: (posts) {
                 final openingPost = posts.isNotEmpty ? posts.first : null;
                 final replies =
@@ -150,11 +153,7 @@ class _ForumThreadPageState extends ConsumerState<ForumThreadPage> {
               },
             ),
           ),
-          _Composer(
-            controller: _commentCtl,
-            sending: _sending,
-            onSend: _send,
-          ),
+          _Composer(controller: _commentCtl, sending: _sending, onSend: _send),
         ],
       ),
     );
@@ -360,6 +359,7 @@ class _PostCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -511,16 +511,17 @@ class _Composer extends StatelessWidget {
             const SizedBox(width: 8),
             sending
                 ? const Padding(
-                    padding: EdgeInsets.all(8),
-                    child: SizedBox(
-                        height: 22,
-                        width: 22,
-                        child: CircularProgressIndicator(strokeWidth: 2)),
-                  )
-                : IconButton.filled(
-                    onPressed: onSend,
-                    icon: const Icon(Icons.send),
+                  padding: EdgeInsets.all(8),
+                  child: SizedBox(
+                    height: 22,
+                    width: 22,
+                    child: CircularProgressIndicator(strokeWidth: 2),
                   ),
+                )
+                : IconButton.filled(
+                  onPressed: onSend,
+                  icon: const Icon(Icons.send),
+                ),
           ],
         ),
       ),

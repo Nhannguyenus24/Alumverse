@@ -9,8 +9,7 @@ import com.service.backend.shared.entity.MentorExpertise;
 import com.service.backend.shared.entity.MentorProfile;
 import com.service.backend.shared.entity.MentorshipSession;
 import com.service.backend.shared.dao.UserDisplayInfo;
-import com.service.backend.shared.dao.UserDisplayInfoRepository;
-import org.springframework.r2dbc.core.DatabaseClient;
+import com.service.backend.user.dao.UserProfileRepository;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.shared.enums.ErrorCode;
@@ -40,21 +39,9 @@ public class MentorService {
     private final MentorAvailabilityR2dbcRepository availabilityRepository;
     private final MentorshipSessionR2dbcRepository sessionRepository;
     private final SessionFeedbackR2dbcRepository feedbackRepository;
-    private final UserDisplayInfoRepository userDisplayInfoRepository;
-    private final DatabaseClient databaseClient;
+    private final UserProfileRepository userProfileRepository;
     private final MentorshipAccessService accessService;
     private final NotificationService notificationService;
-
-    private Mono<Void> updateUserAvatar(Integer userId, String avatarUrl) {
-        if (userId == null || avatarUrl == null || avatarUrl.isBlank()) return Mono.empty();
-        return databaseClient
-                .sql("UPDATE users SET avatar_url = :url WHERE id = :id")
-                .bind("url", avatarUrl)
-                .bind("id", userId)
-                .fetch()
-                .rowsUpdated()
-                .then();
-    }
 
     private Mono<Integer> currentMemberId() {
         return SecurityUtils.getCurrentUserId().map(Long::intValue);
@@ -96,7 +83,7 @@ public class MentorService {
             if (r.getMenteeMemberId() != null) ids.add(r.getMenteeMemberId());
         }
         if (ids.isEmpty()) return Mono.just(list);
-        return userDisplayInfoRepository.findByUserIds(ids)
+        return userProfileRepository.findByUserIds(ids)
                 .map(map -> {
                     for (MentorshipSessionResponse r : list) {
                         UserDisplayInfo m = r.getMentorMemberId() != null ? map.get(r.getMentorMemberId()) : null;
@@ -116,7 +103,7 @@ public class MentorService {
 
     private Mono<MentorProfileResponse> attachProfileDisplay(MentorProfileResponse single) {
         if (single.getMemberId() == null) return Mono.just(single);
-        Mono<MentorProfileResponse> displayMono = userDisplayInfoRepository.findByUserId(single.getMemberId())
+        Mono<MentorProfileResponse> displayMono = userProfileRepository.findDisplayInfoByUserId(single.getMemberId())
                 .map(info -> single.withDisplay(info.getFullName(), info.getAvatarUrl()))
                 .defaultIfEmpty(single);
         Mono<List<String>> topicsMono = expertiseRepository.findByMentorMemberId(single.getMemberId())
@@ -169,7 +156,7 @@ public class MentorService {
                             }
                             existing.setUpdatedAt(LocalDateTime.now());
                             existing.setNew(false);
-                            return updateUserAvatar(memberId, request.getAvatarUrl())
+                            return userProfileRepository.updateUserAvatar(memberId, request.getAvatarUrl())
                                     .then(profileRepository.save(existing));
                         })
                         .switchIfEmpty(Mono.defer(() -> {
@@ -188,7 +175,7 @@ public class MentorService {
                                     .createdAt(LocalDateTime.now())
                                     .updatedAt(LocalDateTime.now())
                                     .build();
-                            return updateUserAvatar(memberId, request.getAvatarUrl())
+                            return userProfileRepository.updateUserAvatar(memberId, request.getAvatarUrl())
                                     .then(profileRepository.save(profile));
                         }))
                         .map(MentorProfileResponse::from)
@@ -208,7 +195,7 @@ public class MentorService {
                             if (request.getBookingWindowSettings() != null) existing.setBookingWindowSettings(request.getBookingWindowSettings());
                             if (request.getExtendedProfile() != null) existing.setExtendedProfile(request.getExtendedProfile());
                             existing.setNew(false);
-                            return updateUserAvatar(memberId, request.getAvatarUrl())
+                            return userProfileRepository.updateUserAvatar(memberId, request.getAvatarUrl())
                                     .then(profileRepository.save(existing));
                         })
                         .map(MentorProfileResponse::from)

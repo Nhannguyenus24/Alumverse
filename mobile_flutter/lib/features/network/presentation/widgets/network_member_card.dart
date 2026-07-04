@@ -44,10 +44,14 @@ class NetworkMemberCard extends StatelessWidget {
               backgroundColor: AppColors.primaryLighter,
               backgroundImage:
                   avatar != null ? CachedNetworkImageProvider(avatar) : null,
-              child: avatar == null
-                  ? const Icon(Icons.person,
-                      size: 28, color: AppColors.primary)
-                  : null,
+              child:
+                  avatar == null
+                      ? const Icon(
+                        Icons.person,
+                        size: 28,
+                        color: AppColors.primary,
+                      )
+                      : null,
             ),
           ),
           const SizedBox(width: 12),

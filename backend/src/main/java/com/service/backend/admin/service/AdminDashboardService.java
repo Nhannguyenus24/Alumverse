@@ -1,7 +1,7 @@
 package com.service.backend.admin.service;
 
-import com.service.backend.admin.dao.AdminEventRepository;
-import com.service.backend.admin.dao.AdminOrganizationRepository;
+import com.service.backend.organization.dao.OrganizationRepository;
+import com.service.backend.event.dao.EventR2dbcRepository;
 import com.service.backend.admin.dao.AdminAuditLogRepository;
 import com.service.backend.admin.dao.AdminUserRepository;
 import com.service.backend.admin.dao.AuditRepository;
@@ -33,8 +33,8 @@ public class AdminDashboardService {
     private static final Logger log = LoggerFactory.getLogger(AdminDashboardService.class);
 
     private final AdminUserRepository adminUserRepository;
-    private final AdminOrganizationRepository adminOrganizationRepository;
-    private final AdminEventRepository adminEventRepository;
+    private final OrganizationRepository organizationRepository;
+    private final EventR2dbcRepository eventRepo;
     private final FundDonationsR2dbcRepository fundDonationsRepository;
     private final AdminAuditLogRepository adminAuditLogRepository;
     private final AuditRepository auditRepository;
@@ -43,11 +43,11 @@ public class AdminDashboardService {
     public Mono<DashboardMetricsDTO> getMetrics() {
         Supplier<Mono<DashboardMetricsDTO>> supplier = () -> {
             Mono<Long> totalUsersMono = adminUserRepository.countAllUsers();
-            Mono<Long> totalOrgsMono = adminOrganizationRepository.count();
+            Mono<Long> totalOrgsMono = organizationRepository.count();
             Mono<Long> pendingVerifMono = adminUserRepository.countPendingVerificationRequests(null);
-            Mono<Long> totalEventsMono = adminEventRepository.countAllEvents();
-            Mono<Long> upcomingEventsMono = adminEventRepository.countUpcomingEvents(LocalDateTime.now());
-            Mono<Long> ticketsSoldMono = adminEventRepository.countAllTickets();
+            Mono<Long> totalEventsMono = eventRepo.countAllEvents();
+            Mono<Long> upcomingEventsMono = eventRepo.countUpcomingEvents(LocalDateTime.now());
+            Mono<Long> ticketsSoldMono = eventRepo.countAllTickets();
             Mono<Long> totalDonationsMono = fundDonationsRepository.countAll();
             LocalDateTime end = LocalDateTime.now();
             LocalDateTime start30 = end.minusDays(30);

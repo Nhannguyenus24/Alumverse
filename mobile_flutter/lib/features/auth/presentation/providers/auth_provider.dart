@@ -18,8 +18,9 @@ class AuthState {
   static const AuthState signedOut = AuthState();
 }
 
-final authStateProvider =
-    AsyncNotifierProvider<AuthNotifier, AuthState>(AuthNotifier.new);
+final authStateProvider = AsyncNotifierProvider<AuthNotifier, AuthState>(
+  AuthNotifier.new,
+);
 
 /// Roles allowed to run event check-in (mirrors the web admin gate, which
 /// admits ADMIN/MODERATOR; STAFF is included for on-site organizers).
@@ -28,12 +29,8 @@ const _checkInRoles = {'ADMIN', 'MODERATOR', 'STAFF'};
 /// True when the signed-in user may access admin-only tools (event check-in).
 /// Derived from the JWT `role` claim exposed on [AuthUser].
 final isStaffProvider = Provider<bool>((ref) {
-  final role = ref
-      .watch(authStateProvider)
-      .valueOrNull
-      ?.user
-      ?.role
-      ?.toUpperCase();
+  final role =
+      ref.watch(authStateProvider).valueOrNull?.user?.role?.toUpperCase();
   return role != null && _checkInRoles.contains(role);
 });
 

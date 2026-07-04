@@ -2,7 +2,7 @@ package com.service.backend.mentorship.service;
 
 import com.service.backend.mentorship.dao.*;
 import com.service.backend.mentorship.dto.*;
-import com.service.backend.shared.dao.UserDisplayInfoRepository;
+import com.service.backend.user.dao.UserProfileRepository;
 import com.service.backend.shared.entity.*;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.enums.Status;
@@ -40,7 +40,7 @@ class MentorServiceTest {
     @Mock private MentorAvailabilityR2dbcRepository availabilityRepository;
     @Mock private MentorshipSessionR2dbcRepository sessionRepository;
     @Mock private SessionFeedbackR2dbcRepository feedbackRepository;
-    @Mock private UserDisplayInfoRepository userDisplayInfoRepository;
+    @Mock private UserProfileRepository userProfileRepository;
     @Mock private DatabaseClient databaseClient;
     @Mock private MentorshipAccessService accessService;
     @Mock private NotificationService notificationService;

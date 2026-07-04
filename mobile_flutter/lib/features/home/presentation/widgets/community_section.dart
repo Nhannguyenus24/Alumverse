@@ -73,9 +73,14 @@ class _MemberCard extends StatelessWidget {
               backgroundColor: AppColors.primaryLighter,
               backgroundImage:
                   avatar != null ? CachedNetworkImageProvider(avatar) : null,
-              child: avatar == null
-                  ? const Icon(Icons.person, size: 36, color: AppColors.primary)
-                  : null,
+              child:
+                  avatar == null
+                      ? const Icon(
+                        Icons.person,
+                        size: 36,
+                        color: AppColors.primary,
+                      )
+                      : null,
             ),
             const SizedBox(height: 10),
             Text(

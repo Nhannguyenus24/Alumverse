@@ -38,10 +38,14 @@ class BlockedMemberCard extends StatelessWidget {
             backgroundColor: AppColors.primaryLighter,
             backgroundImage:
                 avatar != null ? CachedNetworkImageProvider(avatar) : null,
-            child: avatar == null
-                ? const Icon(Icons.person,
-                    size: 26, color: AppColors.primary)
-                : null,
+            child:
+                avatar == null
+                    ? const Icon(
+                      Icons.person,
+                      size: 26,
+                      color: AppColors.primary,
+                    )
+                    : null,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -59,20 +63,23 @@ class BlockedMemberCard extends StatelessWidget {
           const SizedBox(width: 8),
           isLoading
               ? const SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(strokeWidth: 2))
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
               : OutlinedButton(
-                  onPressed: onUnblock,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.primary,
-                    side: const BorderSide(color: AppColors.primary),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 6),
-                    textStyle: const TextStyle(fontSize: 13),
+                onPressed: onUnblock,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: const BorderSide(color: AppColors.primary),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
                   ),
-                  child: Text('network.unblock'.tr()),
+                  textStyle: const TextStyle(fontSize: 13),
                 ),
+                child: Text('network.unblock'.tr()),
+              ),
         ],
       ),
     );

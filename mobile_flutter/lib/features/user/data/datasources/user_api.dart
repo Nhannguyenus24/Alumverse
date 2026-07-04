@@ -48,12 +48,15 @@ class UserApi {
     String? gender,
     String? bio,
   }) {
-    return _dio.put(ApiEndpoints.meProfile, data: {
-      'organizationId': organizationId,
-      if (phone != null) 'phone': phone,
-      if (gender != null) 'gender': gender,
-      if (bio != null) 'bio': bio,
-    });
+    return _dio.put(
+      ApiEndpoints.meProfile,
+      data: {
+        'organizationId': organizationId,
+        if (phone != null) 'phone': phone,
+        if (gender != null) 'gender': gender,
+        if (bio != null) 'bio': bio,
+      },
+    );
   }
 
   /// Upload a base64 image (may include the `data:image/...;base64,` header)
@@ -78,7 +81,10 @@ class UserApi {
   }
 
   Future<void> updateNotificationSettings(NotificationSettings settings) {
-    return _dio.put(ApiEndpoints.meNotificationSettings, data: settings.toJson());
+    return _dio.put(
+      ApiEndpoints.meNotificationSettings,
+      data: settings.toJson(),
+    );
   }
 
   Future<List<NotificationItem>> getNotifications() async {

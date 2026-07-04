@@ -45,10 +45,11 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await EasyLocalization.ensureInitialized();
 
-  final (cookieJar, loader) = await (
-    _createCookieJar(),
-    _PreloadedAssetLoader.preload('assets/translations', _supportedLocales),
-  ).wait;
+  final (cookieJar, loader) =
+      await (
+        _createCookieJar(),
+        _PreloadedAssetLoader.preload('assets/translations', _supportedLocales),
+      ).wait;
 
   runApp(
     EasyLocalization(

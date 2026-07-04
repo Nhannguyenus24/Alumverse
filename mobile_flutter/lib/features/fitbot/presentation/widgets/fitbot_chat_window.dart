@@ -110,15 +110,16 @@ class _FitBotChatWindowState extends ConsumerState<FitBotChatWindow> {
             child: Text(
               'HCMUS Assistant',
               style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 16),
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 16,
+              ),
             ),
           ),
           IconButton(
             tooltip: 'fitbot.clear_conversation'.tr(),
-            onPressed: () =>
-                ref.read(fitBotControllerProvider.notifier).clear(),
+            onPressed:
+                () => ref.read(fitBotControllerProvider.notifier).clear(),
             icon: const Icon(Icons.delete_outline, color: Colors.white70),
             visualDensity: VisualDensity.compact,
           ),
@@ -152,7 +153,9 @@ class _FitBotChatWindowState extends ConsumerState<FitBotChatWindow> {
                   hintText: 'fitbot.input_hint'.tr(),
                   isDense: true,
                   contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 12),
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   filled: true,
                   fillColor: AppColors.background,
                   border: OutlineInputBorder(
@@ -202,16 +205,20 @@ class _Bubble extends StatelessWidget {
             bottomRight: Radius.circular(isBot ? 16 : 4),
           ),
         ),
-        child: isBot
-            ? HtmlWidget(
-                fitBotMarkdownToHtml(message.text),
-                textStyle: const TextStyle(
-                    color: AppColors.textPrimary, fontSize: 14, height: 1.45),
-              )
-            : Text(
-                message.text,
-                style: const TextStyle(color: Colors.white, fontSize: 14),
-              ),
+        child:
+            isBot
+                ? HtmlWidget(
+                  fitBotMarkdownToHtml(message.text),
+                  textStyle: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 14,
+                    height: 1.45,
+                  ),
+                )
+                : Text(
+                  message.text,
+                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                ),
       ),
     );
   }
@@ -226,9 +233,10 @@ class _TypingIndicator extends StatefulWidget {
 
 class _TypingIndicatorState extends State<_TypingIndicator>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _c =
-      AnimationController(vsync: this, duration: const Duration(milliseconds: 1200))
-        ..repeat();
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1200),
+  )..repeat();
 
   @override
   void dispose() {
@@ -260,7 +268,9 @@ class _TypingIndicatorState extends State<_TypingIndicator>
                   child: Transform.translate(
                     offset: Offset(0, dy),
                     child: const CircleAvatar(
-                        radius: 4, backgroundColor: AppColors.primary),
+                      radius: 4,
+                      backgroundColor: AppColors.primary,
+                    ),
                   ),
                 );
               }),

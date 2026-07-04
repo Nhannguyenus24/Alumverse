@@ -24,33 +24,36 @@ class _NetworkRequestsTabState extends ConsumerState<NetworkRequestsTab> {
 
   Future<void> _respond(int id, String status, String name) async {
     final isAccepted = status == 'ACCEPTED';
-    final title = isAccepted
-        ? 'network.accept_request_title'.tr()
-        : 'network.reject_request_title'.tr();
-    final content = isAccepted
-        ? 'network.confirm_accept_request'.tr(namedArgs: {'name': name})
-        : 'network.confirm_reject_request'.tr(namedArgs: {'name': name});
+    final title =
+        isAccepted
+            ? 'network.accept_request_title'.tr()
+            : 'network.reject_request_title'.tr();
+    final content =
+        isAccepted
+            ? 'network.confirm_accept_request'.tr(namedArgs: {'name': name})
+            : 'network.confirm_reject_request'.tr(namedArgs: {'name': name});
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(title),
-        content: Text(content),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: Text('common.cancel'.tr())),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(
-              isAccepted ? 'network.accept'.tr() : 'network.reject'.tr(),
-              style: TextStyle(
-                  color: isAccepted
-                      ? AppColors.primary
-                      : AppColors.error),
-            ),
+      builder:
+          (ctx) => AlertDialog(
+            title: Text(title),
+            content: Text(content),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text('common.cancel'.tr()),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: Text(
+                  isAccepted ? 'network.accept'.tr() : 'network.reject'.tr(),
+                  style: TextStyle(
+                    color: isAccepted ? AppColors.primary : AppColors.error,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
     );
     if (confirm != true) return;
 
@@ -63,10 +66,11 @@ class _NetworkRequestsTabState extends ConsumerState<NetworkRequestsTab> {
       if (status == 'ACCEPTED') ref.invalidate(networkConnectionsProvider);
       if (mounted) {
         AppToast.success(
-            context,
-            isAccepted
-                ? 'network.accepted_toast'.tr()
-                : 'network.rejected_toast'.tr());
+          context,
+          isAccepted
+              ? 'network.accepted_toast'.tr()
+              : 'network.rejected_toast'.tr(),
+        );
       }
     } catch (e) {
       if (mounted) AppToast.fromError(context, e);
@@ -85,9 +89,10 @@ class _NetworkRequestsTabState extends ConsumerState<NetworkRequestsTab> {
         NetworkSearchBar(
           hintText: 'network.search_requests_hint'.tr(),
           initialValue: query.fullName,
-          onSubmit: (v) => ref
-              .read(networkRequestsQueryProvider.notifier)
-              .state = query.copyWith(fullName: v).resetPage(),
+          onSubmit:
+              (v) =>
+                  ref.read(networkRequestsQueryProvider.notifier).state =
+                      query.copyWith(fullName: v).resetPage(),
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -96,55 +101,60 @@ class _NetworkRequestsTabState extends ConsumerState<NetworkRequestsTab> {
               _FilterChip(
                 label: 'common.all'.tr(),
                 selected: query.status == null,
-                onTap: () => ref
-                    .read(networkRequestsQueryProvider.notifier)
-                    .state = query.copyWith(clearStatus: true).resetPage(),
+                onTap:
+                    () =>
+                        ref.read(networkRequestsQueryProvider.notifier).state =
+                            query.copyWith(clearStatus: true).resetPage(),
               ),
               const SizedBox(width: 8),
               _FilterChip(
                 label: 'network.pending_request'.tr(),
                 selected: query.status == 'PENDING',
-                onTap: () => ref
-                    .read(networkRequestsQueryProvider.notifier)
-                    .state =
-                    query.copyWith(status: 'PENDING').resetPage(),
+                onTap:
+                    () =>
+                        ref.read(networkRequestsQueryProvider.notifier).state =
+                            query.copyWith(status: 'PENDING').resetPage(),
               ),
               const SizedBox(width: 8),
               _FilterChip(
                 label: 'network.filter_rejected'.tr(),
                 selected: query.status == 'REJECTED',
-                onTap: () => ref
-                    .read(networkRequestsQueryProvider.notifier)
-                    .state =
-                    query.copyWith(status: 'REJECTED').resetPage(),
+                onTap:
+                    () =>
+                        ref.read(networkRequestsQueryProvider.notifier).state =
+                            query.copyWith(status: 'REJECTED').resetPage(),
               ),
             ],
           ),
         ),
         Expanded(
           child: async.when(
-            loading: () =>
-                const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.error_outline,
-                      color: AppColors.error, size: 40),
-                  const SizedBox(height: 8),
-                  Text('$e',
-                      style: const TextStyle(
-                          color: AppColors.textSecondary),
-                      textAlign: TextAlign.center),
-                  const SizedBox(height: 12),
-                  ElevatedButton(
-                    onPressed: () =>
-                        ref.invalidate(networkRequestsProvider),
-                    child: Text('common.retry'.tr()),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error:
+                (e, _) => Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        color: AppColors.error,
+                        size: 40,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '$e',
+                        style: const TextStyle(color: AppColors.textSecondary),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 12),
+                      ElevatedButton(
+                        onPressed:
+                            () => ref.invalidate(networkRequestsProvider),
+                        child: Text('common.retry'.tr()),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
+                ),
             data: (result) {
               if (result.items.isEmpty) {
                 return EmptyView(
@@ -154,8 +164,7 @@ class _NetworkRequestsTabState extends ConsumerState<NetworkRequestsTab> {
                 );
               }
               return RefreshIndicator(
-                onRefresh: () async =>
-                    ref.invalidate(networkRequestsProvider),
+                onRefresh: () async => ref.invalidate(networkRequestsProvider),
                 child: ListView.builder(
                   padding: const EdgeInsets.only(bottom: 16),
                   itemCount: result.items.length + 1,
@@ -164,26 +173,34 @@ class _NetworkRequestsTabState extends ConsumerState<NetworkRequestsTab> {
                       return _PaginationBar(
                         page: query.page,
                         totalPage: result.totalPage,
-                        onPrev: () => ref
-                            .read(networkRequestsQueryProvider.notifier)
-                            .state =
-                            query.copyWith(page: query.page - 1),
-                        onNext: () => ref
-                            .read(networkRequestsQueryProvider.notifier)
-                            .state =
-                            query.copyWith(page: query.page + 1),
+                        onPrev:
+                            () =>
+                                ref
+                                    .read(networkRequestsQueryProvider.notifier)
+                                    .state = query.copyWith(
+                                  page: query.page - 1,
+                                ),
+                        onNext:
+                            () =>
+                                ref
+                                    .read(networkRequestsQueryProvider.notifier)
+                                    .state = query.copyWith(
+                                  page: query.page + 1,
+                                ),
                       );
                     }
                     final req = result.items[i];
                     return ConversationRequestCard(
                       request: req,
                       isLoading: _loadingIds.contains(req.id),
-                      onAccept: () =>
-                          _respond(req.id, 'ACCEPTED', req.fullName),
-                      onReject: () =>
-                          _respond(req.id, 'REJECTED', req.fullName),
-                      onViewProfile: () => context
-                          .push('${RouteNames.profile}/${req.requesterMemberId}'),
+                      onAccept:
+                          () => _respond(req.id, 'ACCEPTED', req.fullName),
+                      onReject:
+                          () => _respond(req.id, 'REJECTED', req.fullName),
+                      onViewProfile:
+                          () => context.push(
+                            '${RouteNames.profile}/${req.requesterMemberId}',
+                          ),
                     );
                   },
                 ),
@@ -212,12 +229,9 @@ class _FilterChip extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: selected
-              ? AppColors.primary
-              : AppColors.background,
+          color: selected ? AppColors.primary : AppColors.background,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: selected ? AppColors.primary : AppColors.divider,
@@ -262,10 +276,12 @@ class _PaginationBar extends StatelessWidget {
             icon: const Icon(Icons.chevron_left),
           ),
           Text(
-            'common.page_indicator'.tr(namedArgs: {
-              'current': (page + 1).toString(),
-              'total': totalPage.toString(),
-            }),
+            'common.page_indicator'.tr(
+              namedArgs: {
+                'current': (page + 1).toString(),
+                'total': totalPage.toString(),
+              },
+            ),
             style: const TextStyle(color: AppColors.textSecondary),
           ),
           IconButton(
