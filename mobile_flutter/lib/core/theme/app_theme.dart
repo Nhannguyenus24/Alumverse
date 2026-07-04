@@ -7,8 +7,11 @@ import 'app_spacing.dart';
 class AppTheme {
   AppTheme._();
 
+  static String? get _fontFamily => GoogleFonts.nunito().fontFamily;
+
   static ThemeData get light => ThemeData(
         useMaterial3: true,
+        fontFamily: _fontFamily,
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppColors.primary,
           brightness: Brightness.light,
@@ -19,14 +22,15 @@ class AppTheme {
           surface: AppColors.surface,
         ),
         scaffoldBackgroundColor: AppColors.background,
-        textTheme: GoogleFonts.robotoTextTheme(),
-        appBarTheme: const AppBarTheme(
+        textTheme: GoogleFonts.nunitoTextTheme(),
+        primaryTextTheme: GoogleFonts.nunitoTextTheme(),
+        appBarTheme: AppBarTheme(
           centerTitle: false,
           elevation: 0,
           scrolledUnderElevation: 0.5,
           backgroundColor: AppColors.surface,
           foregroundColor: AppColors.textPrimary,
-          titleTextStyle: TextStyle(
+          titleTextStyle: GoogleFonts.nunito(
             color: AppColors.textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.w700,
@@ -69,7 +73,7 @@ class AppTheme {
               borderRadius: BorderRadius.circular(AppRadius.sm),
             ),
             textStyle:
-                const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                GoogleFonts.nunito(fontSize: 16, fontWeight: FontWeight.w600),
           ),
         ),
         outlinedButtonTheme: OutlinedButtonThemeData(
@@ -80,6 +84,14 @@ class AppTheme {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppRadius.sm),
             ),
+            textStyle:
+                GoogleFonts.nunito(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+        ),
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(
+            textStyle:
+                GoogleFonts.nunito(fontSize: 14, fontWeight: FontWeight.w600),
           ),
         ),
         snackBarTheme: SnackBarThemeData(
@@ -104,10 +116,19 @@ class AppTheme {
 
   static ThemeData get dark => ThemeData(
         useMaterial3: true,
+        fontFamily: _fontFamily,
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppColors.primary,
           brightness: Brightness.dark,
         ),
-        textTheme: GoogleFonts.robotoTextTheme(ThemeData.dark().textTheme),
+        textTheme: GoogleFonts.nunitoTextTheme(ThemeData.dark().textTheme),
+        primaryTextTheme:
+            GoogleFonts.nunitoTextTheme(ThemeData.dark().primaryTextTheme),
+        appBarTheme: AppBarTheme(
+          titleTextStyle: GoogleFonts.nunito(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
       );
 }

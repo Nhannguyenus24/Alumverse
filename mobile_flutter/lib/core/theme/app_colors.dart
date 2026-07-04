@@ -27,6 +27,6 @@ class AppColors {
   static const Color textPrimary = Color(0xFF212B36); // GREY[800]
   static const Color textSecondary = Color(0xFF637381); // GREY[600]
   static const Color divider = Color(0xFFDFE3E8); // GREY[300]
-  static const Color background = Color(0xFFF4F6F8); // GREY[200]
   static const Color surface = Colors.white;
+  static const Color background = surface;
 }

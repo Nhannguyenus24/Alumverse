@@ -357,7 +357,7 @@ class _MeetingLinkRow extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
         decoration: BoxDecoration(
-          color: AppColors.primary.withValues(alpha: 0.08),
+          color: AppColors.primaryLighter,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(

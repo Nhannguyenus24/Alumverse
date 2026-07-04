@@ -70,7 +70,7 @@ class _OrganizationSelectPageState
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Center(child: AlumverseLogo(size: 80)),
+              const Center(child: AlumverseLogo(size: 68)),
               const SizedBox(height: 48),
               Text(
                 'organization.select'.tr(),

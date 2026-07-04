@@ -66,8 +66,8 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Center(child: AlumverseLogo(size: 80)),
-                const SizedBox(height: 48),
+                const Center(child: AlumverseLogo(size: 72, full: false)),
+                const SizedBox(height: 32),
                 Text(
                   'auth.forgot_password_title'.tr(),
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(

@@ -142,7 +142,7 @@ class _PreviewTile extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 22,
-              backgroundColor: AppColors.primary.withValues(alpha: 0.12),
+              backgroundColor: AppColors.primaryLighter,
               backgroundImage:
                   avatarUrl != null ? CachedNetworkImageProvider(avatarUrl) : null,
               child: avatarUrl == null

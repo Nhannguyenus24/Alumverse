@@ -146,7 +146,7 @@ class _SavedCard extends ConsumerWidget {
   }
 
   Widget _placeholder() => Container(
-        color: AppColors.primary.withValues(alpha: 0.08),
+        color: AppColors.primaryLighter,
         child: const Icon(Icons.article_outlined, color: AppColors.primary),
       );
 }
