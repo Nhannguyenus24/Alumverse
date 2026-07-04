@@ -299,12 +299,12 @@ class _Avatar extends StatelessWidget {
       return CircleAvatar(
         radius: 20,
         backgroundImage: CachedNetworkImageProvider(resolved),
-        backgroundColor: AppColors.background,
+        backgroundColor: AppColors.primaryLighter,
       );
     }
     return CircleAvatar(
       radius: 20,
-      backgroundColor: AppColors.primaryLight,
+      backgroundColor: AppColors.primaryLighter,
       child: Text(
         name.isNotEmpty ? name[0].toUpperCase() : '?',
         style: const TextStyle(

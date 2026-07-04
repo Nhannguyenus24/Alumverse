@@ -70,7 +70,7 @@ class _MemberCard extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 32,
-              backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+              backgroundColor: AppColors.primaryLighter,
               backgroundImage:
                   avatar != null ? CachedNetworkImageProvider(avatar) : null,
               child:
@@ -87,7 +87,7 @@ class _MemberCard extends StatelessWidget {
               member.fullName,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
             ),
             if (member.subtitle.isNotEmpty) ...[
               const SizedBox(height: 2),

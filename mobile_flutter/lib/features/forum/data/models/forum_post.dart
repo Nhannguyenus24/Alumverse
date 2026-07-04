@@ -5,6 +5,7 @@ class ForumPost {
   final String content;
   final int? authorMemberId;
   final String? authorName;
+  final String? authorAvatarUrl;
   final String? role;
   final DateTime? createdAt;
   final int? answerToPostId;
@@ -17,6 +18,7 @@ class ForumPost {
     this.content = '',
     this.authorMemberId,
     this.authorName,
+    this.authorAvatarUrl,
     this.role,
     this.createdAt,
     this.answerToPostId,
@@ -30,6 +32,7 @@ class ForumPost {
     content: content,
     authorMemberId: authorMemberId,
     authorName: authorName,
+    authorAvatarUrl: authorAvatarUrl,
     role: role,
     createdAt: createdAt,
     answerToPostId: answerToPostId,
@@ -44,6 +47,7 @@ class ForumPost {
       content: json['content'] as String? ?? '',
       authorMemberId: (json['authorMemberId'] as num?)?.toInt(),
       authorName: json['authorName'] as String?,
+      authorAvatarUrl: json['authorAvatarUrl'] as String?,
       role: json['role'] as String?,
       createdAt:
           json['createdAt'] is String

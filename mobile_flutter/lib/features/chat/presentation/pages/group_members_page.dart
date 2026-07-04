@@ -423,7 +423,7 @@ class _MemberTile extends StatelessWidget {
         radius: 22,
         backgroundImage:
             resolved != null ? CachedNetworkImageProvider(resolved) : null,
-        backgroundColor: AppColors.primaryLight,
+        backgroundColor: AppColors.primaryLighter,
         child:
             resolved == null
                 ? Text(
@@ -611,7 +611,7 @@ class _AddMembersSheetState extends ConsumerState<_AddMembersSheet> {
                                 resolved != null
                                     ? CachedNetworkImageProvider(resolved)
                                     : null,
-                            backgroundColor: AppColors.primaryLight,
+                            backgroundColor: AppColors.primaryLighter,
                             child:
                                 resolved == null
                                     ? Text(

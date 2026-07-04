@@ -189,7 +189,7 @@ class MessageBubble extends StatelessWidget {
           if (showSender && !isMine) ...[
             CircleAvatar(
               radius: 14,
-              backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+              backgroundColor: AppColors.primaryLighter,
               backgroundImage:
                   avatar != null ? CachedNetworkImageProvider(avatar) : null,
               child:

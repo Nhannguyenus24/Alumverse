@@ -91,12 +91,16 @@ class _EventCard extends StatelessWidget {
                             (_, __) => Container(color: AppColors.divider),
                         errorWidget:
                             (_, __, ___) => Container(
-                              color: AppColors.divider,
-                              child: const Icon(Icons.event, size: 36),
+                              color: AppColors.primaryLighter,
+                              child: const Icon(
+                                Icons.event,
+                                size: 36,
+                                color: AppColors.primary,
+                              ),
                             ),
                       )
                       : Container(
-                        color: AppColors.primary.withValues(alpha: 0.08),
+                        color: AppColors.primaryLighter,
                         child: const Center(
                           child: Icon(
                             Icons.event,
@@ -116,7 +120,7 @@ class _EventCard extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w800,
                       fontSize: 14,
                     ),
                   ),

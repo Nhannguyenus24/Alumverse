@@ -31,7 +31,7 @@ class ConversationTile extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 26,
-              backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+              backgroundColor: AppColors.primaryLighter,
               backgroundImage:
                   avatar != null ? CachedNetworkImageProvider(avatar) : null,
               child:

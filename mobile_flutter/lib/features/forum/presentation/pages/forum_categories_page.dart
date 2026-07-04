@@ -51,7 +51,6 @@ class ForumCategoriesPage extends ConsumerWidget {
                 // Categories with no parent grouping still need to be reachable.
                 final orphanParents = parents.isEmpty ? categories : parents;
 
-                return ListView(
                   padding: const EdgeInsets.all(16),
                   children: [
                     for (final parent in orphanParents) ...[
@@ -89,9 +88,9 @@ class _ParentHeader extends StatelessWidget {
         name.toUpperCase(),
         style: const TextStyle(
           color: AppColors.primary,
-          fontWeight: FontWeight.w800,
-          fontSize: 14,
-          letterSpacing: 0.5,
+          fontWeight: FontWeight.w900,
+          fontSize: 16,
+          letterSpacing: 0.25,
         ),
       ),
     );
@@ -105,17 +104,33 @@ class _CategoryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasStats =
+        category.topicCount != null || category.participantCount != null;
+
     return Card(
-      margin: const EdgeInsets.only(bottom: 10),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      margin: const EdgeInsets.only(bottom: 12),
+      color: AppColors.surface,
+      elevation: 1.5,
+      shadowColor: Colors.black.withValues(alpha: 0.12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: const BorderSide(color: AppColors.divider),
+      ),
       child: ListTile(
-        leading: const CircleAvatar(
-          backgroundColor: Color(0x1A013F83),
-          child: Icon(Icons.forum_outlined, color: AppColors.primary),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        leading: Container(
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            color: AppColors.primaryLighter,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Icon(Icons.forum_outlined, color: AppColors.primary),
         ),
         title: Text(
           category.name,
-          style: const TextStyle(fontWeight: FontWeight.w600),
+          style: const TextStyle(fontWeight: FontWeight.w900),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -127,8 +142,7 @@ class _CategoryTile extends StatelessWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
-            if (category.topicCount != null ||
-                category.participantCount != null)
+            if (hasStats)
               Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Row(
@@ -171,7 +185,7 @@ class _CategoryTile extends StatelessWidget {
               ),
           ],
         ),
-        isThreeLine: category.topicCount != null,
+        isThreeLine: hasStats,
         trailing: const Icon(Icons.chevron_right),
         onTap:
             () => context.push(

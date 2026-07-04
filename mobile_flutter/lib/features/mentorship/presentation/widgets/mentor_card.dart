@@ -38,7 +38,7 @@ class MentorCard extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 40,
-            backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+            backgroundColor: AppColors.primaryLighter,
             backgroundImage:
                 avatar != null ? CachedNetworkImageProvider(avatar) : null,
             child:
@@ -73,7 +73,7 @@ class MentorCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.star, color: AppColors.secondary, size: 18),
+              const Icon(Icons.star, color: AppColors.warning, size: 18),
               const SizedBox(width: 4),
               Text(
                 rating,
@@ -109,8 +109,9 @@ class MentorCard extends StatelessWidget {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.primary.withValues(alpha: 0.08),
+                            color: AppColors.primaryLighter,
                             borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: AppColors.primaryLight),
                           ),
                           child: Text(
                             t,
@@ -128,18 +129,16 @@ class MentorCard extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                flex: 3,
                 child: OutlinedButton(
                   onPressed: onViewProfile,
-                  child: Text('mentorship.view_profile'.tr()),
+                  child: Text('mentorship.personal_page'.tr()),
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
-                flex: 2,
                 child: ElevatedButton(
                   onPressed: onBook,
-                  child: Text('mentorship.book_session'.tr()),
+                  child: Text('mentorship.book_appointment'.tr()),
                 ),
               ),
             ],

@@ -84,7 +84,7 @@ class _ProfileView extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 48,
-                backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                backgroundColor: AppColors.primaryLighter,
                 backgroundImage:
                     avatar != null ? CachedNetworkImageProvider(avatar) : null,
                 child:

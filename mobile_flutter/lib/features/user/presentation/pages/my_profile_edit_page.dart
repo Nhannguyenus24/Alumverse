@@ -279,7 +279,7 @@ class _EditFormState extends ConsumerState<_EditForm> {
       children: [
         CircleAvatar(
           radius: 48,
-          backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+          backgroundColor: AppColors.primaryLighter,
           backgroundImage: url != null ? CachedNetworkImageProvider(url) : null,
           child:
               url == null

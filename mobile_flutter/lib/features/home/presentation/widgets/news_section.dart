@@ -111,7 +111,7 @@ class _NewsCard extends StatelessWidget {
                       style: const TextStyle(
                         color: AppColors.primary,
                         fontSize: 11,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w900,
                         letterSpacing: 0.5,
                       ),
                     ),
@@ -123,7 +123,7 @@ class _NewsCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontSize: 15.5,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
                   if (snippet.isNotEmpty) ...[
@@ -175,11 +175,11 @@ class _ImageFallback extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: AppColors.divider,
+      color: AppColors.primaryLighter,
       child: const Center(
-        child: Icon(
+        child: const Icon(
           Icons.image_outlined,
-          color: AppColors.textSecondary,
+          color: AppColors.primary,
           size: 40,
         ),
       ),

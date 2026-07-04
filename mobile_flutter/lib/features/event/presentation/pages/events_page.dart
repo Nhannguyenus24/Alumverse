@@ -67,7 +67,8 @@ class EventsPage extends ConsumerWidget {
                       Text(
                         'event.title_upper'.tr(),
                         style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w800,
+                          fontSize: 30,
+                          fontWeight: FontWeight.w900,
                           color: AppColors.primary,
                         ),
                       ),
@@ -148,7 +149,7 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
     );
   }
 }
@@ -165,7 +166,7 @@ class _EventGrid extends StatelessWidget {
         crossAxisCount: 2,
         mainAxisSpacing: 12,
         crossAxisSpacing: 12,
-        childAspectRatio: 0.72,
+        childAspectRatio: 0.82,
       ),
       delegate: SliverChildBuilderDelegate(
         (_, i) => _EventCard(event: events[i]),
@@ -216,7 +217,7 @@ class _EventCard extends StatelessWidget {
             ),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(8),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -225,16 +226,16 @@ class _EventCard extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w800,
                         fontSize: 13.5,
                       ),
                     ),
-                    const Spacer(),
+                    const SizedBox(height: 6),
                     if (date != null)
                       _IconLine(icon: Icons.schedule, text: date),
                     if (event.location != null && event.location!.isNotEmpty)
                       Padding(
-                        padding: const EdgeInsets.only(top: 3),
+                        padding: const EdgeInsets.only(top: 2),
                         child: _IconLine(
                           icon: Icons.place_outlined,
                           text: event.location!,
@@ -331,7 +332,7 @@ class _EventFallback extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: AppColors.primary.withValues(alpha: 0.08),
+      color: AppColors.primaryLighter,
       child: const Center(
         child: Icon(Icons.event, size: 40, color: AppColors.primary),
       ),

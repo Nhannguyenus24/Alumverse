@@ -73,7 +73,7 @@ class MainScaffold extends StatelessWidget {
       bottomNavigationBar: NavigationBarTheme(
         data: NavigationBarThemeData(
           backgroundColor: AppColors.surface,
-          indicatorColor: AppColors.primary.withValues(alpha: 0.12),
+          indicatorColor: Colors.transparent,
           labelTextStyle: WidgetStateProperty.resolveWith((states) {
             final selected =
                 _hasSelectedTab && states.contains(WidgetState.selected);
@@ -96,10 +96,7 @@ class MainScaffold extends StatelessWidget {
           // NavigationBar requires a valid index; when no tab is current
           // (e.g. profile) fall back to 0 but suppress the highlight below.
           selectedIndex: _hasSelectedTab ? currentIndex : 0,
-          indicatorColor:
-              _hasSelectedTab
-                  ? AppColors.primary.withValues(alpha: 0.12)
-                  : Colors.transparent,
+          indicatorColor: Colors.transparent,
           onDestinationSelected: (i) => _onTap(context, i),
           labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
           destinations: [

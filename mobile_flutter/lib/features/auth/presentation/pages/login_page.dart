@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/errors/api_exception.dart';
 import '../../../../core/router/route_names.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../shared/widgets/app_toast.dart';
 import '../../../../shared/widgets/blur_validated_field.dart';
@@ -88,7 +89,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Center(child: AlumverseLogo(size: 80)),
+                const Center(
+                  child: AlumverseLogo(size: 72, full: false),
+                ),
                 const SizedBox(height: 32),
                 Text(
                   'auth.login'.tr(),
@@ -210,6 +213,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     Text('auth.no_account'.tr()),
                     TextButton(
                       onPressed: () => context.push(RouteNames.register),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.only(left: 4),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
                       child: Text(
                         'auth.register_now'.tr(),
                         style: const TextStyle(fontWeight: FontWeight.bold),
@@ -217,14 +225,25 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                TextButton(
+                const SizedBox(height: 14),
+                OutlinedButton.icon(
                   onPressed: () {
                     ref.read(organizationStateProvider.notifier).reset();
                   },
-                  child: Text(
+                  icon: const Icon(Icons.apartment_rounded, size: 18),
+                  label: Text(
                     'auth.change_organization'.tr(),
-                    style: const TextStyle(color: Colors.grey),
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppColors.divider),
+                    shape: const StadiumBorder(),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                 ),
               ],

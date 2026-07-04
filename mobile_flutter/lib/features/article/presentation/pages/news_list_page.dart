@@ -216,6 +216,7 @@ class _NewsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final thumb = resolveImageUrl(article.thumbnailUrl);
+    final snippet = HtmlUtils.toPlainText(article.content);
     final date =
         article.publishedAt != null
             ? DateFormat('dd/MM/yyyy').format(article.publishedAt!)
@@ -258,11 +259,24 @@ class _NewsCard extends StatelessWidget {
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w800,
                         fontSize: 13.5,
                       ),
                     ),
-                    const Spacer(),
+                    if (snippet.isNotEmpty) ...[
+                      const SizedBox(height: 5),
+                      Text(
+                        snippet,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 12,
+                          height: 1.3,
+                        ),
+                      ),
+                    ],
+                    if (date != null) const SizedBox(height: 8),
                     if (date != null) _DateLine(date: date),
                   ],
                 ),
@@ -305,11 +319,11 @@ class _NewsFallback extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: AppColors.divider,
+      color: AppColors.primaryLighter,
       child: const Center(
-        child: Icon(
+        child: const Icon(
           Icons.image_outlined,
-          color: AppColors.textSecondary,
+          color: AppColors.primary,
           size: 40,
         ),
       ),

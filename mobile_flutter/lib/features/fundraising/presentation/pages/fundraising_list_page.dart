@@ -290,7 +290,7 @@ class _FundProgress extends StatelessWidget {
             valueColor: const AlwaysStoppedAnimation(AppColors.primary),
           ),
         ),
-        const SizedBox(height: 5),
+        const SizedBox(height: 10),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -315,6 +315,7 @@ class _FundProgress extends StatelessWidget {
             ),
           ],
         ),
+        const SizedBox(height: 6),
         Text(
           'donation.goal_amount'.tr(
             namedArgs: {'amount': formatVnd(fund.targetAmount)},
@@ -322,8 +323,9 @@ class _FundProgress extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(
-            fontSize: 11.5,
-            color: AppColors.textSecondary,
+            fontSize: 12,
+            color: AppColors.primary,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ],
@@ -382,7 +384,7 @@ class _FundFallback extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: AppColors.primary.withValues(alpha: 0.08),
+      color: AppColors.primaryLighter,
       child: const Center(
         child: Icon(
           Icons.volunteer_activism,

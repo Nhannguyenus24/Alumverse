@@ -65,8 +65,9 @@ class _MentorshipPageState extends ConsumerState<MentorshipPage> {
               'mentorship.title_upper'.tr(),
               style: const TextStyle(
                 color: AppColors.primary,
-                fontWeight: FontWeight.w800,
-                fontSize: 28,
+                fontWeight: FontWeight.w900,
+                fontSize: 30,
+                letterSpacing: 0.2,
               ),
             ),
             const SizedBox(height: 8),
