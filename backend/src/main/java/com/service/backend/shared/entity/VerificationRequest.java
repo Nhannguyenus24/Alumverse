@@ -24,6 +24,9 @@ public class VerificationRequest {
     @Id
     private Integer id;
 
+    @Column("organization_id")
+    private Integer organizationId;
+
     @Column("member_id")
     private Integer memberId;
 

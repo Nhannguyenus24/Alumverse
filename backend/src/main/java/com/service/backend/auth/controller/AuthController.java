@@ -158,7 +158,9 @@ public class AuthController {
     @PostMapping("/logout")
     public Mono<ResponseEntity<ApiResponse<Boolean>>> logout(
             @CookieValue(value = "refreshToken", required = false) String refreshToken) {
-        jwtUtils.revokeRefreshToken(refreshToken);
+        if (org.springframework.util.StringUtils.hasText(refreshToken)) {
+            jwtUtils.revokeRefreshToken(refreshToken);
+        }
 
         ResponseCookie clearCookie = ResponseCookie
                 .from("refreshToken", "")
@@ -174,6 +176,18 @@ public class AuthController {
     }
 
     /**
+     * Revoke refresh token without clearing cookie (explicit revoke API)
+     */
+    @PostMapping("/revoke")
+    public Mono<ResponseEntity<ApiResponse<Boolean>>> revoke(
+            @CookieValue(value = "refreshToken", required = false) String refreshToken) {
+        if (org.springframework.util.StringUtils.hasText(refreshToken)) {
+            jwtUtils.revokeRefreshToken(refreshToken);
+        }
+        return Mono.just(ResponseEntity.ok(new ApiResponse<>("Token revoked successfully", true)));
+    }
+
+    /**
      * Refresh access token using refresh token from cookie
      */
     @PostMapping("/refresh")
@@ -183,6 +197,35 @@ public class AuthController {
         return authService.refreshAccessToken(refreshToken)
                 .map(loginResponse -> ResponseEntity.ok(
                         new ApiResponse<>("Access token refreshed successfully", loginResponse)));
+    }
+
+    /**
+     * Switch organization - revokes current refresh token and issues new tokens for the specified organization
+     */
+    @PostMapping("/switch-organization/{organizationId}")
+    public Mono<ResponseEntity<ApiResponse<LoginResponse>>> switchOrganization(
+            @Parameter(example = "1")
+            @PathVariable @Min(value = 1, message = "Organization ID must be greater than 0") Integer organizationId,
+            @CookieValue(value = "refreshToken", required = false) String refreshToken) {
+
+        return authService.switchOrganization(refreshToken, organizationId)
+                .map(tuple -> {
+                    String newAccessToken = tuple.getT1();
+                    String newRefreshToken = tuple.getT2();
+                    Integer verificationLevel = tuple.getT3();
+
+                    long refreshTokenExpirationMs = 604800000L; // default 7 days
+                    ResponseCookie newCookie = buildRefreshTokenCookie(newRefreshToken, refreshTokenExpirationMs);
+
+                    LoginResponse loginResponse = LoginResponse.builder()
+                            .accessToken(newAccessToken)
+                            .verificationLevel(verificationLevel)
+                            .build();
+
+                    return ResponseEntity.ok()
+                            .header(HttpHeaders.SET_COOKIE, newCookie.toString())
+                            .body(new ApiResponse<>("Switched organization successfully", loginResponse));
+                });
     }
 
     /**
@@ -279,13 +322,7 @@ public class AuthController {
 
         if (organizationId == null) {
             // For admin login without organization, generate token with null orgId
-            String accessToken = jwtUtils.generateAccessToken(
-                    user.getId(),
-                    user.getEmail(),
-                    user.getRole().name(),
-                    user.getAvatarUrl(),
-                    null
-            );
+            String accessToken = jwtUtils.generateAccessToken(user, null);
             String refreshToken = jwtUtils.generateRefreshToken(user.getId(), null, refreshTokenExpirationMs);
 
             ResponseCookie refreshTokenCookie = buildRefreshTokenCookie(refreshToken, refreshTokenExpirationMs);
@@ -303,13 +340,7 @@ public class AuthController {
         return authService.getVerificationLevel(user.getId(), organizationId)
                 .defaultIfEmpty(0) // If user is not a member, level is 0
                 .map(level -> {
-                    String accessToken = jwtUtils.generateAccessToken(
-                            user.getId(),
-                            user.getEmail(),
-                            user.getRole().name(),
-                            user.getAvatarUrl(),
-                            organizationId
-                    );
+                    String accessToken = jwtUtils.generateAccessToken(user, organizationId);
                     String refreshToken = jwtUtils.generateRefreshToken(user.getId(), organizationId, refreshTokenExpirationMs);
                     ResponseCookie refreshTokenCookie = buildRefreshTokenCookie(refreshToken, refreshTokenExpirationMs);
 

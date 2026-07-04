@@ -6,6 +6,8 @@ import java.util.Date;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.service.backend.shared.entity.User;
+
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.nimbusds.jose.JOSEException;
@@ -60,14 +62,19 @@ public class JwtUtils {
         }
     }
 
-    public String generateAccessToken(Integer userId, String email, String role, String avatarUrl, Integer organizationId) {
+    public String generateAccessToken(User user, Integer organizationId) {
         Instant now = Instant.now();
         JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
-                .subject(String.valueOf(userId))
-                .claim("email", email)
-                .claim("role", role)
-                .claim("avatar", avatarUrl)
+                .subject(String.valueOf(user.getId()))
+                .claim("email", user.getEmail())
+                .claim("role", user.getRole().name())
+                .claim("avatar", user.getAvatarUrl())
                 .claim("organizationId", organizationId)
+                .claim("full_name", user.getFullName())
+                .claim("phone", user.getPhone())
+                .claim("bio", user.getBio())
+                .claim("dob", user.getDob() != null ? user.getDob().toString() : null)
+                .claim("gender", user.getGender())
                 .issueTime(Date.from(now))
                 .expirationTime(Date.from(now.plusMillis(accessTokenExpirationMs)))
                 .build();
