@@ -35,6 +35,7 @@ import '../../features/user/presentation/pages/my_profile_edit_page.dart';
 import '../../features/user/presentation/pages/settings_page.dart';
 import '../../features/user/presentation/pages/notifications_page.dart';
 import '../../features/forum/presentation/pages/forum_categories_page.dart';
+import '../../features/forum/data/models/forum_topic.dart';
 import '../../features/forum/presentation/pages/forum_topics_page.dart';
 import '../../features/forum/presentation/pages/forum_thread_page.dart';
 import '../../features/forum/presentation/pages/forum_create_topic_page.dart';
@@ -345,10 +346,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '${RouteNames.forum}/topic/:id',
-        builder: (_, state) => ForumThreadPage(
-          topicId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
-          topicTitle: state.extra as String?,
-        ),
+        builder: (_, state) {
+          final extra = state.extra;
+          final topic = extra is ForumTopic ? extra : null;
+          return ForumThreadPage(
+            topicId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
+            topicTitle: topic?.title ?? (extra is String ? extra : null),
+            initialTopic: topic,
+          );
+        },
       ),
       GoRoute(
         path: RouteNames.fundraising,

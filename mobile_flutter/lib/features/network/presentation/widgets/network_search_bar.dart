@@ -82,26 +82,22 @@ class _NetworkSearchBarState extends State<NetworkSearchBar> {
           ),
           if (widget.showFilters) ...[
             const SizedBox(height: 8),
-            Row(
+            Column(
               children: [
-                Expanded(
-                  child: _buildField(
-                    controller: _programCtrl,
-                    hint: 'network.program_filter_hint'.tr(),
-                    prefixIcon: Icons.school_outlined,
-                    onSubmit: widget.onProgramSubmit ?? (_) {},
-                    dense: true,
-                  ),
+                _buildField(
+                  controller: _programCtrl,
+                  hint: 'network.program_filter_hint'.tr(),
+                  prefixIcon: Icons.school_outlined,
+                  onSubmit: widget.onProgramSubmit ?? (_) {},
+                  dense: true,
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _buildField(
-                    controller: _majorCtrl,
-                    hint: 'network.major_filter_hint'.tr(),
-                    prefixIcon: Icons.book_outlined,
-                    onSubmit: widget.onMajorSubmit ?? (_) {},
-                    dense: true,
-                  ),
+                const SizedBox(height: 8),
+                _buildField(
+                  controller: _majorCtrl,
+                  hint: 'network.major_filter_hint'.tr(),
+                  prefixIcon: Icons.book_outlined,
+                  onSubmit: widget.onMajorSubmit ?? (_) {},
+                  dense: true,
                 ),
               ],
             ),
@@ -209,7 +205,7 @@ class _NetworkSearchBarState extends State<NetworkSearchBar> {
     return TextField(
       controller: controller,
       textInputAction: TextInputAction.search,
-      style: TextStyle(fontSize: dense ? 13 : 14),
+      style: TextStyle(fontSize: dense ? 13.5 : 14),
       onSubmitted: onSubmit,
       decoration: InputDecoration(
         hintText: hint,

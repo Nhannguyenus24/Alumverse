@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../shared/widgets/logo.dart';
 
 /// Hero banner — a 2-page auto-sliding carousel:
 ///  • page 1: the Alumverse intro hero (brand + tagline + org chip)
@@ -79,7 +80,7 @@ class _HeroBannerState extends State<HeroBanner> {
         children: [
           // Fixed height so the carousel doesn't jump between pages.
           SizedBox(
-            height: 248,
+            height: 272,
             child: PageView(
               controller: _controller,
               onPageChanged: (i) => setState(() => _page = i),
@@ -87,8 +88,9 @@ class _HeroBannerState extends State<HeroBanner> {
                 _AlumverseSlide(organizationName: widget.organizationName),
                 _IntroSlide(
                   organizationName: widget.organizationName,
-                  onTap: () =>
-                      context.push(RouteNames.organizationIntroduction),
+                  onTap: () => context.push(
+                    RouteNames.organizationIntroduction,
+                  ),
                 ),
               ],
             ),
@@ -140,21 +142,15 @@ class _AlumverseSlide extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.school_rounded, color: Colors.white, size: 40),
-          const SizedBox(height: 10),
-          const Text(
-            'ALUMVERSE',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 26,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 2,
-            ),
-          ),
+          const AlumverseLogo(size: 56, white: true),
           const SizedBox(height: 8),
           Text(
             'home.hero_tagline'.tr(),
-            style: const TextStyle(color: Colors.white70, height: 1.5, fontSize: 14),
+            style: const TextStyle(
+              color: Colors.white70,
+              height: 1.5,
+              fontSize: 14,
+            ),
           ),
           if (organizationName != null) ...[
             const SizedBox(height: 14),
@@ -181,7 +177,7 @@ class _SlideScroll extends StatelessWidget {
           child: ConstrainedBox(
             constraints: BoxConstraints(minHeight: constraints.maxHeight),
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 36),
+              padding: const EdgeInsets.fromLTRB(20, 34, 20, 44),
               child: child,
             ),
           ),
@@ -210,24 +206,46 @@ class _IntroSlide extends StatelessWidget {
             const Icon(Icons.info_outline_rounded,
                 color: Colors.white, size: 40),
             const SizedBox(height: 10),
-            Text(
-              organizationName != null
-                  ? 'home.intro_title_with_org'
-                      .tr(namedArgs: {'name': organizationName!})
-                  : 'organization.introduction'.tr(),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
+            if (organizationName != null) ...[
+              Text(
+                'home.intro_about'.tr(),
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
-            ),
+              const SizedBox(height: 4),
+              Text(
+                organizationName!,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 23,
+                  fontWeight: FontWeight.w900,
+                  height: 1.15,
+                ),
+              ),
+            ] else
+              Text(
+                'organization.introduction'.tr(),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
             const SizedBox(height: 8),
             Text(
               'home.intro_subtitle'.tr(),
               style: const TextStyle(
-                  color: Colors.white70, height: 1.5, fontSize: 14),
+                color: Colors.white70,
+                height: 1.5,
+                fontSize: 14,
+              ),
             ),
             const SizedBox(height: 14),
             Row(
@@ -243,11 +261,14 @@ class _IntroSlide extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text('home.view_intro'.tr(),
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600)),
+                      Text(
+                        'home.view_intro'.tr(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                       const SizedBox(width: 4),
                       const Icon(Icons.arrow_forward_rounded,
                           color: Colors.white, size: 16),

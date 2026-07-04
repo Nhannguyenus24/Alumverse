@@ -24,6 +24,7 @@ class ConnectionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final avatar = resolveImageUrl(connection.avatarUrl);
+    final educationLines = connection.educationLines;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -39,7 +40,7 @@ class ConnectionCard extends StatelessWidget {
             onTap: onViewProfile,
             child: CircleAvatar(
               radius: 26,
-              backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+              backgroundColor: AppColors.primaryLighter,
               backgroundImage:
                   avatar != null ? CachedNetworkImageProvider(avatar) : null,
               child: avatar == null
@@ -58,53 +59,25 @@ class ConnectionCard extends StatelessWidget {
                   Text(
                     connection.fullName,
                     style: const TextStyle(
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w700,
                       fontSize: 15,
                       color: AppColors.textPrimary,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  if (connection.subtitle.isNotEmpty) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      connection.subtitle,
-                      style: const TextStyle(
-                          color: AppColors.textSecondary, fontSize: 13),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                  if (educationLines.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    _EducationLines(lines: educationLines),
                   ],
                 ],
               ),
             ),
           ),
           const SizedBox(width: 8),
-          IconButton(
-            onPressed: onChat,
-            icon: const Icon(Icons.chat_rounded,
-                color: AppColors.primary, size: 22),
-            tooltip: 'network.message'.tr(),
-          ),
-          PopupMenuButton<_Action>(
-            onSelected: (action) {
-              if (action == _Action.block) onBlock();
-            },
-            itemBuilder: (_) => [
-              PopupMenuItem(
-                value: _Action.block,
-                child: Row(
-                  children: [
-                    const Icon(Icons.block, color: AppColors.error, size: 18),
-                    const SizedBox(width: 8),
-                    Text('network.block'.tr(),
-                        style: const TextStyle(color: AppColors.error)),
-                  ],
-                ),
-              ),
-            ],
-            icon: const Icon(Icons.more_vert,
-                color: AppColors.textSecondary, size: 20),
+          _CardActions(
+            onMessage: onChat,
+            onBlock: onBlock,
           ),
         ],
       ),
@@ -113,3 +86,90 @@ class ConnectionCard extends StatelessWidget {
 }
 
 enum _Action { block }
+
+class _EducationLines extends StatelessWidget {
+  const _EducationLines({required this.lines});
+
+  final List<String> lines;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final line in lines)
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Text(
+              line,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 12,
+                height: 1.25,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _CardActions extends StatelessWidget {
+  const _CardActions({required this.onMessage, required this.onBlock});
+
+  final VoidCallback onMessage;
+  final VoidCallback onBlock;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 36,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            onPressed: onMessage,
+            icon: const Icon(Icons.chat_bubble_outline,
+                color: AppColors.primary, size: 21),
+            tooltip: 'network.message'.tr(),
+            padding: EdgeInsets.zero,
+            visualDensity: VisualDensity.compact,
+            constraints: const BoxConstraints.tightFor(width: 34, height: 30),
+          ),
+          SizedBox(
+            width: 34,
+            height: 30,
+            child: PopupMenuButton<_Action>(
+              onSelected: (action) {
+                if (action == _Action.block) onBlock();
+              },
+              itemBuilder: (_) => [
+                PopupMenuItem(
+                  value: _Action.block,
+                  child: Row(
+                    children: [
+                      const Icon(Icons.block, color: AppColors.error, size: 18),
+                      const SizedBox(width: 8),
+                      Text('network.block'.tr(),
+                          style: const TextStyle(color: AppColors.error)),
+                    ],
+                  ),
+                ),
+              ],
+              padding: EdgeInsets.zero,
+              child: const Center(
+                child: Icon(
+                  Icons.more_vert,
+                  color: AppColors.textSecondary,
+                  size: 20,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

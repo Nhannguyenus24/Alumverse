@@ -45,8 +45,7 @@ class ConversationRequestCard extends StatelessWidget {
                   onTap: onViewProfile,
                   child: CircleAvatar(
                     radius: 26,
-                    backgroundColor:
-                        AppColors.primary.withValues(alpha: 0.1),
+                    backgroundColor: AppColors.primaryLighter,
                     backgroundImage: avatar != null
                         ? CachedNetworkImageProvider(avatar)
                         : null,
