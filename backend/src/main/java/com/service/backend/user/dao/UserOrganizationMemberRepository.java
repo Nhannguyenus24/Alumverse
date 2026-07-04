@@ -83,4 +83,24 @@ public interface UserOrganizationMemberRepository extends R2dbcRepository<Organi
             WHERE user_id = :userId
             """)
     Mono<Integer> updateVerificationLevel(@Param("userId") Integer userId, @Param("level") Integer level);
+
+    // Org-scoped variants: một user có thể thuộc nhiều tổ chức nên phải xác định
+    // thành viên theo cặp (organization_id, user_id).
+    @Modifying
+    @Query("""
+            UPDATE organization_members
+            SET verification_level = 2,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE organization_id = :organizationId AND user_id = :userId
+            """)
+    Mono<Integer> incrementVerificationLevelByOrgAndUser(@Param("organizationId") Integer organizationId, @Param("userId") Integer userId);
+
+    @Modifying
+    @Query("""
+            UPDATE organization_members
+            SET verification_level = :level,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE organization_id = :organizationId AND user_id = :userId
+            """)
+    Mono<Integer> updateVerificationLevelByOrgAndUser(@Param("organizationId") Integer organizationId, @Param("userId") Integer userId, @Param("level") Integer level);
 }

@@ -148,7 +148,7 @@ const Header = () => {
   }, []);
 
   const { displayName, displayRole } = useMemo(() => {
-    const name = user?.fullName ?? user?.studentId ?? 'User';
+    const name = user?.fullName ?? 'User';
     const rawRole = user?.role ?? 'Student';
     const verLabel = verificationLevel != null
       ? (VERIFICATION_LABELS[verificationLevel] ?? rawRole.charAt(0) + rawRole.slice(1).toLowerCase())

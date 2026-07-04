@@ -2,7 +2,7 @@
  * Decode JWT payload without verification (for reading claims on client).
  * Do not use for security decisions; backend validates the token.
  * @param {string} token - JWT access token
- * @returns {{ sub?: number, email?: string, studentId?: string, avatarUrl?: string } | null}
+ * @returns {{ sub?: number, email?: string, studentId?: string, avatarUrl?: string, fullName?: string, phone?: string, bio?: string, dob?: string, gender?: string } | null}
  */
 function decodeJwtPayload(token) {
   if (!token || typeof token !== 'string') return null;
@@ -10,7 +10,13 @@ function decodeJwtPayload(token) {
     const parts = token.split('.');
     if (parts.length !== 3) return null;
     const payload = parts[1];
-    const decoded = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
+    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const binString = atob(base64);
+    const bytes = new Uint8Array(binString.length);
+    for (let i = 0; i < binString.length; i++) {
+      bytes[i] = binString.charCodeAt(i);
+    }
+    const decoded = new TextDecoder().decode(bytes);
     const parsed = JSON.parse(decoded);
     return {
       sub: parsed.sub != null ? Number(parsed.sub) : undefined,
@@ -20,6 +26,11 @@ function decodeJwtPayload(token) {
       role: parsed.role,
       organizationId: parsed.organizationId != null ? Number(parsed.organizationId) : undefined,
       exp: parsed.exp,
+      fullName: parsed.full_name,
+      phone: parsed.phone,
+      bio: parsed.bio,
+      dob: parsed.dob,
+      gender: parsed.gender,
     };
   } catch {
     return null;
@@ -29,7 +40,7 @@ function decodeJwtPayload(token) {
 /**
  * Build auth user from access token (for store).
  * @param {string} token - JWT access token
- * @returns {{ id: number, email?: string, studentId?: string, avatarUrl?: string } | null}
+ * @returns {{ id: number, email?: string, studentId?: string, avatarUrl?: string, fullName?: string, phone?: string, bio?: string, dob?: string, gender?: string } | null}
  */
 export function userFromAccessToken(token) {
   if (!token) return null;
@@ -42,6 +53,11 @@ export function userFromAccessToken(token) {
     avatarUrl: payload.avatarUrl,
     role: payload.role,
     organizationId: payload.organizationId,
+    fullName: payload.fullName,
+    phone: payload.phone,
+    bio: payload.bio,
+    dob: payload.dob,
+    gender: payload.gender,
   };
 }
 
