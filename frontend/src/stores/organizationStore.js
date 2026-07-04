@@ -33,7 +33,7 @@ const initialState = {
   statusCode: null,
 };
 
-const useOrganizationStore = create((set, get) => ({
+const useOrganizationStore = create((set) => ({
   ...initialState,
 
   setOrganization: (organization) => set({ organization: normalizeOrganization(organization) }),
@@ -51,7 +51,7 @@ const useOrganizationStore = create((set, get) => ({
       return;
     }
 
-    const { currentSlug: oldSlug } = get();
+    // If slug changed, clear old organization data
 
     set((state) => ({
       loading: true,

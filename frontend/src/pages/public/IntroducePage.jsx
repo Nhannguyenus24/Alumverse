@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { useLocation, useParams } from "react-router";
+import { useLocation } from "react-router";
 import {
   Box,
   Container,
