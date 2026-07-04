@@ -52,7 +52,7 @@ import com.service.backend.forum.dao.ForumPostReportRepository;
 import com.service.backend.forum.dao.ForumTopicRepository;
 import com.service.backend.forum.dao.ForumTopicSubscriptionRepository;
 import com.service.backend.shared.dao.UserDisplayInfo;
-import com.service.backend.shared.dao.UserDisplayInfoRepository;
+import com.service.backend.user.dao.UserProfileRepository;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -68,7 +68,7 @@ public class ForumService {
     private final ForumPostReactionRepository forumPostReactionRepository;
     private final ForumPostReportRepository forumPostReportRepository;
     private final ForumTopicSubscriptionRepository forumTopicSubscriptionRepository;
-    private final UserDisplayInfoRepository userDisplayInfoRepository;
+    private final UserProfileRepository userProfileRepository;
     private final CacheUtils cacheUtils;
 
     private static final String FORUM_RECENT_POSTS_CACHE = "forumRecentPosts";
@@ -247,7 +247,7 @@ public class ForumService {
                                     .map(ForumPost::getAuthorMemberId)
                                     .filter(java.util.Objects::nonNull)
                                     .collect(Collectors.toSet());
-                            return userDisplayInfoRepository.findByUserIds(authorIds)
+                            return userProfileRepository.findByUserIds(authorIds)
                                     .map(displayMap -> posts.stream()
                                             .map(post -> {
                                                 ForumPostDTO dto = convertToPostDTO(post, likedPostIds.contains(post.getId()));

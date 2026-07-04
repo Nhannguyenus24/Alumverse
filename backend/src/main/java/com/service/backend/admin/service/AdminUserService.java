@@ -2,6 +2,9 @@ package com.service.backend.admin.service;
 
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
+import java.util.Map;
+import java.util.LinkedHashMap;
+import java.util.Collection;
 
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.enums.Status;
@@ -16,7 +19,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import com.service.backend.admin.dao.AdminAuditLogRepository;
-import com.service.backend.admin.dao.AdminUserOrganizationPreviewRepository;
 import com.service.backend.admin.dto.BulkCreateOrganizationMembersRequest;
 import com.service.backend.admin.dto.BulkImportResult;
 import com.service.backend.admin.dto.CreateAdminRequest;
@@ -34,7 +36,7 @@ import com.service.backend.shared.entity.User;
 import com.service.backend.shared.entity.AdminAuditLog;
 import com.service.backend.user.service.NotificationService;
 import com.service.backend.shared.dao.UserDisplayInfo;
-import com.service.backend.shared.dao.UserDisplayInfoRepository;
+import com.service.backend.user.dao.UserProfileRepository;
 
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
@@ -51,8 +53,7 @@ public class AdminUserService {
     private final AdminUserRepository adminUserRepository;
     private final AdminAuditLogRepository adminAuditLogRepository;
     private final PasswordEncoder passwordEncoder;
-    private final UserDisplayInfoRepository userDisplayInfoRepository;
-    private final AdminUserOrganizationPreviewRepository adminUserOrganizationPreviewRepository;
+    private final UserProfileRepository userProfileRepository;
     private final UserOrganizationMemberRepository userOrganizationMemberRepository;
     private final NotificationService notificationService;
 
@@ -350,14 +351,27 @@ public class AdminUserService {
         return adminUserRepository.upsertOrganizationMemberByUserId(organizationId, userId).then();
     }
 
+    private Mono<Map<Integer, UserOrganizationMemberRepository.PrimaryOrg>> getPrimaryOrgMap(Collection<Integer> userIds) {
+        if (userIds == null || userIds.isEmpty()) return Mono.just(Map.of());
+        return userOrganizationMemberRepository.findPrimaryOrgByUserIds(userIds)
+                .collectList()
+                .map(rows -> {
+                    Map<Integer, UserOrganizationMemberRepository.PrimaryOrg> map = new LinkedHashMap<>();
+                    for (UserOrganizationMemberRepository.PrimaryOrg row : rows) {
+                        map.putIfAbsent(row.userId(), row);
+                    }
+                    return map;
+                });
+    }
+
     private Mono<List<UserResponse>> enrichUserResponses(List<User> users) {
         if (users == null || users.isEmpty()) {
             return Mono.just(List.of());
         }
         List<Integer> ids = users.stream().map(User::getId).toList();
         return Mono.zip(
-                        userDisplayInfoRepository.findByUserIds(ids),
-                        adminUserOrganizationPreviewRepository.findPrimaryOrgByUserIds(ids))
+                        userProfileRepository.findByUserIds(ids),
+                        getPrimaryOrgMap(ids))
                 .map(tuple -> {
                     var displayMap = tuple.getT1();
                     var orgMap = tuple.getT2();
@@ -375,15 +389,15 @@ public class AdminUserService {
             return Mono.just(base);
         }
         return Mono.zip(
-                        userDisplayInfoRepository.findByUserId(base.getId()).defaultIfEmpty(new UserDisplayInfo()),
-                        adminUserOrganizationPreviewRepository.findPrimaryOrgByUserIds(List.of(base.getId())))
+                        userProfileRepository.findDisplayInfoByUserId(base.getId()).defaultIfEmpty(new UserDisplayInfo()),
+                        getPrimaryOrgMap(List.of(base.getId())))
                 .map(t -> mergeEnrichment(base, t.getT1(), t.getT2().get(base.getId())));
     }
 
     private UserResponse mergeEnrichment(
             UserResponse base,
             UserDisplayInfo di,
-            AdminUserOrganizationPreviewRepository.PrimaryOrg org) {
+            UserOrganizationMemberRepository.PrimaryOrg org) {
         UserResponse.UserResponseBuilder b = base.toBuilder();
         if (di != null && StringUtils.hasText(di.getFullName())) {
             b.fullName(di.getFullName());

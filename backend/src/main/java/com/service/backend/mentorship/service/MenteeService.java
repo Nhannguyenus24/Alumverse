@@ -10,7 +10,7 @@ import com.service.backend.shared.enums.MentorshipSessionType;
 import com.service.backend.shared.enums.Status;
 import com.service.backend.shared.entity.SessionFeedback;
 import com.service.backend.shared.dao.UserDisplayInfo;
-import com.service.backend.shared.dao.UserDisplayInfoRepository;
+import com.service.backend.user.dao.UserProfileRepository;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.shared.entity.MentorExpertise;
@@ -40,7 +40,7 @@ public class MenteeService {
     private final MentorAvailabilityR2dbcRepository availabilityRepository;
     private final MentorshipSessionR2dbcRepository sessionRepository;
     private final SessionFeedbackR2dbcRepository feedbackRepository;
-    private final UserDisplayInfoRepository userDisplayInfoRepository;
+    private final UserProfileRepository userProfileRepository;
     private final MenteeProfileR2dbcRepository menteeProfileRepository;
     private final MentorshipAccessService accessService;
     private final NotificationService notificationService;
@@ -95,7 +95,7 @@ public class MenteeService {
         }
         if (ids.isEmpty()) return Mono.just(list);
 
-        return userDisplayInfoRepository.findByUserIds(ids)
+        return userProfileRepository.findByUserIds(ids)
                 .map(map -> {
                     for (MentorshipSessionResponse r : list) {
                         UserDisplayInfo m = r.getMentorMemberId() != null ? map.get(r.getMentorMemberId()) : null;
@@ -121,7 +121,7 @@ public class MenteeService {
         }
         if (ids.isEmpty()) return Mono.just(list);
 
-        Mono<Map<Integer, UserDisplayInfo>> displayMono = userDisplayInfoRepository.findByMemberIds(ids);
+        Mono<Map<Integer, UserDisplayInfo>> displayMono = userProfileRepository.findByMemberIds(ids);
         Mono<Map<Integer, java.util.List<String>>> topicsMono = expertiseRepository
                 .findByMentorMemberIds(ids)
                 .collectMultimap(MentorExpertise::getMentorMemberId,

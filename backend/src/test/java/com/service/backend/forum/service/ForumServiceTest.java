@@ -2,7 +2,7 @@ package com.service.backend.forum.service;
 
 import com.service.backend.forum.dao.*;
 import com.service.backend.forum.dto.*;
-import com.service.backend.shared.dao.UserDisplayInfoRepository;
+import com.service.backend.user.dao.UserProfileRepository;
 import com.service.backend.shared.entity.*;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.enums.Status;
@@ -35,7 +35,7 @@ class ForumServiceTest {
     @Mock private ForumPostReactionRepository forumPostReactionRepository;
     @Mock private ForumPostReportRepository forumPostReportRepository;
     @Mock private ForumTopicSubscriptionRepository forumTopicSubscriptionRepository;
-    @Mock private UserDisplayInfoRepository userDisplayInfoRepository;
+    @Mock private UserProfileRepository userProfileRepository;
     @Mock private CacheUtils cacheUtils;
 
     @InjectMocks
