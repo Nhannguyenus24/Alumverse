@@ -20,20 +20,20 @@ public interface PeerVerificationRepository extends R2dbcRepository<PeerVerifica
     @Query("UPDATE peer_verifications SET \"status\" = :status WHERE id = :id")
     Mono<Integer> updateStatus(@Param("id") Integer id, @Param("status") Status status);
 
-    @Query("SELECT * FROM peer_verifications WHERE \"target_member_id\" = :targetMemberId AND \"verifier_member_id\" = :verifierMemberId AND \"status\" = 'PENDING'")
-    Mono<PeerVerification> findPendingRequest(@Param("targetMemberId") Integer targetMemberId, @Param("verifierMemberId") Integer verifierMemberId);
+    @Query("SELECT * FROM peer_verifications WHERE \"organization_id\" = :organizationId AND \"target_member_id\" = :targetMemberId AND \"verifier_member_id\" = :verifierMemberId AND \"status\" = 'PENDING'")
+    Mono<PeerVerification> findPendingRequest(@Param("organizationId") Integer organizationId, @Param("targetMemberId") Integer targetMemberId, @Param("verifierMemberId") Integer verifierMemberId);
 
     @Query("""
-        SELECT pv.id as request_id, 
-               om_target.user_id as requester_user_id, 
-               gp.full_name as requester_name, 
-               om_target.organization_id as organization_id, 
+        SELECT pv.id as request_id,
+               om_target.user_id as requester_user_id,
+               gp.full_name as requester_name,
+               pv.organization_id as organization_id,
                pv.created_at as created_at
         FROM peer_verifications pv
-        JOIN organization_members om_target ON pv.target_member_id = om_target.user_id
+        JOIN organization_members om_target ON pv.target_member_id = om_target.user_id AND pv.organization_id = om_target.organization_id
         JOIN users gp ON gp.id = om_target.user_id
-        WHERE pv.verifier_member_id = :verifierUserId AND pv."status" = 'PENDING'
+        WHERE pv.verifier_member_id = :verifierUserId AND pv.organization_id = :organizationId AND pv."status" = 'PENDING'
         ORDER BY pv.created_at DESC
     """)
-    Flux<PendingPeerVerificationResponse> findPendingRequestsByVerifierMemberId(@Param("verifierUserId") Integer verifierUserId);
+    Flux<PendingPeerVerificationResponse> findPendingRequestsByVerifierMemberId(@Param("organizationId") Integer organizationId, @Param("verifierUserId") Integer verifierUserId);
 }

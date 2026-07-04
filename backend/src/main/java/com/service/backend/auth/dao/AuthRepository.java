@@ -141,10 +141,11 @@ public interface AuthRepository extends R2dbcRepository<User, Integer> {
     @Query("SELECT verification_level FROM organization_members WHERE user_id = :userId AND organization_id = :organizationId")
     Mono<Integer> getVerificationLevelByUserIdAndOrgId(@Param("userId") Integer userId, @Param("organizationId") Integer organizationId);
 
-    @Query("INSERT INTO verification_requests (member_id, document_url, document_type, \"status\", created_at, updated_at) " +
-           "VALUES (:userId, :documentUrl, :documentType, 'PENDING', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) " +
+    @Query("INSERT INTO verification_requests (organization_id, member_id, document_url, document_type, \"status\", created_at, updated_at) " +
+           "VALUES (:organizationId, :userId, :documentUrl, :documentType, 'PENDING', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) " +
            "RETURNING id")
     Mono<Integer> insertVerificationRequest(
+            @Param("organizationId") Integer organizationId,
             @Param("userId") Integer userId,
             @Param("documentUrl") String documentUrl,
             @Param("documentType") String documentType);

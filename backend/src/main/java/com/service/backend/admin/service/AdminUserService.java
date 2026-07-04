@@ -442,16 +442,21 @@ public class AdminUserService {
 
     public Mono<Boolean> reviewVerificationRequest(Integer requestId, String status, String adminNote) {
         String upperStatus = status == null ? null : status.toUpperCase();
-        return adminUserRepository.findMemberIdByRequestId(requestId)
-                .flatMap(memberId -> adminUserRepository.reviewVerificationRequest(requestId, Status.valueOf(upperStatus).getValue(), adminNote)
+        return Mono.zip(
+                        adminUserRepository.findMemberIdByRequestId(requestId),
+                        adminUserRepository.findOrganizationIdByRequestId(requestId))
+                .flatMap(tuple -> {
+                    Integer memberId = tuple.getT1();
+                    Integer organizationId = tuple.getT2();
+                    return adminUserRepository.reviewVerificationRequest(requestId, Status.valueOf(upperStatus).getValue(), adminNote)
                         .flatMap(count -> {
                             if (count <= 0) return Mono.just(false);
-                            
+
                             if ("APPROVED".equals(upperStatus)) {
                                 Mono.fromRunnable(() -> notificationService.createNotificationAsync(memberId, "Xác thực thành công", "Yêu cầu xác thực của bạn đã được duyệt."))
                                         .subscribeOn(Schedulers.boundedElastic())
                                         .subscribe();
-                                return userOrganizationMemberRepository.incrementVerificationLevelByUserId(memberId)
+                                return userOrganizationMemberRepository.incrementVerificationLevelByOrgAndUser(organizationId, memberId)
                                         .thenReturn(true);
                             } else if ("REJECTED".equals(upperStatus)) {
                                 String msg = "Yêu cầu xác thực của bạn đã bị từ chối.";
@@ -464,7 +469,8 @@ public class AdminUserService {
                                         .subscribe();
                             }
                             return Mono.just(true);
-                        }))
+                        });
+                })
                 .doOnSuccess(ok -> logger.info("reviewVerificationRequest: requestId={}, status={}, success={}", requestId, upperStatus, ok))
                 .doOnError(e -> logger.error("Error reviewing verification request {}", e.getMessage()))
                 .defaultIfEmpty(false);
