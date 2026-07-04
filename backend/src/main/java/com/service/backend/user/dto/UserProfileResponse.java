@@ -25,8 +25,6 @@ public class UserProfileResponse {
     private String fullName;
     private String phone;
     private String bio;
-    private String currentJobTitle;
-    private String currentCompany;
     private LocalDate dob;
     private String gender;
     private LocalDateTime profileUpdatedAt;

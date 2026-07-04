@@ -27,7 +27,7 @@ public class UserDisplayInfoRepository {
         List<Integer> distinctIds = userIds.stream().distinct().toList();
         return databaseClient
                 .sql("SELECT u.id AS user_id, u.avatar_url, u.cover_url, u.full_name, " +
-                        "u.bio, u.current_job_title, u.current_company " +
+                        "u.bio " +
                         "FROM users u " +
                         "WHERE u.id IN (:ids)")
                 .bind("ids", distinctIds)
@@ -37,8 +37,6 @@ public class UserDisplayInfoRepository {
                         .avatarUrl(row.get("avatar_url", String.class))
                         .coverUrl(row.get("cover_url", String.class))
                         .bio(row.get("bio", String.class))
-                        .currentJobTitle(row.get("current_job_title", String.class))
-                        .currentCompany(row.get("current_company", String.class))
                         .build())
                 .all()
                 .collectMap(UserDisplayInfo::getUserId, info -> info);
@@ -54,7 +52,7 @@ public class UserDisplayInfoRepository {
         List<Integer> distinctIds = memberIds.stream().distinct().toList();
         return databaseClient
                 .sql("SELECT om.id AS member_id, u.avatar_url, u.cover_url, u.full_name, " +
-                        "u.bio, u.current_job_title, u.current_company " +
+                        "u.bio " +
                         "FROM organization_members om " +
                         "JOIN users u ON om.user_id = u.id " +
                         "WHERE om.id IN (:ids)")
@@ -67,8 +65,6 @@ public class UserDisplayInfoRepository {
                             .avatarUrl(row.get("avatar_url", String.class))
                             .coverUrl(row.get("cover_url", String.class))
                             .bio(row.get("bio", String.class))
-                            .currentJobTitle(row.get("current_job_title", String.class))
-                            .currentCompany(row.get("current_company", String.class))
                             .build();
                     return info;
                 })

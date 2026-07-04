@@ -9,8 +9,6 @@ CREATE TABLE "users" (
   "full_name" text,
   "phone" text,
   "bio" text,
-  "current_job_title" text,
-  "current_company" text,
   "dob" date,
   "gender" text,
   "settings" json,

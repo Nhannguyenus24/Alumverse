@@ -62,17 +62,11 @@ public class MentorProfileResponse {
     }
 
     public MentorProfileResponse withUserProfile(String fullName, String avatarUrl, String coverUrl,
-            String bio, String currentJobTitle, String currentCompany) {
+            String bio) {
         this.fullName = fullName;
         this.avatarUrl = avatarUrl;
         this.coverUrl = coverUrl;
         this.bio = bio;
-        if (this.currentJobTitle == null || this.currentJobTitle.isBlank()) {
-            this.currentJobTitle = currentJobTitle;
-        }
-        if (this.currentCompany == null || this.currentCompany.isBlank()) {
-            this.currentCompany = currentCompany;
-        }
         return this;
     }
 

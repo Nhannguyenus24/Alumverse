@@ -23,10 +23,11 @@ public interface OrganizationFeaturedAlumniRepository extends R2dbcRepository<Or
                    u.avatar_url,
                    u.cover_url,
                    u.bio,
-                   u.current_job_title,
-                   u.current_company
+                   mp.current_job_title,
+                   mp.current_company
             FROM organization_featured_alumni ofa
             JOIN users u ON u.id = ofa.user_id
+            LEFT JOIN mentor_profiles mp ON u.id = mp.member_id
             WHERE ofa.organization_id = :organizationId
             ORDER BY ofa.display_order ASC, ofa.id ASC
             """)

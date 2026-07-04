@@ -2,8 +2,6 @@
 -- Run once on the cloud PostgreSQL database before deploying the matching backend.
 
 ALTER TABLE users ADD COLUMN IF NOT EXISTS cover_url text;
-ALTER TABLE users ADD COLUMN IF NOT EXISTS current_job_title text;
-ALTER TABLE users ADD COLUMN IF NOT EXISTS current_company text;
 
 UPDATE users u
 SET cover_url = mp.cover_url
@@ -11,20 +9,6 @@ FROM mentor_profiles mp
 WHERE mp.member_id = u.id
   AND u.cover_url IS NULL
   AND mp.cover_url IS NOT NULL;
-
-UPDATE users u
-SET current_job_title = mp.current_job_title
-FROM mentor_profiles mp
-WHERE mp.member_id = u.id
-  AND u.current_job_title IS NULL
-  AND mp.current_job_title IS NOT NULL;
-
-UPDATE users u
-SET current_company = mp.current_company
-FROM mentor_profiles mp
-WHERE mp.member_id = u.id
-  AND u.current_company IS NULL
-  AND mp.current_company IS NOT NULL;
 
 UPDATE users u
 SET bio = mp.bio

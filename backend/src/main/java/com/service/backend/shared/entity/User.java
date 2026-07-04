@@ -54,12 +54,6 @@ public class User {
     @Column("bio")
     private String bio;
 
-    @Column("current_job_title")
-    private String currentJobTitle;
-
-    @Column("current_company")
-    private String currentCompany;
-
     @Column("dob")
     private LocalDate dob;
 

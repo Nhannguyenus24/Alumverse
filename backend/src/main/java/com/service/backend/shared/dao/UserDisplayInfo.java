@@ -15,6 +15,4 @@ public class UserDisplayInfo {
     private String avatarUrl;
     private String coverUrl;
     private String bio;
-    private String currentJobTitle;
-    private String currentCompany;
 }

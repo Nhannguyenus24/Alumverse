@@ -276,9 +276,7 @@ public class UserService {
                         request.getPhone(),
                         request.getGender(),
                         request.getBio(),
-                        request.getCoverUrl(),
-                        request.getCurrentJobTitle(),
-                        request.getCurrentCompany());
+                        request.getCoverUrl());
 
         Mono<Integer> updateOrganizationMember = userOrganizationMemberRepository
                 .updateAcademicProfileByOrganizationAndUserId(

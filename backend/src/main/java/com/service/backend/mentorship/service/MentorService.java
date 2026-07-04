@@ -121,9 +121,7 @@ public class MentorService {
                         info.getFullName(),
                         info.getAvatarUrl(),
                         info.getCoverUrl(),
-                        info.getBio(),
-                        info.getCurrentJobTitle(),
-                        info.getCurrentCompany()))
+                        info.getBio()))
                 .defaultIfEmpty(single);
         Mono<List<String>> topicsMono = expertiseRepository.findByMentorMemberId(single.getMemberId())
                 .map(MentorExpertise::getTopic)
