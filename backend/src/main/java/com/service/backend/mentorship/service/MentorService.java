@@ -56,24 +56,6 @@ public class MentorService {
                 .then();
     }
 
-    private Mono<Void> updateUserWorkInfo(Integer userId, String currentJobTitle, String currentCompany) {
-        if (userId == null) return Mono.empty();
-        DatabaseClient.GenericExecuteSpec spec = databaseClient
-                .sql("""
-                        UPDATE users
-                        SET current_job_title = COALESCE(:currentJobTitle, current_job_title),
-                            current_company = COALESCE(:currentCompany, current_company),
-                            updated_at = CURRENT_TIMESTAMP
-                        WHERE id = :id
-                        """)
-                .bind("id", userId);
-        spec = currentJobTitle != null ? spec.bind("currentJobTitle", currentJobTitle) : spec.bindNull("currentJobTitle", String.class);
-        spec = currentCompany != null ? spec.bind("currentCompany", currentCompany) : spec.bindNull("currentCompany", String.class);
-        return spec.fetch()
-                .rowsUpdated()
-                .then();
-    }
-
     private Mono<Integer> currentMemberId() {
         return SecurityUtils.getCurrentUserId().map(Long::intValue);
     }
@@ -191,9 +173,7 @@ public class MentorService {
                             }
                             existing.setUpdatedAt(LocalDateTime.now());
                             existing.setNew(false);
-                            return Mono.when(
-                                            updateUserAvatar(memberId, request.getAvatarUrl()),
-                                            updateUserWorkInfo(memberId, request.getCurrentJobTitle(), request.getCurrentCompany()))
+                            return updateUserAvatar(memberId, request.getAvatarUrl())
                                     .then(profileRepository.save(existing));
                         })
                         .switchIfEmpty(Mono.defer(() -> {
@@ -210,9 +190,7 @@ public class MentorService {
                                     .createdAt(LocalDateTime.now())
                                     .updatedAt(LocalDateTime.now())
                                     .build();
-                            return Mono.when(
-                                            updateUserAvatar(memberId, request.getAvatarUrl()),
-                                            updateUserWorkInfo(memberId, request.getCurrentJobTitle(), request.getCurrentCompany()))
+                            return updateUserAvatar(memberId, request.getAvatarUrl())
                                     .then(profileRepository.save(profile));
                         }))
                         .map(MentorProfileResponse::from)
@@ -230,9 +208,7 @@ public class MentorService {
                             if (request.getBookingWindowSettings() != null) existing.setBookingWindowSettings(request.getBookingWindowSettings());
                             if (request.getExtendedProfile() != null) existing.setExtendedProfile(request.getExtendedProfile());
                             existing.setNew(false);
-                            return Mono.when(
-                                            updateUserAvatar(memberId, request.getAvatarUrl()),
-                                            updateUserWorkInfo(memberId, request.getCurrentJobTitle(), request.getCurrentCompany()))
+                            return updateUserAvatar(memberId, request.getAvatarUrl())
                                     .then(profileRepository.save(existing));
                         })
                         .map(MentorProfileResponse::from)
