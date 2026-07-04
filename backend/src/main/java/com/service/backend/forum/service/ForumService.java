@@ -431,7 +431,7 @@ public class ForumService {
                         request.getTopicId(), request.getMemberId());
                 return forumTopicSubscriptionRepository.deleteByTopicIdAndMemberId(
                         request.getTopicId(), request.getMemberId())
-                        .then(Mono.<ForumTopicSubscription>empty());
+                        .then(Mono.empty());
             } else {
                 log.info("Creating new subscription for topic ID: {}, member: {}",
                         request.getTopicId(), request.getMemberId());

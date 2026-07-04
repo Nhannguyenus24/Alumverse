@@ -129,7 +129,7 @@ public class MenteeService {
                 .map(mm -> {
                     java.util.HashMap<Integer, java.util.List<String>> out = new java.util.HashMap<>();
                     mm.forEach((k, v) -> out.put(k, new java.util.ArrayList<>(v)));
-                    return (Map<Integer, java.util.List<String>>) out;
+                    return out;
                 });
 
         return Mono.zip(displayMono, topicsMono).map(tuple -> {
