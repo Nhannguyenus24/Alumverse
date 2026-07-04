@@ -271,6 +271,7 @@ const OrganizationRegistrationPage = () => {
           try {
             const base64File = await fileToBase64(proofFile);
             await createVerificationRequest({
+              organizationId: Number(data.organizationId),
               base64File,
               originalFileName: proofFile.name,
               documentType: proofFile.type === "application/pdf" ? "pdf" : "image",
