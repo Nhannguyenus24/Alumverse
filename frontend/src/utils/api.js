@@ -1163,6 +1163,11 @@ const mentorshipApi = {
 		return apiClient.post('/mentorship/skills/extract', { text });
 	},
 
+	// AI-assisted CV upload: OCR + Gemini auto-fill of the signup profile step.
+	extractMentorshipCv({ base64File, originalFileName }) {
+		return apiClient.post('/mentorship/cv/extract', { base64File, originalFileName });
+	},
+
 	getMyExpertise() {
 		return apiClient.get(`${BASE_MENTOR}/expertise`);
 	},
@@ -1257,6 +1262,7 @@ export const {
 	getMyMentorProfile,
 	addMyExpertise,
 	extractMentorshipSkills,
+	extractMentorshipCv,
 	getMyExpertise,
 	deleteMyExpertise,
 	updateMyExpertise,
