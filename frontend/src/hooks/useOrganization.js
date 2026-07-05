@@ -1,20 +1,18 @@
 import { useEffect, useMemo, useCallback } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router';
+import { useParams } from 'react-router';
 import useOrganizationStore from '../stores/organizationStore';
-import useAuthStore from '../stores/authStore';
-import apiClient from '../utils/axios';
 
 /**
  * Organization hook backed by the organization store.
  * - Auto-fetches on first slug resolution.
  * - Re-fetches when slug changes.
  * - Avoids duplicate requests while loading.
- * - Logs out user when switching to a different organization (JWT is org-scoped).
+ * - Switching to a different organization is handled seamlessly by
+ *   fetchOrganization (rotates access/refresh tokens via /auth/switch-organization);
+ *   the user stays logged in — non-members simply get verificationLevel 0.
  */
 export const useOrganization = ({ enabled = true } = {}) => {
   const { slug: routeSlug } = useParams();
-  const navigate = useNavigate();
-  const location = useLocation();
 
   const currentSlug = useOrganizationStore((state) => state.currentSlug);
   const organization = useOrganizationStore((state) => state.organization);
@@ -31,28 +29,13 @@ export const useOrganization = ({ enabled = true } = {}) => {
   useEffect(() => {
     if (!enabled || !slug) return;
 
-    const isOrgSwitch = currentSlug && currentSlug !== slug;
-    const isAuthenticated = !!useAuthStore.getState().token;
-
-    const user = useAuthStore.getState().user;
-    const isAdmin = user?.role === 'ADMIN';
-
-    if (isOrgSwitch && isAuthenticated && !isAdmin) {
-      // JWT is scoped to organizationId — switching orgs requires a fresh login.
-      // Global admins are exempt from this as they have system-wide access.
-      apiClient.post('/auth/logout').finally(() => {
-        useAuthStore.getState().reset();
-        reset();
-        navigate(`/${slug}/auth/login`, { replace: true });
-      });
-      return;
-    }
-
     // Keep one in-flight request per slug and avoid automatic retry loop on error.
+    // On an org switch (currentSlug !== slug) this falls through so fetchOrganization
+    // runs and seamlessly rotates the session tokens for the new org.
     if (currentSlug === slug && (loading || organization || error)) return;
 
     fetchOrganization(slug);
-  }, [enabled, slug, currentSlug, loading, organization, error, fetchOrganization, navigate, reset, location.pathname]);
+  }, [enabled, slug, currentSlug, loading, organization, error, fetchOrganization]);
 
   const isOrganizationNotFound = statusCode === 404;
   const isServerError = statusCode >= 500;

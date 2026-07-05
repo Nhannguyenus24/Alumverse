@@ -37,6 +37,7 @@ public enum ErrorCode {
     RECAPTCHA_VERIFICATION_FAILED("ReCAPTCHA verification failed", 401),
     INTERNAL_SERVER_ERROR("Internal server error", 500),
     BAD_REQUEST("Bad request", 400),
+    TOO_MANY_REQUESTS("Quá nhiều yêu cầu, vui lòng thử lại sau", 429),
 
     // Event module
     EVENT_NOT_FOUND("Không tìm thấy sự kiện", 404),

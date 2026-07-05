@@ -70,10 +70,11 @@ public interface UserProfileRepository extends R2dbcRepository<User, Integer> {
                    CAST(om.faculty AS text) AS faculty,
                    CAST(om.department AS text) AS department
             FROM users u
-            LEFT JOIN organization_members om ON om.user_id = u.id
+            LEFT JOIN organization_members om ON om.user_id = u.id AND (:organizationId IS NULL OR om.organization_id = :organizationId)
             WHERE u.id = :userId
+            LIMIT 1
             """)
-    Mono<UserProfileResponse> findProfileByUserId(@Param("userId") Integer userId);
+    Mono<UserProfileResponse> findProfileByUserId(@Param("userId") Integer userId, @Param("organizationId") Integer organizationId);
 
     @Modifying
     @Query("""
