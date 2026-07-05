@@ -10,6 +10,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -24,8 +25,10 @@ public class PublicUserController {
 
     @PublicEndpoint
     @GetMapping("/{userId}/public-profile")
-    public Mono<ResponseEntity<ApiResponse<UserProfileResponse>>> getPublicProfile(@PathVariable Integer userId) {
-        return userService.getPublicProfile(userId)
+    public Mono<ResponseEntity<ApiResponse<UserProfileResponse>>> getPublicProfile(
+            @PathVariable Integer userId,
+            @RequestParam(required = false) Integer organizationId) {
+        return userService.getPublicProfile(userId, organizationId)
                 .map(profile -> ResponseEntity.ok(new ApiResponse<>("Public profile retrieved successfully", profile)));
     }
 }
