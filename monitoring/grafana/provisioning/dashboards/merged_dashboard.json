@@ -401,10 +401,10 @@
       }
     },
     {
-      "type": "stat",
+      "type": "bargauge",
       "title": "Avg Latency (By Endpoint)",
       "gridPos": {
-        "h": 4,
+        "h": 8,
         "w": 6,
         "x": 18,
         "y": 43
@@ -416,6 +416,11 @@
           "refId": "A"
         }
       ],
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "showUnfilled": true
+      },
       "fieldConfig": {
         "defaults": {
           "unit": "ms",
