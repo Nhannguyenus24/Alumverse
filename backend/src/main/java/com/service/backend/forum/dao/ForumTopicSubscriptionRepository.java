@@ -34,23 +34,11 @@ public interface ForumTopicSubscriptionRepository extends R2dbcRepository<ForumT
     Mono<Void> deleteByTopicId(@Param("topicId") Integer topicId);
 
     /**
-     * Count subscriptions by topic id
-     */
-    Mono<Long> countByTopicId(Integer topicId);
-
-    /**
      * Update last read at for a subscription
      */
     @Modifying
     @Query("UPDATE forum_topic_subscriptions SET last_read_at = :lastReadAt WHERE topic_id = :topicId AND member_id = :memberId")
     Mono<Integer> updateLastReadAt(Integer topicId, Integer memberId, LocalDateTime lastReadAt);
-
-    /**
-     * Update last notified at for a subscription
-     */
-    @Modifying
-    @Query("UPDATE forum_topic_subscriptions SET last_notified_at = :lastNotifiedAt WHERE id = :id")
-    Mono<Integer> updateLastNotifiedAt(Integer id, LocalDateTime lastNotifiedAt);
 
     /**
      * Update last notified at for a batch of subscriptions

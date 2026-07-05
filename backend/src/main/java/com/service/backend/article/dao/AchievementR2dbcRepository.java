@@ -30,9 +30,6 @@ public interface AchievementR2dbcRepository extends ReactiveCrudRepository<Achie
     @Query("SELECT COUNT(*) FROM achievements WHERE member_id = :memberId")
     Mono<Long> countByMemberId(Integer memberId);
 
-    @Query("SELECT * FROM achievements WHERE status = :status ORDER BY awarded_date DESC LIMIT :limit OFFSET :offset")
-    Flux<Achievement> findByStatus(Status status, int limit, int offset);
-
     @Query("SELECT COUNT(*) FROM achievements WHERE status = :status")
     Mono<Long> countByStatus(Status status);
 
