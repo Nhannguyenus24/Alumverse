@@ -1,4 +1,4 @@
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useCallback, useState } from 'react';
 import { Box } from '@mui/material';
 import { useLocation, useParams } from 'react-router';
 
@@ -12,6 +12,13 @@ export default function FloatingChatActions() {
   const location = useLocation();
   const { slug } = useParams();
   const normalizedPath = getNormalizedPathname(location.pathname, slug);
+  const [activeWidget, setActiveWidget] = useState(null);
+
+  const openMessages = useCallback(() => setActiveWidget('messages'), []);
+  const openFitBot = useCallback(() => setActiveWidget('fitbot'), []);
+  const closeWidget = useCallback((widget) => {
+    setActiveWidget((current) => (current === widget ? null : current));
+  }, []);
 
   if (HIDDEN_PATHS.includes(normalizedPath)) {
     return null;
@@ -27,10 +34,19 @@ export default function FloatingChatActions() {
           zIndex: 999,
         }}
       >
-        <ChatFloatingButton />
+        <ChatFloatingButton
+          isOpen={activeWidget === 'messages'}
+          onOpen={openMessages}
+          onClose={() => closeWidget('messages')}
+        />
       </Box>
       <Suspense fallback={null}>
-        <FitBot />
+        <FitBot
+          isOpen={activeWidget === 'fitbot'}
+          isBlocked={activeWidget === 'messages'}
+          onOpen={openFitBot}
+          onClose={() => closeWidget('fitbot')}
+        />
       </Suspense>
     </>
   );
