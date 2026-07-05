@@ -765,6 +765,7 @@
   "edit_fund_note_active": "Fund is active: only end date can be edited (>= now + 10 min). Cannot change target amount, start date, or receiving account.",
   "edit_fund_note_ended": "Fund has ended: no changes allowed.",
   "edit_fund_note_invalid": "Fund date range is invalid.",
+  "edit_fund_staff_note": "You can only edit the fund's Manager, Contact email, and Article content.",
   "edit_fund_logo_label": "Fund logo (optional)",
   "edit_fund_logo_hint": "Supports JPG, JPEG, PNG — max 8 MB.",
   "edit_fund_logo_change": "Change logo",

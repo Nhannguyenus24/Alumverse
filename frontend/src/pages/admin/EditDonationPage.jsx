@@ -25,6 +25,7 @@ import Page from "../../components/Page";
 import WYSIWYG from "../../components/WYSIWYG";
 import FundReceivingInfoSelect from "../../components/FundReceivingInfoSelect";
 import { fundApi } from "../../utils/api";
+import { useAuth } from "../../hooks/useAuth";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
 import Breadcrumb from "../../components/Breadcrumb";
 import MoneyField from "../../components/MoneyField";
@@ -139,6 +140,8 @@ export default function EditDonationPage() {
   const navigate = useOrgNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const { id } = useParams();
+  const { user } = useAuth();
+  const isStaff = user?.role === "STAFF";
   const { uploadFile: uploadLogo, isPending: isUploadingLogo } = useUploadImage();
   const [receivingOptions, setReceivingOptions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -289,6 +292,8 @@ export default function EditDonationPage() {
   const disableEndDate = disableAllFields;
   const disableTargetAmount = disableAllFields || phase === "active";
   const disableFundReceivingInfo = phase !== "before_start";
+  // STAFF may only edit managerName, managerEmail, descriptionFull — every other field is locked.
+  const lockForStaff = isStaff;
 
   const noteMessage = {
     before_start: t('admin:edit_fund_note_before_start'),
@@ -304,24 +309,32 @@ export default function EditDonationPage() {
     }
 
     try {
-      const logoUrl = logoFile
-        ? await uploadLogo(logoFile)
-        : donationDetail.logoUrl?.trim() || null;
+      if (isStaff) {
+        await fundApi.updateFundBasicInfo(id, {
+          managerName: values.managerName?.trim(),
+          managerEmail: values.managerEmail?.trim(),
+          description_full: values.descriptionFull,
+        });
+      } else {
+        const logoUrl = logoFile
+          ? await uploadLogo(logoFile)
+          : donationDetail.logoUrl?.trim() || null;
 
-      const payload = {
-        name: values.name?.trim(),
-        managerName: values.managerName?.trim(),
-        managerEmail: values.managerEmail?.trim(),
-        logoUrl,
-        description_short: values.descriptionShort?.trim(),
-        description_full: values.descriptionFull,
-        targetAmount: Number(values.targetAmount),
-        fundReceivingInfoId: Number(values.fundReceivingInfoId),
-        timeStarted: values.startDate?.format("YYYY-MM-DDTHH:mm:ss"),
-        timeEnded: values.endDate?.format("YYYY-MM-DDTHH:mm:ss"),
-      };
+        const payload = {
+          name: values.name?.trim(),
+          managerName: values.managerName?.trim(),
+          managerEmail: values.managerEmail?.trim(),
+          logoUrl,
+          description_short: values.descriptionShort?.trim(),
+          description_full: values.descriptionFull,
+          targetAmount: Number(values.targetAmount),
+          fundReceivingInfoId: Number(values.fundReceivingInfoId),
+          timeStarted: values.startDate?.format("YYYY-MM-DDTHH:mm:ss"),
+          timeEnded: values.endDate?.format("YYYY-MM-DDTHH:mm:ss"),
+        };
 
-      await fundApi.updateFund(id, payload);
+        await fundApi.updateFund(id, payload);
+      }
       enqueueSnackbar(t('admin:edit_fund_success'), { variant: "success" });
       navigate(`/donations/${id}`);
     } catch (error) {
@@ -363,6 +376,11 @@ export default function EditDonationPage() {
               {t('admin:edit_fund_note_label')}
             </Typography>
             <Typography sx={{ mt: 0.3, color: "#214c90", fontWeight: 600, lineHeight: 1.6 }}>{noteMessage}</Typography>
+            {isStaff && (
+              <Typography sx={{ mt: 0.6, color: "#214c90", fontWeight: 600, lineHeight: 1.6 }}>
+                {t('admin:edit_fund_staff_note')}
+              </Typography>
+            )}
           </Box>
 
           {isLoading && <LinearProgress sx={{ mb: 2.2 }} />}
@@ -373,7 +391,7 @@ export default function EditDonationPage() {
                   <Box component="form" onSubmit={handleSubmit(onSubmit)}>
                     <Grid container spacing={2}>
                       <Grid size={12}>
-                        <TextField fullWidth label={t('donation:fund_name')} InputLabelProps={{ shrink: true }} {...register("name")} disabled={disableAllFields} error={!!errors.name} helperText={errors.name?.message} />
+                        <TextField fullWidth label={t('donation:fund_name')} InputLabelProps={{ shrink: true }} {...register("name")} disabled={disableAllFields || lockForStaff} error={!!errors.name} helperText={errors.name?.message} />
                       </Grid>
                       <Grid size={12}>
                         <TextField
@@ -419,13 +437,13 @@ export default function EditDonationPage() {
                               accept={IMAGE_ACCEPT}
                               style={{ display: "none" }}
                               onChange={handleLogoChange}
-                              disabled={disableAllFields}
+                              disabled={disableAllFields || lockForStaff}
                             />
                             <Button
                               variant="outlined"
                               size="small"
                               onClick={() => logoInputRef.current?.click()}
-                              disabled={disableAllFields}
+                              disabled={disableAllFields || lockForStaff}
                               sx={{ textTransform: "none" }}
                             >
                               {logoPreview ? t('admin:edit_fund_logo_change') : t('admin:edit_fund_logo_select')}
@@ -442,7 +460,7 @@ export default function EditDonationPage() {
                           InputLabelProps={{ shrink: true }}
                           inputProps={{ maxLength: 100 }}
                           {...register("descriptionShort")}
-                          disabled={disableAllFields}
+                          disabled={disableAllFields || lockForStaff}
                           error={!!errors.descriptionShort}
                           helperText={errors.descriptionShort?.message}
                         />
@@ -488,7 +506,7 @@ export default function EditDonationPage() {
                               value={field.value}
                               onChange={field.onChange}
                               onBlur={field.onBlur}
-                              disabled={disableTargetAmount}
+                              disabled={disableTargetAmount || lockForStaff}
                               error={!!errors.targetAmount}
                               helperText={errors.targetAmount?.message}
                             />
@@ -504,7 +522,7 @@ export default function EditDonationPage() {
                               value={field.value}
                               onChange={field.onChange}
                               options={receivingOptions}
-                              disabled={disableFundReceivingInfo}
+                              disabled={disableFundReceivingInfo || lockForStaff}
                               error={!!errors.fundReceivingInfoId}
                               helperText={errors.fundReceivingInfoId?.message}
                               labelId="fund-receiving-info-label"
@@ -522,7 +540,7 @@ export default function EditDonationPage() {
                               value={field.value}
                               onChange={field.onChange}
                               views={["year", "month", "day", "hours", "minutes", "seconds"]}
-                              disabled={disableStartDate}
+                              disabled={disableStartDate || lockForStaff}
                               slotProps={{
                                 textField: {
                                   fullWidth: true,
@@ -544,7 +562,7 @@ export default function EditDonationPage() {
                               value={field.value}
                               onChange={field.onChange}
                               views={["year", "month", "day", "hours", "minutes", "seconds"]}
-                              disabled={disableEndDate}
+                              disabled={disableEndDate || lockForStaff}
                               slotProps={{
                                 textField: {
                                   fullWidth: true,
