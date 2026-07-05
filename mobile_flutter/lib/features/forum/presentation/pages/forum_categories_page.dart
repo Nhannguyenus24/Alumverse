@@ -51,6 +51,7 @@ class ForumCategoriesPage extends ConsumerWidget {
                 // Categories with no parent grouping still need to be reachable.
                 final orphanParents = parents.isEmpty ? categories : parents;
 
+                return ListView(
                   padding: const EdgeInsets.all(16),
                   children: [
                     for (final parent in orphanParents) ...[
