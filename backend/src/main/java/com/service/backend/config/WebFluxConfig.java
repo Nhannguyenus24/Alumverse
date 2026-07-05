@@ -27,8 +27,8 @@ public class WebFluxConfig implements WebFluxConfigurer {
                 .addResourceLocations("classpath:/static/")
                 .resourceChain(true);
 
-        // Root-level static files only (index.html, favicon.ico, etc.)
-        registry.addResourceHandler("/", "/*.html", "/*.css", "/*.js", "/*.ico", "/*.png", "/*.jpg")
+        // Root-level static files only (index.html, etc.)
+        registry.addResourceHandler("/", "/*.html", "/*.css", "/*.js")
                 .addResourceLocations("classpath:/static/", "classpath:/public/")
                 .resourceChain(true);
     }
