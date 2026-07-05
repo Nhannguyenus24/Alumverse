@@ -177,11 +177,12 @@ class NetworkSearchTab extends ConsumerWidget {
       await ref.read(networkRepositoryProvider).block(memberId);
       ref.invalidate(networkSearchProvider);
       ref.invalidate(networkBlockedProvider);
-      if (context.mounted)
+      if (context.mounted) {
         AppToast.success(
           context,
           'network.blocked_toast'.tr(namedArgs: {'name': name}),
         );
+      }
     } catch (e) {
       if (context.mounted) AppToast.fromError(context, e);
     }

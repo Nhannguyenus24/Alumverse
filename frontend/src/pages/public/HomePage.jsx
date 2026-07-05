@@ -182,7 +182,9 @@ const HomePage = () => {
           setOrganizations(res.data.data);
         }
       } catch (error) {
-        console.error("Failed to fetch organizations:", error);
+        if (error?.response?.status !== 429) {
+          console.error("Failed to fetch organizations:", error);
+        }
       }
     };
     fetchOrgs();
@@ -278,32 +280,36 @@ const HomePage = () => {
             sx={{ width: "100%" }}
           >
             <Box sx={{ textAlign: { xs: "center", md: "left" }, flex: { md: "1 1 50%" } }}>
-              <Typography
-                variant="h2"
-                component="h1"
-                fontWeight={800}
-                sx={{
-                  fontSize: { xs: "1.75rem", sm: "2.5rem", md: "3.5rem", lg: "4rem" },
-                  letterSpacing: { xs: 1, md: 2 },
-                  mb: 2,
-                }}
-              >
-                ALUMVERSE
-              </Typography>
-              <Typography
-                variant="body1"
-                sx={{
-                  fontSize: { xs: "0.875rem", sm: "1rem", md: "1.125rem" },
-                  lineHeight: 1.7,
-                  mb: 3,
-                  maxWidth: 520,
-                  mx: { xs: "auto", md: 0 },
-                  color: "rgba(255,255,255,0.95)",
-                }}
-              >
-                {t("home:hero_body")}
-              </Typography>
-              <Box sx={{ display: "flex", justifyContent: { xs: "center", md: "flex-start" } }}>
+              <RevealBox>
+                <Typography
+                  variant="h2"
+                  component="h1"
+                  fontWeight={800}
+                  sx={{
+                    fontSize: { xs: "1.75rem", sm: "2.5rem", md: "3.5rem", lg: "4rem" },
+                    letterSpacing: { xs: 1, md: 2 },
+                    mb: 2,
+                  }}
+                >
+                  ALUMVERSE
+                </Typography>
+              </RevealBox>
+              <RevealBox delay={120}>
+                <Typography
+                  variant="body1"
+                  sx={{
+                    fontSize: { xs: "0.875rem", sm: "1rem", md: "1.125rem" },
+                    lineHeight: 1.7,
+                    mb: 3,
+                    maxWidth: 520,
+                    mx: { xs: "auto", md: 0 },
+                    color: "rgba(255,255,255,0.95)",
+                  }}
+                >
+                  {t("home:hero_body")}
+                </Typography>
+              </RevealBox>
+              <RevealBox delay={220} sx={{ display: "flex", justifyContent: { xs: "center", md: "flex-start" } }}>
                 <Button
                   onClick={() => navigate("/introduction")}
                   variant="outlined"
@@ -322,10 +328,10 @@ const HomePage = () => {
                 >
                   {t("home:hero_intro_btn")}
                 </Button>
-              </Box>
+              </RevealBox>
             </Box>
             {isDesktop && (
-              <Box sx={{ display: "flex", justifyContent: "center", flex: "1 1 50%" }}>
+              <RevealBox delay={180} sx={{ display: "flex", justifyContent: "center", flex: "1 1 50%" }}>
                 <Logo
                   variant="image"
                   src={HERO_LOGO}
@@ -339,7 +345,7 @@ const HomePage = () => {
                     animation: `${floatIconAnimation} 5s ease-in-out infinite`,
                   }}
                 />
-              </Box>
+              </RevealBox>
             )}
           </Stack>
         </Container>
@@ -348,14 +354,16 @@ const HomePage = () => {
       {/* Khám phá */}
       <Box sx={{ py: { xs: 7, sm: 9, md: 12 }, backgroundColor: softSectionBg }}>
         <Container sx={{ px: { xs: 2, sm: 3 } }}>
-          <Typography
-            variant="h1"
-            color="primary.main"
-            textAlign="center"
-            sx={mainSectionTitleSx}
-          >
-            {t("home:section_explore")}
-          </Typography>
+          <RevealBox>
+            <Typography
+              variant="h1"
+              color="primary.main"
+              textAlign="center"
+              sx={mainSectionTitleSx}
+            >
+              {t("home:section_explore")}
+            </Typography>
+          </RevealBox>
           <Stack
             direction="row"
             flexWrap="wrap"
@@ -487,22 +495,26 @@ const HomePage = () => {
       {/* Tin tức */}
       <Box sx={{ py: { xs: 7, sm: 9, md: 12 }, backgroundColor: plainSectionBg }}>
         <Container sx={{ px: { xs: 2, sm: 3 } }}>
-          <Typography
-            variant="h1"
-            color="primary.main"
-            textAlign="center"
-            sx={mainSectionTitleSx}
-          >
-            {t("home:section_news")}
-          </Typography>
-          <Typography
-            variant="body1"
-            color="text.secondary"
-            textAlign="center"
-            sx={{ maxWidth: 720, mx: "auto", mb: { xs: 3, md: 5 }, lineHeight: 1.7 }}
-          >
-            {t("home:section_news_desc")}
-          </Typography>
+          <RevealBox>
+            <Typography
+              variant="h1"
+              color="primary.main"
+              textAlign="center"
+              sx={mainSectionTitleSx}
+            >
+              {t("home:section_news")}
+            </Typography>
+          </RevealBox>
+          <RevealBox delay={100}>
+            <Typography
+              variant="body1"
+              color="text.secondary"
+              textAlign="center"
+              sx={{ maxWidth: 720, mx: "auto", mb: { xs: 3, md: 5 }, lineHeight: 1.7 }}
+            >
+              {t("home:section_news_desc")}
+            </Typography>
+          </RevealBox>
           <Stack
             direction="row"
             flexWrap="wrap"
@@ -527,7 +539,7 @@ const HomePage = () => {
               </RevealBox>
             ))}
           </Stack>
-          <Box sx={{ display: "flex", justifyContent: "center", mt: { xs: 3, md: 5 } }}>
+          <RevealBox delay={120} sx={{ display: "flex", justifyContent: "center", mt: { xs: 3, md: 5 } }}>
             <Button
               variant="contained"
               endIcon={<ArrowForwardIcon />}
@@ -536,7 +548,7 @@ const HomePage = () => {
             >
               {t("home:news_all_cta")}
             </Button>
-          </Box>
+          </RevealBox>
         </Container>
       </Box>
 
@@ -549,32 +561,38 @@ const HomePage = () => {
             alignItems={{ xs: "stretch", md: "center" }}
           >
             <Box sx={{ flex: { md: "0 0 34%" }, textAlign: { xs: "center", md: "left" } }}>
-              <Typography
-                variant="h1"
-                sx={{
-                  ...mainSectionTitleSx,
-                  mb: 2,
-                  color: "accent.main",
-                  textAlign: { xs: "center", md: "left" },
-                }}
-              >
-                {t("home:section_featured_alumni")}
-              </Typography>
-              <Typography variant="body1" sx={{ color: alpha(theme.palette.primary.contrastText, 0.88), lineHeight: 1.8, mb: 3 }}>
-                {t("home:section_featured_alumni_desc")}
-              </Typography>
-              <Button
-                variant="contained"
-                color="accent"
-                endIcon={<ArrowForwardIcon />}
-                onClick={() => navigate("/honors/achievements")}
-                sx={{
-                  px: 2.5,
-                  fontWeight: 700,
-                }}
-              >
-                {t("home:featured_alumni_cta")}
-              </Button>
+              <RevealBox>
+                <Typography
+                  variant="h1"
+                  sx={{
+                    ...mainSectionTitleSx,
+                    mb: 2,
+                    color: "primary.contrastText",
+                    textAlign: { xs: "center", md: "left" },
+                  }}
+                >
+                  {t("home:section_featured_alumni")}
+                </Typography>
+              </RevealBox>
+              <RevealBox delay={100}>
+                <Typography variant="body1" sx={{ color: alpha(theme.palette.primary.contrastText, 0.88), lineHeight: 1.8, mb: 3 }}>
+                  {t("home:section_featured_alumni_desc")}
+                </Typography>
+              </RevealBox>
+              <RevealBox delay={180}>
+                <Button
+                  variant="contained"
+                  color="accent"
+                  endIcon={<ArrowForwardIcon />}
+                  onClick={() => navigate("/honors/achievements")}
+                  sx={{
+                    px: 2.5,
+                    fontWeight: 700,
+                  }}
+                >
+                  {t("home:featured_alumni_cta")}
+                </Button>
+              </RevealBox>
             </Box>
             <Box
               sx={{
@@ -658,14 +676,16 @@ const HomePage = () => {
       {/* Đối tác */}
       <Box sx={{ py: { xs: 8, sm: 10, md: 12 }, backgroundColor: softSectionBg, overflow: "hidden" }}>
         <Container sx={{ px: { xs: 2, sm: 3 } }}>
-          <Typography
-            variant="h5"
-            textAlign="center"
-            color="primary.main"
-            sx={marqueeTitleSx}
-          >
-            {t("common:partners_count")}
-          </Typography>
+          <RevealBox>
+            <Typography
+              variant="h5"
+              textAlign="center"
+              color="primary.main"
+              sx={marqueeTitleSx}
+            >
+              {t("common:partners_count")}
+            </Typography>
+          </RevealBox>
           <Box sx={{ position: "relative", overflow: "hidden", py: 2 }}>
             <Box
               sx={{
@@ -703,22 +723,26 @@ const HomePage = () => {
       {organizations.length > 0 && (
         <Box sx={{ py: { xs: 8, sm: 10, md: 12 }, backgroundColor: plainSectionBg, overflow: "hidden" }}>
           <Container sx={{ px: { xs: 2, sm: 3 } }}>
-            <Typography
-              variant="h5"
-              textAlign="center"
-              color="accent.main"
-              sx={marqueeTitleSx}
-            >
-              {t("home:section_other_orgs")}
-            </Typography>
-            <Typography
-              variant="body1"
-              color="text.secondary"
-              textAlign="center"
-              sx={{ maxWidth: 680, mx: "auto", mb: { xs: 3, md: 4 }, lineHeight: 1.8, fontSize: { xs: "0.95rem", md: "1rem" } }}
-            >
-              {t("home:section_other_orgs_desc")}
-            </Typography>
+            <RevealBox>
+              <Typography
+                variant="h5"
+                textAlign="center"
+                color="accent.main"
+                sx={marqueeTitleSx}
+              >
+                {t("home:section_other_orgs")}
+              </Typography>
+            </RevealBox>
+            <RevealBox delay={100}>
+              <Typography
+                variant="body1"
+                color="text.secondary"
+                textAlign="center"
+                sx={{ maxWidth: 680, mx: "auto", mb: { xs: 3, md: 4 }, lineHeight: 1.8, fontSize: { xs: "0.95rem", md: "1rem" } }}
+              >
+                {t("home:section_other_orgs_desc")}
+              </Typography>
+            </RevealBox>
             <Box sx={{ position: 'relative', width: '100%', overflow: 'hidden' }}>
               <Box
                 sx={{

@@ -330,6 +330,7 @@ public class AuthController {
             LoginResponse loginResponse = LoginResponse.builder()
                     .accessToken(accessToken)
                     .verificationLevel(4) // Default for system admin (non-zero)
+                    .mustChangePassword(user.isMustChangePassword())
                     .build();
 
             return Mono.just(ResponseEntity.ok()
@@ -347,6 +348,7 @@ public class AuthController {
                     LoginResponse loginResponse = LoginResponse.builder()
                             .accessToken(accessToken)
                             .verificationLevel(level)
+                            .mustChangePassword(user.isMustChangePassword())
                             .build();
 
                     return ResponseEntity.ok()

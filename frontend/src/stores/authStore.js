@@ -5,6 +5,7 @@ const initialState = {
   user: null,
   token: null,
   verificationLevel: null,
+  mustChangePassword: false,
   loading: false,
   error: null,
 };
@@ -24,6 +25,7 @@ const useAuthStore = create(
       setUser: (user) => set({ user }),
       setToken: (token) => set({ token }),
       setVerificationLevel: (verificationLevel) => set({ verificationLevel }),
+      setMustChangePassword: (mustChangePassword) => set({ mustChangePassword }),
 
       setLoading: (loading) => set((state) => ({
         loading,
@@ -40,6 +42,7 @@ const useAuthStore = create(
         user: state.user,
         token: state.token,
         verificationLevel: state.verificationLevel,
+        mustChangePassword: state.mustChangePassword,
       }),
     }
   )

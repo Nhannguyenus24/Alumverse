@@ -125,8 +125,9 @@ class _RequestCardState extends ConsumerState<_RequestCard> {
           .read(organizationRepositoryProvider)
           .acceptPeerVerification(widget.item.requestId);
       ref.invalidate(pendingPeerVerificationsProvider);
-      if (mounted)
+      if (mounted) {
         AppToast.success(context, 'organization.verify_success'.tr());
+      }
     } catch (e) {
       if (mounted) AppToast.error(context, 'organization.verify_failed'.tr());
     } finally {

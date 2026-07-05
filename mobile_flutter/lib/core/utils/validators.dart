@@ -26,27 +26,32 @@ class Validators {
     if (v.length < 8) return 'validation.password_min_length'.tr();
 
     // Add same requirements as frontend
-    if (!RegExp(r'[A-Z]').hasMatch(v))
+    if (!RegExp(r'[A-Z]').hasMatch(v)) {
       return 'validation.password_uppercase'.tr();
-    if (!RegExp(r'[a-z]').hasMatch(v))
+    }
+    if (!RegExp(r'[a-z]').hasMatch(v)) {
       return 'validation.password_lowercase'.tr();
+    }
     if (!RegExp(r'\d').hasMatch(v)) return 'validation.password_digit'.tr();
-    if (!RegExp(r'[@$!%*?&]').hasMatch(v))
+    if (!RegExp(r'[@$!%*?&]').hasMatch(v)) {
       return 'validation.password_special'.tr();
+    }
 
     return null;
   }
 
   static String? confirmPassword(String? value, String password) {
-    if (value == null || value.isEmpty)
+    if (value == null || value.isEmpty) {
       return 'validation.confirm_password_empty'.tr();
+    }
     if (value != password) return 'validation.password_mismatch'.tr();
     return null;
   }
 
   static String? studentId(String? value) {
-    if (value == null || value.trim().isEmpty)
+    if (value == null || value.trim().isEmpty) {
       return 'validation.student_id_empty'.tr();
+    }
     // Add specific student ID validation if needed
     return null;
   }

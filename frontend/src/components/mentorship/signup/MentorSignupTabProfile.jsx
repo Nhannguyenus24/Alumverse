@@ -1,10 +1,12 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   alpha,
+  Alert,
   Avatar,
   Box,
   Button,
   Card,
+  CircularProgress,
   Divider,
   IconButton,
   Stack,
@@ -19,6 +21,8 @@ import UploadFileOutlinedIcon from '@mui/icons-material/UploadFileOutlined';
 import { useTranslation } from 'react-i18next';
 import AvatarUploadDialog from '../../profile/AvatarUploadDialog';
 import useAvatarCrop from '../../../hooks/profile/useAvatarCrop';
+import { fileToBase64 } from '../../../utils/imageUtils';
+import { extractMentorshipCv } from '../../../utils/api';
 
 const SectionList = ({ title, subtitle, items, onChange, fields, required = false, addLabel }) => {
   const { t } = useTranslation('mentorship');
@@ -98,6 +102,8 @@ const MentorSignupTabProfile = ({ values, onChange }) => {
   const { t } = useTranslation('mentorship');
   const cvInputRef = useRef(null);
   const avatarCrop = useAvatarCrop();
+  const [cvExtracting, setCvExtracting] = useState(false);
+  const [cvExtractError, setCvExtractError] = useState(null);
 
   useEffect(() => {
     const url = values.avatarPreview;
@@ -117,10 +123,41 @@ const MentorSignupTabProfile = ({ values, onChange }) => {
 
   const update = (key, val) => onChange({ ...values, [key]: val });
 
-  const handleCvPick = (e) => {
+  const handleCvPick = async (e) => {
     const file = e.target.files?.[0];
-    if (file) update('cvFile', file);
     e.target.value = null;
+    if (!file) return;
+
+    update('cvFile', file);
+    setCvExtractError(null);
+
+    if (!file.name.toLowerCase().endsWith('.pdf')) {
+      setCvExtractError(t('signup_profile_cv_pdf_only'));
+      return;
+    }
+
+    setCvExtracting(true);
+    try {
+      const base64File = await fileToBase64(file);
+      const res = await extractMentorshipCv({ base64File, originalFileName: file.name });
+      const profile = res?.data?.data ?? {};
+      onChange({
+        ...values,
+        cvFile: file,
+        currentJobTitle: profile.currentJobTitle || values.currentJobTitle,
+        currentCompany: profile.currentCompany || values.currentCompany,
+        bio: profile.bio || values.bio,
+        educations: (profile.educations?.length ? profile.educations : values.educations) ?? [],
+        experiences: (profile.experiences?.length ? profile.experiences : values.experiences) ?? [],
+        projects: (profile.projects?.length ? profile.projects : values.projects) ?? [],
+        awards: (profile.awards?.length ? profile.awards : values.awards) ?? [],
+        skills: (profile.skills?.length ? profile.skills : values.skills) ?? [],
+      });
+    } catch (err) {
+      setCvExtractError(err?.response?.data?.message ?? t('signup_profile_cv_extract_error'));
+    } finally {
+      setCvExtracting(false);
+    }
   };
 
   return (
@@ -148,20 +185,25 @@ const MentorSignupTabProfile = ({ values, onChange }) => {
             <span>
               <Button
                 variant="contained"
-                startIcon={<UploadFileOutlinedIcon />}
-                disabled
+                startIcon={cvExtracting ? <CircularProgress size={16} color="inherit" /> : <UploadFileOutlinedIcon />}
+                disabled={cvExtracting}
                 onClick={() => cvInputRef.current?.click()}
               >
-                Up CV
+                {cvExtracting ? t('signup_profile_cv_extracting') : t('signup_profile_cv_upload_btn')}
               </Button>
             </span>
           </Tooltip>
-          <input ref={cvInputRef} hidden type="file" accept=".pdf,.doc,.docx" onChange={handleCvPick} />
+          <input ref={cvInputRef} hidden type="file" accept=".pdf" onChange={handleCvPick} />
         </Stack>
-        {values.cvFile && (
+        {values.cvFile && !cvExtractError && (
           <Typography variant="caption" mt={1} display="block">
             {t('signup_profile_cv_selected', { name: values.cvFile.name })}
           </Typography>
+        )}
+        {cvExtractError && (
+          <Alert severity="warning" sx={{ mt: 1.5 }}>
+            {cvExtractError}
+          </Alert>
         )}
       </Card>
 

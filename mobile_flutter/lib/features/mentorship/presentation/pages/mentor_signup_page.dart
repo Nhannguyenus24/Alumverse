@@ -1,4 +1,8 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:easy_localization/easy_localization.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -22,9 +26,21 @@ class _ExpertiseDraft {
   String description = '';
 }
 
+/// A generic key/value draft row used by the education/experience/projects/
+/// awards/skills section lists — mirrors the web `SectionList` component,
+/// which stores each item as a plain map keyed by field name.
+class _EntryDraft {
+  _EntryDraft(this.values);
+  final Map<String, String> values;
+
+  Map<String, dynamic> toJson() => values;
+}
+
 /// Become a mentor — native take on the web `MentorshipSignupPage`. Collects
 /// the core profile fields + at least one expertise, then POSTs the profile
 /// and each expertise. Mentor profiles start as PENDING (admin approval).
+/// A CV (PDF) can be uploaded to auto-fill most of the fields below via OCR +
+/// Gemini (see MentorshipCvController on the backend).
 class MentorSignupPage extends ConsumerStatefulWidget {
   const MentorSignupPage({super.key});
 
@@ -40,8 +56,17 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
   final _meetingCtl = TextEditingController();
 
   final List<_ExpertiseDraft> _expertises = [_ExpertiseDraft()];
+  final List<_EntryDraft> _educations = [];
+  final List<_EntryDraft> _experiences = [];
+  final List<_EntryDraft> _projects = [];
+  final List<_EntryDraft> _awards = [];
+  final List<_EntryDraft> _skills = [];
+
   bool _termsAccepted = false;
   bool _submitting = false;
+  bool _cvExtracting = false;
+  String? _cvFileName;
+  String? _cvExtractError;
 
   @override
   void dispose() {
@@ -52,12 +77,128 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
     super.dispose();
   }
 
+  Future<void> _pickCv() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf'],
+      withData: true,
+    );
+    final picked = result?.files.firstOrNull;
+    if (picked == null) return;
+
+    setState(() {
+      _cvFileName = picked.name;
+      _cvExtractError = null;
+    });
+
+    if (!picked.name.toLowerCase().endsWith('.pdf')) {
+      setState(() => _cvExtractError = 'mentorship.signup_cv_pdf_only'.tr());
+      return;
+    }
+
+    setState(() => _cvExtracting = true);
+    try {
+      final bytes = picked.bytes ?? await File(picked.path!).readAsBytes();
+      final base64File = base64Encode(bytes);
+      final repo = ref.read(mentorshipRepositoryProvider);
+      final profile = await repo.extractCv(
+        base64File: base64File,
+        originalFileName: picked.name,
+      );
+      if (!mounted) return;
+      _applyExtractedProfile(profile);
+    } catch (e) {
+      if (!mounted) return;
+      setState(
+        () => _cvExtractError = 'mentorship.signup_cv_extract_error'.tr(),
+      );
+    } finally {
+      if (mounted) setState(() => _cvExtracting = false);
+    }
+  }
+
+  void _applyExtractedProfile(Map<String, dynamic> profile) {
+    setState(() {
+      final jobTitle = profile['currentJobTitle'] as String?;
+      if (jobTitle != null && jobTitle.trim().isNotEmpty) {
+        _jobCtl.text = jobTitle;
+      }
+      final company = profile['currentCompany'] as String?;
+      if (company != null && company.trim().isNotEmpty) {
+        _companyCtl.text = company;
+      }
+      final bio = profile['bio'] as String?;
+      if (bio != null && bio.trim().isNotEmpty) {
+        _bioCtl.text = bio;
+      }
+
+      _mergeEntries(_educations, profile['educations'], [
+        'school',
+        'degree',
+        'period',
+      ]);
+      _mergeEntries(_experiences, profile['experiences'], [
+        'title',
+        'company',
+        'period',
+        'description',
+      ]);
+      _mergeEntries(_projects, profile['projects'], [
+        'name',
+        'description',
+        'link',
+      ]);
+      _mergeEntries(_awards, profile['awards'], [
+        'name',
+        'year',
+        'description',
+      ]);
+      _mergeEntries(_skills, profile['skills'], ['name', 'issuer']);
+    });
+  }
+
+  /// Replaces [target] with entries from the AI response when it returned
+  /// any — otherwise leaves what the user already typed untouched.
+  void _mergeEntries(
+    List<_EntryDraft> target,
+    dynamic rawList,
+    List<String> keys,
+  ) {
+    if (rawList is! List || rawList.isEmpty) return;
+    target.clear();
+    for (final raw in rawList) {
+      if (raw is! Map) continue;
+      final values = <String, String>{
+        for (final key in keys) key: (raw[key] as String?) ?? '',
+      };
+      target.add(_EntryDraft(values));
+    }
+  }
+
+  String _buildExtendedProfile() {
+    return jsonEncode({
+      'educations': _educations.map((e) => e.toJson()).toList(),
+      'experiences': _experiences.map((e) => e.toJson()).toList(),
+      'projects': _projects.map((e) => e.toJson()).toList(),
+      'awards': _awards.map((e) => e.toJson()).toList(),
+      'skills': _skills.map((e) => e.toJson()).toList(),
+    });
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     final validExpertises =
         _expertises.where((e) => e.topic.trim().isNotEmpty).toList();
     if (validExpertises.isEmpty) {
       AppToast.info(context, 'mentorship.signup_expertise_required'.tr());
+      return;
+    }
+    if (_educations.isEmpty) {
+      AppToast.info(context, 'mentorship.signup_education_required'.tr());
+      return;
+    }
+    if (_experiences.isEmpty) {
+      AppToast.info(context, 'mentorship.signup_experience_required'.tr());
       return;
     }
     if (!_termsAccepted) {
@@ -73,6 +214,7 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
         currentCompany: _companyCtl.text.trim(),
         bio: _bioCtl.text.trim(),
         defaultMeetingLink: _meetingCtl.text.trim(),
+        extendedProfile: _buildExtendedProfile(),
       );
       for (final e in validExpertises) {
         await repo.addExpertise(
@@ -105,6 +247,13 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            _CvUploadCard(
+              extracting: _cvExtracting,
+              fileName: _cvFileName,
+              error: _cvExtractError,
+              onPick: _pickCv,
+            ),
+            const SizedBox(height: 24),
             _Label('mentorship.signup_mentor_info'.tr()),
             const SizedBox(height: 12),
             TextFormField(
@@ -158,6 +307,73 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
                 hintText: 'VD: https://meet.google.com/...',
                 prefixIcon: const Icon(Icons.video_call_outlined),
               ),
+            ),
+            const SizedBox(height: 24),
+            _SectionList(
+              title: 'mentorship.signup_education_title'.tr(),
+              addLabel: 'mentorship.signup_add_education'.tr(),
+              items: _educations,
+              onChanged: () => setState(() {}),
+              fields: const ['school', 'degree', 'period'],
+              fieldLabels: [
+                'mentorship.signup_edu_school'.tr(),
+                'mentorship.signup_edu_degree'.tr(),
+                'mentorship.signup_edu_period'.tr(),
+              ],
+            ),
+            const SizedBox(height: 20),
+            _SectionList(
+              title: 'mentorship.signup_experience_title'.tr(),
+              addLabel: 'mentorship.signup_add_experience'.tr(),
+              items: _experiences,
+              onChanged: () => setState(() {}),
+              fields: const ['title', 'company', 'period', 'description'],
+              fieldLabels: [
+                'mentorship.signup_exp_title'.tr(),
+                'mentorship.signup_exp_company'.tr(),
+                'mentorship.signup_exp_period'.tr(),
+                'mentorship.signup_exp_description'.tr(),
+              ],
+              multilineFields: const ['description'],
+            ),
+            const SizedBox(height: 20),
+            _SectionList(
+              title: 'mentorship.signup_projects_title'.tr(),
+              addLabel: 'mentorship.signup_add_project'.tr(),
+              items: _projects,
+              onChanged: () => setState(() {}),
+              fields: const ['name', 'description', 'link'],
+              fieldLabels: [
+                'mentorship.signup_project_name'.tr(),
+                'mentorship.signup_project_desc'.tr(),
+                'mentorship.signup_project_link'.tr(),
+              ],
+              multilineFields: const ['description'],
+            ),
+            const SizedBox(height: 20),
+            _SectionList(
+              title: 'mentorship.signup_awards_title'.tr(),
+              addLabel: 'mentorship.signup_add_award'.tr(),
+              items: _awards,
+              onChanged: () => setState(() {}),
+              fields: const ['name', 'year', 'description'],
+              fieldLabels: [
+                'mentorship.signup_award_name'.tr(),
+                'mentorship.signup_award_year'.tr(),
+                'mentorship.signup_award_desc'.tr(),
+              ],
+            ),
+            const SizedBox(height: 20),
+            _SectionList(
+              title: 'mentorship.signup_skills_title'.tr(),
+              addLabel: 'mentorship.signup_add_skill'.tr(),
+              items: _skills,
+              onChanged: () => setState(() {}),
+              fields: const ['name', 'issuer'],
+              fieldLabels: [
+                'mentorship.signup_skill_name'.tr(),
+                'mentorship.signup_skill_issuer'.tr(),
+              ],
             ),
             const SizedBox(height: 24),
             Row(
@@ -228,6 +444,207 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Card offering to auto-fill the form below from an uploaded CV (PDF).
+/// Mirrors the web signup form's "Quick-fill from CV" card.
+class _CvUploadCard extends StatelessWidget {
+  const _CvUploadCard({
+    required this.extracting,
+    required this.fileName,
+    required this.error,
+    required this.onPick,
+  });
+
+  final bool extracting;
+  final String? fileName;
+  final String? error;
+  final VoidCallback onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 0,
+      color: AppColors.primaryLighter,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+        side: const BorderSide(color: AppColors.primary, width: 0.5),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'mentorship.signup_cv_title'.tr(),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'mentorship.signup_cv_desc'.tr(),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                ElevatedButton.icon(
+                  onPressed: extracting ? null : onPick,
+                  icon:
+                      extracting
+                          ? const SizedBox(
+                            height: 16,
+                            width: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                          : const Icon(Icons.upload_file_outlined, size: 18),
+                  label: Text(
+                    extracting
+                        ? 'mentorship.signup_cv_extracting'.tr()
+                        : 'mentorship.signup_cv_upload_btn'.tr(),
+                  ),
+                ),
+              ],
+            ),
+            if (fileName != null && error == null) ...[
+              const SizedBox(height: 8),
+              Text(
+                'mentorship.signup_cv_selected'.tr(
+                  namedArgs: {'name': fileName!},
+                ),
+                style: const TextStyle(fontSize: 12),
+              ),
+            ],
+            if (error != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                error!,
+                style: const TextStyle(fontSize: 12, color: AppColors.error),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Repeatable list of free-form entries (education/experience/projects/
+/// awards/skills) — native counterpart of the web `SectionList` component.
+class _SectionList extends StatelessWidget {
+  const _SectionList({
+    required this.title,
+    required this.addLabel,
+    required this.items,
+    required this.onChanged,
+    required this.fields,
+    required this.fieldLabels,
+    this.multilineFields = const [],
+  });
+
+  final String title;
+  final String addLabel;
+  final List<_EntryDraft> items;
+  final VoidCallback onChanged;
+  final List<String> fields;
+  final List<String> fieldLabels;
+  final List<String> multilineFields;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(child: _Label(title)),
+            TextButton.icon(
+              onPressed: () {
+                items.add(_EntryDraft({for (final f in fields) f: ''}));
+                onChanged();
+              },
+              icon: const Icon(Icons.add, size: 18),
+              label: Text(addLabel),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        if (items.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              border: Border.all(color: AppColors.divider),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(
+              'mentorship.signup_no_items'.tr(namedArgs: {'label': addLabel}),
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 13,
+              ),
+            ),
+          )
+        else
+          ...items.asMap().entries.map(
+            (entry) => Card(
+              key: ValueKey(entry.value),
+              margin: const EdgeInsets.only(bottom: 12),
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+                side: const BorderSide(color: AppColors.divider),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  children: [
+                    for (var i = 0; i < fields.length; i++) ...[
+                      TextFormField(
+                        initialValue: entry.value.values[fields[i]],
+                        maxLines: multilineFields.contains(fields[i]) ? 3 : 1,
+                        onChanged: (v) => entry.value.values[fields[i]] = v,
+                        decoration: InputDecoration(
+                          labelText: fieldLabels[i],
+                          isDense: true,
+                        ),
+                      ),
+                      if (i != fields.length - 1) const SizedBox(height: 8),
+                    ],
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.delete_outline,
+                          color: AppColors.error,
+                        ),
+                        onPressed: () {
+                          items.removeAt(entry.key);
+                          onChanged();
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

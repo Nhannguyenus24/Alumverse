@@ -82,4 +82,23 @@ public class LangChain4jConfig {
                 .chatLanguageModel(model)
                 .build();
     }
+
+    @Bean
+    public com.service.backend.shared.service.CvExtractionService cvExtractionService() {
+        if (geminiApiKey == null || geminiApiKey.isBlank()) {
+            // No Gemini key: return an empty result so the CV-upload step degrades
+            // to a no-op instead of failing the request.
+            return cvText -> com.service.backend.shared.dto.CvExtractionResponse.builder().build();
+        }
+
+        GoogleAiGeminiChatModel model = GoogleAiGeminiChatModel.builder()
+                .apiKey(geminiApiKey)
+                .modelName(geminiModelName)
+                .temperature(geminiModelTemperature)
+                .build();
+
+        return AiServices.builder(com.service.backend.shared.service.CvExtractionService.class)
+                .chatLanguageModel(model)
+                .build();
+    }
 }

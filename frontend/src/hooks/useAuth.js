@@ -21,7 +21,7 @@ export const useAuth = () => {
   const getFirstZodMessage = (error) =>
     error?.issues?.[0]?.message ?? t('invalid_data');
   const organizationIdFromStore = useOrganizationStore((state) => state.organization?.id ?? null);
-  const { user, token, loading, error, verificationLevel } = store;
+  const { user, token, loading, error, verificationLevel, mustChangePassword } = store;
 
   const [storageHydrated, setStorageHydrated] = useState(() =>
     typeof useAuthStore.persist?.hasHydrated === 'function'
@@ -111,6 +111,7 @@ export const useAuth = () => {
   const applyAccessTokenToStore = useCallback((responseData, fallbackMessage) => {
     const accessToken = responseData?.data?.accessToken ?? null;
     const verificationLevel = responseData?.data?.verificationLevel ?? null;
+    const mustChangePassword = responseData?.data?.mustChangePassword ?? false;
     const authUser = userFromAccessToken(accessToken);
     if (!accessToken || !authUser) {
       const msg = responseData?.message ?? fallbackMessage;
@@ -122,8 +123,9 @@ export const useAuth = () => {
       user: authUser,
       token: accessToken,
       verificationLevel,
+      mustChangePassword,
     });
-    return { ok: true, data: { token: accessToken, user: authUser, verificationLevel } };
+    return { ok: true, data: { token: accessToken, user: authUser, verificationLevel, mustChangePassword } };
   }, [store]);
 
   const login = useCallback(async (payload) => {
@@ -294,6 +296,7 @@ export const useAuth = () => {
       }
       store.setLoading(false);
       store.setError(null);
+      store.setMustChangePassword(false);
       return { ok: true, message: data?.message };
     } catch (err) {
       const message = err.response?.data?.message ?? err.message ?? t('change_password_failed');
@@ -350,6 +353,7 @@ export const useAuth = () => {
     /** Button/form busy: login, register, OTP, password flows */
     isSubmitting: loading,
     verificationLevel,
+    mustChangePassword,
     user,
     error,
     setError,
@@ -363,7 +367,7 @@ export const useAuth = () => {
     resetPasswordWithOtp,
     logout,
   }), [
-    storageHydrated, authResolved, token, user, isBootLoading, loading, verificationLevel, error,
+    storageHydrated, authResolved, token, user, isBootLoading, loading, verificationLevel, mustChangePassword, error,
     setError, clearError, login, loginWithGoogle, register, forgotPassword, verifySignupCode, resetPassword, resetPasswordWithOtp, logout
   ]);
 };

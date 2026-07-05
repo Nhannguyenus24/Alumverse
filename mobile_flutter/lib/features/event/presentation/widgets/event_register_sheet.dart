@@ -239,16 +239,22 @@ class _QuestionField extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           label,
-          for (final opt in question.options)
-            RadioListTile<String>(
-              contentPadding: EdgeInsets.zero,
-              dense: true,
-              value: opt,
-              groupValue: selected,
-              title: Text(opt),
-              activeColor: AppColors.primary,
-              onChanged: (v) => onChanged(v),
+          RadioGroup<String>(
+            groupValue: selected,
+            onChanged: (v) => onChanged(v),
+            child: Column(
+              children: [
+                for (final opt in question.options)
+                  RadioListTile<String>(
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                    value: opt,
+                    title: Text(opt),
+                    activeColor: AppColors.primary,
+                  ),
+              ],
             ),
+          ),
         ],
       );
     }
