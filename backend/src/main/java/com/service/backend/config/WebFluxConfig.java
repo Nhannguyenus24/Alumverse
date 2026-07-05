@@ -9,12 +9,11 @@ public class WebFluxConfig implements WebFluxConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("/*.html", "/*.js", "/*.css", "/*.ico", "/*.png", "/*.jpg", "/*.jpeg")
-                .addResourceLocations("classpath:/static/", "classpath:/public/")
-                .resourceChain(true);
-
         registry.addResourceHandler("/webjars/**")
                 .addResourceLocations("classpath:/META-INF/resources/webjars/")
                 .resourceChain(true);
+
+        registry.addResourceHandler("/swagger-ui.html")
+                .addResourceLocations("classpath:/META-INF/resources/");
     }
 }
