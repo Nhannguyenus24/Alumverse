@@ -1,14 +1,3 @@
-/** @deprecated Use getAcademicEmptyLabel(t) instead */
-const ACADEMIC_EMPTY_LABEL = 'Chưa cập nhật';
-
-/**
- * Returns a translated "not updated" label, or falls back to the Vietnamese
- * literal when no t function is provided (backward compatibility).
- * @param {Function} [t] - optional i18next t function
- * @returns {string}
- */
-export const getAcademicEmptyLabel = (t) => t ? t('common:not_updated') : ACADEMIC_EMPTY_LABEL;
-
 function parseAcademicList(value) {
   if (value == null) return [];
 

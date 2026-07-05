@@ -33,28 +33,26 @@ class OrganizationRepository {
     List<String>? program,
     List<String>? major,
     List<int>? graduatedYear,
-  }) =>
-      api.joinOrganization(
-        organizationId: organizationId,
-        userId: userId,
-        program: program,
-        major: major,
-        graduatedYear: graduatedYear,
-      );
+  }) => api.joinOrganization(
+    organizationId: organizationId,
+    userId: userId,
+    program: program,
+    major: major,
+    graduatedYear: graduatedYear,
+  );
 
   Future<void> requestPeerVerification({
     required int organizationId,
     required int verifierUserId,
-  }) =>
-      api.requestPeerVerification(
-        organizationId: organizationId,
-        verifierUserId: verifierUserId,
-      );
+  }) => api.requestPeerVerification(
+    organizationId: organizationId,
+    verifierUserId: verifierUserId,
+  );
 
   /// Peer-verification requests the current user received (to vouch for others).
   Future<List<PendingPeerVerification>> getPendingPeerVerifications(
-          int organizationId) =>
-      api.getPendingPeerVerifications(organizationId);
+    int organizationId,
+  ) => api.getPendingPeerVerifications(organizationId);
 
   /// Accept a received peer-verification request.
   Future<void> acceptPeerVerification(int requestId) =>
@@ -64,10 +62,9 @@ class OrganizationRepository {
     required String base64File,
     required String originalFileName,
     required String documentType,
-  }) =>
-      api.createVerificationRequest(
-        base64File: base64File,
-        originalFileName: originalFileName,
-        documentType: documentType,
-      );
+  }) => api.createVerificationRequest(
+    base64File: base64File,
+    originalFileName: originalFileName,
+    documentType: documentType,
+  );
 }

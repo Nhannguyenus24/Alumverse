@@ -26,9 +26,10 @@ class AlumniVerificationPage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: Text('organization.verify_alumni'.tr())),
       body: async.when(
-        loading: () => ListView(
-          children: List.generate(4, (_) => const SkeletonTile()),
-        ),
+        loading:
+            () => ListView(
+              children: List.generate(4, (_) => const SkeletonTile()),
+            ),
         error: (err, __) {
           // 403/404 = the user isn't a trusted verifier (or not a member) yet —
           // that's expected, not a load failure. Show a friendly explanation.
@@ -96,22 +97,25 @@ class _RequestCardState extends ConsumerState<_RequestCard> {
   Future<void> _accept() async {
     final ok = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('organization.verify_identity'.tr()),
-        content: Text(
-          'organization.verify_identity_confirm'.tr(
-            namedArgs: {'name': widget.item.requesterName},
+      builder:
+          (ctx) => AlertDialog(
+            title: Text('organization.verify_identity'.tr()),
+            content: Text(
+              'organization.verify_identity_confirm'.tr(
+                namedArgs: {'name': widget.item.requesterName},
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text('common.cancel'.tr()),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: Text('organization.verify_action'.tr()),
+              ),
+            ],
           ),
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: Text('common.cancel'.tr())),
-          ElevatedButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: Text('organization.verify_action'.tr())),
-        ],
-      ),
     );
     if (ok != true) return;
 
@@ -121,7 +125,8 @@ class _RequestCardState extends ConsumerState<_RequestCard> {
           .read(organizationRepositoryProvider)
           .acceptPeerVerification(widget.item.requestId);
       ref.invalidate(pendingPeerVerificationsProvider);
-      if (mounted) AppToast.success(context, 'organization.verify_success'.tr());
+      if (mounted)
+        AppToast.success(context, 'organization.verify_success'.tr());
     } catch (e) {
       if (mounted) AppToast.error(context, 'organization.verify_failed'.tr());
     } finally {
@@ -132,9 +137,10 @@ class _RequestCardState extends ConsumerState<_RequestCard> {
   @override
   Widget build(BuildContext context) {
     final item = widget.item;
-    final time = item.createdAt != null
-        ? DateFormat('dd/MM/yyyy • HH:mm').format(item.createdAt!)
-        : '';
+    final time =
+        item.createdAt != null
+            ? DateFormat('dd/MM/yyyy • HH:mm').format(item.createdAt!)
+            : '';
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -155,19 +161,31 @@ class _RequestCardState extends ConsumerState<_RequestCard> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(item.requesterName,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w700, fontSize: 15)),
+                Text(
+                  item.requesterName,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                  ),
+                ),
                 const SizedBox(height: 2),
-                Text('organization.verification_request_from'.tr(),
-                    style: const TextStyle(
-                        fontSize: 12.5, color: AppColors.textSecondary)),
+                Text(
+                  'organization.verification_request_from'.tr(),
+                  style: const TextStyle(
+                    fontSize: 12.5,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
                 if (time.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: 2),
-                    child: Text(time,
-                        style: const TextStyle(
-                            fontSize: 11, color: AppColors.textSecondary)),
+                    child: Text(
+                      time,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
                   ),
               ],
             ),
@@ -175,18 +193,20 @@ class _RequestCardState extends ConsumerState<_RequestCard> {
           const SizedBox(width: 8),
           _busy
               ? const SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
               : ElevatedButton(
-                  onPressed: _accept,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 8),
+                onPressed: _accept,
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
                   ),
-                  child: Text('organization.verify_action'.tr()),
                 ),
+                child: Text('organization.verify_action'.tr()),
+              ),
         ],
       ),
     );

@@ -13,9 +13,6 @@ import reactor.core.publisher.Mono;
 @Repository
 public interface ChatGroupMemberRepository extends ReactiveCrudRepository<ChatGroupMember, Long> {
 
-    @Query("SELECT * FROM chat_group_members WHERE member_id = :memberId")
-    Flux<ChatGroupMember> findByMemberId(Long memberId);
-
     @Query("SELECT * FROM chat_group_members WHERE group_id = :groupId")
     Flux<ChatGroupMember> findByGroupId(Long groupId);
 
@@ -91,18 +88,6 @@ public interface ChatGroupMemberRepository extends ReactiveCrudRepository<ChatGr
               AND (:namePattern IS NULL OR LOWER(gp.full_name) LIKE LOWER(:namePattern))
             """)
     Mono<Long> countMembersByGroupIdWithNameFilter(Long groupId, String namePattern);
-
-    @Query("SELECT COUNT(id) FROM chat_group_members WHERE group_id = :groupId")
-    Mono<Long> countMembersByGroupId(Long groupId);
-
-    @Modifying
-    @Query("""
-            INSERT INTO chat_group_members (group_id, member_id, role, joined_at)
-            VALUES (:groupId, :memberId, 'MEMBER', CURRENT_TIMESTAMP)
-            ON CONFLICT (group_id, member_id) DO NOTHING
-            """)
-    Mono<Void> insertMemberIfNotExists(Long groupId, Long memberId);
-    
 }
 
 

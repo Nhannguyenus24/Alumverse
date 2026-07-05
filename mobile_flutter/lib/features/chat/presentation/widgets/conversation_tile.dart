@@ -31,16 +31,19 @@ class ConversationTile extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 26,
-              backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+              backgroundColor: AppColors.primaryLighter,
               backgroundImage:
                   avatar != null ? CachedNetworkImageProvider(avatar) : null,
-              child: avatar == null
-                  ? Icon(
-                      conversation.isGroup ? Icons.groups_rounded : Icons.person,
-                      size: 28,
-                      color: AppColors.primary,
-                    )
-                  : null,
+              child:
+                  avatar == null
+                      ? Icon(
+                        conversation.isGroup
+                            ? Icons.groups_rounded
+                            : Icons.person,
+                        size: 28,
+                        color: AppColors.primary,
+                      )
+                      : null,
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -98,7 +101,9 @@ class ConversationTile extends StatelessWidget {
     final now = DateTime.now();
     final local = dt.toLocal();
     final sameDay =
-        now.year == local.year && now.month == local.month && now.day == local.day;
+        now.year == local.year &&
+        now.month == local.month &&
+        now.day == local.day;
     return sameDay
         ? DateFormat('HH:mm').format(local)
         : DateFormat('dd/MM').format(local);

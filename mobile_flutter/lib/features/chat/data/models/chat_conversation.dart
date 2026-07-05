@@ -55,9 +55,10 @@ class ChatConversation {
     return ChatConversation(
       id: (json['id'] as num).toInt(),
       type: 'GROUP',
-      name: (json['title'] as String?)?.trim().isNotEmpty == true
-          ? json['title'] as String
-          : 'Group chat',
+      name:
+          (json['title'] as String?)?.trim().isNotEmpty == true
+              ? json['title'] as String
+              : 'Group chat',
       avatarUrl: json['avatarUrl'] as String?,
       memberCount: (json['memberCount'] as num?)?.toInt(),
       preview: json['lastMessagePreview'] as String?,

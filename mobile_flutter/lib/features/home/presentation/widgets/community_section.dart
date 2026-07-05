@@ -66,40 +66,44 @@ class _MemberCard extends StatelessWidget {
           border: Border.all(color: AppColors.divider),
         ),
         child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircleAvatar(
-            radius: 32,
-            backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-            backgroundImage: avatar != null
-                ? CachedNetworkImageProvider(avatar)
-                : null,
-            child: avatar == null
-                ? const Icon(Icons.person, size: 36, color: AppColors.primary)
-                : null,
-          ),
-          const SizedBox(height: 10),
-          Text(
-            member.fullName,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-          ),
-          if (member.subtitle.isNotEmpty) ...[
-            const SizedBox(height: 2),
-            Text(
-              member.subtitle,
-              maxLines: 2,
-              textAlign: TextAlign.center,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 11.5,
-                height: 1.3,
-              ),
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircleAvatar(
+              radius: 32,
+              backgroundColor: AppColors.primaryLighter,
+              backgroundImage:
+                  avatar != null ? CachedNetworkImageProvider(avatar) : null,
+              child:
+                  avatar == null
+                      ? const Icon(
+                        Icons.person,
+                        size: 36,
+                        color: AppColors.primary,
+                      )
+                      : null,
             ),
+            const SizedBox(height: 10),
+            Text(
+              member.fullName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+            ),
+            if (member.subtitle.isNotEmpty) ...[
+              const SizedBox(height: 2),
+              Text(
+                member.subtitle,
+                maxLines: 2,
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 11.5,
+                  height: 1.3,
+                ),
+              ),
+            ],
           ],
-        ],
         ),
       ),
     );

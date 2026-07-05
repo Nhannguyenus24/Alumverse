@@ -21,12 +21,36 @@ class MainScaffold extends StatelessWidget {
   final int currentIndex;
 
   static const _tabSpecs = <_TabSpec>[
-    _TabSpec(RouteNames.home, Icons.home_outlined, Icons.home_rounded, 'nav.home'),
-    _TabSpec(RouteNames.forum, Icons.forum_outlined, Icons.forum_rounded, 'nav.forum'),
-    _TabSpec(RouteNames.mentorship, Icons.school_outlined, Icons.school_rounded, 'nav.mentorship'),
-    _TabSpec(RouteNames.events, Icons.event_outlined, Icons.event_rounded, 'nav.events'),
-    _TabSpec(RouteNames.chat, Icons.chat_bubble_outline_rounded,
-        Icons.chat_bubble_rounded, 'nav.messages'),
+    _TabSpec(
+      RouteNames.home,
+      Icons.home_outlined,
+      Icons.home_rounded,
+      'nav.home',
+    ),
+    _TabSpec(
+      RouteNames.forum,
+      Icons.forum_outlined,
+      Icons.forum_rounded,
+      'nav.forum',
+    ),
+    _TabSpec(
+      RouteNames.mentorship,
+      Icons.school_outlined,
+      Icons.school_rounded,
+      'nav.mentorship',
+    ),
+    _TabSpec(
+      RouteNames.events,
+      Icons.event_outlined,
+      Icons.event_rounded,
+      'nav.events',
+    ),
+    _TabSpec(
+      RouteNames.chat,
+      Icons.chat_bubble_outline_rounded,
+      Icons.chat_bubble_rounded,
+      'nav.messages',
+    ),
   ];
 
   /// Whether one of the bottom-nav tabs is the current screen. Screens opened
@@ -49,7 +73,7 @@ class MainScaffold extends StatelessWidget {
       bottomNavigationBar: NavigationBarTheme(
         data: NavigationBarThemeData(
           backgroundColor: AppColors.surface,
-          indicatorColor: AppColors.primary.withValues(alpha: 0.12),
+          indicatorColor: Colors.transparent,
           labelTextStyle: WidgetStateProperty.resolveWith((states) {
             final selected =
                 _hasSelectedTab && states.contains(WidgetState.selected);
@@ -72,9 +96,7 @@ class MainScaffold extends StatelessWidget {
           // NavigationBar requires a valid index; when no tab is current
           // (e.g. profile) fall back to 0 but suppress the highlight below.
           selectedIndex: _hasSelectedTab ? currentIndex : 0,
-          indicatorColor: _hasSelectedTab
-              ? AppColors.primary.withValues(alpha: 0.12)
-              : Colors.transparent,
+          indicatorColor: Colors.transparent,
           onDestinationSelected: (i) => _onTap(context, i),
           labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
           destinations: [

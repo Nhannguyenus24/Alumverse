@@ -22,37 +22,42 @@ class SavedArticlesPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final async = ref.watch(savedArticlesProvider);
-
     return Scaffold(
       appBar: AppBar(title: Text('article.saved'.tr())),
-      body: async.when(
-        loading: () => ListView(
-          children: List.generate(5, (_) => const SkeletonTile()),
-        ),
-        error: (_, __) => ErrorView(
-          message: 'article.saved_load_failed'.tr(),
-          onRetry: () => ref.invalidate(savedArticlesProvider),
-        ),
-        data: (items) {
-          if (items.isEmpty) {
-            return EmptyView(
-              icon: Icons.favorite_border_rounded,
-              title: 'article.no_saved'.tr(),
-              message: 'article.no_saved_desc'.tr(),
-            );
-          }
-          return RefreshIndicator(
-            onRefresh: () async {
-              ref.invalidate(savedArticlesProvider);
-              await ref.read(savedArticlesProvider.future);
+      body: Consumer(
+        builder: (context, ref, _) {
+          final async = ref.watch(savedArticlesProvider);
+          return async.when(
+            loading:
+                () => ListView(
+                  children: List.generate(5, (_) => const SkeletonTile()),
+                ),
+            error:
+                (_, __) => ErrorView(
+                  message: 'article.saved_load_failed'.tr(),
+                  onRetry: () => ref.invalidate(savedArticlesProvider),
+                ),
+            data: (items) {
+              if (items.isEmpty) {
+                return EmptyView(
+                  icon: Icons.favorite_border_rounded,
+                  title: 'article.no_saved'.tr(),
+                  message: 'article.no_saved_desc'.tr(),
+                );
+              }
+              return RefreshIndicator(
+                onRefresh: () async {
+                  ref.invalidate(savedArticlesProvider);
+                  await ref.read(savedArticlesProvider.future);
+                },
+                child: ListView.separated(
+                  padding: const EdgeInsets.all(12),
+                  itemCount: items.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 10),
+                  itemBuilder: (_, i) => _SavedCard(item: items[i]),
+                ),
+              );
             },
-            child: ListView.separated(
-              padding: const EdgeInsets.all(12),
-              itemCount: items.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 10),
-              itemBuilder: (_, i) => _SavedCard(item: items[i]),
-            ),
           );
         },
       ),
@@ -76,7 +81,8 @@ class _SavedCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final articleAsync = ref.watch(newsDetailProvider(item.itemId));
     final article = articleAsync.valueOrNull;
-    final title = article?.title ??
+    final title =
+        article?.title ??
         'article.article_id'.tr(namedArgs: {'id': item.itemId.toString()});
     final thumb = resolveImageUrl(article?.thumbnailUrl);
 
@@ -95,20 +101,23 @@ class _SavedCard extends ConsumerWidget {
             SizedBox(
               width: 96,
               height: 84,
-              child: thumb != null
-                  ? CachedNetworkImage(
-                      imageUrl: thumb,
-                      fit: BoxFit.cover,
-                      placeholder: (_, __) =>
-                          Container(color: AppColors.divider),
-                      errorWidget: (_, __, ___) => _placeholder(),
-                    )
-                  : _placeholder(),
+              child:
+                  thumb != null
+                      ? CachedNetworkImage(
+                        imageUrl: thumb,
+                        fit: BoxFit.cover,
+                        placeholder:
+                            (_, __) => Container(color: AppColors.divider),
+                        errorWidget: (_, __, ___) => _placeholder(),
+                      )
+                      : _placeholder(),
             ),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 10),
+                  horizontal: 12,
+                  vertical: 10,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
@@ -116,19 +125,26 @@ class _SavedCard extends ConsumerWidget {
                     if (articleAsync.isLoading)
                       const SkeletonBox(height: 14, width: 160)
                     else
-                      Text(title,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                              fontWeight: FontWeight.w700, fontSize: 14.5)),
+                      Text(
+                        title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14.5,
+                        ),
+                      ),
                     if (article?.topic != null &&
                         article!.topic!.isNotEmpty) ...[
                       const SizedBox(height: 4),
-                      Text(article.topic!.toUpperCase(),
-                          style: const TextStyle(
-                              fontSize: 11,
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.w700)),
+                      Text(
+                        article.topic!.toUpperCase(),
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ],
                   ],
                 ),
@@ -146,7 +162,7 @@ class _SavedCard extends ConsumerWidget {
   }
 
   Widget _placeholder() => Container(
-        color: AppColors.primary.withValues(alpha: 0.08),
-        child: const Icon(Icons.article_outlined, color: AppColors.primary),
-      );
+    color: AppColors.primaryLighter,
+    child: const Icon(Icons.article_outlined, color: AppColors.primary),
+  );
 }

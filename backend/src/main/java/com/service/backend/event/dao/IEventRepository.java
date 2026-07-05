@@ -35,8 +35,8 @@ public interface IEventRepository {
     Mono<Boolean> removeEventInterest(Long eventId, Long memberId);
     Mono<PaginatedResponse<EventInterest>> findEventInterests(Long eventId, int page, int limit);
     Mono<Boolean> checkUserInterest(Long eventId, Long memberId);
-    Mono<Event> updateInterestedCount(Long eventId, Boolean increment);
     Mono<Boolean> checkUserRegistered(Long eventId, Long memberId);
+    Mono<Event> updateInterestedCount(Long eventId, Boolean increment);
 
     Mono<EventTicket> registerTicket(EventTicket ticketData);
     Mono<Boolean> hasRegistered(Long eventId, Long memberId);

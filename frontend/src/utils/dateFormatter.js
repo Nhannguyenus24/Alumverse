@@ -8,18 +8,6 @@ const toValidDate = (value) => {
   return Number.isNaN(date.getTime()) ? null : date;
 };
 
-/**
- * Native implementation of formatDate.
- */
-const formatDateNative = (value, fallback = '-') => {
-  const date = toValidDate(value);
-  if (!date) return fallback;
-  return date.toLocaleDateString(DEFAULT_LOCALE, {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
-};
 
 /**
  * Formats a date string or object into a human-readable format using dayjs.
@@ -33,20 +21,6 @@ export const formatDate = (value, formatStr = "DD/MM/YYYY") => {
   return d.isValid() ? d.format(formatStr) : "--";
 };
 
-/**
- * Native implementation of formatDateTime.
- */
-const formatDateTimeNative = (value, fallback = '-') => {
-  const date = toValidDate(value);
-  if (!date) return fallback;
-  return date.toLocaleString(DEFAULT_LOCALE, {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-};
 
 /**
  * Formats a date with time using dayjs.

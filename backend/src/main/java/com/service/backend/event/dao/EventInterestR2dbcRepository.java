@@ -10,8 +10,6 @@ import reactor.core.publisher.Mono;
 @Repository
 public interface EventInterestR2dbcRepository extends ReactiveCrudRepository<EventInterest, Long> {
 
-    Mono<EventInterest> findByEventIdAndMemberId(Long eventId, Long memberId);
-
     Mono<Boolean> existsByEventIdAndMemberId(Long eventId, Long memberId);
 
     Mono<Void> deleteByEventIdAndMemberId(Long eventId, Long memberId);

@@ -36,34 +36,37 @@ class EventRepository {
 
   Future<EventSummary> getDetail(int id) async {
     final res = await _dio.get(ApiEndpoints.eventDetail(id));
-    final data = res.data is Map && res.data['data'] is Map
-        ? res.data['data'] as Map<String, dynamic>
-        : res.data as Map<String, dynamic>;
+    final data =
+        res.data is Map && res.data['data'] is Map
+            ? res.data['data'] as Map<String, dynamic>
+            : res.data as Map<String, dynamic>;
     return EventSummary.fromJson(data);
   }
 
   /// {interestedCount, registeredCount}
   Future<({int interested, int registered})> getStatistics(int id) async {
     final res = await _dio.get(ApiEndpoints.eventStatistics(id));
-    final data = res.data is Map && res.data['data'] is Map
-        ? res.data['data'] as Map
-        : res.data;
+    final data =
+        res.data is Map && res.data['data'] is Map
+            ? res.data['data'] as Map
+            : res.data;
     final m = data is Map ? data : const {};
     return (
       interested: (m['interestedCount'] as num?)?.toInt() ?? 0,
-      registered: ((m['registeredCount'] ?? m['joinedCount']) as num?)?.toInt() ?? 0,
+      registered:
+          ((m['registeredCount'] ?? m['joinedCount']) as num?)?.toInt() ?? 0,
     );
   }
 
   Future<bool> isInterested(int id) => _checkFlag(
-        ApiEndpoints.eventInterestCheck(id),
-        const ['isInterested', 'interested'],
-      );
+    ApiEndpoints.eventInterestCheck(id),
+    const ['isInterested', 'interested'],
+  );
 
   Future<bool> isRegistered(int id) => _checkFlag(
-        ApiEndpoints.eventCheckRegistered(id),
-        const ['isRegistered', 'registered'],
-      );
+    ApiEndpoints.eventCheckRegistered(id),
+    const ['isRegistered', 'registered'],
+  );
 
   Future<void> addInterest(int id) => _dio.post(ApiEndpoints.eventInterest(id));
 
@@ -86,9 +89,7 @@ class EventRepository {
   Future<void> register(int id, {List<Map<String, dynamic>>? answers}) =>
       _dio.post(
         ApiEndpoints.eventRegister(id),
-        data: {
-          if (answers != null && answers.isNotEmpty) 'answers': answers,
-        },
+        data: {if (answers != null && answers.isNotEmpty) 'answers': answers},
       );
 
   /// The current user's registration tickets (`GET /api/events/my-tickets`).
@@ -98,9 +99,8 @@ class EventRepository {
       queryParameters: {'page': page, 'limit': limit},
     );
     final data = res.data is Map ? res.data['data'] : res.data;
-    final list = data is Map
-        ? (data['items'] ?? data['content'] ?? data['data'])
-        : data;
+    final list =
+        data is Map ? (data['items'] ?? data['content'] ?? data['data']) : data;
     if (list is! List) return const [];
     return list
         .whereType<Map>()
@@ -111,9 +111,10 @@ class EventRepository {
   /// A single ticket by its code (`GET /api/events/tickets/code/{code}`).
   Future<EventTicket> getTicketByCode(String code) async {
     final res = await _dio.get(ApiEndpoints.eventTicketByCode(code));
-    final data = res.data is Map && res.data['data'] is Map
-        ? res.data['data'] as Map<String, dynamic>
-        : res.data as Map<String, dynamic>;
+    final data =
+        res.data is Map && res.data['data'] is Map
+            ? res.data['data'] as Map<String, dynamic>
+            : res.data as Map<String, dynamic>;
     return EventTicket.fromJson(data);
   }
 
@@ -132,9 +133,10 @@ class EventRepository {
       ApiEndpoints.eventCheckIn(eventId),
       data: {'qrToken': qrToken, 'code': code},
     );
-    final data = res.data is Map && res.data['data'] is Map
-        ? res.data['data'] as Map<String, dynamic>
-        : res.data as Map<String, dynamic>;
+    final data =
+        res.data is Map && res.data['data'] is Map
+            ? res.data['data'] as Map<String, dynamic>
+            : res.data as Map<String, dynamic>;
     return EventTicket.fromJson(data);
   }
 
@@ -142,9 +144,12 @@ class EventRepository {
   /// capacity, available slots (`GET /api/events/{id}/statistics`).
   Future<Map<String, dynamic>> getEventStatistics(int id) async {
     final res = await _dio.get(ApiEndpoints.eventStatistics(id));
-    final data = res.data is Map && res.data['data'] is Map
-        ? res.data['data'] as Map<String, dynamic>
-        : (res.data is Map ? res.data as Map<String, dynamic> : <String, dynamic>{});
+    final data =
+        res.data is Map && res.data['data'] is Map
+            ? res.data['data'] as Map<String, dynamic>
+            : (res.data is Map
+                ? res.data as Map<String, dynamic>
+                : <String, dynamic>{});
     return data;
   }
 
@@ -240,9 +245,8 @@ class EventRepository {
       queryParameters: {'page': 0, 'limit': 100},
     );
     final data = res.data is Map ? res.data['data'] : res.data;
-    final list = data is Map
-        ? (data['items'] ?? data['content'] ?? data['data'])
-        : data;
+    final list =
+        data is Map ? (data['items'] ?? data['content'] ?? data['data']) : data;
     if (list is! List) return null;
     for (final raw in list) {
       if (raw is! Map) continue;
@@ -258,9 +262,10 @@ class EventRepository {
 
   Future<bool> _checkFlag(String path, List<String> keys) async {
     final res = await _dio.get(path);
-    final data = res.data is Map && res.data['data'] != null
-        ? res.data['data']
-        : res.data;
+    final data =
+        res.data is Map && res.data['data'] != null
+            ? res.data['data']
+            : res.data;
     if (data is bool) return data;
     if (data is Map) {
       for (final k in keys) {
@@ -274,9 +279,8 @@ class EventRepository {
   /// key varies (`items`/`content`/`data`), so probe the common ones.
   List<EventSummary> _items(dynamic body) {
     final data = body is Map ? body['data'] : body;
-    final list = data is Map
-        ? (data['items'] ?? data['content'] ?? data['data'])
-        : data;
+    final list =
+        data is Map ? (data['items'] ?? data['content'] ?? data['data']) : data;
     if (list is! List) return const [];
     return list
         .map((e) => EventSummary.fromJson(e as Map<String, dynamic>))

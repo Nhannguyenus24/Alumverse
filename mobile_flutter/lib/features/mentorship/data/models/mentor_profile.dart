@@ -29,7 +29,10 @@ class MentorProfile {
 
   /// "Title @ Company" line, falling back to a generic label.
   String get roleLine {
-    final parts = [currentJobTitle, currentCompany].where((e) => e != null && e.isNotEmpty);
+    final parts = [
+      currentJobTitle,
+      currentCompany,
+    ].where((e) => e != null && e.isNotEmpty);
     return parts.isEmpty ? 'Mentor' : parts.join(' @ ');
   }
 
@@ -47,7 +50,8 @@ class MentorProfile {
       totalSessions: (json['totalSessions'] as num?)?.toInt() ?? 0,
       status: json['status'] as String?,
       coverUrl: json['coverUrl'] as String?,
-      expertiseTopics: (json['expertiseTopics'] as List?)
+      expertiseTopics:
+          (json['expertiseTopics'] as List?)
               ?.map((e) => e.toString())
               .toList() ??
           const [],

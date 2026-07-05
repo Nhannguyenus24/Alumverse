@@ -136,8 +136,8 @@ export const getJsonPayloadByteSize = (payload) =>
 
 // ── Chat attachments (image/video) ──────────────────────────────────────────
 
-export const CHAT_IMAGE_MAX_BYTES = 10 * 1024 * 1024;
-export const CHAT_VIDEO_MAX_BYTES = 30 * 1024 * 1024;
+const CHAT_IMAGE_MAX_BYTES = 10 * 1024 * 1024;
+const CHAT_VIDEO_MAX_BYTES = 30 * 1024 * 1024;
 
 const CHAT_IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
 const CHAT_IMAGE_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
@@ -150,8 +150,8 @@ const CHAT_VIDEO_MIME_TYPES = [
   "video/x-m4v",
 ];
 
-export const CHAT_IMAGE_ACCEPT = "image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif";
-export const CHAT_VIDEO_ACCEPT = "video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm,.m4v";
+const CHAT_IMAGE_ACCEPT = "image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif";
+const CHAT_VIDEO_ACCEPT = "video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm,.m4v";
 export const CHAT_ATTACHMENT_ACCEPT = `${CHAT_IMAGE_ACCEPT},${CHAT_VIDEO_ACCEPT}`;
 
 const getFileExtension = (file) => file.name.toLowerCase().match(/\.[^.]+$/)?.[0] ?? "";

@@ -15,7 +15,6 @@ public class LoginHistoryResponse {
     private Long id;
     private Integer userId;
     private String email;
-    private String studentId;
     private LocalDateTime loginAt;
     private String loginMethod;
     private String loginIp;

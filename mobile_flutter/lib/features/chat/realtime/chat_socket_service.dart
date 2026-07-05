@@ -40,8 +40,9 @@ class ChatSocketService {
   Stream<ChatSocketEvent> get events => _events.stream;
 
   /// Connection status for the UI (e.g. to disable the composer when closed).
-  final ValueNotifier<ChatSocketStatus> status =
-      ValueNotifier(ChatSocketStatus.idle);
+  final ValueNotifier<ChatSocketStatus> status = ValueNotifier(
+    ChatSocketStatus.idle,
+  );
 
   static const List<int> _backoff = [1, 2, 4, 8, 15];
 

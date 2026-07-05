@@ -50,24 +50,26 @@ class _MentorProfilePageState extends ConsumerState<MentorProfilePage>
       ),
       body: profileAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('mentorship.profile_load_failed'.tr()),
-              TextButton(
-                onPressed: () =>
-                    ref.invalidate(mentorProfileProvider(widget.memberId)),
-                child: Text('common.retry'.tr()),
+        error:
+            (e, _) => Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('mentorship.profile_load_failed'.tr()),
+                  TextButton(
+                    onPressed:
+                        () => ref.invalidate(
+                          mentorProfileProvider(widget.memberId),
+                        ),
+                    child: Text('common.retry'.tr()),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
+            ),
         data: (m) {
           final avatar = resolveImageUrl(m.avatarUrl);
-          final rating = m.ratingAvg != null
-              ? m.ratingAvg!.toStringAsFixed(1)
-              : '0.0';
+          final rating =
+              m.ratingAvg != null ? m.ratingAvg!.toStringAsFixed(1) : '0.0';
 
           return Column(
             children: [
@@ -85,44 +87,59 @@ class _MentorProfilePageState extends ConsumerState<MentorProfilePage>
                     CircleAvatar(
                       radius: 44,
                       backgroundColor: Colors.white,
-                      backgroundImage: avatar != null
-                          ? CachedNetworkImageProvider(avatar)
-                          : null,
-                      child: avatar == null
-                          ? const Icon(Icons.person,
-                              size: 48, color: AppColors.primary)
-                          : null,
+                      backgroundImage:
+                          avatar != null
+                              ? CachedNetworkImageProvider(avatar)
+                              : null,
+                      child:
+                          avatar == null
+                              ? const Icon(
+                                Icons.person,
+                                size: 48,
+                                color: AppColors.primary,
+                              )
+                              : null,
                     ),
                     const SizedBox(height: 10),
                     Text(
                       m.displayName,
                       style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 19,
-                          fontWeight: FontWeight.bold),
+                        color: Colors.white,
+                        fontSize: 19,
+                        fontWeight: FontWeight.bold,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 2),
                     Text(
                       m.roleLine,
-                      style:
-                          const TextStyle(color: Colors.white70, fontSize: 13),
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 13,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 6),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.star,
-                            color: AppColors.secondary, size: 17),
+                        const Icon(
+                          Icons.star,
+                          color: AppColors.secondary,
+                          size: 17,
+                        ),
                         const SizedBox(width: 4),
                         Text(
-                          'mentorship.rating_sessions'.tr(namedArgs: {
-                            'rating': rating,
-                            'count': m.totalSessions.toString(),
-                          }),
+                          'mentorship.rating_sessions'.tr(
+                            namedArgs: {
+                              'rating': rating,
+                              'count': m.totalSessions.toString(),
+                            },
+                          ),
                           style: const TextStyle(
-                              color: Colors.white, fontSize: 13),
+                            color: Colors.white,
+                            fontSize: 13,
+                          ),
                         ),
                       ],
                     ),
@@ -130,8 +147,10 @@ class _MentorProfilePageState extends ConsumerState<MentorProfilePage>
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
-                        onPressed: () => context.push(
-                            '${RouteNames.mentorship}/mentors/${widget.memberId}/book'),
+                        onPressed:
+                            () => context.push(
+                              '${RouteNames.mentorship}/mentors/${widget.memberId}/book',
+                            ),
                         icon: const Icon(Icons.calendar_month, size: 18),
                         label: Text('mentorship.book_appointment'.tr()),
                         style: ElevatedButton.styleFrom(
@@ -156,9 +175,10 @@ class _MentorProfilePageState extends ConsumerState<MentorProfilePage>
                         if (m.bio != null && m.bio!.isNotEmpty) ...[
                           _SectionLabel('mentorship.bio'.tr()),
                           const SizedBox(height: 6),
-                          Text(m.bio!,
-                              style: const TextStyle(
-                                  height: 1.6, fontSize: 14.5)),
+                          Text(
+                            m.bio!,
+                            style: const TextStyle(height: 1.6, fontSize: 14.5),
+                          ),
                           const SizedBox(height: 20),
                         ],
                         if (m.expertiseTopics.isNotEmpty) ...[
@@ -167,17 +187,21 @@ class _MentorProfilePageState extends ConsumerState<MentorProfilePage>
                           Wrap(
                             spacing: 8,
                             runSpacing: 8,
-                            children: m.expertiseTopics
-                                .map((t) => Chip(
-                                      label: Text(t),
-                                      backgroundColor: AppColors.primary
-                                          .withValues(alpha: 0.08),
-                                      labelStyle: const TextStyle(
+                            children:
+                                m.expertiseTopics
+                                    .map(
+                                      (t) => Chip(
+                                        label: Text(t),
+                                        backgroundColor: AppColors.primary
+                                            .withValues(alpha: 0.08),
+                                        labelStyle: const TextStyle(
                                           color: AppColors.primary,
-                                          fontSize: 13),
-                                      side: BorderSide.none,
-                                    ))
-                                .toList(),
+                                          fontSize: 13,
+                                        ),
+                                        side: BorderSide.none,
+                                      ),
+                                    )
+                                    .toList(),
                           ),
                         ],
                       ],
@@ -218,8 +242,11 @@ class _FeedbackTab extends ConsumerWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.lock_outline,
-                      size: 40, color: AppColors.textSecondary),
+                  const Icon(
+                    Icons.lock_outline,
+                    size: 40,
+                    color: AppColors.textSecondary,
+                  ),
                   const SizedBox(height: 12),
                   Text(
                     'mentorship.verify_required_feedback'.tr(),
@@ -227,8 +254,8 @@ class _FeedbackTab extends ConsumerWidget {
                   ),
                   const SizedBox(height: 12),
                   ElevatedButton.icon(
-                    onPressed: () =>
-                        context.push(RouteNames.organizationRegistration),
+                    onPressed:
+                        () => context.push(RouteNames.organizationRegistration),
                     icon: const Icon(Icons.verified_user_outlined, size: 18),
                     label: Text('mentorship.verify_academic'.tr()),
                   ),
@@ -243,8 +270,8 @@ class _FeedbackTab extends ConsumerWidget {
             children: [
               Text('mentorship.feedbacks_load_failed'.tr()),
               TextButton(
-                onPressed: () =>
-                    ref.invalidate(mentorFeedbacksProvider(memberId)),
+                onPressed:
+                    () => ref.invalidate(mentorFeedbacksProvider(memberId)),
                 child: Text('common.retry'.tr()),
               ),
             ],
@@ -257,11 +284,16 @@ class _FeedbackTab extends ConsumerWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.rate_review_outlined,
-                    size: 48, color: AppColors.textSecondary),
+                const Icon(
+                  Icons.rate_review_outlined,
+                  size: 48,
+                  color: AppColors.textSecondary,
+                ),
                 const SizedBox(height: 12),
-                Text('mentorship.no_feedbacks'.tr(),
-                    style: const TextStyle(color: AppColors.textSecondary)),
+                Text(
+                  'mentorship.no_feedbacks'.tr(),
+                  style: const TextStyle(color: AppColors.textSecondary),
+                ),
               ],
             ),
           );

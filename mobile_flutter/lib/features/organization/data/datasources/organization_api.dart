@@ -24,7 +24,9 @@ class OrganizationApi {
 
   /// Organization introduction content (`GET /organizations/{id}/introduction`).
   Future<OrganizationIntroduction> getIntroduction(int organizationId) async {
-    final res = await _dio.get(ApiEndpoints.organizationIntroduction(organizationId));
+    final res = await _dio.get(
+      ApiEndpoints.organizationIntroduction(organizationId),
+    );
     return OrganizationIntroduction.fromJson(_unwrap(res.data));
   }
 
@@ -81,7 +83,8 @@ class OrganizationApi {
   /// Peer-verification requests the current user RECEIVED (pending), scoped to
   /// [organizationId] (`GET /users/me/peer-verifications/pending`).
   Future<List<PendingPeerVerification>> getPendingPeerVerifications(
-      int organizationId) async {
+    int organizationId,
+  ) async {
     final res = await _dio.get(
       ApiEndpoints.peerVerificationPending,
       queryParameters: {'organizationId': organizationId},
@@ -89,8 +92,7 @@ class OrganizationApi {
     final body = res.data;
     final list = (body is Map ? body['data'] : body) as List? ?? const [];
     return list
-        .map((e) =>
-            PendingPeerVerification.fromJson(e as Map<String, dynamic>))
+        .map((e) => PendingPeerVerification.fromJson(e as Map<String, dynamic>))
         .toList();
   }
 

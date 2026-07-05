@@ -34,8 +34,7 @@ class FundSummary {
       targetAmount <= 0 ? 0 : (currentAmount / targetAmount).clamp(0, 1);
 
   /// A campaign is over once its end time has passed.
-  bool get isEnded =>
-      timeEnded != null && timeEnded!.isBefore(DateTime.now());
+  bool get isEnded => timeEnded != null && timeEnded!.isBefore(DateTime.now());
 
   factory FundSummary.fromJson(Map<String, dynamic> json) {
     return FundSummary(

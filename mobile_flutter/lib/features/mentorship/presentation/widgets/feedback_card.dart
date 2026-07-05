@@ -12,9 +12,10 @@ class FeedbackCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final date = feedback.createdAt != null
-        ? DateFormat('dd/MM/yyyy').format(feedback.createdAt!)
-        : null;
+    final date =
+        feedback.createdAt != null
+            ? DateFormat('dd/MM/yyyy').format(feedback.createdAt!)
+            : null;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -44,19 +45,27 @@ class FeedbackCard extends StatelessWidget {
               Text(
                 '${feedback.rating}/5',
                 style: const TextStyle(
-                    fontWeight: FontWeight.bold, color: AppColors.primary),
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
+                ),
               ),
               const Spacer(),
               if (date != null)
-                Text(date,
-                    style: const TextStyle(
-                        color: AppColors.textSecondary, fontSize: 12)),
+                Text(
+                  date,
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 12,
+                  ),
+                ),
             ],
           ),
           if (feedback.comment != null && feedback.comment!.isNotEmpty) ...[
             const SizedBox(height: 8),
-            Text(feedback.comment!,
-                style: const TextStyle(fontSize: 14, height: 1.5)),
+            Text(
+              feedback.comment!,
+              style: const TextStyle(fontSize: 14, height: 1.5),
+            ),
           ],
         ],
       ),

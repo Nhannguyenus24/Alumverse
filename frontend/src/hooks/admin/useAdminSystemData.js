@@ -77,7 +77,7 @@ const useAdminSystemData = (preferredOrganization = {}) => {
     });
 
     setLoading(false);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, []);
 
   // Run once on mount

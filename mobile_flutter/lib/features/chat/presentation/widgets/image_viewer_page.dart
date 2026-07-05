@@ -26,13 +26,15 @@ class ImageViewerPage extends StatelessWidget {
             child: CachedNetworkImage(
               imageUrl: imageUrl,
               fit: BoxFit.contain,
-              placeholder: (context, _) =>
-                  const CircularProgressIndicator(color: Colors.white),
-              errorWidget: (context, _, __) => const Icon(
-                Icons.broken_image_outlined,
-                color: Colors.white54,
-                size: 48,
-              ),
+              placeholder:
+                  (context, _) =>
+                      const CircularProgressIndicator(color: Colors.white),
+              errorWidget:
+                  (context, _, __) => const Icon(
+                    Icons.broken_image_outlined,
+                    color: Colors.white54,
+                    size: 48,
+                  ),
             ),
           ),
         ),

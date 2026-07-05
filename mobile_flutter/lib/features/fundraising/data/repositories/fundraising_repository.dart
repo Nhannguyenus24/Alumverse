@@ -49,15 +49,15 @@ class CreateDonationRequest {
   });
 
   Map<String, dynamic> toJson() => {
-        'fundId': fundId,
-        'donor_member_id': donorMemberId,
-        'donor_name': donorName,
-        'amount': amount,
-        'address': address,
-        'phone': phone,
-        'email': email,
-        'message': message,
-      };
+    'fundId': fundId,
+    'donor_member_id': donorMemberId,
+    'donor_name': donorName,
+    'amount': amount,
+    'address': address,
+    'phone': phone,
+    'email': email,
+    'message': message,
+  };
 }
 
 class FundraisingRepository {
@@ -123,11 +123,9 @@ class FundraisingRepository {
 
   // ── helpers ────────────────────────────────────────────────────────────────
 
-  String _isoStartOfDay(DateTime d) =>
-      '${_ymd(d)}T00:00:00';
+  String _isoStartOfDay(DateTime d) => '${_ymd(d)}T00:00:00';
 
-  String _isoEndOfDay(DateTime d) =>
-      '${_ymd(d)}T23:59:59';
+  String _isoEndOfDay(DateTime d) => '${_ymd(d)}T23:59:59';
 
   String _ymd(DateTime d) =>
       '${d.year.toString().padLeft(4, '0')}-'
@@ -158,9 +156,10 @@ class FundraisingRepository {
     }
     final map = data is Map<String, dynamic> ? data : <String, dynamic>{};
     final raw = map['items'] ?? map['content'];
-    final items = raw is List
-        ? raw.map((e) => fromJson(e as Map<String, dynamic>)).toList()
-        : <T>[];
+    final items =
+        raw is List
+            ? raw.map((e) => fromJson(e as Map<String, dynamic>)).toList()
+            : <T>[];
     return FundPageResult<T>(
       items: items,
       totalPage: (map['totalPage'] as num?)?.toInt() ?? 1,

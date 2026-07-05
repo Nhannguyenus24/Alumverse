@@ -67,7 +67,9 @@ class _CreateGroupPageState extends ConsumerState<CreateGroupPage> {
       if (_selected.length >= _maxMembers) {
         AppToast.info(
           context,
-          'chat.max_members_toast'.tr(namedArgs: {'max': _maxMembers.toString()}),
+          'chat.max_members_toast'.tr(
+            namedArgs: {'max': _maxMembers.toString()},
+          ),
         );
         return;
       }
@@ -83,10 +85,12 @@ class _CreateGroupPageState extends ConsumerState<CreateGroupPage> {
     setState(() => _isCreating = true);
     try {
       final title = _titleController.text.trim();
-      final ChatConversation group = await ref.read(chatRepositoryProvider).createGroup(
-        title: title.isEmpty ? null : title,
-        memberIds: _selected.keys.toList(),
-      );
+      final ChatConversation group = await ref
+          .read(chatRepositoryProvider)
+          .createGroup(
+            title: title.isEmpty ? null : title,
+            memberIds: _selected.keys.toList(),
+          );
       ref.invalidate(chatListProvider);
       if (mounted) {
         context.pushReplacement(
@@ -115,13 +119,14 @@ class _CreateGroupPageState extends ConsumerState<CreateGroupPage> {
         actions: [
           TextButton(
             onPressed: canCreate ? _create : null,
-            child: _isCreating
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Text('chat.create'.tr()),
+            child:
+                _isCreating
+                    ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                    : Text('chat.create'.tr()),
           ),
         ],
       ),
@@ -170,10 +175,12 @@ class _CreateGroupPageState extends ConsumerState<CreateGroupPage> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
-              'chat.selected_count'.tr(namedArgs: {
-                'count': _selected.length.toString(),
-                'max': _maxMembers.toString(),
-              }),
+              'chat.selected_count'.tr(
+                namedArgs: {
+                  'count': _selected.length.toString(),
+                  'max': _maxMembers.toString(),
+                },
+              ),
               style: const TextStyle(
                 fontSize: 12,
                 color: AppColors.textSecondary,
@@ -182,28 +189,30 @@ class _CreateGroupPageState extends ConsumerState<CreateGroupPage> {
           ),
           const SizedBox(height: 4),
           Expanded(
-            child: _isSearching
-                ? const Center(child: CircularProgressIndicator())
-                : _searchResults.isEmpty
+            child:
+                _isSearching
+                    ? const Center(child: CircularProgressIndicator())
+                    : _searchResults.isEmpty
                     ? Center(
-                        child: Text(
-                          'chat.no_connections_found'.tr(),
-                          style: const TextStyle(color: AppColors.textSecondary),
-                        ),
-                      )
-                    : ListView.builder(
-                        itemCount: _searchResults.length,
-                        itemBuilder: (context, i) {
-                          final conn = _searchResults[i];
-                          final isSelected =
-                              _selected.containsKey(conn.peerMemberId);
-                          return _ConnectionTile(
-                            connection: conn,
-                            isSelected: isSelected,
-                            onTap: () => _toggleMember(conn),
-                          );
-                        },
+                      child: Text(
+                        'chat.no_connections_found'.tr(),
+                        style: const TextStyle(color: AppColors.textSecondary),
                       ),
+                    )
+                    : ListView.builder(
+                      itemCount: _searchResults.length,
+                      itemBuilder: (context, i) {
+                        final conn = _searchResults[i];
+                        final isSelected = _selected.containsKey(
+                          conn.peerMemberId,
+                        );
+                        return _ConnectionTile(
+                          connection: conn,
+                          isSelected: isSelected,
+                          onTap: () => _toggleMember(conn),
+                        );
+                      },
+                    ),
           ),
         ],
       ),
@@ -253,17 +262,25 @@ class _ConnectionTile extends StatelessWidget {
     return ListTile(
       leading: _Avatar(url: connection.avatarUrl, name: connection.fullName),
       title: Text(connection.fullName),
-      subtitle: connection.subtitle.isNotEmpty
-          ? Text(
-              connection.subtitle,
-              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            )
-          : null,
-      trailing: isSelected
-          ? const Icon(Icons.check_circle, color: AppColors.primary)
-          : const Icon(Icons.circle_outlined, color: AppColors.secondaryLighter),
+      subtitle:
+          connection.subtitle.isNotEmpty
+              ? Text(
+                connection.subtitle,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              )
+              : null,
+      trailing:
+          isSelected
+              ? const Icon(Icons.check_circle, color: AppColors.primary)
+              : const Icon(
+                Icons.circle_outlined,
+                color: AppColors.secondaryLighter,
+              ),
       onTap: onTap,
     );
   }
@@ -282,12 +299,12 @@ class _Avatar extends StatelessWidget {
       return CircleAvatar(
         radius: 20,
         backgroundImage: CachedNetworkImageProvider(resolved),
-        backgroundColor: AppColors.background,
+        backgroundColor: AppColors.primaryLighter,
       );
     }
     return CircleAvatar(
       radius: 20,
-      backgroundColor: AppColors.primaryLight,
+      backgroundColor: AppColors.primaryLighter,
       child: Text(
         name.isNotEmpty ? name[0].toUpperCase() : '?',
         style: const TextStyle(

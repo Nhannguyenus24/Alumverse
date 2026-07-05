@@ -45,7 +45,8 @@ class _ForumCreateTopicPageState extends ConsumerState<ForumCreateTopicPage> {
 
     final orgId = ref.read(organizationStateProvider).valueOrNull?.id;
     final memberId = currentMemberIdFromUserId(
-        ref.read(authStateProvider).valueOrNull?.user?.id);
+      ref.read(authStateProvider).valueOrNull?.user?.id,
+    );
     if (orgId == null || memberId == null) {
       AppToast.error(context, 'forum.missing_info'.tr());
       return;
@@ -110,14 +111,19 @@ class _ForumCreateTopicPageState extends ConsumerState<ForumCreateTopicPage> {
                 if (widget.categoryName != null)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 12),
-                    child: Text('forum.category_label'.tr(
-                        namedArgs: {'name': widget.categoryName!})),
+                    child: Text(
+                      'forum.category_label'.tr(
+                        namedArgs: {'name': widget.categoryName!},
+                      ),
+                    ),
                   ),
                 TextFormField(
                   controller: _titleCtl,
-                  validator: (v) => (v == null || v.trim().isEmpty)
-                      ? 'forum.title_required'.tr()
-                      : null,
+                  validator:
+                      (v) =>
+                          (v == null || v.trim().isEmpty)
+                              ? 'forum.title_required'.tr()
+                              : null,
                   decoration: InputDecoration(
                     labelText: 'forum.post_title'.tr(),
                     prefixIcon: const Icon(Icons.title),
@@ -140,15 +146,20 @@ class _ForumCreateTopicPageState extends ConsumerState<ForumCreateTopicPage> {
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
-                  child: _submitting
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white),
-                        )
-                      : Text('forum.create_post'.tr(),
-                          style: const TextStyle(fontSize: 16)),
+                  child:
+                      _submitting
+                          ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                          : Text(
+                            'forum.create_post'.tr(),
+                            style: const TextStyle(fontSize: 16),
+                          ),
                 ),
               ],
             ),

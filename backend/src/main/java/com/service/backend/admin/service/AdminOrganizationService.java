@@ -22,7 +22,7 @@ import com.service.backend.organization.dto.OrganizationIntroductionResponse;
 import com.service.backend.shared.entity.Organization;
 import com.service.backend.shared.entity.OrganizationIntroduction;
 import com.service.backend.shared.entity.SchoolFeedback;
-import com.service.backend.admin.dao.AdminOrganizationRepository;
+import com.service.backend.organization.dao.OrganizationRepository;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.enums.Status;
 import com.service.backend.shared.dto.PaginatedResponse;
@@ -42,7 +42,7 @@ public class AdminOrganizationService {
     private static final Logger logger = LoggerFactory.getLogger(AdminOrganizationService.class);
     private static final String ORG_CACHE = "organization_cache";
 
-    private final AdminOrganizationRepository organizationRepository;
+    private final OrganizationRepository organizationRepository;
     private final SchoolFeedbackRepository schoolFeedbackRepository;
     private final OrganizationIntroductionRepository introductionRepository;
     private final ImageService imageService;

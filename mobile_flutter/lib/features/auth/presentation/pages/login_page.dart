@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/errors/api_exception.dart';
 import '../../../../core/router/route_names.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../shared/widgets/app_toast.dart';
 import '../../../../shared/widgets/blur_validated_field.dart';
@@ -77,8 +78,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authStateProvider);
     final loading = authState.isLoading;
-    final orgName =
-        ref.watch(organizationStateProvider).valueOrNull?.name;
+    final orgName = ref.watch(organizationStateProvider).valueOrNull?.name;
 
     return Scaffold(
       body: SafeArea(
@@ -89,23 +89,25 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Center(child: AlumverseLogo(size: 80)),
+                const Center(
+                  child: AlumverseLogo(size: 72, full: false),
+                ),
                 const SizedBox(height: 32),
                 Text(
                   'auth.login'.tr(),
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).primaryColor,
-                      ),
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).primaryColor,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 if (orgName != null) ...[
                   const SizedBox(height: 8),
                   Text(
                     orgName,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey[600],
-                        ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -125,8 +127,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 BlurValidatedField(
                   controller: _passCtl,
                   obscureText: _obscure,
-                  validator: (v) =>
-                      Validators.required(v, field: 'auth.password'.tr()),
+                  validator:
+                      (v) =>
+                          Validators.required(v, field: 'auth.password'.tr()),
                   textInputAction: TextInputAction.done,
                   onFieldSubmitted: (_) => loading ? null : _submit(),
                   decoration: InputDecoration(
@@ -154,17 +157,20 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
-                  child: loading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
+                  child:
+                      loading
+                          ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                          : Text(
+                            'auth.login'.tr(),
+                            style: const TextStyle(fontSize: 16),
                           ),
-                        )
-                      : Text('auth.login'.tr(),
-                          style: const TextStyle(fontSize: 16)),
                 ),
                 const SizedBox(height: 24),
                 Row(
@@ -182,15 +188,18 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 ),
                 const SizedBox(height: 24),
                 OutlinedButton.icon(
-                  onPressed: loading
-                      ? null
-                      : () {
-                          // TODO: Google Sign-In — gọi google_sign_in để lấy
-                          // idToken rồi ref.read(authStateProvider.notifier)
-                          // .loginWithGoogle(idToken).
-                          AppToast.info(
-                              context, 'auth.google_coming_soon'.tr());
-                        },
+                  onPressed:
+                      loading
+                          ? null
+                          : () {
+                            // TODO: Google Sign-In — gọi google_sign_in để lấy
+                            // idToken rồi ref.read(authStateProvider.notifier)
+                            // .loginWithGoogle(idToken).
+                            AppToast.info(
+                              context,
+                              'auth.google_coming_soon'.tr(),
+                            );
+                          },
                   icon: const Icon(Icons.g_mobiledata, size: 30),
                   label: Text('auth.continue_with_google'.tr()),
                   style: OutlinedButton.styleFrom(
@@ -204,6 +213,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     Text('auth.no_account'.tr()),
                     TextButton(
                       onPressed: () => context.push(RouteNames.register),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.only(left: 4),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
                       child: Text(
                         'auth.register_now'.tr(),
                         style: const TextStyle(fontWeight: FontWeight.bold),
@@ -211,14 +225,25 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                TextButton(
+                const SizedBox(height: 14),
+                OutlinedButton.icon(
                   onPressed: () {
                     ref.read(organizationStateProvider.notifier).reset();
                   },
-                  child: Text(
+                  icon: const Icon(Icons.apartment_rounded, size: 18),
+                  label: Text(
                     'auth.change_organization'.tr(),
-                    style: const TextStyle(color: Colors.grey),
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppColors.divider),
+                    shape: const StadiumBorder(),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                 ),
               ],

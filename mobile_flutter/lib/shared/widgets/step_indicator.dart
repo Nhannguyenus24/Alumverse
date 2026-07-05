@@ -38,9 +38,10 @@ class StepIndicator extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
-                  color: i <= current
-                      ? Colors.white
-                      : primary.withValues(alpha: 0.4),
+                  color:
+                      i <= current
+                          ? Colors.white
+                          : primary.withValues(alpha: 0.4),
                 ),
               ),
             ),

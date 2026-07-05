@@ -1,6 +1,7 @@
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 
@@ -44,13 +45,14 @@ final dioProvider = Provider<Dio>((ref) {
     CookieManager(cookieJar),
     AuthInterceptor(storage, refreshDio: refreshDio),
     ErrorInterceptor(),
-    PrettyDioLogger(
-      requestHeader: false,
-      requestBody: true,
-      responseBody: true,
-      compact: true,
-      maxWidth: 100,
-    ),
+    if (kDebugMode)
+      PrettyDioLogger(
+        requestHeader: false,
+        requestBody: true,
+        responseBody: true,
+        compact: true,
+        maxWidth: 100,
+      ),
   ]);
 
   return dio;

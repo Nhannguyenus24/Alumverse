@@ -20,14 +20,13 @@ class NotificationSettings {
     bool? newsEnabled,
     bool? emailEnabled,
     bool? pushEnabled,
-  }) =>
-      NotificationSettings(
-        forumReplyEnabled: forumReplyEnabled ?? this.forumReplyEnabled,
-        eventReminderEnabled: eventReminderEnabled ?? this.eventReminderEnabled,
-        newsEnabled: newsEnabled ?? this.newsEnabled,
-        emailEnabled: emailEnabled ?? this.emailEnabled,
-        pushEnabled: pushEnabled ?? this.pushEnabled,
-      );
+  }) => NotificationSettings(
+    forumReplyEnabled: forumReplyEnabled ?? this.forumReplyEnabled,
+    eventReminderEnabled: eventReminderEnabled ?? this.eventReminderEnabled,
+    newsEnabled: newsEnabled ?? this.newsEnabled,
+    emailEnabled: emailEnabled ?? this.emailEnabled,
+    pushEnabled: pushEnabled ?? this.pushEnabled,
+  );
 
   factory NotificationSettings.fromJson(Map<String, dynamic> json) {
     return NotificationSettings(
@@ -40,10 +39,10 @@ class NotificationSettings {
   }
 
   Map<String, dynamic> toJson() => {
-        'forumReplyEnabled': forumReplyEnabled,
-        'eventReminderEnabled': eventReminderEnabled,
-        'newsEnabled': newsEnabled,
-        'emailEnabled': emailEnabled,
-        'pushEnabled': pushEnabled,
-      };
+    'forumReplyEnabled': forumReplyEnabled,
+    'eventReminderEnabled': eventReminderEnabled,
+    'newsEnabled': newsEnabled,
+    'emailEnabled': emailEnabled,
+    'pushEnabled': pushEnabled,
+  };
 }

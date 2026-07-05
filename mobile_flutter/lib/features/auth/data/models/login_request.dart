@@ -13,8 +13,8 @@ class LoginRequest {
   });
 
   Map<String, dynamic> toJson() => {
-        'email': email,
-        'password': password,
-        'organizationId': organizationId,
-      };
+    'email': email,
+    'password': password,
+    'organizationId': organizationId,
+  };
 }

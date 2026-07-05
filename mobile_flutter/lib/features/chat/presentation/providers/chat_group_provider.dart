@@ -8,9 +8,10 @@ import '../../data/repositories/chat_repository.dart';
 
 /// Members of a group chat. Supports add/remove mutations that reload the list.
 final chatGroupMembersProvider = AsyncNotifierProvider.family<
-    ChatGroupMembersNotifier, List<ChatGroupMember>, int>(
-  ChatGroupMembersNotifier.new,
-);
+  ChatGroupMembersNotifier,
+  List<ChatGroupMember>,
+  int
+>(ChatGroupMembersNotifier.new);
 
 class ChatGroupMembersNotifier
     extends FamilyAsyncNotifier<List<ChatGroupMember>, int> {
@@ -35,5 +36,5 @@ class ChatGroupMembersNotifier
 /// Recent chat previews (shown on Home or as a notification badge).
 final chatRecentPreviewsProvider =
     FutureProvider.autoDispose<List<ChatRecentPreview>>((ref) {
-  return ref.read(chatRepositoryProvider).recentPreviews();
-});
+      return ref.read(chatRepositoryProvider).recentPreviews();
+    });

@@ -14,7 +14,6 @@ import reactor.core.publisher.Mono;
 
 /**
  * Network directory search. Custom SELECT returns {@link NetworkMemberSearchItemResponse}
- * (class DTO), not interface projection — see docs/backend/network-member-search-r2dbc-mapping.md.
  */
 @Repository
 public interface NetworkMemberSearchRepository

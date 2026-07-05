@@ -74,28 +74,35 @@ class _MyBookingsPageState extends ConsumerState<MyBookingsPage>
       ),
       body: async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('mentorship.bookings_load_failed'.tr()),
-              TextButton(
-                onPressed: () => ref.invalidate(mySessionsProvider),
-                child: Text('common.retry'.tr()),
+        error:
+            (e, _) => Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('mentorship.bookings_load_failed'.tr()),
+                  TextButton(
+                    onPressed: () => ref.invalidate(mySessionsProvider),
+                    child: Text('common.retry'.tr()),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
-        data: (sessions) => TabBarView(
-          controller: _tabCtrl,
-          children: _tabDefs
-              .map((t) => _SessionList(
-                    sessions:
-                        sessions.where((s) => _matchTab(t.key, s)).toList(),
-                    tabKey: t.key,
-                  ))
-              .toList(),
-        ),
+            ),
+        data:
+            (sessions) => TabBarView(
+              controller: _tabCtrl,
+              children:
+                  _tabDefs
+                      .map(
+                        (t) => _SessionList(
+                          sessions:
+                              sessions
+                                  .where((s) => _matchTab(t.key, s))
+                                  .toList(),
+                          tabKey: t.key,
+                        ),
+                      )
+                      .toList(),
+            ),
       ),
     );
   }
@@ -114,8 +121,11 @@ class _SessionList extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.event_busy,
-                size: 48, color: AppColors.textSecondary),
+            const Icon(
+              Icons.event_busy,
+              size: 48,
+              color: AppColors.textSecondary,
+            ),
             const SizedBox(height: 12),
             Text(
               tabKey == 'all'
@@ -159,9 +169,10 @@ class _SessionCard extends ConsumerWidget {
     final st = (session.status ?? '').toUpperCase();
     final isCompleted = st == 'COMPLETED';
     final canCancel = st == 'PENDING' || st == 'CONFIRMED';
-    final when = session.startTime != null
-        ? DateFormat('dd/MM/yyyy • HH:mm').format(session.startTime!)
-        : 'mentorship.time_unconfirmed'.tr();
+    final when =
+        session.startTime != null
+            ? DateFormat('dd/MM/yyyy • HH:mm').format(session.startTime!)
+            : 'mentorship.time_unconfirmed'.tr();
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -176,11 +187,15 @@ class _SessionCard extends ConsumerWidget {
                 Expanded(
                   child: Text(
                     session.mentorName ??
-                        'mentorship.mentor_fallback'.tr(namedArgs: {
-                          'id': session.mentorMemberId?.toString() ?? '-'
-                        }),
+                        'mentorship.mentor_fallback'.tr(
+                          namedArgs: {
+                            'id': session.mentorMemberId?.toString() ?? '-',
+                          },
+                        ),
                     style: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 16),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
                   ),
                 ),
                 _StatusChip(status: session.status),
@@ -190,8 +205,9 @@ class _SessionCard extends ConsumerWidget {
             _InfoRow(icon: Icons.schedule, text: when),
             if (session.sessionType != null)
               _InfoRow(
-                  icon: Icons.category_outlined,
-                  text: _typeLabel(session.sessionType!)),
+                icon: Icons.category_outlined,
+                text: _typeLabel(session.sessionType!),
+              ),
             if (session.introduction != null &&
                 session.introduction!.isNotEmpty) ...[
               const SizedBox(height: 6),
@@ -200,7 +216,9 @@ class _SessionCard extends ConsumerWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                    color: AppColors.textSecondary, fontSize: 13),
+                  color: AppColors.textSecondary,
+                  fontSize: 13,
+                ),
               ),
             ],
             if (st == 'CONFIRMED' &&
@@ -216,19 +234,28 @@ class _SessionCard extends ConsumerWidget {
                 if (isCompleted)
                   TextButton.icon(
                     onPressed: () => _openFeedback(context),
-                    icon: const Icon(Icons.star_outline,
-                        size: 16, color: AppColors.secondary),
-                    label: Text('mentorship.feedback'.tr(),
-                        style:
-                            const TextStyle(color: AppColors.secondary)),
+                    icon: const Icon(
+                      Icons.star_outline,
+                      size: 16,
+                      color: AppColors.secondary,
+                    ),
+                    label: Text(
+                      'mentorship.feedback'.tr(),
+                      style: const TextStyle(color: AppColors.secondary),
+                    ),
                   ),
                 if (canCancel)
                   TextButton.icon(
                     onPressed: () => _confirmCancel(context, ref),
-                    icon: const Icon(Icons.close,
-                        size: 16, color: AppColors.error),
-                    label: Text('mentorship.cancel_session'.tr(),
-                        style: const TextStyle(color: AppColors.error)),
+                    icon: const Icon(
+                      Icons.close,
+                      size: 16,
+                      color: AppColors.error,
+                    ),
+                    label: Text(
+                      'mentorship.cancel_session'.tr(),
+                      style: const TextStyle(color: AppColors.error),
+                    ),
                   ),
               ],
             ),
@@ -239,11 +266,11 @@ class _SessionCard extends ConsumerWidget {
   }
 
   String _typeLabel(String t) => switch (t.toUpperCase()) {
-        'CAREER' => 'mentorship.type_career'.tr(),
-        'ACADEMIC' => 'mentorship.type_academic'.tr(),
-        'SOFT_SKILLS' => 'mentorship.type_soft_skills'.tr(),
-        _ => t,
-      };
+    'CAREER' => 'mentorship.type_career'.tr(),
+    'ACADEMIC' => 'mentorship.type_academic'.tr(),
+    'SOFT_SKILLS' => 'mentorship.type_soft_skills'.tr(),
+    _ => t,
+  };
 
   Future<void> _openFeedback(BuildContext context) async {
     await showModalBottomSheet<void>(
@@ -259,19 +286,24 @@ class _SessionCard extends ConsumerWidget {
   Future<void> _confirmCancel(BuildContext context, WidgetRef ref) async {
     final ok = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: Text('mentorship.cancel_booking_title'.tr()),
-        content: Text('mentorship.cancel_booking_content'.tr()),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: Text('common.no'.tr())),
-          TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: Text('mentorship.cancel_session'.tr(),
-                  style: const TextStyle(color: AppColors.error))),
-        ],
-      ),
+      builder:
+          (_) => AlertDialog(
+            title: Text('mentorship.cancel_booking_title'.tr()),
+            content: Text('mentorship.cancel_booking_content'.tr()),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text('common.no'.tr()),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: Text(
+                  'mentorship.cancel_session'.tr(),
+                  style: const TextStyle(color: AppColors.error),
+                ),
+              ),
+            ],
+          ),
     );
     if (ok != true) return;
     try {
@@ -309,9 +341,14 @@ class _StatusChip extends StatelessWidget {
         color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Text(label,
-          style: TextStyle(
-              color: color, fontSize: 12, fontWeight: FontWeight.w600)),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 }
@@ -330,9 +367,14 @@ class _InfoRow extends StatelessWidget {
           Icon(icon, size: 15, color: AppColors.textSecondary),
           const SizedBox(width: 6),
           Expanded(
-              child: Text(text,
-                  style: const TextStyle(
-                      color: AppColors.textSecondary, fontSize: 13))),
+            child: Text(
+              text,
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 13,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -357,12 +399,16 @@ class _MeetingLinkRow extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
         decoration: BoxDecoration(
-          color: AppColors.primary.withValues(alpha: 0.08),
+          color: AppColors.primaryLighter,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
           children: [
-            const Icon(Icons.videocam_outlined, size: 16, color: AppColors.primary),
+            const Icon(
+              Icons.videocam_outlined,
+              size: 16,
+              color: AppColors.primary,
+            ),
             const SizedBox(width: 6),
             Expanded(
               child: Text(

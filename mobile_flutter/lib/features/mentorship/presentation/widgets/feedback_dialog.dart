@@ -34,7 +34,9 @@ class _FeedbackBottomSheetState extends ConsumerState<FeedbackBottomSheet> {
   Future<void> _submit() async {
     setState(() => _submitting = true);
     try {
-      await ref.read(mentorshipRepositoryProvider).submitFeedback(
+      await ref
+          .read(mentorshipRepositoryProvider)
+          .submitFeedback(
             sessionId: widget.sessionId,
             rating: _rating,
             comment: _commentCtl.text.trim(),
@@ -74,11 +76,16 @@ class _FeedbackBottomSheetState extends ConsumerState<FeedbackBottomSheet> {
           const SizedBox(height: 4),
           Text(
             'mentorship.feedback_subtitle'.tr(),
-            style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 13,
+            ),
           ),
           const SizedBox(height: 20),
-          Text('mentorship.feedback_star_label'.tr(),
-              style: const TextStyle(fontWeight: FontWeight.w600)),
+          Text(
+            'mentorship.feedback_star_label'.tr(),
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
           const SizedBox(height: 8),
           Row(
             children: List.generate(
@@ -128,16 +135,22 @@ class _FeedbackBottomSheetState extends ConsumerState<FeedbackBottomSheet> {
             child: ElevatedButton(
               onPressed: _submitting ? null : _submit,
               style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14)),
-              child: _submitting
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white),
-                    )
-                  : Text('mentorship.submit_feedback'.tr(),
-                      style: const TextStyle(fontSize: 16)),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+              child:
+                  _submitting
+                      ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                      : Text(
+                        'mentorship.submit_feedback'.tr(),
+                        style: const TextStyle(fontSize: 16),
+                      ),
             ),
           ),
         ],

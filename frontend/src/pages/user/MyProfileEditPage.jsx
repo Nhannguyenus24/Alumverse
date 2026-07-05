@@ -235,7 +235,7 @@ const UnifiedProfileEditPage = () => {
     const m = mentorQuery.data;
     
     if (p || m) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+       
       setCurrentJobTitle(m?.currentJobTitle ?? p?.currentJobTitle ?? '');
       setCurrentCompany(m?.currentCompany ?? p?.currentCompany ?? '');
       setBio(p?.bio ?? '');
