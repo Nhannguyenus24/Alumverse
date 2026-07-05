@@ -190,6 +190,7 @@
     "file_type_unsupported": "This file type is not supported.",
     "upload_failed": "Failed to upload the attachment. Please try again.",
     "attachment_unavailable": "Attachment unavailable",
-    "image_update_failed": "Failed to update group photo. Please try again."
+    "image_update_failed": "Failed to update group photo. Please try again.",
+    "access_blocked_title": "Alumni verification required to chat"
   }
 }
