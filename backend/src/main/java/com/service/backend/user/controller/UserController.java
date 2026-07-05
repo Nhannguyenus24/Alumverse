@@ -50,9 +50,10 @@ public class UserController {
     private final NotificationService notificationService;
 
     @GetMapping("/profile")
-    public Mono<ResponseEntity<ApiResponse<UserProfileResponse>>> getMyProfile() {
+    public Mono<ResponseEntity<ApiResponse<UserProfileResponse>>> getMyProfile(
+            @RequestParam(required = false) Integer organizationId) {
         return SecurityUtils.getCurrentUserId()
-                .flatMap(userService::getMyProfile)
+                .flatMap(userId -> userService.getMyProfile(userId, organizationId))
                 .map(profile -> ResponseEntity.ok(new ApiResponse<>("Profile retrieved successfully", profile)));
     }
 
