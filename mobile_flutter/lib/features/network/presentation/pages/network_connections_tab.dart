@@ -27,34 +27,39 @@ class NetworkConnectionsTab extends ConsumerWidget {
         NetworkSearchBar(
           hintText: 'network.search_connections_hint'.tr(),
           initialValue: query.fullName,
-          onSubmit: (v) => ref
-              .read(networkConnectionsQueryProvider.notifier)
-              .state = query.copyWith(fullName: v).resetPage(),
+          onSubmit:
+              (v) =>
+                  ref.read(networkConnectionsQueryProvider.notifier).state =
+                      query.copyWith(fullName: v).resetPage(),
         ),
         Expanded(
           child: async.when(
-            loading: () =>
-                const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.error_outline,
-                      color: AppColors.error, size: 40),
-                  const SizedBox(height: 8),
-                  Text('$e',
-                      style: const TextStyle(
-                          color: AppColors.textSecondary),
-                      textAlign: TextAlign.center),
-                  const SizedBox(height: 12),
-                  ElevatedButton(
-                    onPressed: () =>
-                        ref.invalidate(networkConnectionsProvider),
-                    child: Text('common.retry'.tr()),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error:
+                (e, _) => Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        color: AppColors.error,
+                        size: 40,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '$e',
+                        style: const TextStyle(color: AppColors.textSecondary),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 12),
+                      ElevatedButton(
+                        onPressed:
+                            () => ref.invalidate(networkConnectionsProvider),
+                        child: Text('common.retry'.tr()),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
+                ),
             data: (result) {
               if (result.items.isEmpty) {
                 return EmptyView(
@@ -64,8 +69,8 @@ class NetworkConnectionsTab extends ConsumerWidget {
                 );
               }
               return RefreshIndicator(
-                onRefresh: () async =>
-                    ref.invalidate(networkConnectionsProvider),
+                onRefresh:
+                    () async => ref.invalidate(networkConnectionsProvider),
                 child: ListView.builder(
                   padding: const EdgeInsets.only(bottom: 16),
                   itemCount: result.items.length + 1,
@@ -74,22 +79,41 @@ class NetworkConnectionsTab extends ConsumerWidget {
                       return _PaginationBar(
                         page: query.page,
                         totalPage: result.totalPage,
-                        onPrev: () => ref
-                            .read(networkConnectionsQueryProvider.notifier)
-                            .state = query.copyWith(page: query.page - 1),
-                        onNext: () => ref
-                            .read(networkConnectionsQueryProvider.notifier)
-                            .state = query.copyWith(page: query.page + 1),
+                        onPrev:
+                            () =>
+                                ref
+                                    .read(
+                                      networkConnectionsQueryProvider.notifier,
+                                    )
+                                    .state = query.copyWith(
+                                  page: query.page - 1,
+                                ),
+                        onNext:
+                            () =>
+                                ref
+                                    .read(
+                                      networkConnectionsQueryProvider.notifier,
+                                    )
+                                    .state = query.copyWith(
+                                  page: query.page + 1,
+                                ),
                       );
                     }
                     final conn = result.items[i];
                     return ConnectionCard(
                       connection: conn,
                       onChat: () => _openChat(context, conn),
-                      onViewProfile: () =>
-                          context.push('${RouteNames.profile}/${conn.peerMemberId}'),
-                      onBlock: () => _confirmBlock(
-                          context, ref, conn.peerMemberId, conn.fullName),
+                      onViewProfile:
+                          () => context.push(
+                            '${RouteNames.profile}/${conn.peerMemberId}',
+                          ),
+                      onBlock:
+                          () => _confirmBlock(
+                            context,
+                            ref,
+                            conn.peerMemberId,
+                            conn.fullName,
+                          ),
                     );
                   },
                 ),
@@ -129,26 +153,37 @@ class NetworkConnectionsTab extends ConsumerWidget {
   ) async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('network.block_member_title'.tr()),
-        content: Text('network.confirm_block_connection'.tr(namedArgs: {'name': name})),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: Text('common.cancel'.tr())),
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: Text('network.block'.tr(),
-                  style: const TextStyle(color: AppColors.error))),
-        ],
-      ),
+      builder:
+          (ctx) => AlertDialog(
+            title: Text('network.block_member_title'.tr()),
+            content: Text(
+              'network.confirm_block_connection'.tr(namedArgs: {'name': name}),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text('common.cancel'.tr()),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: Text(
+                  'network.block'.tr(),
+                  style: const TextStyle(color: AppColors.error),
+                ),
+              ),
+            ],
+          ),
     );
     if (confirm != true) return;
     try {
       await ref.read(networkRepositoryProvider).block(memberId);
       ref.invalidate(networkConnectionsProvider);
       ref.invalidate(networkBlockedProvider);
-      if (context.mounted) AppToast.success(context, 'network.blocked_toast'.tr(namedArgs: {'name': name}));
+      if (context.mounted)
+        AppToast.success(
+          context,
+          'network.blocked_toast'.tr(namedArgs: {'name': name}),
+        );
     } catch (e) {
       if (context.mounted) AppToast.fromError(context, e);
     }
@@ -181,10 +216,12 @@ class _PaginationBar extends StatelessWidget {
             icon: const Icon(Icons.chevron_left),
           ),
           Text(
-            'common.page_indicator'.tr(namedArgs: {
-              'current': (page + 1).toString(),
-              'total': totalPage.toString(),
-            }),
+            'common.page_indicator'.tr(
+              namedArgs: {
+                'current': (page + 1).toString(),
+                'total': totalPage.toString(),
+              },
+            ),
             style: const TextStyle(color: AppColors.textSecondary),
           ),
           IconButton(

@@ -22,8 +22,9 @@ final isTrustedVerifierProvider = FutureProvider<bool>((ref) async {
   }
 });
 
-final notificationSettingsProvider =
-    FutureProvider<NotificationSettings>((ref) {
+final notificationSettingsProvider = FutureProvider<NotificationSettings>((
+  ref,
+) {
   return ref.watch(userRepositoryProvider).getNotificationSettings();
 });
 
@@ -31,7 +32,9 @@ final notificationsProvider = FutureProvider<List<NotificationItem>>((ref) {
   return ref.watch(userRepositoryProvider).getNotifications();
 });
 
-final publicProfileProvider =
-    FutureProvider.family<UserProfile, int>((ref, userId) {
+final publicProfileProvider = FutureProvider.family<UserProfile, int>((
+  ref,
+  userId,
+) {
   return ref.watch(userRepositoryProvider).getPublicProfile(userId);
 });

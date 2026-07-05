@@ -51,8 +51,7 @@ class FitBotRepository {
     final body = res.data;
     if (body == null) return;
 
-    final contentType =
-        (res.headers.value('content-type') ?? '').toLowerCase();
+    final contentType = (res.headers.value('content-type') ?? '').toLowerCase();
 
     // Non-streaming JSON response: read it all, extract the answer.
     if (contentType.contains('application/json')) {
@@ -90,9 +89,13 @@ class FitBotRepository {
       final data = jsonDecode(dataStr);
       if (data is List) {
         return data
-            .map((e) => e is Map
-                ? (e['content'] ?? e['text'] ?? e['answer'] ?? '').toString()
-                : e.toString())
+            .map(
+              (e) =>
+                  e is Map
+                      ? (e['content'] ?? e['text'] ?? e['answer'] ?? '')
+                          .toString()
+                      : e.toString(),
+            )
             .join();
       }
       if (data is Map) {
@@ -119,9 +122,13 @@ class FitBotRepository {
       final data = jsonDecode(raw);
       if (data is List) {
         return data
-            .map((e) => e is Map
-                ? (e['content'] ?? e['text'] ?? e['answer'] ?? '').toString()
-                : e.toString())
+            .map(
+              (e) =>
+                  e is Map
+                      ? (e['content'] ?? e['text'] ?? e['answer'] ?? '')
+                          .toString()
+                      : e.toString(),
+            )
             .join();
       }
       if (data is Map) {

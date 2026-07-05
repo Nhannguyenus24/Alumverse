@@ -62,14 +62,14 @@ class Organization {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'slug': slug,
-        'logoUrl': logoUrl,
-        'brandConfig': brandConfig,
-        'featuresConfig': featuresConfig,
-        'programs': programs,
-        'majors': majors,
-        'status': status,
-      };
+    'id': id,
+    'name': name,
+    'slug': slug,
+    'logoUrl': logoUrl,
+    'brandConfig': brandConfig,
+    'featuresConfig': featuresConfig,
+    'programs': programs,
+    'majors': majors,
+    'status': status,
+  };
 }

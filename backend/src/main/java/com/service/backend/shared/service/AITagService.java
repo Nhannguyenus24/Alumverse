@@ -80,25 +80,25 @@ public class AITagService {
         int currentBatchChars = 0;
 
         for (String content : cleaned) {
-            if (!currentBatch.isEmpty() && 
-                (currentBatchChars + content.length() > MAX_CHARS_PER_BATCH || 
-                 currentBatch.size() >= MAX_ITEMS_PER_BATCH)) {
-                
+            if (!currentBatch.isEmpty() &&
+                    (currentBatchChars + content.length() > MAX_CHARS_PER_BATCH ||
+                            currentBatch.size() >= MAX_ITEMS_PER_BATCH)) {
+
                 dynamicBatches.add(new ArrayList<>(currentBatch));
                 currentBatch.clear();
                 currentBatchChars = 0;
             }
-            
+
             currentBatch.add(content);
             currentBatchChars += content.length();
         }
-        
+
         if (!currentBatch.isEmpty()) {
             dynamicBatches.add(currentBatch);
         }
 
         return Flux.fromIterable(dynamicBatches)
-                .flatMapSequential(batch -> processBatch(batch, availableTags), 3) 
+                .flatMapSequential(batch -> processBatch(batch, availableTags), 3)
                 .flatMapIterable(BatchModerationResponse::getTags);
     }
 

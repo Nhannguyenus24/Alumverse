@@ -25,18 +25,20 @@ class TicketDetailPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Use the passed-in ticket immediately if available; otherwise fetch.
-    final async = initial != null
-        ? AsyncValue.data(initial!)
-        : ref.watch(ticketByCodeProvider(code));
+    final async =
+        initial != null
+            ? AsyncValue.data(initial!)
+            : ref.watch(ticketByCodeProvider(code));
 
     return Scaffold(
       appBar: AppBar(title: Text('event.ticket_detail_title'.tr())),
       body: async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => ErrorView(
-          message: 'event.ticket_load_failed'.tr(),
-          onRetry: () => ref.invalidate(ticketByCodeProvider(code)),
-        ),
+        error:
+            (_, __) => ErrorView(
+              message: 'event.ticket_load_failed'.tr(),
+              onRetry: () => ref.invalidate(ticketByCodeProvider(code)),
+            ),
         data: (ticket) => _Body(ticket: ticket),
       ),
     );
@@ -49,19 +51,26 @@ class _Body extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final titleAsync = ticket.eventTitle != null
-        ? AsyncValue.data(ticket.eventTitle!)
-        : ref.watch(eventDetailProvider(ticket.eventId)
-            .select((a) => a.whenData((e) => e.title)));
-    final title = titleAsync.valueOrNull ??
+    final titleAsync =
+        ticket.eventTitle != null
+            ? AsyncValue.data(ticket.eventTitle!)
+            : ref.watch(
+              eventDetailProvider(
+                ticket.eventId,
+              ).select((a) => a.whenData((e) => e.title)),
+            );
+    final title =
+        titleAsync.valueOrNull ??
         'event.event_number'.tr(namedArgs: {'id': ticket.eventId.toString()});
 
-    final reg = ticket.registeredAt != null
-        ? DateFormat('dd/MM/yyyy • HH:mm').format(ticket.registeredAt!)
-        : null;
-    final checkin = ticket.checkedInAt != null
-        ? DateFormat('dd/MM/yyyy • HH:mm').format(ticket.checkedInAt!)
-        : null;
+    final reg =
+        ticket.registeredAt != null
+            ? DateFormat('dd/MM/yyyy • HH:mm').format(ticket.registeredAt!)
+            : null;
+    final checkin =
+        ticket.checkedInAt != null
+            ? DateFormat('dd/MM/yyyy • HH:mm').format(ticket.checkedInAt!)
+            : null;
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -75,9 +84,13 @@ class _Body extends ConsumerWidget {
           child: Row(
             children: [
               Expanded(
-                child: Text(title,
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.w600)),
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
               const Icon(Icons.chevron_right, color: AppColors.textSecondary),
             ],
@@ -93,20 +106,30 @@ class _Body extends ConsumerWidget {
           _InfoRow(Icons.schedule, 'event.registration_time'.tr(), reg),
         ],
         if (checkin != null)
-          _InfoRow(Icons.how_to_reg_outlined, 'event.checkin_time'.tr(), checkin),
+          _InfoRow(
+            Icons.how_to_reg_outlined,
+            'event.checkin_time'.tr(),
+            checkin,
+          ),
 
         if (ticket.isCancelled &&
             ticket.cancelReason != null &&
             ticket.cancelReason!.isNotEmpty) ...[
           const SizedBox(height: 8),
-          _InfoRow(Icons.cancel_outlined, 'event.cancel_reason_label'.tr(),
-              ticket.cancelReason!,
-              color: AppColors.error),
+          _InfoRow(
+            Icons.cancel_outlined,
+            'event.cancel_reason_label'.tr(),
+            ticket.cancelReason!,
+            color: AppColors.error,
+          ),
         ],
         if (ticket.rejectReason != null && ticket.rejectReason!.isNotEmpty)
-          _InfoRow(Icons.block, 'event.reject_reason_label'.tr(),
-              ticket.rejectReason!,
-              color: AppColors.error),
+          _InfoRow(
+            Icons.block,
+            'event.reject_reason_label'.tr(),
+            ticket.rejectReason!,
+            color: AppColors.error,
+          ),
 
         if (ticket.registrationAnswers.isNotEmpty) ...[
           const SizedBox(height: 16),
@@ -118,7 +141,9 @@ class _Body extends ConsumerWidget {
   }
 
   Widget _answerTile(Map<String, dynamic> a) {
-    final label = (a['label'] ?? a['question'] ?? 'event.question_fallback'.tr()).toString();
+    final label =
+        (a['label'] ?? a['question'] ?? 'event.question_fallback'.tr())
+            .toString();
     final value = a['value'];
     final text = value is List ? value.join(', ') : (value?.toString() ?? '');
     return Padding(
@@ -126,12 +151,15 @@ class _Body extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label,
-              style: const TextStyle(
-                  fontSize: 12, color: AppColors.textSecondary)),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              color: AppColors.textSecondary,
+            ),
+          ),
           const SizedBox(height: 2),
-          Text(text.isEmpty ? '—' : text,
-              style: const TextStyle(fontSize: 15)),
+          Text(text.isEmpty ? '—' : text, style: const TextStyle(fontSize: 15)),
         ],
       ),
     );
@@ -161,14 +189,21 @@ class _TicketCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.confirmation_number, color: Colors.white70, size: 20),
+              const Icon(
+                Icons.confirmation_number,
+                color: Colors.white70,
+                size: 20,
+              ),
               const SizedBox(width: 8),
-              Text('event.ticket_header'.tr(),
-                  style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1)),
+              Text(
+                'event.ticket_header'.tr(),
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -176,8 +211,10 @@ class _TicketCard extends StatelessWidget {
           // to a third-party QR service). Encodes the same payload as web.
           Center(child: _QrBox(code: code, ticket: badge)),
           const SizedBox(height: 16),
-          Text('event.ticket_code'.tr(),
-              style: const TextStyle(color: Colors.white70, fontSize: 12)),
+          Text(
+            'event.ticket_code'.tr(),
+            style: const TextStyle(color: Colors.white70, fontSize: 12),
+          ),
           const SizedBox(height: 4),
           Row(
             children: [
@@ -222,9 +259,10 @@ class _QrBox extends StatelessWidget {
     final invalid = ticket.isCancelled || ticket.isCheckedIn;
     // Prefer the server-issued encrypted token; fall back to the legacy plaintext
     // format for tickets issued before QR encryption was added.
-    final payload = (ticket.qrToken != null && ticket.qrToken!.isNotEmpty)
-        ? ticket.qrToken!
-        : 'ALUMVERSE-TICKET-$code';
+    final payload =
+        (ticket.qrToken != null && ticket.qrToken!.isNotEmpty)
+            ? ticket.qrToken!
+            : 'ALUMVERSE-TICKET-$code';
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -241,14 +279,15 @@ class _QrBox extends StatelessWidget {
             size: 200,
             gapless: true,
             // ignore: deprecated_member_use
-            foregroundColor: invalid ? Colors.grey.shade400 : AppColors.primaryDarker,
+            foregroundColor:
+                invalid ? Colors.grey.shade400 : AppColors.primaryDarker,
           ),
           if (invalid)
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: (ticket.isCancelled ? AppColors.error : AppColors.success),
+                color:
+                    (ticket.isCancelled ? AppColors.error : AppColors.success),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
@@ -256,10 +295,11 @@ class _QrBox extends StatelessWidget {
                     ? 'event.status_cancelled_upper'.tr()
                     : 'event.status_used_upper'.tr(),
                 style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 14,
-                    letterSpacing: 1),
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 14,
+                  letterSpacing: 1,
+                ),
               ),
             ),
         ],
@@ -275,11 +315,14 @@ class _SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: Text(text,
-          style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: AppColors.primary)),
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w700,
+          color: AppColors.primary,
+        ),
+      ),
     );
   }
 }
@@ -303,12 +346,15 @@ class _InfoRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label,
-                    style: const TextStyle(
-                        fontSize: 12, color: AppColors.textSecondary)),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
                 const SizedBox(height: 2),
-                Text(value,
-                    style: TextStyle(fontSize: 15, color: color)),
+                Text(value, style: TextStyle(fontSize: 15, color: color)),
               ],
             ),
           ),

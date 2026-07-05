@@ -23,19 +23,26 @@ class _NetworkBlockedTabState extends ConsumerState<NetworkBlockedTab> {
   Future<void> _confirmUnblock(int memberId, String name) async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('network.unblock'.tr()),
-        content: Text('network.confirm_unblock'.tr(namedArgs: {'name': name})),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: Text('common.cancel'.tr())),
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: Text('network.unblock'.tr(),
-                  style: const TextStyle(color: AppColors.primary))),
-        ],
-      ),
+      builder:
+          (ctx) => AlertDialog(
+            title: Text('network.unblock'.tr()),
+            content: Text(
+              'network.confirm_unblock'.tr(namedArgs: {'name': name}),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text('common.cancel'.tr()),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: Text(
+                  'network.unblock'.tr(),
+                  style: const TextStyle(color: AppColors.primary),
+                ),
+              ),
+            ],
+          ),
     );
     if (confirm != true) return;
 
@@ -44,7 +51,11 @@ class _NetworkBlockedTabState extends ConsumerState<NetworkBlockedTab> {
       await ref.read(networkRepositoryProvider).unblock(memberId);
       ref.invalidate(networkBlockedProvider);
       ref.invalidate(networkConnectionsProvider);
-      if (mounted) AppToast.success(context, 'network.unblocked_toast'.tr(namedArgs: {'name': name}));
+      if (mounted)
+        AppToast.success(
+          context,
+          'network.unblocked_toast'.tr(namedArgs: {'name': name}),
+        );
     } catch (e) {
       if (mounted) AppToast.fromError(context, e);
     } finally {
@@ -62,34 +73,38 @@ class _NetworkBlockedTabState extends ConsumerState<NetworkBlockedTab> {
         NetworkSearchBar(
           hintText: 'network.search_blocked_hint'.tr(),
           initialValue: query.fullName,
-          onSubmit: (v) => ref
-              .read(networkBlockedQueryProvider.notifier)
-              .state = query.copyWith(fullName: v).resetPage(),
+          onSubmit:
+              (v) =>
+                  ref.read(networkBlockedQueryProvider.notifier).state =
+                      query.copyWith(fullName: v).resetPage(),
         ),
         Expanded(
           child: async.when(
-            loading: () =>
-                const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.error_outline,
-                      color: AppColors.error, size: 40),
-                  const SizedBox(height: 8),
-                  Text('$e',
-                      style: const TextStyle(
-                          color: AppColors.textSecondary),
-                      textAlign: TextAlign.center),
-                  const SizedBox(height: 12),
-                  ElevatedButton(
-                    onPressed: () =>
-                        ref.invalidate(networkBlockedProvider),
-                    child: Text('common.retry'.tr()),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error:
+                (e, _) => Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        color: AppColors.error,
+                        size: 40,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '$e',
+                        style: const TextStyle(color: AppColors.textSecondary),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 12),
+                      ElevatedButton(
+                        onPressed: () => ref.invalidate(networkBlockedProvider),
+                        child: Text('common.retry'.tr()),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
+                ),
             data: (result) {
               if (result.items.isEmpty) {
                 return EmptyView(
@@ -99,8 +114,7 @@ class _NetworkBlockedTabState extends ConsumerState<NetworkBlockedTab> {
                 );
               }
               return RefreshIndicator(
-                onRefresh: () async =>
-                    ref.invalidate(networkBlockedProvider),
+                onRefresh: () async => ref.invalidate(networkBlockedProvider),
                 child: ListView.builder(
                   padding: const EdgeInsets.only(bottom: 16),
                   itemCount: result.items.length + 1,
@@ -109,22 +123,28 @@ class _NetworkBlockedTabState extends ConsumerState<NetworkBlockedTab> {
                       return _PaginationBar(
                         page: query.page,
                         totalPage: result.totalPage,
-                        onPrev: () => ref
-                            .read(networkBlockedQueryProvider.notifier)
-                            .state =
-                            query.copyWith(page: query.page - 1),
-                        onNext: () => ref
-                            .read(networkBlockedQueryProvider.notifier)
-                            .state =
-                            query.copyWith(page: query.page + 1),
+                        onPrev:
+                            () =>
+                                ref
+                                    .read(networkBlockedQueryProvider.notifier)
+                                    .state = query.copyWith(
+                                  page: query.page - 1,
+                                ),
+                        onNext:
+                            () =>
+                                ref
+                                    .read(networkBlockedQueryProvider.notifier)
+                                    .state = query.copyWith(
+                                  page: query.page + 1,
+                                ),
                       );
                     }
                     final m = result.items[i];
                     return BlockedMemberCard(
                       member: m,
                       isLoading: _loadingIds.contains(m.blockedMemberId),
-                      onUnblock: () =>
-                          _confirmUnblock(m.blockedMemberId, m.fullName),
+                      onUnblock:
+                          () => _confirmUnblock(m.blockedMemberId, m.fullName),
                     );
                   },
                 ),
@@ -163,10 +183,12 @@ class _PaginationBar extends StatelessWidget {
             icon: const Icon(Icons.chevron_left),
           ),
           Text(
-            'common.page_indicator'.tr(namedArgs: {
-              'current': (page + 1).toString(),
-              'total': totalPage.toString(),
-            }),
+            'common.page_indicator'.tr(
+              namedArgs: {
+                'current': (page + 1).toString(),
+                'total': totalPage.toString(),
+              },
+            ),
             style: const TextStyle(color: AppColors.textSecondary),
           ),
           IconButton(

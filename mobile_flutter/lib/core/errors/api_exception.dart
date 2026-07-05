@@ -3,11 +3,7 @@ class ApiException implements Exception {
   final String message;
   final dynamic data;
 
-  const ApiException({
-    this.statusCode,
-    required this.message,
-    this.data,
-  });
+  const ApiException({this.statusCode, required this.message, this.data});
 
   bool get isUnauthorized => statusCode == 401;
   bool get isForbidden => statusCode == 403;

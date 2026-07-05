@@ -107,11 +107,16 @@ class _EventCheckInScannerPageState
     try {
       // The backend decrypts/verifies the token, enforces the event scope and
       // ticket status, and returns the holder's profile for verification.
-      final ticket =
-          await repo.checkIn(widget.eventId, qrToken: qrToken, code: code);
+      final ticket = await repo.checkIn(
+        widget.eventId,
+        qrToken: qrToken,
+        code: code,
+      );
       return _CheckInResult(
-          _ResultKind.success, 'event.checkin_success'.tr(),
-          ticket: ticket);
+        _ResultKind.success,
+        'event.checkin_success'.tr(),
+        ticket: ticket,
+      );
     } catch (e) {
       return _CheckInResult(_ResultKind.error, _messageOf(e));
     }
@@ -135,10 +140,11 @@ class _EventCheckInScannerPageState
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (ctx) => _ResultSheet(
-        result: result,
-        onClose: () => Navigator.of(ctx).pop(),
-      ),
+      builder:
+          (ctx) => _ResultSheet(
+            result: result,
+            onClose: () => Navigator.of(ctx).pop(),
+          ),
     );
   }
 
@@ -146,29 +152,30 @@ class _EventCheckInScannerPageState
     final controller = TextEditingController();
     final code = await showDialog<String>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('event.checkin_manual_title'.tr()),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          textCapitalization: TextCapitalization.characters,
-          decoration: InputDecoration(
-            labelText: 'event.ticket_code'.tr(),
-            hintText: 'ABC12345',
+      builder:
+          (ctx) => AlertDialog(
+            title: Text('event.checkin_manual_title'.tr()),
+            content: TextField(
+              controller: controller,
+              autofocus: true,
+              textCapitalization: TextCapitalization.characters,
+              decoration: InputDecoration(
+                labelText: 'event.ticket_code'.tr(),
+                hintText: 'ABC12345',
+              ),
+              onSubmitted: (v) => Navigator.of(ctx).pop(v),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: Text('common.cancel'.tr()),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(ctx).pop(controller.text),
+                child: Text('event.check_in'.tr()),
+              ),
+            ],
           ),
-          onSubmitted: (v) => Navigator.of(ctx).pop(v),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text('common.cancel'.tr()),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(ctx).pop(controller.text),
-            child: Text('event.check_in'.tr()),
-          ),
-        ],
-      ),
     );
     if (code != null && code.trim().isNotEmpty) {
       await _handle(code: code.trim().toUpperCase());
@@ -202,16 +209,17 @@ class _EventCheckInScannerPageState
           MobileScanner(
             controller: _controller,
             onDetect: _onDetect,
-            errorBuilder: (context, error, child) => Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Text(
-                  'event.checkin_camera_error'.tr(),
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.white),
+            errorBuilder:
+                (context, error, child) => Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Text(
+                      'event.checkin_camera_error'.tr(),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ),
                 ),
-              ),
-            ),
           ),
           // Scan window guide.
           IgnorePointer(
@@ -251,8 +259,10 @@ class _EventCheckInScannerPageState
                   const SizedBox(height: 12),
                   OutlinedButton.icon(
                     onPressed: _busy ? null : _promptManualEntry,
-                    icon: const Icon(Icons.keyboard_outlined,
-                        color: Colors.white),
+                    icon: const Icon(
+                      Icons.keyboard_outlined,
+                      color: Colors.white,
+                    ),
                     label: Text(
                       'event.checkin_manual_entry'.tr(),
                       style: const TextStyle(color: Colors.white),
@@ -260,7 +270,9 @@ class _EventCheckInScannerPageState
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(color: Colors.white54),
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 12),
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
                     ),
                   ),
                 ],
@@ -280,16 +292,16 @@ class _ResultSheet extends StatelessWidget {
   final VoidCallback onClose;
 
   Color get _color => switch (result.kind) {
-        _ResultKind.success => AppColors.success,
-        _ResultKind.warning => AppColors.warning,
-        _ResultKind.error => AppColors.error,
-      };
+    _ResultKind.success => AppColors.success,
+    _ResultKind.warning => AppColors.warning,
+    _ResultKind.error => AppColors.error,
+  };
 
   IconData get _icon => switch (result.kind) {
-        _ResultKind.success => Icons.check_circle,
-        _ResultKind.warning => Icons.info,
-        _ResultKind.error => Icons.cancel,
-      };
+    _ResultKind.success => Icons.check_circle,
+    _ResultKind.warning => Icons.info,
+    _ResultKind.error => Icons.cancel,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -382,11 +394,15 @@ class _InfoRow extends StatelessWidget {
         children: [
           Icon(icon, size: 18, color: AppColors.textSecondary),
           const SizedBox(width: 10),
-          Text('$label: ',
-              style: const TextStyle(color: AppColors.textSecondary)),
+          Text(
+            '$label: ',
+            style: const TextStyle(color: AppColors.textSecondary),
+          ),
           Expanded(
-            child: Text(value,
-                style: const TextStyle(fontWeight: FontWeight.w600)),
+            child: Text(
+              value,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
           ),
         ],
       ),

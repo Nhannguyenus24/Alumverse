@@ -27,9 +27,10 @@ class ArticleRepository {
 
   Future<Article> getNewsDetail(int id) async {
     final res = await _dio.get(ApiEndpoints.newsDetail(id));
-    final data = res.data is Map && res.data['data'] is Map
-        ? res.data['data'] as Map<String, dynamic>
-        : res.data as Map<String, dynamic>;
+    final data =
+        res.data is Map && res.data['data'] is Map
+            ? res.data['data'] as Map<String, dynamic>
+            : res.data as Map<String, dynamic>;
     return Article.fromJson(data);
   }
 
@@ -43,9 +44,10 @@ class ArticleRepository {
       ApiEndpoints.savedItemCheck,
       queryParameters: {'itemType': _newsType, 'itemId': id},
     );
-    final data = res.data is Map && res.data['data'] != null
-        ? res.data['data']
-        : res.data;
+    final data =
+        res.data is Map && res.data['data'] != null
+            ? res.data['data']
+            : res.data;
     if (data is bool) return data;
     if (data is Map) {
       final v = data['saved'] ?? data['isSaved'];
@@ -56,15 +58,15 @@ class ArticleRepository {
 
   /// Save (bookmark) a news article.
   Future<void> save(int id) => _dio.post(
-        ApiEndpoints.savedItems,
-        data: {'itemType': _newsType, 'itemId': id},
-      );
+    ApiEndpoints.savedItems,
+    data: {'itemType': _newsType, 'itemId': id},
+  );
 
   /// Remove a news article from saved.
   Future<void> unsave(int id) => _dio.delete(
-        ApiEndpoints.savedItems,
-        queryParameters: {'itemType': _newsType, 'itemId': id},
-      );
+    ApiEndpoints.savedItems,
+    queryParameters: {'itemType': _newsType, 'itemId': id},
+  );
 
   /// The current user's saved articles (references only — resolve titles via
   /// [getNewsDetail]).
@@ -77,9 +79,8 @@ class ArticleRepository {
       queryParameters: {'page': page, 'limit': limit},
     );
     final data = res.data is Map ? res.data['data'] : res.data;
-    final list = data is Map
-        ? (data['items'] ?? data['content'] ?? data['data'])
-        : data;
+    final list =
+        data is Map ? (data['items'] ?? data['content'] ?? data['data']) : data;
     if (list is! List) return const [];
     return list
         .whereType<Map>()

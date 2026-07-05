@@ -29,8 +29,6 @@ class ForumTopicsPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final async = ref.watch(forumTopicsProvider(categoryId));
-
     return Scaffold(
       appBar: AppBar(title: Text(categoryName ?? 'forum.categories'.tr())),
       floatingActionButton: FloatingActionButton.extended(
@@ -51,26 +49,31 @@ class ForumTopicsPage extends ConsumerWidget {
           ref.invalidate(forumTopicsProvider(categoryId));
           await ref.read(forumTopicsProvider(categoryId).future);
         },
-        child: async.when(
-          loading: () => ListView(
-            children: List.generate(6, (_) => const SkeletonTile()),
-          ),
-          error: (_, __) => ErrorView(
-            message: 'forum.load_topics_failed'.tr(),
-            onRetry: () => ref.invalidate(forumTopicsProvider(categoryId)),
-          ),
-          data: (topics) {
-            if (topics.isEmpty) {
-              return EmptyView(
-                icon: Icons.chat_bubble_outline,
-                title: 'forum.no_topics'.tr(),
-                message: 'forum.no_topics_desc'.tr(),
-              );
-            }
-            return ListView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 88),
-              itemCount: topics.length,
-              itemBuilder: (_, i) => _TopicTile(topic: topics[i]),
+        child: Consumer(
+          builder: (context, ref, _) {
+            final async = ref.watch(forumTopicsProvider(categoryId));
+            return async.when(
+              loading:
+                  () => ListView(
+                    children: List.generate(6, (_) => const SkeletonTile()),
+                  ),
+              error:
+                  (_, __) => ErrorView(
+                    message: 'forum.load_topics_failed'.tr(),
+                    onRetry: () => ref.invalidate(forumTopicsProvider(categoryId)),
+                  ),
+              data: (topics) {
+                if (topics.isEmpty) {
+                  return EmptyView(
+                    icon: Icons.chat_bubble_outline,
+                    title: 'forum.no_topics'.tr(),
+                    message: 'forum.no_topics_desc'.tr(),
+                  );
+                }
+                return ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 88),
+                  itemCount: topics.length,
+                  itemBuilder: (_, i) => _TopicTile(topic: topics[i]),
             );
           },
         ),

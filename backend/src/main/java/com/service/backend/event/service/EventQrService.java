@@ -40,7 +40,6 @@ public class EventQrService {
     /** Marker prefix so scanners can distinguish the encrypted token from the legacy format. */
     public static final String QR_PREFIX = "ALUMVERSE-TKT2-";
 
-    private final byte[] key;
     private final long ttlMillis;
     private final DirectEncrypter encrypter;
     private final DirectDecrypter decrypter;
@@ -48,7 +47,7 @@ public class EventQrService {
     public EventQrService(@Value("${jwt.secret}") String secret,
                           @Value("${event.qr.ttl-days:30}") long ttlDays) {
         try {
-            this.key = MessageDigest.getInstance("SHA-256").digest(secret.getBytes(StandardCharsets.UTF_8));
+            byte[] key = MessageDigest.getInstance("SHA-256").digest(secret.getBytes(StandardCharsets.UTF_8));
             this.ttlMillis = ttlDays * 24L * 60L * 60L * 1000L;
             this.encrypter = new DirectEncrypter(key);
             this.decrypter = new DirectDecrypter(key);

@@ -26,9 +26,10 @@ class SessionFeedback {
       rating: (json['rating'] as num).toInt(),
       comment: json['comment'] as String?,
       isPublic: (json['isPublic'] as bool?) ?? true,
-      createdAt: json['createdAt'] is String
-          ? DateTime.tryParse(json['createdAt'] as String)
-          : null,
+      createdAt:
+          json['createdAt'] is String
+              ? DateTime.tryParse(json['createdAt'] as String)
+              : null,
     );
   }
 }

@@ -39,7 +39,7 @@ class EventServiceTest {
     @Mock private OrganizationRepository organizationRepository;
     @Mock private CacheUtils cacheUtils;
     @Mock private EventQrService eventQrService;
-    @Mock private com.service.backend.event.dao.AttendeeLookupRepository attendeeLookupRepository;
+    @Mock private com.service.backend.user.dao.UserProfileRepository userProfileRepository;
 
     @InjectMocks
     private EventService eventService;

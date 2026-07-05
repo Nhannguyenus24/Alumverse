@@ -30,22 +30,24 @@ class MentorAvailabilityPage extends ConsumerWidget {
         },
         child: async.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => ListView(
-            children: [
-              const SizedBox(height: 120),
-              Center(
-                child: Column(
-                  children: [
-                    Text('mentorship.availability_load_failed'.tr()),
-                    TextButton(
-                      onPressed: () => ref.invalidate(myAvailabilityProvider),
-                      child: Text('common.retry'.tr()),
+          error:
+              (e, _) => ListView(
+                children: [
+                  const SizedBox(height: 120),
+                  Center(
+                    child: Column(
+                      children: [
+                        Text('mentorship.availability_load_failed'.tr()),
+                        TextButton(
+                          onPressed:
+                              () => ref.invalidate(myAvailabilityProvider),
+                          child: Text('common.retry'.tr()),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          ),
           data: (slots) {
             // Sort: upcoming first, past after
             final now = DateTime.now();
@@ -53,15 +55,17 @@ class MentorAvailabilityPage extends ConsumerWidget {
               ..sort((a, b) => a.startTime.compareTo(b.startTime));
             final upcoming =
                 sorted.where((s) => s.endTime.isAfter(now)).toList();
-            final past =
-                sorted.where((s) => !s.endTime.isAfter(now)).toList();
+            final past = sorted.where((s) => !s.endTime.isAfter(now)).toList();
 
             if (slots.isEmpty) {
               return ListView(
                 children: [
                   const SizedBox(height: 120),
-                  const Icon(Icons.calendar_today_outlined,
-                      size: 48, color: AppColors.textSecondary),
+                  const Icon(
+                    Icons.calendar_today_outlined,
+                    size: 48,
+                    color: AppColors.textSecondary,
+                  ),
                   const SizedBox(height: 12),
                   Center(
                     child: Text(
@@ -127,9 +131,10 @@ class _SlotTile extends ConsumerWidget {
       child: ListTile(
         leading: Icon(
           isBooked ? Icons.event_available : Icons.schedule,
-          color: isBooked
-              ? AppColors.success
-              : isPast
+          color:
+              isBooked
+                  ? AppColors.success
+                  : isPast
                   ? AppColors.textSecondary
                   : AppColors.primary,
         ),
@@ -145,13 +150,17 @@ class _SlotTile extends ConsumerWidget {
           '${isBooked ? ' · ${'mentorship.slot_booked'.tr()}' : ''}',
           style: const TextStyle(fontSize: 13),
         ),
-        trailing: (!isBooked && !isPast)
-            ? IconButton(
-                tooltip: 'mentorship.delete_slot'.tr(),
-                icon: const Icon(Icons.delete_outline, color: AppColors.error),
-                onPressed: () => _delete(context, ref),
-              )
-            : null,
+        trailing:
+            (!isBooked && !isPast)
+                ? IconButton(
+                  tooltip: 'mentorship.delete_slot'.tr(),
+                  icon: const Icon(
+                    Icons.delete_outline,
+                    color: AppColors.error,
+                  ),
+                  onPressed: () => _delete(context, ref),
+                )
+                : null,
       ),
     );
   }
@@ -159,19 +168,24 @@ class _SlotTile extends ConsumerWidget {
   Future<void> _delete(BuildContext context, WidgetRef ref) async {
     final ok = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: Text('mentorship.delete_slot_title'.tr()),
-        content: Text('mentorship.delete_slot_content'.tr()),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: Text('common.cancel'.tr())),
-          TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: Text('common.delete'.tr(),
-                  style: const TextStyle(color: AppColors.error))),
-        ],
-      ),
+      builder:
+          (_) => AlertDialog(
+            title: Text('mentorship.delete_slot_title'.tr()),
+            content: Text('mentorship.delete_slot_content'.tr()),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text('common.cancel'.tr()),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: Text(
+                  'common.delete'.tr(),
+                  style: const TextStyle(color: AppColors.error),
+                ),
+              ),
+            ],
+          ),
     );
     if (ok != true) return;
     try {
@@ -214,9 +228,10 @@ class _AddSlotSheetState extends ConsumerState<_AddSlotSheet> {
   Future<void> _pickTime(bool isStart) async {
     final t = await showTimePicker(
       context: context,
-      initialTime: isStart
-          ? const TimeOfDay(hour: 9, minute: 0)
-          : const TimeOfDay(hour: 10, minute: 0),
+      initialTime:
+          isStart
+              ? const TimeOfDay(hour: 9, minute: 0)
+              : const TimeOfDay(hour: 10, minute: 0),
     );
     if (t != null) {
       setState(() {
@@ -278,14 +293,16 @@ class _AddSlotSheetState extends ConsumerState<_AddSlotSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('mentorship.add_slot_title'.tr(),
-              style:
-                  const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Text(
+            'mentorship.add_slot_title'.tr(),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 20),
           _PickerTile(
             icon: Icons.calendar_today,
             label: 'mentorship.slot_date'.tr(),
-            value: _date != null ? df.format(_date!) : 'mentorship.pick_date'.tr(),
+            value:
+                _date != null ? df.format(_date!) : 'mentorship.pick_date'.tr(),
             onTap: _pickDate,
           ),
           const SizedBox(height: 12),
@@ -295,10 +312,10 @@ class _AddSlotSheetState extends ConsumerState<_AddSlotSheet> {
                 child: _PickerTile(
                   icon: Icons.access_time,
                   label: 'mentorship.slot_start'.tr(),
-                  value: _startTime != null
-                      ? tf.format(_combine(
-                          _date ?? now, _startTime!))
-                      : 'mentorship.pick_time'.tr(),
+                  value:
+                      _startTime != null
+                          ? tf.format(_combine(_date ?? now, _startTime!))
+                          : 'mentorship.pick_time'.tr(),
                   onTap: () => _pickTime(true),
                 ),
               ),
@@ -307,10 +324,10 @@ class _AddSlotSheetState extends ConsumerState<_AddSlotSheet> {
                 child: _PickerTile(
                   icon: Icons.access_time_filled,
                   label: 'mentorship.slot_end'.tr(),
-                  value: _endTime != null
-                      ? tf.format(_combine(
-                          _date ?? now, _endTime!))
-                      : 'mentorship.pick_time'.tr(),
+                  value:
+                      _endTime != null
+                          ? tf.format(_combine(_date ?? now, _endTime!))
+                          : 'mentorship.pick_time'.tr(),
                   onTap: () => _pickTime(false),
                 ),
               ),
@@ -322,15 +339,22 @@ class _AddSlotSheetState extends ConsumerState<_AddSlotSheet> {
             child: ElevatedButton(
               onPressed: _saving ? null : _save,
               style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14)),
-              child: _saving
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white))
-                  : Text('mentorship.save_slot'.tr(),
-                      style: const TextStyle(fontSize: 16)),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+              child:
+                  _saving
+                      ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                      : Text(
+                        'mentorship.save_slot'.tr(),
+                        style: const TextStyle(fontSize: 16),
+                      ),
             ),
           ),
         ],
@@ -371,12 +395,20 @@ class _PickerTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(label,
-                      style: const TextStyle(
-                          color: AppColors.textSecondary, fontSize: 11)),
-                  Text(value,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w600, fontSize: 14)),
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 11,
+                    ),
+                  ),
+                  Text(
+                    value,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -398,10 +430,11 @@ class _GroupLabel extends StatelessWidget {
       child: Text(
         text.toUpperCase(),
         style: const TextStyle(
-            color: AppColors.primary,
-            fontWeight: FontWeight.w700,
-            fontSize: 12,
-            letterSpacing: 0.5),
+          color: AppColors.primary,
+          fontWeight: FontWeight.w700,
+          fontSize: 12,
+          letterSpacing: 0.5,
+        ),
       ),
     );
   }

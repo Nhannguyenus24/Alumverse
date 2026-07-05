@@ -21,13 +21,13 @@ class SkeletonBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: width,
-      height: height,
-      decoration: BoxDecoration(
-        color: AppColors.divider,
-        borderRadius: BorderRadius.circular(radius),
-      ),
-    )
+          width: width,
+          height: height,
+          decoration: BoxDecoration(
+            color: AppColors.divider,
+            borderRadius: BorderRadius.circular(radius),
+          ),
+        )
         .animate(onPlay: (c) => c.repeat())
         .shimmer(
           duration: 1100.ms,
@@ -98,7 +98,9 @@ class SkeletonTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.md,
+      ),
       child: Row(
         children: const [
           SkeletonBox(width: 44, height: 44, radius: AppRadius.pill),

@@ -47,55 +47,90 @@ class EventsPage extends ConsumerWidget {
         },
         child: upcomingAsync.when(
           loading: () => const SkeletonList(count: 3),
-          error: (_, __) => ErrorView(
-            message: 'event.load_failed'.tr(),
-            onRetry: () => ref.invalidate(allUpcomingEventsProvider),
-          ),
+          error:
+              (_, __) => ErrorView(
+                message: 'event.load_failed'.tr(),
+                onRetry: () => ref.invalidate(allUpcomingEventsProvider),
+              ),
           data: (upcoming) {
             final featured = upcoming.isNotEmpty ? upcoming.first : null;
             final rest =
                 upcoming.length > 1 ? upcoming.sublist(1) : <EventSummary>[];
             final past = pastAsync.valueOrNull ?? const <EventSummary>[];
 
-            return ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                Text(
-                  'event.title_upper'.tr(),
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontSize: 30,
-                        fontWeight: FontWeight.w900,
-                        color: AppColors.primary,
+            return CustomScrollView(
+              slivers: [
+                SliverPadding(
+                  padding: const EdgeInsets.all(16),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
+                      Text(
+                        'event.title_upper'.tr(),
+                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontSize: 30,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.primary,
+                        ),
                       ),
+                      const SizedBox(height: 16),
+                      if (featured != null)
+                        _FeaturedEventCard(event: featured)
+                            .animate()
+                            .fadeIn(duration: 300.ms)
+                            .slideY(begin: 0.08, curve: Curves.easeOut),
+                    ]),
+                  ),
                 ),
-                const SizedBox(height: 16),
-                if (featured != null)
-                  _FeaturedEventCard(event: featured)
-                      .animate()
-                      .fadeIn(duration: 300.ms)
-                      .slideY(begin: 0.08, curve: Curves.easeOut),
                 if (rest.isNotEmpty) ...[
-                  const SizedBox(height: 24),
-                  _SectionHeader('event.upcoming'.tr()),
-                  const SizedBox(height: 12),
-                  _EventGrid(events: rest),
-                ],
-                if (past.isNotEmpty) ...[
-                  const SizedBox(height: 24),
-                  _SectionHeader('event.past'.tr()),
-                  const SizedBox(height: 12),
-                  _EventGrid(events: past),
-                ],
-                if (featured == null && past.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 40),
-                    child: EmptyView(
-                      icon: Icons.event_busy_outlined,
-                      title: 'event.no_events'.tr(),
-                      message: 'event.no_events_desc'.tr(),
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    sliver: SliverToBoxAdapter(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 8),
+                          _SectionHeader('event.upcoming'.tr()),
+                          const SizedBox(height: 12),
+                        ],
+                      ),
                     ),
                   ),
-                const SizedBox(height: 24),
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    sliver: _EventGrid(events: rest),
+                  ),
+                ],
+                if (past.isNotEmpty) ...[
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    sliver: SliverToBoxAdapter(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 24),
+                          _SectionHeader('event.past'.tr()),
+                          const SizedBox(height: 12),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    sliver: _EventGrid(events: past),
+                  ),
+                ],
+                if (featured == null && past.isEmpty)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 40),
+                      child: EmptyView(
+                        icon: Icons.event_busy_outlined,
+                        title: 'event.no_events'.tr(),
+                        message: 'event.no_events_desc'.tr(),
+                      ),
+                    ),
+                  ),
+                const SliverToBoxAdapter(child: SizedBox(height: 24)),
               ],
             );
           },
@@ -126,17 +161,17 @@ class _EventGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: events.length,
+    return SliverGrid(
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         mainAxisSpacing: 12,
         crossAxisSpacing: 12,
         childAspectRatio: 0.82,
       ),
-      itemBuilder: (_, i) => _EventCard(event: events[i]),
+      delegate: SliverChildBuilderDelegate(
+        (_, i) => _EventCard(event: events[i]),
+        childCount: events.length,
+      ),
     );
   }
 }
@@ -149,9 +184,10 @@ class _EventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final banner = resolveImageUrl(event.bannerUrl);
-    final date = event.startTime != null
-        ? DateFormat('dd/MM/yyyy • HH:mm').format(event.startTime!)
-        : null;
+    final date =
+        event.startTime != null
+            ? DateFormat('dd/MM/yyyy • HH:mm').format(event.startTime!)
+            : null;
 
     return InkWell(
       onTap: () => context.push('${RouteNames.events}/${event.id}'),
@@ -168,15 +204,16 @@ class _EventCard extends StatelessWidget {
           children: [
             AspectRatio(
               aspectRatio: 16 / 10,
-              child: banner != null
-                  ? CachedNetworkImage(
-                      imageUrl: banner,
-                      fit: BoxFit.cover,
-                      placeholder: (_, __) =>
-                          Container(color: AppColors.divider),
-                      errorWidget: (_, __, ___) => const _EventFallback(),
-                    )
-                  : const _EventFallback(),
+              child:
+                  banner != null
+                      ? CachedNetworkImage(
+                        imageUrl: banner,
+                        fit: BoxFit.cover,
+                        placeholder:
+                            (_, __) => Container(color: AppColors.divider),
+                        errorWidget: (_, __, ___) => const _EventFallback(),
+                      )
+                      : const _EventFallback(),
             ),
             Expanded(
               child: Padding(
@@ -189,7 +226,9 @@ class _EventCard extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                          fontWeight: FontWeight.w800, fontSize: 13.5),
+                        fontWeight: FontWeight.w800,
+                        fontSize: 13.5,
+                      ),
                     ),
                     const SizedBox(height: 6),
                     if (date != null)
@@ -198,7 +237,9 @@ class _EventCard extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.only(top: 2),
                         child: _IconLine(
-                            icon: Icons.place_outlined, text: event.location!),
+                          icon: Icons.place_outlined,
+                          text: event.location!,
+                        ),
                       ),
                   ],
                 ),
@@ -219,9 +260,10 @@ class _FeaturedEventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final banner = resolveImageUrl(event.bannerUrl);
-    final date = event.startTime != null
-        ? DateFormat('dd/MM/yyyy • HH:mm').format(event.startTime!)
-        : null;
+    final date =
+        event.startTime != null
+            ? DateFormat('dd/MM/yyyy • HH:mm').format(event.startTime!)
+            : null;
 
     return InkWell(
       onTap: () => context.push('${RouteNames.events}/${event.id}'),
@@ -238,15 +280,16 @@ class _FeaturedEventCard extends StatelessWidget {
           children: [
             AspectRatio(
               aspectRatio: 16 / 9,
-              child: banner != null
-                  ? CachedNetworkImage(
-                      imageUrl: banner,
-                      fit: BoxFit.cover,
-                      placeholder: (_, __) =>
-                          Container(color: AppColors.divider),
-                      errorWidget: (_, __, ___) => const _EventFallback(),
-                    )
-                  : const _EventFallback(),
+              child:
+                  banner != null
+                      ? CachedNetworkImage(
+                        imageUrl: banner,
+                        fit: BoxFit.cover,
+                        placeholder:
+                            (_, __) => Container(color: AppColors.divider),
+                        errorWidget: (_, __, ___) => const _EventFallback(),
+                      )
+                      : const _EventFallback(),
             ),
             Padding(
               padding: const EdgeInsets.all(14),
@@ -258,7 +301,9 @@ class _FeaturedEventCard extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 18),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
                   ),
                   if (date != null) ...[
                     const SizedBox(height: 8),
@@ -267,7 +312,9 @@ class _FeaturedEventCard extends StatelessWidget {
                   if (event.location != null && event.location!.isNotEmpty) ...[
                     const SizedBox(height: 4),
                     _IconLine(
-                        icon: Icons.place_outlined, text: event.location!),
+                      icon: Icons.place_outlined,
+                      text: event.location!,
+                    ),
                   ],
                 ],
               ),
@@ -310,7 +357,10 @@ class _IconLine extends StatelessWidget {
             text,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 12,
+            ),
           ),
         ),
       ],

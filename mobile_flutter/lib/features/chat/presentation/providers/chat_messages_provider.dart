@@ -8,14 +8,16 @@ import '../../realtime/chat_socket_messages.dart';
 import '../../realtime/chat_socket_service.dart';
 import 'chat_socket_provider.dart';
 
-final chatMessagesProvider = AsyncNotifierProvider.family<ChatMessagesNotifier,
-    List<ChatMessage>, int>(ChatMessagesNotifier.new);
+final chatMessagesProvider = AsyncNotifierProvider.autoDispose
+    .family<ChatMessagesNotifier, List<ChatMessage>, int>(
+  ChatMessagesNotifier.new,
+);
 
 /// Messages for one conversation. Loads history over REST, then keeps the list
 /// live from the WebSocket. Messages are held newest-first (the room renders a
 /// `reverse: true` list, so index 0 sits at the bottom).
 class ChatMessagesNotifier
-    extends FamilyAsyncNotifier<List<ChatMessage>, int> {
+    extends AutoDisposeFamilyAsyncNotifier<List<ChatMessage>, int> {
   static const int _pageSize = 20;
 
   late ChatSocketService _socket;

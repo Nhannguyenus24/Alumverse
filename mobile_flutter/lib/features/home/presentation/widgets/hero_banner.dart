@@ -88,9 +88,8 @@ class _HeroBannerState extends State<HeroBanner> {
                 _AlumverseSlide(organizationName: widget.organizationName),
                 _IntroSlide(
                   organizationName: widget.organizationName,
-                  onTap: () => context.push(
-                    RouteNames.organizationIntroduction,
-                  ),
+                  onTap:
+                      () => context.push(RouteNames.organizationIntroduction),
                 ),
               ],
             ),
@@ -113,9 +112,10 @@ class _HeroBannerState extends State<HeroBanner> {
                     width: active ? 22 : 8,
                     height: 8,
                     decoration: BoxDecoration(
-                      color: active
-                          ? Colors.white
-                          : Colors.white.withValues(alpha: 0.45),
+                      color:
+                          active
+                              ? Colors.white
+                              : Colors.white.withValues(alpha: 0.45),
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),
@@ -203,8 +203,11 @@ class _IntroSlide extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.info_outline_rounded,
-                color: Colors.white, size: 40),
+            const Icon(
+              Icons.info_outline_rounded,
+              color: Colors.white,
+              size: 40,
+            ),
             const SizedBox(height: 10),
             if (organizationName != null) ...[
               Text(
@@ -252,8 +255,10 @@ class _IntroSlide extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 7,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.18),
                     borderRadius: BorderRadius.circular(20),
@@ -270,8 +275,11 @@ class _IntroSlide extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 4),
-                      const Icon(Icons.arrow_forward_rounded,
-                          color: Colors.white, size: 16),
+                      const Icon(
+                        Icons.arrow_forward_rounded,
+                        color: Colors.white,
+                        size: 16,
+                      ),
                     ],
                   ),
                 ),

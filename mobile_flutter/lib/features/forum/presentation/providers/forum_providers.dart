@@ -12,22 +12,28 @@ import '../../data/repositories/forum_repository.dart';
 int? currentMemberIdFromUserId(String? userId) =>
     userId == null ? null : int.tryParse(userId);
 
-final forumCategoriesProvider =
-    FutureProvider<List<ForumCategory>>((ref) async {
+final forumCategoriesProvider = FutureProvider<List<ForumCategory>>((
+  ref,
+) async {
   final orgId = ref.watch(organizationStateProvider).valueOrNull?.id;
   if (orgId == null) return const [];
   return ref.read(forumRepositoryProvider).getCategories(orgId);
 });
 
-final forumTopicsProvider =
-    FutureProvider.family<List<ForumTopic>, int>((ref, categoryId) {
+final forumTopicsProvider = FutureProvider.autoDispose.family<List<ForumTopic>, int>((
+  ref,
+  categoryId,
+) {
   return ref.read(forumRepositoryProvider).getTopics(categoryId);
 });
 
-final forumPostsProvider =
-    FutureProvider.family<List<ForumPost>, int>((ref, topicId) {
+final forumPostsProvider = FutureProvider.autoDispose.family<List<ForumPost>, int>((
+  ref,
+  topicId,
+) {
   final memberId = currentMemberIdFromUserId(
-      ref.read(authStateProvider).valueOrNull?.user?.id);
+    ref.read(authStateProvider).valueOrNull?.user?.id,
+  );
   return ref
       .read(forumRepositoryProvider)
       .getPosts(topicId, memberId: memberId);

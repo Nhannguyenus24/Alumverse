@@ -68,22 +68,29 @@ class _ChatComposerState extends ConsumerState<ChatComposer> {
     if (!_canAttach) return;
     final source = await showModalBottomSheet<_AttachChoice>(
       context: context,
-      builder: (sheetContext) => SafeArea(
-        child: Wrap(
-          children: [
-            ListTile(
-              leading: const Icon(Icons.image_outlined, color: AppColors.primary),
-              title: Text('chat.attach_image'.tr()),
-              onTap: () => Navigator.pop(sheetContext, _AttachChoice.image),
+      builder:
+          (sheetContext) => SafeArea(
+            child: Wrap(
+              children: [
+                ListTile(
+                  leading: const Icon(
+                    Icons.image_outlined,
+                    color: AppColors.primary,
+                  ),
+                  title: Text('chat.attach_image'.tr()),
+                  onTap: () => Navigator.pop(sheetContext, _AttachChoice.image),
+                ),
+                ListTile(
+                  leading: const Icon(
+                    Icons.videocam_outlined,
+                    color: AppColors.primary,
+                  ),
+                  title: Text('chat.attach_video'.tr()),
+                  onTap: () => Navigator.pop(sheetContext, _AttachChoice.video),
+                ),
+              ],
             ),
-            ListTile(
-              leading: const Icon(Icons.videocam_outlined, color: AppColors.primary),
-              title: Text('chat.attach_video'.tr()),
-              onTap: () => Navigator.pop(sheetContext, _AttachChoice.video),
-            ),
-          ],
-        ),
-      ),
+          ),
     );
     if (source == null || !mounted) return;
     await _pickAndSend(source);
@@ -91,12 +98,16 @@ class _ChatComposerState extends ConsumerState<ChatComposer> {
 
   Future<void> _pickAndSend(_AttachChoice choice) async {
     final picker = ImagePicker();
-    final XFile? picked = choice == _AttachChoice.image
-        ? await picker.pickImage(source: ImageSource.gallery, imageQuality: 85)
-        : await picker.pickVideo(
-            source: ImageSource.gallery,
-            maxDuration: const Duration(minutes: 1),
-          );
+    final XFile? picked =
+        choice == _AttachChoice.image
+            ? await picker.pickImage(
+              source: ImageSource.gallery,
+              imageQuality: 85,
+            )
+            : await picker.pickVideo(
+              source: ImageSource.gallery,
+              maxDuration: const Duration(minutes: 1),
+            );
     if (picked == null || !mounted) return;
 
     setState(() => _isUploading = true);
@@ -105,7 +116,9 @@ class _ChatComposerState extends ConsumerState<ChatComposer> {
           .read(chatRepositoryProvider)
           .uploadChatAttachment(File(picked.path));
       if (!mounted) return;
-      ref.read(chatMessagesProvider(widget.groupId).notifier).sendMedia(
+      ref
+          .read(chatMessagesProvider(widget.groupId).notifier)
+          .sendMedia(
             url: upload.url,
             messageType: upload.messageType,
             metadata: upload.metadata,
@@ -114,7 +127,8 @@ class _ChatComposerState extends ConsumerState<ChatComposer> {
     } on ChatAttachmentException catch (e) {
       if (mounted) AppToast.error(context, e.messageKey.tr());
     } catch (e) {
-      if (mounted) AppToast.fromError(context, e, fallback: 'chat.upload_failed'.tr());
+      if (mounted)
+        AppToast.fromError(context, e, fallback: 'chat.upload_failed'.tr());
     } finally {
       if (mounted) setState(() => _isUploading = false);
     }
@@ -122,8 +136,10 @@ class _ChatComposerState extends ConsumerState<ChatComposer> {
 
   void _insertEmoji(String emoji) {
     final value = _controller.value;
-    final start = value.selection.isValid ? value.selection.start : value.text.length;
-    final end = value.selection.isValid ? value.selection.end : value.text.length;
+    final start =
+        value.selection.isValid ? value.selection.start : value.text.length;
+    final end =
+        value.selection.isValid ? value.selection.end : value.text.length;
     final newText = value.text.replaceRange(start, end, emoji);
     _controller.value = TextEditingValue(
       text: newText,
@@ -146,31 +162,35 @@ class _ChatComposerState extends ConsumerState<ChatComposer> {
           children: [
             IconButton(
               onPressed: _canAttach ? _openAttachSheet : null,
-              icon: _isUploading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Icon(
-                      Icons.attach_file_rounded,
-                      color: _canAttach
-                          ? AppColors.textSecondary
-                          : AppColors.secondaryLighter,
-                    ),
+              icon:
+                  _isUploading
+                      ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                      : Icon(
+                        Icons.attach_file_rounded,
+                        color:
+                            _canAttach
+                                ? AppColors.textSecondary
+                                : AppColors.secondaryLighter,
+                      ),
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
             ),
             const SizedBox(width: 4),
             IconButton(
-              onPressed: widget.enabled
-                  ? () => EmojiPickerSheet.show(context, _insertEmoji)
-                  : null,
+              onPressed:
+                  widget.enabled
+                      ? () => EmojiPickerSheet.show(context, _insertEmoji)
+                      : null,
               icon: Icon(
                 Icons.emoji_emotions_outlined,
-                color: widget.enabled
-                    ? AppColors.textSecondary
-                    : AppColors.secondaryLighter,
+                color:
+                    widget.enabled
+                        ? AppColors.textSecondary
+                        : AppColors.secondaryLighter,
               ),
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
@@ -184,13 +204,16 @@ class _ChatComposerState extends ConsumerState<ChatComposer> {
                 maxLines: 4,
                 textInputAction: TextInputAction.newline,
                 decoration: InputDecoration(
-                  hintText: widget.enabled
-                      ? (widget.hintText ?? 'chat.type_message'.tr())
-                      : 'chat.cannot_send'.tr(),
+                  hintText:
+                      widget.enabled
+                          ? (widget.hintText ?? 'chat.type_message'.tr())
+                          : 'chat.cannot_send'.tr(),
                   filled: true,
                   fillColor: AppColors.background,
                   contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 10),
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(22),
                     borderSide: BorderSide.none,
@@ -201,12 +224,17 @@ class _ChatComposerState extends ConsumerState<ChatComposer> {
             const SizedBox(width: 8),
             CircleAvatar(
               radius: 22,
-              backgroundColor: (widget.enabled && _canSend)
-                  ? AppColors.primary
-                  : AppColors.secondaryLighter,
+              backgroundColor:
+                  (widget.enabled && _canSend)
+                      ? AppColors.primary
+                      : AppColors.secondaryLighter,
               child: IconButton(
                 onPressed: (widget.enabled && _canSend) ? _submit : null,
-                icon: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+                icon: const Icon(
+                  Icons.send_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
             ),
           ],

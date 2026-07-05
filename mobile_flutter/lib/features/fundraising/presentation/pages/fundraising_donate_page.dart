@@ -30,8 +30,7 @@ class FundraisingDonatePage extends ConsumerStatefulWidget {
       _FundraisingDonatePageState();
 }
 
-class _FundraisingDonatePageState
-    extends ConsumerState<FundraisingDonatePage> {
+class _FundraisingDonatePageState extends ConsumerState<FundraisingDonatePage> {
   final _formKey = GlobalKey<FormState>();
   final _customController = TextEditingController();
   final _nameController = TextEditingController();
@@ -78,20 +77,20 @@ class _FundraisingDonatePageState
       final memberId =
           (!_anonymous && rawId != null) ? int.tryParse(rawId) : null;
 
-      final checkoutUrl =
-          await ref.read(fundraisingRepositoryProvider).createDonation(
-                CreateDonationRequest(
-                  fundId: widget.fundId,
-                  donorMemberId: memberId,
-                  donorName:
-                      _anonymous ? null : _nameController.text.trim(),
-                  amount: amount,
-                  address: _anonymous ? null : _trimOrNull(_addressController),
-                  phone: _anonymous ? null : _trimOrNull(_phoneController),
-                  email: _anonymous ? null : _trimOrNull(_emailController),
-                  message: _trimOrNull(_messageController),
-                ),
-              );
+      final checkoutUrl = await ref
+          .read(fundraisingRepositoryProvider)
+          .createDonation(
+            CreateDonationRequest(
+              fundId: widget.fundId,
+              donorMemberId: memberId,
+              donorName: _anonymous ? null : _nameController.text.trim(),
+              amount: amount,
+              address: _anonymous ? null : _trimOrNull(_addressController),
+              phone: _anonymous ? null : _trimOrNull(_phoneController),
+              email: _anonymous ? null : _trimOrNull(_emailController),
+              message: _trimOrNull(_messageController),
+            ),
+          );
 
       if (!mounted) return;
       if (checkoutUrl.isEmpty) {
@@ -123,76 +122,89 @@ class _FundraisingDonatePageState
     return showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (_) => StatefulBuilder(
-        builder: (context, setLocalState) => AlertDialog(
-          title: Text('donation.qr_title'.tr()),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: 280),
-                child: CachedNetworkImage(
-                  imageUrl: url,
-                  fit: BoxFit.contain,
-                  placeholder: (_, __) => const SizedBox(
-                    height: 200,
-                    child: Center(child: CircularProgressIndicator()),
-                  ),
-                  errorWidget: (_, __, ___) => Column(
+      builder:
+          (_) => StatefulBuilder(
+            builder:
+                (context, setLocalState) => AlertDialog(
+                  title: Text('donation.qr_title'.tr()),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        'donation.qr_load_failed'.tr(),
-                        textAlign: TextAlign.center,
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxHeight: 280),
+                        child: CachedNetworkImage(
+                          imageUrl: url,
+                          fit: BoxFit.contain,
+                          placeholder:
+                              (_, __) => const SizedBox(
+                                height: 200,
+                                child: Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                              ),
+                          errorWidget:
+                              (_, __, ___) => Column(
+                                children: [
+                                  Text(
+                                    'donation.qr_load_failed'.tr(),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  OutlinedButton.icon(
+                                    onPressed:
+                                        () => launchUrl(
+                                          Uri.parse(url),
+                                          mode: LaunchMode.externalApplication,
+                                        ),
+                                    icon: const Icon(Icons.open_in_new),
+                                    label: Text('donation.qr_open_link'.tr()),
+                                  ),
+                                ],
+                              ),
+                        ),
                       ),
                       const SizedBox(height: 12),
-                      OutlinedButton.icon(
-                        onPressed: () => launchUrl(
-                          Uri.parse(url),
-                          mode: LaunchMode.externalApplication,
+                      Text(
+                        'donation.qr_instruction'.tr(),
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 12.5,
+                          color: AppColors.textSecondary,
                         ),
-                        icon: const Icon(Icons.open_in_new),
-                        label: Text('donation.qr_open_link'.tr()),
                       ),
                     ],
                   ),
+                  actions: [
+                    TextButton.icon(
+                      onPressed:
+                          downloading
+                              ? null
+                              : () async {
+                                setLocalState(() => downloading = true);
+                                await _downloadQr(url);
+                                if (context.mounted) {
+                                  setLocalState(() => downloading = false);
+                                }
+                              },
+                      icon:
+                          downloading
+                              ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                              : const Icon(Icons.download_rounded),
+                      label: Text('donation.qr_download'.tr()),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: Text('donation.done'.tr()),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'donation.qr_instruction'.tr(),
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                    fontSize: 12.5, color: AppColors.textSecondary),
-              ),
-            ],
           ),
-          actions: [
-            TextButton.icon(
-              onPressed: downloading
-                  ? null
-                  : () async {
-                      setLocalState(() => downloading = true);
-                      await _downloadQr(url);
-                      if (context.mounted) {
-                        setLocalState(() => downloading = false);
-                      }
-                    },
-              icon: downloading
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.download_rounded),
-              label: Text('donation.qr_download'.tr()),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('donation.done'.tr()),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -243,10 +255,11 @@ class _FundraisingDonatePageState
                   ChoiceChip(
                     label: Text(formatVnd(amount)),
                     selected: !_custom && _selectedPreset == amount,
-                    onSelected: (_) => setState(() {
-                      _custom = false;
-                      _selectedPreset = amount;
-                    }),
+                    onSelected:
+                        (_) => setState(() {
+                          _custom = false;
+                          _selectedPreset = amount;
+                        }),
                   ),
                 ChoiceChip(
                   label: Text('donation.custom_amount'.tr()),
@@ -312,8 +325,7 @@ class _FundraisingDonatePageState
                 validator: (v) {
                   final t = (v ?? '').trim();
                   if (t.isEmpty) return null;
-                  final ok =
-                      RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(t);
+                  final ok = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(t);
                   return ok ? null : 'donation.email_invalid'.tr();
                 },
               ),
@@ -354,15 +366,20 @@ class _FundraisingDonatePageState
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
-                child: _submitting
-                    ? const SizedBox(
-                        height: 22,
-                        width: 22,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : Text('donation.proceed_payment'.tr(),
-                        style: const TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w700)),
+                child:
+                    _submitting
+                        ? const SizedBox(
+                          height: 22,
+                          width: 22,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                        : Text(
+                          'donation.proceed_payment'.tr(),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
               ),
             ),
             const SizedBox(height: 24),
@@ -379,7 +396,9 @@ class _Label extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(text,
-        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15));
+    return Text(
+      text,
+      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+    );
   }
 }

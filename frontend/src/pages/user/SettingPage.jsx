@@ -351,10 +351,6 @@ export default function SettingPage() {
     }
   };
 
-  const handleStartEduEdit = useCallback(() => {
-    setOriginalEducations(structuredClone(formData.educations));
-    setIsEduEditMode(true);
-  }, [formData.educations]);
 
   const handleCancelEduEdit = useCallback(() => {
     if (originalEducations) {

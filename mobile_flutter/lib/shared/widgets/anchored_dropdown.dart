@@ -22,8 +22,10 @@ Future<T?> showAnchoredDropdown<T>({
 
   final size = overlay.size;
   // Anchor icon centre (x) and bottom (y) in overlay coordinates.
-  final iconBottomCenter =
-      box.localToGlobal(box.size.bottomCenter(Offset.zero), ancestor: overlay);
+  final iconBottomCenter = box.localToGlobal(
+    box.size.bottomCenter(Offset.zero),
+    ancestor: overlay,
+  );
 
   // Clamp the card horizontally inside the screen with an 8px margin.
   const margin = 8.0;
@@ -73,8 +75,11 @@ class _DropdownRoute<T> extends PopupRoute<T> {
   Duration get transitionDuration => const Duration(milliseconds: 150);
 
   @override
-  Widget buildPage(BuildContext context, Animation<double> animation,
-      Animation<double> secondaryAnimation) {
+  Widget buildPage(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+  ) {
     return Stack(
       children: [
         Positioned(
@@ -93,8 +98,12 @@ class _DropdownRoute<T> extends PopupRoute<T> {
   }
 
   @override
-  Widget buildTransitions(BuildContext context, Animation<double> animation,
-      Animation<double> secondaryAnimation, Widget child) {
+  Widget buildTransitions(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
     final curved = CurvedAnimation(parent: animation, curve: Curves.easeOut);
     return FadeTransition(
       opacity: curved,
@@ -152,14 +161,16 @@ class _CaretPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-    final path = Path()
-      ..moveTo(0, size.height)
-      ..lineTo(size.width / 2, 0)
-      ..lineTo(size.width, size.height)
-      ..close();
+    final paint =
+        Paint()
+          ..color = color
+          ..style = PaintingStyle.fill;
+    final path =
+        Path()
+          ..moveTo(0, size.height)
+          ..lineTo(size.width / 2, 0)
+          ..lineTo(size.width, size.height)
+          ..close();
     // Soft shadow so the caret blends with the card's elevation.
     canvas.drawShadow(path, Colors.black, 3, false);
     canvas.drawPath(path, paint);

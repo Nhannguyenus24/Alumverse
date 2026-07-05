@@ -36,9 +36,10 @@ class _MentorDashboardPageState extends ConsumerState<MentorDashboardPage>
     final sessionsAsync = ref.watch(mentorSessionsProvider);
     final profileAsync = ref.watch(myMentorProfileProvider);
 
-    final ratingLabel = profileAsync.valueOrNull?.ratingAvg != null
-        ? profileAsync.valueOrNull!.ratingAvg!.toStringAsFixed(1)
-        : '-';
+    final ratingLabel =
+        profileAsync.valueOrNull?.ratingAvg != null
+            ? profileAsync.valueOrNull!.ratingAvg!.toStringAsFixed(1)
+            : '-';
 
     return Scaffold(
       appBar: AppBar(
@@ -68,25 +69,41 @@ class _MentorDashboardPageState extends ConsumerState<MentorDashboardPage>
             loading: () => const SizedBox.shrink(),
             error: (_, __) => const SizedBox.shrink(),
             data: (sessions) {
-              final pending = sessions
-                  .where((s) =>
-                      (s.status ?? '').toUpperCase() == 'PENDING')
-                  .length;
-              final completed = sessions
-                  .where((s) =>
-                      (s.status ?? '').toUpperCase() == 'COMPLETED')
-                  .length;
+              final pending =
+                  sessions
+                      .where((s) => (s.status ?? '').toUpperCase() == 'PENDING')
+                      .length;
+              final completed =
+                  sessions
+                      .where(
+                        (s) => (s.status ?? '').toUpperCase() == 'COMPLETED',
+                      )
+                      .length;
               return Container(
                 padding: const EdgeInsets.symmetric(
-                    vertical: 14, horizontal: 16),
+                  vertical: 14,
+                  horizontal: 16,
+                ),
                 color: AppColors.primary,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    _Stat(value: '${sessions.length}', label: 'mentorship.stat_bookings'.tr()),
-                    _Stat(value: '$pending', label: 'mentorship.tab_pending'.tr()),
-                    _Stat(value: '$completed', label: 'mentorship.stat_completed'.tr()),
-                    _Stat(value: ratingLabel, label: 'mentorship.feedback'.tr()),
+                    _Stat(
+                      value: '${sessions.length}',
+                      label: 'mentorship.stat_bookings'.tr(),
+                    ),
+                    _Stat(
+                      value: '$pending',
+                      label: 'mentorship.tab_pending'.tr(),
+                    ),
+                    _Stat(
+                      value: '$completed',
+                      label: 'mentorship.stat_completed'.tr(),
+                    ),
+                    _Stat(
+                      value: ratingLabel,
+                      label: 'mentorship.feedback'.tr(),
+                    ),
                   ],
                 ),
               );
@@ -95,30 +112,34 @@ class _MentorDashboardPageState extends ConsumerState<MentorDashboardPage>
           // ── Tab content ──────────────────────────────────────────
           Expanded(
             child: sessionsAsync.when(
-              loading: () =>
-                  const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text('mentorship.sessions_load_failed'.tr()),
-                    TextButton(
-                      onPressed: () =>
-                          ref.invalidate(mentorSessionsProvider),
-                      child: Text('common.retry'.tr()),
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error:
+                  (e, _) => Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('mentorship.sessions_load_failed'.tr()),
+                        TextButton(
+                          onPressed:
+                              () => ref.invalidate(mentorSessionsProvider),
+                          child: Text('common.retry'.tr()),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
+                  ),
               data: (sessions) {
-                final pending = sessions
-                    .where((s) =>
-                        (s.status ?? '').toUpperCase() == 'PENDING')
-                    .toList();
-                final upcoming = sessions
-                    .where((s) =>
-                        (s.status ?? '').toUpperCase() == 'CONFIRMED')
-                    .toList();
+                final pending =
+                    sessions
+                        .where(
+                          (s) => (s.status ?? '').toUpperCase() == 'PENDING',
+                        )
+                        .toList();
+                final upcoming =
+                    sessions
+                        .where(
+                          (s) => (s.status ?? '').toUpperCase() == 'CONFIRMED',
+                        )
+                        .toList();
                 return TabBarView(
                   controller: _tabCtrl,
                   children: [
@@ -149,11 +170,16 @@ class _PendingList extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.inbox_outlined,
-                size: 48, color: AppColors.textSecondary),
+            const Icon(
+              Icons.inbox_outlined,
+              size: 48,
+              color: AppColors.textSecondary,
+            ),
             const SizedBox(height: 12),
-            Text('mentorship.no_pending_requests'.tr(),
-                style: const TextStyle(color: AppColors.textSecondary)),
+            Text(
+              'mentorship.no_pending_requests'.tr(),
+              style: const TextStyle(color: AppColors.textSecondary),
+            ),
           ],
         ),
       );
@@ -178,9 +204,10 @@ class _PendingCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final when = session.startTime != null
-        ? DateFormat('dd/MM/yyyy • HH:mm').format(session.startTime!)
-        : 'mentorship.pending_time'.tr();
+    final when =
+        session.startTime != null
+            ? DateFormat('dd/MM/yyyy • HH:mm').format(session.startTime!)
+            : 'mentorship.pending_time'.tr();
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -192,15 +219,15 @@ class _PendingCard extends ConsumerWidget {
           children: [
             Text(
               session.menteeName ?? 'Mentee #${session.menteeMemberId}',
-              style: const TextStyle(
-                  fontWeight: FontWeight.bold, fontSize: 16),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             const SizedBox(height: 6),
             _InfoLine(icon: Icons.schedule, text: when),
             if (session.sessionType != null)
               _InfoLine(
-                  icon: Icons.category_outlined,
-                  text: _typeLabel(session.sessionType!)),
+                icon: Icons.category_outlined,
+                text: _typeLabel(session.sessionType!),
+              ),
             if (session.introduction != null &&
                 session.introduction!.isNotEmpty) ...[
               const SizedBox(height: 6),
@@ -209,7 +236,9 @@ class _PendingCard extends ConsumerWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                    color: AppColors.textSecondary, fontSize: 13),
+                  color: AppColors.textSecondary,
+                  fontSize: 13,
+                ),
               ),
             ],
             const SizedBox(height: 12),
@@ -221,11 +250,11 @@ class _PendingCard extends ConsumerWidget {
   }
 
   String _typeLabel(String t) => switch (t.toUpperCase()) {
-        'CAREER' => 'mentorship.type_career'.tr(),
-        'ACADEMIC' => 'mentorship.type_academic'.tr(),
-        'SOFT_SKILLS' => 'mentorship.type_soft_skills'.tr(),
-        _ => t,
-      };
+    'CAREER' => 'mentorship.type_career'.tr(),
+    'ACADEMIC' => 'mentorship.type_academic'.tr(),
+    'SOFT_SKILLS' => 'mentorship.type_soft_skills'.tr(),
+    _ => t,
+  };
 }
 
 class _AcceptRejectButtons extends ConsumerStatefulWidget {
@@ -237,8 +266,7 @@ class _AcceptRejectButtons extends ConsumerStatefulWidget {
       _AcceptRejectButtonsState();
 }
 
-class _AcceptRejectButtonsState
-    extends ConsumerState<_AcceptRejectButtons> {
+class _AcceptRejectButtonsState extends ConsumerState<_AcceptRejectButtons> {
   bool _loading = false;
   String? _action; // 'confirm' | 'reject'
 
@@ -253,7 +281,9 @@ class _AcceptRejectButtonsState
       _action = status == 'CONFIRMED' ? 'confirm' : 'reject';
     });
     try {
-      await ref.read(mentorshipRepositoryProvider).updateSessionStatus(
+      await ref
+          .read(mentorshipRepositoryProvider)
+          .updateSessionStatus(
             widget.session.id,
             status: status,
             meetingLink: meetingLink,
@@ -280,25 +310,28 @@ class _AcceptRejectButtonsState
     final ctl = TextEditingController();
     return showDialog<String>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: Text('mentorship.meeting_link_title'.tr()),
-        content: TextField(
-          controller: ctl,
-          keyboardType: TextInputType.url,
-          decoration: InputDecoration(
-            hintText: 'https://meet.google.com/...',
-            labelText: 'mentorship.meeting_link_label'.tr(),
+      builder:
+          (_) => AlertDialog(
+            title: Text('mentorship.meeting_link_title'.tr()),
+            content: TextField(
+              controller: ctl,
+              keyboardType: TextInputType.url,
+              decoration: InputDecoration(
+                hintText: 'https://meet.google.com/...',
+                labelText: 'mentorship.meeting_link_label'.tr(),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('common.cancel'.tr()),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, ctl.text.trim()),
+                child: Text('common.confirm'.tr()),
+              ),
+            ],
           ),
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('common.cancel'.tr())),
-          ElevatedButton(
-              onPressed: () => Navigator.pop(context, ctl.text.trim()),
-              child: Text('common.confirm'.tr())),
-        ],
-      ),
     );
   }
 
@@ -308,34 +341,45 @@ class _AcceptRejectButtonsState
       children: [
         Expanded(
           child: OutlinedButton(
-            onPressed: (_loading && _action == 'reject')
-                ? null
-                : () => _update('REJECTED'),
+            onPressed:
+                (_loading && _action == 'reject')
+                    ? null
+                    : () => _update('REJECTED'),
             style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.error,
-                side: const BorderSide(color: AppColors.error)),
-            child: (_loading && _action == 'reject')
-                ? const SizedBox(
-                    height: 16,
-                    width: 16,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2, color: AppColors.error))
-                : Text('common.reject'.tr()),
+              foregroundColor: AppColors.error,
+              side: const BorderSide(color: AppColors.error),
+            ),
+            child:
+                (_loading && _action == 'reject')
+                    ? const SizedBox(
+                      height: 16,
+                      width: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.error,
+                      ),
+                    )
+                    : Text('common.reject'.tr()),
           ),
         ),
         const SizedBox(width: 8),
         Expanded(
           child: ElevatedButton(
-            onPressed: (_loading && _action == 'confirm')
-                ? null
-                : () => _update('CONFIRMED'),
-            child: (_loading && _action == 'confirm')
-                ? const SizedBox(
-                    height: 16,
-                    width: 16,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2, color: Colors.white))
-                : Text('common.confirm'.tr()),
+            onPressed:
+                (_loading && _action == 'confirm')
+                    ? null
+                    : () => _update('CONFIRMED'),
+            child:
+                (_loading && _action == 'confirm')
+                    ? const SizedBox(
+                      height: 16,
+                      width: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                    : Text('common.confirm'.tr()),
           ),
         ),
       ],
@@ -353,8 +397,10 @@ class _UpcomingList extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     if (sessions.isEmpty) {
       return Center(
-        child: Text('mentorship.no_upcoming_sessions'.tr(),
-            style: const TextStyle(color: AppColors.textSecondary)),
+        child: Text(
+          'mentorship.no_upcoming_sessions'.tr(),
+          style: const TextStyle(color: AppColors.textSecondary),
+        ),
       );
     }
     return ListView.builder(
@@ -371,9 +417,10 @@ class _UpcomingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final when = session.startTime != null
-        ? DateFormat('dd/MM/yyyy • HH:mm').format(session.startTime!)
-        : '-';
+    final when =
+        session.startTime != null
+            ? DateFormat('dd/MM/yyyy • HH:mm').format(session.startTime!)
+            : '-';
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -389,16 +436,20 @@ class _UpcomingCard extends StatelessWidget {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(when,
-                style: const TextStyle(
-                    color: AppColors.textSecondary, fontSize: 12)),
-            if (session.meetingLink != null &&
-                session.meetingLink!.isNotEmpty)
-              Text(session.meetingLink!,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                      color: AppColors.primary, fontSize: 12)),
+            Text(
+              when,
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 12,
+              ),
+            ),
+            if (session.meetingLink != null && session.meetingLink!.isNotEmpty)
+              Text(
+                session.meetingLink!,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: AppColors.primary, fontSize: 12),
+              ),
           ],
         ),
       ),
@@ -416,23 +467,26 @@ class _FeedbackList extends ConsumerWidget {
     final async = ref.watch(myMentorFeedbacksProvider);
     return async.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (_, __) => Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('mentorship.feedbacks_load_failed'.tr()),
-            TextButton(
-              onPressed: () => ref.invalidate(myMentorFeedbacksProvider),
-              child: Text('common.retry'.tr()),
+      error:
+          (_, __) => Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('mentorship.feedbacks_load_failed'.tr()),
+                TextButton(
+                  onPressed: () => ref.invalidate(myMentorFeedbacksProvider),
+                  child: Text('common.retry'.tr()),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
       data: (feedbacks) {
         if (feedbacks.isEmpty) {
           return Center(
-            child: Text('mentorship.no_feedbacks'.tr(),
-                style: const TextStyle(color: AppColors.textSecondary)),
+            child: Text(
+              'mentorship.no_feedbacks'.tr(),
+              style: const TextStyle(color: AppColors.textSecondary),
+            ),
           );
         }
         return ListView.builder(
@@ -456,14 +510,18 @@ class _Stat extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(value,
-            style: const TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold)),
-        Text(label,
-            style:
-                const TextStyle(color: Colors.white70, fontSize: 11)),
+        Text(
+          value,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        Text(
+          label,
+          style: const TextStyle(color: Colors.white70, fontSize: 11),
+        ),
       ],
     );
   }
@@ -483,9 +541,14 @@ class _InfoLine extends StatelessWidget {
           Icon(icon, size: 14, color: AppColors.textSecondary),
           const SizedBox(width: 6),
           Expanded(
-              child: Text(text,
-                  style: const TextStyle(
-                      color: AppColors.textSecondary, fontSize: 13))),
+            child: Text(
+              text,
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 13,
+              ),
+            ),
+          ),
         ],
       ),
     );

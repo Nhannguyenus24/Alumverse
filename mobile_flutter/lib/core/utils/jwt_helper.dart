@@ -41,7 +41,10 @@ class JwtHelper {
 
   /// True when the token is missing, malformed, or expired (with [skew] leeway
   /// so we treat it as expired slightly early to avoid a server-clock race).
-  static bool isExpired(String? token, {Duration skew = const Duration(seconds: 60)}) {
+  static bool isExpired(
+    String? token, {
+    Duration skew = const Duration(seconds: 60),
+  }) {
     if (token == null || token.isEmpty) return true;
     try {
       final exp = JwtDecoder.getExpirationDate(token);

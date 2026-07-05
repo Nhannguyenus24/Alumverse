@@ -12,30 +12,30 @@ import '../providers/event_provider.dart';
 
 // ── Providers ──────────────────────────────────────────────────────────────
 
-final _eventStatsProvider =
-    FutureProvider.autoDispose.family<Map<String, dynamic>, int>((ref, id) {
-  return ref.read(eventRepositoryProvider).getEventStatistics(id);
-});
+final _eventStatsProvider = FutureProvider.autoDispose
+    .family<Map<String, dynamic>, int>((ref, id) {
+      return ref.read(eventRepositoryProvider).getEventStatistics(id);
+    });
 
 final _adminTicketsProvider = FutureProvider.autoDispose
     .family<Map<String, dynamic>, _PaginatedQuery>((ref, q) {
-  return ref.read(eventRepositoryProvider).getAdminEventTickets(
-        q.eventId,
-        page: q.page,
-        limit: q.limit,
-        keyword: q.keyword,
-        status: q.status,
-      );
-});
+      return ref
+          .read(eventRepositoryProvider)
+          .getAdminEventTickets(
+            q.eventId,
+            page: q.page,
+            limit: q.limit,
+            keyword: q.keyword,
+            status: q.status,
+          );
+    });
 
 final _adminInterestsProvider = FutureProvider.autoDispose
     .family<Map<String, dynamic>, _PageQuery>((ref, q) {
-  return ref.read(eventRepositoryProvider).getAdminEventInterests(
-        q.eventId,
-        page: q.page,
-        limit: q.limit,
-      );
-});
+      return ref
+          .read(eventRepositoryProvider)
+          .getAdminEventInterests(q.eventId, page: q.page, limit: q.limit);
+    });
 
 // ── Query key types ─────────────────────────────────────────────────────────
 
@@ -64,8 +64,7 @@ class _PaginatedQuery {
       other.status == status;
 
   @override
-  int get hashCode =>
-      Object.hash(eventId, page, limit, keyword, status);
+  int get hashCode => Object.hash(eventId, page, limit, keyword, status);
 }
 
 class _PageQuery {
@@ -151,7 +150,8 @@ class _AdminEventManagePageState extends ConsumerState<AdminEventManagePage>
   Future<void> _cancelTicket(String ticketCode) async {
     try {
       await ref.read(eventRepositoryProvider).adminCancelTicket(ticketCode);
-      if (mounted) AppToast.success(context, 'event.ticket_cancel_success'.tr());
+      if (mounted)
+        AppToast.success(context, 'event.ticket_cancel_success'.tr());
       // Invalidate tickets + stats to refresh counts
       ref.invalidate(_adminTicketsProvider(_currentTicketQuery));
       ref.invalidate(_eventStatsProvider(widget.eventId));
@@ -161,12 +161,12 @@ class _AdminEventManagePageState extends ConsumerState<AdminEventManagePage>
   }
 
   _PaginatedQuery get _currentTicketQuery => _PaginatedQuery(
-        eventId: widget.eventId,
-        page: _ticketsPage,
-        limit: _ticketsLimit,
-        keyword: _keyword.isEmpty ? null : _keyword,
-        status: _ticketStatus.isEmpty ? null : _ticketStatus,
-      );
+    eventId: widget.eventId,
+    page: _ticketsPage,
+    limit: _ticketsLimit,
+    keyword: _keyword.isEmpty ? null : _keyword,
+    status: _ticketStatus.isEmpty ? null : _ticketStatus,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -181,179 +181,211 @@ class _AdminEventManagePageState extends ConsumerState<AdminEventManagePage>
             eventAsync.when(
               loading: () => const SizedBox.shrink(),
               error: (_, __) => const SizedBox.shrink(),
-              data: (event) => _publishBusy
-                  ? const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16),
-                      child: SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2)),
-                    )
-                  : TextButton.icon(
-                      onPressed: () => _togglePublish(event.isPublished),
-                      icon: Icon(
-                        event.isPublished
-                            ? Icons.unpublished_outlined
-                            : Icons.publish_outlined,
-                        size: 18,
-                      ),
-                      label: Text(
-                        event.isPublished
-                            ? 'event.unpublish'.tr()
-                            : 'event.publish'.tr(),
-                        style: const TextStyle(fontSize: 13),
-                      ),
-                    ),
+              data:
+                  (event) =>
+                      _publishBusy
+                          ? const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 16),
+                            child: SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          )
+                          : TextButton.icon(
+                            onPressed: () => _togglePublish(event.isPublished),
+                            icon: Icon(
+                              event.isPublished
+                                  ? Icons.unpublished_outlined
+                                  : Icons.publish_outlined,
+                              size: 18,
+                            ),
+                            label: Text(
+                              event.isPublished
+                                  ? 'event.unpublish'.tr()
+                                  : 'event.publish'.tr(),
+                              style: const TextStyle(fontSize: 13),
+                            ),
+                          ),
             ),
           if (eventAsync.valueOrNull?.requiresCheckIn ?? false)
             IconButton(
               icon: const Icon(Icons.qr_code_scanner_outlined),
               tooltip: 'event.check_in'.tr(),
-              onPressed: () => context.push(
-                RouteNames.adminCheckInScanner(widget.eventId),
-                extra: eventAsync.valueOrNull?.title,
-              ),
+              onPressed:
+                  () => context.push(
+                    RouteNames.adminCheckInScanner(widget.eventId),
+                    extra: eventAsync.valueOrNull?.title,
+                  ),
             ),
         ],
       ),
       body: eventAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => ErrorView(
-          message: 'event.load_failed'.tr(),
-          onRetry: () => ref.invalidate(eventDetailProvider(widget.eventId)),
-        ),
-        data: (event) => Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ── Header: title + publish status
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      event.title,
-                      style: const TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.bold),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: event.isPublished
-                          ? AppColors.success.withValues(alpha: 0.12)
-                          : AppColors.textSecondary.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      event.isPublished
-                          ? 'event.published'.tr()
-                          : 'event.draft'.tr(),
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: event.isPublished
-                            ? AppColors.success
-                            : AppColors.textSecondary,
+        error:
+            (_, __) => ErrorView(
+              message: 'event.load_failed'.tr(),
+              onRetry:
+                  () => ref.invalidate(eventDetailProvider(widget.eventId)),
+            ),
+        data:
+            (event) => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ── Header: title + publish status
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          event.title,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color:
+                              event.isPublished
+                                  ? AppColors.success.withValues(alpha: 0.12)
+                                  : AppColors.textSecondary.withValues(
+                                    alpha: 0.12,
+                                  ),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          event.isPublished
+                              ? 'event.published'.tr()
+                              : 'event.draft'.tr(),
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color:
+                                event.isPublished
+                                    ? AppColors.success
+                                    : AppColors.textSecondary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // ── Stats tiles
+                statsAsync.when(
+                  loading:
+                      () => const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8),
+                        child: LinearProgressIndicator(),
+                      ),
+                  error: (_, __) => const SizedBox.shrink(),
+                  data: (stats) => _StatsTiles(stats: stats),
+                ),
+
+                // ── Overview info box
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: AppColors.divider),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'event.overview_section'.tr(),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        if (event.location != null &&
+                            event.location!.isNotEmpty)
+                          _OverviewRow(
+                            Icons.place_outlined,
+                            'event.location'.tr(),
+                            event.location!,
+                          ),
+                        if (event.startTime != null)
+                          _OverviewRow(
+                            Icons.schedule_outlined,
+                            'event.time_label'.tr(),
+                            _fmt(event.startTime),
+                          ),
+                        if (event.registrationStartAt != null ||
+                            event.registrationEndAt != null)
+                          _OverviewRow(
+                            Icons.event_available_outlined,
+                            'event.registration_window'.tr(),
+                            '${_fmt(event.registrationStartAt)} – ${_fmt(event.registrationEndAt)}',
+                          ),
+                      ],
                     ),
                   ),
-                ],
-              ),
-            ),
-
-            // ── Stats tiles
-            statsAsync.when(
-              loading: () => const Padding(
-                padding: EdgeInsets.symmetric(vertical: 8),
-                child: LinearProgressIndicator(),
-              ),
-              error: (_, __) => const SizedBox.shrink(),
-              data: (stats) => _StatsTiles(stats: stats),
-            ),
-
-            // ── Overview info box
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  border: Border.all(color: AppColors.divider),
-                  borderRadius: BorderRadius.circular(10),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('event.overview_section'.tr(),
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.primary)),
-                    const SizedBox(height: 6),
-                    if (event.location != null && event.location!.isNotEmpty)
-                      _OverviewRow(
-                          Icons.place_outlined, 'event.location'.tr(),
-                          event.location!),
-                    if (event.startTime != null)
-                      _OverviewRow(
-                          Icons.schedule_outlined, 'event.time_label'.tr(),
-                          _fmt(event.startTime)),
-                    if (event.registrationStartAt != null ||
-                        event.registrationEndAt != null)
-                      _OverviewRow(
-                          Icons.event_available_outlined,
-                          'event.registration_window'.tr(),
-                          '${_fmt(event.registrationStartAt)} – ${_fmt(event.registrationEndAt)}'),
+
+                // ── Tabs
+                TabBar(
+                  controller: _tabController,
+                  labelColor: AppColors.primary,
+                  unselectedLabelColor: AppColors.textSecondary,
+                  indicatorColor: AppColors.primary,
+                  tabs: [
+                    Tab(text: 'event.stat_registered'.tr()),
+                    Tab(text: 'event.stat_interested'.tr()),
                   ],
                 ),
-              ),
-            ),
 
-            // ── Tabs
-            TabBar(
-              controller: _tabController,
-              labelColor: AppColors.primary,
-              unselectedLabelColor: AppColors.textSecondary,
-              indicatorColor: AppColors.primary,
-              tabs: [
-                Tab(text: 'event.stat_registered'.tr()),
-                Tab(text: 'event.stat_interested'.tr()),
+                // ── Tab content
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _ParticipantsTab(
+                        eventId: widget.eventId,
+                        page: _ticketsPage,
+                        limit: _ticketsLimit,
+                        keyword: _keyword,
+                        status: _ticketStatus,
+                        keywordCtl: _keywordCtl,
+                        onKeywordChanged:
+                            (v) => setState(() {
+                              _keyword = v;
+                              _ticketsPage = 0;
+                            }),
+                        onStatusChanged:
+                            (v) => setState(() {
+                              _ticketStatus = v;
+                              _ticketsPage = 0;
+                            }),
+                        onPageChanged: (p) => setState(() => _ticketsPage = p),
+                        onCancelTicket: _cancelTicket,
+                      ),
+                      _InterestsTab(
+                        eventId: widget.eventId,
+                        page: _interestsPage,
+                        limit: _interestsLimit,
+                        onPageChanged:
+                            (p) => setState(() => _interestsPage = p),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
-
-            // ── Tab content
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _ParticipantsTab(
-                    eventId: widget.eventId,
-                    page: _ticketsPage,
-                    limit: _ticketsLimit,
-                    keyword: _keyword,
-                    status: _ticketStatus,
-                    keywordCtl: _keywordCtl,
-                    onKeywordChanged: (v) =>
-                        setState(() { _keyword = v; _ticketsPage = 0; }),
-                    onStatusChanged: (v) =>
-                        setState(() { _ticketStatus = v; _ticketsPage = 0; }),
-                    onPageChanged: (p) => setState(() => _ticketsPage = p),
-                    onCancelTicket: _cancelTicket,
-                  ),
-                  _InterestsTab(
-                    eventId: widget.eventId,
-                    page: _interestsPage,
-                    limit: _interestsLimit,
-                    onPageChanged: (p) => setState(() => _interestsPage = p),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -377,27 +409,27 @@ class _StatsTiles extends StatelessWidget {
       (
         'event.stat_registered'.tr(),
         stats['registeredCount'] ?? 0,
-        Icons.confirmation_number_outlined
+        Icons.confirmation_number_outlined,
       ),
       (
         'event.stat_checked_in'.tr(),
         stats['checkedInCount'] ?? 0,
-        Icons.how_to_reg_outlined
+        Icons.how_to_reg_outlined,
       ),
       (
         'event.stat_interested'.tr(),
         stats['interestedCount'] ?? 0,
-        Icons.favorite_border_outlined
+        Icons.favorite_border_outlined,
       ),
       (
         'event.stat_capacity'.tr(),
         stats['maxCapacity'] ?? '—',
-        Icons.groups_outlined
+        Icons.groups_outlined,
       ),
       (
         'event.stat_available'.tr(),
         stats['availableSlots'] ?? '—',
-        Icons.event_available_outlined
+        Icons.event_available_outlined,
       ),
     ];
 
@@ -405,12 +437,15 @@ class _StatsTiles extends StatelessWidget {
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
-        children: tiles
-            .map((t) => Padding(
-                  padding: const EdgeInsets.only(right: 10),
-                  child: _StatTile(label: t.$1, value: t.$2, icon: t.$3),
-                ))
-            .toList(),
+        children:
+            tiles
+                .map(
+                  (t) => Padding(
+                    padding: const EdgeInsets.only(right: 10),
+                    child: _StatTile(label: t.$1, value: t.$2, icon: t.$3),
+                  ),
+                )
+                .toList(),
       ),
     );
   }
@@ -445,15 +480,21 @@ class _StatTile extends StatelessWidget {
           Text(
             '$value',
             style: const TextStyle(
-                fontSize: 22, fontWeight: FontWeight.w800,
-                color: AppColors.primary),
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: AppColors.primary,
+            ),
           ),
           const SizedBox(height: 2),
-          Text(label,
-              style: const TextStyle(
-                  fontSize: 11, color: AppColors.textSecondary),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              color: AppColors.textSecondary,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
         ],
       ),
     );
@@ -478,13 +519,18 @@ class _OverviewRow extends StatelessWidget {
         children: [
           Icon(icon, size: 15, color: AppColors.textSecondary),
           const SizedBox(width: 6),
-          Text('$label: ',
-              style: const TextStyle(
-                  fontSize: 13, color: AppColors.textSecondary)),
+          Text(
+            '$label: ',
+            style: const TextStyle(
+              fontSize: 13,
+              color: AppColors.textSecondary,
+            ),
+          ),
           Expanded(
-            child: Text(value,
-                style: const TextStyle(
-                    fontSize: 13, fontWeight: FontWeight.w600)),
+            child: Text(
+              value,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            ),
           ),
         ],
       ),
@@ -548,7 +594,9 @@ class _ParticipantsTab extends ConsumerWidget {
                     isDense: true,
                     border: const OutlineInputBorder(),
                     contentPadding: const EdgeInsets.symmetric(
-                        vertical: 10, horizontal: 12),
+                      vertical: 10,
+                      horizontal: 12,
+                    ),
                   ),
                   onChanged: onKeywordChanged,
                 ),
@@ -558,16 +606,23 @@ class _ParticipantsTab extends ConsumerWidget {
                 value: status.isEmpty ? '' : status,
                 isDense: true,
                 items: [
-                  DropdownMenuItem(
-                      value: '', child: Text('common.all'.tr())),
+                  DropdownMenuItem(value: '', child: Text('common.all'.tr())),
                   const DropdownMenuItem(
-                      value: 'ISSUED', child: Text('ISSUED')),
+                    value: 'ISSUED',
+                    child: Text('ISSUED'),
+                  ),
                   const DropdownMenuItem(
-                      value: 'CHECKED_IN', child: Text('CHECKED_IN')),
+                    value: 'CHECKED_IN',
+                    child: Text('CHECKED_IN'),
+                  ),
                   const DropdownMenuItem(
-                      value: 'CANCELLED', child: Text('CANCELLED')),
+                    value: 'CANCELLED',
+                    child: Text('CANCELLED'),
+                  ),
                   const DropdownMenuItem(
-                      value: 'PENDING', child: Text('PENDING')),
+                    value: 'PENDING',
+                    child: Text('PENDING'),
+                  ),
                 ],
                 onChanged: (v) => onStatusChanged(v ?? ''),
               ),
@@ -578,23 +633,23 @@ class _ParticipantsTab extends ConsumerWidget {
         // ── List
         Expanded(
           child: async.when(
-            loading: () =>
-                const Center(child: CircularProgressIndicator()),
-            error: (_, __) => ErrorView(
-              message: 'event.manage_load_failed'.tr(),
-              onRetry: () => ref.invalidate(_adminTicketsProvider(query)),
-            ),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error:
+                (_, __) => ErrorView(
+                  message: 'event.manage_load_failed'.tr(),
+                  onRetry: () => ref.invalidate(_adminTicketsProvider(query)),
+                ),
             data: (data) {
-              final items =
-                  (data['items'] ?? data['content'] ?? []) as List;
-              final total = (data['totalItem'] ?? data['totalElements'] ?? 0)
-                  as num;
+              final items = (data['items'] ?? data['content'] ?? []) as List;
+              final total =
+                  (data['totalItem'] ?? data['totalElements'] ?? 0) as num;
 
               if (items.isEmpty) {
                 return Center(
-                  child: Text('event.tickets_empty'.tr(),
-                      style: const TextStyle(
-                          color: AppColors.textSecondary)),
+                  child: Text(
+                    'event.tickets_empty'.tr(),
+                    style: const TextStyle(color: AppColors.textSecondary),
+                  ),
                 );
               }
 
@@ -603,15 +658,17 @@ class _ParticipantsTab extends ConsumerWidget {
                   Expanded(
                     child: ListView.separated(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 4),
+                        horizontal: 12,
+                        vertical: 4,
+                      ),
                       itemCount: items.length,
-                      separatorBuilder: (_, __) =>
-                          const Divider(height: 1),
+                      separatorBuilder: (_, __) => const Divider(height: 1),
                       itemBuilder: (_, i) {
                         final t = items[i] as Map;
                         final tStatus = t['status']?.toString() ?? '';
-                        final cancellable = _cancellableStatuses
-                            .contains(tStatus.toUpperCase());
+                        final cancellable = _cancellableStatuses.contains(
+                          tStatus.toUpperCase(),
+                        );
                         return _TicketRow(
                           ticket: t,
                           cancellable: cancellable,
@@ -673,7 +730,8 @@ class _TicketRow extends StatelessWidget {
     final guestName = ticket['guestName']?.toString();
     final registeredAt = _fmtDate(ticket['registeredAt']);
     final checkedInAt = _fmtDate(ticket['checkedInAt']);
-    final attendee = guestName ?? guestEmail ?? (memberId != null ? '#$memberId' : '—');
+    final attendee =
+        guestName ?? guestEmail ?? (memberId != null ? '#$memberId' : '—');
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
@@ -684,19 +742,30 @@ class _TicketRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(code,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontFamily: 'monospace')),
-                Text(attendee,
-                    style: const TextStyle(
-                        fontSize: 13, color: AppColors.textSecondary)),
+                Text(
+                  code,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+                Text(
+                  attendee,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
                 if (registeredAt != null)
-                  Text('${'event.col_registered_at'.tr()}: $registeredAt',
-                      style: const TextStyle(fontSize: 11)),
+                  Text(
+                    '${'event.col_registered_at'.tr()}: $registeredAt',
+                    style: const TextStyle(fontSize: 11),
+                  ),
                 if (checkedInAt != null)
-                  Text('${'event.col_checked_in_at'.tr()}: $checkedInAt',
-                      style: const TextStyle(fontSize: 11)),
+                  Text(
+                    '${'event.col_checked_in_at'.tr()}: $checkedInAt',
+                    style: const TextStyle(fontSize: 11),
+                  ),
               ],
             ),
           ),
@@ -705,11 +774,9 @@ class _TicketRow extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color:
-                      _statusColor(tStatus).withValues(alpha: 0.12),
+                  color: _statusColor(tStatus).withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -723,8 +790,11 @@ class _TicketRow extends StatelessWidget {
               ),
               if (cancellable)
                 IconButton(
-                  icon: const Icon(Icons.cancel_outlined,
-                      size: 20, color: AppColors.error),
+                  icon: const Icon(
+                    Icons.cancel_outlined,
+                    size: 20,
+                    color: AppColors.error,
+                  ),
                   tooltip: 'event.tooltip_cancel_ticket'.tr(),
                   onPressed: onCancel,
                   padding: EdgeInsets.zero,
@@ -768,19 +838,21 @@ class _InterestsTab extends ConsumerWidget {
 
     return async.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (_, __) => ErrorView(
-        message: 'event.manage_load_failed'.tr(),
-        onRetry: () => ref.invalidate(_adminInterestsProvider(query)),
-      ),
+      error:
+          (_, __) => ErrorView(
+            message: 'event.manage_load_failed'.tr(),
+            onRetry: () => ref.invalidate(_adminInterestsProvider(query)),
+          ),
       data: (data) {
         final items = (data['items'] ?? data['content'] ?? []) as List;
-        final total =
-            (data['totalItem'] ?? data['totalElements'] ?? 0) as num;
+        final total = (data['totalItem'] ?? data['totalElements'] ?? 0) as num;
 
         if (items.isEmpty) {
           return Center(
-            child: Text('event.interests_empty'.tr(),
-                style: const TextStyle(color: AppColors.textSecondary)),
+            child: Text(
+              'event.interests_empty'.tr(),
+              style: const TextStyle(color: AppColors.textSecondary),
+            ),
           );
         }
 
@@ -789,36 +861,42 @@ class _InterestsTab extends ConsumerWidget {
             Expanded(
               child: ListView.separated(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 8),
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 itemCount: items.length,
                 separatorBuilder: (_, __) => const Divider(height: 1),
                 itemBuilder: (_, i) {
                   final item = items[i] as Map;
                   final memberId = item['memberId'];
                   final createdAt = item['createdAt']?.toString() ?? '';
-                  DateTime? dt = createdAt.isNotEmpty
-                      ? DateTime.tryParse(createdAt)
-                      : null;
+                  DateTime? dt =
+                      createdAt.isNotEmpty
+                          ? DateTime.tryParse(createdAt)
+                          : null;
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 10),
                     child: Row(
                       children: [
-                        const Icon(Icons.favorite_border_outlined,
-                            size: 18, color: AppColors.primary),
+                        const Icon(
+                          Icons.favorite_border_outlined,
+                          size: 18,
+                          color: AppColors.primary,
+                        ),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
                             memberId != null ? '#$memberId' : '—',
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w600),
+                            style: const TextStyle(fontWeight: FontWeight.w600),
                           ),
                         ),
                         if (dt != null)
                           Text(
                             DateFormat('dd/MM/yyyy HH:mm').format(dt),
                             style: const TextStyle(
-                                fontSize: 12,
-                                color: AppColors.textSecondary),
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
                           ),
                       ],
                     ),

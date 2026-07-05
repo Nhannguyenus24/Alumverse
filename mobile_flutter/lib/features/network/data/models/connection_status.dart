@@ -47,10 +47,12 @@ class ConnectionStatus {
     return ConnectionStatus(
       status: json['status'] as String?,
       cooldownUntil: json['cooldownUntil'] as String?,
-      latestMessage: json['latestMessage'] is Map
-          ? LatestMessage.fromJson(
-              json['latestMessage'] as Map<String, dynamic>)
-          : null,
+      latestMessage:
+          json['latestMessage'] is Map
+              ? LatestMessage.fromJson(
+                json['latestMessage'] as Map<String, dynamic>,
+              )
+              : null,
     );
   }
 }

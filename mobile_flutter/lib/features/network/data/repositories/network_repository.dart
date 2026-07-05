@@ -194,9 +194,10 @@ class NetworkRepository {
     final data = body is Map ? body['data'] : body;
     final map = data is Map<String, dynamic> ? data : <String, dynamic>{};
     final raw = map['items'];
-    final items = raw is List
-        ? raw.map((e) => fromJson(e as Map<String, dynamic>)).toList()
-        : <T>[];
+    final items =
+        raw is List
+            ? raw.map((e) => fromJson(e as Map<String, dynamic>)).toList()
+            : <T>[];
     return NetworkPageResult<T>(
       items: items,
       totalPage: (map['totalPage'] as num?)?.toInt() ?? 1,

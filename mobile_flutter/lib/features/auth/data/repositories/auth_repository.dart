@@ -35,11 +35,13 @@ class AuthRepository {
     required String password,
     required int organizationId,
   }) async {
-    final res = await api.login(LoginRequest(
-      email: email,
-      password: password,
-      organizationId: organizationId,
-    ));
+    final res = await api.login(
+      LoginRequest(
+        email: email,
+        password: password,
+        organizationId: organizationId,
+      ),
+    );
     return _persistSession(res);
   }
 
@@ -59,13 +61,15 @@ class AuthRepository {
     required String password,
     required int organizationId,
   }) {
-    return api.register(RegisterRequest(
-      email: email,
-      studentId: studentId,
-      fullName: fullName,
-      password: password,
-      organizationId: organizationId,
-    ));
+    return api.register(
+      RegisterRequest(
+        email: email,
+        studentId: studentId,
+        fullName: fullName,
+        password: password,
+        organizationId: organizationId,
+      ),
+    );
   }
 
   Future<void> sendOtp(String email) => api.sendOtp(email);
@@ -82,12 +86,11 @@ class AuthRepository {
     required int userId,
     required String oldPassword,
     required String newPassword,
-  }) =>
-      api.changePassword(
-        userId: userId,
-        oldPassword: oldPassword,
-        newPassword: newPassword,
-      );
+  }) => api.changePassword(
+    userId: userId,
+    oldPassword: oldPassword,
+    newPassword: newPassword,
+  );
 
   Future<void> logout() async {
     try {
