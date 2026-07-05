@@ -1,0 +1,113 @@
+version: '3.8'
+
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus_rules.yml:/etc/prometheus/rules.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.enable-lifecycle'
+    networks:
+      - monitoring
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    environment:
+      - TZ=UTC
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_INSTALL_PLUGINS=grafana-worldmap-panel
+      - TZ=UTC
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    networks:
+      - monitoring
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: alertmanager
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml
+      - alertmanager_data:/alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    networks:
+      - monitoring
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9093/-/healthy"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  alertmanager_data:
+    driver: local
+
+networks:
+  monitoring:
+    driver: bridge
+
+# How to use:
+#
+# 1. Start the monitoring stack:
+#    docker-compose up -d
+#
+# 2. Access services:
+#    - Prometheus:    http://localhost:9090
+#    - Grafana:       http://localhost:3000 (admin/admin)
+#    - AlertManager:  http://localhost:9093
+#
+# 3. View logs:
+#    docker-compose logs -f prometheus
+#    docker-compose logs -f grafana
+#    docker-compose logs -f alertmanager
+#
+# 4. Stop the stack:
+#    docker-compose down
+#
+# 5. Clean up (remove data):
+#    docker-compose down -v
+#
+# Notes:
+# - Backend should be accessible at host.docker.internal:8080 (Mac/Windows)
+#   or 172.17.0.1:8080 (Linux)
+# - Update prometheus.yml if backend is running elsewhere
+# - Grafana plugins auto-installed: grafana-worldmap-panel
+# - Prometheus retention: 15 days (adjust in command if needed)

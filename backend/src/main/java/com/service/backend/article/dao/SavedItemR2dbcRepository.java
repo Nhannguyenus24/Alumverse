@@ -22,8 +22,6 @@ public interface SavedItemR2dbcRepository extends ReactiveCrudRepository<SavedIt
     @Query("SELECT COUNT(*) FROM saved_items WHERE member_id = :memberId AND item_type = :itemType")
     Mono<Long> countByMemberIdAndItemType(Integer memberId, String itemType);
 
-    Mono<SavedItem> findByMemberIdAndItemTypeAndItemId(Integer memberId, String itemType, Integer itemId);
-
     Mono<Boolean> existsByMemberIdAndItemTypeAndItemId(Integer memberId, String itemType, Integer itemId);
 
     Mono<Void> deleteByMemberIdAndItemTypeAndItemId(Integer memberId, String itemType, Integer itemId);

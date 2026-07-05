@@ -55,6 +55,8 @@ public class SecurityConfig {
             "/*.ico",
             "/static/**",
             "/api/payment/sepay/webhook",
+            "/actuator/**",
+            "/internal/actuator/**"
     };
 
     @Value("${app.cors.allowed-origin-patterns:}")

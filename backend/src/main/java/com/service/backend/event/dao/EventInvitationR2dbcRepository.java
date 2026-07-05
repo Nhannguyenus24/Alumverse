@@ -17,8 +17,6 @@ public interface EventInvitationR2dbcRepository extends ReactiveCrudRepository<E
 
     Mono<Boolean> existsByEventIdAndMemberId(Long eventId, Long memberId);
 
-    Mono<Boolean> existsByEventIdAndEmail(Long eventId, String email);
-
     @Query("SELECT * FROM event_invitations WHERE event_id = :eventId ORDER BY invited_at DESC LIMIT :limit OFFSET :offset")
     Flux<EventInvitation> findByEventIdWithPagination(Long eventId, int limit, int offset);
 
