@@ -958,6 +958,32 @@
           }
         }
       }
+    },
+    {
+      "type": "timeseries",
+      "title": "API Errors Count Increase (5m)",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 110
+      },
+      "targets": [
+        {
+          "expr": "increase(api_errors_count[5m])",
+          "legendFormat": "{{uri}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10
+          }
+        }
+      }
     }
   ]
 }
