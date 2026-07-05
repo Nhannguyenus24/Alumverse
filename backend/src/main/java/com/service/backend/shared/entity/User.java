@@ -60,6 +60,9 @@ public class User {
     @Column("settings")
     private String settings;
 
+    @Column("must_change_password")
+    private boolean mustChangePassword;
+
     @CreatedDate
     @Column("created_at")
     private LocalDateTime createdAt;

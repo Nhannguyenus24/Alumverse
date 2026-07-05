@@ -102,6 +102,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         orElse: () => false,
       );
 
+      final mustChangePassword = authState.maybeWhen(
+        data: (auth) => auth.mustChangePassword,
+        orElse: () => false,
+      );
+
       final hasOrg = orgState.maybeWhen(
         data: (org) => org != null,
         orElse: () => false,
@@ -119,6 +124,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return RouteNames.login;
       }
       if (isLoggedIn && isAuthRoute) return RouteNames.home;
+
+      // 4. Admin-provisioned accounts must change their password before
+      // accessing anything else in the app.
+      final isResetPasswordRoute =
+          state.matchedLocation == RouteNames.resetPassword;
+      if (isLoggedIn && mustChangePassword && !isResetPasswordRoute) {
+        return RouteNames.resetPassword;
+      }
 
       return null;
     },
@@ -144,7 +157,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: RouteNames.resetPassword,
-        builder: (_, __) => const ResetPasswordPage(),
+        builder: (_, __) {
+          final mustChangePassword = ref
+              .read(authStateProvider)
+              .maybeWhen(
+                data: (auth) => auth.mustChangePassword,
+                orElse: () => false,
+              );
+          return ResetPasswordPage(isMandatory: mustChangePassword);
+        },
       ),
       GoRoute(
         path: RouteNames.organizationRegistration,

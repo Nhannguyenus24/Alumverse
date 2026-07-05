@@ -95,7 +95,7 @@ const getVerifyOtpSchema = (t) => z.object({
 export const verifyOtpSchema = getVerifyOtpSchema(null);
 
 /** Change password: backend ChangePasswordRequest — oldPassword, newPassword (userId from store) */
-const getChangePasswordSchema = (t) => z.object({
+export const getChangePasswordSchema = (t) => z.object({
   oldPassword: z.string().min(1, t ? t('auth:old_password_required') : 'Mật khẩu hiện tại là bắt buộc'),
   newPassword: z
     .string()
