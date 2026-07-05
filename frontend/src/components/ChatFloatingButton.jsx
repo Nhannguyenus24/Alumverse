@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Avatar,
   Box,
@@ -84,7 +84,7 @@ const PanelBody = styled(Box)(({ theme }) => ({
   backgroundColor: theme.palette.background.paper,
 }));
 
-export default function ChatFloatingButton() {
+export default function ChatFloatingButton({ isOpen = false, onOpen, onClose }) {
   const { t } = useTranslation('common');
   const { isAuthenticated } = useAuth();
   const navigate = useOrgNavigate();
@@ -94,7 +94,15 @@ export default function ChatFloatingButton() {
   const menuOpen = Boolean(anchorEl);
   const { menuActionsRef, slotProps, updateMenuPosition } = useMessagesPreviewMenu({ mb: 1.5 });
 
+  useEffect(() => {
+    if (!isOpen) {
+      setAnchorEl(null);
+      setShowLoginPanel(false);
+    }
+  }, [isOpen]);
+
   const handleClick = (event) => {
+    onOpen?.();
     if (isAuthenticated) {
       setAnchorEl(event.currentTarget);
       return;
@@ -104,19 +112,23 @@ export default function ChatFloatingButton() {
 
   const handleCloseMenu = () => {
     setAnchorEl(null);
+    onClose?.();
   };
 
   const handleClosePanel = () => {
     setShowLoginPanel(false);
+    onClose?.();
   };
 
   const goToLogin = () => {
     setShowLoginPanel(false);
+    onClose?.();
     navigate('/auth/login', { state: { from: location } });
   };
 
   const goToRegister = () => {
     setShowLoginPanel(false);
+    onClose?.();
     navigate('/auth/register', { state: { from: location } });
   };
 
