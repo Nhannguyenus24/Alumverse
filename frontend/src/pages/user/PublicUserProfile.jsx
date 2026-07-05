@@ -19,6 +19,7 @@ import UserHighlights from '../../components/profile/UserHighlights';
 import AcademicInfoSection from '../../components/profile/AcademicInfoSection';
 import PersonalInfoRow from '../../components/profile/PersonalInfoRow';
 import ProfileSectionTitle from '../../components/profile/ProfileSectionTitle';
+import SocialLinksRenderer from '../../components/profile/SocialLinksRenderer';
 import { CONVERSATION_REQUEST_STATUS } from '../../constants/conversationRequestStatus';
 import { useCheckConversationRequestStatus } from '../../hooks/network/useCheckConversationRequestStatus';
 import { useNetworkCurrentMemberId } from '../../hooks/network/useNetworkCurrentMemberId';
@@ -155,6 +156,7 @@ const PublicUserProfile = ({ userId, navigate }) => {
                       value={field.value}
                     />
                   ))}
+                  <SocialLinksRenderer linksRaw={profile.links} />
                 </Box>
               </Box>
             </Grid>

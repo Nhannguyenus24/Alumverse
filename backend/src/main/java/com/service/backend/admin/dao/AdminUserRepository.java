@@ -255,8 +255,8 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
         FROM users u
         LEFT JOIN organization_members om ON u.id = om.user_id
         WHERE (CAST(:search AS TEXT) IS NULL OR u.email ILIKE :search OR om.student_id ILIKE :search OR u.full_name ILIKE :search)
-          AND (CAST(:role AS TEXT) IS NULL OR u.role = :role)
-          AND (CAST(:status AS TEXT) IS NULL OR u."status" = :status)
+          AND (CAST(:role AS TEXT) IS NULL OR CAST(u.role AS TEXT) = :role)
+          AND (CAST(:status AS TEXT) IS NULL OR CAST(u."status" AS TEXT) = :status)
           AND (CAST(:organizationId AS INTEGER) IS NULL OR om.organization_id = :organizationId)
         ORDER BY u.created_at DESC
         LIMIT :limit OFFSET :offset
@@ -274,8 +274,8 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
         SELECT COUNT(DISTINCT u.id) FROM users u
         LEFT JOIN organization_members om ON u.id = om.user_id
         WHERE (CAST(:search AS TEXT) IS NULL OR u.email ILIKE :search OR om.student_id ILIKE :search OR u.full_name ILIKE :search)
-          AND (CAST(:role AS TEXT) IS NULL OR u.role = :role)
-          AND (CAST(:status AS TEXT) IS NULL OR u."status" = :status)
+          AND (CAST(:role AS TEXT) IS NULL OR CAST(u.role AS TEXT) = :role)
+          AND (CAST(:status AS TEXT) IS NULL OR CAST(u."status" AS TEXT) = :status)
           AND (CAST(:organizationId AS INTEGER) IS NULL OR om.organization_id = :organizationId)
         """)
     Mono<Long> countUsersWithFilters(

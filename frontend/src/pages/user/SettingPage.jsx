@@ -117,6 +117,7 @@ export default function SettingPage() {
 
   const [formData, setFormData] = useState({
     fullName: '', gender: '', birthDate: '', phone: '', studentId: '', email: '',
+    currentJobTitle: '', currentCompany: '', linksText: '',
     educations: [{ faculty: '', department: '', program: '', startedYear: '', graduatedYear: '', major: '', graduationStatus: '' }],
   });
 
@@ -206,6 +207,13 @@ export default function SettingPage() {
           phone: profile?.phone ?? '',
           studentId: profile?.studentId ?? '',
           email: profile?.email ?? '',
+          currentJobTitle: profile?.currentJobTitle ?? '',
+          currentCompany: profile?.currentCompany ?? '',
+          linksText: (() => {
+            let parsedLinks = [];
+            try { parsedLinks = profile?.links ? JSON.parse(profile.links) : []; } catch (e) {}
+            return Array.isArray(parsedLinks) ? parsedLinks.join('\n') : '';
+          })(),
           educations,
         }));
 
@@ -281,10 +289,14 @@ export default function SettingPage() {
     }
 
     try {
+      const linksArray = formData.linksText.split('\n').map(l => l.trim()).filter(Boolean);
       const payload = {
         organizationId,
         phone: formData.phone || null,
         gender: formData.gender || null,
+        currentJobTitle: formData.currentJobTitle || null,
+        currentCompany: formData.currentCompany || null,
+        links: linksArray.length > 0 ? linksArray : null,
       };
 
       await userSettingsApi.updateProfile(payload);
@@ -476,6 +488,9 @@ export default function SettingPage() {
           <TextField fullWidth label={t('label_phone')} name="phone" value={formData.phone} InputProps={{ readOnly: !isEditMode }} onChange={handleFormChange} />
           <TextField fullWidth label={t('label_student_id')} name="studentId" value={formData.studentId} InputProps={{ readOnly: true }} />
           <TextField fullWidth label={t('label_email')} name="email" type="email" value={formData.email} InputProps={{ readOnly: !isEditMode }} />
+          <TextField fullWidth label={t('label_job_title', { defaultValue: 'Chức danh' })} name="currentJobTitle" value={formData.currentJobTitle} InputProps={{ readOnly: !isEditMode }} onChange={handleFormChange} />
+          <TextField fullWidth label={t('label_company', { defaultValue: 'Công ty' })} name="currentCompany" value={formData.currentCompany} InputProps={{ readOnly: !isEditMode }} onChange={handleFormChange} />
+          <TextField fullWidth multiline minRows={3} label={t('label_social_links', { defaultValue: 'Liên kết mạng xã hội' })} name="linksText" value={formData.linksText} InputProps={{ readOnly: !isEditMode }} onChange={handleFormChange} sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }} placeholder={t('placeholder_links', { defaultValue: 'Mỗi link một dòng (VD: https://facebook.com/...)' })} />
         </Box>
       </Box>
 
