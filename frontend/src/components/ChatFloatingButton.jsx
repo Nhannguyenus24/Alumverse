@@ -22,6 +22,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useOrgNavigate } from '../hooks/useOrgNavigate';
 import MessagesPreviewPanel from './MessagesPreviewPanel';
 import { useMessagesPreviewMenu } from '../hooks/chat/useMessagesPreviewMenu';
+import { useCanAccessChat } from '../hooks/chat/useCanAccessChat';
 import { useTranslation } from 'react-i18next';
 
 const pulse = keyframes`
@@ -93,9 +94,11 @@ export default function ChatFloatingButton() {
   const [anchorEl, setAnchorEl] = useState(null);
   const menuOpen = Boolean(anchorEl);
   const { menuActionsRef, slotProps, updateMenuPosition } = useMessagesPreviewMenu({ mb: 1.5 });
+  const { canAccessChat } = useCanAccessChat();
 
   const handleClick = (event) => {
     if (isAuthenticated) {
+      if (!canAccessChat) return;
       setAnchorEl(event.currentTarget);
       return;
     }
@@ -120,14 +123,20 @@ export default function ChatFloatingButton() {
     navigate('/auth/register', { state: { from: location } });
   };
 
+  const isBlocked = isAuthenticated && !canAccessChat;
+
   return (
     <Box sx={{ position: 'relative' }}>
-      <Tooltip title={t('chat_tooltip')} placement="left">
+      <Tooltip
+        title={isBlocked ? t('verification_required_tooltip') : t('chat_tooltip')}
+        placement="left"
+      >
         <AnimatedAvatar
           onClick={handleClick}
-          isAnimating={!showLoginPanel && !menuOpen}
+          isAnimating={!isBlocked && !showLoginPanel && !menuOpen}
           sx={{
-            cursor: 'pointer',
+            cursor: isBlocked ? 'not-allowed' : 'pointer',
+            opacity: isBlocked ? 0.6 : 1,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',

@@ -66,7 +66,7 @@ const SCROLL_TOP_THRESHOLD = 8;
 
 const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
   const { t } = useTranslation(['network', 'common']);
-  const { canContribute, isAuthenticated } = useCanContribute();
+  const { canContribute } = useCanContribute();
   const { showError } = useNotification();
   const [draft, setDraft] = useState('');
   const draftInputRef = useRef(null);
@@ -206,14 +206,14 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
   }, [hasMore, isLoadingMore, loadMore]);
 
   // --- Send ---
-  const isInputDisabled = !isOpen || isMessagingBlocked || !canContribute;
+  const isInputDisabled = !isOpen || isMessagingBlocked;
 
   const handleSend = useCallback(() => {
     const text = draft.trim();
-    if (!text || !activeChat?.id || !isOpen || isMessagingBlocked || !canContribute) return;
+    if (!text || !activeChat?.id || !isOpen || isMessagingBlocked) return;
     wsSendMessage({ groupId: activeChat.id, content: text, chatType: activeChat?.type });
     setDraft('');
-  }, [draft, activeChat, isOpen, isMessagingBlocked, canContribute, wsSendMessage]);
+  }, [draft, activeChat, isOpen, isMessagingBlocked, wsSendMessage]);
 
   const handleKeyDown = useCallback((event) => {
     if (event.key !== 'Enter' || event.shiftKey) return;
@@ -633,12 +633,10 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
               ? t('network:blocked_placeholder')
               : blockedByPeer
                 ? t('network:cannot_message_placeholder')
-                : !canContribute
-                  ? (isAuthenticated ? t('common:verification_required_tooltip') : t('common:verification_required_login'))
-                  : ''
+                : ''
           }
           placement="top"
-          disableHoverListener={!isMessagingBlocked && canContribute}
+          disableHoverListener={!isMessagingBlocked}
         >
           <TextField
             fullWidth
