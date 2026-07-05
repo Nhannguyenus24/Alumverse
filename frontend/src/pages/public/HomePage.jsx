@@ -23,6 +23,7 @@ import { keyframes } from "@emotion/react";
 import { alpha } from "@mui/material/styles";
 import apiClient from "../../utils/axios";
 import ArticleCard from "../../components/articles/ArticleCard";
+import useOrganizationStore from "../../stores/organizationStore";
 
 const HERO_LOGO = "/alumverse_logo/Logo_White.svg";
 
@@ -173,6 +174,7 @@ const HomePage = () => {
   const [alumniPage, setAlumniPage] = useState(0);
   const [organizations, setOrganizations] = useState([]);
   const navigate = useOrgNavigate();
+  const { organization } = useOrganizationStore();
 
   useEffect(() => {
     const fetchOrgs = async () => {
@@ -289,9 +291,10 @@ const HomePage = () => {
                     fontSize: { xs: "1.75rem", sm: "2.5rem", md: "3.5rem", lg: "4rem" },
                     letterSpacing: { xs: 1, md: 2 },
                     mb: 2,
+                    textTransform: 'uppercase'
                   }}
                 >
-                  ALUMVERSE
+                  {organization?.name || "ALUMVERSE"}
                 </Typography>
               </RevealBox>
               <RevealBox delay={120}>
