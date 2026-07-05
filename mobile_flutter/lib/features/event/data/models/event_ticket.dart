@@ -45,11 +45,13 @@ class EventTicket {
   /// Best-effort display name for the attendee
   /// (profile name → guest name → profile/guest email → member id).
   String? get attendeeLabel {
-    if (attendeeName != null && attendeeName!.trim().isNotEmpty)
+    if (attendeeName != null && attendeeName!.trim().isNotEmpty) {
       return attendeeName;
+    }
     if (guestName != null && guestName!.trim().isNotEmpty) return guestName;
-    if (attendeeEmail != null && attendeeEmail!.trim().isNotEmpty)
+    if (attendeeEmail != null && attendeeEmail!.trim().isNotEmpty) {
       return attendeeEmail;
+    }
     if (guestEmail != null && guestEmail!.trim().isNotEmpty) return guestEmail;
     if (memberId != null) return '#$memberId';
     return null;
@@ -57,8 +59,9 @@ class EventTicket {
 
   /// Email to show for verification, if any.
   String? get displayEmail {
-    if (attendeeEmail != null && attendeeEmail!.trim().isNotEmpty)
+    if (attendeeEmail != null && attendeeEmail!.trim().isNotEmpty) {
       return attendeeEmail;
+    }
     if (guestEmail != null && guestEmail!.trim().isNotEmpty) return guestEmail;
     return null;
   }

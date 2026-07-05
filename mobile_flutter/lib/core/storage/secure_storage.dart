@@ -33,10 +33,19 @@ class SecureStorage {
   Future<String?> readOrganizationSlug() =>
       _storage.read(key: StorageKeys.organizationSlug);
 
+  Future<void> writeMustChangePassword(bool value) =>
+      _storage.write(key: StorageKeys.mustChangePassword, value: '$value');
+
+  Future<bool> readMustChangePassword() async {
+    final raw = await _storage.read(key: StorageKeys.mustChangePassword);
+    return raw == 'true';
+  }
+
   Future<void> clearAuth() async {
     await _storage.delete(key: StorageKeys.accessToken);
     await _storage.delete(key: StorageKeys.verificationLevel);
     await _storage.delete(key: StorageKeys.currentUser);
+    await _storage.delete(key: StorageKeys.mustChangePassword);
   }
 
   Future<void> clearAll() => _storage.deleteAll();

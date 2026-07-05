@@ -53,7 +53,9 @@ class NewsListPage extends ConsumerWidget {
                     delegate: SliverChildListDelegate([
                       Text(
                         'article.title_upper'.tr(),
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        style: Theme.of(
+                          context,
+                        ).textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.w800,
                           color: AppColors.primary,
                         ),
@@ -89,12 +91,13 @@ class NewsListPage extends ConsumerWidget {
                   SliverPadding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     sliver: SliverGrid(
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        mainAxisSpacing: 12,
-                        crossAxisSpacing: 12,
-                        childAspectRatio: 0.68,
-                      ),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            mainAxisSpacing: 12,
+                            crossAxisSpacing: 12,
+                            childAspectRatio: 0.68,
+                          ),
                       delegate: SliverChildBuilderDelegate(
                         (_, i) => _NewsCard(article: rest[i])
                             .animate()
@@ -321,11 +324,7 @@ class _NewsFallback extends StatelessWidget {
     return Container(
       color: AppColors.primaryLighter,
       child: const Center(
-        child: const Icon(
-          Icons.image_outlined,
-          color: AppColors.primary,
-          size: 40,
-        ),
+        child: Icon(Icons.image_outlined, color: AppColors.primary, size: 40),
       ),
     );
   }
