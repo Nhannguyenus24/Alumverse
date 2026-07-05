@@ -17,4 +17,7 @@ public class LoginResponse {
 
     @Schema(description = "Verification level of the user in the organization", example = "0")
     private Integer verificationLevel;
+
+    @Schema(description = "Whether the user must change their password before continuing", example = "false")
+    private boolean mustChangePassword;
 }

@@ -169,11 +169,15 @@ class MentorshipRepository {
   }
 
   /// Create the mentor profile (signup). Returns the created profile.
+  /// [extendedProfile] is a JSON-encoded string of
+  /// {educations, experiences, projects, awards, skills} — mirrors the web
+  /// signup form's extendedProfile payload.
   Future<MentorProfile> createMentorProfile({
     required String currentJobTitle,
     required String currentCompany,
     required String bio,
     String? defaultMeetingLink,
+    String? extendedProfile,
   }) async {
     final res = await _dio.post(
       ApiEndpoints.mentorProfile,
@@ -183,9 +187,24 @@ class MentorshipRepository {
         'bio': bio,
         if (defaultMeetingLink != null && defaultMeetingLink.isNotEmpty)
           'defaultMeetingLink': defaultMeetingLink,
+        if (extendedProfile != null) 'extendedProfile': extendedProfile,
       },
     );
     return MentorProfile.fromJson(_dataMap(res.data));
+  }
+
+  /// Uploads a mentor's CV (PDF only) and returns the AI-extracted profile
+  /// fields (job title/company/bio/education/experience/...) as a raw map, to
+  /// auto-fill the signup form. Mirrors POST /api/mentorship/cv/extract.
+  Future<Map<String, dynamic>> extractCv({
+    required String base64File,
+    required String originalFileName,
+  }) async {
+    final res = await _dio.post(
+      ApiEndpoints.mentorshipCvExtract,
+      data: {'base64File': base64File, 'originalFileName': originalFileName},
+    );
+    return _dataMap(res.data);
   }
 
   // ── Mentor: sessions & status ─────────────────────────────────

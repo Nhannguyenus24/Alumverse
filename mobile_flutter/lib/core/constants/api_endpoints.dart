@@ -178,6 +178,7 @@ class ApiEndpoints {
   static String mentorAvailabilityDelete(int id) =>
       '/api/mentorship/mentor/availability/$id';
   static const String mentorFeedbacks = '/api/mentorship/mentor/feedbacks';
+  static const String mentorshipCvExtract = '/api/mentorship/cv/extract';
 
   // --- Funds ---
   static const String funds = '/api/funds';

@@ -208,8 +208,8 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
     @Query("SELECT EXISTS(SELECT 1 FROM users WHERE email = :email)")
     Mono<Boolean> existsByEmail(@Param("email") String email);
 
-    @Query("INSERT INTO users (email, password_hash, role, \"status\", created_at, updated_at) " +
-           "VALUES (:email, :passwordHash, 'ADMIN', 'ACTIVE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) " +
+    @Query("INSERT INTO users (email, password_hash, role, \"status\", must_change_password, created_at, updated_at) " +
+           "VALUES (:email, :passwordHash, 'ADMIN', 'ACTIVE', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) " +
            "RETURNING id")
     Mono<Integer> createAdminUser(
             @Param("email") String email,

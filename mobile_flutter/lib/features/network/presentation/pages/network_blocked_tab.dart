@@ -51,11 +51,12 @@ class _NetworkBlockedTabState extends ConsumerState<NetworkBlockedTab> {
       await ref.read(networkRepositoryProvider).unblock(memberId);
       ref.invalidate(networkBlockedProvider);
       ref.invalidate(networkConnectionsProvider);
-      if (mounted)
+      if (mounted) {
         AppToast.success(
           context,
           'network.unblocked_toast'.tr(namedArgs: {'name': name}),
         );
+      }
     } catch (e) {
       if (mounted) AppToast.fromError(context, e);
     } finally {

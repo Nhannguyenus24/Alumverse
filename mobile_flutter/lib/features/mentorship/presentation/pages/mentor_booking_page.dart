@@ -161,8 +161,9 @@ class _MentorBookingPageState extends ConsumerState<MentorBookingPage> {
                       if (_rangeStart != null && d.isBefore(_rangeStart!)) {
                         return false;
                       }
-                      if (_rangeEnd != null && d.isAfter(_rangeEnd!))
+                      if (_rangeEnd != null && d.isAfter(_rangeEnd!)) {
                         return false;
+                      }
                       return true;
                     }).toList();
 
