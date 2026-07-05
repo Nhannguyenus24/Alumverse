@@ -150,8 +150,9 @@ class _AdminEventManagePageState extends ConsumerState<AdminEventManagePage>
   Future<void> _cancelTicket(String ticketCode) async {
     try {
       await ref.read(eventRepositoryProvider).adminCancelTicket(ticketCode);
-      if (mounted)
+      if (mounted) {
         AppToast.success(context, 'event.ticket_cancel_success'.tr());
+      }
       // Invalidate tickets + stats to refresh counts
       ref.invalidate(_adminTicketsProvider(_currentTicketQuery));
       ref.invalidate(_eventStatsProvider(widget.eventId));
