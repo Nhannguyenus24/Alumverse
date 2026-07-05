@@ -176,8 +176,8 @@ public class UserService {
                 });
     }
 
-    public Mono<UserProfileResponse> getMyProfile(Long currentUserId) {
-        return userProfileRepository.findProfileByUserId(currentUserId.intValue())
+    public Mono<UserProfileResponse> getMyProfile(Long currentUserId, Integer organizationId) {
+        return userProfileRepository.findProfileByUserId(currentUserId.intValue(), organizationId)
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(
                         ErrorCode.USER_NOT_FOUND,
                         "User not found with id: " + currentUserId))))
@@ -203,8 +203,8 @@ public class UserService {
                 .doOnSuccess(v -> logger.info("changeMyPassword: userId={} password changed", userId));
     }
 
-    public Mono<UserProfileResponse> getPublicProfile(Integer userId) {
-        return userProfileRepository.findProfileByUserId(userId)
+    public Mono<UserProfileResponse> getPublicProfile(Integer userId, Integer organizationId) {
+        return userProfileRepository.findProfileByUserId(userId, organizationId)
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(
                         ErrorCode.USER_NOT_FOUND,
                         "User not found with id: " + userId))))
