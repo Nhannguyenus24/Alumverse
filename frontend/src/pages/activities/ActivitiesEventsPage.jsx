@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Box, Button, Pagination, Typography } from '@mui/material';
 import { useSnackbar } from 'notistack';
@@ -14,54 +14,13 @@ import { usePublishedEvents } from '../../hooks/articles/usePublishedEvents';
 import { toEventCardShape } from '../../hooks/articles/toEventCardShape';
 import { useAuth } from '../../hooks/useAuth';
 import { eventApi } from '../../utils/api';
+import {
+  ARTICLE_FETCH_LIMIT,
+  applyArticleFilters,
+  getArticleFilterConfig,
+  paginateArticles,
+} from '../../utils/articleListFilters';
 import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
-
-
-const getEventFilters = (t) => [
-  {
-    type: 'dropdown',
-    key: 'type',
-    label: t('event:filter_topic'),
-    multiple: true,
-    options: [
-      t('event:opt_academic'),
-      t('event:opt_student'),
-      t('event:opt_school_event'),
-      t('event:opt_community'),
-      t('event:opt_announcement'),
-    ],
-  },
-  {
-    type: 'dropdown',
-    key: 'format',
-    label: t('event:filter_format'),
-    multiple: true,
-    options: [t('event:format_online'), t('event:format_offline')],
-  },
-  {
-    type: 'date',
-    key: 'date',
-    label: t('event:filter_date'),
-  },
-  {
-    type: 'dropdown',
-    key: 'status',
-    label: t('event:filter_status'),
-    multiple: true,
-    options: [
-      t('event:upcoming'),
-      t('event:ongoing'),
-      t('event:ended'),
-    ],
-  },
-  {
-    type: 'topics',
-    key: 'topics',
-    label: t('event:filter_topic'),
-    options: [t('event:opt_trending'), t('event:opt_newest'), t('event:opt_interested')],
-  },
-];
-
 
 const ActivitiesPage = () => {
   const { t } = useTranslation(['nav', 'event']);
@@ -71,17 +30,35 @@ const ActivitiesPage = () => {
 
   const [upcomingPage, setUpcomingPage] = useState(0);
   const [pastPage, setPastPage] = useState(0);
-  const { events: upcomingEvents, pageInfo: upcomingPageInfo } = usePublishedEvents('upcoming', upcomingPage, 7);
-  const { events: pastEvents, pageInfo: pastPageInfo } = usePublishedEvents('past', pastPage, 6);
+  const { events: upcomingEvents } = usePublishedEvents('upcoming', 0, ARTICLE_FETCH_LIMIT);
+  const { events: pastEvents } = usePublishedEvents('past', 0, ARTICLE_FETCH_LIMIT);
 
   const [filters, setFilters] = useState({ all: true });
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
-  const [featured, ...upcomingRest] = upcomingEvents;
+  const filterConfig = useMemo(() => getArticleFilterConfig(t, ['event']), [t]);
+  const filteredUpcomingEvents = useMemo(
+    () => applyArticleFilters(upcomingEvents, filters),
+    [upcomingEvents, filters],
+  );
+  const filteredPastEvents = useMemo(
+    () => applyArticleFilters(pastEvents, filters),
+    [pastEvents, filters],
+  );
+  const { items: pagedUpcomingEvents, pageInfo: upcomingPageInfo } = useMemo(
+    () => paginateArticles(filteredUpcomingEvents, upcomingPage, 7),
+    [filteredUpcomingEvents, upcomingPage],
+  );
+  const { items: pagedPastEvents, pageInfo: pastPageInfo } = useMemo(
+    () => paginateArticles(filteredPastEvents, pastPage, 6),
+    [filteredPastEvents, pastPage],
+  );
+
+  const [featured, ...upcomingRest] = pagedUpcomingEvents;
   const featuredCard = featured ? toEventCardShape(featured) : null;
   const upcomingCards = upcomingRest.slice(0, 6).map(toEventCardShape);
-  const pastCards = pastEvents.slice(0, 6).map(toEventCardShape);
+  const pastCards = pagedPastEvents.slice(0, 6).map(toEventCardShape);
 
   const openArticle = (article) => {
     if (!article?.id) return;
@@ -132,13 +109,21 @@ const ActivitiesPage = () => {
         </Button>
       )}
       filters={{
-        config: getEventFilters(t),
+        config: filterConfig,
         value: filters,
-        onChange: setFilters,
+        onChange: (next) => {
+          setFilters(next);
+          setUpcomingPage(0);
+          setPastPage(0);
+        },
       }}
       search={{
         value: filters.search,
-        onChange: (val) => setFilters((prev) => ({ ...prev, search: val })),
+        onChange: (val) => {
+          setFilters((prev) => ({ ...prev, search: val }));
+          setUpcomingPage(0);
+          setPastPage(0);
+        },
       }}
     >
               {/* FEATURED ARTICLE */}
@@ -214,12 +199,12 @@ const ActivitiesPage = () => {
                     }}
                   >
                     {pastCards.map((card, i) => (
-                      <Box key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(pastEvents[i])}>
+                      <Box key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(pagedPastEvents[i])}>
                         <ArticleEventCard
                           article={card}
                           isAdmin={isAdmin}
-                          onEdit={() => handleEdit(pastEvents[i])}
-                          onDelete={() => handleDelete(pastEvents[i])}
+                          onEdit={() => handleEdit(pagedPastEvents[i])}
+                          onDelete={() => handleDelete(pagedPastEvents[i])}
                         />
                       </Box>
                     ))}

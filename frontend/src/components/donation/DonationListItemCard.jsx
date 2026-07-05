@@ -12,19 +12,18 @@ export default function DonationListItemCard({ item }) {
   return (
     <Box
       sx={{
-        border: "1px solid #e4e9f4",
-        borderRadius: 2.5,
-        backgroundColor: "#ffffff",
+        border: "1px solid",
+        borderColor: "divider",
+        backgroundColor: "background.paper",
         px: { xs: 1.4, sm: 2 },
         py: 1.4,
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
         gap: 1.2,
-        transition: "box-shadow 0.2s ease, transform 0.2s ease",
+        transition: "background-color 0.2s ease, border-color 0.2s ease",
         "&:hover": {
-          boxShadow: "0 10px 22px rgba(15, 58, 122, 0.12)",
-          transform: "translateY(-1px)",
+          backgroundColor: "action.hover",
         },
       }}
     >
@@ -38,8 +37,9 @@ export default function DonationListItemCard({ item }) {
                 width: 11,
                 height: 11,
                 borderRadius: "50%",
-                backgroundColor: "#22c55e",
-                border: "2px solid #ffffff",
+                backgroundColor: "success.main",
+                border: "2px solid",
+                borderColor: "background.paper",
               }}
             />
           }
@@ -47,12 +47,12 @@ export default function DonationListItemCard({ item }) {
           <Avatar src={item.avatarUrl || DONATION_AVATAR_FALLBACK} alt={item.donorName} sx={{ width: 52, height: 52 }} />
         </Badge>
         <Box sx={{ minWidth: 0 }}>
-          <Typography sx={{ color: "#0f2f5f", fontWeight: 800, fontSize: "1rem", lineHeight: 1.3 }} noWrap>
+          <Typography sx={{ color: "text.primary", fontWeight: 800, fontSize: "1rem", lineHeight: 1.3 }} noWrap>
             {item.donorName}
           </Typography>
           <Typography
             sx={{
-              color: "#7184a3",
+              color: "text.secondary",
               fontSize: "0.88rem",
               mt: 0.3,
               lineHeight: 1.35,
@@ -65,7 +65,7 @@ export default function DonationListItemCard({ item }) {
           </Typography>
           <Typography
             sx={{
-              color: "#5f7395",
+              color: "text.secondary",
               fontSize: "0.8rem",
               mt: 0.5,
               lineHeight: 1.45,
@@ -75,7 +75,7 @@ export default function DonationListItemCard({ item }) {
           </Typography>
           <Typography
             sx={{
-              color: "#5f7395",
+              color: "text.secondary",
               fontSize: "0.8rem",
               mt: 0.15,
               lineHeight: 1.45,
@@ -87,7 +87,7 @@ export default function DonationListItemCard({ item }) {
           >
             {t('donation:donor_address', { address: item.address || '--' })}
           </Typography>
-          <Typography sx={{ color: "#8c9ab2", fontSize: "0.78rem", mt: 0.45 }}>
+          <Typography sx={{ color: "text.disabled", fontSize: "0.78rem", mt: 0.45 }}>
             {formatDonationTimestamp(item.createdAt)}
           </Typography>
         </Box>
@@ -95,7 +95,7 @@ export default function DonationListItemCard({ item }) {
 
       <Typography
         sx={{
-          color: "#1155cc",
+          color: "primary.main",
           fontWeight: 800,
           fontSize: { xs: "1rem", sm: "1.15rem" },
           whiteSpace: "nowrap",

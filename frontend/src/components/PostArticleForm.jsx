@@ -89,6 +89,7 @@ const PostArticleForm = ({
   registrationQuestions = [], // event
   setRegistrationQuestions,   // event
   hideLocalQuestions = false,
+  showSourceUrl = true,
 }) => {
   const { t } = useTranslation(['article', 'event', 'donation']);
   const { infos: fundReceivingInfos } = useFundReceivingInfos();
@@ -385,15 +386,17 @@ const PostArticleForm = ({
         />
       </Box>
 
-      <TextField
-        fullWidth
-        type="url"
-        label={t('article:source_url_label')}
-        placeholder="https://example.com/nguon-bai-viet"
-        helperText={t('article:source_url_helper')}
-        value={url ?? ''}
-        onChange={(e) => setUrl?.(e.target.value)}
-      />
+      {showSourceUrl && (
+        <TextField
+          fullWidth
+          type="url"
+          label={t('article:source_url_label')}
+          placeholder="https://example.com/nguon-bai-viet"
+          helperText={t('article:source_url_helper')}
+          value={url ?? ''}
+          onChange={(e) => setUrl?.(e.target.value)}
+        />
+      )}
     </Stack>
   );
 };

@@ -135,6 +135,9 @@ const AdminMentorshipPage = Loadable(
 const AdminArticlesPage = Loadable(
   lazy(() => import("../pages/admin/AdminArticlesPage")),
 );
+const AdminArticleRequestsPage = Loadable(
+  lazy(() => import("../pages/admin/AdminArticleRequestsPage")),
+);
 const AdminEditArticlePage = Loadable(
   lazy(() => import("../pages/admin/AdminEditArticlePage")),
 );
@@ -580,6 +583,10 @@ export const router = createBrowserRouter([
             element: <DevelopmentAcademicsPage />,
           },
           {
+            path: "academic",
+            element: <Navigate to="../academics" replace />,
+          },
+          {
             path: "jobs",
             element: <DevelopmentJobsPage />,
           },
@@ -803,6 +810,18 @@ export const router = createBrowserRouter([
                 <AdminArticlesPage />
               </ProtectedRoute>
             ),
+          },
+          {
+            path: "submissions",
+            element: (
+              <ProtectedRoute allowedRoles={["ADMIN", "STAFF", "MODERATOR"]}>
+                <AdminArticleRequestsPage />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: "article-requests",
+            element: <Navigate to="../submissions" replace />,
           },
           {
             path: "article/:channel/:id/edit",
@@ -1082,6 +1101,18 @@ export const router = createBrowserRouter([
             <AdminArticlesPage />
           </ProtectedRoute>
         ),
+      },
+      {
+        path: "submissions",
+        element: (
+          <ProtectedRoute allowedRoles={["ADMIN", "MODERATOR"]}>
+            <AdminArticleRequestsPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "article-requests",
+        element: <Navigate to="../submissions" replace />,
       },
       {
         path: "article/:channel/:id/edit",

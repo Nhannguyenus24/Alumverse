@@ -37,6 +37,7 @@ import { useOrgNavigate, useOrgPath } from '../../hooks/useOrgNavigate';
 import { eventApi } from '../../utils/api';
 import { formatDateTime } from '../../utils/dateFormatter';
 import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetricTile';
+import AdminStatusChip from '../../components/admin/AdminStatusChip';
 import FavoriteBorderOutlinedIcon from '@mui/icons-material/FavoriteBorderOutlined';
 import ConfirmationNumberOutlinedIcon from '@mui/icons-material/ConfirmationNumberOutlined';
 import EventAvailableOutlinedIcon from '@mui/icons-material/EventAvailableOutlined';
@@ -326,10 +327,11 @@ const AdminEventManagePage = () => {
               sx={{ minWidth: 140 }}
             >
               <MenuItem value="">{t('common:all')}</MenuItem>
-              <MenuItem value="PENDING">PENDING</MenuItem>
-              <MenuItem value="ISSUED">ISSUED</MenuItem>
-              <MenuItem value="CHECKED_IN">CHECKED_IN</MenuItem>
-              <MenuItem value="CANCELLED">CANCELLED</MenuItem>
+              {['PENDING', 'ISSUED', 'CHECKED_IN', 'CANCELLED'].map((status) => (
+                <MenuItem key={status} value={status}>
+                  {getTicketStatusChip(t, status).label}
+                </MenuItem>
+              ))}
             </TextField>
           </Stack>
           {ticketsLoading ? (
@@ -490,7 +492,9 @@ const AdminEventManagePage = () => {
                       <TableCell>{inv.id}</TableCell>
                       <TableCell>{inv.email || '—'}</TableCell>
                       <TableCell>{inv.memberId ?? '—'}</TableCell>
-                      <TableCell><Chip size="small" label={inv.status || '—'} /></TableCell>
+                      <TableCell>
+                        <AdminStatusChip status={inv.status} category="audit" />
+                      </TableCell>
                       <TableCell>{formatDateTime(inv.invitedAt)}</TableCell>
                       <TableCell>{formatDateTime(inv.confirmedAt)}</TableCell>
                     </TableRow>

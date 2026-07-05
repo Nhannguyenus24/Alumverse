@@ -7,7 +7,6 @@ import { useOrgNavigate, useOrgPath } from "../../hooks/useOrgNavigate";
 import {
   Box,
   Button,
-  Chip,
   IconButton,
   MenuItem,
   Stack,
@@ -38,22 +37,17 @@ import {
   ADMIN_EVENT_SORT_OPTIONS,
   ADMIN_EVENT_STATUS_OPTIONS,
 } from "../../constants/adminDefaultEvents";
-import {
-  ADMIN_STATUS_CHIP_SX,
-} from "../../constants/adminUiShared";
 import useAdminEvents from "../../hooks/admin/useAdminEvents";
 import { useAdminSystemContext } from "../../stores/AdminStore";
 import { formatDateTime } from "../../utils/dateFormatter";
 import AdminDashboardMetricTile from "../../components/admin/AdminDashboardMetricTile";
+import AdminStatusChip from "../../components/admin/AdminStatusChip";
 
 const AdminEventsPage = () => {
   const { t } = useTranslation(["admin", "common", "event"]);
   const { enqueueSnackbar } = useSnackbar();
 
-  const publishStatusChip = (isPublished) =>
-    isPublished
-      ? { color: "success", label: t("admin:published_chip") }
-      : { color: "default", label: t("admin:draft_chip") };
+  const publishStatus = (isPublished) => (isPublished ? "PUBLISHED" : "DRAFT");
   const orgNavigate = useOrgNavigate();
   const toOrgPath = useOrgPath();
   const { stableOrgId } = useAdminSystemContext();
@@ -304,17 +298,9 @@ const AdminEventsPage = () => {
             {
               id: "isPublished",
               label: t("admin:col_status"),
-              render: (val) => {
-                const chip = publishStatusChip(val);
-                return (
-                  <Chip
-                    size="small"
-                    color={chip.color}
-                    label={chip.label}
-                    sx={ADMIN_STATUS_CHIP_SX}
-                  />
-                );
-              },
+              render: (val) => (
+                <AdminStatusChip status={publishStatus(val)} category="event" />
+              ),
             },
             {
               id: "time",

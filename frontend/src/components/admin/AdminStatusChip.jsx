@@ -23,7 +23,7 @@ const AdminStatusChip = ({
       sx={[
         {
           fontWeight: 700,
-          textTransform: 'capitalize',
+          textTransform: 'none',
           letterSpacing: 0.02,
           px: 0.5,
           height: 'auto',
