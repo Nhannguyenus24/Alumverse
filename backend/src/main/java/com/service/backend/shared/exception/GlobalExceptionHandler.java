@@ -10,6 +10,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.support.WebExchangeBindException;
+import org.springframework.web.reactive.resource.NoResourceFoundException;
 import reactor.core.publisher.Mono;
 
 import java.util.HashMap;
@@ -60,6 +61,19 @@ public class GlobalExceptionHandler {
         }
         
         return Mono.just(ResponseEntity.status(errorCode.getStatus()).body(response));
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public Mono<ResponseEntity<?>> handleNoResourceFoundException(NoResourceFoundException ex) {
+        log.warn("Resource not found: {}", ex.getMessage());
+        
+        meterRegistry.counter("api.errors.count", "error_code", "NOT_FOUND").increment();
+        
+        return Mono.just(
+                ResponseEntity
+                        .status(404)
+                        .body(new ApiResponse<>("Not found", ex.getMessage()))
+        );
     }
 
     @ExceptionHandler(Exception.class)

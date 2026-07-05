@@ -631,8 +631,9 @@ export default function SettingPage() {
       <Typography variant="body1" color="textSecondary">{t('advisor_no_advisor')}</Typography>
       <Paper sx={{ p: 3, bgcolor: 'primary.light' }}>
         <Typography variant="h5" sx={{ color: 'primary.main' }}>{t('advisor_contact_title')}</Typography>
-        <Typography variant="body1" color="secondary.dark" display="block" sx={{ mt: 2 }}>Email: admin@hcmus.edu.vn</Typography>
-        <Typography variant="body1" color="secondary.dark" display="block">{t('advisor_contact_phone')}</Typography>
+        <Typography variant="body1" color="secondary.dark" display="block" sx={{ mt: 2, fontWeight: 600 }}>{organization?.departmentName || 'Khoa Công nghệ Thông tin'}</Typography>
+        <Typography variant="body1" color="secondary.dark" display="block" sx={{ mt: 0.5 }}>Email: {organization?.contactEmail || 'admin@hcmus.edu.vn'}</Typography>
+        <Typography variant="body1" color="secondary.dark" display="block">Phone: {organization?.contactPhone || '(028) 6288 4499'}</Typography>
       </Paper>
     </Box>
   );

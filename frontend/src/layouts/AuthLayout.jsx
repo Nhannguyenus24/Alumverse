@@ -2,13 +2,16 @@ import { Outlet } from 'react-router';
 import { Box, useTheme } from '@mui/material';
 import Logo from '../components/Logo';
 import { useOrgNavigate } from '../hooks/useOrgNavigate';
+import useOrganizationStore from '../stores/organizationStore';
 
 const AuthLayout = () => {
   const navigate = useOrgNavigate();
   const theme = useTheme();
-  const logoSrc = theme.palette.mode === 'dark'
+  const { organization } = useOrganizationStore();
+  const defaultLogoSrc = theme.palette.mode === 'dark'
     ? '/alumverse_logo/Logo_White_Full.svg'
     : '/alumverse_logo/Logo_Main_Full.svg';
+  const logoSrc = organization?.logoUrl || defaultLogoSrc;
 
   return (
     <Box
