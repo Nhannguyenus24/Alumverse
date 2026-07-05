@@ -28,6 +28,32 @@ const normalizeOrganization = (organization) => {
   };
 };
 
+/**
+ * Deduplicate concurrent organization switches (StrictMode double-invoke,
+ * re-renders, full-page reload racing with auth bootstrap). Multiple callers
+ * targeting the same org share a single /auth/switch-organization request so we
+ * never rotate tokens more than once for one navigation.
+ */
+let switchInFlight = null; // { orgId, promise }
+
+const switchOrganizationOnce = (orgId) => {
+  if (switchInFlight && switchInFlight.orgId === orgId) {
+    return switchInFlight.promise;
+  }
+  const promise = apiClient
+    .post(`/auth/switch-organization/${orgId}`)
+    .then((res) => {
+      syncAuthStoreFromAccessToken(res.data.data);
+    })
+    .finally(() => {
+      if (switchInFlight && switchInFlight.orgId === orgId) {
+        switchInFlight = null;
+      }
+    });
+  switchInFlight = { orgId, promise };
+  return promise;
+};
+
 const initialState = {
   currentSlug: null,
   organization: null,
@@ -86,13 +112,12 @@ const useOrganizationStore = create((set) => ({
         // This handles both direct navigation (oldSlug is null) and React Router navigation
         if (Number(userOrgId) !== Number(organization.id)) {
           try {
-            const res = await apiClient.post(`/auth/switch-organization/${organization.id}`);
-            syncAuthStoreFromAccessToken(res.data.data);
+            await switchOrganizationOnce(organization.id);
           } catch (err) {
             console.error("Failed to switch organization", err);
-            // Do not force logout here.
-            // If it's a 401, the axios interceptor handles session refresh/logout automatically.
-            // If it's a 403 (e.g. user not a member of this new org), they should just remain logged in to their previous org.
+            // Do not force logout here. The backend issues fresh tokens without
+            // revoking the old refresh token, so a failed/duplicate switch leaves
+            // the previous session intact; the user simply stays on their prior org.
           }
         }
       }

@@ -946,8 +946,10 @@ export const {
 } = userApi;
 
 export const userSettingsApi = {
-	async getProfile() {
-		const response = await apiClient.get('/users/me/profile');
+	async getProfile(organizationId) {
+		const response = await apiClient.get('/users/me/profile', {
+			params: { organizationId },
+		});
 		return unwrap(response);
 	},
 

@@ -24,8 +24,10 @@ public class PublicUserController {
 
     @PublicEndpoint
     @GetMapping("/{userId}/public-profile")
-    public Mono<ResponseEntity<ApiResponse<UserProfileResponse>>> getPublicProfile(@PathVariable Integer userId) {
-        return userService.getPublicProfile(userId)
+    public Mono<ResponseEntity<ApiResponse<UserProfileResponse>>> getPublicProfile(
+            @PathVariable Integer userId,
+            @RequestParam(required = false) Integer organizationId) {
+        return userService.getPublicProfile(userId, organizationId)
                 .map(profile -> ResponseEntity.ok(new ApiResponse<>("Public profile retrieved successfully", profile)));
     }
 }

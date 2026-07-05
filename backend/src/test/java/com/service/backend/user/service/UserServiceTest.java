@@ -69,7 +69,7 @@ class UserServiceTest {
                     .fullName("Test User")
                     .build();
 
-            when(userProfileRepository.findProfileByUserId(1)).thenReturn(Mono.just(profile));
+            when(userProfileRepository.findProfileByUserId(1, null)).thenReturn(Mono.just(profile));
 
             StepVerifier.create(userService.getMyProfile(1L))
                     .assertNext(p -> assertThat(p.getFullName()).isEqualTo("Test User"))
@@ -79,7 +79,7 @@ class UserServiceTest {
         @Test
         @DisplayName("should fail when user not found")
         void getMyProfile_notFound() {
-            when(userProfileRepository.findProfileByUserId(99)).thenReturn(Mono.empty());
+            when(userProfileRepository.findProfileByUserId(99, null)).thenReturn(Mono.empty());
 
             StepVerifier.create(userService.getMyProfile(99L))
                     .expectErrorMatches(err -> err instanceof ApplicationException &&
@@ -102,9 +102,9 @@ class UserServiceTest {
                     .fullName("Other User")
                     .build();
 
-            when(userProfileRepository.findProfileByUserId(2)).thenReturn(Mono.just(profile));
+            when(userProfileRepository.findProfileByUserId(2, null)).thenReturn(Mono.just(profile));
 
-            StepVerifier.create(userService.getPublicProfile(2))
+            StepVerifier.create(userService.getPublicProfile(2, null))
                     .assertNext(p -> assertThat(p.getFullName()).isEqualTo("Other User"))
                     .verifyComplete();
         }
@@ -112,9 +112,9 @@ class UserServiceTest {
         @Test
         @DisplayName("should fail when user not found")
         void getPublicProfile_notFound() {
-            when(userProfileRepository.findProfileByUserId(99)).thenReturn(Mono.empty());
+            when(userProfileRepository.findProfileByUserId(99, null)).thenReturn(Mono.empty());
 
-            StepVerifier.create(userService.getPublicProfile(99))
+            StepVerifier.create(userService.getPublicProfile(99, null))
                     .expectErrorMatches(err -> err instanceof ApplicationException &&
                             ((ApplicationException) err).getErrorCode() == ErrorCode.USER_NOT_FOUND)
                     .verify();
