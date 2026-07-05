@@ -13,11 +13,26 @@ import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
+import org.springframework.http.MediaType;
+import org.springframework.core.io.buffer.DataBuffer;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.service.backend.shared.dto.ApiResponse;
+import com.service.backend.shared.enums.ErrorCode;
+import com.service.backend.shared.exception.ApplicationException;
+import java.nio.charset.StandardCharsets;
 
 import java.time.Duration;
 
 @Component
 public class RateLimitingFilter implements WebFilter {
+    
+    private final ObjectMapper objectMapper;
+
+    public RateLimitingFilter(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
+
     @Getter
     private enum RateLimitPlan {
         AUTH(5, Duration.ofMinutes(1)),      // Các API nhạy cảm: 5 requests / phút
@@ -58,7 +73,18 @@ public class RateLimitingFilter implements WebFilter {
             return chain.filter(exchange);
         } else {
             exchange.getResponse().setStatusCode(HttpStatus.TOO_MANY_REQUESTS);
-            return exchange.getResponse().setComplete();
+            exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
+            
+            ApplicationException ex = new ApplicationException(ErrorCode.TOO_MANY_REQUESTS);
+            ApiResponse<?> apiResponse = ApiResponse.error(ex.getErrorCode());
+            
+            try {
+                byte[] bytes = objectMapper.writeValueAsBytes(apiResponse);
+                DataBuffer buffer = exchange.getResponse().bufferFactory().wrap(bytes);
+                return exchange.getResponse().writeWith(Mono.just(buffer));
+            } catch (JsonProcessingException e) {
+                return exchange.getResponse().setComplete();
+            }
         }
     }
 
