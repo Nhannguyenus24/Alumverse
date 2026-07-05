@@ -573,6 +573,7 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
         tabs={tabs}
         onNavigate={navigate}
         mode={isMentorshipPath ? 'mentor' : 'user'}
+        contentSx={isMentorshipPath ? { pb: { xs: 4, md: 8 } } : undefined}
       >
         <Stack spacing={6}>
           {isMentorshipPath ? (
@@ -682,6 +683,7 @@ const PublicMentorProfile = ({ mentorMemberId, navigate }) => {
       mode="mentee"
       mentorId={mentorMemberId}
       canBook={canBook}
+      contentSx={{ pb: { xs: 4, md: 8 } }}
     >
       <Stack spacing={5}>
         {access.needsOrgVerification && (

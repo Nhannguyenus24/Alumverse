@@ -9,7 +9,6 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
 
 import NetworkSectionLayout from '../../components/network/NetworkSectionLayout';
 import SearchBar from '../../components/SearchBar';

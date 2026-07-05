@@ -25,6 +25,36 @@ let isRefreshing = false;
 let failedQueue = [];
 let refreshPromise = null;
 
+const RATE_LIMIT_MAX_RETRIES = 2;
+const SAFE_RETRY_METHODS = new Set(['get', 'head', 'options']);
+
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const getRetryAfterMs = (error, attempt) => {
+  const retryAfter = error.response?.headers?.['retry-after'];
+  const parsedSeconds = Number(retryAfter);
+
+  if (Number.isFinite(parsedSeconds) && parsedSeconds > 0) {
+    return Math.min(parsedSeconds * 1000, 15_000);
+  }
+
+  const parsedDate = retryAfter ? Date.parse(retryAfter) : Number.NaN;
+  if (Number.isFinite(parsedDate)) {
+    return Math.min(Math.max(parsedDate - Date.now(), 0), 15_000);
+  }
+
+  return Math.min(1200 * 2 ** attempt, 8000);
+};
+
+const shouldRetryRateLimitedRequest = (error, request) => {
+  const method = (request?.method || 'get').toLowerCase();
+  return (
+    error.response?.status === 429 &&
+    SAFE_RETRY_METHODS.has(method) &&
+    (request._rateLimitRetries || 0) < RATE_LIMIT_MAX_RETRIES
+  );
+};
+
 /**
  * Resolve or reject every request waiting in the queue
  */
@@ -157,6 +187,13 @@ apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+
+    if (shouldRetryRateLimitedRequest(error, originalRequest)) {
+      const attempt = originalRequest._rateLimitRetries || 0;
+      originalRequest._rateLimitRetries = attempt + 1;
+      await wait(getRetryAfterMs(error, attempt));
+      return apiClient(originalRequest);
+    }
 
     // Skip handling when:
     // - Not 401

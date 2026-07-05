@@ -22,7 +22,8 @@ const ProfileLayout = ({
   onUserMessage,
   userMessageLabel,
   children,
-  avatarSlot
+  avatarSlot,
+  contentSx,
 }) => {
   const { t } = useTranslation('profile');
 
@@ -159,7 +160,7 @@ const ProfileLayout = ({
       </Box>
 
       {/* ================= MAIN ================= */}
-      <Container maxWidth="lg" sx={{ mt: 6 }}>
+      <Container maxWidth="lg" sx={{ mt: 6, ...contentSx }}>
         <Stack spacing={6}>
           {/* TAB FILTER */}
           {(tabs?.length ?? 0) > 1 && (

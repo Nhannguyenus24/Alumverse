@@ -456,18 +456,23 @@ export const eventApi = {
 		return unwrap(response);
 	},
 
-	async getAdminEvents(params = {}) {
-		const response = await apiClient.get('/admin/events', { params });
+	async getAdminEvents(params = {}, config = {}) {
+		const response = await apiClient.get('/admin/events', { params, ...config });
 		return unwrap(response);
 	},
 
-	async getAdminEventsByOrganization(organizationId, params = {}) {
-		const response = await apiClient.get(`/admin/events/organization/${organizationId}`, { params });
+	async getAdminEventsByOrganization(organizationId, params = {}, config = {}) {
+		const response = await apiClient.get(`/admin/events/organization/${organizationId}`, { params, ...config });
 		return unwrap(response);
 	},
 
-	async searchAdminEvents(keyword, params = {}) {
-		const response = await apiClient.get('/admin/events/search', { params: { keyword, ...params } });
+	async searchAdminEvents(keyword, params = {}, config = {}) {
+		const response = await apiClient.get('/admin/events/search', { params: { keyword, ...params }, ...config });
+		return unwrap(response);
+	},
+
+	async getAdminEventsByPublishStatus(isPublished, params = {}, config = {}) {
+		const response = await apiClient.get('/admin/events/by-status', { params: { isPublished, ...params }, ...config });
 		return unwrap(response);
 	},
 
@@ -1287,6 +1292,4 @@ export const notificationApi = {
 		return unwrap(response);
 	},
 };
-
-
 
