@@ -169,42 +169,41 @@ class _MentorProfilePageState extends ConsumerState<MentorProfilePage>
                   controller: _tabCtrl,
                   children: [
                     // Tab 1: Info
-                    ListView(
-                      padding: const EdgeInsets.all(16),
-                      children: [
-                        if (m.bio != null && m.bio!.isNotEmpty) ...[
-                          _SectionLabel('mentorship.bio'.tr()),
-                          const SizedBox(height: 6),
-                          Text(
-                            m.bio!,
-                            style: const TextStyle(height: 1.6, fontSize: 14.5),
-                          ),
-                          const SizedBox(height: 20),
-                        ],
-                        if (m.expertiseTopics.isNotEmpty) ...[
-                          _SectionLabel('mentorship.expertise'.tr()),
-                          const SizedBox(height: 8),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children:
-                                m.expertiseTopics
-                                    .map(
-                                      (t) => Chip(
-                                        label: Text(t),
-                                        backgroundColor: AppColors.primary
-                                            .withValues(alpha: 0.08),
-                                        labelStyle: const TextStyle(
-                                          color: AppColors.primary,
-                                          fontSize: 13,
-                                        ),
-                                        side: BorderSide.none,
-                                      ),
-                                    )
-                                    .toList(),
-                          ),
-                        ],
-                      ],
+                    Builder(
+                      builder: (_) {
+                        final tags = {
+                          ...m.expertiseTags,
+                          ...m.expertiseTopics,
+                        }.toList();
+                        return ListView(
+                          padding: const EdgeInsets.all(16),
+                          children: [
+                            if (tags.isNotEmpty) ...[
+                              _SectionLabel('mentorship.expertise'.tr()),
+                              const SizedBox(height: 8),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children:
+                                    tags
+                                        .map(
+                                          (t) => Chip(
+                                            label: Text(t),
+                                            backgroundColor: AppColors.primary
+                                                .withValues(alpha: 0.08),
+                                            labelStyle: const TextStyle(
+                                              color: AppColors.primary,
+                                              fontSize: 13,
+                                            ),
+                                            side: BorderSide.none,
+                                          ),
+                                        )
+                                        .toList(),
+                              ),
+                            ],
+                          ],
+                        );
+                      },
                     ),
 
                     // Tab 2: Feedback / Reviews

@@ -140,10 +140,7 @@ class ApiEndpoints {
       '/api/mentorship/mentee/mentors/search';
   static const String menteeMentorFilter =
       '/api/mentorship/mentee/mentors/filter';
-  static const String menteeExpertiseTopics =
-      '/api/mentorship/mentee/expertise-topics';
-  static const String menteeExpertiseCategories =
-      '/api/mentorship/mentee/expertise-categories';
+  static const String menteeSkills = '/api/mentorship/mentee/skills';
   static String menteeMentorProfile(int memberId) =>
       '/api/mentorship/mentee/mentors/$memberId';
   static String menteeMentorExpertise(int memberId) =>
@@ -179,6 +176,8 @@ class ApiEndpoints {
       '/api/mentorship/mentor/availability/$id';
   static const String mentorFeedbacks = '/api/mentorship/mentor/feedbacks';
   static const String mentorshipCvExtract = '/api/mentorship/cv/extract';
+  static const String mentorshipSkillsExtract =
+      '/api/mentorship/skills/extract';
 
   // --- Funds ---
   static const String funds = '/api/funds';

@@ -15,6 +15,7 @@ const uploadImageIfPresent = async (image) => {
 
 const submitDraft = async ({
   profile,
+  expertiseTags,
   avatarFile,
   coverFile,
   defaultMeetingLink,
@@ -33,6 +34,7 @@ const submitDraft = async ({
     coverUrl: coverUrl ?? undefined,
     defaultMeetingLink: defaultMeetingLink || undefined,
     extendedProfile,
+    expertiseTags: (expertiseTags ?? []).map((tag) => (tag ?? '').trim()).filter(Boolean),
   });
   return res?.data?.data ?? null;
 };
