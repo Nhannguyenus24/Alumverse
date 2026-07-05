@@ -5,14 +5,17 @@ import { useTranslation } from 'react-i18next';
 
 import MessagesPreviewPanel from './MessagesPreviewPanel';
 import { useMessagesPreviewMenu } from '../hooks/chat/useMessagesPreviewMenu';
+import { useCanAccessChat } from '../hooks/chat/useCanAccessChat';
 
 const MessagesNavDropdown = ({ headerTextColor }) => {
-  const { t } = useTranslation('network');
+  const { t } = useTranslation(['network', 'common']);
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
   const { menuActionsRef, slotProps, updateMenuPosition } = useMessagesPreviewMenu({ mt: 1.5 });
+  const { canAccessChat } = useCanAccessChat();
 
   const handleOpen = (event) => {
+    if (!canAccessChat) return;
     setAnchorEl(event.currentTarget);
   };
 
@@ -23,7 +26,7 @@ const MessagesNavDropdown = ({ headerTextColor }) => {
   return (
     <>
       <Tooltip
-        title={t('conversations')}
+        title={canAccessChat ? t('conversations') : t('common:verification_required_tooltip')}
         arrow
         placement="bottom"
         slotProps={{
@@ -32,18 +35,21 @@ const MessagesNavDropdown = ({ headerTextColor }) => {
           },
         }}
       >
-        <IconButton
-          id="messages-nav-trigger"
-          size="small"
-          aria-label={t('conversations')}
-          aria-controls={open ? 'messages-nav-menu' : undefined}
-          aria-haspopup="true"
-          aria-expanded={open ? 'true' : undefined}
-          onClick={handleOpen}
-          sx={{ color: headerTextColor }}
-        >
-          <ChatBubbleOutlineIcon />
-        </IconButton>
+        <span>
+          <IconButton
+            id="messages-nav-trigger"
+            size="small"
+            aria-label={t('conversations')}
+            aria-controls={open ? 'messages-nav-menu' : undefined}
+            aria-haspopup="true"
+            aria-expanded={open ? 'true' : undefined}
+            onClick={handleOpen}
+            disabled={!canAccessChat}
+            sx={{ color: headerTextColor }}
+          >
+            <ChatBubbleOutlineIcon />
+          </IconButton>
+        </span>
       </Tooltip>
 
       <Menu

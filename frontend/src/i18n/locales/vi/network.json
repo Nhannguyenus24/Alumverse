@@ -191,6 +191,7 @@
     "file_type_unsupported": "Định dạng file này không được hỗ trợ.",
     "upload_failed": "Tải lên thất bại. Vui lòng thử lại.",
     "attachment_unavailable": "Không thể hiển thị tệp đính kèm",
-    "image_update_failed": "Cập nhật ảnh nhóm thất bại. Vui lòng thử lại."
+    "image_update_failed": "Cập nhật ảnh nhóm thất bại. Vui lòng thử lại.",
+    "access_blocked_title": "Cần xác minh cựu sinh viên để trò chuyện"
   }
 }

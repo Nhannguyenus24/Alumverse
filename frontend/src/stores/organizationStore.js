@@ -12,6 +12,9 @@ const organizationDefaults = {
   featuresConfig: '{}',
   programs: '[]',
   majors: '[]',
+  contactPhone: null,
+  contactEmail: null,
+  departmentName: null,
   status: null,
   createdAt: null,
 };

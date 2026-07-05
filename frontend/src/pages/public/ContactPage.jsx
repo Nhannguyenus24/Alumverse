@@ -175,16 +175,16 @@ const ContactPage = () => {
                     {t('contact_info_title')}
                   </Typography>
                   <Typography variant="body2" color="text.secondary" fontWeight={600}>
-                    {CONTACT_INFO.office}
+                    {organization?.departmentName || CONTACT_INFO.office}
                   </Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
                     {CONTACT_INFO.address}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Email: {CONTACT_INFO.email}
+                    Email: {organization?.contactEmail || CONTACT_INFO.email}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    {t('label_phone')}: {CONTACT_INFO.phone}
+                    {t('label_phone')}: {organization?.contactPhone || CONTACT_INFO.phone}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     {t('label_admissions')}: {CONTACT_INFO.admissions}

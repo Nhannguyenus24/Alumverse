@@ -160,6 +160,9 @@ const AdminOrganizationsPage = () => {
       featuresConfig: payload.featuresConfig,
       programs: parseIfNeeded(payload.programs),
       majors: parseIfNeeded(payload.majors),
+      contactPhone: payload.contactPhone,
+      contactEmail: payload.contactEmail,
+      departmentName: payload.departmentName,
     };
 
     try {

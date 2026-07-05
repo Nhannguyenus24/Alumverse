@@ -46,6 +46,15 @@ public class Organization {
     @Column("status")
     private Status status;
 
+    @Column("contact_phone")
+    private String contactPhone;
+
+    @Column("contact_email")
+    private String contactEmail;
+
+    @Column("department_name")
+    private String departmentName;
+
     @Column("created_at")
     @CreatedDate
     @ReadOnlyProperty
