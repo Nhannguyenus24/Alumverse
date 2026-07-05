@@ -44,6 +44,7 @@ class ForumTopic {
           json['updatedAt'] is String
               ? DateTime.tryParse(json['updatedAt'] as String)
               : null,
+      viewCount: (json['viewCount'] as num?)?.toInt() ?? 0,
       replyCount:
           ((json['postCount'] ?? json['replyCount']) as num?)?.toInt() ?? 0,
     );
