@@ -4,6 +4,7 @@ import { alpha } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
 import Logo from './Logo';
 import { useOrgPath } from '../hooks/useOrgNavigate';
+import useOrganizationStore from '../stores/organizationStore';
 
 const SOCIAL_LINKS = [
   {
@@ -59,6 +60,7 @@ const Footer = () => {
   const { t } = useTranslation(['footer']);
   const theme = useTheme();
   const toOrgPath = useOrgPath();
+  const { organization } = useOrganizationStore();
   const isDark = theme.palette.mode === 'dark';
   const footerText = theme.palette.common.white;
   const mutedText = alpha(footerText, 0.9);
@@ -136,19 +138,16 @@ const Footer = () => {
               {t('footer:contact_heading')}
             </Typography>
             <Typography variant="body2" fontWeight={600} sx={{ color: strongText }}>
-              {t('footer:office_name')}
+              {organization?.departmentName || t('footer:office_name')}
             </Typography>
             <Typography variant="body2" sx={{ color: mutedText, mt: 0.5, lineHeight: 1.6 }}>
               {t('footer:address')}
             </Typography>
             <Typography variant="body2" sx={{ color: mutedText, mt: 1 }}>
-              Email: info@fit.hcmus.edu.vn
+              Email: {organization?.contactEmail || 'info@fit.hcmus.edu.vn'}
             </Typography>
             <Typography variant="body2" sx={{ color: mutedText }}>
-              {t('footer:phone_label')}: (028) 6288 4499
-            </Typography>
-            <Typography variant="body2" sx={{ color: mutedText }}>
-              {t('footer:admissions_label')}: 093 773 4004
+              {t('footer:phone_label')}: {organization?.contactPhone || '(028) 6288 4499'}
             </Typography>
             <Button
               component={RouterLink}

@@ -37,9 +37,9 @@ public interface OrganizationRepository extends R2dbcRepository<Organization, In
     @Query("SELECT COUNT(*) FROM organizations WHERE :search IS NULL OR name ILIKE :search")
     Mono<Long> countWithFilters(@Param("search") String search);
 
-    @Query("INSERT INTO organizations (name, slug, logo_url, status, features_config, programs, majors) " +
+    @Query("INSERT INTO organizations (name, slug, logo_url, status, features_config, programs, majors, contact_phone, contact_email, department_name) " +
            "VALUES (:name, :slug, :logoUrl, :status, " +
-           "CAST(:featuresConfig AS json), CAST(:programs AS json), CAST(:majors AS json)) " +
+           "CAST(:featuresConfig AS json), CAST(:programs AS json), CAST(:majors AS json), :contactPhone, :contactEmail, :departmentName) " +
            "RETURNING *")
     Mono<Organization> insertOrganization(
             @Param("name") String name,
@@ -48,13 +48,17 @@ public interface OrganizationRepository extends R2dbcRepository<Organization, In
             @Param("status") Status status,
             @Param("featuresConfig") String featuresConfig,
             @Param("programs") String programs,
-            @Param("majors") String majors
+            @Param("majors") String majors,
+            @Param("contactPhone") String contactPhone,
+            @Param("contactEmail") String contactEmail,
+            @Param("departmentName") String departmentName
     );
 
     @Modifying
     @Query("UPDATE organizations SET name = :name, slug = :slug, logo_url = :logoUrl, status = :status, " +
            "brand_config = CAST(:brandConfig AS json), features_config = CAST(:featuresConfig AS json), " +
-           "programs = CAST(:programs AS json), majors = CAST(:majors AS json) " +
+           "programs = CAST(:programs AS json), majors = CAST(:majors AS json), " +
+           "contact_phone = :contactPhone, contact_email = :contactEmail, department_name = :departmentName " +
            "WHERE id = :id")
     Mono<Integer> updateOrganizationFields(
             @Param("id") Integer id,
@@ -65,7 +69,10 @@ public interface OrganizationRepository extends R2dbcRepository<Organization, In
             @Param("brandConfig") String brandConfig,
             @Param("featuresConfig") String featuresConfig,
             @Param("programs") String programs,
-            @Param("majors") String majors
+            @Param("majors") String majors,
+            @Param("contactPhone") String contactPhone,
+            @Param("contactEmail") String contactEmail,
+            @Param("departmentName") String departmentName
     );
 
     @Query("SELECT organization_id as id, COUNT(*) as count FROM organization_members " +

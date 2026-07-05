@@ -116,7 +116,10 @@ public class AdminOrganizationService {
                         request.getStatus() != null ? request.getStatus() : Status.ACTIVE,
                         request.getFeaturesConfig(),
                         JsonUtils.toJson(request.getPrograms()),
-                        JsonUtils.toJson(request.getMajors())
+                        JsonUtils.toJson(request.getMajors()),
+                        request.getContactPhone(),
+                        request.getContactEmail(),
+                        request.getDepartmentName()
                 ))
                 .delayUntil(res -> cacheUtils.clear(ORG_CACHE))
                 .doOnSuccess(saved -> logger.info("createOrganization result: {}", JsonUtils.toJson(saved)))
@@ -138,9 +141,13 @@ public class AdminOrganizationService {
                         String featuresConfig = organizationUpdate.getFeaturesConfig() != null ? organizationUpdate.getFeaturesConfig() : existing.getFeaturesConfig();
                         String programs = organizationUpdate.getPrograms() != null ? JsonUtils.toJson(organizationUpdate.getPrograms()) : existing.getPrograms();
                         String majors = organizationUpdate.getMajors() != null ? JsonUtils.toJson(organizationUpdate.getMajors()) : existing.getMajors();
+                        String contactPhone = organizationUpdate.getContactPhone() != null ? organizationUpdate.getContactPhone() : existing.getContactPhone();
+                        String contactEmail = organizationUpdate.getContactEmail() != null ? organizationUpdate.getContactEmail() : existing.getContactEmail();
+                        String departmentName = organizationUpdate.getDepartmentName() != null ? organizationUpdate.getDepartmentName() : existing.getDepartmentName();
 
                         return organizationRepository.updateOrganizationFields(
-                                organizationId, name, slug, finalLogoUrl, status, brandConfig, featuresConfig, programs, majors
+                                organizationId, name, slug, finalLogoUrl, status, brandConfig, featuresConfig, programs, majors,
+                                contactPhone, contactEmail, departmentName
                         ).flatMap(rows -> organizationRepository.findById(organizationId))
                          .delayUntil(res -> cacheUtils.clear(ORG_CACHE));
                     });
@@ -577,7 +584,8 @@ public class AdminOrganizationService {
         return organizationRepository.updateOrganizationFields(
                 org.getId(), org.getName(), org.getSlug(), org.getLogoUrl(),
                 org.getStatus(), org.getBrandConfig(), org.getFeaturesConfig(),
-                org.getPrograms(), org.getMajors())
+                org.getPrograms(), org.getMajors(),
+                org.getContactPhone(), org.getContactEmail(), org.getDepartmentName())
                 .delayUntil(res -> cacheUtils.clear(ORG_CACHE));
     }
 

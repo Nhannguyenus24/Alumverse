@@ -14,7 +14,8 @@ import {
   Divider,
   Avatar,
   Switch,
-  FormControlLabel
+  FormControlLabel,
+  Stack
 } from '@mui/material';
 import BusinessIcon from '@mui/icons-material/Business';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
@@ -30,6 +31,9 @@ const AdminOrganizationEditDialog = ({ open, onClose, organization, onConfirm })
     programs: '',
     majors: '',
     featuresConfig: '',
+    contactPhone: '',
+    contactEmail: '',
+    departmentName: '',
   });
 
 
@@ -65,6 +69,9 @@ useEffect(() => {
         programs: Array.isArray(programsArr) ? programsArr.join(', ') : (programsArr || ''),
         majors: Array.isArray(majorsArr) ? majorsArr.join(', ') : (majorsArr || ''),
         featuresConfig: config,
+        contactPhone: organization.contactPhone || '',
+        contactEmail: organization.contactEmail || '',
+        departmentName: organization.departmentName || '',
       });
     }, 0);
     return () => clearTimeout(timer);
@@ -158,20 +165,53 @@ useEffect(() => {
                 helperText={t('admin:slug_helper_text')}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                select
-                fullWidth
-                label={t('admin:status_label')}
-                name="status"
-                value={formData.status}
-                onChange={handleChange}
-              >
-                <MenuItem value="ACTIVE">{t('common:status_active')}</MenuItem>
-                <MenuItem value="INACTIVE">{t('common:status_inactive')}</MenuItem>
-              </TextField>
+            <Grid item xs={12} sm={6} sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={formData.status === 'ACTIVE'}
+                    onChange={(e) => handleChange({
+                      target: { name: 'status', value: e.target.checked ? 'ACTIVE' : 'INACTIVE' }
+                    })}
+                    name="status"
+                    color="primary"
+                  />
+                }
+                label={
+                  <Typography variant="body1">
+                    {t('admin:status_label')}: <b>{formData.status === 'ACTIVE' ? t('common:status_active') : t('common:status_inactive')}</b>
+                  </Typography>
+                }
+              />
             </Grid>
           </Grid>
+          <Stack spacing={2}>
+            <TextField
+              fullWidth
+              label="Contact Phone"
+              name="contactPhone"
+              value={formData.contactPhone}
+              onChange={handleChange}
+              placeholder="e.g. +84 123 456 789"
+            />
+            <TextField
+              fullWidth
+              label="Contact Email"
+              name="contactEmail"
+              type="email"
+              value={formData.contactEmail}
+              onChange={handleChange}
+              placeholder="e.g. contact@hcmus.edu.vn"
+            />
+            <TextField
+              fullWidth
+              label="Department Name"
+              name="departmentName"
+              value={formData.departmentName}
+              onChange={handleChange}
+              placeholder="e.g. Information Technology"
+            />
+          </Stack>
         </Box>
       </DialogContent>
       <DialogActions sx={{ p: 3, pt: 2, bgcolor: 'action.hover' }}>
