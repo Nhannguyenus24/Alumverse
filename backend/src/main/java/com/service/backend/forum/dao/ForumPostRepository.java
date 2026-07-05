@@ -9,6 +9,7 @@ import com.service.backend.shared.entity.ForumPost;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import com.service.backend.shared.dto.IdCountDTO;
 
@@ -45,6 +46,12 @@ public interface ForumPostRepository extends R2dbcRepository<ForumPost, Integer>
      */
     @Query("SELECT * FROM forum_posts WHERE DATE(created_at) = CURRENT_DATE - INTERVAL '1 day' AND is_banned = false ORDER BY created_at DESC")
     Flux<ForumPost> findPostsCreatedYesterday();
+
+    /**
+     * Find forum posts created since a given time
+     */
+    @Query("SELECT * FROM forum_posts WHERE created_at >= :since AND is_banned = false ORDER BY created_at ASC")
+    Flux<ForumPost> findPostsCreatedSince(@Param("since") LocalDateTime since);
 
     /**
      * Find forum posts created yesterday with pagination
