@@ -12,16 +12,6 @@ import reactor.core.publisher.Mono;
 
 @Repository
 public interface UserBlockRepository extends ReactiveCrudRepository<UserBlock, Long> {
-
-    @Query("""
-            SELECT id, blocker_member_id, blocked_member_id, created_at
-            FROM user_blocks
-            WHERE blocker_member_id = :blockerMemberId
-              AND blocked_member_id = :blockedMemberId
-            LIMIT 1
-            """)
-    Mono<UserBlock> findByBlockerMemberIdAndBlockedMemberId(Long blockerMemberId, Long blockedMemberId);
-
     @Query("""
             SELECT COUNT(id)
             FROM user_blocks

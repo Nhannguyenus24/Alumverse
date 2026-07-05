@@ -27,17 +27,7 @@ public interface ForumCategoryRepository extends R2dbcRepository<ForumCategory, 
     Flux<ForumCategory> findByParentId(Integer parentId);
 
     /**
-     * Find forum category by name and organization id
-     */
-    Mono<ForumCategory> findByNameAndOrganizationId(String name, Integer organizationId);
-
-    /**
      * Count categories by organization id
      */
     Mono<Long> countByOrganizationId(Integer organizationId);
-
-    /**
-     * Find all categories ordered by name
-     */
-    Flux<ForumCategory> findAllByOrganizationIdOrderByNameAsc(Integer organizationId);
 }

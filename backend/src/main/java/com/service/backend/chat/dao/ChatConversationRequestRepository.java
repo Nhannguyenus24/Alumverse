@@ -22,16 +22,6 @@ public interface ChatConversationRequestRepository extends ReactiveCrudRepositor
             """)
     Mono<ChatConversationRequest> findByMemberPair(Long memberLowId, Long memberHighId);
 
-    @Query("""
-            SELECT id, member_low_id, member_high_id, requester_member_id, target_member_id, chat_group_id,
-                   last_request_message_id, cooldown_until, status,
-                   created_at, updated_at
-            FROM chat_conversation_requests
-            WHERE chat_group_id = :chatGroupId
-            LIMIT 1
-            """)
-    Mono<ChatConversationRequest> findByChatGroupId(Long chatGroupId);
-
     String SEARCH_FROM_JOIN = """
             FROM chat_conversation_requests ccr
             JOIN users u             ON u.id        = ccr.requester_member_id

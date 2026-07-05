@@ -11,16 +11,6 @@ import reactor.core.publisher.Mono;
 
 @Repository
 public interface ChatMessageRepository extends ReactiveCrudRepository<ChatMessage, Long> {
-
-    @Query("""
-            SELECT *
-            FROM chat_messages
-            WHERE group_id = :groupId
-            ORDER BY created_at ASC
-            LIMIT :limit OFFSET :offset
-            """)
-    Flux<ChatMessage> findByGroupIdWithPagination(Long groupId, int limit, int offset);
-
     @Query("""
             SELECT cm.id,
                    cm.group_id,
@@ -42,16 +32,6 @@ public interface ChatMessageRepository extends ReactiveCrudRepository<ChatMessag
     Flux<ChatMessageResponse> findByGroupIdWithSenderInfoAndPagination(Long groupId, int limit, int offset);
 
     @Query("""
-            SELECT *
-            FROM chat_messages
-            WHERE group_id = :groupId
-              AND deleted_at IS NULL
-            ORDER BY created_at DESC
-            LIMIT 1
-            """)
-    Mono<ChatMessage> findLastByGroupId(Long groupId);
-
-    @Query("""
             SELECT id, group_id, sender_member_id, content, created_at, edited_at, deleted_at
             FROM chat_messages
             WHERE group_id = :groupId
@@ -61,9 +41,6 @@ public interface ChatMessageRepository extends ReactiveCrudRepository<ChatMessag
             LIMIT 1
             """)
     Mono<ChatMessage> findLatestByGroupIdAndSenderMemberId(Long groupId, Long senderMemberId);
-
-    @Query("SELECT COUNT(*) FROM chat_messages WHERE group_id = :groupId")
-    Mono<Long> countByGroupId(Long groupId);
 
     @Query("""
             INSERT INTO chat_messages (group_id, sender_member_id, content, message_type, metadata, created_at)

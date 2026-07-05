@@ -19,11 +19,6 @@ public interface ForumPostReactionRepository extends R2dbcRepository<ForumPostRe
     Mono<ForumPostReaction> findByPostIdAndMemberId(Integer postId, Integer memberId);
     
     /**
-     * Find all reactions for a post
-     */
-    Flux<ForumPostReaction> findByPostId(Integer postId);
-    
-    /**
      * Count likes (reactions) for a post
      */
     Mono<Long> countByPostId(Integer postId);

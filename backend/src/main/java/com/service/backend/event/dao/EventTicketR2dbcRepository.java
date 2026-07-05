@@ -9,7 +9,6 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
-import com.service.backend.shared.enums.Status;
 
 @Repository
 public interface EventTicketR2dbcRepository extends ReactiveCrudRepository<EventTicket, Long> {
@@ -29,18 +28,12 @@ public interface EventTicketR2dbcRepository extends ReactiveCrudRepository<Event
     Mono<Long> countByEventIdAndStatus(Long eventId, String status);
 
     @Modifying
-    @Query("UPDATE event_tickets SET status = :status WHERE id = :ticketId")
-    Mono<Integer> updateStatus(Long ticketId, Status status);
-
-    @Modifying
     @Query("UPDATE event_tickets SET status = 'CANCELLED', cancel_reason = :reason WHERE id = :ticketId")
     Mono<Integer> cancelTicket(Long ticketId, String reason);
 
     @Modifying
     @Query("UPDATE event_tickets SET status = 'USED', checked_in_at = :checkedInAt WHERE id = :ticketId")
     Mono<Integer> checkInTicket(Long ticketId, LocalDateTime checkedInAt);
-
-    Mono<Boolean> existsByEventIdAndMemberId(Long eventId, Long memberId);
 
     @Query("""
             SELECT EXISTS(
@@ -53,8 +46,6 @@ public interface EventTicketR2dbcRepository extends ReactiveCrudRepository<Event
 
     @Query("SELECT * FROM event_tickets WHERE event_id = :eventId AND status = :status ORDER BY registered_at DESC LIMIT :limit OFFSET :offset")
     Flux<EventTicket> findByEventIdAndStatusWithPagination(Long eventId, String status, int limit, int offset);
-
-    Mono<Long> countByEventIdAndMemberId(Long eventId, Long memberId);
 
     @Query("SELECT * FROM event_tickets WHERE event_id = :eventId AND status = 'ISSUED' ORDER BY registered_at ASC")
     Flux<EventTicket> findIssuedTicketsByEventId(Long eventId);
