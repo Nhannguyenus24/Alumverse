@@ -55,11 +55,12 @@ class _ChatVideoAttachmentState extends State<ChatVideoAttachment> {
         _isLoading = false;
       });
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _failed = true;
           _isLoading = false;
         });
+      }
     }
   }
 

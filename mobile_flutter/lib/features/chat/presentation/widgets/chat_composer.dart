@@ -127,8 +127,9 @@ class _ChatComposerState extends ConsumerState<ChatComposer> {
     } on ChatAttachmentException catch (e) {
       if (mounted) AppToast.error(context, e.messageKey.tr());
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         AppToast.fromError(context, e, fallback: 'chat.upload_failed'.tr());
+      }
     } finally {
       if (mounted) setState(() => _isUploading = false);
     }

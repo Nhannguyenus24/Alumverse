@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
-import * as api from '../../utils/api';
-import { organizationApi } from '../../utils/api';
+import { eventApi, organizationApi } from '../../utils/api';
 
 const fallbackPage = { items: [], totalItem: 0, totalPage: 0, currentPage: 0, pageSize: 10 };
 const fallbackStatistics = null;
 
-const extractData = (response) => response?.data?.data ?? response?.data ?? null;
+const extractData = (response) => response?.data?.data ?? response?.data ?? response ?? null;
 
 const safeFetch = async (request, fallback) => {
   try {
@@ -67,23 +66,26 @@ const useAdminEvents = (initialOrgId = 'ALL') => {
     const config = { signal: abortRef.current.signal };
 
     try {
+      const params = { page, size: rowsPerPage };
+      if (orgId) params.organizationId = orgId;
+
       if (trimmed.length > 0) {
         data = await safeFetch(
-          () => api.searchAllEvents(trimmed, page, rowsPerPage, orgId, config),
+          () => eventApi.searchAdminEvents(trimmed, params, config),
           fallbackPage,
         );
       } else if (statusFilter === 'PUBLISHED') {
         data = await safeFetch(
-          () => api.getEventsByPublishStatus(true, page, rowsPerPage, orgId, config),
+          () => eventApi.getAdminEventsByPublishStatus(true, params, config),
           fallbackPage,
         );
       } else if (statusFilter === 'DRAFT') {
         data = await safeFetch(
-          () => api.getEventsByPublishStatus(false, page, rowsPerPage, orgId, config),
+          () => eventApi.getAdminEventsByPublishStatus(false, params, config),
           fallbackPage,
         );
       } else {
-        data = await safeFetch(() => api.getAllEvents(page, rowsPerPage, orgId, config), fallbackPage);
+        data = await safeFetch(() => eventApi.getAdminEvents(params, config), fallbackPage);
       }
       if (!config.signal.aborted) {
         setPaged(data || fallbackPage);
@@ -103,7 +105,7 @@ const useAdminEvents = (initialOrgId = 'ALL') => {
   }, [loadEvents]);
 
   const loadStatistics = useCallback(async () => {
-    const data = await safeFetch(() => api.getEventStatistics(), fallbackStatistics);
+    const data = await safeFetch(() => eventApi.getAdminEventStatistics(), fallbackStatistics);
     setStatistics(data);
   }, []);
 
@@ -138,7 +140,7 @@ const useAdminEvents = (initialOrgId = 'ALL') => {
 
   const publishEvent = useCallback(async (eventId) => {
     try {
-      await api.publishEvent(eventId);
+      await eventApi.publishAdminEvent(eventId);
       await Promise.all([loadEvents(), loadStatistics()]);
       return true;
     } catch {
@@ -148,7 +150,7 @@ const useAdminEvents = (initialOrgId = 'ALL') => {
 
   const unpublishEvent = useCallback(async (eventId) => {
     try {
-      await api.unpublishEvent(eventId);
+      await eventApi.unpublishAdminEvent(eventId);
       await Promise.all([loadEvents(), loadStatistics()]);
       return true;
     } catch {
@@ -158,7 +160,7 @@ const useAdminEvents = (initialOrgId = 'ALL') => {
 
   const deleteEvent = useCallback(async (eventId) => {
     try {
-      await api.deleteEvent(eventId);
+      await eventApi.deleteAdminEvent(eventId);
       await Promise.all([loadEvents(), loadStatistics()]);
       return true;
     } catch {
@@ -168,7 +170,7 @@ const useAdminEvents = (initialOrgId = 'ALL') => {
 
   const updateEvent = useCallback(async (eventId, payload) => {
     try {
-      await api.updateEvent(eventId, payload);
+      await eventApi.updateAdminEvent(eventId, payload);
       await Promise.all([loadEvents(), loadStatistics()]);
       return true;
     } catch {

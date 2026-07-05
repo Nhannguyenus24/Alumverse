@@ -175,6 +175,7 @@ public class AdminUserService {
                                             .role(finalUserRole)
                                             .status(Status.ACTIVE)
                                             .avatarUrl(avatarUrl)
+                                            .mustChangePassword(true)
                                             .createdAt(LocalDateTime.now())
                                             .updatedAt(LocalDateTime.now())
                                             .build();

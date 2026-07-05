@@ -14,6 +14,7 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import { formatTimeAgoVi } from "../utils/dateFormatter";
 import { notificationApi } from "../utils/api";
 import { useOrgNavigate } from "../hooks/useOrgNavigate";
+import useAuthStore from "../stores/authStore";
 
 const Notification = ({ headerTextColor = "text.primary" }) => {
   const { t } = useTranslation(['notification', 'common']);
@@ -22,35 +23,43 @@ const Notification = ({ headerTextColor = "text.primary" }) => {
   const [activeTab, setActiveTab] = useState(0);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
+  const token = useAuthStore((state) => state.token);
 
   const open = Boolean(anchorEl);
 
   const fetchNotifications = useCallback(async () => {
+    if (!token || document.visibilityState === 'hidden') return;
+
     setLoading(true);
     try {
       const data = await notificationApi.getNotifications();
       setNotifications(data);
     } catch (error) {
-      console.error("Failed to fetch notifications:", error);
+      if (error?.response?.status !== 429) {
+        console.error("Failed to fetch notifications:", error);
+      }
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [token]);
 
   useEffect(() => {
+    if (!token) return undefined;
+
     // Initial fetch
     fetchNotifications();
     
-    // Set up polling every 1 minute
-    const interval = setInterval(fetchNotifications, 60000);
+    // Set up polling every 2 minutes. Local dev often points to the shared
+    // production API, so keeping this modest helps avoid rate-limit noise.
+    const interval = setInterval(fetchNotifications, 120000);
     return () => clearInterval(interval);
-  }, [fetchNotifications]);
+  }, [fetchNotifications, token]);
 
   const handleOpen = useCallback((event) => {
     setAnchorEl(event.currentTarget);
     // Refresh notifications when opening
-    fetchNotifications();
-  }, [fetchNotifications]);
+    if (token) fetchNotifications();
+  }, [fetchNotifications, token]);
 
   const handleClose = useCallback(() => {
     setAnchorEl(null);

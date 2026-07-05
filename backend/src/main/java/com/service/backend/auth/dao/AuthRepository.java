@@ -23,7 +23,7 @@ public interface AuthRepository extends R2dbcRepository<User, Integer> {
      * Update user password by id
      */
     @Modifying
-    @Query("UPDATE users SET password_hash = :passwordHash, updated_at = CURRENT_TIMESTAMP WHERE id = :id")
+    @Query("UPDATE users SET password_hash = :passwordHash, must_change_password = false, updated_at = CURRENT_TIMESTAMP WHERE id = :id")
     Mono<Void> updatePasswordById(@Param("id") Integer id, @Param("passwordHash") String passwordHash);
     
     /**

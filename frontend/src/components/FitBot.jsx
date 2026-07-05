@@ -198,7 +198,7 @@ const MessageContainer = styled(Box)(({ theme }) => ({
   gap: theme.spacing(1.5),
   backgroundColor: theme.palette.mode === 'dark'
     ? theme.palette.background.default
-    : theme.palette.grey[200],
+    : theme.palette.background.paper,
   '&::-webkit-scrollbar': {
     width: '6px',
   },
@@ -401,9 +401,9 @@ const streamSSEResponse = async (userMessage, onChunk, onComplete, onError, sign
   }
 };
 
-export default function FitBot() {
+export default function FitBot({ isOpen = false, isBlocked = false, onOpen, onClose }) {
   const { t } = useTranslation('common');
-  const [isChatOpen, setIsChatOpen] = useState(false);
+  const isChatOpen = isOpen;
   const isAnimating = !isChatOpen;
   const [messages, setMessages] = useState(() => loadMessagesFromStorage(t('fitbot_greeting')));
   const [inputValue, setInputValue] = useState('');
@@ -444,9 +444,19 @@ export default function FitBot() {
 
   // Show random suggestion at random interval
   useEffect(() => {
+    if (isBlocked) {
+      setShowSuggestion(false);
+    }
+  }, [isBlocked]);
+
+  useEffect(() => {
     if (!isChatOpen) {
       const scheduleNextSuggestion = () => {
         suggestionTimeoutRef.current = setTimeout(() => {
+          if (isBlocked) {
+            scheduleNextSuggestion();
+            return;
+          }
           const randomKey =
             SUGGESTION_KEYS[Math.floor(Math.random() * SUGGESTION_KEYS.length)];
           const randomSuggestion = t(randomKey);
@@ -465,11 +475,11 @@ export default function FitBot() {
       scheduleNextSuggestion();
 
       return () => {
-        clearTimeout(suggestionTimeoutRef.current);
-        clearTimeout(suggestionHideTimeoutRef.current);
-      };
+      clearTimeout(suggestionTimeoutRef.current);
+      clearTimeout(suggestionHideTimeoutRef.current);
+    };
     }
-  }, [isChatOpen, t]);
+  }, [isBlocked, isChatOpen, t]);
 
 
   const handleSendMessage = useCallback(async (messageText) => {
@@ -555,19 +565,19 @@ export default function FitBot() {
 
   const handleSuggestionClick = useCallback((suggestion) => {
     setShowSuggestion(false);
-    setIsChatOpen(true);
+    onOpen?.();
     handleSendMessage(suggestion);
-  }, [handleSendMessage]);
+  }, [handleSendMessage, onOpen]);
 
   const handleClose = useCallback(() => {
-    setIsChatOpen(false);
+    onClose?.();
     setIsTyping(false);
     // Abort active stream
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
     }
-  }, []);
+  }, [onClose]);
 
   const renderedMessages = React.useMemo(() => {
     return messages.map((message) => (
@@ -591,7 +601,7 @@ export default function FitBot() {
       <AvatarWrapper>
         <Tooltip title={isChatOpen ? '' : t('fitbot_chat_tooltip')} placement="left">
           <AnimatedAvatar
-            onClick={() => setIsChatOpen(true)}
+            onClick={onOpen}
             isAnimating={isAnimating}
             sx={{
               cursor: 'pointer',

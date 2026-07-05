@@ -11,6 +11,7 @@ CREATE TABLE "users" (
   "dob" date,
   "gender" text,
   "settings" json,
+  "must_change_password" boolean NOT NULL DEFAULT false,
   "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
   "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
