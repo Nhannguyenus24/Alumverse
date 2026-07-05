@@ -74,6 +74,8 @@ class ForumTopicsPage extends ConsumerWidget {
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 88),
                   itemCount: topics.length,
                   itemBuilder: (_, i) => _TopicTile(topic: topics[i]),
+                );
+              },
             );
           },
         ),
