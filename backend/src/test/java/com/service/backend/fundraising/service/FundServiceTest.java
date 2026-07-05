@@ -15,12 +15,17 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.test.util.ReflectionTestUtils;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+import reactor.util.context.Context;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
@@ -49,6 +54,20 @@ class FundServiceTest {
         // Set @Value fields
         ReflectionTestUtils.setField(fundService, "sepayQrImgUrl", "https://img.vietqr.io/image/");
         ReflectionTestUtils.setField(fundService, "vietQrTemplate", "compact2");
+    }
+
+    private static Context staffContext(Integer organizationId) {
+        UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(
+                "1", null, List.of(new SimpleGrantedAuthority("ROLE_STAFF")));
+        token.setDetails(organizationId);
+        return ReactiveSecurityContextHolder.withAuthentication(token);
+    }
+
+    private static Context adminContext(Integer organizationId) {
+        UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(
+                "1", null, List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
+        token.setDetails(organizationId);
+        return ReactiveSecurityContextHolder.withAuthentication(token);
     }
 
     // ─── getFundDetail ────────────────────────────────────────────────────────
@@ -132,6 +151,145 @@ class FundServiceTest {
             when(fundR2dbcRepository.findById(99L)).thenReturn(Mono.empty());
 
             StepVerifier.create(fundService.closeFund(99L))
+                    .expectErrorMatches(err -> err instanceof ApplicationException &&
+                            ((ApplicationException) err).getErrorCode() == ErrorCode.FUND_NOT_FOUND)
+                    .verify();
+        }
+    }
+
+    // ─── updateFundBasicInfo ─────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("updateFundBasicInfo()")
+    class UpdateFundBasicInfo {
+
+        private UpdateFundBasicInfoRequest basicInfoRequest() {
+            return UpdateFundBasicInfoRequest.builder()
+                    .managerName("Updated Manager Name")
+                    .managerEmail("updated@test.com")
+                    .descriptionFull("Updated description")
+                    .build();
+        }
+
+        private Funds activeFund(Integer organizationId) {
+            return Funds.builder()
+                    .id(1)
+                    .name("Original Name")
+                    .organizationId(organizationId)
+                    .managerName("Manager")
+                    .managerEmail("original@test.com")
+                    .descriptionShort("short")
+                    .descriptionFull("Original description")
+                    .targetAmount(new BigDecimal("1000000"))
+                    .timeStarted(LocalDateTime.now().minusDays(1))
+                    .timeEnded(LocalDateTime.now().plusDays(5))
+                    .build();
+        }
+
+        private Funds endedFund(Integer organizationId) {
+            return Funds.builder()
+                    .id(1)
+                    .name("Original Name")
+                    .organizationId(organizationId)
+                    .managerEmail("original@test.com")
+                    .descriptionFull("Original description")
+                    .timeStarted(LocalDateTime.now().minusDays(10))
+                    .timeEnded(LocalDateTime.now().minusDays(1))
+                    .build();
+        }
+
+        @Test
+        @DisplayName("STAFF in same org: updates only managerName/managerEmail/descriptionFull")
+        void updateFundBasicInfo_staffSameOrg_updatesOnlyThreeFields() {
+            Funds existing = activeFund(10);
+            when(fundR2dbcRepository.findById(1L)).thenReturn(Mono.just(existing));
+            when(fundR2dbcRepository.save(any())).thenAnswer(inv -> Mono.just(inv.getArgument(0)));
+
+            StepVerifier.create(fundService.updateFundBasicInfo(1L, basicInfoRequest())
+                            .contextWrite(staffContext(10)))
+                    .assertNext(saved -> {
+                        assertThat(saved.getManagerName()).isEqualTo("Updated Manager Name");
+                        assertThat(saved.getManagerEmail()).isEqualTo("updated@test.com");
+                        assertThat(saved.getDescriptionFull()).isEqualTo("Updated description");
+                        assertThat(saved.getName()).isEqualTo("Original Name");
+                        assertThat(saved.getDescriptionShort()).isEqualTo("short");
+                        assertThat(saved.getTargetAmount()).isEqualByComparingTo("1000000");
+                    })
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("STAFF in different org: forbidden")
+        void updateFundBasicInfo_staffDifferentOrg_forbidden() {
+            Funds existing = activeFund(10);
+            when(fundR2dbcRepository.findById(1L)).thenReturn(Mono.just(existing));
+
+            StepVerifier.create(fundService.updateFundBasicInfo(1L, basicInfoRequest())
+                            .contextWrite(staffContext(20)))
+                    .expectErrorMatches(err -> err instanceof ApplicationException &&
+                            ((ApplicationException) err).getErrorCode() == ErrorCode.FORBIDDEN)
+                    .verify();
+        }
+
+        @Test
+        @DisplayName("STAFF with null org: forbidden (fail-safe)")
+        void updateFundBasicInfo_staffNullOrg_forbidden() {
+            Funds existing = activeFund(10);
+            when(fundR2dbcRepository.findById(1L)).thenReturn(Mono.just(existing));
+
+            StepVerifier.create(fundService.updateFundBasicInfo(1L, basicInfoRequest())
+                            .contextWrite(staffContext(null)))
+                    .expectErrorMatches(err -> err instanceof ApplicationException &&
+                            ((ApplicationException) err).getErrorCode() == ErrorCode.FORBIDDEN)
+                    .verify();
+        }
+
+        @Test
+        @DisplayName("ADMIN with null org: not subject to org check")
+        void updateFundBasicInfo_adminNullOrg_succeeds() {
+            Funds existing = activeFund(10);
+            when(fundR2dbcRepository.findById(1L)).thenReturn(Mono.just(existing));
+            when(fundR2dbcRepository.save(any())).thenAnswer(inv -> Mono.just(inv.getArgument(0)));
+
+            StepVerifier.create(fundService.updateFundBasicInfo(1L, basicInfoRequest())
+                            .contextWrite(adminContext(null)))
+                    .assertNext(saved -> assertThat(saved.getManagerName()).isEqualTo("Updated Manager Name"))
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("STAFF on ended fund: FUND_ALREADY_ENDED")
+        void updateFundBasicInfo_staffEndedFund_alreadyEnded() {
+            Funds existing = endedFund(10);
+            when(fundR2dbcRepository.findById(1L)).thenReturn(Mono.just(existing));
+
+            StepVerifier.create(fundService.updateFundBasicInfo(1L, basicInfoRequest())
+                            .contextWrite(staffContext(10)))
+                    .expectErrorMatches(err -> err instanceof ApplicationException &&
+                            ((ApplicationException) err).getErrorCode() == ErrorCode.FUND_ALREADY_ENDED)
+                    .verify();
+        }
+
+        @Test
+        @DisplayName("ADMIN on ended fund: FUND_ALREADY_ENDED")
+        void updateFundBasicInfo_adminEndedFund_alreadyEnded() {
+            Funds existing = endedFund(10);
+            when(fundR2dbcRepository.findById(1L)).thenReturn(Mono.just(existing));
+
+            StepVerifier.create(fundService.updateFundBasicInfo(1L, basicInfoRequest())
+                            .contextWrite(adminContext(10)))
+                    .expectErrorMatches(err -> err instanceof ApplicationException &&
+                            ((ApplicationException) err).getErrorCode() == ErrorCode.FUND_ALREADY_ENDED)
+                    .verify();
+        }
+
+        @Test
+        @DisplayName("should fail when fund not found")
+        void updateFundBasicInfo_notFound() {
+            when(fundR2dbcRepository.findById(99L)).thenReturn(Mono.empty());
+
+            StepVerifier.create(fundService.updateFundBasicInfo(99L, basicInfoRequest())
+                            .contextWrite(adminContext(null)))
                     .expectErrorMatches(err -> err instanceof ApplicationException &&
                             ((ApplicationException) err).getErrorCode() == ErrorCode.FUND_NOT_FOUND)
                     .verify();
