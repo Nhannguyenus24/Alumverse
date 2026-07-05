@@ -53,7 +53,8 @@ public interface ForumTopicSubscriptionRepository extends R2dbcRepository<ForumT
      * are included correctly without matching posts that predate their subscription.
      * Used as fallback when the in-memory cache is empty (e.g. after a server restart).
      */
-    @Query("SELECT DISTINCT s.* FROM forum_topic_subscriptions s " +
+    @Query("SELECT DISTINCT s.id, s.topic_id, s.member_id, s.last_read_at, s.last_notified_at, s.created_at " +
+           "FROM forum_topic_subscriptions s " +
            "JOIN forum_posts p ON s.topic_id = p.topic_id " +
            "WHERE p.created_at > COALESCE(s.last_read_at, s.created_at) " +
            "AND p.created_at > COALESCE(s.last_notified_at, s.created_at) " +
@@ -64,7 +65,8 @@ public interface ForumTopicSubscriptionRepository extends R2dbcRepository<ForumT
      * Optimized scan: same conditions but scoped to the topic IDs that are known
      * to have recent activity (supplied from the in-memory cache).
      */
-    @Query("SELECT DISTINCT s.* FROM forum_topic_subscriptions s " +
+    @Query("SELECT DISTINCT s.id, s.topic_id, s.member_id, s.last_read_at, s.last_notified_at, s.created_at " +
+           "FROM forum_topic_subscriptions s " +
            "JOIN forum_posts p ON s.topic_id = p.topic_id " +
            "WHERE s.topic_id IN (:topicIds) " +
            "AND p.created_at > COALESCE(s.last_read_at, s.created_at) " +
