@@ -42,8 +42,7 @@ public class MetricsFilter implements WebFilter {
 
     private void recordMetrics(String method, String path, int status, long durationMs) {
         try {
-            // Skip metrics for health checks and actuator endpoints
-            if (path.startsWith("/actuator") || path.startsWith("/swagger") ||
+            if (path.startsWith("/actuator") || path.startsWith("/internal/actuator") || path.startsWith("/swagger") ||
                 path.startsWith("/v3/api-docs") || isStaticFile(path)) {
                 return;
             }
