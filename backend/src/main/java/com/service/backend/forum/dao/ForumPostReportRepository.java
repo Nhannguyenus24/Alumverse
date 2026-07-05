@@ -20,8 +20,6 @@ public interface ForumPostReportRepository extends R2dbcRepository<ForumPostRepo
 
     Mono<Long> countByStatus(Status status);
 
-    Mono<Long> countByPostId(Integer postId);
-
     @Query("SELECT post_id as id, COUNT(*) as count FROM forum_post_reports WHERE post_id IN (:postIds) GROUP BY post_id")
     Flux<IdCountDTO> countByPostIds(@Param("postIds") Collection<Integer> postIds);
 

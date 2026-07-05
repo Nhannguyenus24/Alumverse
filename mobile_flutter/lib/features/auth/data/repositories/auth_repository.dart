@@ -20,8 +20,13 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
 class AuthSession {
   final AuthUser user;
   final int? verificationLevel;
+  final bool mustChangePassword;
 
-  const AuthSession({required this.user, this.verificationLevel});
+  const AuthSession({
+    required this.user,
+    this.verificationLevel,
+    this.mustChangePassword = false,
+  });
 }
 
 class AuthRepository {
@@ -81,16 +86,20 @@ class AuthRepository {
   /// Forgot password — sends a recovery OTP to [email] (same as web).
   Future<void> forgotPassword(String email) => api.forgotPassword(email);
 
-  /// Change the signed-in user's password.
+  /// Change the signed-in user's password. Clears the must-change-password
+  /// flag on success so the app stops redirecting to the change-password page.
   Future<void> changePassword({
     required int userId,
     required String oldPassword,
     required String newPassword,
-  }) => api.changePassword(
-    userId: userId,
-    oldPassword: oldPassword,
-    newPassword: newPassword,
-  );
+  }) async {
+    await api.changePassword(
+      userId: userId,
+      oldPassword: oldPassword,
+      newPassword: newPassword,
+    );
+    await storage.writeMustChangePassword(false);
+  }
 
   Future<void> logout() async {
     try {
@@ -113,6 +122,7 @@ class AuthRepository {
     return AuthSession(
       user: user,
       verificationLevel: await storage.readVerificationLevel(),
+      mustChangePassword: await storage.readMustChangePassword(),
     );
   }
 
@@ -125,6 +135,11 @@ class AuthRepository {
     if (res.verificationLevel != null) {
       await storage.writeVerificationLevel(res.verificationLevel!);
     }
-    return AuthSession(user: user, verificationLevel: res.verificationLevel);
+    await storage.writeMustChangePassword(res.mustChangePassword);
+    return AuthSession(
+      user: user,
+      verificationLevel: res.verificationLevel,
+      mustChangePassword: res.mustChangePassword,
+    );
   }
 }

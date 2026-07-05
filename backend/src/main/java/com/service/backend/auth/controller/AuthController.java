@@ -67,7 +67,11 @@ public class AuthController {
                 .secure(cookieSecure)
                 .path("/")
                 .maxAge(Duration.ofMillis(maxAgeMs))
-                .sameSite(cookieSecure ? "Strict" : "Lax")
+                // Frontend and API live on different sites (separate *.duckdns.org subdomains,
+                // and duckdns.org is a public suffix), so /auth/refresh is a cross-site XHR.
+                // Cross-site requests only carry the cookie with SameSite=None (which requires
+                // Secure). Fall back to Lax for local dev where everything is same-origin over http.
+                .sameSite(cookieSecure ? "None" : "Lax")
                 .build();
     }
 
@@ -162,13 +166,9 @@ public class AuthController {
             jwtUtils.revokeRefreshToken(refreshToken);
         }
 
-        ResponseCookie clearCookie = ResponseCookie
-                .from("refreshToken", "")
-                .httpOnly(true)
-                .path("/")
-                .maxAge(0)
-                .sameSite("Lax")
-                .build();
+        // Must mirror the attributes of the cookie set in buildRefreshTokenCookie
+        // (Secure + SameSite) so the browser matches and actually deletes it.
+        ResponseCookie clearCookie = buildRefreshTokenCookie("", 0);
 
         return Mono.just(ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, clearCookie.toString())
@@ -330,6 +330,7 @@ public class AuthController {
             LoginResponse loginResponse = LoginResponse.builder()
                     .accessToken(accessToken)
                     .verificationLevel(4) // Default for system admin (non-zero)
+                    .mustChangePassword(user.isMustChangePassword())
                     .build();
 
             return Mono.just(ResponseEntity.ok()
@@ -347,6 +348,7 @@ public class AuthController {
                     LoginResponse loginResponse = LoginResponse.builder()
                             .accessToken(accessToken)
                             .verificationLevel(level)
+                            .mustChangePassword(user.isMustChangePassword())
                             .build();
 
                     return ResponseEntity.ok()

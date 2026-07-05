@@ -9,6 +9,7 @@ import com.service.backend.shared.entity.ForumPost;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import com.service.backend.shared.dto.IdCountDTO;
 
@@ -26,26 +27,10 @@ public interface ForumPostRepository extends R2dbcRepository<ForumPost, Integer>
     );
 
     /**
-     * Find all forum posts by topic id (including banned)
-     */
-    Flux<ForumPost> findByTopicId(Integer topicId);
-
-    /**
      * Delete all forum posts by topic id
      */
     @Query("DELETE FROM forum_posts WHERE topic_id = :topicId")
     Mono<Void> deleteByTopicId(Integer topicId);
-
-    /**
-     * Find forum posts by author member id
-     */
-    Flux<ForumPost> findByAuthorMemberId(Integer authorMemberId);
-
-    /**
-     * Find replies to a specific post
-     */
-    @Query("SELECT * FROM forum_posts WHERE answer_to_post_id = :postId AND is_banned = false ORDER BY created_at ASC")
-    Flux<ForumPost> findRepliesByPostId(@Param("postId") Integer postId);
 
     /**
      * Count posts by topic id (excluding banned)
@@ -57,15 +42,16 @@ public interface ForumPostRepository extends R2dbcRepository<ForumPost, Integer>
     Flux<IdCountDTO> countByTopicIds(@Param("topicIds") Collection<Integer> topicIds);
 
     /**
-     * Count total posts by topic id (including banned)
-     */
-    Mono<Long> countAllByTopicId(Integer topicId);
-
-    /**
      * Find forum posts created yesterday
      */
     @Query("SELECT * FROM forum_posts WHERE DATE(created_at) = CURRENT_DATE - INTERVAL '1 day' AND is_banned = false ORDER BY created_at DESC")
     Flux<ForumPost> findPostsCreatedYesterday();
+
+    /**
+     * Find forum posts created since a given time
+     */
+    @Query("SELECT * FROM forum_posts WHERE created_at >= :since AND is_banned = false ORDER BY created_at ASC")
+    Flux<ForumPost> findPostsCreatedSince(@Param("since") LocalDateTime since);
 
     /**
      * Find forum posts created yesterday with pagination
@@ -81,12 +67,6 @@ public interface ForumPostRepository extends R2dbcRepository<ForumPost, Integer>
      */
     @Query("SELECT COUNT(*) FROM forum_posts WHERE DATE(created_at) = CURRENT_DATE - INTERVAL '1 day' AND is_banned = false")
     Mono<Long> countPostsCreatedYesterday();
-
-    /**
-     * Find forum posts created since a specific time
-     */
-    @Query("SELECT * FROM forum_posts WHERE created_at >= :since AND is_banned = false")
-    Flux<ForumPost> findPostsCreatedSince(@Param("since") java.time.LocalDateTime since);
 
     /**
      * Find all banned forum posts with pagination
@@ -159,23 +139,6 @@ public interface ForumPostRepository extends R2dbcRepository<ForumPost, Integer>
            "LIMIT 10")
     Flux<Integer> findTopContributorMemberIds(@Param("month") int month, @Param("year") int year);
 
-    /**
-     * Count posts by a specific author in a given month/year
-     */
-    @Query("SELECT COUNT(*) FROM forum_posts " +
-           "WHERE author_member_id = :authorMemberId " +
-           "AND EXTRACT(MONTH FROM created_at) = :month " +
-           "AND EXTRACT(YEAR FROM created_at) = :year " +
-           "AND is_banned = false")
-    Mono<Long> countPostsByAuthorInMonth(
-            @Param("authorMemberId") Integer authorMemberId,
-            @Param("month") int month,
-            @Param("year") int year);
-
-    /**
-     * Batch variant of {@link #countPostsByAuthorInMonth}: counts posts per author in a given
-     * month/year for a set of authors in a single query.
-     */
     @Query("SELECT author_member_id as id, COUNT(*) as count FROM forum_posts " +
            "WHERE author_member_id IN (:authorMemberIds) " +
            "AND EXTRACT(MONTH FROM created_at) = :month " +
@@ -204,20 +167,6 @@ public interface ForumPostRepository extends R2dbcRepository<ForumPost, Integer>
            "AND EXTRACT(YEAR FROM created_at) = :year")
     Mono<Long> countPostsInMonth(@Param("month") int month, @Param("year") int year);
 
-    /**
-     * Count distinct active forum users in a specific organization
-     * (users who have posted at least once, where those users belong to the given organization)
-     */
-    @Query("SELECT COUNT(DISTINCT fp.author_member_id) FROM forum_posts fp " +
-           "JOIN organization_members om ON fp.author_member_id = om.user_id " +
-           "WHERE om.organization_id = :organizationId " +
-           "AND fp.is_banned = false")
-    Mono<Long> countActiveForumUsersByOrganization(@Param("organizationId") Integer organizationId);
-
-    /**
-     * Batch variant of {@link #countActiveForumUsersByOrganization}: distinct active forum user
-     * counts per organization for a set of organizations in a single query.
-     */
     @Query("SELECT om.organization_id as id, COUNT(DISTINCT fp.author_member_id) as count FROM forum_posts fp " +
            "JOIN organization_members om ON fp.author_member_id = om.user_id " +
            "WHERE om.organization_id IN (:organizationIds) " +

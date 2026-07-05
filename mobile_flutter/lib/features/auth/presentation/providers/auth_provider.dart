@@ -10,8 +10,13 @@ import '../../data/repositories/auth_repository.dart';
 class AuthState {
   final AuthUser? user;
   final int? verificationLevel;
+  final bool mustChangePassword;
 
-  const AuthState({this.user, this.verificationLevel});
+  const AuthState({
+    this.user,
+    this.verificationLevel,
+    this.mustChangePassword = false,
+  });
 
   bool get isLoggedIn => user != null;
 
@@ -44,6 +49,7 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     return AuthState(
       user: session.user,
       verificationLevel: session.verificationLevel,
+      mustChangePassword: session.mustChangePassword,
     );
   }
 
@@ -70,6 +76,7 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       return AuthState(
         user: session.user,
         verificationLevel: session.verificationLevel,
+        mustChangePassword: session.mustChangePassword,
       );
     });
   }
@@ -92,6 +99,7 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       return AuthState(
         user: session.user,
         verificationLevel: session.verificationLevel,
+        mustChangePassword: session.mustChangePassword,
       );
     });
   }
@@ -147,6 +155,16 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       oldPassword: oldPassword,
       newPassword: newPassword,
     );
+    final current = state.valueOrNull;
+    if (current != null) {
+      state = AsyncData(
+        AuthState(
+          user: current.user,
+          verificationLevel: current.verificationLevel,
+          mustChangePassword: false,
+        ),
+      );
+    }
   }
 
   Future<void> logout() async {

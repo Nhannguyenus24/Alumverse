@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Avatar,
   Box,
@@ -22,6 +22,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useOrgNavigate } from '../hooks/useOrgNavigate';
 import MessagesPreviewPanel from './MessagesPreviewPanel';
 import { useMessagesPreviewMenu } from '../hooks/chat/useMessagesPreviewMenu';
+import { useCanAccessChat } from '../hooks/chat/useCanAccessChat';
 import { useTranslation } from 'react-i18next';
 
 const pulse = keyframes`
@@ -84,7 +85,7 @@ const PanelBody = styled(Box)(({ theme }) => ({
   backgroundColor: theme.palette.background.paper,
 }));
 
-export default function ChatFloatingButton() {
+export default function ChatFloatingButton({ isOpen = false, onOpen, onClose }) {
   const { t } = useTranslation('common');
   const { isAuthenticated } = useAuth();
   const navigate = useOrgNavigate();
@@ -93,9 +94,19 @@ export default function ChatFloatingButton() {
   const [anchorEl, setAnchorEl] = useState(null);
   const menuOpen = Boolean(anchorEl);
   const { menuActionsRef, slotProps, updateMenuPosition } = useMessagesPreviewMenu({ mb: 1.5 });
+  const { canAccessChat } = useCanAccessChat();
+
+  useEffect(() => {
+    if (!isOpen) {
+      setAnchorEl(null);
+      setShowLoginPanel(false);
+    }
+  }, [isOpen]);
 
   const handleClick = (event) => {
+    onOpen?.();
     if (isAuthenticated) {
+      if (!canAccessChat) return;
       setAnchorEl(event.currentTarget);
       return;
     }
@@ -104,30 +115,40 @@ export default function ChatFloatingButton() {
 
   const handleCloseMenu = () => {
     setAnchorEl(null);
+    onClose?.();
   };
 
   const handleClosePanel = () => {
     setShowLoginPanel(false);
+    onClose?.();
   };
 
   const goToLogin = () => {
     setShowLoginPanel(false);
+    onClose?.();
     navigate('/auth/login', { state: { from: location } });
   };
 
   const goToRegister = () => {
     setShowLoginPanel(false);
+    onClose?.();
     navigate('/auth/register', { state: { from: location } });
   };
 
+  const isBlocked = isAuthenticated && !canAccessChat;
+
   return (
     <Box sx={{ position: 'relative' }}>
-      <Tooltip title={t('chat_tooltip')} placement="left">
+      <Tooltip
+        title={isBlocked ? t('verification_required_tooltip') : t('chat_tooltip')}
+        placement="left"
+      >
         <AnimatedAvatar
           onClick={handleClick}
-          isAnimating={!showLoginPanel && !menuOpen}
+          isAnimating={!isBlocked && !showLoginPanel && !menuOpen}
           sx={{
-            cursor: 'pointer',
+            cursor: isBlocked ? 'not-allowed' : 'pointer',
+            opacity: isBlocked ? 0.6 : 1,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',

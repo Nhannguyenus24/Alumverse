@@ -19,7 +19,10 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 60_000,
-      retry: 1,
+      retry: (failureCount, error) => {
+        if (error?.response?.status === 429) return false;
+        return failureCount < 1;
+      },
       // Avoid redundant backend calls when the user simply switches back to the tab.
       // Freshness is still guaranteed by staleTime and the per-hook refetchOnMount settings.
       refetchOnWindowFocus: false,

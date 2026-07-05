@@ -111,7 +111,7 @@ class _DropdownRoute<T> extends PopupRoute<T> {
         alignment: Alignment.topCenter,
         child: SizeTransition(
           sizeFactor: curved,
-          axisAlignment: -1,
+          alignment: Alignment.topCenter,
           child: child,
         ),
       ),

@@ -208,8 +208,8 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
     @Query("SELECT EXISTS(SELECT 1 FROM users WHERE email = :email)")
     Mono<Boolean> existsByEmail(@Param("email") String email);
 
-    @Query("INSERT INTO users (email, password_hash, role, \"status\", created_at, updated_at) " +
-           "VALUES (:email, :passwordHash, 'ADMIN', 'ACTIVE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) " +
+    @Query("INSERT INTO users (email, password_hash, role, \"status\", must_change_password, created_at, updated_at) " +
+           "VALUES (:email, :passwordHash, 'ADMIN', 'ACTIVE', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) " +
            "RETURNING id")
     Mono<Integer> createAdminUser(
             @Param("email") String email,
@@ -249,7 +249,10 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
      * Search users with multiple filters (search term, role, "status", organization)
      */
     @Query("""
-        SELECT DISTINCT u.* FROM users u
+        SELECT DISTINCT u.id, u.email, u.password_hash, u.status, u.role, u.avatar_url,
+                        u.full_name, u.phone, u.bio, u.dob, u.gender, u.settings,
+                        u.created_at, u.updated_at
+        FROM users u
         LEFT JOIN organization_members om ON u.id = om.user_id
         WHERE (:search IS NULL OR u.email ILIKE :search OR om.student_id ILIKE :search OR u.full_name ILIKE :search)
           AND (:role IS NULL OR u.role = :role)

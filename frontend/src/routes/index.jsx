@@ -10,6 +10,7 @@ import LoadingScreen from "../components/LoadingScreen";
 import { Loadable, AuthLoadable } from "./loadable";
 import MentorshipFullAccessGate from "../components/mentorship/MentorshipFullAccessGate";
 import MentorshipBookingGate from "../components/mentorship/MentorshipBookingGate";
+import ChatAccessGate from "../components/network/ChatAccessGate";
 
 if (typeof window !== "undefined") {
   queueMicrotask(() => {
@@ -42,6 +43,9 @@ const ForgotPasswordPage = AuthLoadable(
 );
 const ResetPasswordPage = AuthLoadable(
   lazy(() => import("../pages/authentication/ResetPasswordPage")),
+);
+const ForceChangePasswordPage = AuthLoadable(
+  lazy(() => import("../pages/authentication/ForceChangePasswordPage")),
 );
 const OrganizationRegistrationPage = Loadable(
   lazy(() => import("../pages/authentication/OrganizationRegistrationPage")),
@@ -435,7 +439,9 @@ export const router = createBrowserRouter([
         handle: { hideFooter: true },
         element: (
           <ProtectedRoute>
-            <ChatPage />
+            <ChatAccessGate>
+              <ChatPage />
+            </ChatAccessGate>
           </ProtectedRoute>
         ),
       },
@@ -907,11 +913,27 @@ export const router = createBrowserRouter([
           </PublicRoute>
         ),
       },
+      {
+        path: "change-password",
+        element: (
+          <ProtectedRoute>
+            <ForceChangePasswordPage />
+          </ProtectedRoute>
+        ),
+      },
     ],
   },
   {
     path: "/admin/login",
     element: <AdminLoginPage />,
+  },
+  {
+    path: "/admin/change-password",
+    element: (
+      <ProtectedRoute allowedRoles={["ADMIN"]}>
+        <ForceChangePasswordPage />
+      </ProtectedRoute>
+    ),
   },
   {
     path: "/admin",

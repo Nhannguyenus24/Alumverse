@@ -20,18 +20,6 @@ public interface ForumTopicRepository extends R2dbcRepository<ForumTopic, Intege
      */
     Mono<ForumTopic> findByTitle(String title);
 
-    /**
-     * Find forum topics by category id with pagination and keyword
-     */
-    @Query("SELECT * FROM forum_topics WHERE category_id = :categoryId " +
-           "AND (:keyword IS NULL OR LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
-           "ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
-    Flux<ForumTopic> findByCategoryIdWithPagination(
-            @Param("categoryId") Integer categoryId,
-            @Param("keyword") String keyword,
-            @Param("limit") int limit,
-            @Param("offset") long offset
-    );
 
     /**
      * Find all forum topics in a category (any status). Used when cascade-deleting a category.
@@ -61,11 +49,6 @@ public interface ForumTopicRepository extends R2dbcRepository<ForumTopic, Intege
             @Param("categoryId") Integer categoryId,
             @Param("keyword") String keyword
     );
-
-    /**
-     * Find forum topics by organization id
-     */
-    Flux<ForumTopic> findByOrganizationId(Integer organizationId);
 
     /**
      * Find forum topics by organization id with pagination and keyword

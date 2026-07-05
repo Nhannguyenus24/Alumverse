@@ -34,23 +34,11 @@ public interface ForumTopicSubscriptionRepository extends R2dbcRepository<ForumT
     Mono<Void> deleteByTopicId(@Param("topicId") Integer topicId);
 
     /**
-     * Count subscriptions by topic id
-     */
-    Mono<Long> countByTopicId(Integer topicId);
-
-    /**
      * Update last read at for a subscription
      */
     @Modifying
     @Query("UPDATE forum_topic_subscriptions SET last_read_at = :lastReadAt WHERE topic_id = :topicId AND member_id = :memberId")
     Mono<Integer> updateLastReadAt(Integer topicId, Integer memberId, LocalDateTime lastReadAt);
-
-    /**
-     * Update last notified at for a subscription
-     */
-    @Modifying
-    @Query("UPDATE forum_topic_subscriptions SET last_notified_at = :lastNotifiedAt WHERE id = :id")
-    Mono<Integer> updateLastNotifiedAt(Integer id, LocalDateTime lastNotifiedAt);
 
     /**
      * Update last notified at for a batch of subscriptions
@@ -65,7 +53,8 @@ public interface ForumTopicSubscriptionRepository extends R2dbcRepository<ForumT
      * are included correctly without matching posts that predate their subscription.
      * Used as fallback when the in-memory cache is empty (e.g. after a server restart).
      */
-    @Query("SELECT DISTINCT s.* FROM forum_topic_subscriptions s " +
+    @Query("SELECT DISTINCT s.id, s.topic_id, s.member_id, s.last_read_at, s.last_notified_at, s.created_at " +
+           "FROM forum_topic_subscriptions s " +
            "JOIN forum_posts p ON s.topic_id = p.topic_id " +
            "WHERE p.created_at > COALESCE(s.last_read_at, s.created_at) " +
            "AND p.created_at > COALESCE(s.last_notified_at, s.created_at) " +
@@ -76,7 +65,8 @@ public interface ForumTopicSubscriptionRepository extends R2dbcRepository<ForumT
      * Optimized scan: same conditions but scoped to the topic IDs that are known
      * to have recent activity (supplied from the in-memory cache).
      */
-    @Query("SELECT DISTINCT s.* FROM forum_topic_subscriptions s " +
+    @Query("SELECT DISTINCT s.id, s.topic_id, s.member_id, s.last_read_at, s.last_notified_at, s.created_at " +
+           "FROM forum_topic_subscriptions s " +
            "JOIN forum_posts p ON s.topic_id = p.topic_id " +
            "WHERE s.topic_id IN (:topicIds) " +
            "AND p.created_at > COALESCE(s.last_read_at, s.created_at) " +

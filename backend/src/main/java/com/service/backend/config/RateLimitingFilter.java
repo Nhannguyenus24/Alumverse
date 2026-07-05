@@ -22,7 +22,7 @@ public class RateLimitingFilter implements WebFilter {
     private enum RateLimitPlan {
         AUTH(5, Duration.ofMinutes(1)),      // Các API nhạy cảm: 5 requests / phút
         UPLOAD(5, Duration.ofMinutes(1)),   // Các API upload file: 5 requests / phút
-        DEFAULT(30, Duration.ofMinutes(1)); // API thông thường: 30 requests / phút
+        DEFAULT(100, Duration.ofMinutes(1)); // API thông thường: 100 requests / phút
 
         private final Bandwidth limit;
 
@@ -43,7 +43,7 @@ public class RateLimitingFilter implements WebFilter {
     public @NonNull Mono<Void> filter(ServerWebExchange exchange, @NonNull WebFilterChain chain) {
         String path = exchange.getRequest().getPath().value();
         
-        if (path.startsWith("/swagger-ui") || path.startsWith("/v3/api-docs") || path.startsWith("/actuator")) {
+        if (path.startsWith("/swagger-ui") || path.startsWith("/v3/api-docs") || path.startsWith("/actuator") || path.startsWith("/internal/actuator")) {
             return chain.filter(exchange);
         }
 

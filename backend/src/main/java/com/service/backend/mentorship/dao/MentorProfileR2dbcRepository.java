@@ -38,7 +38,11 @@ public interface MentorProfileR2dbcRepository extends ReactiveCrudRepository<Men
 
     // ===================== Combined filter =====================
 
-    @Query("SELECT DISTINCT mp.* FROM mentor_profiles mp " +
+    @Query("SELECT DISTINCT mp.member_id, mp.current_job_title, mp.current_company, mp.bio, " +
+            "mp.rating_avg, mp.total_sessions, mp.status, mp.review_note, mp.reviewed_at, " +
+            "mp.reviewed_by, mp.cover_url, mp.default_meeting_link, mp.booking_window_settings, " +
+            "mp.extended_profile, mp.created_at, mp.updated_at " +
+            "FROM mentor_profiles mp " +
             "LEFT JOIN mentor_expertise me ON mp.member_id = me.mentor_member_id " +
             "LEFT JOIN mentor_availabilities ma ON mp.member_id = ma.mentor_member_id " +
             "LEFT JOIN organization_members om ON mp.member_id = om.user_id " +
@@ -80,7 +84,11 @@ public interface MentorProfileR2dbcRepository extends ReactiveCrudRepository<Men
                                   boolean hasAvailability,
                                   LocalDateTime availableFrom, LocalDateTime availableTo);
 
-    @Query("SELECT DISTINCT mp.* FROM mentor_profiles mp " +
+    @Query("SELECT DISTINCT mp.member_id, mp.current_job_title, mp.current_company, mp.bio, " +
+            "mp.rating_avg, mp.total_sessions, mp.status, mp.review_note, mp.reviewed_at, " +
+            "mp.reviewed_by, mp.cover_url, mp.default_meeting_link, mp.booking_window_settings, " +
+            "mp.extended_profile, mp.created_at, mp.updated_at " +
+            "FROM mentor_profiles mp " +
             "LEFT JOIN organization_members om ON mp.member_id = om.user_id " +
             "LEFT JOIN users gp ON gp.id = om.user_id " +
             "WHERE mp.status = 'APPROVED' " +

@@ -22,6 +22,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useOrgNavigate, useOrgPath } from '../hooks/useOrgNavigate';
 import { getNormalizedPathname } from '../utils/pathUtils';
 import useThemeModeStore from '../stores/themeModeStore';
+import useOrganizationStore from '../stores/organizationStore';
 import { HEADER_HEIGHT } from '../constants/layout';
 
 const LOGO_SRC = '/alumverse_logo/Logo_Main_Full.svg';
@@ -106,6 +107,7 @@ const Header = () => {
   const location = useLocation();
   const { slug: routeSlug } = useParams();
   const { isAuthenticated, user, verificationLevel } = useAuth();
+  const { organization } = useOrganizationStore();
   const themeMode = useThemeModeStore((state) => state.mode);
   const toggleThemeMode = useThemeModeStore((state) => state.toggleMode);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -195,7 +197,8 @@ const Header = () => {
     };
   }, [isTransparent]);
 
-  const logoSrc = (isTransparent || theme.palette.mode === 'dark') ? LOGO_SRC_WHITE : LOGO_SRC;
+  const defaultLogoSrc = (isTransparent || theme.palette.mode === 'dark') ? LOGO_SRC_WHITE : LOGO_SRC;
+  const logoSrc = organization?.logoUrl || defaultLogoSrc;
 
   const appBarMinHeight = HEADER_HEIGHT;
 

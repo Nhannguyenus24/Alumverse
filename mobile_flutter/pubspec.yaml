@@ -66,6 +66,9 @@ dependencies:
   #flutter_quill: ^11.5.1
   image_picker: ^1.1.2
 
+  # Document picker (mentor signup CV upload)
+  file_picker: ^8.1.6
+
   # Chat video attachments
   video_player: ^2.9.2
   chewie: ^1.8.5

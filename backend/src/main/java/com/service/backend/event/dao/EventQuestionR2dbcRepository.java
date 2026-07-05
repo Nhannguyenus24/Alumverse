@@ -14,8 +14,6 @@ public interface EventQuestionR2dbcRepository extends ReactiveCrudRepository<Eve
     @Query("SELECT * FROM event_questions WHERE event_id = :eventId ORDER BY order_index ASC, id ASC")
     Flux<EventQuestion> findByEventIdOrderByOrderIndex(Long eventId);
 
-    Mono<Long> countByEventId(Long eventId);
-
     @Modifying
     @Query("DELETE FROM event_questions WHERE id = :questionId AND event_id = :eventId")
     Mono<Integer> deleteByIdAndEventId(Integer questionId, Long eventId);
