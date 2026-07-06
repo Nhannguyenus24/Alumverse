@@ -9,6 +9,7 @@ export const normalizeNews = (data) => {
     thumbnailUrl: data.thumbnailUrl,
     publishedAt,
     topic: data.topic,
+    url: data.url,
   };
 };
 
@@ -23,6 +24,7 @@ export const normalizeAlumniPost = (data) => {
     thumbnailUrl: data.thumbnailUrl,
     publishedAt,
     topic: data.topic,
+    url: data.url,
   };
 };
 
@@ -66,6 +68,7 @@ export const normalizeJob = (data) => {
     type: data.type,
     isReferral: data.isReferral ?? data.is_referral ?? false,
     topic,
+    url: data.url,
   };
 };
 
@@ -85,6 +88,7 @@ export const normalizeAchievement = (data) => {
     memberAvatar: data.memberAvatar,
     memberJobTitle: data.memberJobTitle,
     memberCompany: data.memberCompany,
+    url: data.url,
   };
 };
 

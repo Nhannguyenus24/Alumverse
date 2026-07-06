@@ -17,6 +17,7 @@ import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
+import LinkIcon from '@mui/icons-material/Link';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
 import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
@@ -265,6 +266,17 @@ const AdminArticlesPage = () => {
                       <VisibilityOutlinedIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
+                  {(a.url || a.linkUrl) && (
+                    <Tooltip title="Truy cập liên kết gốc">
+                      <IconButton
+                        size="small"
+                        sx={{ color: 'info.main' }}
+                        onClick={() => window.open(a.url || a.linkUrl, '_blank', 'noopener,noreferrer')}
+                      >
+                        <LinkIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  )}
                   <Tooltip title="Chỉnh sửa">
                     <IconButton size="small" sx={{ color: 'secondary.main' }} onClick={() => openEdit(a)}>
                       <EditOutlinedIcon fontSize="small" />

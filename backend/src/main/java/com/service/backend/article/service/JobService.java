@@ -43,6 +43,7 @@ public class JobService {
                             .type(JobType.valueOf(request.getType().toUpperCase().replace("-", "_")))
                             .salaryRange(request.getSalaryRange())
                             .howToApply(request.getHowToApply())
+                            .url(request.getUrl())
                             .deadline(request.getDeadline())
                             .isReferral(request.getIsReferral() != null ? request.getIsReferral() : false)
                             .isActive(publishImmediately)
@@ -66,6 +67,7 @@ public class JobService {
                     existing.setType(JobType.valueOf(request.getType().toUpperCase().replace("-", "_")));
                     existing.setSalaryRange(request.getSalaryRange());
                     existing.setHowToApply(request.getHowToApply());
+                    existing.setUrl(request.getUrl());
                     existing.setDeadline(request.getDeadline());
                     existing.setIsReferral(request.getIsReferral() != null ? request.getIsReferral() : false);
                     return jobRepository.save(existing);

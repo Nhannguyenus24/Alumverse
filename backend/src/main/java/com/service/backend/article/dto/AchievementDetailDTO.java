@@ -24,6 +24,9 @@ public class AchievementDetailDTO {
     @Column("image_url")
     private String imageUrl;
     
+    @Column("url")
+    private String url;
+    
     @Column("awarded_date")
     private LocalDate awardedDate;
     
