@@ -263,3 +263,88 @@ export const useUploadImage = () => {
 
   return { uploadFile, uploadBase64: mutateAsync, isPending, isError, errorMessage };
 };
+
+// ── Fund document (pdf/doc/docx) ─────────────────────────────────────────────
+
+const FUND_DOCUMENT_MAX_BYTES = 10 * 1024 * 1024;
+
+const FUND_DOCUMENT_EXTENSIONS = [".pdf", ".doc", ".docx"];
+
+const FUND_DOCUMENT_MIME_TYPES = [
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+];
+
+export const FUND_DOCUMENT_ACCEPT =
+  ".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+
+/**
+ * Validate a fund document file (pdf/doc/docx, ≤10MB) before upload.
+ * Backend (FileUploadService) is the final gate; this gives early FE feedback.
+ * @param {File} file
+ * @param {Function} [t] - optional i18next t function for translated messages
+ * @returns {{ valid: true } | { valid: false, message: string }}
+ */
+export const validateFundDocumentFile = (file, t = null) => {
+  if (!file) {
+    return { valid: false, message: t ? t("common:no_file_selected") : "Không có file được chọn." };
+  }
+
+  const extension = getFileExtension(file);
+  const isAllowedType =
+    FUND_DOCUMENT_MIME_TYPES.includes(file.type) || FUND_DOCUMENT_EXTENSIONS.includes(extension);
+
+  if (!isAllowedType) {
+    return {
+      valid: false,
+      message: t ? t("donation:fund_document_type_error") : "Chỉ hỗ trợ file PDF, DOC hoặc DOCX.",
+    };
+  }
+
+  if (file.size > FUND_DOCUMENT_MAX_BYTES) {
+    return {
+      valid: false,
+      message: t
+        ? t("donation:fund_document_size_error")
+        : "Tài liệu vượt quá 10MB. Vui lòng chọn file nhỏ hơn.",
+    };
+  }
+
+  return { valid: true };
+};
+
+/**
+ * Upload a fund document (base64 + original filename) to the raw file endpoint.
+ * @param {{ base64String: string, fileName: string }} args
+ * @returns {Promise<string|null>} The uploaded file URL or null.
+ */
+const uploadFundDocumentBase64 = async ({ base64String, fileName }) => {
+  const res = await apiClient.post("/files/upload", { base64String, fileName });
+  return res?.data?.data ?? null;
+};
+
+/**
+ * Hook for uploading fund documents (pdf/doc/docx) via /files/upload.
+ * Mirrors {@link useUploadImage} but preserves the original filename so the
+ * backend can resolve the extension and size limit.
+ * @returns {object} { uploadFile, isPending, isError, errorMessage }
+ */
+export const useUploadFundDocument = () => {
+  const { mutateAsync, isPending, isError, error } = useMutation({
+    mutationFn: uploadFundDocumentBase64,
+  });
+
+  const uploadFile = async (file) => {
+    if (!file) return null;
+    const base64 = await fileToBase64(file);
+    return mutateAsync({ base64String: base64, fileName: file.name });
+  };
+
+  const errorMessage =
+    isError && error
+      ? error.response?.data?.message ?? error.message ?? "file_upload_error"
+      : null;
+
+  return { uploadFile, isPending, isError, errorMessage };
+};

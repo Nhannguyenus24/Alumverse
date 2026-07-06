@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useLocation } from "react-router";
 import { Box, Button, Chip, Grid, LinearProgress, Typography } from "@mui/material";
 import ConnectWithoutContactOutlinedIcon from "@mui/icons-material/ConnectWithoutContactOutlined";
+import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import dayjs from "dayjs";
 import { useTranslation } from "react-i18next";
 import NetworkMessageDrawer from "../network/NetworkMessageDrawer";
@@ -107,6 +108,26 @@ export default function DonationFundInfoPanel({ fundDetail }) {
           {fundDetail?.timeEnded ? dayjs(fundDetail.timeEnded).format("DD/MM/YYYY") : "--"}
         </Box>
       </Typography>
+
+      {fundDetail?.fundDocumentUrl && (
+        <Box sx={{ mt: 1.2, display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+          <Typography sx={{ color: "text.secondary", fontSize: "0.98rem", fontWeight: 600 }}>
+            {t("fund_document_label")}:
+          </Typography>
+          <Button
+            size="small"
+            variant="outlined"
+            startIcon={<DescriptionOutlinedIcon fontSize="small" />}
+            component="a"
+            href={fundDetail.fundDocumentUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            sx={{ textTransform: "none", fontSize: "0.82rem", py: 0.3, px: 1.2 }}
+          >
+            {t("fund_document_view")}
+          </Button>
+        </Box>
+      )}
 
       <Box sx={{ mt: 1.4 }}>
         <Box sx={{ mb: 0.7, display: "flex", alignItems: "center", justifyContent: "flex-start", gap: 0.8 }}>

@@ -45,6 +45,15 @@ public interface NetworkMemberSearchRepository
     // DISTINCT ON (om.user_id) collapses multi-organization members to a single
     // row (a user may belong to >1 organization); the inner ORDER BY must lead
     // with om.user_id, so the outer query re-sorts alphabetically for display.
+    // LEFT JOIN the connection request for the (currentUser, member) pair so each
+    // row carries its connection status. The pair is normalized to
+    // (member_low_id, member_high_id) = (min, max), matching how requests are stored.
+    String SEARCH_CONNECTION_JOIN = """
+            LEFT JOIN chat_conversation_requests ccr
+              ON ccr.member_low_id = LEAST(om.user_id, :currentUserId)
+             AND ccr.member_high_id = GREATEST(om.user_id, :currentUserId)
+            """;
+
     @Query("""
             SELECT * FROM (
                 SELECT DISTINCT ON (om.user_id)
@@ -52,8 +61,9 @@ public interface NetworkMemberSearchRepository
                        u.full_name AS full_name,
                        CAST(om.program AS text) AS program,
                        CAST(om.major AS text) AS major,
-                       u.avatar_url AS avatar_url
-            """ + SEARCH_FROM_JOIN + SEARCH_WHERE + """
+                       u.avatar_url AS avatar_url,
+                       ccr.status AS connection_status
+            """ + SEARCH_FROM_JOIN + SEARCH_CONNECTION_JOIN + SEARCH_WHERE + """
                 ORDER BY om.user_id, om.id ASC
             ) sub
             ORDER BY sub.full_name ASC, sub.user_id ASC

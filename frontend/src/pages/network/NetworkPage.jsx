@@ -247,8 +247,6 @@ const NetworkMemberDirectory = () => {
   const [checkingUserId, setCheckingUserId] = useState(null);
   const [blockTarget, setBlockTarget] = useState(null);
 
-  const filterConfig = useMemo(() => getNetworkSearchFilterConfig(t), [t]);
-
   const navigate = useOrgNavigate();
   const currentMemberId = useNetworkCurrentMemberId();
 
@@ -257,6 +255,11 @@ const NetworkMemberDirectory = () => {
     queryFn: () => organizationApi.getAllOrganizations(),
     staleTime: 5 * 60 * 1000,
   });
+
+  const filterConfig = useMemo(
+    () => getNetworkSearchFilterConfig(t, organizations),
+    [t, organizations],
+  );
 
   const { showError, showInfo } = useNotification();
   const { checkStatus } = useCheckConversationRequestStatus();
@@ -396,6 +399,18 @@ const NetworkMemberDirectory = () => {
         >
           {items.map((member) => {
             const isSelf = String(member.userId) === String(currentMemberId);
+            const isConnected =
+              member.connectionStatus === CONVERSATION_REQUEST_STATUS.ACCEPTED;
+            const isPending =
+              member.connectionStatus === CONVERSATION_REQUEST_STATUS.PENDING;
+
+            const messageButtonLabel = isSelf
+              ? t('network:this_is_you')
+              : isConnected
+                ? t('network:message')
+                : isPending
+                  ? t('network:connect_pending')
+                  : t('network:connect');
 
             return (
               <NetworkSearchMemberCard
@@ -409,7 +424,8 @@ const NetworkMemberDirectory = () => {
                 onBlock={isSelf ? null : () => setBlockTarget(member)}
                 isMessageLoading={checkingUserId === member.userId}
                 isBlockLoading={isBlocking && blockTarget?.userId === member.userId}
-                messageButtonLabel={isSelf ? t('network:this_is_you') : t('network:message')}
+                messageButtonLabel={messageButtonLabel}
+                messageButtonVariant={isConnected ? 'outlined' : 'contained'}
               />
             );
           })}

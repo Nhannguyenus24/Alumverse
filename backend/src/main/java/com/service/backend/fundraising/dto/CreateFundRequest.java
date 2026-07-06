@@ -78,4 +78,12 @@ public class CreateFundRequest {
     @Email
     @Schema(example = "manager@hcmus.edu.vn")
     private String managerEmail;
+
+    /**
+     * Optional URL of the fund's attached document (e.g. establishment decision as pdf/doc/docx).
+     * The frontend uploads the file via /files/upload and sends the resulting URL here.
+     */
+    @Size(max = 500)
+    @Schema(example = "https://example.com/funds/quyet-dinh-thanh-lap.pdf")
+    private String fundDocumentUrl;
 }

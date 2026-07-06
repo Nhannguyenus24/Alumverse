@@ -30,7 +30,15 @@ import { useOrgNavigate } from "../../hooks/useOrgNavigate";
 import Breadcrumb from "../../components/Breadcrumb";
 import MoneyField from "../../components/MoneyField";
 import FundLogoPreview from "../../components/FundLogoPreview";
-import { useUploadImage, validateImageFile, IMAGE_ACCEPT, FUND_CONTENT_EDITOR_HEIGHT } from "../../utils/imageUtils";
+import {
+  useUploadImage,
+  useUploadFundDocument,
+  validateImageFile,
+  validateFundDocumentFile,
+  IMAGE_ACCEPT,
+  FUND_DOCUMENT_ACCEPT,
+  FUND_CONTENT_EDITOR_HEIGHT,
+} from "../../utils/imageUtils";
 
 const isEmptyHtml = (html) => {
   if (!html || typeof html !== "string") return true;
@@ -143,11 +151,16 @@ export default function EditDonationPage() {
   const { user } = useAuth();
   const isStaff = user?.role === "STAFF";
   const { uploadFile: uploadLogo, isPending: isUploadingLogo } = useUploadImage();
+  const { uploadFile: uploadFundDocument, isPending: isUploadingDocument } = useUploadFundDocument();
   const [receivingOptions, setReceivingOptions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const logoInputRef = useRef(null);
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState(null);
+  const documentInputRef = useRef(null);
+  const [documentFile, setDocumentFile] = useState(null);
+  // Currently stored document URL; "" means "no document / remove on save".
+  const [documentUrl, setDocumentUrl] = useState("");
 
   const now = useMemo(() => dayjs(), []);
   const minAllowedTime = useMemo(() => now.add(10, "minute"), [now]);
@@ -221,6 +234,24 @@ export default function EditDonationPage() {
     );
   };
 
+  const handleDocumentChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const result = validateFundDocumentFile(file, t);
+    if (!result.valid) {
+      enqueueSnackbar(result.message, { variant: "warning" });
+      e.target.value = "";
+      return;
+    }
+    setDocumentFile(file);
+  };
+
+  const handleDocumentRemove = () => {
+    setDocumentFile(null);
+    setDocumentUrl("");
+    if (documentInputRef.current) documentInputRef.current.value = "";
+  };
+
   useEffect(() => {
     let mounted = true;
 
@@ -251,6 +282,8 @@ export default function EditDonationPage() {
         setDonationDetail(normalizedDetail);
         setLogoFile(null);
         setLogoPreview(normalizedDetail.logoUrl || null);
+        setDocumentFile(null);
+        setDocumentUrl(detail?.fundDocumentUrl ?? "");
         reset({
           name: normalizedDetail.name,
           managerName: detail?.managerName ?? "",
@@ -320,11 +353,18 @@ export default function EditDonationPage() {
           ? await uploadLogo(logoFile)
           : donationDetail.logoUrl?.trim() || null;
 
+        // A newly chosen file is uploaded; otherwise send the current URL, or ""
+        // to signal removal (backend: null = keep, "" = remove).
+        const fundDocumentUrl = documentFile
+          ? await uploadFundDocument(documentFile)
+          : documentUrl?.trim() || "";
+
         const payload = {
           name: values.name?.trim(),
           managerName: values.managerName?.trim(),
           managerEmail: values.managerEmail?.trim(),
           logoUrl,
+          fundDocumentUrl,
           description_short: values.descriptionShort?.trim(),
           description_full: values.descriptionFull,
           targetAmount: Number(values.targetAmount),
@@ -344,7 +384,7 @@ export default function EditDonationPage() {
     }
   };
 
-  const isBusy = isSubmitting || isUploadingLogo;
+  const isBusy = isSubmitting || isUploadingLogo || isUploadingDocument;
 
   return (
     <Page title={t('admin:edit_fund_page_title')} meta={<meta name="description" content={t('admin:edit_fund_page_title')} />}>
@@ -450,6 +490,75 @@ export default function EditDonationPage() {
                             </Button>
                           </Stack>
                         </Box>
+                      </Grid>
+                      <Grid size={12}>
+                        <Typography
+                          variant="body2"
+                          sx={{ mb: 1.2, fontWeight: 600, color: "text.secondary" }}
+                        >
+                          {t('admin:edit_fund_document_label')}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
+                          {t('admin:edit_fund_document_hint')}
+                        </Typography>
+                        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                          {documentFile ? (
+                            <Typography variant="body2" sx={{ color: "text.primary", wordBreak: "break-all" }}>
+                              {documentFile.name}
+                            </Typography>
+                          ) : documentUrl ? (
+                            <Button
+                              variant="text"
+                              size="small"
+                              component="a"
+                              href={documentUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              sx={{ textTransform: "none" }}
+                            >
+                              {t('admin:edit_fund_document_view')}
+                            </Button>
+                          ) : (
+                            <Typography variant="body2" color="text.secondary">
+                              {t('admin:edit_fund_document_none')}
+                            </Typography>
+                          )}
+                          {!lockForStaff && (
+                            <>
+                              <input
+                                ref={documentInputRef}
+                                type="file"
+                                accept={FUND_DOCUMENT_ACCEPT}
+                                style={{ display: "none" }}
+                                onChange={handleDocumentChange}
+                                disabled={disableAllFields}
+                              />
+                              <Button
+                                variant="outlined"
+                                size="small"
+                                onClick={() => documentInputRef.current?.click()}
+                                disabled={disableAllFields}
+                                sx={{ textTransform: "none" }}
+                              >
+                                {documentFile || documentUrl
+                                  ? t('admin:edit_fund_document_change')
+                                  : t('admin:edit_fund_document_select')}
+                              </Button>
+                              {(documentFile || documentUrl) && (
+                                <Button
+                                  variant="text"
+                                  size="small"
+                                  color="primary"
+                                  onClick={handleDocumentRemove}
+                                  disabled={disableAllFields}
+                                  sx={{ textTransform: "none" }}
+                                >
+                                  {t('admin:edit_fund_document_remove')}
+                                </Button>
+                              )}
+                            </>
+                          )}
+                        </Stack>
                       </Grid>
                       <Grid size={12}>
                         <TextField

@@ -9,22 +9,41 @@ export const DEFAULT_NETWORK_INCOMING_REQUEST_FILTERS = {
   status: '',
 };
 
-export const getNetworkSearchFilterConfig = (t) => [
-  {
-    type: 'input',
-    key: 'program',
-    label: t('network:filter_program_label'),
-    inputMode: 'text',
-    placeholder: t('network:filter_program_placeholder'),
-  },
-  {
-    type: 'input',
-    key: 'major',
-    label: t('network:filter_major_label'),
-    inputMode: 'text',
-    placeholder: t('network:filter_major_placeholder'),
-  },
-];
+export const getNetworkSearchFilterConfig = (t, organizations = []) => {
+  const baseFilters = [
+    {
+      type: 'input',
+      key: 'program',
+      label: t('network:filter_program_label'),
+      inputMode: 'text',
+      placeholder: t('network:filter_program_placeholder'),
+    },
+    {
+      type: 'input',
+      key: 'major',
+      label: t('network:filter_major_label'),
+      inputMode: 'text',
+      placeholder: t('network:filter_major_placeholder'),
+    },
+  ];
+
+  if (organizations.length === 0) {
+    return baseFilters;
+  }
+
+  // Multi-organization support: let members broaden the directory across
+  // organizations (or "Tất cả" to span every one).
+  return [
+    {
+      type: 'dropdown',
+      key: 'organizationIds',
+      label: t('network:filter_organization_label'),
+      multiple: true,
+      options: organizations.map((org) => ({ value: org.id, label: org.name })),
+    },
+    ...baseFilters,
+  ];
+};
 
 export const getNetworkIncomingRequestFilterConfig = (t) => [
   {

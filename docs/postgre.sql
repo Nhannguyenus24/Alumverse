@@ -631,7 +631,8 @@ create table funds
     time_ended             timestamp,
     created_at             timestamp default CURRENT_TIMESTAMP,
     updated_at             timestamp default CURRENT_TIMESTAMP,
-    manager_email          text not null
+    manager_email          text not null,
+    fund_document_url      text
 );
 
 alter table funds
