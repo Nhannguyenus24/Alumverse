@@ -131,14 +131,22 @@ class MentorCard extends StatelessWidget {
               Expanded(
                 child: OutlinedButton(
                   onPressed: onViewProfile,
-                  child: Text('mentorship.personal_page'.tr()),
+                  child: Text(
+                    'mentorship.personal_page'.tr(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: ElevatedButton(
                   onPressed: onBook,
-                  child: Text('mentorship.book_appointment'.tr()),
+                  child: Text(
+                    'mentorship.book_appointment'.tr(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ),
             ],

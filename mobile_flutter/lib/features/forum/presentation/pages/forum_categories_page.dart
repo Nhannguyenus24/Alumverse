@@ -48,21 +48,27 @@ class ForumCategoriesPage extends ConsumerWidget {
                 }
                 final parents = categories.where((c) => c.isParent).toList();
                 final children = categories.where((c) => !c.isParent).toList();
-                // Categories with no parent grouping still need to be reachable.
-                final orphanParents = parents.isEmpty ? categories : parents;
 
                 return ListView(
                   padding: const EdgeInsets.all(16),
                   children: [
-                    for (final parent in orphanParents) ...[
-                      _ParentHeader(parent.name),
+                    Text(
+                      'forum.title_upper'.tr(),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.headlineSmall?.copyWith(
+                        fontSize: 30,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.2,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    for (final parent in parents) ...[
+                      _ParentHeader(parent),
                       ...children
                           .where((c) => c.parentId == parent.id)
                           .map((c) => _CategoryTile(category: c)),
-                      // If this "parent" is actually a leaf (no children), make it
-                      // tappable itself.
-                      if (children.every((c) => c.parentId != parent.id))
-                        _CategoryTile(category: parent),
                       const SizedBox(height: 8),
                     ],
                   ],
@@ -77,22 +83,39 @@ class ForumCategoriesPage extends ConsumerWidget {
 }
 
 class _ParentHeader extends StatelessWidget {
-  const _ParentHeader(this.name);
+  const _ParentHeader(this.category);
 
-  final String name;
+  final ForumCategory category;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(top: 8, bottom: 8),
-      child: Text(
-        name.toUpperCase(),
-        style: const TextStyle(
-          color: AppColors.primary,
-          fontWeight: FontWeight.w900,
-          fontSize: 16,
-          letterSpacing: 0.25,
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            category.name.toUpperCase(),
+            style: const TextStyle(
+              color: AppColors.primary,
+              fontWeight: FontWeight.w900,
+              fontSize: 16,
+              letterSpacing: 0.25,
+            ),
+          ),
+          if (category.description != null &&
+              category.description!.trim().isNotEmpty) ...[
+            const SizedBox(height: 3),
+            Text(
+              category.description!.trim(),
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 12,
+                height: 1.3,
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

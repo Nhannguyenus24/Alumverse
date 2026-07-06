@@ -102,7 +102,11 @@ class ApiEndpoints {
   static const String newsPublished = '/api/articles/news/published';
   static const String alumniPostsPublished =
       '/api/articles/alumni-posts/published';
+  static const String achievementsApproved =
+      '/api/articles/achievements/status/APPROVED';
   static String newsDetail(int id) => '/api/articles/news/$id';
+  static String alumniPostDetail(int id) => '/api/articles/alumni-posts/$id';
+  static String achievementDetail(int id) => '/api/articles/achievements/$id';
 
   // --- Saved items (bookmarked articles) ---
   static const String savedItems = '/api/articles/saved';

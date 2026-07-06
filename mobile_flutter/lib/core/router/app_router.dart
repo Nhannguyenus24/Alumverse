@@ -18,6 +18,7 @@ import '../../features/chat/presentation/pages/group_members_page.dart';
 import '../../features/home/presentation/pages/home_page.dart';
 import '../../features/home/presentation/pages/splash_page.dart';
 import '../../features/article/presentation/pages/article_detail_page.dart';
+import '../../features/article/presentation/pages/honors_list_page.dart';
 import '../../features/article/presentation/pages/news_list_page.dart';
 import '../../features/article/presentation/pages/saved_articles_page.dart';
 import '../../features/event/presentation/pages/events_page.dart';
@@ -214,6 +215,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
+        path: '${RouteNames.articles}/:channel/:id',
+        builder:
+            (_, state) => ArticleDetailPage(
+              articleId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
+              channel: state.pathParameters['channel'] ?? 'news',
+            ),
+      ),
+      GoRoute(
         path: '${RouteNames.articles}/:id',
         builder:
             (_, state) => ArticleDetailPage(
@@ -235,6 +244,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             ),
       ),
       GoRoute(path: RouteNames.news, builder: (_, __) => const NewsListPage()),
+      GoRoute(
+        path: RouteNames.honors,
+        builder: (_, __) => const HonorsListPage(),
+      ),
       GoRoute(
         path: RouteNames.organizationIntroduction,
         builder: (_, __) => const OrganizationIntroductionPage(),

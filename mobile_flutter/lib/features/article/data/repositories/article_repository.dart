@@ -22,16 +22,50 @@ class ArticleRepository {
       ApiEndpoints.newsPublished,
       queryParameters: {'page': page, 'limit': limit},
     );
-    return _itemsFrom(res.data);
+    return _itemsFrom(res.data, channel: 'news');
   }
 
-  Future<Article> getNewsDetail(int id) async {
-    final res = await _dio.get(ApiEndpoints.newsDetail(id));
+  Future<List<Article>> getPublishedAlumniPosts({
+    int page = 0,
+    int limit = 10,
+  }) async {
+    final res = await _dio.get(
+      ApiEndpoints.alumniPostsPublished,
+      queryParameters: {'page': page, 'limit': limit},
+    );
+    return _itemsFrom(res.data, channel: 'alumni');
+  }
+
+  Future<List<Article>> getApprovedAchievements({
+    int page = 0,
+    int limit = 10,
+  }) async {
+    final res = await _dio.get(
+      ApiEndpoints.achievementsApproved,
+      queryParameters: {'page': page, 'limit': limit},
+    );
+    return _itemsFrom(res.data, channel: 'achievement');
+  }
+
+  Future<Article> getArticleDetail(int id, {String channel = 'news'}) async {
+    final res = await _dio.get(_detailEndpoint(channel, id));
     final data =
         res.data is Map && res.data['data'] is Map
             ? res.data['data'] as Map<String, dynamic>
             : res.data as Map<String, dynamic>;
-    return Article.fromJson(data);
+    return Article.fromJson(data, channel: channel);
+  }
+
+  Future<Article> getNewsDetail(int id) {
+    return getArticleDetail(id);
+  }
+
+  String _detailEndpoint(String channel, int id) {
+    return switch (channel) {
+      'alumni' => ApiEndpoints.alumniPostDetail(id),
+      'achievement' => ApiEndpoints.achievementDetail(id),
+      _ => ApiEndpoints.newsDetail(id),
+    };
   }
 
   // ─── Saved items (bookmarked articles) ────────────────────────────────────
@@ -90,12 +124,12 @@ class ArticleRepository {
 
   /// Unwrap `ApiResponse.data.items` → List<Article>. Tolerates the list being
   /// directly under `data` as well.
-  List<Article> _itemsFrom(dynamic body) {
+  List<Article> _itemsFrom(dynamic body, {String channel = 'news'}) {
     final data = body is Map ? body['data'] : body;
     final items = data is Map ? data['items'] : data;
     if (items is! List) return const [];
     return items
-        .map((e) => Article.fromJson(e as Map<String, dynamic>))
+        .map((e) => Article.fromJson(e as Map<String, dynamic>, channel: channel))
         .toList();
   }
 }

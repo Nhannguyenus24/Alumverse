@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/article_topic_label.dart';
 import '../../../../core/utils/image_url.dart';
 import '../../../../shared/widgets/empty_view.dart';
 import '../../../../shared/widgets/error_view.dart';
@@ -84,6 +85,7 @@ class _SavedCard extends ConsumerWidget {
     final title =
         article?.title ??
         'article.article_id'.tr(namedArgs: {'id': item.itemId.toString()});
+    final topicLabel = articleTopicLabel(article?.topic);
     final thumb = resolveImageUrl(article?.thumbnailUrl);
 
     return InkWell(
@@ -134,11 +136,10 @@ class _SavedCard extends ConsumerWidget {
                           fontSize: 14.5,
                         ),
                       ),
-                    if (article?.topic != null &&
-                        article!.topic!.isNotEmpty) ...[
+                    if (topicLabel.isNotEmpty) ...[
                       const SizedBox(height: 4),
                       Text(
-                        article.topic!.toUpperCase(),
+                        topicLabel.toUpperCase(),
                         style: const TextStyle(
                           fontSize: 11,
                           color: AppColors.primary,
