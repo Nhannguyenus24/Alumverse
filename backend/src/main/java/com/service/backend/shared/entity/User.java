@@ -63,6 +63,15 @@ public class User {
     @Column("must_change_password")
     private boolean mustChangePassword;
 
+    @Column("current_job_title")
+    private String currentJobTitle;
+
+    @Column("current_company")
+    private String currentCompany;
+
+    @Column("links")
+    private String links;
+
     @CreatedDate
     @Column("created_at")
     private LocalDateTime createdAt;
