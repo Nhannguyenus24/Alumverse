@@ -790,6 +790,7 @@
   "edit_fund_note_active": "Quỹ đang diễn ra: chỉ có thể sửa end date (>= hiện tại + 10 phút). Không thể sửa target amount, start date và tài khoản ngân hàng nhận quỹ.",
   "edit_fund_note_ended": "Quỹ đã kết thúc: không thể chỉnh sửa.",
   "edit_fund_note_invalid": "Khoảng thời gian quỹ chưa hợp lệ.",
+  "edit_fund_staff_note": "Bạn (STAFF) chỉ có thể chỉnh sửa Người quản lý, Email liên hệ và Nội dung bài viết của quỹ.",
   "edit_fund_logo_label": "Logo quỹ (tuỳ chọn)",
   "edit_fund_logo_hint": "Hỗ trợ JPG, JPEG, PNG — tối đa 8MB.",
   "edit_fund_logo_change": "Đổi ảnh logo",

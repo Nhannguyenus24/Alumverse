@@ -848,7 +848,7 @@ export const router = createBrowserRouter([
           {
             path: ":id/edit",
             element: (
-              <ProtectedRoute allowedRoles={["ADMIN"]}>
+              <ProtectedRoute allowedRoles={["ADMIN", "STAFF"]}>
                 <EditDonationPage />
               </ProtectedRoute>
             ),
