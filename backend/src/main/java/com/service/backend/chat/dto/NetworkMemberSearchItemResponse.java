@@ -16,4 +16,8 @@ public class NetworkMemberSearchItemResponse {
     private String program;
     private String major;
     private String avatarUrl;
+    // Connection status between the current user and this member, derived from
+    // chat_conversation_requests (PENDING / ACCEPTED / REJECTED). Null when the
+    // two have never exchanged a connection request.
+    private String connectionStatus;
 }
