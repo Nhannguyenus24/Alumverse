@@ -177,6 +177,7 @@ const MentorshipSignupPage = () => {
           currentCompany: values.currentCompany?.trim() || null,
           bio: values.bio?.trim() || null,
         },
+        expertiseTags: values.expertiseTags ?? [],
         avatarFile: values.avatarFile,
         coverFile: null,
         defaultMeetingLink: values.defaultMeetingLink?.trim() || null,

@@ -176,7 +176,7 @@ const GuestLandingContent = () => {
             </Button>
           )}
           {!access.isGuest && (
-            <Button variant="outlined" onClick={() => navigate('/settings/account')}>
+            <Button variant="outlined" onClick={() => navigate('/settings')}>
               {t('mentorship:go_to_account_settings')}
             </Button>
           )}

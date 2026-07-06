@@ -7,6 +7,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -37,4 +39,7 @@ public class UpdateMentorProfileRequest {
 
     @Size(max = 20000)
     private String extendedProfile;
+
+    @Size(max = 30)
+    private List<@Size(max = 100) String> expertiseTags;
 }

@@ -7,6 +7,7 @@ import '../models/mentor_availability.dart';
 import '../models/mentor_profile.dart';
 import '../models/mentorship_session.dart';
 import '../models/session_feedback.dart';
+import '../models/skill.dart';
 
 final mentorshipRepositoryProvider = Provider<MentorshipRepository>((ref) {
   return MentorshipRepository(ref.watch(dioProvider));
@@ -21,14 +22,11 @@ class MentorshipRepository {
 
   Future<List<MentorProfile>> browseMentors({
     String keyword = '',
-    String? category,
-    String? expertise,
+    List<int> skillIds = const [],
     int page = 0,
     int limit = 10,
   }) async {
-    final hasAdvanced =
-        (category != null && category.isNotEmpty) ||
-        (expertise != null && expertise.isNotEmpty);
+    final hasAdvanced = skillIds.isNotEmpty;
     final kw = keyword.trim();
 
     final Response res;
@@ -37,11 +35,15 @@ class MentorshipRepository {
         ApiEndpoints.menteeMentorFilter,
         queryParameters: {
           if (kw.isNotEmpty) 'search': kw,
-          if (category != null && category.isNotEmpty) 'category': category,
-          if (expertise != null && expertise.isNotEmpty) 'expertise': expertise,
+          'skillIds': skillIds,
           'page': page,
           'limit': limit,
         },
+        // Repeat array keys without brackets (skillIds=1&skillIds=2) so Spring
+        // binds them to List<Integer>; dio defaults to skillIds[]=1.
+        options: Options(
+          listFormat: ListFormat.multiCompatible,
+        ),
       );
     } else if (kw.isNotEmpty) {
       res = await _dio.get(
@@ -69,14 +71,18 @@ class MentorshipRepository {
         .toList();
   }
 
-  Future<List<String>> getExpertiseTopics() async {
-    final res = await _dio.get(ApiEndpoints.menteeExpertiseTopics);
-    return _dataList(res.data).map((e) => e.toString()).toList();
-  }
-
-  Future<List<String>> getExpertiseCategories() async {
-    final res = await _dio.get(ApiEndpoints.menteeExpertiseCategories);
-    return _dataList(res.data).map((e) => e.toString()).toList();
+  /// Skill catalog lookup for the "filter by skill" multi-select: %LIKE%
+  /// search over existing skills (skills table), sorted A-Z by the backend.
+  Future<List<Skill>> searchSkills({String search = '', int limit = 20}) async {
+    final res = await _dio.get(
+      ApiEndpoints.menteeSkills,
+      queryParameters: {
+        if (search.trim().isNotEmpty) 'search': search.trim(),
+        'page': 0,
+        'limit': limit,
+      },
+    );
+    return _items(res.data, Skill.fromJson);
   }
 
   Future<MentorshipSession> bookSession({
@@ -178,6 +184,7 @@ class MentorshipRepository {
     required String bio,
     String? defaultMeetingLink,
     String? extendedProfile,
+    List<String> expertiseTags = const [],
   }) async {
     final res = await _dio.post(
       ApiEndpoints.mentorProfile,
@@ -188,6 +195,7 @@ class MentorshipRepository {
         if (defaultMeetingLink != null && defaultMeetingLink.isNotEmpty)
           'defaultMeetingLink': defaultMeetingLink,
         if (extendedProfile != null) 'extendedProfile': extendedProfile,
+        'expertiseTags': expertiseTags,
       },
     );
     return MentorProfile.fromJson(_dataMap(res.data));
@@ -205,6 +213,18 @@ class MentorshipRepository {
       data: {'base64File': base64File, 'originalFileName': originalFileName},
     );
     return _dataMap(res.data);
+  }
+
+  /// ME-02: extracts skill/expertise tags from a free-text description of
+  /// the mentor's experience. Mirrors POST /api/mentorship/skills/extract.
+  Future<List<String>> extractSkillTags(String text) async {
+    final res = await _dio.post(
+      ApiEndpoints.mentorshipSkillsExtract,
+      data: {'text': text},
+    );
+    final data = _dataMap(res.data);
+    final tags = data['tags'];
+    return tags is List ? tags.whereType<String>().toList() : const [];
   }
 
   // ── Mentor: sessions & status ─────────────────────────────────

@@ -13,6 +13,10 @@ class MentorProfile {
   final String? coverUrl;
   final List<String> expertiseTopics;
 
+  /// Priority-ordered normalized skill tags from the skills catalog
+  /// (mentor_skills), confirmed by the mentor at signup review step.
+  final List<String> expertiseTags;
+
   const MentorProfile({
     required this.memberId,
     this.fullName,
@@ -25,6 +29,7 @@ class MentorProfile {
     this.status,
     this.coverUrl,
     this.expertiseTopics = const [],
+    this.expertiseTags = const [],
   });
 
   /// "Title @ Company" line, falling back to a generic label.
@@ -54,6 +59,9 @@ class MentorProfile {
           (json['expertiseTopics'] as List?)
               ?.map((e) => e.toString())
               .toList() ??
+          const [],
+      expertiseTags:
+          (json['expertiseTags'] as List?)?.map((e) => e.toString()).toList() ??
           const [],
     );
   }

@@ -9,6 +9,7 @@ import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/empty_view.dart';
 import '../../../../shared/widgets/skeleton.dart';
+import '../../data/models/skill.dart';
 import '../providers/mentorship_providers.dart';
 import '../widgets/mentor_card.dart';
 
@@ -290,83 +291,175 @@ class _StatsBanner extends StatelessWidget {
   }
 }
 
-/// Category + topic dropdown filters, backed by the live expertise endpoints.
+/// "Filter theo kỹ năng": multi-select over the skills catalog. Replaces the
+/// old separate category/topic dropdowns (free-text values). Tapping opens a
+/// search dialog (%LIKE%, sorted A-Z by the backend); selected skills render
+/// as removable chips.
 class _FilterBar extends ConsumerWidget {
   const _FilterBar();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final categories = ref.watch(expertiseCategoriesProvider).valueOrNull ?? [];
-    final topics = ref.watch(expertiseTopicsProvider).valueOrNull ?? [];
     final query = ref.watch(mentorQueryProvider);
     final notifier = ref.read(mentorQueryProvider.notifier);
 
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: _Dropdown(
-            hint: 'mentorship.category'.tr(),
-            value: query.category,
-            options: categories,
-            onChanged:
-                (v) =>
-                    notifier.state =
-                        v == null
-                            ? query.copyWith(clearCategory: true)
-                            : query.copyWith(category: v),
+        OutlinedButton.icon(
+          onPressed: () async {
+            final result = await showModalBottomSheet<List<Skill>>(
+              context: context,
+              isScrollControlled: true,
+              builder: (_) => _SkillFilterSheet(initialSelected: query.skills),
+            );
+            if (result != null) {
+              notifier.state = query.copyWith(skills: result);
+            }
+          },
+          icon: const Icon(Icons.tune, size: 18),
+          label: Text(
+            query.skills.isEmpty
+                ? 'mentorship.filter_skill'.tr()
+                : 'mentorship.filter_skill_count'.tr(
+                  namedArgs: {'count': query.skills.length.toString()},
+                ),
           ),
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _Dropdown(
-            hint: 'mentorship.topic'.tr(),
-            value: query.expertise,
-            options: topics,
-            onChanged:
-                (v) =>
-                    notifier.state =
-                        v == null
-                            ? query.copyWith(clearExpertise: true)
-                            : query.copyWith(expertise: v),
+        if (query.skills.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children:
+                query.skills
+                    .map(
+                      (s) => Chip(
+                        label: Text(s.name),
+                        onDeleted:
+                            () =>
+                                notifier.state = query.copyWith(
+                                  skills:
+                                      query.skills
+                                          .where((sk) => sk.id != s.id)
+                                          .toList(),
+                                ),
+                      ),
+                    )
+                    .toList(),
           ),
-        ),
+        ],
       ],
     );
   }
 }
 
-class _Dropdown extends StatelessWidget {
-  const _Dropdown({
-    required this.hint,
-    required this.value,
-    required this.options,
-    required this.onChanged,
-  });
+/// Bottom sheet: search box (%LIKE%, debounced via provider family) + a
+/// checkable list of matching skills from the catalog.
+class _SkillFilterSheet extends ConsumerStatefulWidget {
+  const _SkillFilterSheet({required this.initialSelected});
 
-  final String hint;
-  final String? value;
-  final List<String> options;
-  final ValueChanged<String?> onChanged;
+  final List<Skill> initialSelected;
+
+  @override
+  ConsumerState<_SkillFilterSheet> createState() => _SkillFilterSheetState();
+}
+
+class _SkillFilterSheetState extends ConsumerState<_SkillFilterSheet> {
+  final _searchCtl = TextEditingController();
+  String _search = '';
+  final List<Skill> _selected = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _selected.addAll(widget.initialSelected);
+  }
+
+  @override
+  void dispose() {
+    _searchCtl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return DropdownButtonFormField<String>(
-      initialValue: value,
-      isExpanded: true,
-      decoration: InputDecoration(
-        labelText: hint,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      ),
-      items: [
-        DropdownMenuItem(value: null, child: Text('common.all'.tr())),
-        ...options.map(
-          (o) => DropdownMenuItem(
-            value: o,
-            child: Text(o, overflow: TextOverflow.ellipsis),
+    final resultsAsync = ref.watch(skillSearchProvider(_search));
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.7,
+      minChildSize: 0.4,
+      maxChildSize: 0.9,
+      expand: false,
+      builder: (context, scrollController) {
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 16,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 16,
           ),
-        ),
-      ],
-      onChanged: onChanged,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'mentorship.filter_skill'.tr(),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _searchCtl,
+                onChanged: (v) => setState(() => _search = v),
+                decoration: InputDecoration(
+                  hintText: 'mentorship.filter_skill_search_hint'.tr(),
+                  prefixIcon: const Icon(Icons.search),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Expanded(
+                child: resultsAsync.when(
+                  loading: () => const Center(child: CircularProgressIndicator()),
+                  error: (_, __) => Center(child: Text('mentorship.load_failed'.tr())),
+                  data: (skills) {
+                    if (skills.isEmpty) {
+                      return Center(child: Text('mentorship.no_skill_found'.tr()));
+                    }
+                    return ListView.builder(
+                      controller: scrollController,
+                      itemCount: skills.length,
+                      itemBuilder: (_, i) {
+                        final skill = skills[i];
+                        final checked = _selected.any((s) => s.id == skill.id);
+                        return CheckboxListTile(
+                          value: checked,
+                          title: Text(skill.name),
+                          onChanged: (v) {
+                            setState(() {
+                              if (v == true) {
+                                _selected.add(skill);
+                              } else {
+                                _selected.removeWhere((s) => s.id == skill.id);
+                              }
+                            });
+                          },
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(_selected),
+                  child: Text('common.apply'.tr()),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

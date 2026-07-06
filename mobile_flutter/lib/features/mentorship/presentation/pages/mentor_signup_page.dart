@@ -54,6 +54,8 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
   final _companyCtl = TextEditingController();
   final _bioCtl = TextEditingController();
   final _meetingCtl = TextEditingController();
+  final _summaryCtl = TextEditingController();
+  final _manualTagCtl = TextEditingController();
 
   final List<_ExpertiseDraft> _expertises = [_ExpertiseDraft()];
   final List<_EntryDraft> _educations = [];
@@ -61,12 +63,16 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
   final List<_EntryDraft> _projects = [];
   final List<_EntryDraft> _awards = [];
   final List<_EntryDraft> _skills = [];
+  final List<String> _expertiseTags = [];
 
   bool _termsAccepted = false;
   bool _submitting = false;
   bool _cvExtracting = false;
   String? _cvFileName;
   String? _cvExtractError;
+  bool _tagsExtracting = false;
+  bool _tagsExtractAttempted = false;
+  String? _tagsExtractError;
 
   @override
   void dispose() {
@@ -74,7 +80,67 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
     _companyCtl.dispose();
     _bioCtl.dispose();
     _meetingCtl.dispose();
+    _summaryCtl.dispose();
+    _manualTagCtl.dispose();
     super.dispose();
+  }
+
+  void _addTags(Iterable<String> incoming) {
+    final existing = _expertiseTags.map((t) => t.toLowerCase()).toSet();
+    for (final raw in incoming) {
+      final v = raw
+          .trim()
+          .replaceFirst(RegExp(r'^#+'), '')
+          .replaceAll(RegExp(r'\s+'), '_');
+      if (v.isNotEmpty && !existing.contains(v.toLowerCase())) {
+        existing.add(v.toLowerCase());
+        setState(() => _expertiseTags.add(v));
+      }
+    }
+  }
+
+  void _removeTag(String tag) {
+    setState(() => _expertiseTags.remove(tag));
+  }
+
+  void _handleManualAddTag() {
+    final v = _manualTagCtl.text.trim();
+    if (v.isEmpty) return;
+    _addTags([v]);
+    _manualTagCtl.clear();
+  }
+
+  Future<void> _extractTags() async {
+    final text = _summaryCtl.text.trim();
+    if (text.isEmpty) return;
+    setState(() {
+      _tagsExtracting = true;
+      _tagsExtractError = null;
+    });
+    try {
+      final repo = ref.read(mentorshipRepositoryProvider);
+      final tags = await repo.extractSkillTags(text);
+      if (!mounted) return;
+      if (tags.isEmpty) {
+        setState(
+          () => _tagsExtractError = 'mentorship.signup_tab_extract_empty'.tr(),
+        );
+      } else {
+        _addTags(tags);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(
+        () => _tagsExtractError = 'mentorship.signup_tab_extract_error'.tr(),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _tagsExtracting = false;
+          _tagsExtractAttempted = true;
+        });
+      }
+    }
   }
 
   Future<void> _pickCv() async {
@@ -154,6 +220,14 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
         'description',
       ]);
       _mergeEntries(_skills, profile['skills'], ['name', 'issuer']);
+
+      // Merge CV-detected skill tags into the same priority-ordered list as
+      // the description extraction (ME-02) so both sources feed one tag list
+      // reviewed/reordered by the mentor below.
+      final cvTags = profile['expertiseTags'];
+      if (cvTags is List) {
+        _addTags(cvTags.whereType<String>());
+      }
     });
   }
 
@@ -177,6 +251,8 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
 
   String _buildExtendedProfile() {
     return jsonEncode({
+      'experienceSummary': _summaryCtl.text.trim(),
+      'expertiseTags': _expertiseTags,
       'educations': _educations.map((e) => e.toJson()).toList(),
       'experiences': _experiences.map((e) => e.toJson()).toList(),
       'projects': _projects.map((e) => e.toJson()).toList(),
@@ -215,6 +291,7 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
         bio: _bioCtl.text.trim(),
         defaultMeetingLink: _meetingCtl.text.trim(),
         extendedProfile: _buildExtendedProfile(),
+        expertiseTags: _expertiseTags,
       );
       for (final e in validExpertises) {
         await repo.addExpertise(
@@ -308,6 +385,163 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
                 prefixIcon: const Icon(Icons.video_call_outlined),
               ),
             ),
+            const SizedBox(height: 24),
+            _Label('mentorship.signup_tab_content_title'.tr()),
+            const SizedBox(height: 4),
+            Text(
+              'mentorship.signup_tab_content_desc'.tr(),
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextFormField(
+              controller: _summaryCtl,
+              maxLines: 4,
+              validator:
+                  (v) =>
+                      (v == null || v.trim().isEmpty)
+                          ? 'mentorship.signup_tab_content_required'.tr()
+                          : null,
+              decoration: InputDecoration(
+                hintText: 'mentorship.signup_tab_content_placeholder'.tr(),
+                alignLabelWithHint: true,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerRight,
+              child: ElevatedButton.icon(
+                onPressed: _tagsExtracting ? null : _extractTags,
+                icon:
+                    _tagsExtracting
+                        ? const SizedBox(
+                          height: 16,
+                          width: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                        : const Icon(Icons.auto_awesome, size: 18),
+                label: Text(
+                  _tagsExtracting
+                      ? 'mentorship.signup_tab_extract_analyzing'.tr()
+                      : 'mentorship.signup_tab_extract_btn'.tr(),
+                ),
+              ),
+            ),
+            if (_tagsExtractError != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                _tagsExtractError!,
+                style: const TextStyle(fontSize: 12, color: AppColors.error),
+              ),
+            ],
+            if (_tagsExtractAttempted || _expertiseTags.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Text(
+                'mentorship.signup_tab_tags_hint'.tr(),
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              if (_expertiseTags.isEmpty)
+                Text(
+                  'mentorship.signup_tab_no_tags'.tr(),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                  ),
+                )
+              else ...[
+                Text(
+                  'mentorship.signup_tab_tags_priority_hint'.tr(),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                ReorderableListView(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  onReorderItem: (oldIndex, newIndex) {
+                    setState(() {
+                      final tag = _expertiseTags.removeAt(oldIndex);
+                      _expertiseTags.insert(newIndex, tag);
+                    });
+                  },
+                  children: [
+                    for (final (index, tag) in _expertiseTags.indexed)
+                      Container(
+                        key: ValueKey(tag),
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: AppColors.divider),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.close, size: 18),
+                              onPressed: () => _removeTag(tag),
+                              tooltip: 'mentorship.signup_tab_remove_tag'.tr(),
+                            ),
+                            Text(
+                              '${index + 1}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                tag,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const Icon(
+                              Icons.drag_handle,
+                              color: AppColors.textSecondary,
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _manualTagCtl,
+                      decoration: InputDecoration(
+                        isDense: true,
+                        hintText:
+                            'mentorship.signup_tab_manual_tag_placeholder'.tr(),
+                      ),
+                      onFieldSubmitted: (_) => _handleManualAddTag(),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  TextButton.icon(
+                    onPressed: _handleManualAddTag,
+                    icon: const Icon(Icons.add, size: 18),
+                    label: Text('mentorship.signup_tab_add_btn'.tr()),
+                  ),
+                ],
+              ),
+            ],
             const SizedBox(height: 24),
             _SectionList(
               title: 'mentorship.signup_education_title'.tr(),

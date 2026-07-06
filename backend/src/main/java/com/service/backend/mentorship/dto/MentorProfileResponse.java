@@ -37,6 +37,9 @@ public class MentorProfileResponse {
 
     private List<String> expertiseTopics;
 
+    /** Priority-ordered normalized skill tags from the skills catalog (mentor_skills). */
+    private List<String> expertiseTags;
+
     public static MentorProfileResponse from(MentorProfile profile) {
         return MentorProfileResponse.builder()
                 .memberId(profile.getMemberId())

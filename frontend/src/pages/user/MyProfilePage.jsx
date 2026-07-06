@@ -672,6 +672,7 @@ const PublicMentorProfile = ({ mentorMemberId, navigate }) => {
   ];
 
   const tags = Array.from(new Set([
+    ...normalizeTags(mentor.expertiseTags),
     ...expertise.map((e) => e.tag || e.topic).flatMap(normalizeTags),
     ...normalizeTags(mentor.expertiseTopics),
   ]));
@@ -700,15 +701,6 @@ const PublicMentorProfile = ({ mentorMemberId, navigate }) => {
 
         <StatsBanner items={stats} />
       </Stack>
-
-      <Box sx={{ mt: 5 }}>
-        <Typography variant="h5" fontWeight={800} color="primary.main" mb={3} display="flex" alignItems="center" gap={1}>
-          <PersonIcon /> {t('profile:intro_section')}
-        </Typography>
-        <Typography color={mentor.bio?.trim() ? 'text.secondary' : 'text.disabled'} sx={{ whiteSpace: 'pre-line', fontSize: '1.05rem', lineHeight: 1.7, fontStyle: mentor.bio?.trim() ? 'normal' : 'italic' }}>
-          {mentor.bio?.trim() || t('profile:no_intro')}
-        </Typography>
-      </Box>
 
       <Box sx={{ mt: 5 }}>
         <ExpertiseSection expertise={expertise} t={t} />

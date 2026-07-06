@@ -1087,15 +1087,18 @@ const mentorshipApi = {
 	},
 
 	filterMentors(params = {}) {
-		return apiClient.get(`${BASE_MENTEE}/mentors/filter`, { params });
+		return apiClient.get(`${BASE_MENTEE}/mentors/filter`, {
+			params,
+			// Repeat array keys without brackets (skillIds=1&skillIds=2) so Spring
+			// binds them to List<Integer>; axios defaults to skillIds[]=1.
+			paramsSerializer: { indexes: null },
+		});
 	},
 
-	getExpertiseTopics() {
-		return apiClient.get(`${BASE_MENTEE}/expertise-topics`);
-	},
-
-	getExpertiseCategories() {
-		return apiClient.get(`${BASE_MENTEE}/expertise-categories`);
+	// Skill catalog: mentors sort/select these tags at signup; the browse page
+	// filters by them (multi-select, %LIKE% search, backed by the "skills" table).
+	searchSkills(params = {}) {
+		return apiClient.get(`${BASE_MENTEE}/skills`, { params });
 	},
 
 	getMentorExpertise(mentorMemberId) {
@@ -1248,8 +1251,7 @@ export const {
 	getMentorProfile,
 	searchMentors,
 	filterMentors,
-	getExpertiseTopics,
-	getExpertiseCategories,
+	searchSkills,
 	getMentorExpertise,
 	getMentorAvailableSlots,
 	getMentorFeedbacks,
