@@ -553,6 +553,9 @@
     "message_hint": "Nhập lời nhắn kết nối…",
     "send_message_btn": "Gửi lời nhắn",
     "connection_request_sent": "Đã gửi lời nhắn kết nối",
+    "message_too_long": "Tin nhắn không được vượt quá {max} ký tự.",
+    "char_count": "{count}/{max}",
+    "char_count_hint": "giới hạn ký tự",
     "program_filter_hint": "VD: Regular, Advanced…",
     "major_filter_hint": "VD: Computer Science…",
     "faculty_filter_label": "Khoa",
@@ -738,7 +741,10 @@
     "file_type_unsupported": "Định dạng file này không được hỗ trợ.",
     "upload_failed": "Tải lên thất bại. Vui lòng thử lại.",
     "attachment_unavailable": "Không thể hiển thị tệp đính kèm",
-    "open_externally": "Mở bằng ứng dụng khác"
+    "open_externally": "Mở bằng ứng dụng khác",
+    "message_too_long": "Tin nhắn không được vượt quá {max} ký tự.",
+    "char_count": "{count}/{max}",
+    "char_count_hint": "giới hạn ký tự"
   },
   "profile": {
     "title": "Hồ sơ",

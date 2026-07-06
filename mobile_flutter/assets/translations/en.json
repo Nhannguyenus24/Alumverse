@@ -553,6 +553,9 @@
     "message_hint": "Enter connection message…",
     "send_message_btn": "Send message",
     "connection_request_sent": "Connection message sent",
+    "message_too_long": "Message must not exceed {max} characters.",
+    "char_count": "{count}/{max}",
+    "char_count_hint": "character limit",
     "program_filter_hint": "e.g. Regular, Advanced…",
     "major_filter_hint": "e.g. Computer Science…",
     "faculty_filter_label": "Faculty",
@@ -738,7 +741,10 @@
     "file_type_unsupported": "This file type is not supported.",
     "upload_failed": "Failed to upload the attachment. Please try again.",
     "attachment_unavailable": "Attachment unavailable",
-    "open_externally": "Open externally"
+    "open_externally": "Open externally",
+    "message_too_long": "Message must not exceed {max} characters.",
+    "char_count": "{count}/{max}",
+    "char_count_hint": "character limit"
   },
   "profile": {
     "title": "Profile",

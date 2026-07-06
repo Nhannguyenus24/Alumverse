@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../../core/constants/chat_limits.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/app_toast.dart';
 import '../../data/models/chat_attachment_upload.dart';
@@ -39,6 +40,7 @@ class _ChatComposerState extends ConsumerState<ChatComposer> {
   final TextEditingController _controller = TextEditingController();
   bool _canSend = false;
   bool _isUploading = false;
+  int _charCount = 0;
 
   @override
   void initState() {
@@ -46,6 +48,9 @@ class _ChatComposerState extends ConsumerState<ChatComposer> {
     _controller.addListener(() {
       final canSend = _controller.text.trim().isNotEmpty;
       if (canSend != _canSend) setState(() => _canSend = canSend);
+      if (_controller.text.length != _charCount) {
+        setState(() => _charCount = _controller.text.length);
+      }
     });
   }
 
@@ -58,6 +63,15 @@ class _ChatComposerState extends ConsumerState<ChatComposer> {
   void _submit() {
     final text = _controller.text.trim();
     if (text.isEmpty || !widget.enabled) return;
+    if (text.length > kMaxChatMessageLength) {
+      AppToast.error(
+        context,
+        'chat.message_too_long'.tr(
+          namedArgs: {'max': '$kMaxChatMessageLength'},
+        ),
+      );
+      return;
+    }
     widget.onSend(text);
     _controller.clear();
   }
@@ -150,6 +164,7 @@ class _ChatComposerState extends ConsumerState<ChatComposer> {
 
   @override
   Widget build(BuildContext context) {
+    final atLengthLimit = _charCount >= kMaxChatMessageLength;
     return SafeArea(
       top: false,
       child: Container(
@@ -158,85 +173,134 @@ class _ChatComposerState extends ConsumerState<ChatComposer> {
           color: AppColors.surface,
           border: Border(top: BorderSide(color: AppColors.divider)),
         ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            IconButton(
-              onPressed: _canAttach ? _openAttachSheet : null,
-              icon:
-                  _isUploading
-                      ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                      : Icon(
-                        Icons.attach_file_rounded,
-                        color:
-                            _canAttach
-                                ? AppColors.textSecondary
-                                : AppColors.secondaryLighter,
+            if (_charCount > kMaxChatMessageLength * 0.8)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4, left: 4),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'chat.char_count'.tr(
+                        namedArgs: {
+                          'count': '$_charCount',
+                          'max': '$kMaxChatMessageLength',
+                        },
                       ),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-            ),
-            const SizedBox(width: 4),
-            IconButton(
-              onPressed:
-                  widget.enabled
-                      ? () => EmojiPickerSheet.show(context, _insertEmoji)
-                      : null,
-              icon: Icon(
-                Icons.emoji_emotions_outlined,
-                color:
-                    widget.enabled
-                        ? AppColors.textSecondary
-                        : AppColors.secondaryLighter,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color:
+                            atLengthLimit
+                                ? AppColors.primary
+                                : AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'chat.char_count_hint'.tr(),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color:
+                            atLengthLimit
+                                ? AppColors.primary
+                                : AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-            ),
-            const SizedBox(width: 4),
-            Expanded(
-              child: TextField(
-                controller: _controller,
-                enabled: widget.enabled,
-                minLines: 1,
-                maxLines: 4,
-                textInputAction: TextInputAction.newline,
-                decoration: InputDecoration(
-                  hintText:
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                IconButton(
+                  onPressed: _canAttach ? _openAttachSheet : null,
+                  icon:
+                      _isUploading
+                          ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                          : Icon(
+                            Icons.attach_file_rounded,
+                            color:
+                                _canAttach
+                                    ? AppColors.textSecondary
+                                    : AppColors.secondaryLighter,
+                          ),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 36,
+                    minHeight: 36,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                IconButton(
+                  onPressed:
                       widget.enabled
-                          ? (widget.hintText ?? 'chat.type_message'.tr())
-                          : 'chat.cannot_send'.tr(),
-                  filled: true,
-                  fillColor: AppColors.background,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 10,
+                          ? () => EmojiPickerSheet.show(context, _insertEmoji)
+                          : null,
+                  icon: Icon(
+                    Icons.emoji_emotions_outlined,
+                    color:
+                        widget.enabled
+                            ? AppColors.textSecondary
+                            : AppColors.secondaryLighter,
                   ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(22),
-                    borderSide: BorderSide.none,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 36,
+                    minHeight: 36,
                   ),
                 ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            CircleAvatar(
-              radius: 22,
-              backgroundColor:
-                  (widget.enabled && _canSend)
-                      ? AppColors.primary
-                      : AppColors.secondaryLighter,
-              child: IconButton(
-                onPressed: (widget.enabled && _canSend) ? _submit : null,
-                icon: const Icon(
-                  Icons.send_rounded,
-                  color: Colors.white,
-                  size: 20,
+                const SizedBox(width: 4),
+                Expanded(
+                  child: TextField(
+                    controller: _controller,
+                    enabled: widget.enabled,
+                    minLines: 1,
+                    maxLines: 4,
+                    maxLength: kMaxChatMessageLength,
+                    textInputAction: TextInputAction.newline,
+                    decoration: InputDecoration(
+                      counterText: '',
+                      hintText:
+                          widget.enabled
+                              ? (widget.hintText ?? 'chat.type_message'.tr())
+                              : 'chat.cannot_send'.tr(),
+                      filled: true,
+                      fillColor: AppColors.background,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(22),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(width: 8),
+                CircleAvatar(
+                  radius: 22,
+                  backgroundColor:
+                      (widget.enabled && _canSend)
+                          ? AppColors.primary
+                          : AppColors.secondaryLighter,
+                  child: IconButton(
+                    onPressed: (widget.enabled && _canSend) ? _submit : null,
+                    icon: const Icon(
+                      Icons.send_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
