@@ -3,8 +3,7 @@ import { filterMentors, getApprovedMentors, searchMentors } from '../../utils/ap
 
 const fetchPage = async ({
   keyword,
-  category,
-  expertise,
+  skillIds,
   minRating,
   hasAvailability,
   availableFrom,
@@ -13,11 +12,9 @@ const fetchPage = async ({
   limit,
 }) => {
   const trimmedKeyword = keyword?.trim();
-  const trimmedCategory = category?.trim();
-  const trimmedExpertise = expertise?.trim();
+  const hasSkillFilter = Array.isArray(skillIds) && skillIds.length > 0;
   const hasAdvanced =
-    Boolean(trimmedCategory) ||
-    Boolean(trimmedExpertise) ||
+    hasSkillFilter ||
     minRating != null ||
     hasAvailability ||
     Boolean(availableFrom) ||
@@ -27,8 +24,7 @@ const fetchPage = async ({
   if (hasAdvanced) {
     res = await filterMentors({
       search: trimmedKeyword || undefined,
-      category: trimmedCategory || undefined,
-      expertise: trimmedExpertise || undefined,
+      skillIds: hasSkillFilter ? skillIds : undefined,
       minRating: minRating ?? undefined,
       hasAvailability: hasAvailability || undefined,
       availableFrom: availableFrom || undefined,
@@ -45,15 +41,14 @@ const fetchPage = async ({
 };
 
 /**
- * params: { keyword?, category?, expertise?, minRating?, hasAvailability?, availableFrom?, availableTo?, page?, limit? }
+ * params: { keyword?, skillIds?, minRating?, hasAvailability?, availableFrom?, availableTo?, page?, limit? }
  * - keyword + no advanced filters → /mentors/search
- * - any advanced filter set (category, expertise, minRating, hasAvailability, time window) → /mentors/filter
+ * - any advanced filter set (skillIds, minRating, hasAvailability, time window) → /mentors/filter
  * - else → /mentors (approved list)
  */
 export const useBrowseMentors = ({
   keyword = '',
-  category = '',
-  expertise = '',
+  skillIds = [],
   minRating = null,
   hasAvailability = false,
   availableFrom = '',
@@ -68,8 +63,7 @@ export const useBrowseMentors = ({
       'browse',
       {
         keyword: keyword.trim(),
-        category: category.trim(),
-        expertise: expertise.trim(),
+        skillIds: [...skillIds].sort(),
         minRating,
         hasAvailability,
         availableFrom,
@@ -81,8 +75,7 @@ export const useBrowseMentors = ({
     queryFn: () =>
       fetchPage({
         keyword,
-        category,
-        expertise,
+        skillIds,
         minRating,
         hasAvailability,
         availableFrom,

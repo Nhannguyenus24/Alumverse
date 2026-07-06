@@ -135,6 +135,9 @@ const AdminMentorshipPage = Loadable(
 const AdminArticlesPage = Loadable(
   lazy(() => import("../pages/admin/AdminArticlesPage")),
 );
+const AdminArticleRequestsPage = Loadable(
+  lazy(() => import("../pages/admin/AdminArticleRequestsPage")),
+);
 const AdminEditArticlePage = Loadable(
   lazy(() => import("../pages/admin/AdminEditArticlePage")),
 );
@@ -143,6 +146,9 @@ const AdminFundraisingsPage = Loadable(
 );
 const AdminFundReceivingInfosPage = Loadable(
   lazy(() => import("../pages/admin/AdminFundReceivingInfosPage")),
+);
+const AdminSystemMonitoringPage = Loadable(
+  lazy(() => import("../pages/admin/AdminSystemMonitoringPage")),
 );
 const AdminAuditLogsPage = Loadable(
   lazy(() => import("../pages/admin/AdminAuditLogsPage")),
@@ -580,6 +586,10 @@ export const router = createBrowserRouter([
             element: <DevelopmentAcademicsPage />,
           },
           {
+            path: "academic",
+            element: <Navigate to="../academics" replace />,
+          },
+          {
             path: "jobs",
             element: <DevelopmentJobsPage />,
           },
@@ -741,6 +751,14 @@ export const router = createBrowserRouter([
             ),
           },
           {
+            path: "monitoring",
+            element: (
+              <ProtectedRoute allowedRoles={["ADMIN"]}>
+                <AdminSystemMonitoringPage />
+              </ProtectedRoute>
+            ),
+          },
+          {
             path: "events/:eventId/organize",
             element: (
               <ProtectedRoute allowedRoles={["ADMIN", "STAFF"]}>
@@ -805,6 +823,18 @@ export const router = createBrowserRouter([
             ),
           },
           {
+            path: "submissions",
+            element: (
+              <ProtectedRoute allowedRoles={["ADMIN", "STAFF", "MODERATOR"]}>
+                <AdminArticleRequestsPage />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: "article-requests",
+            element: <Navigate to="../submissions" replace />,
+          },
+          {
             path: "article/:channel/:id/edit",
             element: (
               <ProtectedRoute allowedRoles={["ADMIN", "STAFF", "MODERATOR"]}>
@@ -848,7 +878,7 @@ export const router = createBrowserRouter([
           {
             path: ":id/edit",
             element: (
-              <ProtectedRoute allowedRoles={["ADMIN"]}>
+              <ProtectedRoute allowedRoles={["ADMIN", "STAFF"]}>
                 <EditDonationPage />
               </ProtectedRoute>
             ),
@@ -1020,6 +1050,14 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        path: "monitoring",
+        element: (
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminSystemMonitoringPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
         path: "events/:eventId/organize",
         element: (
           <ProtectedRoute allowedRoles={["ADMIN"]}>
@@ -1082,6 +1120,18 @@ export const router = createBrowserRouter([
             <AdminArticlesPage />
           </ProtectedRoute>
         ),
+      },
+      {
+        path: "submissions",
+        element: (
+          <ProtectedRoute allowedRoles={["ADMIN", "MODERATOR"]}>
+            <AdminArticleRequestsPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "article-requests",
+        element: <Navigate to="../submissions" replace />,
       },
       {
         path: "article/:channel/:id/edit",

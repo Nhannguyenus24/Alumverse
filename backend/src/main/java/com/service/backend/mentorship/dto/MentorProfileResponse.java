@@ -25,7 +25,6 @@ public class MentorProfileResponse {
     private String status;
     private String reviewNote;
     private LocalDateTime reviewedAt;
-    private String coverUrl;
     private String defaultMeetingLink;
     private String bookingWindowSettings;
     private String extendedProfile;
@@ -36,6 +35,9 @@ public class MentorProfileResponse {
     private String avatarUrl;
 
     private List<String> expertiseTopics;
+
+    /** Priority-ordered normalized skill tags from the skills catalog (mentor_skills). */
+    private List<String> expertiseTags;
 
     public static MentorProfileResponse from(MentorProfile profile) {
         return MentorProfileResponse.builder()
@@ -48,7 +50,6 @@ public class MentorProfileResponse {
                 .status(profile.getStatus() != null ? profile.getStatus().getValue() : null)
                 .reviewNote(profile.getReviewNote())
                 .reviewedAt(profile.getReviewedAt())
-                .coverUrl(profile.getCoverUrl())
                 .defaultMeetingLink(profile.getDefaultMeetingLink())
                 .bookingWindowSettings(profile.getBookingWindowSettings())
                 .extendedProfile(profile.getExtendedProfile())

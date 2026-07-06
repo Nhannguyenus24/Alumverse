@@ -176,8 +176,8 @@ public class UserService {
                 });
     }
 
-    public Mono<UserProfileResponse> getMyProfile(Long currentUserId) {
-        return userProfileRepository.findProfileByUserId(currentUserId.intValue())
+    public Mono<UserProfileResponse> getMyProfile(Long currentUserId, Integer organizationId) {
+        return userProfileRepository.findProfileByUserId(currentUserId.intValue(), organizationId)
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(
                         ErrorCode.USER_NOT_FOUND,
                         "User not found with id: " + currentUserId))))
@@ -203,8 +203,8 @@ public class UserService {
                 .doOnSuccess(v -> logger.info("changeMyPassword: userId={} password changed", userId));
     }
 
-    public Mono<UserProfileResponse> getPublicProfile(Integer userId) {
-        return userProfileRepository.findProfileByUserId(userId)
+    public Mono<UserProfileResponse> getPublicProfile(Integer userId, Integer organizationId) {
+        return userProfileRepository.findProfileByUserId(userId, organizationId)
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(
                         ErrorCode.USER_NOT_FOUND,
                         "User not found with id: " + userId))))
@@ -274,7 +274,9 @@ public class UserService {
         Integer userId = currentUserId.intValue();
 
         Mono<Integer> updateGlobalProfile = userProfileRepository
-                .upsertProfileInfo(userId, request.getPhone(), request.getGender(), request.getBio());
+                .upsertProfileInfo(userId, request.getPhone(), request.getGender(), request.getBio(),
+                        request.getCurrentJobTitle(), request.getCurrentCompany(),
+                        request.getLinks() != null ? JsonUtils.toJson(request.getLinks()) : null);
 
         Mono<Integer> updateOrganizationMember = userOrganizationMemberRepository
                 .updateAcademicProfileByOrganizationAndUserId(
@@ -308,6 +310,18 @@ public class UserService {
         }
         return authRepository.updateAvatarById(currentUserId.intValue(), avatarUrl.trim())
                 .doOnSuccess(v -> logger.info("updateMyAvatar: userId={} updated", currentUserId));
+    }
+
+    /**
+     * Update the current user's cover. The caller uploads the image via
+     * {@code POST /api/images/upload} and passes the returned URL here.
+     */
+    public Mono<Void> updateMyCover(Long currentUserId, String coverUrl) {
+        if (coverUrl == null || coverUrl.isBlank()) {
+            return Mono.error(new ApplicationException(ErrorCode.BAD_REQUEST, "Cover URL is required"));
+        }
+        return authRepository.updateCoverById(currentUserId.intValue(), coverUrl.trim())
+                .doOnSuccess(v -> logger.info("updateMyCover: userId={} updated", currentUserId));
     }
 
     public Mono<UserOrganizationMemberResponse> getMyOrganizationMember(Long currentUserId, Integer organizationId) {

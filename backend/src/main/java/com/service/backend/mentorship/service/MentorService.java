@@ -42,6 +42,7 @@ public class MentorService {
     private final UserProfileRepository userProfileRepository;
     private final MentorshipAccessService accessService;
     private final NotificationService notificationService;
+    private final SkillService skillService;
 
     private Mono<Integer> currentMemberId() {
         return SecurityUtils.getCurrentUserId().map(Long::intValue);
@@ -110,10 +111,13 @@ public class MentorService {
                 .map(MentorExpertise::getTopic)
                 .filter(topic -> topic != null && !topic.isBlank())
                 .collectList();
-        return Mono.zip(displayMono, topicsMono)
+        Mono<List<String>> tagsMono = skillService.getMentorSkills(single.getMemberId())
+                .map(list -> list.stream().map(com.service.backend.mentorship.dto.SkillResponse::getName).toList());
+        return Mono.zip(displayMono, topicsMono, tagsMono)
                 .map(tuple -> {
                     MentorProfileResponse profile = tuple.getT1();
                     profile.setExpertiseTopics(tuple.getT2());
+                    profile.setExpertiseTags(tuple.getT3());
                     return profile;
                 });
     }
@@ -144,7 +148,6 @@ public class MentorService {
                             if (request.getCurrentJobTitle() != null) existing.setCurrentJobTitle(request.getCurrentJobTitle());
                             if (request.getCurrentCompany() != null) existing.setCurrentCompany(request.getCurrentCompany());
                             if (request.getBio() != null) existing.setBio(request.getBio());
-                            if (request.getCoverUrl() != null) existing.setCoverUrl(request.getCoverUrl());
                             if (request.getDefaultMeetingLink() != null) existing.setDefaultMeetingLink(request.getDefaultMeetingLink());
                             if (request.getBookingWindowSettings() != null) existing.setBookingWindowSettings(request.getBookingWindowSettings());
                             if (request.getExtendedProfile() != null) existing.setExtendedProfile(request.getExtendedProfile());
@@ -168,7 +171,6 @@ public class MentorService {
                                     .ratingAvg(java.math.BigDecimal.ZERO)
                                     .totalSessions(0)
                                     .status(targetStatus)
-                                    .coverUrl(request.getCoverUrl())
                                     .defaultMeetingLink(request.getDefaultMeetingLink())
                                     .bookingWindowSettings(request.getBookingWindowSettings())
                                     .extendedProfile(request.getExtendedProfile())
@@ -178,8 +180,13 @@ public class MentorService {
                             return userProfileRepository.updateUserAvatar(memberId, request.getAvatarUrl())
                                     .then(profileRepository.save(profile));
                         }))
+                        .flatMap(saved -> applyExpertiseTags(memberId, request.getExpertiseTags()).thenReturn(saved))
                         .map(MentorProfileResponse::from)
                         .flatMap(this::attachProfileDisplay));
+    }
+
+    private Mono<Void> applyExpertiseTags(Integer memberId, java.util.List<String> expertiseTags) {
+        return expertiseTags == null ? Mono.empty() : skillService.replaceMentorSkills(memberId, expertiseTags);
     }
 
     public Mono<MentorProfileResponse> updateProfile(UpdateMentorProfileRequest request) {
@@ -190,7 +197,6 @@ public class MentorService {
                             if (request.getCurrentJobTitle() != null) existing.setCurrentJobTitle(request.getCurrentJobTitle());
                             if (request.getCurrentCompany() != null) existing.setCurrentCompany(request.getCurrentCompany());
                             if (request.getBio() != null) existing.setBio(request.getBio());
-                            if (request.getCoverUrl() != null) existing.setCoverUrl(request.getCoverUrl());
                             if (request.getDefaultMeetingLink() != null) existing.setDefaultMeetingLink(request.getDefaultMeetingLink());
                             if (request.getBookingWindowSettings() != null) existing.setBookingWindowSettings(request.getBookingWindowSettings());
                             if (request.getExtendedProfile() != null) existing.setExtendedProfile(request.getExtendedProfile());
@@ -198,6 +204,7 @@ public class MentorService {
                             return userProfileRepository.updateUserAvatar(memberId, request.getAvatarUrl())
                                     .then(profileRepository.save(existing));
                         })
+                        .flatMap(saved -> applyExpertiseTags(memberId, request.getExpertiseTags()).thenReturn(saved))
                         .map(MentorProfileResponse::from)
                         .flatMap(this::attachProfileDisplay));
     }

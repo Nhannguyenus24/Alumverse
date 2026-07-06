@@ -27,8 +27,7 @@ export default function DonationListFilters({
         sx={{
           minWidth: { xs: "100%", md: 200 },
           "& .MuiOutlinedInput-root": {
-            borderRadius: 999,
-            backgroundColor: "#ffffff",
+            backgroundColor: "background.paper",
           },
         }}
       >
@@ -51,14 +50,13 @@ export default function DonationListFilters({
         }}
         sx={{
           "& .MuiOutlinedInput-root": {
-            borderRadius: 999,
-            backgroundColor: "#ffffff",
+            backgroundColor: "background.paper",
           },
         }}
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
-              <SearchIcon sx={{ color: "#6b7f9f" }} />
+              <SearchIcon sx={{ color: "text.secondary" }} />
             </InputAdornment>
           ),
         }}

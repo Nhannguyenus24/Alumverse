@@ -14,6 +14,12 @@ public class UpdateMyProfileRequest {
 
     private String bio;
 
+    private String currentJobTitle;
+
+    private String currentCompany;
+
+    private List<String> links;
+
     @NotNull(message = "Organization ID is required")
     @Min(value = 1, message = "Organization ID must be greater than 0")
     private Integer organizationId;

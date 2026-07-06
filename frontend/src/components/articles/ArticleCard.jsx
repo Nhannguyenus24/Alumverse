@@ -2,6 +2,7 @@ import { Box, Typography, Button, Stack } from '@mui/material';
 import { useState } from 'react';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import LinkIcon from '@mui/icons-material/Link';
 import { useTranslation } from 'react-i18next';
 
 const ArticleCard = ({ article, isAdmin = false, onEdit }) => {
@@ -81,9 +82,26 @@ const ArticleCard = ({ article, isAdmin = false, onEdit }) => {
           {article.description}
         </Typography>
 
-        <Typography variant="caption" color="text.secondary">
-          {article.date}
-        </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="caption" color="text.secondary">
+            {article.date}
+          </Typography>
+          {article.url && (
+            <Button
+              size="small"
+              variant="text"
+              color="primary"
+              endIcon={<LinkIcon />}
+              onClick={(e) => {
+                e.stopPropagation();
+                window.open(article.url, '_blank', 'noopener,noreferrer');
+              }}
+              sx={{ textTransform: 'none', fontWeight: 600, minWidth: 'auto', p: 0.5 }}
+            >
+              {t('common:link', 'Link')}
+            </Button>
+          )}
+        </Box>
 
         {/* Spacer đẩy buttons xuống đáy */}
         <Box sx={{ flex: 1 }} />

@@ -55,12 +55,16 @@ public interface UserProfileRepository extends R2dbcRepository<User, Integer> {
                    u.role,
                    u.status,
                    u.avatar_url,
+                   u.cover_url,
                    u.created_at,
                    u.full_name,
                    u.phone,
                    u.bio,
                    u.dob,
                    u.gender,
+                   u.current_job_title,
+                   u.current_company,
+                   CAST(u.links AS text) AS links,
                    u.updated_at AS profile_updated_at,
                    CAST(om.started_year AS text) AS started_year,
                    CAST(om.graduated_year AS text) AS graduated_year,
@@ -70,10 +74,11 @@ public interface UserProfileRepository extends R2dbcRepository<User, Integer> {
                    CAST(om.faculty AS text) AS faculty,
                    CAST(om.department AS text) AS department
             FROM users u
-            LEFT JOIN organization_members om ON om.user_id = u.id
+            LEFT JOIN organization_members om ON om.user_id = u.id AND (:organizationId IS NULL OR om.organization_id = :organizationId)
             WHERE u.id = :userId
+            LIMIT 1
             """)
-    Mono<UserProfileResponse> findProfileByUserId(@Param("userId") Integer userId);
+    Mono<UserProfileResponse> findProfileByUserId(@Param("userId") Integer userId, @Param("organizationId") Integer organizationId);
 
     @Modifying
     @Query("""
@@ -81,6 +86,9 @@ public interface UserProfileRepository extends R2dbcRepository<User, Integer> {
             SET phone = COALESCE(:phone, phone),
                 gender = COALESCE(:gender, gender),
                 bio = COALESCE(:bio, bio),
+                current_job_title = COALESCE(:currentJobTitle, current_job_title),
+                current_company = COALESCE(:currentCompany, current_company),
+                links = COALESCE(CAST(:links AS json), links),
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = :userId
             """)
@@ -88,7 +96,10 @@ public interface UserProfileRepository extends R2dbcRepository<User, Integer> {
             @Param("userId") Integer userId,
             @Param("phone") String phone,
             @Param("gender") String gender,
-            @Param("bio") String bio);
+            @Param("bio") String bio,
+            @Param("currentJobTitle") String currentJobTitle,
+            @Param("currentCompany") String currentCompany,
+            @Param("links") String links);
 
     @Modifying
     @Query("UPDATE users SET avatar_url = :avatarUrl WHERE id = :userId")

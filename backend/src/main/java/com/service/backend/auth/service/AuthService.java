@@ -422,8 +422,13 @@ public class AuthService {
                 .flatMap(user -> {
                     // Allow switching to any organization. Membership is not required:
                     // non-members simply receive verificationLevel 0 (guest) for that org.
-                    jwtUtils.revokeRefreshToken(refreshToken);
-
+                    //
+                    // Do NOT revoke the incoming refresh token here. Switching org can race
+                    // with the client's auto-refresh machinery (and StrictMode/double calls),
+                    // which may still present the old refresh token; revoking it mid-session
+                    // turns those concurrent /auth/refresh calls into 401s and force-logs the
+                    // user out. Like /auth/refresh, we just issue new tokens and let the old
+                    // refresh token expire naturally.
                     long expiration = 604800000L;
                     String newAccessToken = jwtUtils.generateAccessToken(user, newOrganizationId);
                     String newRefreshToken = jwtUtils.generateRefreshToken(user.getId(), newOrganizationId, expiration);

@@ -23,6 +23,8 @@ import PersonIcon from '@mui/icons-material/Person';
 import EmailIcon from '@mui/icons-material/Email'
 import PhoneIcon from '@mui/icons-material/Phone';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
+import WorkIcon from '@mui/icons-material/Work';
+import LinkIcon from '@mui/icons-material/Link';
 import Avatar from '@mui/material/Avatar';
 
 import Page from '../../components/Page';
@@ -214,6 +216,7 @@ const UnifiedProfileEditPage = () => {
   const [success, setSuccess] = useState(false);
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [linksText, setLinksText] = useState('');
 
   const [editingExpertiseId, setEditingExpertiseId] = useState(null);
   const [draftExpertise, setDraftExpertise] = useState({
@@ -246,6 +249,9 @@ const UnifiedProfileEditPage = () => {
 
       setCoverPreview(m?.coverUrl || (isMentorshipEdit ? MENTORSHIP_COVER : DEFAULT_COVER));
       setCoverFile(null);
+      let parsedLinks = [];
+      try { parsedLinks = p?.links ? JSON.parse(p.links) : []; } catch (e) {}
+      setLinksText(Array.isArray(parsedLinks) ? parsedLinks.join('\n') : '');
       
       const extStr = m?.extendedProfile ?? p?.extendedProfile;
       const ext = parseExtended(extStr);
@@ -353,10 +359,14 @@ const UnifiedProfileEditPage = () => {
       }
       
       // Also update base profile (even if it ignores some fields, we send what we can)
+      const linksArray = linksText.split('\n').map(l => l.trim()).filter(Boolean);
       await updateBaseProfile({
         ...(organizationId ? { organizationId } : {}),
         bio: bio.trim(),
         phone: phone.trim() || undefined,
+        currentJobTitle: currentJobTitle.trim() || undefined,
+        currentCompany: currentCompany.trim() || undefined,
+        links: linksArray.length > 0 ? linksArray : null,
         ...buildPreservedAcademicPayload(orgMemberQuery.data),
       });
 
@@ -521,6 +531,40 @@ const UnifiedProfileEditPage = () => {
         helperText={`${bio.length}/500`}
         FormHelperTextProps={{ sx: { textAlign: 'right', mr: 0 } }}
       />
+      
+      <Typography variant="h5" fontWeight={800} color="primary.main" mb={2} mt={4} display="flex" alignItems="center" gap={1}>
+        <WorkIcon />
+        {t('profile:job_info', { defaultValue: 'Thông tin công việc' })}
+      </Typography>
+      
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+        <TextField
+          label={t('profile:label_title')}
+          value={currentJobTitle}
+          onChange={(e) => setCurrentJobTitle(e.target.value)}
+          fullWidth
+        />
+        <TextField
+          label={t('profile:label_company')}
+          value={currentCompany}
+          onChange={(e) => setCurrentCompany(e.target.value)}
+          fullWidth
+        />
+      </Stack>
+
+      <Typography variant="h5" fontWeight={800} color="primary.main" mb={2} mt={4} display="flex" alignItems="center" gap={1}>
+        <LinkIcon />
+        {t('profile:social_links', { defaultValue: 'Liên kết mạng xã hội' })}
+      </Typography>
+      <TextField
+        fullWidth
+        multiline
+        minRows={3}
+        value={linksText}
+        onChange={(e) => setLinksText(e.target.value)}
+        placeholder={t('profile:links_placeholder', { defaultValue: 'Mỗi link một dòng (VD: https://facebook.com/...)' })}
+      />
+
       <Typography variant="h5" fontWeight={800} color="primary.main" mb={2} mt={4} display="flex" alignItems="center" gap={1}>
         <EmailIcon />
         {t('profile:email')}
@@ -592,22 +636,6 @@ const UnifiedProfileEditPage = () => {
           {t('profile:section_public_profile')}
         </SectionTitle>
         <Stack spacing={2}>
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
-            <TextField
-              label={t('profile:label_title')}
-              value={currentJobTitle}
-              onChange={(e) => setCurrentJobTitle(e.target.value)}
-              fullWidth
-              size="small"
-            />
-            <TextField
-              label={t('profile:label_company')}
-              value={currentCompany}
-              onChange={(e) => setCurrentCompany(e.target.value)}
-              fullWidth
-              size="small"
-            />
-          </Stack>
           <TextField
             label={t('profile:mentor_public_bio_label', { defaultValue: 'Giới thiệu cố vấn' })}
             value={mentorBio}

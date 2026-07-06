@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Box, Button, Pagination, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
@@ -15,35 +15,14 @@ import { useAuth } from '../../hooks/useAuth';
 import { useSnackbar } from 'notistack';
 import apiClient from '../../utils/axios';
 import { deleteArticleByChannel, getArticleAdminEditPath } from '../../utils/articleAdminActions';
+import {
+  ARTICLE_FETCH_LIMIT,
+  ARTICLE_PAGE_SIZE,
+  applyArticleFilters,
+  getArticleFilterConfig,
+  paginateArticles,
+} from '../../utils/articleListFilters';
 import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
-
-
-const getNewsFilters = (t) => [
-  {
-    type: 'dropdown',
-    key: 'type',
-    label: t('article:filter_topic'),
-    multiple: true,
-    options: [
-      t('article:opt_academic'),
-      t('article:opt_student'),
-      t('article:opt_school_event'),
-      t('article:opt_community'),
-      t('article:opt_announcement'),
-    ],
-  },
-  {
-    type: 'date',
-    key: 'date',
-    label: t('article:filter_date'),
-  },
-  {
-    type: 'topics',
-    key: 'topics',
-    label: t('article:filter_topic'),
-    options: [t('article:opt_trending'), t('article:opt_newest'), t('article:opt_interested')],
-  },
-];
 
 const ActivitiesPage = () => {
   const { t } = useTranslation(['nav', 'article']);
@@ -52,14 +31,21 @@ const ActivitiesPage = () => {
   const queryClient = useQueryClient();
 
   const [page, setPage] = useState(0);
-  const { news: rawNews, pageInfo } = usePublishedNews(page, 10);
+  const { news: rawNews } = usePublishedNews(0, ARTICLE_FETCH_LIMIT);
 
   const [filters, setFilters] = useState({ all: true });
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
-  const normalized = rawNews.map(normalizeNews);
-  const [featured, ...rest] = normalized;
+  const filterConfig = useMemo(() => getArticleFilterConfig(t, ['news']), [t]);
+  const normalized = useMemo(() => rawNews.map(normalizeNews).filter(Boolean), [rawNews]);
+  const filteredNews = useMemo(() => applyArticleFilters(normalized, filters), [normalized, filters]);
+  const { items: pageNews, pageInfo } = useMemo(
+    () => paginateArticles(filteredNews, page, ARTICLE_PAGE_SIZE),
+    [filteredNews, page],
+  );
+
+  const [featured, ...rest] = pageNews;
   const featuredCard = featured ? toCardShape(featured) : null;
   const suggestionCards = rest.slice(0, 3).map(toCardShape);
   const dailyCards = rest.slice(3, 6).map(toCardShape);
@@ -114,13 +100,19 @@ const ActivitiesPage = () => {
         </Button>
       )}
       filters={{
-        config: getNewsFilters(t),
+        config: filterConfig,
         value: filters,
-        onChange: setFilters,
+        onChange: (next) => {
+          setFilters(next);
+          setPage(0);
+        },
       }}
       search={{
         value: filters.search,
-        onChange: (val) => setFilters((prev) => ({ ...prev, search: val })),
+        onChange: (val) => {
+          setFilters((prev) => ({ ...prev, search: val }));
+          setPage(0);
+        },
       }}
     >
               {/* FEATURED ARTICLE */}

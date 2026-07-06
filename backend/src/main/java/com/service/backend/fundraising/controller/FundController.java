@@ -4,6 +4,7 @@ import com.service.backend.fundraising.dto.CreateFundRequest;
 import com.service.backend.fundraising.dto.FundDetailResponse;
 import com.service.backend.fundraising.dto.FundListItemResponse;
 import com.service.backend.fundraising.dto.UpdateFundRequest;
+import com.service.backend.fundraising.dto.UpdateFundBasicInfoRequest;
 import com.service.backend.fundraising.dto.FundStatisticsResponse;
 import com.service.backend.fundraising.dto.SupportedBanksResponse;
 import com.service.backend.shared.entity.Funds;
@@ -36,7 +37,7 @@ public class FundController {
     private final FundService fundService;
 
     @PrivateEndpoint
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public Mono<ResponseEntity<ApiResponse<Funds>>> createFund(
             @Valid @RequestBody CreateFundRequest request) {
@@ -94,7 +95,7 @@ public class FundController {
     }
 
     @PrivateEndpoint
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{fundId}")
     // co the update 1 field hoac nhieu field trong {name, manager_name, description_short, description_full, logoUrl, organizationId}
     public Mono<ResponseEntity<ApiResponse<Funds>>> updateFund(
@@ -109,6 +110,17 @@ public class FundController {
 
     @PrivateEndpoint
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    @PatchMapping("/{fundId}/basic-info")
+    public Mono<ResponseEntity<ApiResponse<Funds>>> updateFundBasicInfo(
+            @PathVariable @Min(1) Long fundId,
+            @Valid @RequestBody UpdateFundBasicInfoRequest request) {
+        return fundService.updateFundBasicInfo(fundId, request)
+                .map(updated -> ResponseEntity.ok(
+                        new ApiResponse<>("Fund basic info updated successfully", updated)));
+    }
+
+    @PrivateEndpoint
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{fundId}/close")
     public Mono<ResponseEntity<ApiResponse<Funds>>> closeFund(
             @PathVariable @Min(1) Long fundId

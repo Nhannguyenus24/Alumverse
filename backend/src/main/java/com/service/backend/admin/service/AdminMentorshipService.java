@@ -328,7 +328,6 @@ public class AdminMentorshipService {
                 .status(p.getStatus() != null ? p.getStatus().getValue() : null)
                 .reviewNote(p.getReviewNote())
                 .reviewedAt(p.getReviewedAt())
-                .coverUrl(p.getCoverUrl())
                 .createdAt(p.getCreatedAt())
                 .updatedAt(p.getUpdatedAt())
                 .build();

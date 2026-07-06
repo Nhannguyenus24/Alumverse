@@ -10,6 +10,7 @@ import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
 import EventOutlinedIcon from "@mui/icons-material/EventOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import LinkIcon from "@mui/icons-material/Link";
 import Page from "../../components/Page";
 import { useArticleById } from "../../hooks/articles/useArticleById";
 import DOMPurify from "dompurify";
@@ -452,9 +453,23 @@ const ArticlePage = () => {
 
               {/* Date */}
               {article.publishedAt && (
-                <Typography variant="body2" sx={{ textAlign: "center", color: "text.secondary", mb: { xs: 5, md: 6 } }}>
+                <Typography variant="body2" sx={{ textAlign: "center", color: "text.secondary", mb: (article.url || article.linkUrl) ? 2 : { xs: 5, md: 6 } }}>
                   {formatDate(article.publishedAt)}
                 </Typography>
+              )}
+
+              {/* URL / External Link */}
+              {(article.url || article.linkUrl) && (
+                <Box sx={{ display: "flex", justifyContent: "center", mb: { xs: 5, md: 6 } }}>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    startIcon={<LinkIcon />}
+                    onClick={() => window.open(article.url || article.linkUrl, '_blank', 'noopener,noreferrer')}
+                  >
+                    {t('article:visit_link', 'Truy cập liên kết gốc')}
+                  </Button>
+                </Box>
               )}
 
               {/* HIGHLIGHT */}

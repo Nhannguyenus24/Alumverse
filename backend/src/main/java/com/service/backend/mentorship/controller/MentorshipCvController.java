@@ -8,6 +8,8 @@ import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.service.CvExtractionService;
 import com.service.backend.shared.service.FileUploadService;
 import com.service.backend.shared.service.OCRService;
+import com.service.backend.shared.service.SkillExtractionFallback;
+import com.service.backend.shared.service.SkillExtractionService;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -33,6 +35,7 @@ public class MentorshipCvController {
     private final FileUploadService fileUploadService;
     private final OCRService ocrService;
     private final CvExtractionService cvExtractionService;
+    private final SkillExtractionService skillExtractionService;
 
     @PostMapping("/extract")
     public Mono<ResponseEntity<ApiResponse<CvExtractionResponse>>> extractCv(
@@ -44,11 +47,26 @@ public class MentorshipCvController {
                 .flatMap(fileUrl -> {
                     String localPath = fileUploadService.getLocalPath(fileUrl);
                     return ocrService.extractTextFromFile(localPath)
-                            .flatMap(text -> Mono.fromCallable(() -> cvExtractionService.extractProfile(text))
-                                    .subscribeOn(Schedulers.boundedElastic()))
-                            .map(profile -> ResponseEntity.ok(
-                                    new ApiResponse<>("CV parsed successfully", profile)));
+                            .flatMap(text -> Mono.zip(
+                                            Mono.fromCallable(() -> cvExtractionService.extractProfile(text))
+                                                    .subscribeOn(Schedulers.boundedElastic()),
+                                            extractTags(text))
+                                    .map(tuple -> {
+                                        CvExtractionResponse profile = tuple.getT1();
+                                        profile.setExpertiseTags(tuple.getT2());
+                                        return ResponseEntity.ok(
+                                                new ApiResponse<>("CV parsed successfully", profile));
+                                    }));
                 })
                 .doOnError(e -> log.error("CV extraction failed: {}", e.getMessage()));
+    }
+
+    private Mono<java.util.List<String>> extractTags(String text) {
+        return Mono.fromCallable(() -> skillExtractionService.extractTags(text))
+                .subscribeOn(Schedulers.boundedElastic())
+                .map(result -> result != null && result.getTags() != null && !result.getTags().isEmpty()
+                        ? result.getTags()
+                        : SkillExtractionFallback.extract(text).getTags())
+                .onErrorResume(e -> Mono.just(SkillExtractionFallback.extract(text).getTags()));
     }
 }

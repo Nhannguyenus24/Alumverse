@@ -33,6 +33,7 @@ import VolunteerActivismIcon from "@mui/icons-material/VolunteerActivism";
 import GroupIcon from "@mui/icons-material/Group";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "../../hooks/useAuth";
 import { useAdminSystemContext } from "../../stores/AdminStore";
 import { fundApi } from "../../utils/api";
 import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
@@ -56,6 +57,8 @@ const AdminFundraisingsPage = () => {
   const { t } = useTranslation("admin");
   const { setBreadcrumbs } = useOutletContext();
   const { stableOrgId, activeOrganization } = useAdminSystemContext();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "ADMIN";
 
   // Trạng thái quỹ được suy ra hoàn toàn từ thời gian bắt đầu/kết thúc.
   const getFundPhase = (timeStarted, timeEnded) => {
@@ -292,25 +295,27 @@ const AdminFundraisingsPage = () => {
               <EditOutlinedIcon fontSize="small" />
             </IconButton>
           </Tooltip>
-          {getFundPhase(fund.timeStarted, fund.timeEnded).status !== "ENDED" ? (
-            <Tooltip title={t('fund_action_close')}>
-              <IconButton
-                size="small"
-                sx={{
-                  color: "#f2cd3c",
-                  "&:hover": {
-                    backgroundColor: "rgba(242, 205, 60, 0.08)",
-                  },
-                }}
-                onClick={() => setCloseTarget(fund)}
-              >
+          {isAdmin && (
+            getFundPhase(fund.timeStarted, fund.timeEnded).status !== "ENDED" ? (
+              <Tooltip title={t('fund_action_close')}>
+                <IconButton
+                  size="small"
+                  sx={{
+                    color: "#f2cd3c",
+                    "&:hover": {
+                      backgroundColor: "rgba(242, 205, 60, 0.08)",
+                    },
+                  }}
+                  onClick={() => setCloseTarget(fund)}
+                >
+                  <LockOutlinedIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            ) : (
+              <IconButton size="small" disabled sx={{ visibility: "hidden" }}>
                 <LockOutlinedIcon fontSize="small" />
               </IconButton>
-            </Tooltip>
-          ) : (
-            <IconButton size="small" disabled sx={{ visibility: "hidden" }}>
-              <LockOutlinedIcon fontSize="small" />
-            </IconButton>
+            )
           )}
         </Stack>
       ),
@@ -339,13 +344,15 @@ const AdminFundraisingsPage = () => {
             {t('fund_page_subtitle')}
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddOutlinedIcon />}
-          onClick={() => navigate(`/${getOrgSlug()}/post/donation`)}
-        >
-          {t('fund_btn_create')}
-        </Button>
+        {isAdmin && (
+          <Button
+            variant="contained"
+            startIcon={<AddOutlinedIcon />}
+            onClick={() => navigate(`/${getOrgSlug()}/post/donation`)}
+          >
+            {t('fund_btn_create')}
+          </Button>
+        )}
       </Box>
 
       <Box

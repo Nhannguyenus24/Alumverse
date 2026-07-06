@@ -10,6 +10,7 @@ import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Repository
 public interface MentorProfileR2dbcRepository extends ReactiveCrudRepository<MentorProfile, Integer> {
@@ -40,10 +41,9 @@ public interface MentorProfileR2dbcRepository extends ReactiveCrudRepository<Men
 
     @Query("SELECT DISTINCT mp.member_id, mp.current_job_title, mp.current_company, mp.bio, " +
             "mp.rating_avg, mp.total_sessions, mp.status, mp.review_note, mp.reviewed_at, " +
-            "mp.reviewed_by, mp.cover_url, mp.default_meeting_link, mp.booking_window_settings, " +
+            "mp.reviewed_by, mp.default_meeting_link, mp.booking_window_settings, " +
             "mp.extended_profile, mp.created_at, mp.updated_at " +
             "FROM mentor_profiles mp " +
-            "LEFT JOIN mentor_expertise me ON mp.member_id = me.mentor_member_id " +
             "LEFT JOIN mentor_availabilities ma ON mp.member_id = ma.mentor_member_id " +
             "LEFT JOIN organization_members om ON mp.member_id = om.user_id " +
             "LEFT JOIN users gp ON gp.id = om.user_id " +
@@ -52,20 +52,19 @@ public interface MentorProfileR2dbcRepository extends ReactiveCrudRepository<Men
             "     OR LOWER(mp.current_company) LIKE LOWER(CONCAT('%', :search, '%')) " +
             "     OR LOWER(mp.bio) LIKE LOWER(CONCAT('%', :search, '%')) " +
             "     OR LOWER(gp.full_name) LIKE LOWER(CONCAT('%', :search, '%'))) " +
-            "AND (:category IS NULL OR LOWER(me.category) = LOWER(:category)) " +
-            "AND (:expertise IS NULL OR LOWER(me.topic) LIKE LOWER(CONCAT('%', :expertise, '%'))) " +
+            "AND (:hasSkillFilter = false OR mp.member_id IN " +
+            "     (SELECT ms.mentor_member_id FROM mentor_skills ms WHERE ms.skill_id IN (:skillIds))) " +
             "AND (:minRating IS NULL OR mp.rating_avg >= :minRating) " +
             "AND (:hasAvailability = false OR (ma.status = 'AVAILABLE' AND ma.start_time > NOW())) " +
             "AND (:availableFrom IS NULL OR (ma.status = 'AVAILABLE' AND ma.end_time > :availableFrom)) " +
             "AND (:availableTo IS NULL OR (ma.status = 'AVAILABLE' AND ma.start_time < :availableTo)) " +
             "ORDER BY mp.rating_avg DESC LIMIT :limit OFFSET :offset")
-    Flux<MentorProfile> filterMentors(String search, String category, String expertise, BigDecimal minRating,
+    Flux<MentorProfile> filterMentors(String search, boolean hasSkillFilter, List<Integer> skillIds, BigDecimal minRating,
                                       boolean hasAvailability,
                                       LocalDateTime availableFrom, LocalDateTime availableTo,
                                       int limit, int offset);
 
     @Query("SELECT COUNT(DISTINCT mp.member_id) FROM mentor_profiles mp " +
-            "LEFT JOIN mentor_expertise me ON mp.member_id = me.mentor_member_id " +
             "LEFT JOIN mentor_availabilities ma ON mp.member_id = ma.mentor_member_id " +
             "LEFT JOIN organization_members om ON mp.member_id = om.user_id " +
             "LEFT JOIN users gp ON gp.id = om.user_id " +
@@ -74,19 +73,19 @@ public interface MentorProfileR2dbcRepository extends ReactiveCrudRepository<Men
             "     OR LOWER(mp.current_company) LIKE LOWER(CONCAT('%', :search, '%')) " +
             "     OR LOWER(mp.bio) LIKE LOWER(CONCAT('%', :search, '%')) " +
             "     OR LOWER(gp.full_name) LIKE LOWER(CONCAT('%', :search, '%'))) " +
-            "AND (:category IS NULL OR LOWER(me.category) = LOWER(:category)) " +
-            "AND (:expertise IS NULL OR LOWER(me.topic) LIKE LOWER(CONCAT('%', :expertise, '%'))) " +
+            "AND (:hasSkillFilter = false OR mp.member_id IN " +
+            "     (SELECT ms.mentor_member_id FROM mentor_skills ms WHERE ms.skill_id IN (:skillIds))) " +
             "AND (:minRating IS NULL OR mp.rating_avg >= :minRating) " +
             "AND (:hasAvailability = false OR (ma.status = 'AVAILABLE' AND ma.start_time > NOW())) " +
             "AND (:availableFrom IS NULL OR (ma.status = 'AVAILABLE' AND ma.end_time > :availableFrom)) " +
             "AND (:availableTo IS NULL OR (ma.status = 'AVAILABLE' AND ma.start_time < :availableTo))")
-    Mono<Long> countFilterMentors(String search, String category, String expertise, BigDecimal minRating,
+    Mono<Long> countFilterMentors(String search, boolean hasSkillFilter, List<Integer> skillIds, BigDecimal minRating,
                                   boolean hasAvailability,
                                   LocalDateTime availableFrom, LocalDateTime availableTo);
 
     @Query("SELECT DISTINCT mp.member_id, mp.current_job_title, mp.current_company, mp.bio, " +
             "mp.rating_avg, mp.total_sessions, mp.status, mp.review_note, mp.reviewed_at, " +
-            "mp.reviewed_by, mp.cover_url, mp.default_meeting_link, mp.booking_window_settings, " +
+            "mp.reviewed_by, mp.default_meeting_link, mp.booking_window_settings, " +
             "mp.extended_profile, mp.created_at, mp.updated_at " +
             "FROM mentor_profiles mp " +
             "LEFT JOIN organization_members om ON mp.member_id = om.user_id " +

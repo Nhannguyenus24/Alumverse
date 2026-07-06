@@ -26,6 +26,7 @@ import com.service.backend.user.dto.NotificationSettingsResponse;
 import com.service.backend.user.dto.PendingPeerVerificationResponse;
 import com.service.backend.user.dto.RequestPeerVerificationRequest;
 import com.service.backend.user.dto.UpdateAvatarRequest;
+import com.service.backend.user.dto.UpdateCoverRequest;
 import com.service.backend.user.dto.UpdateMyProfileRequest;
 import com.service.backend.user.dto.UpdateNotificationSettingsRequest;
 import com.service.backend.user.dto.UserLoginHistoryResponse;
@@ -50,9 +51,10 @@ public class UserController {
     private final NotificationService notificationService;
 
     @GetMapping("/profile")
-    public Mono<ResponseEntity<ApiResponse<UserProfileResponse>>> getMyProfile() {
+    public Mono<ResponseEntity<ApiResponse<UserProfileResponse>>> getMyProfile(
+            @RequestParam(required = false) Integer organizationId) {
         return SecurityUtils.getCurrentUserId()
-                .flatMap(userService::getMyProfile)
+                .flatMap(userId -> userService.getMyProfile(userId, organizationId))
                 .map(profile -> ResponseEntity.ok(new ApiResponse<>("Profile retrieved successfully", profile)));
     }
 
@@ -70,6 +72,14 @@ public class UserController {
         return SecurityUtils.getCurrentUserId()
                 .flatMap(userId -> userService.updateMyAvatar(userId, request.getAvatarUrl()))
                 .thenReturn(ResponseEntity.ok(new ApiResponse<>("Avatar updated successfully", true)));
+    }
+
+    @PutMapping("/cover")
+    public Mono<ResponseEntity<ApiResponse<Boolean>>> updateMyCover(
+            @Valid @RequestBody UpdateCoverRequest request) {
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(userId -> userService.updateMyCover(userId, request.getCoverUrl()))
+                .thenReturn(ResponseEntity.ok(new ApiResponse<>("Cover updated successfully", true)));
     }
 
     @GetMapping("/organization-member")

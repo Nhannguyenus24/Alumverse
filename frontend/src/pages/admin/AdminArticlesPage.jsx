@@ -17,6 +17,9 @@ import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
+import LinkIcon from '@mui/icons-material/Link';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
 import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
 import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
 import EmojiEventsOutlinedIcon from '@mui/icons-material/EmojiEventsOutlined';
@@ -28,12 +31,18 @@ import { useSnackbar } from 'notistack';
 import { useDebounce } from '../../hooks/useDebounce';
 import AdminDataTable from '../../components/admin/AdminDataTable';
 import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
+import AdminStatusChip from '../../components/admin/AdminStatusChip';
 import useAdminArticles from '../../hooks/admin/useAdminArticles';
 import { useAdminSystemContext } from '../../stores/AdminStore';
 import { useOrgNavigate, useOrgPath } from '../../hooks/useOrgNavigate';
 import { formatDateTime } from '../../utils/dateFormatter';
 import apiClient from '../../utils/axios';
-import { deleteArticleByChannel } from '../../utils/articleAdminActions';
+import {
+  canToggleArticleVisibility,
+  deleteArticleByChannel,
+  getArticleVisibilityState,
+  toggleArticleVisibility,
+} from '../../utils/articleAdminActions';
 
 const CHANNEL_OPTIONS = [
   { value: 'all', label: 'Tất cả' },
@@ -65,6 +74,13 @@ const createdOf = (a) =>
 const channelOf = (a, fallbackChannel) => a.channel || fallbackChannel;
 const channelLabelOf = (value) =>
   CHANNEL_OPTIONS.find((item) => item.value === value)?.label ?? value ?? '-';
+const visibilityStatusOf = (article) => {
+  const state = getArticleVisibilityState(article);
+  if (state === 'published') return 'PUBLISHED';
+  if (state === 'rejected') return 'REJECTED';
+  if (state === 'hidden') return 'HIDDEN';
+  return 'UNSUPPORTED';
+};
 
 const AdminArticlesPage = () => {
   const { setBreadcrumbs } = useOutletContext();
@@ -86,6 +102,7 @@ const AdminArticlesPage = () => {
   const [createAnchorEl, setCreateAnchorEl] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [visibilityBusyId, setVisibilityBusyId] = useState(null);
   const debouncedSearch = useDebounce(searchTerm, 500);
 
   useEffect(() => {
@@ -126,6 +143,21 @@ const AdminArticlesPage = () => {
   const handleCreateArticle = (itemChannel) => {
     setCreateAnchorEl(null);
     navigate(`/post/${itemChannel}`);
+  };
+  const handleToggleVisibility = async (article) => {
+    if (!canToggleArticleVisibility(article)) return;
+    const busyId = `${channelOf(article, channel)}-${idOf(article)}`;
+    setVisibilityBusyId(busyId);
+    try {
+      await toggleArticleVisibility(apiClient, { ...article, channel: channelOf(article, channel) });
+      const nextState = getArticleVisibilityState(article) === 'published' ? 'gỡ đăng' : 'đăng';
+      enqueueSnackbar(`Đã ${nextState} bài viết.`, { variant: 'success' });
+      refresh();
+    } catch (error) {
+      enqueueSnackbar(error?.response?.data?.message || 'Không thể cập nhật trạng thái bài viết.', { variant: 'error' });
+    } finally {
+      setVisibilityBusyId(null);
+    }
   };
 
   return (
@@ -210,6 +242,17 @@ const AdminArticlesPage = () => {
               render: (_, a) => formatDateTime(createdOf(a)),
             },
             {
+              id: "visibility",
+              label: 'Trạng thái',
+              render: (_, a) => (
+                <AdminStatusChip
+                  status={visibilityStatusOf(a)}
+                  category="article"
+                  variant={getArticleVisibilityState(a) === 'published' ? 'filled' : 'outlined'}
+                />
+              ),
+            },
+            {
               id: "actions",
               label: 'Thao tác',
               align: "right",
@@ -223,11 +266,38 @@ const AdminArticlesPage = () => {
                       <VisibilityOutlinedIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
+                  {(a.url || a.linkUrl) && (
+                    <Tooltip title="Truy cập liên kết gốc">
+                      <IconButton
+                        size="small"
+                        sx={{ color: 'info.main' }}
+                        onClick={() => window.open(a.url || a.linkUrl, '_blank', 'noopener,noreferrer')}
+                      >
+                        <LinkIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  )}
                   <Tooltip title="Chỉnh sửa">
                     <IconButton size="small" sx={{ color: 'secondary.main' }} onClick={() => openEdit(a)}>
                       <EditOutlinedIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
+                  {canToggleArticleVisibility(a) && (
+                    <Tooltip title={getArticleVisibilityState(a) === 'published' ? 'Gỡ đăng' : 'Đăng'}>
+                      <span>
+                        <IconButton
+                          size="small"
+                          sx={{ color: getArticleVisibilityState(a) === 'published' ? 'warning.main' : 'success.main' }}
+                          disabled={visibilityBusyId === `${channelOf(a, channel)}-${idOf(a)}`}
+                          onClick={() => handleToggleVisibility(a)}
+                        >
+                          {getArticleVisibilityState(a) === 'published'
+                            ? <CancelOutlinedIcon fontSize="small" />
+                            : <CheckCircleOutlineIcon fontSize="small" />}
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+                  )}
                   <Tooltip title="Xóa">
                     <IconButton size="small" sx={{ color: 'error.main' }} onClick={() => openDeleteDialog(a)}>
                       <DeleteOutlineIcon fontSize="small" />
