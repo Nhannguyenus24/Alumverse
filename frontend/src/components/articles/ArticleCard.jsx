@@ -5,7 +5,7 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import LinkIcon from '@mui/icons-material/Link';
 import { useTranslation } from 'react-i18next';
 
-const ArticleCard = ({ article, isAdmin = false, onEdit }) => {
+const ArticleCard = ({ article, isAdmin = false, onEdit, stretch = true }) => {
   const { t } = useTranslation(['common']);
   const [hovered, setHovered] = useState(false);
 
@@ -16,8 +16,8 @@ const ArticleCard = ({ article, isAdmin = false, onEdit }) => {
       sx={{
         display: 'flex',
         flexDirection: 'column',
-        height: '100%', // kéo full chiều cao cell trong grid
-        gap: 1,
+        height: stretch ? '100%' : 'auto',
+        gap: 1.5,
         // Lift nhẹ toàn card khi hover
         transition: 'transform 0.25s ease',
         transform: hovered ? 'translateY(-4px)' : 'translateY(0)',
@@ -48,6 +48,10 @@ const ArticleCard = ({ article, isAdmin = false, onEdit }) => {
             fontWeight={700}
             sx={{
               flex: 1,
+              display: '-webkit-box',
+              overflow: 'hidden',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
               color: hovered ? 'primary.main' : 'text.primary',
               transition: 'color 0.2s ease',
             }}
@@ -82,7 +86,7 @@ const ArticleCard = ({ article, isAdmin = false, onEdit }) => {
           {article.description}
         </Typography>
 
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 'auto' }}>
           <Typography variant="caption" color="text.secondary">
             {article.date}
           </Typography>
@@ -103,12 +107,9 @@ const ArticleCard = ({ article, isAdmin = false, onEdit }) => {
           )}
         </Box>
 
-        {/* Spacer đẩy buttons xuống đáy */}
-        <Box sx={{ flex: 1 }} />
-
         {/* ACTION BUTTONS */}
         {isAdmin && (
-          <Stack direction="row" spacing={1}>
+          <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
             {/* EDIT BUTTON */}
             <Button
               fullWidth

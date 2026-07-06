@@ -16,7 +16,7 @@ import MentorshipMentorListSection from '../../components/mentorship/MentorshipM
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useAuth } from '../../hooks/useAuth';
 import { useMentorshipAccessState } from '../../hooks/mentorship/useMentorshipAccessState';
-import { getMentorshipSidebar, getMentorshipStats } from '../../constants/mentorshipNav';
+import { getMentorshipStats } from '../../constants/mentorshipNav';
 import { useTranslation } from 'react-i18next';
 import StatsBanner from '../../components/StatsBanner'
 
@@ -54,14 +54,36 @@ const GuestLandingContent = () => {
 
   return (
     <Stack spacing={4}>
+      <Stack spacing={2}>
+        <Typography
+          variant="h1"
+          fontWeight={800}
+          color="primary.main"
+          sx={{ fontSize: { xs: '1.8rem', md: '2.3rem' } }}
+        >
+          {t('nav:mentorship').toUpperCase()}
+        </Typography>
+        <Typography color="text.secondary">
+          {t('mentorship:landing_desc')}
+        </Typography>
+      </Stack>
+
       <Box
         sx={{
           borderRadius: 3,
           px: { xs: 3, md: 5 },
           py: { xs: 4, md: 5 },
-          background: (theme) =>
-            `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-          color: 'common.white',
+          bgcolor: (theme) => theme.palette.mode === 'dark'
+            ? alpha(theme.palette.primary.main, 0.18)
+            : 'primary.lighter',
+          color: (theme) => theme.palette.mode === 'dark' ? 'common.white' : 'text.primary',
+          border: '1px solid',
+          borderColor: (theme) => theme.palette.mode === 'dark'
+            ? alpha(theme.palette.primary.main, 0.32)
+            : alpha(theme.palette.primary.main, 0.2),
+          boxShadow: (theme) => theme.palette.mode === 'dark'
+            ? `0 0 34px ${alpha(theme.palette.primary.main, 0.16)}`
+            : 'none',
         }}
       >
         <Typography variant="overline" sx={{ opacity: 0.9, letterSpacing: 2 }}>
@@ -70,12 +92,13 @@ const GuestLandingContent = () => {
         <Typography
           variant="h3"
           fontWeight={800}
+          color="primary.main"
           sx={{ mt: 1, mb: 2, fontSize: { xs: '1.75rem', md: '2.25rem' } }}
         >
           {t('mentorship:landing_headline')}
         </Typography>
-        <Typography sx={{ opacity: 0.92, maxWidth: 640, mb: 3, lineHeight: 1.7 }}>
-          {t('mentorship:landing_desc')}
+        <Typography sx={{ opacity: 0.92, maxWidth: 840, mb: 3, lineHeight: 1.7 }}>
+          {t('mentorship:cta_guest_desc')}
         </Typography>
         <MentorshipHubActions tone="onPrimary" />
       </Box>
@@ -240,9 +263,9 @@ const MentorshipPage = () => {
 
   return (
     <AlumniContentLayout
-      variant="two"
+      variant="one"
+      maxWidth="lg"
       pageTitle={showGuestLanding ? t('mentorship:page_title_landing') : t('mentorship:page_title_hub')}
-      sidebarItems={getMentorshipSidebar(t)}
       header={null}
       contentSpacing={0}
     >

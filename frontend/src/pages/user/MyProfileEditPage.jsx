@@ -59,7 +59,7 @@ import {
 } from '../../utils/imageUtils';
 import { userSettingsApi } from '../../utils/api';
 import { validateVietnamPhone } from '../../utils/regexUtils';
-import { getMentorProfileTabs, getMenteeProfileTabs } from '../../constants/mentorshipNav';
+import { getBaseProfileTabs, getMentorProfileTabs, getMenteeProfileTabs } from '../../constants/mentorshipNav';
 import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
 import { formatMentorHeadline, resolveProfileRoleLabel } from '../../utils/profileRoleUtils';
@@ -69,8 +69,6 @@ const DEFAULT_COVER =
   'https://ethnasia.com/cdn/shop/articles/sean-o-KMn4VEeEPR8-unsplash_edited.jpg?v=1621585619';
 const MENTORSHIP_COVER =
   'https://info.cognician.com/hubfs/220201%20mentorship-%20desktop.png';
-
-// TOP_TABS is computed inside component using t() — see getTopTabs()
 
 const STATUS_APPROVED = 'APPROVED';
 
@@ -180,7 +178,7 @@ const ProfileItem = ({ label, value, notUpdatedLabel = '—' }) => (
 const UnifiedProfileEditPage = () => {
   const { t } = useTranslation(['mentorship', 'profile']);
   const { enqueueSnackbar } = useSnackbar();
-  const TOP_TABS = [{ label: t('mentorship:profile'), path: '/profile' }];
+  const topTabs = getBaseProfileTabs(t);
   const navigate = useOrgNavigate();
   const location = useLocation();
   const isMentorshipEdit =
@@ -376,7 +374,7 @@ const UnifiedProfileEditPage = () => {
       queryClient.invalidateQueries({ queryKey: ['publicProfile'] });
 
       setSuccess(true);
-      setTimeout(() => navigate(isMentorshipEdit ? '/development/mentorship/profile' : '/profile'), 800);
+      setTimeout(() => navigate(isMentorshipEdit ? '/mentorship/profile' : '/profile'), 800);
     } catch (error) {
       enqueueSnackbar(
         error?.response?.data?.message ||
@@ -510,8 +508,8 @@ const UnifiedProfileEditPage = () => {
   );
 
   const tabs = isMentorshipEdit
-    ? (access.hasMentorProfile ? getMentorProfileTabs(t) : (access.hasMenteeProfile ? getMenteeProfileTabs(t) : TOP_TABS))
-    : TOP_TABS;
+    ? (access.hasMentorProfile ? getMentorProfileTabs(t) : (access.hasMenteeProfile ? getMenteeProfileTabs(t) : topTabs))
+    : topTabs;
 
   const renderPersonalSection = () => (
     <Stack spacing={3}>
@@ -605,10 +603,10 @@ const UnifiedProfileEditPage = () => {
               </Typography>
             </Alert>
             <Stack direction="row" spacing={1.5}>
-              <Button variant="outlined" onClick={() => navigate('/development/mentorship/profile')}>
+              <Button variant="outlined" onClick={() => navigate('/mentorship/profile')}>
                 {t('profile:back_to_profile_btn')}
               </Button>
-              <Button variant="contained" onClick={() => navigate('/development/mentorship/signup')}>
+              <Button variant="contained" onClick={() => navigate('/mentorship/signup')}>
                 {t('profile:reopen_signup_btn')}
               </Button>
             </Stack>
@@ -966,7 +964,7 @@ const UnifiedProfileEditPage = () => {
               <Button
                 variant="outlined"
                 color="inherit"
-                onClick={() => navigate(isMentorshipEdit ? '/development/mentorship/profile' : '/profile')}
+                onClick={() => navigate(isMentorshipEdit ? '/mentorship/profile' : '/profile')}
                 disabled={saving}
               >
                 {t('profile:cancel_btn')}

@@ -406,7 +406,7 @@ public class MentorService {
                                                 session.getMenteeMemberId(),
                                                 "Lịch hẹn bị hủy",
                                                 "Cố vấn đã hủy một buổi hẹn với bạn. Bạn có thể chọn một cố vấn hoặc khung giờ khác phù hợp hơn.",
-                                                "/development/mentorship/my-bookings"))
+                                                "/mentorship/my-bookings"))
                                         .then(sessionRepository.findById(sessionId));
                                     });
                         })
@@ -462,7 +462,7 @@ public class MentorService {
                                                         session.getMenteeMemberId(),
                                                         "Cố vấn đề nghị dời lịch hẹn",
                                                         "Cố vấn đề xuất một khung giờ mới cho buổi hẹn. Vui lòng xem và phản hồi đồng ý hoặc từ chối.",
-                                                        "/development/mentorship/my-bookings"))
+                                                        "/mentorship/my-bookings"))
                                                 .then(sessionRepository.findById(sessionId));
                                     });
                         })
@@ -487,7 +487,7 @@ public class MentorService {
                                                     session.getMenteeMemberId(),
                                                     "Buổi cố vấn đã hoàn tất",
                                                     "Buổi cố vấn của bạn đã hoàn thành. Hãy dành chút thời gian để lại đánh giá cho cố vấn nhé!",
-                                                    "/development/mentorship/my-bookings");
+                                                    "/mentorship/my-bookings");
                                         }
                                     })
                                     .then(sessionRepository.findById(sessionId));
@@ -516,7 +516,7 @@ public class MentorService {
                                                     session.getMenteeMemberId(),
                                                     "Đã có link tham gia buổi mentoring",
                                                     "Cố vấn đã thêm link tham gia cho buổi hẹn của bạn. Hãy kiểm tra chi tiết buổi hẹn.",
-                                                    "/development/mentorship/my-bookings"))
+                                                    "/mentorship/my-bookings"))
                                             .then(sessionRepository.findById(sessionId));
                                 }))
                         .flatMap(this::enrich));

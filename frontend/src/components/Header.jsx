@@ -24,6 +24,7 @@ import { getNormalizedPathname } from '../utils/pathUtils';
 import useThemeModeStore from '../stores/themeModeStore';
 import useOrganizationStore from '../stores/organizationStore';
 import { HEADER_HEIGHT } from '../constants/layout';
+import { getMainNavItems } from '../constants/mainNav';
 
 const LOGO_SRC = '/alumverse_logo/Logo_Main_Full.svg';
 const LOGO_SRC_WHITE = '/alumverse_logo/Logo_White_Full.svg';
@@ -62,43 +63,6 @@ const ThemeModeIcon = ({ rotated = false }) => (
   />
 );
 
-const getNavItems = (t) => [
-  { label: t('nav:introduction'), href: '/introduction',
-    children: [
-      { label: t('nav:intro_general'), href: '/introduction' },
-      { label: t('nav:intro_leaders'), href: '/introduction/leaders' },
-      { label: t('nav:intro_team'), href: '/introduction/team' },
-    ]
-  },
-  {
-    label: t('nav:network'), href: '/network', requiresAuth: true,
-    children: [
-      { label: t('nav:network_requests'), href: '/network/requests' },
-      { label: t('nav:network_connections'), href: '/network/connections' },
-      { label: t('nav:network_restricted'), href: '/network/restricted-connections' },
-    ],
-  },
-  {
-    label: t('nav:honors'), href: '/honors',
-    children: [
-      { label: t('nav:honors_alumni'), href: '/honors/alumni' },
-      { label: t('nav:honors_achievements'), href: '/honors/achievements' },
-    ],
-  },
-  { label: t('nav:news'), href: '/news' },
-  { label: t('nav:events'), href: '/events', requiresAuth: true },
-  {
-    label: t('nav:development'), href: '/development', requiresAuth: true,
-    children: [
-      { label: t('nav:mentorship'), href: '/development/mentorship' },
-      { label: t('nav:academics'), href: '/development/academics' },
-      { label: t('nav:jobs'), href: '/development/jobs' },
-    ],
-  },
-  { label: t('nav:forum'), href: '/forum' },
-  { label: t('nav:donation'), href: '/donations' },
-];
-
 const Header = () => {
   const { t } = useTranslation(['nav', 'auth']);
   const theme = useTheme();
@@ -108,6 +72,7 @@ const Header = () => {
   const { slug: routeSlug } = useParams();
   const { isAuthenticated, user, verificationLevel } = useAuth();
   const { organization } = useOrganizationStore();
+  const organizationLogoUrl = organization?.logoUrl || null;
   const themeMode = useThemeModeStore((state) => state.mode);
   const toggleThemeMode = useThemeModeStore((state) => state.toggleMode);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -158,7 +123,12 @@ const Header = () => {
     return { displayName: name, displayRole: isAdmin ? 'Admin' : verLabel };
   }, [user, verificationLevel, isAdmin]);
 
-  const navItems = useMemo(() => getNavItems(t), [t]);
+  const navItems = useMemo(() => getMainNavItems(t), [t]);
+  const getVisibleChildren = useCallback((item) => {
+    if (!item.children?.length) return [];
+    if (!isAuthenticated && item.hideChildrenWhenGuest) return [];
+    return item.children;
+  }, [isAuthenticated]);
 
   const handleDrawerToggle = useCallback(() => setMobileOpen((prev) => !prev), []);
   const closeDrawer = useCallback(() => setMobileOpen(false), []);
@@ -183,9 +153,9 @@ const Header = () => {
       return normalizedPath === '/';
     }
 
-    const paths = [item.href, ...(item.children || []).map((child) => child.href)];
+    const paths = [item.href, ...getVisibleChildren(item).map((child) => child.href)];
     return paths.some((path) => normalizedPath === path || normalizedPath.startsWith(`${path}/`));
-  }, [normalizedPath]);
+  }, [getVisibleChildren, normalizedPath]);
 
   const getNavActiveSx = useCallback((active) => {
     if (!active) return {};
@@ -197,8 +167,11 @@ const Header = () => {
     };
   }, [isTransparent]);
 
+  const shouldGlowLogo = Boolean(
+    organizationLogoUrl && (isTransparent || theme.palette.mode === 'dark')
+  );
   const defaultLogoSrc = (isTransparent || theme.palette.mode === 'dark') ? LOGO_SRC_WHITE : LOGO_SRC;
-  const logoSrc = organization?.logoUrl || defaultLogoSrc;
+  const logoSrc = organizationLogoUrl || defaultLogoSrc;
 
   const appBarMinHeight = HEADER_HEIGHT;
 
@@ -225,13 +198,26 @@ const Header = () => {
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0, zIndex: 2 }}>
-            <Link to={toOrgPath('/')} style={{ display: 'flex', alignItems: 'center' }}>
-              <Logo
-                variant="image"
-                src={logoSrc}
-                alt="AlumVerse"
-                size="medium"
-              />
+            <Link to={toOrgPath('/')} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+              >
+                <Logo
+                  variant="image"
+                  src={logoSrc}
+                  alt="AlumVerse"
+                  size="medium"
+                  sx={{
+                    filter: shouldGlowLogo
+                      ? 'drop-shadow(0 0 2px rgba(255,255,255,0.95)) drop-shadow(0 0 8px rgba(255,255,255,0.72)) drop-shadow(0 0 14px rgba(255,255,255,0.42))'
+                      : 'none',
+                    transition: 'filter 0.25s ease',
+                  }}
+                />
+              </Box>
             </Link>
           </Box>
 
@@ -251,6 +237,7 @@ const Header = () => {
             }}>
               {navItems.map((item) => {
                 const isLocked = item.requiresAuth && !isAuthenticated;
+                const visibleChildren = getVisibleChildren(item);
                 const isActive = getNavActive(item);
                 const buttonContent = (
                   <Button
@@ -271,7 +258,7 @@ const Header = () => {
                 return (
                   <Box
                     key={item.label}
-                    onMouseEnter={() => !isLocked && item.children && setHoveredNav(item.label)}
+                    onMouseEnter={() => !isLocked && visibleChildren.length && setHoveredNav(item.label)}
                     onMouseLeave={() => setHoveredNav(null)}
                     sx={{ position: 'relative', display: 'flex', alignItems: 'center', py: 1.5 }}
                   >
@@ -285,7 +272,7 @@ const Header = () => {
                       <span style={{ display: 'inline-block' }}>{buttonContent}</span>
                     </Tooltip>
 
-                    {item.children && hoveredNav === item.label && (
+                    {visibleChildren.length > 0 && hoveredNav === item.label && (
                       <Box
                         onMouseEnter={() => setHoveredNav(item.label)}
                         onMouseLeave={() => setHoveredNav(null)}
@@ -313,7 +300,7 @@ const Header = () => {
                             borderColor: 'divider',
                           }}
                         >
-                          {item.children.map((child) => {
+                          {visibleChildren.map((child) => {
                             const isChildLocked = child.requiresAuth && !isAuthenticated;
                             const childButtonContent = (
                               <Button
@@ -361,15 +348,15 @@ const Header = () => {
               <>
                 <Tooltip
                   title={themeMode === 'dark'
-                    ? t('nav:switch_to_light_mode', { defaultValue: 'Chuyển sang giao diện sáng' })
-                    : t('nav:switch_to_dark_mode', { defaultValue: 'Chuyển sang giao diện tối' })}
+                    ? t('nav:switch_to_light_mode')
+                    : t('nav:switch_to_dark_mode')}
                   arrow
                   placement="bottom"
                   slotProps={HEADER_TOOLTIP_SLOT_PROPS}
                 >
                   <IconButton
                     size="small"
-                    aria-label={t('nav:toggle_theme_aria_label', { defaultValue: 'Đổi chế độ sáng tối' })}
+                    aria-label={t('nav:toggle_theme_aria_label')}
                     onClick={toggleThemeMode}
                     sx={{
                       color: headerTextColor,
@@ -546,15 +533,15 @@ const Header = () => {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Tooltip
               title={themeMode === 'dark'
-                ? t('nav:switch_to_light_mode', { defaultValue: 'Chuyển sang giao diện sáng' })
-                : t('nav:switch_to_dark_mode', { defaultValue: 'Chuyển sang giao diện tối' })}
+                ? t('nav:switch_to_light_mode')
+                : t('nav:switch_to_dark_mode')}
               arrow
               placement="bottom"
               slotProps={HEADER_TOOLTIP_SLOT_PROPS}
             >
               <IconButton
                 size="small"
-                aria-label={t('nav:toggle_theme_aria_label', { defaultValue: 'Đổi chế độ sáng tối' })}
+                aria-label={t('nav:toggle_theme_aria_label')}
                 onClick={toggleThemeMode}
                 sx={{ color: 'text.primary' }}
               >
@@ -570,8 +557,9 @@ const Header = () => {
         <List component="nav" sx={{ py: 1 }}>
           {navItems.map((item) => {
             const isLocked = item.requiresAuth && !isAuthenticated;
+            const visibleChildren = getVisibleChildren(item);
 
-            return item.children ? (
+            return visibleChildren.length ? (
               <Box key={item.label}>
                 <Tooltip title={isLocked ? t('nav:login_required') : ''} arrow placement="top" disableHoverListener={!isLocked}>
                   <span>
@@ -598,7 +586,7 @@ const Header = () => {
                 </Tooltip>
                 <Collapse in={expandedNav[item.label]} timeout="auto" unmountOnExit>
                   <List component="div" disablePadding>
-                    {item.children.map((child) => {
+                    {visibleChildren.map((child) => {
                       const isChildLocked = child.requiresAuth && !isAuthenticated;
                       return (
                         <Tooltip key={child.label} title={isChildLocked ? t('nav:login_required') : ''} arrow placement="top" disableHoverListener={!isChildLocked}>

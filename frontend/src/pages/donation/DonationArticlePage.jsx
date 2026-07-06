@@ -136,7 +136,7 @@ export default function DonationArticlePage() {
                       onClick={() => navigate(`/donations/${id}/edit`)}
                       sx={{ textTransform: "none", fontWeight: 700 }}
                     >
-                      Sửa quỹ
+                      {t('edit_fund_short')}
                     </Button>
                   )}
                   {isAdmin && (
@@ -148,7 +148,7 @@ export default function DonationArticlePage() {
                       onClick={() => navigate("/admin/donations")}
                       sx={{ textTransform: "none", fontWeight: 700 }}
                     >
-                      Quản lý quỹ
+                      {t('manage_fund')}
                     </Button>
                   )}
                 </Stack>

@@ -4,15 +4,15 @@ export const truncateText = (text, maxLen = 72, fallback = '-') => {
   return s.length <= maxLen ? s : `${s.slice(0, maxLen)}…`;
 };
 
-export const forumModerationLabel = (status) => {
+export const forumModerationLabel = (status, t) => {
   const key = String(status || '').toUpperCase();
   const map = {
-    PENDING: 'Chờ duyệt',
-    FLAGGED: 'Bị báo cáo',
-    APPROVED: 'Đã duyệt',
-    REJECTED: 'Bị từ chối',
+    PENDING: 'admin:forum_status_pending',
+    FLAGGED: 'admin:forum_status_flagged',
+    APPROVED: 'admin:forum_status_approved',
+    REJECTED: 'admin:forum_status_rejected',
   };
-  return map[key] || key || '-';
+  return map[key] && t ? t(map[key]) : key || '-';
 };
 
 export const stringifyJson = (value, fallback = '-') => {

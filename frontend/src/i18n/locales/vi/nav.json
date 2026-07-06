@@ -23,5 +23,8 @@
   "contact": "Liên hệ",
   "admin": "Trang quản trị",
   "login_required": "Đăng nhập để xem tính năng này",
-  "language": "Ngôn ngữ"
+  "language": "Ngôn ngữ",
+  "switch_to_light_mode": "Chuyển sang giao diện sáng",
+  "switch_to_dark_mode": "Chuyển sang giao diện tối",
+  "toggle_theme_aria_label": "Đổi chế độ sáng tối"
 }

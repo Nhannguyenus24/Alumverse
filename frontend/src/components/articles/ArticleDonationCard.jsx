@@ -143,12 +143,6 @@ const ArticleDonationCard = ({ campaign, onNavigate, onEdit, onClose, isAdmin })
           {t('donation:donor_count', { count: campaign.donorCount ?? 0 })}
         </Typography>
 
-        {/* ENDED STATUS */}
-        {isEnded && (
-          <Box sx={{ mt: 1, alignSelf: "flex-start", px: 1, py: 0.35, borderRadius: 999, border: "1px solid", borderColor: "divider", backgroundColor: "action.hover", color: "text.secondary", fontSize: "0.72rem", fontWeight: 800, letterSpacing: 0.2 }}>
-            {t('common:ended')}
-          </Box>
-        )}
       </Box>
 
       {/* DESCRIPTION */}
@@ -164,8 +158,6 @@ const ArticleDonationCard = ({ campaign, onNavigate, onEdit, onClose, isAdmin })
         {truncateText(campaign.descriptionShort || "", CAMPAIGN_DESCRIPTION_MAX_CHARS)}
       </Typography>
 
-      <Box sx={{ flex: 1 }} />
-
       {/* ADMIN PROGRESS */}
       {isAdmin && (
         <Box>
@@ -177,6 +169,14 @@ const ArticleDonationCard = ({ campaign, onNavigate, onEdit, onClose, isAdmin })
         </Box>
       )}
 
+      {isEnded && (
+        <Box sx={{ alignSelf: "flex-start", px: 1, py: 0.35, borderRadius: 999, border: "1px solid", borderColor: "divider", backgroundColor: "action.hover", color: "text.secondary", fontSize: "0.72rem", fontWeight: 800, letterSpacing: 0.2 }}>
+          {t('common:ended')}
+        </Box>
+      )}
+
+      <Box sx={{ flex: 1 }} />
+
       {/* ACTION BUTTON */}
       {isClosed ? (
         <Button
@@ -186,7 +186,7 @@ const ArticleDonationCard = ({ campaign, onNavigate, onEdit, onClose, isAdmin })
           {t('common:view')}
         </Button>
       ) : isAdmin ? (
-        <Stack spacing={1}>
+        <Stack spacing={1} sx={{ mt: 1.5 }}>
           <Button
             fullWidth variant="outlined" color="primary" startIcon={<InfoOutlinedIcon />} sx={{ textTransform: "none", fontWeight: 600 }}
             onClick={(e) => { e.stopPropagation(); onNavigate?.(); }}

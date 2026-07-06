@@ -182,7 +182,7 @@ const AdminArticleRequestsPage = () => {
                     </IconButton>
                   </Tooltip>
                   {(a.url || a.linkUrl) && (
-                    <Tooltip title="Truy cập liên kết gốc">
+                    <Tooltip title={t('view_original_link')}>
                       <IconButton
                         size="small"
                         sx={{ color: 'info.main' }}

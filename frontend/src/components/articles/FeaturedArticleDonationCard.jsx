@@ -40,7 +40,7 @@ const FeaturedArticleDonationCard = ({ campaign, article, onNavigate, onEdit, on
       sx={{
         display: "flex",
         flexDirection: { xs: "column", md: "row" },
-        alignItems: { xs: "stretch", md: "center" },
+        alignItems: { xs: "stretch", md: "stretch" },
         width: "100%",
         gap: 3,
         cursor: "pointer",
@@ -156,12 +156,6 @@ const FeaturedArticleDonationCard = ({ campaign, article, onNavigate, onEdit, on
             {t('donation:donor_count', { count: data?.donorCount || data?.donors || 0 })}
           </Typography>
 
-          {/* CLOSED STATUS */}
-          {isEnded && (
-            <Box sx={{ mt: 0.5, alignSelf: "flex-start", px: 1.2, py: 0.45, borderRadius: 999, border: "1px solid", borderColor: "divider", backgroundColor: "action.hover", color: "text.secondary", fontSize: "0.72rem", fontWeight: 800, letterSpacing: 0.2 }}>
-              {t('common:ended')}
-            </Box>
-          )}
         </Box>
 
         {/* DESCRIPTION */}
@@ -183,11 +177,8 @@ const FeaturedArticleDonationCard = ({ campaign, article, onNavigate, onEdit, on
           )}
         </Typography>
 
-        <Box sx={{ flex: 1 }} />
-
-        {/* ADMIN PROGRESS */}
         {isAdmin && (
-          <Box sx={{ mt: 0.5 }}>
+          <Box sx={{ mt: 1.5 }}>
             <Typography sx={{ mb: 0.8, color: "primary.main", fontWeight: 700, fontSize: "0.92rem" }}>
               {`${formatCurrency(data?.currentAmount)} / ${formatCurrency(data?.targetAmount)} (VND)`}
             </Typography>
@@ -196,8 +187,15 @@ const FeaturedArticleDonationCard = ({ campaign, article, onNavigate, onEdit, on
           </Box>
         )}
 
-        {/* ACTION BUTTONS */}
-        <Box sx={{ mt: 2, display: "flex" }}>
+        {isEnded && (
+          <Box sx={{ mt: 1, alignSelf: "flex-start", px: 1.2, py: 0.45, borderRadius: 999, border: "1px solid", borderColor: "divider", backgroundColor: "action.hover", color: "text.secondary", fontSize: "0.72rem", fontWeight: 800, letterSpacing: 0.2 }}>
+            {t('common:ended')}
+          </Box>
+        )}
+
+        {/* ACTION BLOCK */}
+        <Box sx={{ mt: 2.5, display: "flex", flexDirection: "column", gap: 2.5 }}>
+
           {isClosed ? (
             <Button
               fullWidth variant="outlined" color="primary" sx={{ textTransform: "none", fontWeight: 600, py: 1.2 }}

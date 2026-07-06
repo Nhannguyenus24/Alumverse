@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 
 import AlumniContentLayout from '../../layouts/AlumniContentLayout';
-import { getNetworkSidebarItems } from '../../pages/network/networkSidebarConfig';
+import { getNetworkSidebarItems } from '../../constants/networkNav';
 
 const NetworkSectionLayout = ({ title, children }) => {
   const { t } = useTranslation('network');

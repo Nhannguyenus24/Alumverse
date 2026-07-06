@@ -132,7 +132,7 @@ const getExploreItems = (t) => [
     iconSrc: "/icons/ho_tro_tu_van.svg",
     title: t("home:explore_mentorship_title"),
     description: t("home:explore_mentorship_desc"),
-    path: "/development/mentorship",
+    path: "/mentorship",
   },
   {
     iconSrc: "/icons/ket_noi_csv.svg",
@@ -448,33 +448,18 @@ const HomePage = () => {
                       flexShrink: 0,
                     }}
                   >
-                    {theme.palette.mode === "dark" ? (
-                      <Box
-                        className="explore-icon"
-                        aria-hidden
-                        sx={{
-                          width: { xs: 40, md: 48 },
-                          height: { xs: 40, md: 48 },
-                          bgcolor: "primary.light",
-                          mask: `url(${iconSrc}) center / contain no-repeat`,
-                          WebkitMask: `url(${iconSrc}) center / contain no-repeat`,
-                          transition: "transform 0.28s ease",
-                        }}
-                      />
-                    ) : (
-                      <Box
-                        className="explore-icon"
-                        component="img"
-                        src={iconSrc}
-                        alt=""
-                        sx={{
-                          width: { xs: 40, md: 48 },
-                          height: { xs: 40, md: 48 },
-                          objectFit: "contain",
-                          transition: "transform 0.28s ease",
-                        }}
-                      />
-                    )}
+                    <Box
+                      className="explore-icon"
+                      aria-hidden
+                      sx={{
+                        width: { xs: 40, md: 48 },
+                        height: { xs: 40, md: 48 },
+                        bgcolor: theme.palette.mode === "dark" ? "primary.light" : "primary.main",
+                        mask: `url(${iconSrc}) center / contain no-repeat`,
+                        WebkitMask: `url(${iconSrc}) center / contain no-repeat`,
+                        transition: "transform 0.28s ease",
+                      }}
+                    />
                   </Box>
                   <Typography
                     variant="subtitle1"
@@ -580,7 +565,7 @@ const HomePage = () => {
                   sx={{
                     ...mainSectionTitleSx,
                     mb: 2,
-                    color: "primary.contrastText",
+                    color: "#fff",
                     textAlign: { xs: "center", md: "left" },
                   }}
                 >
@@ -588,7 +573,7 @@ const HomePage = () => {
                 </Typography>
               </RevealBox>
               <RevealBox delay={100}>
-                <Typography variant="body1" sx={{ color: alpha(theme.palette.primary.contrastText, 0.88), lineHeight: 1.8, mb: 3 }}>
+                <Typography variant="body1" sx={{ color: alpha("#fff", 0.9), lineHeight: 1.8, mb: 3 }}>
                   {t("home:section_featured_alumni_desc")}
                 </Typography>
               </RevealBox>
@@ -621,9 +606,53 @@ const HomePage = () => {
                   delay={index * 110}
                   revealAnimation={alumniFlipIn}
                   onClick={() => navigate(`/article/${article.channel}/${article.id}`)}
-                  sx={{ minWidth: 0, cursor: "pointer" }}
+                  sx={{
+                    minWidth: 0,
+                    cursor: "pointer",
+                    "& > div": {
+                      height: "auto",
+                      minHeight: 0,
+                      p: 0,
+                      borderRadius: 2,
+                      bgcolor: "transparent",
+                      boxShadow: "none",
+                    },
+                    "& > div > div:first-of-type": {
+                      height: { xs: 150, sm: 170, md: 180, lg: 190 },
+                      borderRadius: 1.5,
+                    },
+                    "& > div > div:nth-of-type(2)": {
+                      minHeight: 0,
+                      gap: 1,
+                    },
+                    "& h4": {
+                      color: "#fff",
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                      fontSize: { xs: "1.15rem", md: "1.28rem", lg: "1.35rem" },
+                      lineHeight: 1.28,
+                    },
+                    "& p": {
+                      color: alpha("#fff", 0.9),
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                    },
+                    "& .MuiTypography-caption": {
+                      color: alpha("#fff", 0.72),
+                    },
+                    "& .MuiButton-root": {
+                      color: "accent.light",
+                    },
+                    "& svg": {
+                      color: "accent.light",
+                    },
+                  }}
                 >
-                  <ArticleCard article={article} />
+                  <ArticleCard article={article} stretch={false} />
                 </RevealBox>
               ))}
             </Box>

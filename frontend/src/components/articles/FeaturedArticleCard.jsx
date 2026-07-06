@@ -20,7 +20,7 @@ const FeaturedArticleCard = ({
       sx={{
         display: 'flex',
         flexDirection: { xs: 'column', md: 'row' },
-        alignItems: 'center',
+        alignItems: { xs: 'stretch', md: 'stretch' },
         width: '100%',
         gap: 3,
         transition: 'transform 0.25s ease',
@@ -74,6 +74,10 @@ const FeaturedArticleCard = ({
             sx={{
               flex: 1,
               fontSize: { xs: '1.4rem', md: '2rem' },
+              display: '-webkit-box',
+              overflow: 'hidden',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
               color: hovered ? 'primary.main' : 'text.primary',
               transition: 'color 0.2s ease',
             }}
@@ -109,7 +113,7 @@ const FeaturedArticleCard = ({
           {article.description}
         </Typography>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', mt: 1, gap: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', mt: 2.5, gap: 2, flexWrap: 'wrap' }}>
           <Typography
             variant="caption"
             color="text.secondary"
@@ -133,12 +137,9 @@ const FeaturedArticleCard = ({
           )}
         </Box>
 
-        {/* PUSH ACTIONS DOWN */}
-        <Box sx={{ flex: 1 }} />
-
         {/* ACTION BUTTONS */}
         {isAdmin && (
-          <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
+          <Stack direction="row" spacing={1} sx={{ mt: 3 }}>
             <Button
               fullWidth
               variant="outlined"
