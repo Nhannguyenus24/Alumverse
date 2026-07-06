@@ -1307,4 +1307,3 @@ export const notificationApi = {
 		return unwrap(response);
 	},
 };
-

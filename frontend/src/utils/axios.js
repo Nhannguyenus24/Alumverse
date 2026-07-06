@@ -88,37 +88,9 @@ const isAuthWhitelistedURL = (url = '') => {
   );
 };
 
-/**
- * Logs the user out and redirects to login
- */
-const forceLogout = () => {
-  // Capture slug from auth store BEFORE reset clears it
-  const storeSlug = useAuthStore.getState().slug;
-
+const clearInvalidSession = () => {
   useAuthStore.getState().reset();
-
-  // Don't redirect if already on a login page to avoid loops
-  if (window.location.pathname.includes('/auth/login')) {
-    return;
-  }
-
-  const currentPath = `${window.location.pathname}${window.location.search}`;
-
-  // JWT user object has no organizationSlug; fall back to first path segment
-  // only if it doesn't look like a reserved top-level route
-  const RESERVED = ['admin', '404', 'unauthorized', '500', 'maintenance'];
-  let slug = storeSlug ?? null;
-  if (!slug) {
-    const firstSegment = window.location.pathname.split('/').filter(Boolean)[0];
-    slug = firstSegment && !RESERVED.includes(firstSegment) ? firstSegment : null;
-  }
-
-  const loginPath = slug
-    ? `/${slug}/auth/login?reason=login_required&from=${encodeURIComponent(currentPath)}`
-    : `/404`;
-
-  console.warn('Session expired or invalid. Redirecting to login...');
-  window.location.href = loginPath;
+  console.warn('Session expired or invalid. Cleared local auth session.');
 };
 
 /**
@@ -199,10 +171,14 @@ apiClient.interceptors.response.use(
     // - Not 401
     // - Already retried (single retry only)
     // - URL is auth whitelist (login, refresh)
+    // - There is no session token to refresh. Public/optional requests may
+    //   receive 401, but they must not kick guests to the login page.
+    const currentToken = useAuthStore.getState().token;
     if (
       error.response?.status !== 401 ||
       originalRequest._retried ||
-      isAuthWhitelistedURL(originalRequest.url || '')
+      isAuthWhitelistedURL(originalRequest.url || '') ||
+      !currentToken
     ) {
       return Promise.reject(error);
     }
@@ -239,9 +215,10 @@ apiClient.interceptors.response.use(
       originalRequest.headers.Authorization = `Bearer ${newToken}`;
       return apiClient(originalRequest);
     } catch (refreshError) {
-      // Refresh failed → reject queue + force logout
+      // Refresh failed → reject queue + clear auth. Route guards decide whether
+      // the current page must redirect; public pages should remain accessible.
       processQueue(refreshError, null);
-      forceLogout();
+      clearInvalidSession();
       return Promise.reject(refreshError);
     } finally {
       isRefreshing = false;

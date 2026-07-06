@@ -36,22 +36,22 @@ const ProfileLayout = ({
 
   const BUTTON_CONFIG = useMemo(() => ({
     mentor: [
-      { label: t('back_to_mentorship'), variant: 'outlined', onClick: () => onNavigate('/development/mentorship') },
+      { label: t('back_to_mentorship'), variant: 'outlined', onClick: () => onNavigate('/mentorship') },
       {
         label: t('edit_profile'),
         variant: 'outlined',
         color: 'secondary',
-        onClick: () => onNavigate('/development/mentorship/profile/edit', { state: { profileEditContext: 'mentorship' } }),
+        onClick: () => onNavigate('/mentorship/profile/edit', { state: { profileEditContext: 'mentorship' } }),
       },
     ],
     mentorEdit: [],
     menteeOwn: [
-      { label: t('edit_mentee_profile'), variant: 'outlined', onClick: () => onNavigate('/development/mentorship/mentee-signup') },
-      { label: t('become_mentor'), variant: 'contained', color: 'primary', onClick: () => onNavigate('/development/mentorship/signup') },
+      { label: t('edit_mentee_profile'), variant: 'outlined', onClick: () => onNavigate('/mentorship/mentee-signup') },
+      { label: t('become_mentor'), variant: 'contained', color: 'primary', onClick: () => onNavigate('/mentorship/signup') },
     ],
     mentee: [
-      { label: t('back_to_mentorship'), variant: 'outlined', onClick: () => onNavigate('/development/mentorship') },
-      { label: t('book_appointment'), variant: 'contained', disabled: !canBook, onClick: canBook ? () => onNavigate(`/development/mentorship/mentors/${mentorId}/book`) : undefined },
+      { label: t('back_to_mentorship'), variant: 'outlined', onClick: () => onNavigate('/mentorship') },
+      { label: t('book_appointment'), variant: 'contained', disabled: !canBook, onClick: canBook ? () => onNavigate(`/mentorship/mentors/${mentorId}/book`) : undefined },
     ],
     user: [
       { label: t('back'), variant: 'outlined', onClick: handleBack },

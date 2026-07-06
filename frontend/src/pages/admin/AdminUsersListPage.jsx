@@ -87,7 +87,7 @@ const AdminUsersListPage = () => {
       [t('admin:export_col_fullname')]: u.fullName || u.studentId,
       Email: u.email,
       [t('admin:export_col_role')]: u.role,
-      [t('admin:export_col_status')]: formatAccountStatusLabel(u.status),
+      [t('admin:export_col_status')]: formatAccountStatusLabel(u.status, t),
       [t('admin:export_col_organization')]: u.organizationName || '-',
       [t('admin:export_col_joined_at')]: formatDateTime(u.createdAt)
     }));
@@ -152,7 +152,7 @@ const AdminUsersListPage = () => {
         <AdminStatusChip
           status={status}
           category="account"
-          label={formatAccountStatusLabel(status)}
+          label={formatAccountStatusLabel(status, t)}
           onClick={(e) => {
             e.stopPropagation();
             setUserStatusMenu({ anchorEl: e.currentTarget, user: u });
@@ -233,7 +233,7 @@ const AdminUsersListPage = () => {
         sx={{ minWidth: 140 }}
       >
         <MenuItem value="ALL">{t('admin:filter_all')}</MenuItem>
-        {USER_STATUSES.map((s) => <MenuItem key={s} value={s}>{formatAccountStatusLabel(s)}</MenuItem>)}
+        {USER_STATUSES.map((s) => <MenuItem key={s} value={s}>{formatAccountStatusLabel(s, t)}</MenuItem>)}
       </TextField>
     </Stack>
   );
@@ -330,7 +330,7 @@ const AdminUsersListPage = () => {
               onClick={() => setBulkImportOpen(true)}
               sx={{ fontWeight: 700, textTransform: 'none' }}
             >
-              Nhập Excel
+              {t('admin:bulk_import_excel')}
             </Button>
             <Button
               variant="contained"
@@ -363,7 +363,7 @@ const AdminUsersListPage = () => {
             }}
             sx={{ fontSize: 14, fontWeight: 500 }}
           >
-            {formatAccountStatusLabel(st)}
+            {formatAccountStatusLabel(st, t)}
           </MenuItem>
         ))}
       </Menu>

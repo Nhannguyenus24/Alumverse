@@ -19,7 +19,7 @@ const MentorshipBookingGate = ({ children }) => {
     } else if (blockedNoAccess) {
       navigate(MENTORSHIP_LANDING, { replace: true });
     } else if (blockedNotJoined) {
-      navigate('/development/mentorship/mentee-signup', { replace: true });
+      navigate('/mentorship/mentee-signup', { replace: true });
     }
   }, [resolved, access.isGuest, blockedNoAccess, blockedNotJoined, navigate]);
 

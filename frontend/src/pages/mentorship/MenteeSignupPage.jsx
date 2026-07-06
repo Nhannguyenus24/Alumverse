@@ -99,7 +99,7 @@ const MenteeSignupPage = () => {
         termsAccepted: true,
       });
       setSuccess(true);
-      setTimeout(() => navigate('/development/mentorship'), 1200);
+      setTimeout(() => navigate('/mentorship'), 1200);
     } catch {
       /* surfaced via errorMessage */
     }
@@ -125,7 +125,7 @@ const MenteeSignupPage = () => {
         <Container maxWidth="md" sx={{ py: { xs: 3, md: 5 } }}>
           <Button
             startIcon={<ArrowBackIcon />}
-            onClick={() => navigate('/development/mentorship')}
+            onClick={() => navigate('/mentorship')}
             sx={{ mb: 2, textTransform: 'none' }}
             color="inherit"
           >
@@ -153,7 +153,7 @@ const MenteeSignupPage = () => {
       <Container maxWidth="md" sx={{ py: { xs: 3, md: 5 } }}>
         <Button
           startIcon={<ArrowBackIcon />}
-          onClick={() => navigate('/development/mentorship')}
+          onClick={() => navigate('/mentorship')}
           sx={{ mb: 2, textTransform: 'none' }}
           color="inherit"
         >
@@ -271,7 +271,7 @@ const MenteeSignupPage = () => {
           <Button
             variant="outlined"
             color="inherit"
-            onClick={() => navigate('/development/mentorship')}
+            onClick={() => navigate('/mentorship')}
           >
             {t('mentee_signup_cancel')}
           </Button>

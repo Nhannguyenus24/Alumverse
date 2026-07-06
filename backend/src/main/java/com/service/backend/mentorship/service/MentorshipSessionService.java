@@ -99,6 +99,6 @@ public class MentorshipSessionService {
                 ? "Cố vấn đã vào phòng họp. Hãy tham gia buổi mentoring ngay."
                 : "Người được cố vấn đã vào phòng họp. Hãy tham gia buổi mentoring ngay.";
         notificationService.createNotificationAsync(recipientId, "Buổi mentoring đã bắt đầu", message,
-                "/development/mentorship/my-bookings");
+                "/mentorship/my-bookings");
     }
 }
