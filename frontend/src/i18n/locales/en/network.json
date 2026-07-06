@@ -219,6 +219,9 @@
     "upload_failed": "Failed to upload the attachment. Please try again.",
     "attachment_unavailable": "Attachment unavailable",
     "image_update_failed": "Failed to update group photo. Please try again.",
-    "access_blocked_title": "Alumni verification required to chat"
+    "access_blocked_title": "Alumni verification required to chat",
+    "message_too_long": "Message must not exceed {{max}} characters.",
+    "char_count": "{{count}}/{{max}}",
+    "char_count_hint": "character limit"
   }
 }

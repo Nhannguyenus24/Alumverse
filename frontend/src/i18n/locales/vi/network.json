@@ -220,6 +220,9 @@
     "upload_failed": "Tải lên thất bại. Vui lòng thử lại.",
     "attachment_unavailable": "Không thể hiển thị tệp đính kèm",
     "image_update_failed": "Cập nhật ảnh nhóm thất bại. Vui lòng thử lại.",
-    "access_blocked_title": "Cần xác minh cựu sinh viên để trò chuyện"
+    "access_blocked_title": "Cần xác minh cựu sinh viên để trò chuyện",
+    "message_too_long": "Tin nhắn không được vượt quá {{max}} ký tự.",
+    "char_count": "{{count}}/{{max}}",
+    "char_count_hint": "giới hạn ký tự"
   }
 }

@@ -425,6 +425,7 @@ const NetworkMemberDirectory = () => {
                 isMessageLoading={checkingUserId === member.userId}
                 isBlockLoading={isBlocking && blockTarget?.userId === member.userId}
                 messageButtonLabel={messageButtonLabel}
+                messageButtonVariant={isConnected ? 'outlined' : 'contained'}
               />
             );
           })}

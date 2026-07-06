@@ -27,6 +27,7 @@ import {
 } from '../../utils/networkConnectionDrawerUi';
 import { buildProgramMajorRows } from '../../utils/academicUtils';
 import { CONVERSATION_REQUEST_STATUS } from '../../constants/conversationRequestStatus';
+import { exceedsLengthLimit, MAX_MESSAGE_LENGTH } from '../../utils/messageContent';
 
 import ChatAvatar from '../ChatAvatar';
 
@@ -102,6 +103,8 @@ const NetworkMessageDrawer = ({
   const { sendMessage, isSending } = useNetworkConversationActions(peerUserId);
 
   const drawerState = resolveConnectionDrawerState(statusOverride ?? connectionStatus, t);
+  const charCount = draft.length;
+  const atLengthLimit = charCount >= MAX_MESSAGE_LENGTH;
   const composerEnabled = canContribute && isComposerEnabled({
     canCompose: drawerState.canCompose,
     singleMessageOnly: drawerState.singleMessageOnly,
@@ -127,7 +130,7 @@ const NetworkMessageDrawer = ({
 
   const handleSend = () => {
     const text = draft.trim();
-    if (!text || !composerEnabled) return;
+    if (!text || !composerEnabled || exceedsLengthLimit(text)) return;
 
     sendMessage(text, {
       onSuccess: () => {
@@ -296,6 +299,24 @@ const NetworkMessageDrawer = ({
           disabled={!composerEnabled || isSending}
           variant="outlined"
           size="small"
+          inputProps={{ maxLength: MAX_MESSAGE_LENGTH }}
+          sx={{
+            ...(atLengthLimit && {
+              '& .MuiOutlinedInput-root': {
+                '& fieldset': { borderColor: 'primary.main' },
+                '&:hover fieldset': { borderColor: 'primary.main' },
+                '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+              },
+            }),
+          }}
+          helperText={
+            charCount > MAX_MESSAGE_LENGTH * 0.8
+              ? `${t('network:chat.char_count', { count: charCount, max: MAX_MESSAGE_LENGTH })} · ${t('network:chat.char_count_hint')}`
+              : undefined
+          }
+          FormHelperTextProps={{
+            sx: { color: atLengthLimit ? 'primary.main' : 'text.secondary' },
+          }}
         />
         <IconButton
           color="primary"
