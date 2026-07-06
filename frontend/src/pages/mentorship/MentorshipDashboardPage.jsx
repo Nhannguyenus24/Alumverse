@@ -328,7 +328,7 @@ const MentorshipDashboardPage = () => {
                   upcomingItems.length > 0 && (
                     <Button
                       size="small"
-                      onClick={() => navigate('/development/mentorship/my-bookings')}
+                      onClick={() => navigate('/mentorship/my-bookings')}
                     >
                       {t('dash_view_all')}
                     </Button>
@@ -368,7 +368,7 @@ const MentorshipDashboardPage = () => {
                     {upcomingItems.length > previewUpcoming.length && (
                       <Button
                         variant="outlined"
-                        onClick={() => navigate('/development/mentorship/my-bookings')}
+                        onClick={() => navigate('/mentorship/my-bookings')}
                       >
                         {t('dash_view_more_upcoming', { count: upcomingItems.length - previewUpcoming.length })}
                       </Button>

@@ -89,8 +89,11 @@ const MentorshipCard = ({
             display: "flex",
             flexWrap: "wrap",
             justifyContent: "center",
+            alignContent: "flex-start",
             gap: 1,
-            minHeight: 34,
+            minHeight: 84,
+            maxHeight: 84,
+            overflow: "hidden",
           }}
         >
           {tags.map((tag, idx) => (

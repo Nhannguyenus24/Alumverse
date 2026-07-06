@@ -9,7 +9,7 @@ import { useMentorshipAccessState } from '../../hooks/mentorship/useMentorshipAc
  * Call-to-action buttons shown on the mentorship landing/hub.
  *
  * @param {{ tone?: 'default' | 'onPrimary' }} props
- *   tone="onPrimary" renders light buttons for the dark hero banner.
+ *   tone="onPrimary" renders primary buttons for the guest hero banner.
  */
 const MentorshipHubActions = ({ tone = 'default' }) => {
   const { t } = useTranslation(['mentorship', 'auth']);
@@ -19,11 +19,11 @@ const MentorshipHubActions = ({ tone = 'default' }) => {
   const onPrimary = tone === 'onPrimary';
   const outlinedOnPrimarySx = onPrimary
     ? {
-        color: 'common.white',
-        borderColor: 'common.white',
+        color: 'primary.main',
+        borderColor: 'primary.main',
         '&:hover': {
-          borderColor: 'common.white',
-          bgcolor: 'rgba(255, 255, 255, 0.12)',
+          borderColor: 'primary.dark',
+          bgcolor: 'primary.lighter',
         },
       }
     : undefined;
@@ -32,12 +32,12 @@ const MentorshipHubActions = ({ tone = 'default' }) => {
   if (access.isGuest) {
     return (
       <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
-        <Button variant="contained" onClick={() => navigate('/auth/login')}>
+        <Button variant="contained" color="primary" onClick={() => navigate('/auth/login')}>
           {t('mentorship:login')}
         </Button>
         <Button
           variant="outlined"
-          color={onPrimary ? undefined : 'primary'}
+          color="primary"
           onClick={() => navigate('/auth/register')}
           sx={outlinedOnPrimarySx}
         >
@@ -83,7 +83,7 @@ const MentorshipHubActions = ({ tone = 'default' }) => {
           variant="contained"
           color="primary"
           startIcon={<SearchIcon />}
-          onClick={() => navigate('/development/mentorship/mentee-signup')}
+          onClick={() => navigate('/mentorship/mentee-signup')}
         >
           {t('mentorship:find_mentor_for_me')}
         </Button>
@@ -91,7 +91,7 @@ const MentorshipHubActions = ({ tone = 'default' }) => {
           variant="contained"
           color={onPrimary ? undefined : 'accent'}
           startIcon={<SchoolIcon />}
-          onClick={() => navigate('/development/mentorship/signup')}
+          onClick={() => navigate('/mentorship/signup')}
           sx={onPrimary ? outlinedOnPrimarySx : undefined}
         >
           {t('mentorship:become_advisor')}
@@ -106,14 +106,14 @@ const MentorshipHubActions = ({ tone = 'default' }) => {
       <Button
         variant="outlined"
         color={onPrimary ? undefined : 'primary'}
-        onClick={() => navigate('/development/mentorship/my-bookings')}
+        onClick={() => navigate('/mentorship/my-bookings')}
         sx={outlinedOnPrimarySx}
       >
         {t('mentorship:my_appointments')}
       </Button>
       <Button
         variant="contained"
-        onClick={() => navigate('/development/mentorship/profile')}
+        onClick={() => navigate('/mentorship/profile')}
       >
         {t('mentorship:personal_page')}
       </Button>

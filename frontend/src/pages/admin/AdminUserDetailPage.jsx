@@ -342,7 +342,7 @@ const AdminUserDetailPage = () => {
             {tab === 4 ? (
               <Stack spacing={1}>
                 <Typography variant="body2">
-                  <strong>{t('user_detail_account_status')}:</strong> {formatAccountStatusLabel(user.status)}
+                  <strong>{t('user_detail_account_status')}:</strong> {formatAccountStatusLabel(user.status, t)}
                 </Typography>
                 {user.banReason ? (
                   <Typography variant="body2">

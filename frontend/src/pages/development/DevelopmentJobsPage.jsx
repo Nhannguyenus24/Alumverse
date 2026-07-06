@@ -4,9 +4,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Box, Button, Pagination, Typography } from '@mui/material';
 import { useSnackbar } from 'notistack';
 
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import SchoolIcon from '@mui/icons-material/School';
-import MenuBookIcon from '@mui/icons-material/MenuBook';
 import WorkIcon from '@mui/icons-material/Work';
 
 import FeaturedArticleCard from '../../components/articles/FeaturedArticleCard';
@@ -28,13 +25,7 @@ import {
   getArticleFilterConfig,
   paginateArticles,
 } from '../../utils/articleListFilters';
-
-const getSidebar = (t) => [
-  { id: '/development', label: t('dev:title'), icon: <TrendingUpIcon /> },
-  { id: '/development/mentorship', label: t('mentorship:title'), icon: <SchoolIcon /> },
-  { id: '/development/academics', label: t('dev:academics'), icon: <MenuBookIcon /> },
-  { id: '/development/jobs', label: t('dev:jobs'), icon: <WorkIcon /> },
-];
+import { getDevelopmentSidebarItems } from '../../constants/developmentNav';
 
 const DevelopmentJobsPage = () => {
   const { t } = useTranslation(['dev', 'mentorship', 'common']);
@@ -44,7 +35,7 @@ const DevelopmentJobsPage = () => {
   const { user, isAuthenticated } = useAuth();
   const { canContribute } = useCanContribute();
   const isAdmin = isAuthenticated && user?.role === 'ADMIN';
-  const sidebar = getSidebar(t);
+  const sidebar = getDevelopmentSidebarItems(t);
   const filters = useMemo(() => getArticleFilterConfig(t, ['job']), [t]);
 
   const [page, setPage] = useState(0);
@@ -111,7 +102,7 @@ const DevelopmentJobsPage = () => {
             startIcon={<WorkIcon />}
             onClick={() => navigate('/post/job')}
           >
-            Tạo cơ hội việc làm
+            {t('dev:create_job_opportunity')}
           </Button>
         </ContributeGuardTooltip>
       )}

@@ -9,7 +9,7 @@ const TopTabFilter = ({ tabs, onNavigate }) => {
     <Stack direction="row" flexWrap="wrap" sx={{ gap: 1.5 }}>
       {tabs.map((tab) => {
         const isActive =
-          tab.path === '/development/mentorship'
+          tab.path === '/mentorship'
             ? normalizedPath === tab.path
             : normalizedPath.startsWith(tab.path);
 

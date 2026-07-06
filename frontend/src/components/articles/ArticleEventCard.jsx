@@ -22,10 +22,16 @@ const ArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
   const [checkingRegistration, setCheckingRegistration] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [openJoinDialog, setOpenJoinDialog] = useState(false);
-  const { data: questions = [] } = useEventQuestions(article?.id, !isAdmin && Boolean(article?.id));
+  const { data: questions = [] } = useEventQuestions(article?.id, !isAdmin && canContribute && Boolean(article?.id));
 
   useEffect(() => {
     if (isAdmin || !article?.id) return;
+    if (!canContribute) {
+      setIsInterested(false);
+      setIsJoined(getEventRegisteredState(article));
+      setCheckingRegistration(false);
+      return;
+    }
     eventApi.checkInterest(article.id)
       .then((res) => setIsInterested(res?.isInterested ?? false))
       .catch(() => {});
@@ -34,7 +40,7 @@ const ArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
       .then((res) => setIsJoined(getEventRegisteredState(res)))
       .catch(() => {})
       .finally(() => setCheckingRegistration(false));
-  }, [article?.id, isAdmin]);
+  }, [article, article?.id, canContribute, isAdmin]);
 
   const handleInterest = async (e) => {
     e.stopPropagation();
@@ -129,11 +135,15 @@ const ArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
           <Typography
             variant="h4"
             fontWeight={700}
-            sx={{
-              flex: 1,
-              color: hovered ? 'primary.main' : 'text.primary',
-              transition: 'color 0.2s ease',
-            }}
+              sx={{
+                flex: 1,
+                display: '-webkit-box',
+                overflow: 'hidden',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                color: hovered ? 'primary.main' : 'text.primary',
+                transition: 'color 0.2s ease',
+              }}
           >
             {article.title}
           </Typography>
@@ -192,7 +202,7 @@ const ArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
         </Stack>
       ) : (
         <Stack direction="row" spacing={1}>
-          <ContributeGuardTooltip sx={{ flex: 1 }}>
+          <ContributeGuardTooltip sx={{ flex: 1, opacity: canContribute ? 1 : 0.58, filter: canContribute ? 'none' : 'grayscale(0.25)' }}>
             <Button
               fullWidth
               variant={isInterested ? 'outlined' : 'contained'}
@@ -204,7 +214,7 @@ const ArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
             </Button>
           </ContributeGuardTooltip>
 
-          <ContributeGuardTooltip sx={{ flex: 1 }}>
+          <ContributeGuardTooltip sx={{ flex: 1, opacity: canContribute ? 1 : 0.58, filter: canContribute ? 'none' : 'grayscale(0.25)' }}>
             <Button
               fullWidth
               variant={isJoined ? 'outlined' : 'contained'}

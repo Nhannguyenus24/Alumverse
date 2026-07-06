@@ -126,7 +126,7 @@ const SaveArticleButton = ({ itemId }) => {
 
 const ArticleHighlightCard = ({ data, channel, eventId, isAdmin = false }) => {
   const { enqueueSnackbar } = useSnackbar();
-  const { t } = useTranslation(['common', 'article', 'event', 'donation']);
+  const { t } = useTranslation(['common', 'article', 'event', 'donation', 'admin']);
   const { canContribute } = useCanContribute();
   const [isInterested, setIsInterested] = useState(false);
   const [isJoined, setIsJoined] = useState(() => getEventRegisteredState(data));
@@ -136,30 +136,38 @@ const ArticleHighlightCard = ({ data, channel, eventId, isAdmin = false }) => {
   const [loadingJoin, setLoadingJoin] = useState(false);
   const [checkingRegistration, setCheckingRegistration] = useState(false);
   const [openJoinDialog, setOpenJoinDialog] = useState(false);
-  const { data: questions = [] } = useEventQuestions(eventId, !isAdmin && channel === "event" && Boolean(eventId));
+  const { data: questions = [] } = useEventQuestions(eventId, !isAdmin && canContribute && channel === "event" && Boolean(eventId));
 
   useEffect(() => {
     if (isAdmin || channel !== "event" || !eventId) return;
-    eventApi.checkInterest(eventId)
-      .then((res) => {
-        const checked = res?.isInterested ?? res?.data?.isInterested ?? false;
-        setIsInterested(checked);
-      })
-      .catch(() => {});
-    setCheckingRegistration(true);
-    eventApi.checkRegistered(eventId)
-      .then((res) => {
-        setIsJoined(getEventRegisteredState(res));
-      })
-      .catch(() => {})
-      .finally(() => setCheckingRegistration(false));
+
+    if (canContribute) {
+      eventApi.checkInterest(eventId)
+        .then((res) => {
+          const checked = res?.isInterested ?? res?.data?.isInterested ?? false;
+          setIsInterested(checked);
+        })
+        .catch(() => {});
+      setCheckingRegistration(true);
+      eventApi.checkRegistered(eventId)
+        .then((res) => {
+          setIsJoined(getEventRegisteredState(res));
+        })
+        .catch(() => {})
+        .finally(() => setCheckingRegistration(false));
+    } else {
+      setIsInterested(false);
+      setIsJoined(getEventRegisteredState(data));
+      setCheckingRegistration(false);
+    }
+
     eventApi.getEventStatisticsById(eventId)
       .then((res) => {
         if (res?.interestedCount != null) setInterestedCount(res.interestedCount);
         if (res?.registeredCount != null) setJoinedCount(res.registeredCount);
       })
       .catch(() => {});
-  }, [channel, eventId, isAdmin]);
+  }, [canContribute, channel, data, eventId, isAdmin]);
 
   const handleInterest = async () => {
     if (loadingInterest || !canContribute) return;
@@ -251,14 +259,14 @@ const ArticleHighlightCard = ({ data, channel, eventId, isAdmin = false }) => {
         </Box>
 
         {/* BUTTONS */}
-        {!isAdmin && <VerificationRequiredAlert sx={{ mb: 1 }} />}
+        {!isAdmin && channel === "donation" && <VerificationRequiredAlert sx={{ mb: 1 }} />}
         {isAdmin ? null : channel === "donation" ? (
-          <ContributeGuardTooltip sx={{ width: "100%" }}>
+          <ContributeGuardTooltip sx={{ width: "100%", opacity: canContribute ? 1 : 0.58, filter: canContribute ? "none" : "grayscale(0.25)" }}>
             <Button fullWidth variant="contained" color="accent" disabled={!canContribute}>{t('donation:donate_button')}</Button>
           </ContributeGuardTooltip>
         ) : (
           <Stack direction="row" spacing={1}>
-            <ContributeGuardTooltip sx={{ flex: 1 }}>
+            <ContributeGuardTooltip sx={{ flex: 1, opacity: canContribute ? 1 : 0.58, filter: canContribute ? "none" : "grayscale(0.25)" }}>
               <Button
                 fullWidth
                 variant={isInterested ? "outlined" : "contained"}
@@ -269,7 +277,7 @@ const ArticleHighlightCard = ({ data, channel, eventId, isAdmin = false }) => {
               </Button>
             </ContributeGuardTooltip>
 
-            <ContributeGuardTooltip sx={{ flex: 1 }}>
+            <ContributeGuardTooltip sx={{ flex: 1, opacity: canContribute ? 1 : 0.58, filter: canContribute ? "none" : "grayscale(0.25)" }}>
               <Button
                 fullWidth
                 variant={isJoined ? "outlined" : "contained"}
@@ -386,7 +394,7 @@ const ArticlePage = () => {
           title: article.title,
           organizer: article.organizer ?? "",
           date: formatDateRange(article.donationDate, article.donationEndDate),
-          stats: [{ value: article.donorCount ?? 0, label: t('donation:stat_donors') }, { value: article.targetAmount != null ? `${formatNumberVi(article.targetAmount)} VNĐ` : "0 VNĐ", label: t('donation:stat_target') }],
+          stats: [{ value: article.donorCount ?? 0, label: t('donation:stat_donors') }, { value: t('donation:currency_vnd', { amount: formatNumberVi(article.targetAmount ?? 0) }), label: t('donation:stat_target') }],
         }
       : null;
   
@@ -416,7 +424,7 @@ const ArticlePage = () => {
                       onClick={() => navigate(isEventArticle ? `/post/event/${id}` : `/admin/article/${resolvedChannel}/${id}/edit`)}
                       sx={{ textTransform: "none", fontWeight: 700 }}
                     >
-                      {isEventArticle ? "Sửa sự kiện" : "Sửa bài viết"}
+                      {isEventArticle ? t('event:edit_event') : t('article:edit_article')}
                     </Button>
                     <Button
                       variant="outlined"
@@ -425,7 +433,7 @@ const ArticlePage = () => {
                       onClick={() => navigate(isEventArticle ? "/admin/events" : "/admin/article")}
                       sx={{ textTransform: "none", fontWeight: 700 }}
                     >
-                      {isEventArticle ? "Quản lý sự kiện" : "Quản lý bài viết"}
+                      {isEventArticle ? t('admin:manage_events') : t('admin:manage_articles')}
                     </Button>
                   </>
                 )}
@@ -467,7 +475,7 @@ const ArticlePage = () => {
                     startIcon={<LinkIcon />}
                     onClick={() => window.open(article.url || article.linkUrl, '_blank', 'noopener,noreferrer')}
                   >
-                    {t('article:visit_link', 'Truy cập liên kết gốc')}
+                    {t('article:visit_link')}
                   </Button>
                 </Box>
               )}

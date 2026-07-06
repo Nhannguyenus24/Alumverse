@@ -4,13 +4,20 @@ import { useTranslation } from 'react-i18next';
 import {
   Alert,
   Box,
+  Button,
   CircularProgress,
+  Card,
   Pagination,
   Stack,
   Typography,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
+import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
+import ChatBubbleOutlineOutlinedIcon from '@mui/icons-material/ChatBubbleOutlineOutlined';
+import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
 
 import NetworkSectionLayout from '../../components/network/NetworkSectionLayout';
+import AlumniContentLayout from '../../layouts/AlumniContentLayout';
 import SearchBar from '../../components/SearchBar';
 import NetworkSearchMemberCard from '../../components/network/NetworkSearchMemberCard';
 import NetworkMessageDrawer from '../../components/network/NetworkMessageDrawer';
@@ -23,13 +30,206 @@ import { useNetworkCurrentMemberId } from '../../hooks/network/useNetworkCurrent
 import { useBlockUser } from '../../hooks/network/useBlockUser';
 import { useNotification } from '../../hooks/useNotification';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
+import { useAuth } from '../../hooks/useAuth';
 import useOrganizationStore from '../../stores/organizationStore';
 import { organizationApi } from '../../utils/api';
 import { CONVERSATION_REQUEST_STATUS } from '../../constants/conversationRequestStatus';
+import {
+  getDefaultNetworkFilters,
+  getNetworkGuestBenefits,
+  getNetworkGuestStats,
+  getNetworkGuestSteps,
+  getNetworkSearchFilterConfig,
+} from '../../constants/networkConfig';
+import StatsBanner from '../../components/StatsBanner';
 
 const PAGE_SIZE = 9;
+const guestBenefitIcons = [
+  GroupsOutlinedIcon,
+  ChatBubbleOutlineOutlinedIcon,
+  VerifiedUserOutlinedIcon,
+];
 
-const NetworkPage = () => {
+const NetworkGuestLanding = () => {
+  const { t } = useTranslation(['network', 'common']);
+  const navigate = useOrgNavigate();
+  const benefits = getNetworkGuestBenefits(t);
+
+  return (
+    <AlumniContentLayout
+      variant="one"
+      maxWidth="lg"
+      pageTitle={t('network:title')}
+      header={null}
+      contentSpacing={0}
+    >
+      <Stack spacing={4}>
+        <Stack spacing={2}>
+          <Typography
+            variant="h1"
+            fontWeight={800}
+            color="primary.main"
+            sx={{ fontSize: { xs: '1.8rem', md: '2.3rem' } }}
+          >
+            {t('network:page_heading')}
+          </Typography>
+          <Typography color="text.secondary">
+            {t('network:page_subtitle')}
+          </Typography>
+        </Stack>
+
+        <Box
+          sx={{
+            borderRadius: 3,
+            px: { xs: 3, md: 5 },
+            py: { xs: 4, md: 5 },
+            bgcolor: (theme) => theme.palette.mode === 'dark'
+              ? alpha(theme.palette.primary.main, 0.18)
+              : 'primary.lighter',
+            color: (theme) => theme.palette.mode === 'dark' ? 'common.white' : 'text.primary',
+            border: '1px solid',
+            borderColor: (theme) => theme.palette.mode === 'dark'
+              ? alpha(theme.palette.primary.main, 0.32)
+              : alpha(theme.palette.primary.main, 0.2),
+            boxShadow: (theme) => theme.palette.mode === 'dark'
+              ? `0 0 34px ${alpha(theme.palette.primary.main, 0.16)}`
+              : 'none',
+          }}
+        >
+          <Typography variant="overline" sx={{ opacity: 0.9, letterSpacing: 2 }}>
+            {t('network:guest_overline')}
+          </Typography>
+          <Typography
+            variant="h3"
+            fontWeight={800}
+            color="primary.main"
+            sx={{ mt: 1, mb: 2, fontSize: { xs: '1.75rem', md: '2.25rem' } }}
+          >
+            {t('network:guest_headline')}
+          </Typography>
+          <Typography sx={{ opacity: 0.92, maxWidth: 840, mb: 3, lineHeight: 1.7 }}>
+            {t('network:guest_desc')}
+          </Typography>
+          <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
+            <Button variant="contained" color="primary" onClick={() => navigate('/auth/login')}>
+              {t('network:guest_login')}
+            </Button>
+            <Button
+              variant="outlined"
+              color="primary"
+              onClick={() => navigate('/auth/register')}
+            >
+              {t('network:guest_register')}
+            </Button>
+          </Stack>
+        </Box>
+
+        <StatsBanner items={getNetworkGuestStats(t)} />
+
+        <Box>
+          <Typography variant="h4" fontWeight={700} mb={3}>
+            {t('network:guest_benefits_heading')}
+          </Typography>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' },
+              gap: 2,
+            }}
+          >
+            {benefits.map((item, index) => {
+              const Icon = guestBenefitIcons[index] ?? GroupsOutlinedIcon;
+              return (
+                <Card key={item.title} sx={{ p: 3, border: '1px solid', borderColor: 'divider' }} elevation={0}>
+                  <Icon sx={{ fontSize: 40, color: 'primary.main', mb: 1.5 }} />
+                  <Typography fontWeight={700} mb={1}>
+                    {item.title}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {item.description}
+                  </Typography>
+                </Card>
+              );
+            })}
+          </Box>
+        </Box>
+
+        <Box>
+          <Typography variant="h4" fontWeight={700} mb={3}>
+            {t('network:guest_steps_heading')}
+          </Typography>
+          <Stack spacing={2}>
+            {getNetworkGuestSteps(t).map((item) => (
+              <Card
+                key={item.step}
+                sx={{
+                  p: 2.5,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  display: 'flex',
+                  gap: 2,
+                  alignItems: 'flex-start',
+                }}
+                elevation={0}
+              >
+                <Box
+                  sx={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: '50%',
+                    bgcolor: 'primary.main',
+                    color: 'common.white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 700,
+                    flexShrink: 0,
+                  }}
+                >
+                  {item.step}
+                </Box>
+                <Box>
+                  <Typography fontWeight={700}>{item.title}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {item.text}
+                  </Typography>
+                </Box>
+              </Card>
+            ))}
+          </Stack>
+        </Box>
+
+        <Card
+          sx={{
+            p: { xs: 3, md: 4 },
+            textAlign: 'center',
+            border: '1px dashed',
+            borderColor: (theme) => alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.36 : 0.24),
+            bgcolor: (theme) => alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.14 : 0.06),
+          }}
+          elevation={0}
+        >
+          <Typography variant="h5" fontWeight={700} mb={1}>
+            {t('network:guest_cta_heading')}
+          </Typography>
+          <Typography color="text.secondary" mb={3} maxWidth={520} mx="auto">
+            {t('network:guest_cta_desc')}
+          </Typography>
+          <Stack direction="row" spacing={1.5} justifyContent="center" flexWrap="wrap" useFlexGap>
+            <Button variant="contained" color="primary" onClick={() => navigate('/auth/login')}>
+              {t('network:guest_login')}
+            </Button>
+            <Button variant="outlined" color="primary" onClick={() => navigate('/auth/register')}>
+              {t('network:guest_register')}
+            </Button>
+          </Stack>
+        </Card>
+      </Stack>
+    </AlumniContentLayout>
+  );
+};
+
+const NetworkMemberDirectory = () => {
   const { t } = useTranslation(['network', 'common']);
   const [searchInput, setSearchInput] = useState('');
   const [appliedFullName, setAppliedFullName] = useState('');
@@ -39,9 +239,7 @@ const NetworkPage = () => {
   // bar — pick more orgs, or "Tất cả" to see every organization.
   const [filters, setFilters] = useState(() => {
     const currentOrgId = useOrganizationStore.getState().organization?.id;
-    return currentOrgId
-      ? { all: false, program: '', major: '', organizationIds: [currentOrgId] }
-      : { all: true, program: '', major: '', organizationIds: [] };
+    return getDefaultNetworkFilters(currentOrgId);
   });
   const [messagePeer, setMessagePeer] = useState(null);
   const [connectionStatus, setConnectionStatus] = useState(null);
@@ -49,22 +247,7 @@ const NetworkPage = () => {
   const [checkingUserId, setCheckingUserId] = useState(null);
   const [blockTarget, setBlockTarget] = useState(null);
 
-  const filters_config = useMemo(() => [
-    {
-      type: 'input',
-      key: 'program',
-      label: t('network:filter_program_label'),
-      inputMode: 'text',
-      placeholder: t('network:filter_program_placeholder'),
-    },
-    {
-      type: 'input',
-      key: 'major',
-      label: t('network:filter_major_label'),
-      inputMode: 'text',
-      placeholder: t('network:filter_major_placeholder'),
-    },
-  ], [t]);
+  const filterConfig = useMemo(() => getNetworkSearchFilterConfig(t), [t]);
 
   const navigate = useOrgNavigate();
   const currentMemberId = useNetworkCurrentMemberId();
@@ -172,7 +355,7 @@ const NetworkPage = () => {
         </Typography>
 
         <DynamicFilterBar
-          config={filters_config}
+          config={filterConfig}
           value={filters}
           onChange={handleFilterChange}
         />
@@ -282,6 +465,22 @@ const NetworkPage = () => {
       />
     </NetworkSectionLayout>
   );
+};
+
+const NetworkPage = () => {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <AlumniContentLayout variant="one" maxWidth="lg" pageTitle="Network" header={null}>
+        <Stack alignItems="center" py={6}>
+          <CircularProgress color="primary" />
+        </Stack>
+      </AlumniContentLayout>
+    );
+  }
+
+  return isAuthenticated ? <NetworkMemberDirectory /> : <NetworkGuestLanding />;
 };
 
 export default NetworkPage;
