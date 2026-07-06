@@ -24,6 +24,7 @@ import { useMyOrganizationMember } from '../../hooks/useMyOrganizationMember';
 import { useCreateMentorSignup } from '../../hooks/mentorship/useCreateMentorSignup';
 import { useSaveMentorDraft } from '../../hooks/mentorship/useSaveMentorDraft';
 import { useMyMentorProfile } from '../../hooks/mentorship/useMyMentorProfile';
+import { getMentorSignupTabs } from '../../constants/mentorshipNav';
 
 const MIN_VERIFICATION_LEVEL = 2;
 const STATUS_DRAFT = 'DRAFT';
@@ -74,11 +75,7 @@ const MentorshipSignupPage = () => {
   const draftMutation = useSaveMentorDraft();
   const existingProfileQuery = useMyMentorProfile();
 
-  const TABS = [
-    { key: 'profile', label: t('mentor_signup_tab_profile') },
-    { key: 'content', label: t('mentor_signup_tab_content') },
-    { key: 'terms', label: t('mentor_signup_tab_terms') },
-  ];
+  const tabs = useMemo(() => getMentorSignupTabs(t), [t]);
 
   const draftValues = useMemo(() => {
     const profile = existingProfileQuery.data;
@@ -162,7 +159,7 @@ const MentorshipSignupPage = () => {
         },
       });
       setSuccess(true);
-      setTimeout(() => navigate('/development/mentorship/profile'), 1200);
+      setTimeout(() => navigate('/mentorship/profile'), 1200);
     } catch {
       /* surfaced via submitMutation.errorMessage */
     }
@@ -218,7 +215,7 @@ const MentorshipSignupPage = () => {
         <Container maxWidth="md" sx={{ py: { xs: 3, md: 5 } }}>
           <Button
             startIcon={<ArrowBackIcon />}
-            onClick={() => navigate('/development/mentorship')}
+            onClick={() => navigate('/mentorship')}
             sx={{ mb: 2, textTransform: 'none' }}
             color="inherit"
           >
@@ -247,7 +244,7 @@ const MentorshipSignupPage = () => {
         <Container maxWidth="md" sx={{ py: { xs: 3, md: 5 } }}>
           <Button
             startIcon={<ArrowBackIcon />}
-            onClick={() => navigate('/development/mentorship')}
+            onClick={() => navigate('/mentorship')}
             sx={{ mb: 2, textTransform: 'none' }}
             color="inherit"
           >
@@ -277,7 +274,7 @@ const MentorshipSignupPage = () => {
       <Container maxWidth="md" sx={{ py: { xs: 3, md: 5 } }}>
         <Button
           startIcon={<ArrowBackIcon />}
-          onClick={() => navigate('/development/mentorship')}
+          onClick={() => navigate('/mentorship')}
           sx={{ mb: 2, textTransform: 'none' }}
           color="inherit"
         >
@@ -349,7 +346,7 @@ const MentorshipSignupPage = () => {
             variant="fullWidth"
             sx={{ borderBottom: 1, borderColor: 'divider' }}
           >
-            {TABS.map((tab) => (
+            {tabs.map((tab) => (
               <Tab
                 key={tab.key}
                 value={tab.key}
@@ -388,7 +385,7 @@ const MentorshipSignupPage = () => {
         </Paper>
 
         <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="flex-end" spacing={1.5} mt={3}>
-          <Button variant="outlined" color="inherit" onClick={() => navigate('/development/mentorship')}>
+          <Button variant="outlined" color="inherit" onClick={() => navigate('/mentorship')}>
             {t('mentor_signup_cancel')}
           </Button>
           <Button

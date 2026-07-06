@@ -19,11 +19,13 @@ import {
 } from '@mui/material';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
-import { USER_ROLES, USER_STATUSES } from '../../constants/adminDefaultUsers';
+import {
+  GRADUATION_STATUSES,
+  USER_ROLES,
+  USER_STATUSES,
+  VERIFICATION_LEVELS,
+} from '../../constants/adminDefaultUsers';
 import { formatAccountStatusLabel } from '../../constants/adminStatusDisplay';
-
-const GRADUATION_STATUSES = ['STUDYING', 'GRADUATED', 'DROPPED'];
-const VERIFICATION_LEVELS = [0, 1, 2, 3];
 
 const defaultEmptyForm = {
   email: '',
@@ -99,7 +101,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
     if (!form.fullName.trim()) next.fullName = t('admin:error_full_name_required');
     if (form.password && form.password.length < 8) next.password = t('admin:error_password_min_length');
     if (form.graduatedYear && !/^\d{4}$/.test(String(form.graduatedYear).trim())) {
-      next.graduatedYear = 'Năm tốt nghiệp phải là 4 chữ số (vd: 2024)';
+      next.graduatedYear = t('admin:error_graduated_year_format');
     }
     setErrors(next);
     const keys = Object.keys(next);
@@ -147,9 +149,8 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
       </DialogTitle>
       <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1, overflow: 'visible' }}>
 
-        {/* ── Thông tin tài khoản ── */}
         <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>
-          Thông tin tài khoản
+          {t('admin:account_info_section')}
         </Typography>
 
         <TextField
@@ -171,7 +172,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
             slotProps={slotProps}
           />
           <TextField
-            label={t('profile:full_name', 'Họ tên')}
+            label={t('profile:full_name')}
             value={form.fullName}
             onChange={handleChange('fullName')}
             error={!!errors.fullName}
@@ -233,65 +234,64 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
             fullWidth
             slotProps={slotProps}
           >
-            {USER_STATUSES.map((s) => <MenuItem key={s} value={s}>{formatAccountStatusLabel(s)}</MenuItem>)}
+            {USER_STATUSES.map((s) => <MenuItem key={s} value={s}>{formatAccountStatusLabel(s, t)}</MenuItem>)}
           </TextField>
         </Box>
 
         <Divider />
 
-        {/* ── Học vấn ── */}
         <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>
-          Học vấn & xác thực
+          {t('admin:education_verification_section')}
         </Typography>
 
         <Box sx={{ display: 'flex', gap: 2 }}>
           <TextField
-            label="Chương trình đào tạo"
+            label={t('admin:education_program_label')}
             value={form.program}
             onChange={handleChange('program')}
             fullWidth
-            placeholder="vd: Chính quy"
+            placeholder={t('admin:education_program_placeholder')}
             slotProps={slotProps}
           />
           <TextField
-            label="Ngành học"
+            label={t('admin:education_major_label')}
             value={form.major}
             onChange={handleChange('major')}
             fullWidth
-            placeholder="vd: Công nghệ thông tin"
+            placeholder={t('admin:education_major_placeholder')}
             slotProps={slotProps}
           />
         </Box>
         <Box sx={{ display: 'flex', gap: 2 }}>
           <TextField
-            label="Năm tốt nghiệp"
+            label={t('admin:graduated_year_label')}
             value={form.graduatedYear}
             onChange={handleChange('graduatedYear')}
             error={!!errors.graduatedYear}
             helperText={errors.graduatedYear}
             fullWidth
-            placeholder="vd: 2024"
+            placeholder={t('admin:year_placeholder')}
             slotProps={slotProps}
           />
           <TextField
             select
-            label="Tình trạng tốt nghiệp"
+            label={t('admin:graduation_status_label')}
             value={form.graduationStatus}
             onChange={handleChange('graduationStatus')}
             fullWidth
             slotProps={slotProps}
           >
-            <MenuItem value="">— Không chọn —</MenuItem>
+            <MenuItem value="">{t('admin:no_selection')}</MenuItem>
             {GRADUATION_STATUSES.map((s) => (
               <MenuItem key={s} value={s}>
-                {s === 'STUDYING' ? 'Đang học' : s === 'GRADUATED' ? 'Đã tốt nghiệp' : 'Bỏ học'}
+                {t(`admin:graduation_status.${s}`)}
               </MenuItem>
             ))}
           </TextField>
         </Box>
         <TextField
           select
-          label="Cấp độ xác thực"
+          label={t('admin:verification_level_label')}
           value={form.verificationLevel}
           onChange={handleChange('verificationLevel')}
           fullWidth
@@ -311,7 +311,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
               onChange={(e) => setForm((prev) => ({ ...prev, isTrustedVerifier: e.target.checked }))}
             />
           }
-          label={t('admin:trusted_verifier_label', { defaultValue: 'Người xác minh tin cậy' })}
+          label={t('admin:trusted_verifier_label')}
         />
 
       </DialogContent>

@@ -26,12 +26,7 @@ import {
   applyArticleFilters,
   getArticleFilterConfig,
 } from '../../utils/articleListFilters';
-
-const getSidebar = (t) => [
-  { id: '/honors', label: t('honors:sidebar_honors'), icon: <EmojiEventsIcon /> },
-  { id: '/honors/alumni', label: t('honors:sidebar_alumni'), icon: <GroupsIcon /> },
-  { id: '/honors/achievements', label: t('honors:sidebar_achievements'), icon: <TrendingUpIcon /> },
-];
+import { getHonorsSidebarItems } from '../../constants/honorsNav';
 
 const HonorsPage = () => {
   const { t } = useTranslation(['honors', 'common']);
@@ -97,7 +92,7 @@ const HonorsPage = () => {
     <AlumniContentLayout
       variant="two"
       pageTitle={t('honors:page_title')}
-      sidebarItems={getSidebar(t)}
+      sidebarItems={getHonorsSidebarItems(t)}
       title={t('honors:heading')}
       description={t('honors:description')}
       actions={!isAdmin && isAuthenticated ? (

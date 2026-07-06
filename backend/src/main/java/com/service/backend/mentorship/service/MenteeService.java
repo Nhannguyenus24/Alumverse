@@ -321,7 +321,7 @@ public class MenteeService {
                                                                 availability.getMentorMemberId(),
                                                                 "Lịch hẹn mới",
                                                                 message,
-                                                                "/development/mentorship/my-bookings"));
+                                                                "/mentorship/my-bookings"));
                                             });
                                 })
                                 .flatMap(this::enrich)));
@@ -379,7 +379,7 @@ public class MenteeService {
                                             avail.getMentorMemberId(),
                                             "Lịch hẹn bị hủy",
                                             "Người được cố vấn đã hủy một buổi hẹn với bạn. Khung giờ tương ứng đã được mở lại.",
-                                            "/development/mentorship/dashboard")))
+                                            "/mentorship/dashboard")))
                                     .then(sessionRepository.findById(sessionId));
                         })
                         .flatMap(this::enrich));
@@ -419,7 +419,7 @@ public class MenteeService {
                         avail.getMentorMemberId(),
                         "Lịch hẹn đã được dời",
                         "Người được cố vấn đã đồng ý dời buổi hẹn sang khung giờ bạn đề xuất.",
-                        "/development/mentorship/dashboard"));
+                        "/mentorship/dashboard"));
     }
 
     private Mono<?> rejectReschedule(MentorshipSession session, com.service.backend.shared.entity.MentorAvailability avail) {
@@ -430,7 +430,7 @@ public class MenteeService {
                         avail.getMentorMemberId(),
                         "Đề nghị dời lịch bị từ chối",
                         "Người được cố vấn đã từ chối đề nghị dời lịch và buổi hẹn đã bị hủy.",
-                        "/development/mentorship/dashboard"));
+                        "/mentorship/dashboard"));
     }
 
     private static boolean isCancelled(Status s) {
@@ -482,7 +482,7 @@ public class MenteeService {
                                                                                         avail.getMentorMemberId(),
                                                                                         "Bạn nhận được một đánh giá mới",
                                                                                         "Một buổi cố vấn vừa được đánh giá " + request.getRating() + "/5 sao. Xem chi tiết phản hồi của bạn.",
-                                                                                        "/development/mentorship/dashboard")))
+                                                                                        "/mentorship/dashboard")))
                                                                 .thenReturn(savedFeedback));
                                     });
                         })

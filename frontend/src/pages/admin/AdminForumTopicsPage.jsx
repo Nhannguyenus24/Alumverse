@@ -32,6 +32,7 @@ import AdminDataTable from "../../components/admin/AdminDataTable";
 import AdminStatusChip from "../../components/admin/AdminStatusChip";
 import AdminDashboardMetricTile from "../../components/admin/AdminDashboardMetricTile";
 import AdminConfirmDeleteDialog from "../../components/admin/AdminConfirmDeleteDialog";
+import { FORUM_TOPIC_STATUS_OPTIONS } from "../../constants/adminDefaultForumPosts";
 import { useAdminForumContext, useAdminSystemContext } from "../../stores/AdminStore";
 import { useAuth } from "../../hooks/useAuth";
 import { formatDate } from "../../utils/dateFormatter";
@@ -89,7 +90,6 @@ const AdminForumTopicsPage = () => {
   });
   const [form, setForm] = useState({ title: "", categoryId: "" });
 
-  const TOPIC_STATUS_OPTIONS = ["ACTIVE", "PENDING", "INACTIVE"];
   const statusLabel = (s) => {
     const k = String(s || "").toUpperCase();
     if (k === "ACTIVE") return t("forum_status_active");
@@ -433,7 +433,7 @@ const AdminForumTopicsPage = () => {
         onClose={() => setStatusMenu(null)}
         anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
       >
-        {TOPIC_STATUS_OPTIONS.map((opt) => (
+        {FORUM_TOPIC_STATUS_OPTIONS.map((opt) => (
           <MenuItem
             key={opt}
             selected={String(statusMenu?.topic?.status || "").toUpperCase() === opt}

@@ -63,7 +63,7 @@ public class MentorshipSessionStatusTask {
                                         "Hãy thêm link tham gia buổi mentoring",
                                         "Một buổi cố vấn của bạn sắp diễn ra nhưng chưa có link tham gia. "
                                                 + "Vui lòng thêm link họp cho buổi này trước khi bắt đầu.",
-                                        "/development/mentorship/my-bookings"))
+                                        "/mentorship/my-bookings"))
                                 .onErrorResume(e -> {
                                     log.error("Failed to remind missing meeting link for session {}",
                                             candidate.getSessionId(), e);
@@ -79,13 +79,13 @@ public class MentorshipSessionStatusTask {
                     session.getMenteeMemberId(),
                     "Buổi cố vấn đã hoàn tất",
                     "Buổi cố vấn của bạn đã kết thúc. Hãy dành chút thời gian để lại đánh giá cho cố vấn nhé!",
-                    "/development/mentorship/my-bookings");
+                    "/mentorship/my-bookings");
         } else {
             notificationService.createNotificationAsync(
                     session.getMenteeMemberId(),
                     "Buổi cố vấn đã quá hạn",
                     "Buổi cố vấn đã qua giờ mà không có ai tham gia. Bạn có thể đặt lại lịch hoặc báo cáo sự cố.",
-                    "/development/mentorship/my-bookings");
+                    "/mentorship/my-bookings");
         }
     }
 }

@@ -13,6 +13,10 @@ export const USER_STATUSES = [
   'UNVERIFIED',
 ];
 
+export const GRADUATION_STATUSES = ['STUDYING', 'GRADUATED', 'DROPPED'];
+
+export const VERIFICATION_LEVELS = [0, 1, 2, 3];
+
 export const BAN_REASON_OPTIONS = [
   { value: 'SPAM', label: 'Spam' },
   { value: 'INAPPROPRIATE', label: 'Inappropriate content' },

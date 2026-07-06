@@ -1,5 +1,5 @@
 import { Suspense, lazy } from "react";
-import { createBrowserRouter, Navigate, Outlet } from "react-router";
+import { createBrowserRouter, Navigate, Outlet, useLocation } from "react-router";
 import { Box, CircularProgress } from "@mui/material";
 import MainLayout from "../layouts/MainLayout";
 import AuthLayout from "../layouts/AuthLayout";
@@ -244,6 +244,82 @@ const MenteeSignupPage = Loadable(
   lazy(() => import("../pages/mentorship/MenteeSignupPage")),
 );
 
+const MentorshipLegacyRedirect = () => {
+  const location = useLocation();
+  const nextPath = location.pathname.replace(/\/development\/mentorship(?=\/|$)/, "/mentorship");
+
+  return <Navigate to={`${nextPath}${location.search}${location.hash}`} replace />;
+};
+
+const mentorshipRouteChildren = [
+  {
+    index: true,
+    element: <MentorshipPage />,
+    handle: { hideFooter: true },
+  },
+  {
+    path: "browse",
+    element: <Navigate to=".." replace />,
+  },
+  {
+    path: "dashboard",
+    element: <MentorshipDashboardPage />,
+  },
+  {
+    path: "profile",
+    children: [
+      {
+        index: true,
+        element: <MyProfilePage />,
+      },
+      {
+        path: "edit",
+        element: <MyProfileEditPage />,
+      },
+    ],
+  },
+  {
+    path: "calendar",
+    element: <MentorshipYourCalendarPage />,
+  },
+  {
+    path: "mentors/:mentorId",
+    element: <MyProfilePage />,
+  },
+  {
+    path: "mentors/:mentorId/book",
+    element: (
+      <MentorshipBookingGate>
+        <MentorshipBookingPage />
+      </MentorshipBookingGate>
+    ),
+  },
+  {
+    path: "my-bookings",
+    element: (
+      <MentorshipFullAccessGate>
+        <MentorshipMyBookingsPage />
+      </MentorshipFullAccessGate>
+    ),
+  },
+  {
+    path: "signup",
+    element: (
+      <MentorshipFullAccessGate>
+        <MentorshipSignupPage />
+      </MentorshipFullAccessGate>
+    ),
+  },
+  {
+    path: "mentee-signup",
+    element: (
+      <MentorshipFullAccessGate>
+        <MenteeSignupPage />
+      </MentorshipFullAccessGate>
+    ),
+  },
+];
+
 // User pages
 const PostArticlePage = Loadable(
   lazy(() => import("../pages/user/PostArticlePage")),
@@ -380,11 +456,7 @@ export const router = createBrowserRouter([
       },
       {
         path: "events",
-        element: (
-          <ProtectedRoute>
-            <ActivitiesEventsPage />
-          </ProtectedRoute>
-        ),
+        element: <ActivitiesEventsPage />,
       },
       {
         path: "news",
@@ -400,11 +472,7 @@ export const router = createBrowserRouter([
       },
       {
         path: "network",
-        element: (
-          <ProtectedRoute>
-            <Outlet />
-          </ProtectedRoute>
-        ),
+        element: <Outlet />,
         children: [
           {
             index: true,
@@ -412,15 +480,27 @@ export const router = createBrowserRouter([
           },
           {
             path: "requests",
-            element: <NetworkIncomingRequestsPage />,
+            element: (
+              <ProtectedRoute>
+                <NetworkIncomingRequestsPage />
+              </ProtectedRoute>
+            ),
           },
           {
             path: "connections",
-            element: <NetworkConnectionsPage />,
+            element: (
+              <ProtectedRoute>
+                <NetworkConnectionsPage />
+              </ProtectedRoute>
+            ),
           },
           {
             path: "restricted-connections",
-            element: <NetworkRestrictedConnectionsPage />,
+            element: (
+              <ProtectedRoute>
+                <NetworkRestrictedConnectionsPage />
+              </ProtectedRoute>
+            ),
           },
         ],
       },
@@ -594,77 +674,14 @@ export const router = createBrowserRouter([
             element: <DevelopmentJobsPage />,
           },
           {
-            path: "mentorship",
-            children: [
-              {
-                index: true,
-                element: <MentorshipPage />,
-                handle: { hideFooter: true },
-              },
-              {
-                path: "browse",
-                element: <Navigate to=".." replace />,
-              },
-              {
-                path: "dashboard",
-                element: <MentorshipDashboardPage />,
-              },
-              {
-                path: "profile",
-                children: [
-                  {
-                    index: true,
-                    element: <MyProfilePage />,
-                  },
-                  {
-                    path: "edit",
-                    element: <MyProfileEditPage />,
-                  },
-                ],
-              },
-              {
-                path: "calendar",
-                element: <MentorshipYourCalendarPage />,
-              },
-              {
-                path: "mentors/:mentorId",
-                element: <MyProfilePage />,
-              },
-              {
-                path: "mentors/:mentorId/book",
-                element: (
-                  <MentorshipBookingGate>
-                    <MentorshipBookingPage />
-                  </MentorshipBookingGate>
-                ),
-              },
-              {
-                path: "my-bookings",
-                element: (
-                  <MentorshipFullAccessGate>
-                    <MentorshipMyBookingsPage />
-                  </MentorshipFullAccessGate>
-                ),
-              },
-              {
-                path: "signup",
-                element: (
-                  <MentorshipFullAccessGate>
-                    <MentorshipSignupPage />
-                  </MentorshipFullAccessGate>
-                ),
-              },
-              {
-                path: "mentee-signup",
-                element: (
-                  <MentorshipFullAccessGate>
-                    <MenteeSignupPage />
-                  </MentorshipFullAccessGate>
-                ),
-              },
-            ],
+            path: "mentorship/*",
+            element: <MentorshipLegacyRedirect />,
           },
         ],
+      },
+      {
+        path: "mentorship",
+        children: mentorshipRouteChildren,
       },
       {
         path: "admin",

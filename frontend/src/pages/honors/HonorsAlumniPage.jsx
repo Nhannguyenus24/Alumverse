@@ -27,12 +27,7 @@ import {
   getArticleFilterConfig,
   paginateArticles,
 } from '../../utils/articleListFilters';
-
-const getSidebar = (t) => [
-  { id: '/honors', label: t('honors:sidebar_honors'), icon: <EmojiEventsIcon /> },
-  { id: '/honors/alumni', label: t('honors:sidebar_alumni'), icon: <GroupsIcon /> },
-  { id: '/honors/achievements', label: t('honors:sidebar_achievements'), icon: <TrendingUpIcon /> },
-];
+import { getHonorsSidebarItems } from '../../constants/honorsNav';
 
 const HonorsAlumniPage = () => {
   const { t } = useTranslation(['honors', 'common']);
@@ -42,7 +37,7 @@ const HonorsAlumniPage = () => {
   const { user, isAuthenticated } = useAuth();
   const { canContribute } = useCanContribute();
   const isAdmin = isAuthenticated && user?.role === 'ADMIN';
-  const sidebar = getSidebar(t);
+  const sidebar = getHonorsSidebarItems(t);
   const filters = useMemo(() => getArticleFilterConfig(t, ['alumni']), [t]);
 
   const [page, setPage] = useState(0);

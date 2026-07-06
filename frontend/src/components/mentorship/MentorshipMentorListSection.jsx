@@ -77,7 +77,7 @@ const MentorshipMentorListSection = () => {
   const mentors = useMemo(() => paginated?.items ?? [], [paginated]);
 
   const handleViewProfile = (mentorMemberId) =>
-    navigate(`/development/mentorship/mentors/${mentorMemberId}`);
+    navigate(`/mentorship/mentors/${mentorMemberId}`);
 
   const handleBook = (mentorMemberId) => {
     if (!access.canUseMentorship) {
@@ -91,10 +91,10 @@ const MentorshipMentorListSection = () => {
       enqueueSnackbar(t('mentorship:snack_need_join_to_book'), {
         variant: 'warning',
       });
-      navigate('/development/mentorship/mentee-signup');
+      navigate('/mentorship/mentee-signup');
       return;
     }
-    navigate(`/development/mentorship/mentors/${mentorMemberId}/book`);
+    navigate(`/mentorship/mentors/${mentorMemberId}/book`);
   };
 
   const bookDisabledReason = !access.canUseMentorship

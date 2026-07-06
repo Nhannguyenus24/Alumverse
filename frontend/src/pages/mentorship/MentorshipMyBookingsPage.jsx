@@ -44,7 +44,11 @@ import {
   updateMentorSessionMeetingLink,
 } from '../../utils/api';
 import { reasonsForStatus } from '../../components/mentorship/reportReasons';
-import { getMentorProfileTabs, getMenteeProfileTabs } from '../../constants/mentorshipNav';
+import {
+  getMenteeProfileTabs,
+  getMentorProfileTabs,
+  getMentorshipBookingStatusFilters,
+} from '../../constants/mentorshipNav';
 import { validateMeetingLink, meetingLinkPasswordWarning } from '../../utils/meetingLink';
 import { formatMentorHeadline } from '../../utils/profileRoleUtils';
 import { useTranslation } from 'react-i18next';
@@ -52,22 +56,11 @@ import { useTranslation } from 'react-i18next';
 const DEFAULT_COVER =
   'https://info.cognician.com/hubfs/220201%20mentorship-%20desktop.png';
 
-const ACTIVE_STATUSES = new Set(['PENDING', 'CONFIRMED', 'IN_PROGRESS', 'RESCHEDULE_PROPOSED']);
-const PAST_STATUSES = new Set(['COMPLETED', 'EXPIRED']);
-const CANCELLED_STATUSES = new Set(['CANCELLED', 'CANCELLED_BY_MENTEE', 'CANCELLED_BY_MENTOR', 'REJECTED']);
-
-const getStatusFilters = (t) => [
-  { key: 'all', label: t('bookings_filter_all'), match: () => true },
-  { key: 'upcoming', label: t('bookings_filter_upcoming'), match: (s) => ACTIVE_STATUSES.has(s.status) },
-  { key: 'past', label: t('bookings_filter_past'), match: (s) => PAST_STATUSES.has(s.status) },
-  { key: 'cancelled', label: t('bookings_filter_cancelled'), match: (s) => CANCELLED_STATUSES.has(s.status) },
-];
-
 const PAGE_SIZE = 50;
 
 const MentorshipMyBookingsPage = () => {
   const { t } = useTranslation('mentorship');
-  const STATUS_FILTERS = useMemo(() => getStatusFilters(t), [t]);
+  const statusFilters = useMemo(() => getMentorshipBookingStatusFilters(t), [t]);
   const navigate = useOrgNavigate();
   const access = useMentorshipAccessState();
 
@@ -134,9 +127,9 @@ const MentorshipMyBookingsPage = () => {
   }, [menteeSessionsQuery.data, mentorSessionsQuery.data, canUseMentorSessions]);
 
   const visibleItems = useMemo(() => {
-    const matcher = STATUS_FILTERS.find((t) => t.key === statusKey)?.match ?? (() => true);
+    const matcher = statusFilters.find((item) => item.key === statusKey)?.match ?? (() => true);
     return items.filter(matcher);
-  }, [STATUS_FILTERS, items, statusKey]);
+  }, [statusFilters, items, statusKey]);
 
   const isLoading =
     access.isLoading ||
@@ -268,9 +261,9 @@ const MentorshipMyBookingsPage = () => {
       });
       closeRescheduleDialog();
       if (mentorId) {
-        navigate(`/development/mentorship/mentors/${mentorId}/book`);
+        navigate(`/mentorship/mentors/${mentorId}/book`);
       } else {
-        navigate('/development/mentorship');
+        navigate('/mentorship');
       }
     } catch {
       /* cancelMutation.errorMessage */
@@ -484,8 +477,8 @@ const MentorshipMyBookingsPage = () => {
             variant="scrollable"
             scrollButtons="auto"
           >
-            {STATUS_FILTERS.map((t) => (
-              <Tab key={t.key} value={t.key} label={t.label} />
+            {statusFilters.map((item) => (
+              <Tab key={item.key} value={item.key} label={item.label} />
             ))}
           </Tabs>
 
@@ -503,7 +496,7 @@ const MentorshipMyBookingsPage = () => {
                   : t('bookings_empty_filter')}
               </Typography>
               {items.length === 0 && (
-                <Button variant="contained" onClick={() => navigate('/development/mentorship')}>
+                <Button variant="contained" onClick={() => navigate('/mentorship')}>
                   {t('bookings_find_mentor_btn')}
                 </Button>
               )}

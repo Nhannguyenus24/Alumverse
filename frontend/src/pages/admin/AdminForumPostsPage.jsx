@@ -34,18 +34,17 @@ import AdminForumPostDetailDialog from '../../components/admin/AdminForumPostDet
 import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
 import AdminDataTable from '../../components/admin/AdminDataTable';
 import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetricTile';
-import { FORUM_STATUS_FILTER_OPTIONS } from '../../constants/adminDefaultForumPosts';
+import { FORUM_STATUS_MENU_ORDER, getForumStatusFilterOptions } from '../../constants/adminDefaultForumPosts';
 import { useAdminForumContext } from '../../stores/AdminStore';
 import { useAuth } from '../../hooks/useAuth';
 import { formatDateTime } from '../../utils/dateFormatter';
 import { forumModerationLabel, truncateText, toPlainText } from '../../utils/stringUtils';
 
-const FORUM_STATUS_MENU_ORDER = ['PENDING', 'FLAGGED', 'APPROVED', 'REJECTED'];
-
 const AdminForumPostsPage = () => {
   const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
   const { t } = useTranslation('admin');
+  const forumStatusFilterOptions = useMemo(() => getForumStatusFilterOptions(t), [t]);
   const {
     posts,
     postsPage,
@@ -88,7 +87,7 @@ const AdminForumPostsPage = () => {
       [t('forum_col_author')]: p.authorName,
       [t('forum_col_topic')]: p.topicTitle,
       [t('forum_col_content')]: toPlainText(p.content),
-      [t('forum_col_status')]: forumModerationLabel(p.moderationStatus),
+      [t('forum_col_status')]: forumModerationLabel(p.moderationStatus, t),
       [t('forum_col_organization')]: p.organizationName || '-',
       [t('forum_col_posted_at')]: formatDateTime(p.postedAt)
     }));
@@ -145,7 +144,7 @@ const AdminForumPostsPage = () => {
         <AdminStatusChip
           status={st}
           category="forum"
-          label={forumModerationLabel(st)}
+          label={forumModerationLabel(st, t)}
           onClick={(e) => {
             e.stopPropagation();
             setForumStatusMenu({ anchorEl: e.currentTarget, post: p });
@@ -314,7 +313,7 @@ const AdminForumPostsPage = () => {
                 onChange={(e) => setStatusFilter(e.target.value)}
                 sx={{ minWidth: 160 }}
               >
-                {FORUM_STATUS_FILTER_OPTIONS.map((opt) => (
+                {forumStatusFilterOptions.map((opt) => (
                   <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
                 ))}
               </TextField>
@@ -406,7 +405,7 @@ const AdminForumPostsPage = () => {
             }}
             sx={{ fontSize: 14, fontWeight: 500 }}
           >
-            {forumModerationLabel(st)}
+            {forumModerationLabel(st, t)}
           </MenuItem>
         ))}
       </Menu>
@@ -415,7 +414,7 @@ const AdminForumPostsPage = () => {
       <AdminForumPostDetailDialog
         open={Boolean(forumDetailPost)}
         post={forumDetailPost}
-        statusLabel={forumDetailPost ? forumModerationLabel(forumDetailPost.moderationStatus) : ''}
+        statusLabel={forumDetailPost ? forumModerationLabel(forumDetailPost.moderationStatus, t) : ''}
         onClose={() => setForumDetailPost(null)}
         onBan={handleBan}
         onUnban={handleUnban}

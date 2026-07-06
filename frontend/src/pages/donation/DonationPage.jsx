@@ -16,9 +16,9 @@ import FeaturedArticleDonationCard from "../../components/articles/FeaturedArtic
 import DonationCloseDialog from "../../components/donation/DonationCloseDialog";
 import StatsBanner from "../../components/StatsBanner";
 import AlumniContentLayout from "../../layouts/AlumniContentLayout";
+import { DEFAULT_DONATION_FILTERS, getDonationFilterConfig } from "../../constants/donationConfig";
 
 const DEFAULT_ADMIN_STATS = { totalCurrentAmount: 0, totalFunds: 0, totalDonations: 0, totalDonationsAmountThisMonth: 0 };
-const DEFAULT_FILTERS = { all: true, timeStartedFrom: "", timeStartedTo: "", trending: "", amountMin: "", amountMax: "" };
 
 function formatCurrency(value) {
   return new Intl.NumberFormat("vi-VN").format(Number(value ?? 0));
@@ -44,7 +44,7 @@ export default function DonationPage() {
   const [campaigns, setCampaigns] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
-  const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const [filters, setFilters] = useState(DEFAULT_DONATION_FILTERS);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageCount, setPageCount] = useState(1);
@@ -57,12 +57,7 @@ export default function DonationPage() {
   const gridPageSize = 4;
   const handlePageChange = usePaginationScrollToTop({ currentPage: page, setPage });
 
-  const donationFilters = useMemo(() => [
-    { type: "date", key: "timeStartedFrom", label: t("donation:filter_from_date") },
-    { type: "date", key: "timeStartedTo", label: t("donation:filter_to_date") },
-    { type: "dropdown", key: "trending", label: t("donation:filter_trending"), multiple: false, options: [{ value: "asc", label: t("common:oldest") }, { value: "desc", label: t("common:newest") }] },
-    { type: "range-input", key: "amount", label: t("donation:filter_amount_range") },
-  ], [t]);
+  const donationFilters = useMemo(() => getDonationFilterConfig(t), [t]);
 
   useEffect(() => {
     if (!isAdmin) return;

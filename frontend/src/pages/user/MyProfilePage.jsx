@@ -447,10 +447,10 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
               </Typography>
             </Alert>
             <Stack direction="row" spacing={2} flexWrap="wrap">
-              <Button variant="contained" size="large" sx={{ borderRadius: 2 }} onClick={() => navigate('/development/mentorship/mentee-signup')}>
+              <Button variant="contained" size="large" sx={{ borderRadius: 2 }} onClick={() => navigate('/mentorship/mentee-signup')}>
                 {t('profile:find_mentor_btn')}
               </Button>
-              <Button variant="outlined" size="large" sx={{ borderRadius: 2 }} onClick={() => navigate('/development/mentorship/signup')}>
+              <Button variant="outlined" size="large" sx={{ borderRadius: 2 }} onClick={() => navigate('/mentorship/signup')}>
                 {t('profile:become_mentor_btn')}
               </Button>
             </Stack>
@@ -636,7 +636,7 @@ const PublicMentorProfile = ({ mentorMemberId, navigate }) => {
 
   useEffect(() => {
     if (isOwnProfile) {
-      navigate('/development/mentorship/profile', { replace: true });
+      navigate('/mentorship/profile', { replace: true });
     }
   }, [isOwnProfile, navigate]);
 
