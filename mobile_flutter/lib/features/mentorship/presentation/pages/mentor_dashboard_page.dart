@@ -33,6 +33,39 @@ class _MentorDashboardPageState extends ConsumerState<MentorDashboardPage>
 
   @override
   Widget build(BuildContext context) {
+    final approvedAsync = ref.watch(isApprovedMentorProvider);
+
+    return approvedAsync.when(
+      loading:
+          () => Scaffold(
+            appBar: AppBar(title: Text('mentorship.manage_mentor'.tr())),
+            body: const Center(child: CircularProgressIndicator()),
+          ),
+      error:
+          (_, __) => _MentorOnlyScaffold(
+            title: 'mentorship.manage_mentor'.tr(),
+            actionLabel: 'mentorship.become_mentor'.tr(),
+          ),
+      data: (approved) {
+        if (!approved) {
+          return _MentorOnlyScaffold(
+            title: 'mentorship.manage_mentor'.tr(),
+            actionLabel: 'mentorship.become_mentor'.tr(),
+          );
+        }
+        return _DashboardContent(tabCtrl: _tabCtrl);
+      },
+    );
+  }
+}
+
+class _DashboardContent extends ConsumerWidget {
+  const _DashboardContent({required this.tabCtrl});
+
+  final TabController tabCtrl;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
     final sessionsAsync = ref.watch(mentorSessionsProvider);
     final profileAsync = ref.watch(myMentorProfileProvider);
 
@@ -52,7 +85,7 @@ class _MentorDashboardPageState extends ConsumerState<MentorDashboardPage>
           ),
         ],
         bottom: TabBar(
-          controller: _tabCtrl,
+          controller: tabCtrl,
           isScrollable: true,
           tabAlignment: TabAlignment.start,
           tabs: [
@@ -141,7 +174,7 @@ class _MentorDashboardPageState extends ConsumerState<MentorDashboardPage>
                         )
                         .toList();
                 return TabBarView(
-                  controller: _tabCtrl,
+                  controller: tabCtrl,
                   children: [
                     _PendingList(sessions: pending),
                     _UpcomingList(sessions: upcoming),
@@ -152,6 +185,62 @@ class _MentorDashboardPageState extends ConsumerState<MentorDashboardPage>
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _MentorOnlyScaffold extends StatelessWidget {
+  const _MentorOnlyScaffold({required this.title, required this.actionLabel});
+
+  final String title;
+  final String actionLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(title)),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.08),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.school_outlined,
+                  color: AppColors.primary,
+                  size: 34,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'mentorship.mentor_only_title'.tr(),
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'mentorship.mentor_only_desc'.tr(),
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: 20),
+              FilledButton(
+                onPressed: () => context.go(RouteNames.mentorship),
+                child: Text(actionLabel),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

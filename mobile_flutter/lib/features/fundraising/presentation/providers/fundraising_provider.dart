@@ -8,7 +8,7 @@ import '../../data/models/fund_summary.dart';
 import '../../data/repositories/fundraising_repository.dart';
 
 /// Number of campaigns shown per page.
-const int kFundPageSize = 3;
+const int kFundPageSize = 9;
 
 /// Search + filter + page state for the fund list.
 class FundQuery {

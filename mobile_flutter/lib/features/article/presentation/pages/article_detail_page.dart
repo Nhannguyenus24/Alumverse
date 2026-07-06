@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/article_topic_label.dart';
 import '../../../../core/utils/image_url.dart';
 import '../../../../shared/widgets/app_toast.dart';
 import '../../data/repositories/article_repository.dart';
@@ -14,18 +15,27 @@ import '../providers/news_provider.dart';
 /// renders) — displayed with [HtmlWidget] so formatting, lists and inline
 /// images match the web. Relative image URLs are resolved against the server.
 class ArticleDetailPage extends ConsumerWidget {
-  const ArticleDetailPage({super.key, required this.articleId});
+  const ArticleDetailPage({
+    super.key,
+    required this.articleId,
+    this.channel = 'news',
+  });
 
   final int articleId;
+  final String channel;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final async = ref.watch(newsDetailProvider(articleId));
+    final request = ArticleDetailRequest(id: articleId, channel: channel);
+    final async = ref.watch(articleDetailProvider(request));
+    final canSave = channel == 'news';
 
     return Scaffold(
       appBar: AppBar(
         title: Text('article.detail_title'.tr()),
-        actions: [_SaveButton(articleId: articleId)],
+        actions: [
+          if (canSave) _SaveButton(articleId: articleId),
+        ],
       ),
       body: async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -46,7 +56,7 @@ class ArticleDetailPage extends ConsumerWidget {
                     const SizedBox(height: 12),
                     TextButton(
                       onPressed:
-                          () => ref.invalidate(newsDetailProvider(articleId)),
+                          () => ref.invalidate(articleDetailProvider(request)),
                       child: Text('common.retry'.tr()),
                     ),
                   ],
@@ -59,6 +69,7 @@ class ArticleDetailPage extends ConsumerWidget {
               article.publishedAt != null
                   ? DateFormat('dd/MM/yyyy').format(article.publishedAt!)
                   : null;
+          final topicLabel = articleTopicLabel(article.topic);
 
           return ListView(
             padding: EdgeInsets.zero,
@@ -81,9 +92,9 @@ class ArticleDetailPage extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (article.topic != null && article.topic!.isNotEmpty)
+                    if (topicLabel.isNotEmpty)
                       Text(
-                        article.topic!.toUpperCase(),
+                        topicLabel.toUpperCase(),
                         style: const TextStyle(
                           color: AppColors.primary,
                           fontWeight: FontWeight.w700,

@@ -166,7 +166,7 @@ class _EventGrid extends StatelessWidget {
         crossAxisCount: 2,
         mainAxisSpacing: 12,
         crossAxisSpacing: 12,
-        childAspectRatio: 0.82,
+        childAspectRatio: 0.72,
       ),
       delegate: SliverChildBuilderDelegate(
         (_, i) => _EventCard(event: events[i]),
