@@ -5,8 +5,12 @@ import com.service.backend.article.dto.*;
 import com.service.backend.fundraising.dao.FundR2dbcRepository;
 import com.service.backend.fundraising.dto.FundListItemResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
+import com.service.backend.shared.enums.ErrorCode;
+import com.service.backend.shared.enums.Status;
+import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.utils.PaginationHelper;
+import com.service.backend.user.service.NotificationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -23,19 +27,22 @@ public class AdminArticleService {
     private final JobR2dbcRepository jobRepository;
     private final LearningResourceR2dbcRepository learningResourceRepository;
     private final FundR2dbcRepository fundRepository;
+    private final NotificationService notificationService;
 
     public AdminArticleService(NewsR2dbcRepository newsRepository,
                                AlumniPostR2dbcRepository alumniPostRepository,
                                AchievementR2dbcRepository achievementRepository,
                                JobR2dbcRepository jobRepository,
                                LearningResourceR2dbcRepository learningResourceRepository,
-                               FundR2dbcRepository fundRepository) {
+                               FundR2dbcRepository fundRepository,
+                               NotificationService notificationService) {
         this.newsRepository = newsRepository;
         this.alumniPostRepository = alumniPostRepository;
         this.achievementRepository = achievementRepository;
         this.jobRepository = jobRepository;
         this.learningResourceRepository = learningResourceRepository;
         this.fundRepository = fundRepository;
+        this.notificationService = notificationService;
     }
 
     public Mono<PaginatedResponse<NewsResponse>> getAllNews(Integer organizationId, String keyword, int page, int limit) {
@@ -174,5 +181,30 @@ public class AdminArticleService {
                 fundRepository.countFiltered(organizationId, kw, null, null, null, null),
                 page, limit
         ).doOnSuccess(r -> log.info("getAllFunds result (org={}, keyword={}): {}", organizationId, kw, JsonUtils.toJson(r)));
+    }
+
+    public Mono<AchievementResponse> updateAchievementStatus(Integer id, Status status) {
+        return achievementRepository.findById(id)
+                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.ACHIEVEMENT_NOT_FOUND, "Achievement not found with id: " + id)))
+                .flatMap(existing -> achievementRepository.updateStatus(id, status)
+                        .then(achievementRepository.findById(id)))
+                .doOnNext(updated -> {
+                    if (Status.APPROVED.equals(status)) {
+                        notificationService.createNotificationAsync(
+                                updated.getMemberId(),
+                                "Bài vinh danh đã được duyệt",
+                                "Bài viết \"" + updated.getTitle() + "\" đã được duyệt và hiển thị công khai.",
+                                "/honors/achievements"
+                        );
+                    } else if (Status.REJECTED.equals(status)) {
+                        notificationService.createNotificationAsync(
+                                updated.getMemberId(),
+                                "Bài vinh danh bị từ chối",
+                                "Bài viết \"" + updated.getTitle() + "\" chưa được duyệt. Vui lòng kiểm tra lại nội dung hoặc minh chứng.",
+                                "/honors/achievements"
+                        );
+                    }
+                })
+                .map(AchievementResponse::from);
     }
 }

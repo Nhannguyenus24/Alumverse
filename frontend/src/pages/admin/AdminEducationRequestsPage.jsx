@@ -3,24 +3,17 @@ import { useOutletContext } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
 import {
-  Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle,
+  Box, Button, Dialog, DialogActions, DialogContent, DialogTitle,
   MenuItem, Stack, Tab, Tabs, TextField, Typography,
 } from '@mui/material';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import AdminDataTable from '../../components/admin/AdminDataTable';
+import AdminStatusChip from '../../components/admin/AdminStatusChip';
 import { useAdminSystemContext } from '../../stores/AdminStore';
 import { formatDateTime } from '../../utils/dateFormatter';
 import { adminEducationApi } from '../../utils/api';
-
-const STATUS_COLOR = { PENDING: 'warning', APPROVED: 'success', REJECTED: 'error' };
-
-const getStatusLabels = (t) => ({
-  PENDING: t('admin:edu_status_pending'),
-  APPROVED: t('admin:edu_status_approved'),
-  REJECTED: t('admin:edu_status_rejected'),
-});
 
 const getEduFieldLabels = (t) => ({
   program: t('admin:edu_field_program'),
@@ -56,7 +49,6 @@ const EduDataSection = ({ title, data, eduFieldLabels }) => {
 
 const AdminEducationRequestsPage = () => {
   const { t } = useTranslation('admin');
-  const STATUS_LABEL = getStatusLabels(t);
   const EDU_FIELD_LABELS = getEduFieldLabels(t);
   const { enqueueSnackbar } = useSnackbar();
   const { stableOrgId } = useAdminSystemContext();
@@ -149,11 +141,7 @@ const AdminEducationRequestsPage = () => {
       headerName: t('col_status'),
       width: 130,
       render: (row) => (
-        <Chip
-          label={STATUS_LABEL[row.status] ?? row.status}
-          color={STATUS_COLOR[row.status] ?? 'default'}
-          size="small"
-        />
+        <AdminStatusChip status={row.status} category="education" />
       ),
     },
     {

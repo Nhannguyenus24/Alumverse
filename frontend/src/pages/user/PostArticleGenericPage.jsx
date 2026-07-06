@@ -17,6 +17,7 @@ import {
 import { useNotification } from '../../hooks/useNotification';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useState } from 'react';
+import { useAuth } from '../../hooks/useAuth';
 
 const JOB_TYPE_BY_TOPIC = {
   internship: 'INTERNSHIP',
@@ -90,11 +91,11 @@ const CHANNEL_CONFIG = {
     payloadKey: 'imageBase64',
     useBase64: true,
     contentKey: 'description',
-    buildPayload: ({ title, content, topic, imageBase64 }) => ({
+    buildPayload: ({ title, content, topic, imageBase64, isAdminLike }) => ({
       title,
       description: content,
       topic,
-      status: 'APPROVED',
+      status: isAdminLike ? 'APPROVED' : 'PENDING',
       awardedDate: new Date().toISOString().slice(0, 10),
       ...(imageBase64 ? { imageBase64 } : {}),
     }),
@@ -147,6 +148,8 @@ const PostArticleGenericPage = () => {
   const navigate = useOrgNavigate();
   const { t } = useTranslation('article');
   const { showSuccess, showError } = useNotification();
+  const { user } = useAuth();
+  const isAdminLike = ['ADMIN', 'STAFF', 'MODERATOR'].includes(user?.role);
   const {
     coverFile,
     coverPreview,
@@ -200,6 +203,7 @@ const PostArticleGenericPage = () => {
         topic,
         url: url.trim(),
         imageBase64,
+        isAdminLike,
       });
       if ((channel === 'job' || channel === 'learning') && !payload.type) {
         showError(t('error_topic_required', { defaultValue: 'Vui lòng chọn chủ đề' }));
@@ -241,6 +245,7 @@ const PostArticleGenericPage = () => {
         url={url}
         setUrl={setUrl}
         mainImagePreview={coverCroppedPreview ?? coverPreview}
+        showSourceUrl={!isAdminLike}
       />
     </PostArticleShell>
   );

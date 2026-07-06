@@ -50,6 +50,7 @@ export const normalizeEvent = (data) => {
 export const normalizeJob = (data) => {
   if (!data) return null;
   const publishedAt = data.createdAt ?? data.created_at;
+  const topic = data.topic ?? data.type;
   return {
     id: data.id,
     channel: "job",
@@ -63,6 +64,8 @@ export const normalizeJob = (data) => {
     deadline: data.deadline,
     howToApply: data.howToApply,
     type: data.type,
+    isReferral: data.isReferral ?? data.is_referral ?? false,
+    topic,
   };
 };
 
@@ -88,6 +91,7 @@ export const normalizeAchievement = (data) => {
 export const normalizeLearning = (data) => {
   if (!data) return null;
   const publishedAt = data.createdAt ?? data.created_at;
+  const topic = data.topic ?? data.type;
   return {
     id: data.id,
     channel: "learning",
@@ -97,6 +101,7 @@ export const normalizeLearning = (data) => {
     publishedAt,
     linkUrl: data.linkUrl,
     type: data.type,
+    topic,
   };
 };
 

@@ -145,7 +145,7 @@ const ArticleDonationCard = ({ campaign, onNavigate, onEdit, onClose, isAdmin })
 
         {/* ENDED STATUS */}
         {isEnded && (
-          <Box sx={{ mt: 1, alignSelf: "flex-start", px: 1, py: 0.35, borderRadius: 999, border: "1px solid #d7e5fb", backgroundColor: "#f3f8ff", color: "#5f79a4", fontSize: "0.72rem", fontWeight: 800, letterSpacing: 0.2 }}>
+          <Box sx={{ mt: 1, alignSelf: "flex-start", px: 1, py: 0.35, borderRadius: 999, border: "1px solid", borderColor: "divider", backgroundColor: "action.hover", color: "text.secondary", fontSize: "0.72rem", fontWeight: 800, letterSpacing: 0.2 }}>
             {t('common:ended')}
           </Box>
         )}

@@ -65,13 +65,11 @@ export default function FundraisingListSection({ fundId }) {
         px: { xs: 2.5, md: 4 },
         py: { xs: 3, md: 3.6 },
         mb: 3,
-        borderRadius: 2.5,
-        backgroundColor: "#ffffff",
-        boxShadow: "0 10px 26px rgba(15, 58, 122, 0.08)",
       }}
+      variant="outlined"
     >
       <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2} sx={{ mb: 2.5 }}>
-        <Typography variant="h5" sx={{ fontWeight: 800, color: "#0f2f5f", fontSize: { xs: "1.35rem", md: "1.6rem" } }}>
+        <Typography variant="h5" sx={{ fontWeight: 800, color: "primary.main", fontSize: { xs: "1.35rem", md: "1.6rem" } }}>
           {t('donation:list_title')}
         </Typography>
       </Stack>
@@ -92,13 +90,13 @@ export default function FundraisingListSection({ fundId }) {
       />
 
       {errorMessage ? (
-        <Typography sx={{ color: "#9f2f2f", fontWeight: 700, mb: 2 }}>{errorMessage}</Typography>
+        <Typography sx={{ color: "error.main", fontWeight: 700, mb: 2 }}>{errorMessage}</Typography>
       ) : null}
 
       <Stack spacing={1.5} sx={{ minHeight: { xs: 430, md: 470 } }}>
         {isLoading ? <LinearProgress sx={{ height: 8, borderRadius: 999 }} /> : null}
 
-        {!isLoading && items.length === 0 ? <Typography sx={{ color: "#617491", fontWeight: 600 }}>{t('donation:no_donations_found')}</Typography> : null}
+        {!isLoading && items.length === 0 ? <Typography sx={{ color: "text.secondary", fontWeight: 600 }}>{t('donation:no_donations_found')}</Typography> : null}
 
         {items.map((item) => (
           <DonationListItemCard key={item.id} item={item} />

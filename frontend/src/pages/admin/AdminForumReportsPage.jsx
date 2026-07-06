@@ -3,7 +3,6 @@ import { useSnackbar } from "notistack";
 import {
   Box,
   Button,
-  Chip,
   Dialog,
   DialogActions,
   DialogContent,
@@ -23,28 +22,17 @@ import LockOpenOutlinedIcon from "@mui/icons-material/LockOpenOutlined";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import { useTranslation } from "react-i18next";
 import AdminDataTable from "../../components/admin/AdminDataTable";
+import AdminStatusChip from "../../components/admin/AdminStatusChip";
 import { useAdminSystemContext } from "../../stores/AdminStore";
 import { formatDate, formatDateTime } from "../../utils/dateFormatter";
 import { truncateText, toPlainText } from "../../utils/stringUtils";
 import apiClient from "../../utils/axios";
-
-const REPORT_STATUS_COLOR = {
-  PENDING: "warning",
-  APPROVED: "success",
-  REJECTED: "default",
-};
 
 const AdminForumReportsPage = () => {
   const { enqueueSnackbar } = useSnackbar();
   const { t } = useTranslation("admin");
   const { stableOrgId } = useAdminSystemContext();
   const { setBreadcrumbs } = useOutletContext();
-
-  const getReportStatusLabel = (status) => ({
-    PENDING: t('forum_report_status_pending'),
-    APPROVED: t('forum_report_status_approved'),
-    REJECTED: t('forum_report_status_rejected'),
-  })[status] ?? status;
 
   const [activeTab, setActiveTab] = useState(0);
 
@@ -218,7 +206,7 @@ const AdminForumReportsPage = () => {
       label: t('forum_col_status'),
       render: (val) => {
         const s = val ?? "PENDING";
-        return <Chip size="small" label={getReportStatusLabel(s)} color={REPORT_STATUS_COLOR[s] ?? "default"} />;
+        return <AdminStatusChip status={s} category="report" />;
       },
     },
     {

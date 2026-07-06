@@ -352,7 +352,7 @@ const AdminForumPostsPage = () => {
             { id: 'id', label: 'ID' },
             { id: 'postId', label: 'Post ID', render: (v) => `#${v}` },
             { id: 'reason', label: t('forum_col_reason') },
-            { id: 'status', label: t('forum_col_status'), render: (v) => <AdminStatusChip status={v} category="forum" label={v} /> },
+            { id: 'status', label: t('forum_col_status'), render: (v) => <AdminStatusChip status={v} category="forum" /> },
             {
               id: 'actions',
               label: '',

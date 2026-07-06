@@ -65,8 +65,13 @@ const SavedArticlesPage = () => {
   return (
     <Page title={t('saved_articles')}>
       <Container maxWidth="md" sx={{ py: 4 }}>
-        <Typography variant="h4" fontWeight={700} color="primary.main" mb={3}>
-          {t('saved_articles')}
+        <Typography
+          variant="h1"
+          fontWeight={800}
+          color="primary.main"
+          sx={{ fontSize: { xs: "1.8rem", md: "2.3rem" }, mb: 3 }}
+        >
+          {t('saved_articles').toUpperCase()}
         </Typography>
 
         {loading ? (

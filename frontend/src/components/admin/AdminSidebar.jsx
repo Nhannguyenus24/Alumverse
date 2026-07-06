@@ -23,6 +23,7 @@ import FlagOutlinedIcon from '@mui/icons-material/FlagOutlined';
 import BusinessOutlinedIcon from '@mui/icons-material/BusinessOutlined';
 import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
 import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
+import RateReviewOutlinedIcon from '@mui/icons-material/RateReviewOutlined';
 import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
 import VolunteerActivismOutlinedIcon from '@mui/icons-material/VolunteerActivismOutlined';
 import AccountBalanceOutlinedIcon from '@mui/icons-material/AccountBalanceOutlined';
@@ -67,6 +68,7 @@ const NAV_GROUPS = (adminBase, t) => [
   {
     title: t('admin:nav_group_content_community'),
     items: [
+      { to: `${adminBase}/submissions`, icon: <RateReviewOutlinedIcon />, label: t('admin:nav_submissions') },
       { to: `${adminBase}/article`, icon: <ArticleOutlinedIcon />, label: t('admin:nav_article') },
       { to: `${adminBase}/events`, icon: <EventNoteOutlinedIcon />, label: t('admin:nav_events') },
       { to: `${adminBase}/donations`, end: true, icon: <VolunteerActivismOutlinedIcon />, label: t('admin:nav_fundraising') },

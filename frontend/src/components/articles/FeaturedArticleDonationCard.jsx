@@ -158,7 +158,7 @@ const FeaturedArticleDonationCard = ({ campaign, article, onNavigate, onEdit, on
 
           {/* CLOSED STATUS */}
           {isEnded && (
-            <Box sx={{ mt: 0.5, alignSelf: "flex-start", px: 1.2, py: 0.45, borderRadius: 999, border: "1px solid #d7e5fb", backgroundColor: "#f3f8ff", color: "#5f79a4", fontSize: "0.72rem", fontWeight: 800, letterSpacing: 0.2 }}>
+            <Box sx={{ mt: 0.5, alignSelf: "flex-start", px: 1.2, py: 0.45, borderRadius: 999, border: "1px solid", borderColor: "divider", backgroundColor: "action.hover", color: "text.secondary", fontSize: "0.72rem", fontWeight: 800, letterSpacing: 0.2 }}>
               {t('common:ended')}
             </Box>
           )}

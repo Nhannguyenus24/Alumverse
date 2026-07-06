@@ -9,6 +9,7 @@ import com.service.backend.shared.entity.Event;
 import com.service.backend.fundraising.dto.FundListItemResponse;
 import com.service.backend.shared.dto.ApiResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
+import com.service.backend.shared.enums.Status;
 import com.service.backend.shared.utils.SecurityUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -16,6 +17,8 @@ import jakarta.validation.constraints.Min;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -104,6 +107,20 @@ public class AdminArticleController {
                 .flatMap(resolvedOrgId -> adminArticleService.getAllLearningResources(resolvedOrgId, keyword, page, limit))
                 .switchIfEmpty(adminArticleService.getAllLearningResources(null, keyword, page, limit))
                 .map(response -> ResponseEntity.ok(new ApiResponse<>("Learning resources retrieved successfully", response)));
+    }
+
+    @Operation(summary = "Approve an achievement article request")
+    @PostMapping("/achievements/{id}/approve")
+    public Mono<ResponseEntity<ApiResponse<AchievementResponse>>> approveAchievement(@PathVariable @Min(1) Integer id) {
+        return adminArticleService.updateAchievementStatus(id, Status.APPROVED)
+                .map(response -> ResponseEntity.ok(new ApiResponse<>("Achievement approved successfully", response)));
+    }
+
+    @Operation(summary = "Reject an achievement article request")
+    @PostMapping("/achievements/{id}/reject")
+    public Mono<ResponseEntity<ApiResponse<AchievementResponse>>> rejectAchievement(@PathVariable @Min(1) Integer id) {
+        return adminArticleService.updateAchievementStatus(id, Status.REJECTED)
+                .map(response -> ResponseEntity.ok(new ApiResponse<>("Achievement rejected successfully", response)));
     }
 
     @Operation(summary = "Get all events across organizations")

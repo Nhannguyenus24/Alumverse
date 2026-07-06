@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { Box, Button, Pagination, Typography } from '@mui/material';
@@ -21,47 +21,19 @@ import { usePublishedJobs } from '../../hooks/articles/usePublishedJobs';
 import { toCardShape } from '../../hooks/articles/toCardShape';
 import apiClient from '../../utils/axios';
 import { deleteArticleByChannel, getArticleAdminEditPath } from '../../utils/articleAdminActions';
+import {
+  ARTICLE_FETCH_LIMIT,
+  ARTICLE_PAGE_SIZE,
+  applyArticleFilters,
+  getArticleFilterConfig,
+  paginateArticles,
+} from '../../utils/articleListFilters';
 
 const getSidebar = (t) => [
   { id: '/development', label: t('dev:title'), icon: <TrendingUpIcon /> },
   { id: '/development/mentorship', label: t('mentorship:title'), icon: <SchoolIcon /> },
   { id: '/development/academics', label: t('dev:academics'), icon: <MenuBookIcon /> },
   { id: '/development/jobs', label: t('dev:jobs'), icon: <WorkIcon /> },
-];
-
-const getFilters = (t) => [
-  {
-    type: 'dropdown',
-    key: 'type',
-    label: t('dev:filter_topic'),
-    multiple: true,
-    options: [t('dev:topic_scholarship'), t('dev:topic_exchange'), t('dev:topic_research'), 'Workshop', t('dev:topic_course')],
-  },
-  {
-    type: 'dropdown',
-    key: 'format',
-    label: t('dev:filter_format'),
-    options: ['Online', 'Offline', 'Hybrid'],
-  },
-  {
-    type: 'dropdown',
-    key: 'location',
-    label: t('dev:filter_location'),
-    multiple: true,
-    options: [t('dev:location_hcm'), t('dev:location_domestic'), t('dev:location_abroad')],
-  },
-  {
-    type: 'date',
-    key: 'date',
-    label: t('dev:filter_deadline'),
-  },
-  {
-    type: 'dropdown',
-    key: 'level',
-    label: t('dev:filter_level'),
-    multiple: true,
-    options: [t('dev:level_bachelor'), t('dev:level_master'), t('dev:level_phd')],
-  },
 ];
 
 const DevelopmentJobsPage = () => {
@@ -73,16 +45,22 @@ const DevelopmentJobsPage = () => {
   const { canContribute } = useCanContribute();
   const isAdmin = isAuthenticated && user?.role === 'ADMIN';
   const sidebar = getSidebar(t);
-  const filters = getFilters(t);
+  const filters = useMemo(() => getArticleFilterConfig(t, ['job']), [t]);
 
   const [page, setPage] = useState(0);
-  const { jobs, pageInfo } = usePublishedJobs(page, 10);
+  const { jobs } = usePublishedJobs(0, ARTICLE_FETCH_LIMIT);
 
   const [filterValues, setFilterValues] = useState({ all: true });
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
-  const [featured, ...rest] = jobs;
+  const filteredJobs = useMemo(() => applyArticleFilters(jobs, filterValues), [jobs, filterValues]);
+  const { items: pagedJobs, pageInfo } = useMemo(
+    () => paginateArticles(filteredJobs, page, ARTICLE_PAGE_SIZE),
+    [filteredJobs, page],
+  );
+
+  const [featured, ...rest] = pagedJobs;
   const featuredCard = featured ? toCardShape(featured) : null;
   const cards = rest.slice(0, 9).map(toCardShape);
 
@@ -127,13 +105,31 @@ const DevelopmentJobsPage = () => {
         </Button>
       ) : (
         <ContributeGuardTooltip>
-          <Button variant="contained" disabled={!canContribute} onClick={() => navigate('/post/job')}>
-            {t('common:create')}
+          <Button
+            variant="contained"
+            disabled={!canContribute}
+            startIcon={<WorkIcon />}
+            onClick={() => navigate('/post/job')}
+          >
+            Tạo cơ hội việc làm
           </Button>
         </ContributeGuardTooltip>
       )}
-      filters={{ config: filters, value: filterValues, onChange: setFilterValues }}
-      search={{ value: filterValues.search, onChange: (val) => setFilterValues((prev) => ({ ...prev, search: val })) }}
+      filters={{
+        config: filters,
+        value: filterValues,
+        onChange: (next) => {
+          setFilterValues(next);
+          setPage(0);
+        },
+      }}
+      search={{
+        value: filterValues.search,
+        onChange: (val) => {
+          setFilterValues((prev) => ({ ...prev, search: val }));
+          setPage(0);
+        },
+      }}
     >
 
               {/* FEATURED ARTICLE */}

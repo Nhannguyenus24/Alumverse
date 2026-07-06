@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
-import { Box, Button, Typography } from '@mui/material';
+import { Box, Button, ListItemIcon, ListItemText, Menu, MenuItem, Typography } from '@mui/material';
 import { useSnackbar } from 'notistack';
 
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
@@ -21,42 +21,16 @@ import { usePublishedAlumniPosts } from '../../hooks/articles/usePublishedAlumni
 import { toCardShape } from '../../hooks/articles/toCardShape';
 import apiClient from '../../utils/axios';
 import { deleteArticleByChannel, getArticleAdminEditPath } from '../../utils/articleAdminActions';
+import {
+  ARTICLE_FETCH_LIMIT,
+  applyArticleFilters,
+  getArticleFilterConfig,
+} from '../../utils/articleListFilters';
 
 const getSidebar = (t) => [
   { id: '/honors', label: t('honors:sidebar_honors'), icon: <EmojiEventsIcon /> },
   { id: '/honors/alumni', label: t('honors:sidebar_alumni'), icon: <GroupsIcon /> },
   { id: '/honors/achievements', label: t('honors:sidebar_achievements'), icon: <TrendingUpIcon /> },
-];
-
-const getFilters = (t) => [
-  {
-    type: 'topics',
-    key: 'topics',
-    label: t('honors:filter_topics_label'),
-    options: [
-      t('honors:filter_topics_option_alumni'),
-      t('honors:filter_topics_option_achievements'),
-      t('honors:filter_topics_option_board'),
-    ],
-  },
-  {
-    type: 'dropdown',
-    key: 'type',
-    label: t('honors:filter_type_label'),
-    multiple: true,
-    options: [
-      t('honors:filter_type_startup'),
-      t('honors:filter_type_technology'),
-      t('honors:filter_type_business'),
-      t('honors:filter_type_research'),
-      t('honors:filter_type_community'),
-    ],
-  },
-  {
-    type: 'date',
-    key: 'date',
-    label: t('honors:filter_date_label'),
-  },
 ];
 
 const HonorsPage = () => {
@@ -68,19 +42,28 @@ const HonorsPage = () => {
   const { canContribute } = useCanContribute();
   const isAdmin = isAuthenticated && user?.role === 'ADMIN';
 
-  const { achievements } = usePublishedAchievements(0, 7);
-  const { articles: alumniArticles } = usePublishedAlumniPosts(0, 6);
+  const { achievements } = usePublishedAchievements(0, ARTICLE_FETCH_LIMIT);
+  const { articles: alumniArticles } = usePublishedAlumniPosts(0, ARTICLE_FETCH_LIMIT);
 
   const [filters, setFilters] = useState({
     all: true,
   });
+  const [submitAnchorEl, setSubmitAnchorEl] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
-  const [featured, ...achievementRest] = achievements;
+  const filterConfig = useMemo(() => getArticleFilterConfig(t, ['alumni', 'achievement']), [t]);
+  const filteredArticles = useMemo(
+    () => applyArticleFilters([...achievements, ...alumniArticles], filters),
+    [achievements, alumniArticles, filters],
+  );
+
+  const [featured, ...rest] = filteredArticles;
   const featuredCard = featured ? toCardShape(featured) : null;
-  const alumniCards = alumniArticles.slice(0, 6).map(toCardShape);
-  const achievementCards = achievementRest.slice(0, 6).map(toCardShape);
+  const visibleAlumniArticles = rest.filter((article) => article.channel === 'alumni').slice(0, 6);
+  const visibleAchievementArticles = rest.filter((article) => article.channel === 'achievement').slice(0, 6);
+  const alumniCards = visibleAlumniArticles.map(toCardShape);
+  const achievementCards = visibleAchievementArticles.map(toCardShape);
 
   const openArticle = (article) => {
     if (!article?.id) return;
@@ -122,10 +105,25 @@ const HonorsPage = () => {
           <Button
             variant="contained"
             disabled={!canContribute}
-            onClick={() => navigate('/honors/request-achievements')}
+            startIcon={<EmojiEventsIcon />}
+            onClick={(event) => setSubmitAnchorEl(event.currentTarget)}
           >
             {t('honors:submit_achievement_request')}
           </Button>
+          <Menu
+            anchorEl={submitAnchorEl}
+            open={Boolean(submitAnchorEl)}
+            onClose={() => setSubmitAnchorEl(null)}
+          >
+            <MenuItem onClick={() => { setSubmitAnchorEl(null); navigate('/post/alumni'); }}>
+              <ListItemIcon><GroupsIcon fontSize="small" /></ListItemIcon>
+              <ListItemText>{t('honors:sidebar_alumni')}</ListItemText>
+            </MenuItem>
+            <MenuItem onClick={() => { setSubmitAnchorEl(null); navigate('/post/achievement'); }}>
+              <ListItemIcon><TrendingUpIcon fontSize="small" /></ListItemIcon>
+              <ListItemText>{t('honors:sidebar_achievements')}</ListItemText>
+            </MenuItem>
+          </Menu>
         </ContributeGuardTooltip>
       ) : isAdmin ? (
         <Button
@@ -137,7 +135,7 @@ const HonorsPage = () => {
           {t('honors:manage_honors')}
         </Button>
       ) : null}
-      filters={{ config: getFilters(t), value: filters, onChange: setFilters }}
+      filters={{ config: filterConfig, value: filters, onChange: setFilters }}
       search={{ value: filters.search, onChange: (val) => setFilters((prev) => ({ ...prev, search: val })) }}
     >
 
@@ -172,12 +170,12 @@ const HonorsPage = () => {
                     }}
                   >
                     {alumniCards.map((card, i) => (
-                      <Box key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(alumniArticles[i])}>
+                      <Box key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(visibleAlumniArticles[i])}>
                         <ArticleCard
                           article={card}
                           isAdmin={isAdmin}
-                          onEdit={() => handleEdit(alumniArticles[i])}
-                          onDelete={() => handleDelete(alumniArticles[i])}
+                          onEdit={() => handleEdit(visibleAlumniArticles[i])}
+                          onDelete={() => handleDelete(visibleAlumniArticles[i])}
                         />
                       </Box>
                     ))}
@@ -204,12 +202,12 @@ const HonorsPage = () => {
                     }}
                   >
                     {achievementCards.map((card, i) => (
-                      <Box key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(achievementRest[i])}>
+                      <Box key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(visibleAchievementArticles[i])}>
                         <ArticleCard
                           article={card}
                           isAdmin={isAdmin}
-                          onEdit={() => handleEdit(achievementRest[i])}
-                          onDelete={() => handleDelete(achievementRest[i])}
+                          onEdit={() => handleEdit(visibleAchievementArticles[i])}
+                          onDelete={() => handleDelete(visibleAchievementArticles[i])}
                         />
                       </Box>
                     ))}
