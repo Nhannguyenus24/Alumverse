@@ -39,6 +39,7 @@ public class AchievementService {
                                     .memberId(userId.intValue())
                                     .title(request.getTitle())
                                     .description(request.getDescription())
+                                    .url(request.getUrl())
                                     .imageUrl(imageUrl.isEmpty() ? null : imageUrl)
                                     .awardedDate(request.getAwardedDate() != null ? request.getAwardedDate() : LocalDate.now())
                                     .topic(request.getTopic())
@@ -64,6 +65,7 @@ public class AchievementService {
                                     .flatMap(imageUrl -> {
                                         existing.setTitle(request.getTitle());
                                         existing.setDescription(request.getDescription());
+                                        existing.setUrl(request.getUrl());
                                         existing.setImageUrl(imageUrl.isEmpty() ? existing.getImageUrl() : imageUrl);
                                         if (request.getStatus() != null) existing.setStatus(request.getStatus());
                                         if (request.getTopic() != null) existing.setTopic(request.getTopic());

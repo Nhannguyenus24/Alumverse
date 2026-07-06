@@ -51,6 +51,9 @@ public class Job {
     @Column("how_to_apply")
     private String howToApply;
 
+    @Column("url")
+    private String url;
+
     private LocalDate deadline;
 
     @Column("is_active")
