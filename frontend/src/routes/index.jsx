@@ -147,6 +147,9 @@ const AdminFundraisingsPage = Loadable(
 const AdminFundReceivingInfosPage = Loadable(
   lazy(() => import("../pages/admin/AdminFundReceivingInfosPage")),
 );
+const AdminSystemMonitoringPage = Loadable(
+  lazy(() => import("../pages/admin/AdminSystemMonitoringPage")),
+);
 const AdminAuditLogsPage = Loadable(
   lazy(() => import("../pages/admin/AdminAuditLogsPage")),
 );
@@ -748,6 +751,14 @@ export const router = createBrowserRouter([
             ),
           },
           {
+            path: "monitoring",
+            element: (
+              <ProtectedRoute allowedRoles={["ADMIN"]}>
+                <AdminSystemMonitoringPage />
+              </ProtectedRoute>
+            ),
+          },
+          {
             path: "events/:eventId/organize",
             element: (
               <ProtectedRoute allowedRoles={["ADMIN", "STAFF"]}>
@@ -1035,6 +1046,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute allowedRoles={["ADMIN"]}>
             <AdminEventManagePage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "monitoring",
+        element: (
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminSystemMonitoringPage />
           </ProtectedRoute>
         ),
       },
