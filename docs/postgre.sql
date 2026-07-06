@@ -15,6 +15,9 @@ create table users
     bio                  text,
     dob                  date,
     gender               text,
+    current_job_title    text,
+    current_company      text,
+    links                json,
     settings             json,
     must_change_password boolean   default false not null
 );

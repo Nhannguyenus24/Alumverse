@@ -51,6 +51,7 @@ import AcademicInfoSection from '../../components/profile/AcademicInfoSection';
 import PersonalInfoRow from '../../components/profile/PersonalInfoRow';
 import ProfileSectionTitle from '../../components/profile/ProfileSectionTitle';
 import ExtendedProfileInfoCard from '../../components/profile/ExtendedProfileInfoCard'
+import SocialLinksRenderer from '../../components/profile/SocialLinksRenderer';
 
 import { getMentorProfileTabs, getMenteeProfileTabs } from '../../constants/mentorshipNav';
 import { useTranslation } from 'react-i18next';
@@ -419,6 +420,7 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
                 {personalFields.map((field, index) => (
                   <PersonalInfoRow key={index} icon={field.icon} label={field.label} value={field.value} />
                 ))}
+                <SocialLinksRenderer linksRaw={profile?.links} />
               </Box>
             </Box>
           </Grid>

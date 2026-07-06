@@ -48,6 +48,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 @RequestMapping("/api/auth")
 @Validated
 public class AuthController {
+    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(AuthController.class);
+
     private final AuthService authService;
     private final JwtUtils jwtUtils;
     private final RecaptchaService recaptchaService;
@@ -193,7 +195,10 @@ public class AuthController {
     @PostMapping("/refresh")
     public Mono<ResponseEntity<ApiResponse<LoginResponse>>> refresh(
             @CookieValue(value = "refreshToken", required = false) String refreshToken) {
-        
+
+        logger.info("/auth/refresh called — refreshToken cookie present: {}",
+                org.springframework.util.StringUtils.hasText(refreshToken));
+
         return authService.refreshAccessToken(refreshToken)
                 .map(loginResponse -> ResponseEntity.ok(
                         new ApiResponse<>("Access token refreshed successfully", loginResponse)));
@@ -208,7 +213,11 @@ public class AuthController {
             @PathVariable @Min(value = 1, message = "Organization ID must be greater than 0") Integer organizationId,
             @CookieValue(value = "refreshToken", required = false) String refreshToken) {
 
+        logger.info("/auth/switch-organization/{} called — refreshToken cookie present: {}",
+                organizationId, org.springframework.util.StringUtils.hasText(refreshToken));
+
         return authService.switchOrganization(refreshToken, organizationId)
+                .doOnError(err -> logger.warn("/auth/switch-organization/{} failed: {}", organizationId, err.getMessage()))
                 .map(tuple -> {
                     String newAccessToken = tuple.getT1();
                     String newRefreshToken = tuple.getT2();
