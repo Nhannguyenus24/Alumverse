@@ -169,8 +169,19 @@ const NetworkMessageDrawer = ({
         sx: {
           width: { xs: '100%', sm: 420, md: 440 },
           maxWidth: '100%',
+          // Full screen on mobile; a ~2/3-height panel on larger screens docked
+          // to the bottom (LinkedIn-style) — flush with the bottom edge, gap
+          // only at the top — and nudged in from the right edge.
+          height: { xs: '100%', sm: '66vh' },
+          maxHeight: '100%',
+          top: { xs: 0, sm: 'auto' },
+          bottom: 0,
+          right: { xs: 0, sm: '8vw' },
+          borderRadius: { xs: 0, sm: '12px 12px 0 0' },
+          boxShadow: (theme) => theme.shadows[16],
           display: 'flex',
           flexDirection: 'column',
+          overflow: 'hidden',
         },
       }}
     >
