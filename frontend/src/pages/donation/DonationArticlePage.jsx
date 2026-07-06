@@ -43,6 +43,7 @@ export default function DonationArticlePage() {
   const navigate = useOrgNavigate();
   const { user, isAuthenticated } = useAuth();
   const isAdmin = isAuthenticated && user?.role === "ADMIN";
+  const canEditFund = isAuthenticated && (user?.role === "ADMIN" || user?.role === "STAFF");
 
   const [fundDetail, setFundDetail] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
@@ -122,28 +123,32 @@ export default function DonationArticlePage() {
             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: { xs: 4, md: 5 }, flexWrap: "wrap" }}>
               <Breadcrumb items={[{ label: t('title').toUpperCase(), path: "/donations" }, { label: pageTitle }]} fontSize="0.8rem" />
               <Box sx={{ flexGrow: 1 }} />
-              {isAdmin && (
+              {(canEditFund || isAdmin) && (
                 <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                  <Button
-                    variant="contained"
-                    color="secondary"
-                    size="medium"
-                    startIcon={<EditOutlinedIcon />}
-                    onClick={() => navigate(`/donations/${id}/edit`)}
-                    sx={{ textTransform: "none", fontWeight: 700 }}
-                  >
-                    Sửa quỹ
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    color="primary"
-                    size="medium"
-                    startIcon={<VolunteerActivismOutlinedIcon />}
-                    onClick={() => navigate("/admin/donations")}
-                    sx={{ textTransform: "none", fontWeight: 700 }}
-                  >
-                    Quản lý quỹ
-                  </Button>
+                  {canEditFund && (
+                    <Button
+                      variant="contained"
+                      color="secondary"
+                      size="medium"
+                      startIcon={<EditOutlinedIcon />}
+                      onClick={() => navigate(`/donations/${id}/edit`)}
+                      sx={{ textTransform: "none", fontWeight: 700 }}
+                    >
+                      Sửa quỹ
+                    </Button>
+                  )}
+                  {isAdmin && (
+                    <Button
+                      variant="outlined"
+                      color="primary"
+                      size="medium"
+                      startIcon={<VolunteerActivismOutlinedIcon />}
+                      onClick={() => navigate("/admin/donations")}
+                      sx={{ textTransform: "none", fontWeight: 700 }}
+                    >
+                      Quản lý quỹ
+                    </Button>
+                  )}
                 </Stack>
               )}
             </Box>
