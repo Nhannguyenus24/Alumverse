@@ -18,6 +18,7 @@ import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.enums.ChatRole;
 import com.service.backend.shared.enums.ChatType;
 import com.service.backend.shared.exception.ApplicationException;
+import com.service.backend.shared.validation.ChatMessageLimits;
 import com.service.backend.shared.utils.PaginationHelper;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
@@ -138,6 +139,10 @@ public class ChatService {
                                          String chatType) {
         if (groupId == null || senderMemberId == null) {
             return Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND, "Group ID and sender ID must not be null"));
+        }
+
+        if (ChatMessageLimits.exceedsMax(content)) {
+            return Mono.error(new ApplicationException(ErrorCode.BAD_REQUEST, "Tin nhắn không được vượt quá 200 ký tự"));
         }
 
         LocalDateTime now = LocalDateTime.now();

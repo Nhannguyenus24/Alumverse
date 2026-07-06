@@ -1,5 +1,7 @@
 package com.service.backend.chat.dto;
 
+import com.service.backend.shared.validation.ChatMessageLimits;
+
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -18,6 +20,6 @@ public class CreateConversationRequestBody {
     private Long targetMemberId;
 
     @NotBlank(message = "Message is required")
-    @Size(max = 1000, message = "Message must not exceed 1000 characters")
+    @Size(max = ChatMessageLimits.MAX_MESSAGE_LENGTH, message = "Tin nhắn không được vượt quá 200 ký tự")
     private String message;
 }
