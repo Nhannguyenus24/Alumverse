@@ -25,12 +25,27 @@ import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
 import BusinessCenterOutlinedIcon from '@mui/icons-material/BusinessCenterOutlined';
-import Brightness6RoundedIcon from '@mui/icons-material/Brightness6Rounded';
 import { useAdminSystemContext } from '../../stores/AdminStore';
 import useThemeModeStore from '../../stores/themeModeStore';
 import LanguageSwitcher from '../LanguageSwitcher';
 
 const ADMIN_HEADER_HEIGHT = 88;
+
+const ThemeModeIcon = ({ rotated = false }) => (
+  <Box
+    component="span"
+    sx={{
+      width: 18,
+      height: 18,
+      borderRadius: '50%',
+      border: '2px solid currentColor',
+      background: 'linear-gradient(90deg, currentColor 0 50%, transparent 50% 100%)',
+      display: 'inline-block',
+      transform: rotated ? 'rotate(180deg)' : 'rotate(0deg)',
+      transition: 'transform 320ms ease',
+    }}
+  />
+);
 
 const AdminHeader = ({ onMenuOpen, isSidebarCollapsed, user, onLogout, breadcrumbs }) => {
   const theme = useTheme();
@@ -221,7 +236,7 @@ const AdminHeader = ({ onMenuOpen, isSidebarCollapsed, user, onLogout, breadcrum
                 '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.14) },
               }}
             >
-              <Brightness6RoundedIcon fontSize="small" />
+              <ThemeModeIcon rotated={themeMode === 'dark'} />
             </IconButton>
           </Tooltip>
 

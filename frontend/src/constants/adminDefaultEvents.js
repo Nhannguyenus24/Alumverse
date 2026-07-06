@@ -1,7 +1,7 @@
 export const ADMIN_EVENT_STATUS_OPTIONS = [
-  { value: 'ALL', label: 'All statuses' },
-  { value: 'PUBLISHED', label: 'Published' },
-  { value: 'DRAFT', label: 'Draft (unpublished)' },
+  { value: 'ALL', label: 'Tất cả trạng thái' },
+  { value: 'PUBLISHED', label: 'Đã công bố' },
+  { value: 'DRAFT', label: 'Bản nháp' },
 ];
 
 export const ADMIN_EVENT_SORT_OPTIONS = [

@@ -7,10 +7,10 @@ export const truncateText = (text, maxLen = 72, fallback = '-') => {
 export const forumModerationLabel = (status) => {
   const key = String(status || '').toUpperCase();
   const map = {
-    PENDING: 'Pending',
-    FLAGGED: 'Flagged',
-    APPROVED: 'Approved',
-    REJECTED: 'Rejected',
+    PENDING: 'Chờ duyệt',
+    FLAGGED: 'Bị báo cáo',
+    APPROVED: 'Đã duyệt',
+    REJECTED: 'Bị từ chối',
   };
   return map[key] || key || '-';
 };

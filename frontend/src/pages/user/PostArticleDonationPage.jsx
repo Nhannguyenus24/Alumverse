@@ -260,7 +260,7 @@ export default function PostArticleDonationPage() {
                 borderRadius: 3,
                 border: "1px solid",
                 borderColor: "divider",
-                boxShadow: (theme) => `0 10px 26px ${alpha(theme.palette.primary.main, 0.08)}`,
+                bgcolor: "background.paper",
               }}
             >
               <LocalizationProvider dateAdapter={AdapterDayjs}>

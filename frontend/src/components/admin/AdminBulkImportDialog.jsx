@@ -31,6 +31,7 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
+import AdminStatusChip from './AdminStatusChip';
 
 // ── Template ──────────────────────────────────────────────────────────────────
 const TEMPLATE_HEADERS = [
@@ -75,7 +76,6 @@ const validateRow = (row, idx) => {
 };
 
 // ── Status chip renderer ───────────────────────────────────────────────────────
-const statusColor = (s) => ({ SUCCESS: 'success', FAILED: 'error', PENDING: 'default' }[s] ?? 'default');
 const statusIcon = (s) => {
   if (s === 'SUCCESS') return <CheckCircleOutlineIcon fontSize="small" />;
   if (s === 'FAILED') return <ErrorOutlineIcon fontSize="small" />;
@@ -399,11 +399,11 @@ const AdminBulkImportDialog = ({ open, onClose, organizationOptions = [], onBulk
                         {!row._valid ? (
                           <Chip icon={<WarningAmberOutlinedIcon />} label="Bỏ qua" size="small" color="warning" />
                         ) : (
-                          <Chip
+                          <AdminStatusChip
                             icon={statusIcon(row._importStatus)}
-                            label={row._importStatus === 'SUCCESS' ? 'Thành công' : row._importStatus === 'FAILED' ? 'Thất bại' : 'Chờ'}
                             size="small"
-                            color={statusColor(row._importStatus)}
+                            status={row._importStatus}
+                            category="audit"
                           />
                         )}
                       </TableCell>

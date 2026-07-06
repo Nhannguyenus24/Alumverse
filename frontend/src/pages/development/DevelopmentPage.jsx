@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { Box, Button, CircularProgress, Paper, Stack, Typography } from '@mui/material';
@@ -20,47 +20,17 @@ import { usePublishedLearning } from '../../hooks/articles/usePublishedLearning'
 import { toCardShape } from '../../hooks/articles/toCardShape';
 import apiClient from '../../utils/axios';
 import { deleteArticleByChannel, getArticleAdminEditPath } from '../../utils/articleAdminActions';
+import {
+  ARTICLE_FETCH_LIMIT,
+  applyArticleFilters,
+  getArticleFilterConfig,
+} from '../../utils/articleListFilters';
 
 const getSidebar = (t) => [
   { id: '/development', label: t('dev:title'), icon: <TrendingUpIcon /> },
   { id: '/development/mentorship', label: t('mentorship:title'), icon: <SchoolIcon /> },
   { id: '/development/academics', label: t('dev:academics'), icon: <MenuBookIcon /> },
   { id: '/development/jobs', label: t('dev:jobs'), icon: <WorkIcon /> },
-];
-
-const getFilters = (t) => [
-  {
-    type: 'dropdown',
-    key: 'type',
-    label: t('dev:filter_topic'),
-    multiple: true,
-    options: [t('dev:topic_scholarship'), t('dev:topic_exchange'), t('dev:topic_research'), 'Workshop', t('dev:topic_course')],
-  },
-  {
-    type: 'dropdown',
-    key: 'format',
-    label: t('dev:filter_format'),
-    options: ['Online', 'Offline', 'Hybrid'],
-  },
-  {
-    type: 'dropdown',
-    key: 'location',
-    label: t('dev:filter_location'),
-    multiple: true,
-    options: [t('dev:location_hcm'), t('dev:location_domestic'), t('dev:location_abroad')],
-  },
-  {
-    type: 'date',
-    key: 'date',
-    label: t('dev:filter_deadline'),
-  },
-  {
-    type: 'dropdown',
-    key: 'level',
-    label: t('dev:filter_level'),
-    multiple: true,
-    options: [t('dev:level_bachelor'), t('dev:level_master'), t('dev:level_phd')],
-  },
 ];
 
 const PreviewSection = ({
@@ -144,23 +114,34 @@ const DevelopmentPage = () => {
   const { user, isAuthenticated } = useAuth();
   const isAdmin = isAuthenticated && user?.role === 'ADMIN';
   const sidebar = getSidebar(t);
-  const filters = getFilters(t);
+  const filters = useMemo(() => getArticleFilterConfig(t, ['learning', 'job']), [t]);
 
   const {
     resources: academics,
     isPending: academicsPending,
     errorMessage: academicsError,
-  } = usePublishedLearning(0, 3);
+  } = usePublishedLearning(0, ARTICLE_FETCH_LIMIT);
 
   const {
     jobs,
     isPending: jobsPending,
     errorMessage: jobsError,
-  } = usePublishedJobs(0, 3);
+  } = usePublishedJobs(0, ARTICLE_FETCH_LIMIT);
 
   const [filterValues, setFilterValues] = useState({ all: true });
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
+
+  const filteredDevelopmentArticles = useMemo(
+    () => applyArticleFilters([...academics, ...jobs], filterValues),
+    [academics, jobs, filterValues],
+  );
+  const visibleAcademics = filteredDevelopmentArticles
+    .filter((article) => article.channel === 'learning')
+    .slice(0, 3);
+  const visibleJobs = filteredDevelopmentArticles
+    .filter((article) => article.channel === 'job')
+    .slice(0, 3);
 
   const openArticle = (article) => {
     if (!article?.id) return;
@@ -269,7 +250,7 @@ const DevelopmentPage = () => {
                 description={t('dev:academics_desc')}
                 isPending={academicsPending}
                 errorMessage={academicsError}
-                articles={academics.slice(0, 3)}
+                articles={visibleAcademics}
                 onOpenArticle={openArticle}
                 onSeeMore={() => navigate('/development/academics')}
                 seeMoreLabel={t('common:view_all')}
@@ -285,7 +266,7 @@ const DevelopmentPage = () => {
                 description={t('dev:jobs_desc')}
                 isPending={jobsPending}
                 errorMessage={jobsError}
-                articles={jobs.slice(0, 3)}
+                articles={visibleJobs}
                 onOpenArticle={openArticle}
                 onSeeMore={() => navigate('/development/jobs')}
                 seeMoreLabel={t('common:view_all')}

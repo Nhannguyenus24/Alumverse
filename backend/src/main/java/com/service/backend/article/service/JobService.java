@@ -27,10 +27,12 @@ public class JobService {
     private final CacheUtils cacheUtils;
 
     public Mono<JobResponse> create(CreateJobRequest request) {
-        return Mono.zip(SecurityUtils.getCurrentUserId(), SecurityUtils.getCurrentOrganizationId())
+        return Mono.zip(SecurityUtils.getCurrentUserId(), SecurityUtils.getCurrentOrganizationId(), SecurityUtils.getCurrentUserRole())
                 .flatMap(ctx -> {
                     Long userId = ctx.getT1();
                     Integer orgId = ctx.getT2();
+                    String role = ctx.getT3();
+                    boolean publishImmediately = "ADMIN".equalsIgnoreCase(role) || "STAFF".equalsIgnoreCase(role);
                     Job job = Job.builder()
                             .organizationId(orgId)
                             .posterMemberId(userId.intValue())
@@ -43,7 +45,7 @@ public class JobService {
                             .howToApply(request.getHowToApply())
                             .deadline(request.getDeadline())
                             .isReferral(request.getIsReferral() != null ? request.getIsReferral() : false)
-                            .isActive(true)
+                            .isActive(publishImmediately)
                             .createdAt(LocalDateTime.now())
                             .build();
 

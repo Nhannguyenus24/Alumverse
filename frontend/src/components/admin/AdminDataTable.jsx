@@ -53,7 +53,7 @@ const AdminDataTable = ({
   const resolvedEmptyMessage = emptyMessage ?? t('common:no_data_found');
   const [expandedRow, setExpandedRow] = useState(null);
   const tableHeadBg = theme.palette.mode === 'dark'
-    ? alpha(theme.palette.primary.main, 0.22)
+    ? theme.palette.primary.dark
     : theme.palette.primary.main;
   const tableHeadColor = theme.palette.mode === 'dark'
     ? theme.palette.text.primary

@@ -113,9 +113,11 @@ export default function DonationArticlePage() {
             sx={{
               width: "100%",
               maxWidth: 1200,
-              backgroundColor: "#fff",
+              backgroundColor: "background.paper",
               borderRadius: 2,
-              boxShadow: "0 4px 24px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06)",
+              border: "1px solid",
+              borderColor: "divider",
+              boxShadow: "none",
               py: { xs: 5, md: 6 },
               px: { xs: 4, md: 6 },
             }}
@@ -173,7 +175,21 @@ export default function DonationArticlePage() {
                   {fundDetail.name}
                 </Typography>
 
-                <Box sx={{ mt: 3, mb: 6, p: 5, bgcolor: "primary.light", borderRadius: 2, display: "flex", flexDirection: { xs: "column", md: "row" }, gap: 3, alignItems: { md: "stretch" } }}>
+                <Box
+                  sx={(theme) => ({
+                    mt: 3,
+                    mb: 6,
+                    p: { xs: 3, md: 5 },
+                    bgcolor: alpha(theme.palette.primary.main, theme.palette.mode === "dark" ? 0.12 : 0.08),
+                    border: "1px solid",
+                    borderColor: alpha(theme.palette.primary.main, theme.palette.mode === "dark" ? 0.24 : 0.16),
+                    borderRadius: 2,
+                    display: "flex",
+                    flexDirection: { xs: "column", md: "row" },
+                    gap: 3,
+                    alignItems: { md: "stretch" },
+                  })}
+                >
                   <Box sx={{ flex: 1 }}>
                     <DonationFundInfoPanel fundDetail={fundDetail} />
                   </Box>
@@ -220,7 +236,7 @@ export default function DonationArticlePage() {
         </Box>
 
         {!errorMessage && fundDetail && isAdmin ? (
-          <Box sx={{ px: { xs: 2, sm: 3 }, py: 6, backgroundColor: "#f3f5f9" }}>
+          <Box sx={{ px: { xs: 2, sm: 3 }, py: 6, backgroundColor: "background.default" }}>
             <Box sx={{ width: "100%", maxWidth: 1200, mx: "auto" }}>
               <DonationListSection fundId={id} />
             </Box>

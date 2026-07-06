@@ -9,14 +9,14 @@ const formatTitleCase = (raw) => {
 export const formatAccountStatusLabel = (status) => {
   const key = String(status || '').toUpperCase();
   const map = {
-    ACTIVE: 'Active',
-    INACTIVE: 'Inactive',
-    BANNED: 'Banned',
-    SUSPENDED: 'Suspended',
-    DELETED: 'Deleted',
-    DISABLED: 'Disabled',
-    PENDING: 'Pending',
-    UNVERIFIED: 'Unverified',
+    ACTIVE: 'Hoạt động',
+    INACTIVE: 'Không hoạt động',
+    BANNED: 'Bị cấm',
+    SUSPENDED: 'Tạm ngưng',
+    DELETED: 'Đã xóa',
+    DISABLED: 'Vô hiệu hóa',
+    PENDING: 'Chờ duyệt',
+    UNVERIFIED: 'Chưa xác minh',
   };
   return map[key] || formatTitleCase(status);
 };
@@ -24,8 +24,8 @@ export const formatAccountStatusLabel = (status) => {
 const formatOrganizationStatusLabel = (status) => {
   const key = String(status || '').toUpperCase();
   const map = {
-    ACTIVE: 'Active',
-    INACTIVE: 'Inactive',
+    ACTIVE: 'Hoạt động',
+    INACTIVE: 'Không hoạt động',
   };
   return map[key] || formatTitleCase(status);
 };
@@ -33,9 +33,10 @@ const formatOrganizationStatusLabel = (status) => {
 const formatAuditStatusLabel = (status) => {
   const key = String(status || '').toUpperCase();
   const map = {
-    SUCCESS: 'Success',
-    FAILED: 'Failed',
-    PENDING: 'Pending',
+    SUCCESS: 'Thành công',
+    FAILED: 'Thất bại',
+    PENDING: 'Chờ xử lý',
+    SENT: 'Đã gửi',
   };
   return map[key] || formatTitleCase(status);
 };
@@ -44,12 +45,12 @@ const formatForumStatusLabel = (status) => {
   const key = String(status || '').toUpperCase();
 
   const map = {
-    PENDING: 'Pending',
-    FLAGGED: 'Flagged',
-    APPROVED: 'Approved',
-    REJECTED: 'Rejected',
-    ACTIVE: 'Active',
-    INACTIVE: 'Inactive',
+    PENDING: 'Chờ duyệt',
+    FLAGGED: 'Bị báo cáo',
+    APPROVED: 'Đã duyệt',
+    REJECTED: 'Bị từ chối',
+    ACTIVE: 'Hiển thị',
+    INACTIVE: 'Đã ẩn',
   };
 
   return map[key] || formatTitleCase(status);
@@ -59,8 +60,8 @@ const formatFeedbackStatusLabel = (status) => {
   const key = String(status || '').toUpperCase();
 
   const map = {
-    NEW: 'New',
-    READ: 'Read',
+    NEW: 'Mới',
+    READ: 'Đã đọc',
   };
 
   return map[key] || formatTitleCase(status);
@@ -69,9 +70,54 @@ const formatFeedbackStatusLabel = (status) => {
 const formatFundraisingStatusLabel = (status) => {
   const key = String(status || '').toUpperCase();
   const map = {
-    UPCOMING: 'Upcoming',
-    ACTIVE: 'Active',
-    ENDED: 'Ended',
+    UPCOMING: 'Sắp diễn ra',
+    ACTIVE: 'Đang hoạt động',
+    ENDED: 'Đã kết thúc',
+  };
+  return map[key] || formatTitleCase(status);
+};
+
+const formatArticleStatusLabel = (status) => {
+  const key = String(status || '').toUpperCase();
+  const map = {
+    PUBLISHED: 'Đã hiển thị',
+    APPROVED: 'Đã duyệt',
+    REJECTED: 'Đã từ chối',
+    HIDDEN: 'Chờ duyệt/ẩn',
+    PENDING: 'Chờ duyệt',
+    DRAFT: 'Bản nháp',
+    UNSUPPORTED: 'Không hỗ trợ',
+  };
+  return map[key] || formatTitleCase(status);
+};
+
+const formatEventStatusLabel = (status) => {
+  const key = String(status || '').toUpperCase();
+  const map = {
+    PUBLISHED: 'Đã công bố',
+    DRAFT: 'Bản nháp',
+    UPCOMING: 'Sắp diễn ra',
+    ONGOING: 'Đang diễn ra',
+    PAST: 'Đã diễn ra',
+    REGISTERED: 'Đã đăng ký',
+    PENDING: 'Chờ xử lý',
+    CHECKED_IN: 'Đã check-in',
+    USED: 'Đã sử dụng',
+    CANCELLED: 'Đã hủy',
+    EXPIRED: 'Hết hạn',
+  };
+  return map[key] || formatTitleCase(status);
+};
+
+const formatMentorshipStatusLabel = (status) => {
+  const key = String(status || '').toUpperCase();
+  const map = {
+    PENDING: 'Đang chờ',
+    CONFIRMED: 'Đã xác nhận',
+    COMPLETED: 'Hoàn thành',
+    CANCELLED: 'Đã hủy',
+    REJECTED: 'Bị từ chối',
+    APPROVED: 'Đã duyệt',
   };
   return map[key] || formatTitleCase(status);
 };
@@ -95,6 +141,7 @@ const STATUS_COLORS = {
 
   SUCCESS: 'success',
   FAILED: 'error',
+  SENT: 'success',
 
   FLAGGED: 'warning',
   APPROVED: 'success',
@@ -102,6 +149,22 @@ const STATUS_COLORS = {
 
   NEW: 'primary',
   READ: 'default',
+
+  PUBLISHED: 'success',
+  DRAFT: 'warning',
+  HIDDEN: 'warning',
+  UNSUPPORTED: 'default',
+
+  UPCOMING: 'info',
+  ONGOING: 'primary',
+  PAST: 'default',
+  REGISTERED: 'info',
+  CHECKED_IN: 'success',
+  USED: 'success',
+  CANCELLED: 'error',
+  EXPIRED: 'default',
+  CONFIRMED: 'info',
+  COMPLETED: 'success',
 };
 
 /**
@@ -136,6 +199,25 @@ export const resolveAdminStatusChip = (status, category) => {
 
     case 'fundraising':
       label = formatFundraisingStatusLabel(status);
+      break;
+
+    case 'article':
+      label = formatArticleStatusLabel(status);
+      break;
+
+    case 'event':
+    case 'ticket':
+      label = formatEventStatusLabel(status);
+      break;
+
+    case 'education':
+    case 'verification':
+    case 'report':
+      label = formatForumStatusLabel(status);
+      break;
+
+    case 'mentorship':
+      label = formatMentorshipStatusLabel(status);
       break;
 
     default:

@@ -72,4 +72,7 @@ public interface AchievementR2dbcRepository extends ReactiveCrudRepository<Achie
            "WHERE om.organization_id = :organizationId " +
            "AND LOWER(a.title) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     Mono<Long> countSearchByOrganizationAndTitle(Integer organizationId, String keyword);
+
+    @Query("UPDATE achievements SET status = :status WHERE id = :id")
+    Mono<Integer> updateStatus(Integer id, Status status);
 }

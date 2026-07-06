@@ -127,19 +127,66 @@ const FilterInputPopover = ({ filter, value, onCommit }) => {
 
 const filterBaseSx = (theme, active) => ({
   height: 40, borderRadius: 10, fontWeight: 600, fontSize: '0.9rem', px: 2.5,
+  '& .MuiSelect-icon': {
+    color: 'currentColor',
+  },
   ...(active
     ? { backgroundColor: theme.palette.primary.main, color: theme.palette.primary.contrastText }
     : { border: `1px solid ${theme.palette.primary.main}`, color: theme.palette.primary.main }),
 });
 
+const getOptValue = (opt) => (typeof opt === 'object' ? opt.value : opt);
+const getOptLabel = (opt) => (typeof opt === 'object' ? opt.label : opt);
+
+const areFilterStatesEqual = (left = {}, right = {}) => {
+  const keys = new Set([...Object.keys(left), ...Object.keys(right)]);
+
+  return [...keys].every((key) => {
+    const leftValue = left[key];
+    const rightValue = right[key];
+
+    if (Array.isArray(leftValue) || Array.isArray(rightValue)) {
+      if (!Array.isArray(leftValue) || !Array.isArray(rightValue)) return false;
+      if (leftValue.length !== rightValue.length) return false;
+      return leftValue.every((item, index) => item === rightValue[index]);
+    }
+
+    return leftValue === rightValue;
+  });
+};
+
 const DynamicFilterBar = ({ config = [], value = {}, onChange }) => {
   const { t } = useTranslation(['common']);
   const [internalValue, setInternalValue] = useState({ all: true, ...value });
 
+  const hasActiveVisibleFilters = useCallback((state) => config.some((item) => {
+    const current = state[item.key];
+
+    if (item.type === 'range') {
+      if (!Array.isArray(current)) return false;
+      return current[0] !== item.min || current[1] !== item.max;
+    }
+
+    if (Array.isArray(current)) return current.length > 0;
+    return Boolean(String(current ?? '').trim());
+  }), [config]);
+
   const updateState = useCallback((newState) => {
-    setInternalValue(newState);
-    onChange?.(newState);
-  }, [onChange]);
+    const normalizedState = {
+      ...newState,
+      all: !hasActiveVisibleFilters(newState),
+    };
+    setInternalValue(normalizedState);
+    onChange?.(normalizedState);
+  }, [hasActiveVisibleFilters, onChange]);
+
+  useEffect(() => {
+    const nextState = {
+      ...value,
+      all: !hasActiveVisibleFilters(value),
+    };
+    setInternalValue((prev) => (areFilterStatesEqual(prev, nextState) ? prev : nextState));
+  }, [hasActiveVisibleFilters, value]);
 
   // ===== TẤT CẢ =====
   const handleAllClick = useCallback(() => {
@@ -157,9 +204,13 @@ const DynamicFilterBar = ({ config = [], value = {}, onChange }) => {
   }, [config, updateState]);
 
   // ===== TOPICS =====
-  const handleTopicToggle = useCallback((key, option) => {
+  const handleTopicToggle = useCallback((filter, option) => {
+    const key = filter.key;
+    const optionValue = getOptValue(option);
     const current = internalValue[key] || [];
-    const newValues = current.includes(option) ? current.filter((v) => v !== option) : [...current, option];
+    const newValues = current.includes(optionValue)
+      ? current.filter((v) => v !== optionValue)
+      : filter.single ? [optionValue] : [...current, optionValue];
 
     updateState({ ...internalValue, all: false, [key]: newValues });
   }, [internalValue, updateState]);
@@ -202,14 +253,16 @@ const DynamicFilterBar = ({ config = [], value = {}, onChange }) => {
         // ===== TOPIC BUTTONS =====
         if (filter.type === 'topics') {
           return filter.options.map((option) => {
-            const active = !internalValue.all && (internalValue[filter.key] || []).includes(option);
+            const optionValue = getOptValue(option);
+            const optionLabel = getOptLabel(option);
+            const active = !internalValue.all && (internalValue[filter.key] || []).includes(optionValue);
 
             return (
               <Button
-                key={`${filter.key}-${option}`} variant={active ? 'contained' : 'outlined'}
-                onClick={() => handleTopicToggle(filter.key, option)} sx={(theme) => filterBaseSx(theme, active)}
+                key={`${filter.key}-${optionValue}`} variant={active ? 'contained' : 'outlined'}
+                onClick={() => handleTopicToggle(filter, option)} sx={(theme) => filterBaseSx(theme, active)}
               >
-                {option}
+                {optionLabel}
               </Button>
             );
           });
@@ -217,9 +270,6 @@ const DynamicFilterBar = ({ config = [], value = {}, onChange }) => {
 
         // ===== DROPDOWN =====
         if (filter.type === 'dropdown') {
-          const getOptValue = (opt) => (typeof opt === 'object' ? opt.value : opt);
-          const getOptLabel = (opt) => (typeof opt === 'object' ? opt.label : opt);
-
           const currentValue = internalValue[filter.key] ?? (filter.multiple ? [] : '');
           const isActive = filter.multiple ? currentValue.length > 0 : Boolean(currentValue);
 

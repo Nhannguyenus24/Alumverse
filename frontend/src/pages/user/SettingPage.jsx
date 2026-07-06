@@ -42,6 +42,7 @@ import useAvatarCrop from "../../hooks/profile/useAvatarCrop";
 import ChangeEmailModal from '../../components/profile/ChangeEmailModal';
 import { useUploadImage } from '../../utils/imageUtils';
 import { GENDER_OPTIONS, GENDER_LABEL_KEYS } from '../../constants/gender';
+import { resolveProfileRoleLabel } from '../../utils/profileRoleUtils';
 
 const parseOrganizationOptions = (value) => {
   if (!value) return [];
@@ -79,8 +80,15 @@ const normalizeAcademicList = (value) => {
 
 const normalizeIntegerList = (value) => normalizeAcademicList(value).map((item) => Number(item)).filter((item) => Number.isInteger(item));
 
+const dateInputSx = {
+  '& input[type="date"]::-webkit-calendar-picker-indicator': {
+    opacity: 0.75,
+    filter: (theme) => (theme.palette.mode === 'dark' ? 'invert(1)' : 'none'),
+  },
+};
+
 export default function SettingPage() {
-  const { t } = useTranslation('settings');
+  const { t } = useTranslation(['settings', 'profile']);
   const { showSuccess, showError, showWarning } = useNotification();
   const { organization } = useOrganization();
   const organizationId = useMemo(() => Number(organization?.id) || null, [organization?.id]);
@@ -116,7 +124,7 @@ export default function SettingPage() {
   }, [isTrustedVerifier, t]);
 
   const [formData, setFormData] = useState({
-    fullName: '', gender: '', birthDate: '', phone: '', studentId: '', email: '',
+    fullName: '', gender: '', birthDate: '', phone: '', studentId: '', email: '', role: '',
     educations: [{ faculty: '', department: '', program: '', startedYear: '', graduatedYear: '', major: '', graduationStatus: '' }],
   });
 
@@ -206,6 +214,7 @@ export default function SettingPage() {
           phone: profile?.phone ?? '',
           studentId: profile?.studentId ?? '',
           email: profile?.email ?? '',
+          role: profile?.role ?? profile?.userRole ?? user?.role ?? '',
           educations,
         }));
 
@@ -226,7 +235,7 @@ export default function SettingPage() {
     };
 
     loadSettings();
-  }, [organizationId, showError]);
+  }, [organizationId, showError, user?.role]);
 
   useEffect(() => {
     if (activeTab === 'verification') {
@@ -438,7 +447,21 @@ export default function SettingPage() {
           </Box>
           <Box>
             <Typography variant="h3">{formData.fullName || 'User'}</Typography>
-            <Typography variant="body2" color="primary.main">Alumni {formData.studentId}</Typography>
+            {formData.studentId && (
+              <Typography variant="body2" color="text.primary" sx={{ mt: 0.5 }}>
+                Student ID: {formData.studentId}
+              </Typography>
+            )}
+            <Typography variant="body2" color="primary.main" sx={{ mt: formData.studentId ? 0.25 : 0.5 }}>
+              {resolveProfileRoleLabel({
+                profile: {
+                  role: formData.role,
+                  studentId: formData.studentId,
+                },
+                academicProfile: formData.educations?.[0],
+                t,
+              })}
+            </Typography>
           </Box>
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, }}>
@@ -472,7 +495,7 @@ export default function SettingPage() {
               ))}
             </Select>
           </FormControl>
-          <TextField fullWidth label={t('label_birthdate')} name="birthDate" type="date" value={formData.birthDate} InputProps={{ readOnly: !isEditMode }} InputLabelProps={{ shrink: true }} />
+          <TextField fullWidth label={t('label_birthdate')} name="birthDate" type="date" value={formData.birthDate} InputProps={{ readOnly: !isEditMode }} InputLabelProps={{ shrink: true }} sx={dateInputSx} />
           <TextField fullWidth label={t('label_phone')} name="phone" value={formData.phone} InputProps={{ readOnly: !isEditMode }} onChange={handleFormChange} />
           <TextField fullWidth label={t('label_student_id')} name="studentId" value={formData.studentId} InputProps={{ readOnly: true }} />
           <TextField fullWidth label={t('label_email')} name="email" type="email" value={formData.email} InputProps={{ readOnly: !isEditMode }} />
@@ -504,11 +527,11 @@ export default function SettingPage() {
 
         <Stack spacing={3}>
           {formData.educations.map((edu, index) => (
-            <Card key={index} variant="outlined" sx={{ p: 3, position: 'relative', bgcolor: 'grey.50' }}>
+            <Card key={index} variant="outlined" sx={{ p: 3, position: 'relative', bgcolor: 'background.default' }}>
               {isEduEditMode && formData.educations.length > 1 && (
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
                   <Typography variant="h5">{t('education_label')}</Typography>
-                  <IconButton size="small" color="error" onClick={() => removeEducation(index)} sx={{ '&:hover': { bgcolor: 'error.lighter' } }}>
+                  <IconButton size="small" color="error" onClick={() => removeEducation(index)} sx={{ '&:hover': { bgcolor: 'action.hover' } }}>
                     <DeleteIcon fontSize="small" />
                   </IconButton>
                 </Box>
@@ -629,11 +652,11 @@ export default function SettingPage() {
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       <Typography variant="h4">{t('advisor_section')}</Typography>
       <Typography variant="body1" color="textSecondary">{t('advisor_no_advisor')}</Typography>
-      <Paper sx={{ p: 3, bgcolor: 'primary.light' }}>
+      <Paper variant="outlined" sx={{ p: 3, bgcolor: 'background.default' }}>
         <Typography variant="h5" sx={{ color: 'primary.main' }}>{t('advisor_contact_title')}</Typography>
-        <Typography variant="body1" color="secondary.dark" display="block" sx={{ mt: 2, fontWeight: 600 }}>{organization?.departmentName || 'Khoa Công nghệ Thông tin'}</Typography>
-        <Typography variant="body1" color="secondary.dark" display="block" sx={{ mt: 0.5 }}>Email: {organization?.contactEmail || 'admin@hcmus.edu.vn'}</Typography>
-        <Typography variant="body1" color="secondary.dark" display="block">Phone: {organization?.contactPhone || '(028) 6288 4499'}</Typography>
+        <Typography variant="body1" color="text.primary" display="block" sx={{ mt: 2, fontWeight: 600 }}>{organization?.departmentName || 'Khoa Công nghệ Thông tin'}</Typography>
+        <Typography variant="body1" color="text.secondary" display="block" sx={{ mt: 0.5 }}>Email: {organization?.contactEmail || 'admin@hcmus.edu.vn'}</Typography>
+        <Typography variant="body1" color="text.secondary" display="block">Phone: {organization?.contactPhone || '(028) 6288 4499'}</Typography>
       </Paper>
     </Box>
   );
@@ -704,7 +727,7 @@ export default function SettingPage() {
               <Stack gap={2}>
                 <Typography variant="h1" fontWeight={800} color="primary.main">{t('page_heading')}</Typography>
               </Stack>
-              <Card sx={{ p: 4, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', border: 1, borderColor: 'divider', borderRadius: 1, backgroundColor: 'white' }}>
+              <Card sx={{ p: 4, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', border: 1, borderColor: 'divider', borderRadius: 1, bgcolor: 'background.paper' }}>
                 {renderContent()}
               </Card>
             </Stack>
