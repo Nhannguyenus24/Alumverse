@@ -41,6 +41,8 @@ public class FundDetailResponse {
     private Integer managerUserId;
     private String managerAvatarUrl;
 
+    private String fundDocumentUrl;
+
     public static FundDetailResponse from(
             Funds fund,
             FundReceivingInfos fundReceivingInfo,
@@ -69,6 +71,7 @@ public class FundDetailResponse {
                 .managerEmail(fund.getManagerEmail())
                 .managerUserId(managerUser != null ? managerUser.getId() : null)
                 .managerAvatarUrl(managerUser != null ? managerUser.getAvatarUrl() : null)
+                .fundDocumentUrl(fund.getFundDocumentUrl())
                 .build();
     }
 }

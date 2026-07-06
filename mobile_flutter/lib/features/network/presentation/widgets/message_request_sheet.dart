@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../../core/constants/chat_limits.dart';
 import '../../../../../core/router/route_names.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../shared/widgets/app_toast.dart';
@@ -69,11 +70,17 @@ class _MessageRequestSheetState extends ConsumerState<_MessageRequestSheet> {
   bool _loadingStatus = true;
   bool _sending = false;
   bool _sentThisSession = false;
+  int _charCount = 0;
 
   @override
   void initState() {
     super.initState();
     _loadStatus();
+    _ctrl.addListener(() {
+      if (_ctrl.text.length != _charCount) {
+        setState(() => _charCount = _ctrl.text.length);
+      }
+    });
   }
 
   @override
@@ -101,6 +108,15 @@ class _MessageRequestSheetState extends ConsumerState<_MessageRequestSheet> {
   Future<void> _send() async {
     final msg = _ctrl.text.trim();
     if (msg.isEmpty) return;
+    if (msg.length > kMaxChatMessageLength) {
+      AppToast.error(
+        context,
+        'network.message_too_long'.tr(
+          namedArgs: {'max': '$kMaxChatMessageLength'},
+        ),
+      );
+      return;
+    }
     setState(() => _sending = true);
     try {
       await ref
@@ -307,9 +323,10 @@ class _MessageRequestSheetState extends ConsumerState<_MessageRequestSheet> {
           TextField(
             controller: _ctrl,
             maxLines: 4,
-            maxLength: 500,
+            maxLength: kMaxChatMessageLength,
             enabled: enabled,
             decoration: InputDecoration(
+              counterText: '',
               hintText: 'network.message_hint'.tr(),
               hintStyle: const TextStyle(color: AppColors.textSecondary),
               filled: true,
@@ -328,6 +345,41 @@ class _MessageRequestSheetState extends ConsumerState<_MessageRequestSheet> {
               ),
             ),
           ),
+          if (_charCount > kMaxChatMessageLength * 0.8)
+            Padding(
+              padding: const EdgeInsets.only(top: 4, left: 4),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'network.char_count'.tr(
+                      namedArgs: {
+                        'count': '$_charCount',
+                        'max': '$kMaxChatMessageLength',
+                      },
+                    ),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color:
+                          _charCount >= kMaxChatMessageLength
+                              ? AppColors.primary
+                              : AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'network.char_count_hint'.tr(),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color:
+                          _charCount >= kMaxChatMessageLength
+                              ? AppColors.primary
+                              : AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,

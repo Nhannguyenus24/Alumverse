@@ -84,6 +84,7 @@ public class FundService {
         ).flatMap(tuple -> imageService.uploadBase64IfPresent(request.getLogoBase64())
                 .defaultIfEmpty(request.getLogoUrl() == null ? "" : request.getLogoUrl())
                 .flatMap(logoUrl -> {
+                    String documentUrl = request.getFundDocumentUrl();
                     Funds fund = Funds.builder()
                             .organizationId(organizationId)
                                             .fundReceivingInfoId(fundReceivingInfoId)
@@ -93,6 +94,8 @@ public class FundService {
                                             .descriptionFull(request.getDescriptionFull())
                                             .managerName(request.getManagerName())
                                             .managerEmail(request.getManagerEmail())
+                                            .fundDocumentUrl(
+                                                    documentUrl == null || documentUrl.isBlank() ? null : documentUrl)
                                             .targetAmount(request.getTargetAmount())
                                             .currentAmount(java.math.BigDecimal.ZERO)
                                             .timeStarted(request.getTimeStarted())
@@ -405,11 +408,16 @@ public class FundService {
                             )))
                             .flatMap(existingReceivingInfo -> {
                                 String newLogoUrl = request.getLogoUrl();
+                                String newDocUrl = request.getFundDocumentUrl();
                                 existing.setName(request.getName());
                                 existing.setDescriptionShort(request.getDescriptionShort());
                                 existing.setDescriptionFull(request.getDescriptionFull());
                                 if (newLogoUrl != null) {
                                     existing.setLogoUrl(newLogoUrl.isEmpty() ? null : newLogoUrl);
+                                }
+                                // null = keep existing document, "" = remove it (same pattern as logoUrl)
+                                if (newDocUrl != null) {
+                                    existing.setFundDocumentUrl(newDocUrl.isEmpty() ? null : newDocUrl);
                                 }
                                 existing.setManagerName(request.getManagerName());
                                 existing.setManagerEmail(request.getManagerEmail());

@@ -219,6 +219,24 @@ class FundServiceTest {
         }
 
         @Test
+        @DisplayName("STAFF basic-info: does NOT change fundDocumentUrl (not bindable in this DTO)")
+        void updateFundBasicInfo_staffSameOrg_leavesDocumentUrlUnchanged() {
+            Funds existing = activeFund(10);
+            existing.setFundDocumentUrl("https://example.com/funds/original-doc.pdf");
+            when(fundR2dbcRepository.findById(1L)).thenReturn(Mono.just(existing));
+            when(fundR2dbcRepository.save(any())).thenAnswer(inv -> Mono.just(inv.getArgument(0)));
+
+            StepVerifier.create(fundService.updateFundBasicInfo(1L, basicInfoRequest())
+                            .contextWrite(staffContext(10)))
+                    .assertNext(saved -> {
+                        assertThat(saved.getDescriptionFull()).isEqualTo("Updated description");
+                        assertThat(saved.getFundDocumentUrl())
+                                .isEqualTo("https://example.com/funds/original-doc.pdf");
+                    })
+                    .verifyComplete();
+        }
+
+        @Test
         @DisplayName("STAFF in different org: forbidden")
         void updateFundBasicInfo_staffDifferentOrg_forbidden() {
             Funds existing = activeFund(10);
@@ -378,6 +396,159 @@ class FundServiceTest {
                     .expectErrorMatches(err -> err instanceof ApplicationException &&
                             ((ApplicationException) err).getErrorCode() == ErrorCode.USER_NOT_FOUND)
                     .verify();
+        }
+    }
+
+    // ─── createFund (fundDocumentUrl) ─────────────────────────────────────────
+
+    @Nested
+    @DisplayName("createFund() — fundDocumentUrl")
+    class CreateFund {
+
+        private CreateFundRequest baseRequest() {
+            return CreateFundRequest.builder()
+                    .name("New Fund")
+                    .descriptionShort("short")
+                    .descriptionFull("full")
+                    .managerName("Manager")
+                    .managerEmail("manager@test.com")
+                    .organizationId(1)
+                    .fundReceivingInfoId(1)
+                    .targetAmount(new BigDecimal("1000000"))
+                    .timeStarted(LocalDateTime.now().plusDays(1))
+                    .timeEnded(LocalDateTime.now().plusDays(10))
+                    .build();
+        }
+
+        private void stubDependencies() {
+            when(organizationRepository.findById(1)).thenReturn(Mono.just(Organization.builder().id(1).build()));
+            when(fundReceivingInfosRepository.findById(1))
+                    .thenReturn(Mono.just(FundReceivingInfos.builder().id(1).build()));
+            when(imageService.uploadBase64IfPresent(any())).thenReturn(Mono.empty());
+            when(fundR2dbcRepository.save(any())).thenAnswer(inv -> Mono.just(inv.getArgument(0)));
+        }
+
+        @Test
+        @DisplayName("stores fundDocumentUrl when provided")
+        void createFund_withDocument_stored() {
+            stubDependencies();
+            CreateFundRequest request = baseRequest();
+            request.setFundDocumentUrl("https://example.com/funds/decision.pdf");
+
+            StepVerifier.create(fundService.createFund(request))
+                    .assertNext(saved -> assertThat(saved.getFundDocumentUrl())
+                            .isEqualTo("https://example.com/funds/decision.pdf"))
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("leaves fundDocumentUrl null when not provided (optional)")
+        void createFund_withoutDocument_null() {
+            stubDependencies();
+
+            StepVerifier.create(fundService.createFund(baseRequest()))
+                    .assertNext(saved -> assertThat(saved.getFundDocumentUrl()).isNull())
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("normalizes blank fundDocumentUrl to null")
+        void createFund_blankDocument_null() {
+            stubDependencies();
+            CreateFundRequest request = baseRequest();
+            request.setFundDocumentUrl("   ");
+
+            StepVerifier.create(fundService.createFund(request))
+                    .assertNext(saved -> assertThat(saved.getFundDocumentUrl()).isNull())
+                    .verifyComplete();
+        }
+    }
+
+    // ─── updateFund (fundDocumentUrl) ─────────────────────────────────────────
+
+    @Nested
+    @DisplayName("updateFund() — fundDocumentUrl")
+    class UpdateFund {
+
+        private Funds editableFund() {
+            return Funds.builder()
+                    .id(1)
+                    .name("Original")
+                    .organizationId(1)
+                    .fundReceivingInfoId(1)
+                    .managerName("Manager")
+                    .managerEmail("original@test.com")
+                    .descriptionShort("short")
+                    .descriptionFull("full")
+                    .targetAmount(new BigDecimal("1000000"))
+                    .fundDocumentUrl("https://example.com/funds/original-doc.pdf")
+                    .timeStarted(LocalDateTime.now().plusDays(1))
+                    .timeEnded(LocalDateTime.now().plusDays(10))
+                    .build();
+        }
+
+        private UpdateFundRequest.UpdateFundRequestBuilder baseRequestBuilder(Funds existing) {
+            return UpdateFundRequest.builder()
+                    .name("Updated")
+                    .descriptionShort("short")
+                    .descriptionFull("full")
+                    .managerName("Manager")
+                    .managerEmail("manager@test.com")
+                    .targetAmount(existing.getTargetAmount())
+                    .fundReceivingInfoId(existing.getFundReceivingInfoId())
+                    .timeStarted(existing.getTimeStarted())
+                    .timeEnded(existing.getTimeEnded());
+        }
+
+        private void stubForUpdate(Funds existing) {
+            when(fundR2dbcRepository.findById(1L)).thenReturn(Mono.just(existing));
+            when(fundReceivingInfosRepository.findById(1))
+                    .thenReturn(Mono.just(FundReceivingInfos.builder().id(1).build()));
+            when(fundR2dbcRepository.save(any())).thenAnswer(inv -> Mono.just(inv.getArgument(0)));
+        }
+
+        @Test
+        @DisplayName("changes fundDocumentUrl when a new URL is provided")
+        void updateFund_changesDocument() {
+            Funds existing = editableFund();
+            stubForUpdate(existing);
+            UpdateFundRequest request = baseRequestBuilder(existing)
+                    .fundDocumentUrl("https://example.com/funds/new-doc.pdf")
+                    .build();
+
+            StepVerifier.create(fundService.updateFund(1L, request))
+                    .assertNext(saved -> assertThat(saved.getFundDocumentUrl())
+                            .isEqualTo("https://example.com/funds/new-doc.pdf"))
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("empty string removes the document")
+        void updateFund_emptyStringRemovesDocument() {
+            Funds existing = editableFund();
+            stubForUpdate(existing);
+            UpdateFundRequest request = baseRequestBuilder(existing)
+                    .fundDocumentUrl("")
+                    .build();
+
+            StepVerifier.create(fundService.updateFund(1L, request))
+                    .assertNext(saved -> assertThat(saved.getFundDocumentUrl()).isNull())
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("null keeps the existing document (no accidental wipe)")
+        void updateFund_nullKeepsDocument() {
+            Funds existing = editableFund();
+            stubForUpdate(existing);
+            UpdateFundRequest request = baseRequestBuilder(existing)
+                    .fundDocumentUrl(null)
+                    .build();
+
+            StepVerifier.create(fundService.updateFund(1L, request))
+                    .assertNext(saved -> assertThat(saved.getFundDocumentUrl())
+                            .isEqualTo("https://example.com/funds/original-doc.pdf"))
+                    .verifyComplete();
         }
     }
 

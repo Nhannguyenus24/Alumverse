@@ -25,6 +25,7 @@ const NetworkSearchMemberCard = ({
   isMessageLoading = false,
   isBlockLoading = false,
   messageButtonLabel,
+  messageButtonVariant = 'contained',
 }) => {
   const { t } = useTranslation('network');
   const { canContribute } = useCanContribute();
@@ -118,7 +119,7 @@ const NetworkSearchMemberCard = ({
 
       <ContributeGuardTooltip sx={{ width: '100%', mt: 3 }}>
         <Button
-          variant="contained"
+          variant={messageButtonVariant}
           fullWidth
           type="button"
           onClick={(event) => {
@@ -131,7 +132,7 @@ const NetworkSearchMemberCard = ({
           {isMessageLoading ? (
             <CircularProgress size={22} color="inherit" />
           ) : (
-            messageButtonLabel ?? t('message')
+            messageButtonLabel ?? t('connect')
           )}
         </Button>
       </ContributeGuardTooltip>

@@ -2,6 +2,7 @@
   "title": "Kết nối",
   "alumni_network": "Kết nối cựu sinh viên",
   "connect": "Kết nối",
+  "connect_pending": "Đang chờ",
   "connected": "Đã kết nối",
   "find_alumni": "Tìm cựu sinh viên",
   "find_friends": "Tìm bạn bè...",
@@ -53,7 +54,7 @@
   "drawer_empty_first": "Chưa có tin nhắn. Hãy gửi lời chào đầu tiên.",
   "drawer_placeholder_type": "Nhập tin nhắn…",
   "drawer_banner_pending": "Đang chờ người kia phản hồi. Bạn không thể gửi thêm tin nhắn lúc này.",
-  "drawer_placeholder_disabled": "Không thể gửi tin nhắn lúc này",
+  "drawer_placeholder_disabled": "Đang chờ người kia phản hồi",
   "drawer_banner_accepted": "Hai người đã kết nối.",
   "drawer_banner_retry": "Bạn có thể gửi thêm 1 tin nhắn.",
   "drawer_banner_rejected": "Yêu cầu kết nối đã bị từ chối. Bạn có thể gửi lại sau {{datetime}}.",
@@ -219,6 +220,9 @@
     "upload_failed": "Tải lên thất bại. Vui lòng thử lại.",
     "attachment_unavailable": "Không thể hiển thị tệp đính kèm",
     "image_update_failed": "Cập nhật ảnh nhóm thất bại. Vui lòng thử lại.",
-    "access_blocked_title": "Cần xác minh cựu sinh viên để trò chuyện"
+    "access_blocked_title": "Cần xác minh cựu sinh viên để trò chuyện",
+    "message_too_long": "Tin nhắn không được vượt quá {{max}} ký tự.",
+    "char_count": "{{count}}/{{max}}",
+    "char_count_hint": "giới hạn ký tự"
   }
 }

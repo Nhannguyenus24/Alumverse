@@ -4,6 +4,7 @@ import {
   Stack, Button, Select, MenuItem, Checkbox, ListItemText,
   TextField, Slider, Box, Typography, Popover, Paper
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 
@@ -130,9 +131,25 @@ const filterBaseSx = (theme, active) => ({
   '& .MuiSelect-icon': {
     color: 'currentColor',
   },
+  // Dropdowns render as MuiOutlinedInput, whose theme override repaints the
+  // background on hover. Without an explicit hover here that would leave the
+  // active state's white text on a white background (text "disappears"), so we
+  // mirror the Button hover behavior for both states.
   ...(active
-    ? { backgroundColor: theme.palette.primary.main, color: theme.palette.primary.contrastText }
-    : { border: `1px solid ${theme.palette.primary.main}`, color: theme.palette.primary.main }),
+    ? {
+        backgroundColor: theme.palette.primary.main,
+        color: theme.palette.primary.contrastText,
+        '&:hover': { backgroundColor: theme.palette.primary.dark },
+      }
+    : {
+        border: `1px solid ${theme.palette.primary.main}`,
+        color: theme.palette.primary.main,
+        '&:hover': {
+          backgroundColor: theme.palette.mode === 'dark'
+            ? alpha(theme.palette.primary.main, 0.12)
+            : theme.palette.primary.lighter,
+        },
+      }),
 });
 
 const getOptValue = (opt) => (typeof opt === 'object' ? opt.value : opt);
