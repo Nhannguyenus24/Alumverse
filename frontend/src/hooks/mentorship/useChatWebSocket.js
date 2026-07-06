@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 function getWsUrl() {
-  const envUrl = import.meta?.env?.VITE_WS_CHAT_URL;
+  const envUrl = import.meta.env.VITE_WS_CHAT_URL;
   if (envUrl && typeof envUrl === "string") return envUrl;
   return "ws://localhost:8080/ws/chat";
 }
