@@ -1,7 +1,9 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/app_toast.dart';
 import '../../data/models/mentor_availability.dart';
@@ -14,7 +16,22 @@ class MentorAvailabilityPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final approvedAsync = ref.watch(isApprovedMentorProvider);
     final async = ref.watch(myAvailabilityProvider);
+
+    final scaffold = Scaffold(
+      appBar: AppBar(title: Text('mentorship.my_availability'.tr())),
+      body: const Center(child: CircularProgressIndicator()),
+    );
+
+    final approved = approvedAsync.valueOrNull;
+    if (approvedAsync.isLoading && approved == null) return scaffold;
+    if (approved != true) {
+      return Scaffold(
+        appBar: AppBar(title: Text('mentorship.my_availability'.tr())),
+        body: const _MentorOnlyView(),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(title: Text('mentorship.my_availability'.tr())),
@@ -108,6 +125,56 @@ class MentorAvailabilityPage extends ConsumerWidget {
     );
     // Refresh after sheet closes (success or cancel)
     ref.invalidate(myAvailabilityProvider);
+  }
+}
+
+class _MentorOnlyView extends StatelessWidget {
+  const _MentorOnlyView();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.08),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.school_outlined,
+                color: AppColors.primary,
+                size: 34,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'mentorship.mentor_only_title'.tr(),
+              textAlign: TextAlign.center,
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'mentorship.mentor_only_desc'.tr(),
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 20),
+            FilledButton(
+              onPressed: () => context.go(RouteNames.mentorship),
+              child: Text('mentorship.become_mentor'.tr()),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

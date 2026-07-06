@@ -14,6 +14,7 @@ class RouteNames {
   static const String forum = '/forum';
   static const String events = '/events';
   static const String news = '/news';
+  static const String honors = '/honors';
   static const String organizationIntroduction = '/organization-introduction';
   static const String articles = '/articles';
   static const String mentorship = '/mentorship';

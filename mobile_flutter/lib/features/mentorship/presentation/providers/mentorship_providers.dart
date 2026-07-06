@@ -73,18 +73,39 @@ final myMentorProfileProvider = FutureProvider<MentorProfile?>((ref) {
   return ref.watch(mentorshipRepositoryProvider).getMyMentorProfile();
 });
 
+bool _isApprovedMentor(MentorProfile? profile) =>
+    (profile?.status ?? '').toUpperCase() == 'APPROVED';
+
+/// True only when the current user can call mentor-side management endpoints.
+final isApprovedMentorProvider = FutureProvider<bool>((ref) async {
+  final profile = await ref.watch(myMentorProfileProvider.future);
+  return _isApprovedMentor(profile);
+});
+
 /// Sessions received by the current user as a mentor.
-final mentorSessionsProvider = FutureProvider<List<MentorshipSession>>((ref) {
+final mentorSessionsProvider = FutureProvider<List<MentorshipSession>>((
+  ref,
+) async {
+  final profile = await ref.watch(myMentorProfileProvider.future);
+  if (!_isApprovedMentor(profile)) return const [];
   return ref.watch(mentorshipRepositoryProvider).getMentorSessions();
 });
 
 /// Availability slots managed by the current mentor.
-final myAvailabilityProvider = FutureProvider<List<MentorAvailability>>((ref) {
+final myAvailabilityProvider = FutureProvider<List<MentorAvailability>>((
+  ref,
+) async {
+  final profile = await ref.watch(myMentorProfileProvider.future);
+  if (!_isApprovedMentor(profile)) return const [];
   return ref.watch(mentorshipRepositoryProvider).getMyAvailability();
 });
 
 /// Feedbacks received by the current mentor.
-final myMentorFeedbacksProvider = FutureProvider<List<SessionFeedback>>((ref) {
+final myMentorFeedbacksProvider = FutureProvider<List<SessionFeedback>>((
+  ref,
+) async {
+  final profile = await ref.watch(myMentorProfileProvider.future);
+  if (!_isApprovedMentor(profile)) return const [];
   return ref.watch(mentorshipRepositoryProvider).getMyMentorFeedbacks();
 });
 

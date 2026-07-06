@@ -7,7 +7,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/utils/article_topic_label.dart';
 import '../../../../core/utils/html_utils.dart';
 import '../../../../core/utils/image_url.dart';
 import '../../../../shared/widgets/empty_view.dart';
@@ -16,35 +15,38 @@ import '../../../../shared/widgets/skeleton.dart';
 import '../../data/models/article.dart';
 import '../providers/news_provider.dart';
 
-/// News listing — native port of the web `ActivitiesNewsPage`. Featured article
-/// + a grid of the rest. Tapping a card opens the article detail.
-class NewsListPage extends ConsumerWidget {
-  const NewsListPage({super.key});
+class HonorsListPage extends ConsumerWidget {
+  const HonorsListPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final async = ref.watch(publishedNewsProvider);
+    final async = ref.watch(honorsArticlesProvider);
 
     return Scaffold(
-      appBar: AppBar(title: Text('article.title'.tr())),
+      appBar: AppBar(title: Text('article.honors_title'.tr())),
       body: RefreshIndicator(
         onRefresh: () async {
-          ref.invalidate(publishedNewsProvider);
-          await ref.read(publishedNewsProvider.future);
+          ref.invalidate(honorsArticlesProvider);
+          await ref.read(honorsArticlesProvider.future);
         },
         child: async.when(
           loading: () => const SkeletonList(count: 4),
           error:
               (_, __) => ErrorView(
-                message: 'article.load_failed'.tr(),
-                onRetry: () => ref.invalidate(publishedNewsProvider),
+                message: 'article.honors_load_failed'.tr(),
+                onRetry: () => ref.invalidate(honorsArticlesProvider),
               ),
-          data: (news) {
-            if (news.isEmpty) {
-              return const _NewsEmpty();
+          data: (articles) {
+            if (articles.isEmpty) {
+              return EmptyView(
+                icon: Icons.emoji_events_outlined,
+                title: 'article.no_honors'.tr(),
+                message: 'article.no_honors_desc'.tr(),
+              );
             }
-            final featured = news.first;
-            final rest = news.length > 1 ? news.sublist(1) : <Article>[];
+            final featured = articles.first;
+            final rest =
+                articles.length > 1 ? articles.sublist(1) : <Article>[];
 
             return CustomScrollView(
               slivers: [
@@ -53,7 +55,7 @@ class NewsListPage extends ConsumerWidget {
                   sliver: SliverList(
                     delegate: SliverChildListDelegate([
                       Text(
-                        'article.title_upper'.tr(),
+                        'article.honors_title_upper'.tr(),
                         style: Theme.of(
                           context,
                         ).textTheme.headlineSmall?.copyWith(
@@ -62,7 +64,7 @@ class NewsListPage extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      _FeaturedNewsCard(article: featured)
+                      _FeaturedHonorCard(article: featured)
                           .animate()
                           .fadeIn(duration: 300.ms)
                           .slideY(begin: 0.08, curve: Curves.easeOut),
@@ -100,7 +102,7 @@ class NewsListPage extends ConsumerWidget {
                             childAspectRatio: 0.58,
                           ),
                       delegate: SliverChildBuilderDelegate(
-                        (_, i) => _NewsCard(article: rest[i])
+                        (_, i) => _HonorCard(article: rest[i])
                             .animate()
                             .fadeIn(duration: 300.ms, delay: (40 * i).ms)
                             .slideY(begin: 0.1, curve: Curves.easeOut),
@@ -119,8 +121,8 @@ class NewsListPage extends ConsumerWidget {
   }
 }
 
-class _FeaturedNewsCard extends StatelessWidget {
-  const _FeaturedNewsCard({required this.article});
+class _FeaturedHonorCard extends StatelessWidget {
+  const _FeaturedHonorCard({required this.article});
 
   final Article article;
 
@@ -132,10 +134,9 @@ class _FeaturedNewsCard extends StatelessWidget {
         article.publishedAt != null
             ? DateFormat('dd/MM/yyyy').format(article.publishedAt!)
             : null;
-    final topicLabel = articleTopicLabel(article.topic);
 
     return InkWell(
-      onTap: () => context.push('${RouteNames.articles}/${article.id}'),
+      onTap: () => context.push(_articlePath(article)),
       borderRadius: BorderRadius.circular(14),
       child: Container(
         decoration: BoxDecoration(
@@ -156,27 +157,17 @@ class _FeaturedNewsCard extends StatelessWidget {
                         fit: BoxFit.cover,
                         placeholder:
                             (_, __) => Container(color: AppColors.divider),
-                        errorWidget: (_, __, ___) => const _NewsFallback(),
+                        errorWidget: (_, __, ___) => const _HonorFallback(),
                       )
-                      : const _NewsFallback(),
+                      : const _HonorFallback(),
             ),
             Padding(
               padding: const EdgeInsets.all(14),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (topicLabel.isNotEmpty) ...[
-                    Text(
-                      topicLabel.toUpperCase(),
-                      style: const TextStyle(
-                        color: AppColors.primary,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                  ],
+                  _ChannelLabel(article: article),
+                  const SizedBox(height: 4),
                   Text(
                     article.title,
                     maxLines: 2,
@@ -213,8 +204,8 @@ class _FeaturedNewsCard extends StatelessWidget {
   }
 }
 
-class _NewsCard extends StatelessWidget {
-  const _NewsCard({required this.article});
+class _HonorCard extends StatelessWidget {
+  const _HonorCard({required this.article});
 
   final Article article;
 
@@ -226,10 +217,9 @@ class _NewsCard extends StatelessWidget {
         article.publishedAt != null
             ? DateFormat('dd/MM/yyyy').format(article.publishedAt!)
             : null;
-    final topicLabel = articleTopicLabel(article.topic);
 
     return InkWell(
-      onTap: () => context.push('${RouteNames.articles}/${article.id}'),
+      onTap: () => context.push(_articlePath(article)),
       borderRadius: BorderRadius.circular(12),
       child: Container(
         decoration: BoxDecoration(
@@ -250,9 +240,9 @@ class _NewsCard extends StatelessWidget {
                         fit: BoxFit.cover,
                         placeholder:
                             (_, __) => Container(color: AppColors.divider),
-                        errorWidget: (_, __, ___) => const _NewsFallback(),
+                        errorWidget: (_, __, ___) => const _HonorFallback(),
                       )
-                      : const _NewsFallback(),
+                      : const _HonorFallback(),
             ),
             Expanded(
               child: Padding(
@@ -260,20 +250,8 @@ class _NewsCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (topicLabel.isNotEmpty) ...[
-                      Text(
-                        topicLabel.toUpperCase(),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: AppColors.primary,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.4,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                    ],
+                    _ChannelLabel(article: article),
+                    const SizedBox(height: 4),
                     Text(
                       article.title,
                       maxLines: 2,
@@ -292,12 +270,11 @@ class _NewsCard extends StatelessWidget {
                         style: const TextStyle(
                           color: AppColors.textSecondary,
                           fontSize: 12,
-                          height: 1.3,
+                          height: 1.25,
                         ),
                       ),
                     ],
                     const Spacer(),
-                    if (date != null) const SizedBox(height: 8),
                     if (date != null) _DateLine(date: date),
                   ],
                 ),
@@ -305,6 +282,32 @@ class _NewsCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _ChannelLabel extends StatelessWidget {
+  const _ChannelLabel({required this.article});
+
+  final Article article;
+
+  @override
+  Widget build(BuildContext context) {
+    final label =
+        article.channel == 'achievement'
+            ? 'article.channel_achievement'.tr()
+            : 'article.channel_alumni'.tr();
+
+    return Text(
+      label.toUpperCase(),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: const TextStyle(
+        color: AppColors.primary,
+        fontSize: 11,
+        fontWeight: FontWeight.w800,
+        letterSpacing: 0.4,
       ),
     );
   }
@@ -334,29 +337,21 @@ class _DateLine extends StatelessWidget {
   }
 }
 
-class _NewsFallback extends StatelessWidget {
-  const _NewsFallback();
+class _HonorFallback extends StatelessWidget {
+  const _HonorFallback();
 
   @override
   Widget build(BuildContext context) {
     return Container(
       color: AppColors.primaryLighter,
       child: const Center(
-        child: Icon(Icons.image_outlined, color: AppColors.primary, size: 40),
+        child: Icon(Icons.emoji_events_outlined,
+            color: AppColors.primary, size: 40),
       ),
     );
   }
 }
 
-class _NewsEmpty extends StatelessWidget {
-  const _NewsEmpty();
-
-  @override
-  Widget build(BuildContext context) {
-    return EmptyView(
-      icon: Icons.article_outlined,
-      title: 'article.no_news'.tr(),
-      message: 'article.no_news_desc'.tr(),
-    );
-  }
+String _articlePath(Article article) {
+  return '${RouteNames.articles}/${article.channel}/${article.id}';
 }

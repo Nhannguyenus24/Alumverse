@@ -62,36 +62,16 @@ class AppTheme {
       focusedErrorBorder: _inputBorder(AppColors.error, width: 1.5),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        minimumSize: const Size(0, 48),
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.xl,
-          vertical: AppSpacing.md,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.sm),
-        ),
-        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-      ),
+      style: _elevatedButtonStyle(),
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: _filledButtonStyle(),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
-      style: OutlinedButton.styleFrom(
-        foregroundColor: AppColors.primary,
-        minimumSize: const Size(0, 48),
-        side: const BorderSide(color: AppColors.divider),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.sm),
-        ),
-        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-      ),
+      style: _outlinedButtonStyle(),
     ),
     textButtonTheme: TextButtonThemeData(
-      style: TextButton.styleFrom(
-        textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-      ),
+      style: _textButtonStyle(),
     ),
     snackBarTheme: SnackBarThemeData(
       behavior: SnackBarBehavior.floating,
@@ -113,6 +93,54 @@ class AppTheme {
     );
   }
 
+  static TextStyle _buttonText(double size, FontWeight weight) =>
+      GoogleFonts.nunito(fontSize: size, fontWeight: weight);
+
+  static ButtonStyle _elevatedButtonStyle() => ElevatedButton.styleFrom(
+    backgroundColor: AppColors.primary,
+    foregroundColor: Colors.white,
+    elevation: 0,
+    minimumSize: const Size(0, 44),
+    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: 10),
+    visualDensity: VisualDensity.compact,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(AppRadius.sm),
+    ),
+    textStyle: _buttonText(14.5, FontWeight.w700),
+  );
+
+  static ButtonStyle _filledButtonStyle() => FilledButton.styleFrom(
+    backgroundColor: AppColors.primary,
+    foregroundColor: Colors.white,
+    minimumSize: const Size(0, 44),
+    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: 10),
+    visualDensity: VisualDensity.compact,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(AppRadius.sm),
+    ),
+    textStyle: _buttonText(14.5, FontWeight.w700),
+  );
+
+  static ButtonStyle _outlinedButtonStyle() => OutlinedButton.styleFrom(
+    foregroundColor: AppColors.primary,
+    minimumSize: const Size(0, 44),
+    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: 10),
+    visualDensity: VisualDensity.compact,
+    side: const BorderSide(color: AppColors.divider),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(AppRadius.sm),
+    ),
+    textStyle: _buttonText(14.5, FontWeight.w700),
+  );
+
+  static ButtonStyle _textButtonStyle() => TextButton.styleFrom(
+    foregroundColor: AppColors.primary,
+    minimumSize: const Size(0, 36),
+    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 6),
+    visualDensity: VisualDensity.compact,
+    textStyle: _buttonText(14, FontWeight.w700),
+  );
+
   static ThemeData get dark => ThemeData(
     useMaterial3: true,
     fontFamily: _fontFamily,
@@ -128,6 +156,18 @@ class AppTheme {
         fontSize: 18,
         fontWeight: FontWeight.w700,
       ),
+    ),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: _elevatedButtonStyle(),
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: _filledButtonStyle(),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: _outlinedButtonStyle(),
+    ),
+    textButtonTheme: TextButtonThemeData(
+      style: _textButtonStyle(),
     ),
   );
 }

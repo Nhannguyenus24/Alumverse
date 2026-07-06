@@ -72,7 +72,7 @@ class ExploreSection extends StatelessWidget {
             physics: const NeverScrollableScrollPhysics(),
             mainAxisSpacing: 12,
             crossAxisSpacing: 12,
-            childAspectRatio: 0.95,
+            childAspectRatio: 0.78,
             children: _items.map((e) => _ExploreCard(item: e)).toList(),
           ),
         ),
@@ -129,16 +129,12 @@ class _ExploreCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 6),
-              Expanded(
-                child: Text(
-                  item.descKey.tr(),
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 12.5,
-                    height: 1.4,
-                  ),
-                  maxLines: 4,
-                  overflow: TextOverflow.ellipsis,
+              Text(
+                item.descKey.tr(),
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 12,
+                  height: 1.35,
                 ),
               ),
             ],
