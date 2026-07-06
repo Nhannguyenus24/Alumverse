@@ -21,6 +21,7 @@ public class UserResponse {
     private Status status;
     private UserRole role;
     private String avatarUrl;
+    private String coverUrl;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     /** From users.full_name (admin list/detail enrichment). */

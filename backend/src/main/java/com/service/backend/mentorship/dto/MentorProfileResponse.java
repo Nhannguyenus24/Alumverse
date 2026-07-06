@@ -25,7 +25,6 @@ public class MentorProfileResponse {
     private String status;
     private String reviewNote;
     private LocalDateTime reviewedAt;
-    private String coverUrl;
     private String defaultMeetingLink;
     private String bookingWindowSettings;
     private String extendedProfile;
@@ -51,7 +50,6 @@ public class MentorProfileResponse {
                 .status(profile.getStatus() != null ? profile.getStatus().getValue() : null)
                 .reviewNote(profile.getReviewNote())
                 .reviewedAt(profile.getReviewedAt())
-                .coverUrl(profile.getCoverUrl())
                 .defaultMeetingLink(profile.getDefaultMeetingLink())
                 .bookingWindowSettings(profile.getBookingWindowSettings())
                 .extendedProfile(profile.getExtendedProfile())

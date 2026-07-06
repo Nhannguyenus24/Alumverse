@@ -42,6 +42,9 @@ public class User {
     @Column("avatar_url")
     private String avatarUrl;
 
+    @Column("cover_url")
+    private String coverUrl;
+
     @Column("full_name")
     private String fullName;
 
