@@ -27,6 +27,7 @@ public class JobResponse {
     private String salaryRange;
     private String description;
     private String howToApply;
+    private String url;
     private LocalDate deadline;
     private Boolean isActive;
     private LocalDateTime createdAt;
@@ -44,6 +45,7 @@ public class JobResponse {
                 .salaryRange(job.getSalaryRange())
                 .description(job.getDescription())
                 .howToApply(job.getHowToApply())
+                .url(job.getUrl())
                 .deadline(job.getDeadline())
                 .isActive(job.getIsActive())
                 .createdAt(job.getCreatedAt())

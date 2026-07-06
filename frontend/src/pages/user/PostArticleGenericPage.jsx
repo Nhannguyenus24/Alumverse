@@ -91,12 +91,13 @@ const CHANNEL_CONFIG = {
     payloadKey: 'imageBase64',
     useBase64: true,
     contentKey: 'description',
-    buildPayload: ({ title, content, topic, imageBase64, isAdminLike }) => ({
+    buildPayload: ({ title, content, topic, imageBase64, isAdminLike, url }) => ({
       title,
       description: content,
       topic,
       status: isAdminLike ? 'APPROVED' : 'PENDING',
       awardedDate: new Date().toISOString().slice(0, 10),
+      url: url || null,
       ...(imageBase64 ? { imageBase64 } : {}),
     }),
   },
@@ -109,11 +110,12 @@ const CHANNEL_CONFIG = {
     payloadKey: null,
     useBase64: false,
     contentKey: 'description',
-    buildPayload: ({ title, content, topic }) => ({
+    buildPayload: ({ title, content, topic, url }) => ({
       title,
       description: content,
       type: JOB_TYPE_BY_TOPIC[topic],
       isReferral: topic === 'internal_referral',
+      url: url || null,
     }),
   },
   learning: {

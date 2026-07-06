@@ -386,17 +386,15 @@ const PostArticleForm = ({
         />
       </Box>
 
-      {showSourceUrl && (
-        <TextField
-          fullWidth
-          type="url"
-          label={t('article:source_url_label')}
-          placeholder="https://example.com/nguon-bai-viet"
-          helperText={t('article:source_url_helper')}
-          value={url ?? ''}
-          onChange={(e) => setUrl?.(e.target.value)}
-        />
-      )}
+      <TextField
+        fullWidth
+        type="url"
+        label={t('article:source_url_label')}
+        placeholder="https://example.com/nguon-bai-viet"
+        helperText={t('article:source_url_helper')}
+        value={url ?? ''}
+        onChange={(e) => setUrl?.(e.target.value)}
+      />
     </Stack>
   );
 };

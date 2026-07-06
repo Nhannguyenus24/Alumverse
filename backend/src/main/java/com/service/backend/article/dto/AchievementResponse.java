@@ -21,6 +21,7 @@ public class AchievementResponse {
     private String title;
     private String description;
     private String imageUrl;
+    private String url;
     private LocalDate awardedDate;
     private String topic;
     private Status status;
@@ -37,6 +38,7 @@ public class AchievementResponse {
                 .title(achievement.getTitle())
                 .description(achievement.getDescription())
                 .imageUrl(achievement.getImageUrl())
+                .url(achievement.getUrl())
                 .awardedDate(achievement.getAwardedDate())
                 .topic(achievement.getTopic())
                 .status(achievement.getStatus())
@@ -50,6 +52,7 @@ public class AchievementResponse {
                 .title(dto.getTitle())
                 .description(dto.getDescription())
                 .imageUrl(dto.getImageUrl())
+                .url(dto.getUrl())
                 .awardedDate(dto.getAwardedDate())
                 .topic(dto.getTopic())
                 .status(dto.getStatus())

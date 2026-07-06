@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import LinkIcon from '@mui/icons-material/Link';
 
 const FeaturedArticleCard = ({
   article,
@@ -108,13 +109,29 @@ const FeaturedArticleCard = ({
           {article.description}
         </Typography>
 
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          sx={{ mt: 1 }}
-        >
-          {article.date}
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', mt: 1, gap: 2 }}>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+          >
+            {article.date}
+          </Typography>
+          {article.url && (
+            <Button
+              size="small"
+              variant="text"
+              color="primary"
+              endIcon={<LinkIcon />}
+              onClick={(e) => {
+                e.stopPropagation();
+                window.open(article.url, '_blank', 'noopener,noreferrer');
+              }}
+              sx={{ textTransform: 'none', fontWeight: 600, minWidth: 'auto', p: 0.5 }}
+            >
+              {t('common:link', 'Link')}
+            </Button>
+          )}
+        </Box>
 
         {/* PUSH ACTIONS DOWN */}
         <Box sx={{ flex: 1 }} />

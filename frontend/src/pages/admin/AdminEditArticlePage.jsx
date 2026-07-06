@@ -55,6 +55,7 @@ const AdminEditArticlePage = () => {
   const [coverPreview, setCoverPreview] = useState(null);
   const [coverCroppedPreview, setCoverCroppedPreview] = useState(null);
   const [coverPositionY, setCoverPositionY] = useState(50);
+  const [url, setUrl] = useState('');
 
   useEffect(() => {
     if (!article) return;
@@ -63,6 +64,7 @@ const AdminEditArticlePage = () => {
     setContent(articleContent(article));
     setCoverPreview(articleThumbnail(article));
     setTopic(article.topic ?? article.type ?? '');
+    setUrl(article.url || article.linkUrl || '');
   }, [article]);
 
   useEffect(() => {
@@ -116,6 +118,7 @@ const AdminEditArticlePage = () => {
         thumbnailBase64,
         thumbnailUrl: thumbnailBase64 ? null : articleThumbnail(article),
         topic: topic || null,
+        url: url.trim() || null,
       };
       if (getJsonPayloadByteSize(payload) > MAX_JSON_PAYLOAD_BYTES) {
         showError('Bài viết quá lớn để cập nhật. Tổng dung lượng nội dung và ảnh chính cần dưới 19MB.');
@@ -190,6 +193,8 @@ const AdminEditArticlePage = () => {
               setContent={setContent}
               topic={topic}
               setTopic={setTopic}
+              url={url}
+              setUrl={setUrl}
               mainImagePreview={coverCroppedPreview ?? coverPreview}
             />
 
