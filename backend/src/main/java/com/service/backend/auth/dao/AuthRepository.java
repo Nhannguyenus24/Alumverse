@@ -41,6 +41,13 @@ public interface AuthRepository extends R2dbcRepository<User, Integer> {
     Mono<Void> updateAvatarById(@Param("id") Integer id, @Param("avatarUrl") String avatarUrl);
     
     /**
+     * Update user cover by id
+     */
+    @Modifying
+    @Query("UPDATE users SET cover_url = :coverUrl, updated_at = CURRENT_TIMESTAMP WHERE id = :id")
+    Mono<Void> updateCoverById(@Param("id") Integer id, @Param("coverUrl") String coverUrl);
+    
+    /**
      * Update user status to active after successful verification
      */
     @Modifying

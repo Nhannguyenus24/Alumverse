@@ -249,7 +249,7 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
      * Search users with multiple filters (search term, role, "status", organization)
      */
     @Query("""
-        SELECT DISTINCT u.id, u.email, u.password_hash, u.status, u.role, u.avatar_url,
+        SELECT DISTINCT u.id, u.email, u.password_hash, u.status, u.role, u.avatar_url, u.cover_url,
                         u.full_name, u.phone, u.bio, u.dob, u.gender, u.settings,
                         u.created_at, u.updated_at
         FROM users u

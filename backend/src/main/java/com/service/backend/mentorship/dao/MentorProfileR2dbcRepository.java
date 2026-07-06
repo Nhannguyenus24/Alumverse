@@ -41,7 +41,7 @@ public interface MentorProfileR2dbcRepository extends ReactiveCrudRepository<Men
 
     @Query("SELECT DISTINCT mp.member_id, mp.current_job_title, mp.current_company, mp.bio, " +
             "mp.rating_avg, mp.total_sessions, mp.status, mp.review_note, mp.reviewed_at, " +
-            "mp.reviewed_by, mp.cover_url, mp.default_meeting_link, mp.booking_window_settings, " +
+            "mp.reviewed_by, mp.default_meeting_link, mp.booking_window_settings, " +
             "mp.extended_profile, mp.created_at, mp.updated_at " +
             "FROM mentor_profiles mp " +
             "LEFT JOIN mentor_availabilities ma ON mp.member_id = ma.mentor_member_id " +
@@ -85,7 +85,7 @@ public interface MentorProfileR2dbcRepository extends ReactiveCrudRepository<Men
 
     @Query("SELECT DISTINCT mp.member_id, mp.current_job_title, mp.current_company, mp.bio, " +
             "mp.rating_avg, mp.total_sessions, mp.status, mp.review_note, mp.reviewed_at, " +
-            "mp.reviewed_by, mp.cover_url, mp.default_meeting_link, mp.booking_window_settings, " +
+            "mp.reviewed_by, mp.default_meeting_link, mp.booking_window_settings, " +
             "mp.extended_profile, mp.created_at, mp.updated_at " +
             "FROM mentor_profiles mp " +
             "LEFT JOIN organization_members om ON mp.member_id = om.user_id " +
