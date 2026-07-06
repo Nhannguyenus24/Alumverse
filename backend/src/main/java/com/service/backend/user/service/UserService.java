@@ -312,6 +312,18 @@ public class UserService {
                 .doOnSuccess(v -> logger.info("updateMyAvatar: userId={} updated", currentUserId));
     }
 
+    /**
+     * Update the current user's cover. The caller uploads the image via
+     * {@code POST /api/images/upload} and passes the returned URL here.
+     */
+    public Mono<Void> updateMyCover(Long currentUserId, String coverUrl) {
+        if (coverUrl == null || coverUrl.isBlank()) {
+            return Mono.error(new ApplicationException(ErrorCode.BAD_REQUEST, "Cover URL is required"));
+        }
+        return authRepository.updateCoverById(currentUserId.intValue(), coverUrl.trim())
+                .doOnSuccess(v -> logger.info("updateMyCover: userId={} updated", currentUserId));
+    }
+
     public Mono<UserOrganizationMemberResponse> getMyOrganizationMember(Long currentUserId, Integer organizationId) {
         return userOrganizationMemberRepository
                 .findByOrganizationIdAndUserId(organizationId, currentUserId.intValue())

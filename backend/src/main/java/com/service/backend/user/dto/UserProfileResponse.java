@@ -20,6 +20,7 @@ public class UserProfileResponse {
     private String role;
     private String status;
     private String avatarUrl;
+    private String coverUrl;
     private LocalDateTime createdAt;
 
     private String fullName;

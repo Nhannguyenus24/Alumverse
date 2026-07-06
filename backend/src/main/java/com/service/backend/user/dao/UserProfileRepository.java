@@ -55,6 +55,7 @@ public interface UserProfileRepository extends R2dbcRepository<User, Integer> {
                    u.role,
                    u.status,
                    u.avatar_url,
+                   u.cover_url,
                    u.created_at,
                    u.full_name,
                    u.phone,
