@@ -53,7 +53,7 @@
   "drawer_empty_first": "Chưa có tin nhắn. Hãy gửi lời chào đầu tiên.",
   "drawer_placeholder_type": "Nhập tin nhắn…",
   "drawer_banner_pending": "Đang chờ người kia phản hồi. Bạn không thể gửi thêm tin nhắn lúc này.",
-  "drawer_placeholder_disabled": "Không thể gửi tin nhắn lúc này",
+  "drawer_placeholder_disabled": "Đang chờ người kia phản hồi",
   "drawer_banner_accepted": "Hai người đã kết nối.",
   "drawer_banner_retry": "Bạn có thể gửi thêm 1 tin nhắn.",
   "drawer_banner_rejected": "Yêu cầu kết nối đã bị từ chối. Bạn có thể gửi lại sau {{datetime}}.",

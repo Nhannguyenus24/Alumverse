@@ -409,7 +409,7 @@ const NetworkMemberDirectory = () => {
                 onBlock={isSelf ? null : () => setBlockTarget(member)}
                 isMessageLoading={checkingUserId === member.userId}
                 isBlockLoading={isBlocking && blockTarget?.userId === member.userId}
-                messageButtonLabel={isSelf ? t('network:this_is_you') : t('network:message')}
+                messageButtonLabel={isSelf ? t('network:this_is_you') : t('network:connect')}
               />
             );
           })}

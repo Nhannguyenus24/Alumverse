@@ -131,7 +131,7 @@ const NetworkSearchMemberCard = ({
           {isMessageLoading ? (
             <CircularProgress size={22} color="inherit" />
           ) : (
-            messageButtonLabel ?? t('message')
+            messageButtonLabel ?? t('connect')
           )}
         </Button>
       </ContributeGuardTooltip>

@@ -32,7 +32,15 @@ import { useOrgNavigate } from "../../hooks/useOrgNavigate";
 import { useCreateFund } from "../../hooks/news/useCreateFund";
 import { useFundReceivingInfos } from "../../hooks/news/useFundReceivingInfos";
 import FundLogoPreview from "../../components/FundLogoPreview";
-import { useUploadImage, validateImageFile, IMAGE_ACCEPT, FUND_CONTENT_EDITOR_HEIGHT } from "../../utils/imageUtils";
+import {
+  useUploadImage,
+  useUploadFundDocument,
+  validateImageFile,
+  validateFundDocumentFile,
+  IMAGE_ACCEPT,
+  FUND_DOCUMENT_ACCEPT,
+  FUND_CONTENT_EDITOR_HEIGHT,
+} from "../../utils/imageUtils";
 import useOrganizationStore from "../../stores/organizationStore";
 
 const isEmptyHtml = (html) => {
@@ -109,6 +117,7 @@ export default function PostArticleDonationPage() {
   const { t } = useTranslation("donation");
   const { createFund, isPending } = useCreateFund();
   const { uploadFile: uploadLogo, isPending: isUploadingLogo } = useUploadImage();
+  const { uploadFile: uploadFundDocument, isPending: isUploadingDocument } = useUploadFundDocument();
 
   const organizationId = useOrganizationStore((s) => s.organization?.id ?? null);
   const { infos: receivingInfos } = useFundReceivingInfos();
@@ -143,6 +152,25 @@ export default function PostArticleDonationPage() {
     setLogoFile(null);
     setLogoPreview(null);
     if (logoInputRef.current) logoInputRef.current.value = "";
+  };
+
+  // Tài liệu quỹ (PDF/DOC/DOCX) — tuỳ chọn, upload riêng → /files/upload → fundDocumentUrl
+  const documentInputRef = useRef(null);
+  const [documentFile, setDocumentFile] = useState(null);
+  const handleDocumentChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const result = validateFundDocumentFile(file, t);
+    if (!result.valid) {
+      enqueueSnackbar(result.message, { variant: "warning" });
+      e.target.value = "";
+      return;
+    }
+    setDocumentFile(file);
+  };
+  const handleDocumentRemove = () => {
+    setDocumentFile(null);
+    if (documentInputRef.current) documentInputRef.current.value = "";
   };
 
   const minStartTime = useMemo(() => dayjs().add(1, "hour"), []);
@@ -188,12 +216,14 @@ export default function PostArticleDonationPage() {
 
     try {
       const logoUrl = logoFile ? await uploadLogo(logoFile) : null;
+      const fundDocumentUrl = documentFile ? await uploadFundDocument(documentFile) : null;
 
       const payload = {
         name: values.fundName,
         managerName: values.organizer,
         managerEmail: values.managerEmail.trim(),
         logoUrl: logoUrl ?? null,
+        fundDocumentUrl: fundDocumentUrl ?? null,
         fundReceivingInfoId: Number(values.fundReceivingInfoId),
         targetAmount: Number(values.targetAmount),
         description_short: values.descriptionShort,
@@ -214,7 +244,7 @@ export default function PostArticleDonationPage() {
     }
   };
 
-  const isBusy = isSubmitting || isPending || isUploadingLogo;
+  const isBusy = isSubmitting || isPending || isUploadingLogo || isUploadingDocument;
 
   return (
     <Page
@@ -347,6 +377,52 @@ export default function PostArticleDonationPage() {
                           )}
                         </Stack>
                       </Box>
+                    </Grid>
+
+                    {/* Tài liệu quỹ — upload PDF/DOC/DOCX (tuỳ chọn) */}
+                    <Grid size={12}>
+                      <Typography
+                        variant="body2"
+                        sx={{ mb: 1.2, fontWeight: 600, color: "text.secondary" }}
+                      >
+                        {t("field_fund_document_label")}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
+                        {t("field_fund_document_hint")}
+                      </Typography>
+                      <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                        <input
+                          ref={documentInputRef}
+                          type="file"
+                          accept={FUND_DOCUMENT_ACCEPT}
+                          style={{ display: "none" }}
+                          onChange={handleDocumentChange}
+                        />
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          onClick={() => documentInputRef.current?.click()}
+                          sx={{ textTransform: "none" }}
+                        >
+                          {documentFile ? t("field_fund_document_change") : t("field_fund_document_choose")}
+                        </Button>
+                        {documentFile && (
+                          <>
+                            <Typography variant="body2" sx={{ color: "text.primary", wordBreak: "break-all" }}>
+                              {documentFile.name}
+                            </Typography>
+                            <Button
+                              variant="text"
+                              size="small"
+                              color="primary"
+                              onClick={handleDocumentRemove}
+                              sx={{ textTransform: "none" }}
+                            >
+                              {t("field_fund_document_remove")}
+                            </Button>
+                          </>
+                        )}
+                      </Stack>
                     </Grid>
 
                     {/* Tài khoản nhận */}

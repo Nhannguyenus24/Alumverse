@@ -113,7 +113,7 @@ const NetworkConnectionCard = ({
               onClick={handleMessage}
               disabled={!canContribute}
             >
-              {t('message')}
+              {t('connect')}
             </Button>
           </ContributeGuardTooltip>
 

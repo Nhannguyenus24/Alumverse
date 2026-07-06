@@ -26,6 +26,7 @@ import {
   resolveConnectionDrawerState,
 } from '../../utils/networkConnectionDrawerUi';
 import { buildProgramMajorRows } from '../../utils/academicUtils';
+import { CONVERSATION_REQUEST_STATUS } from '../../constants/conversationRequestStatus';
 
 import ChatAvatar from '../ChatAvatar';
 
@@ -93,13 +94,14 @@ const NetworkMessageDrawer = ({
   const [draft, setDraft] = useState('');
   const [sentInSession, setSentInSession] = useState(false);
   const [localMessages, setLocalMessages] = useState([]);
+  const [statusOverride, setStatusOverride] = useState(null);
 
   const peerUserId = peer?.userId ?? null;
   const currentMemberId = useNetworkCurrentMemberId();
   const { canContribute } = useCanContribute();
   const { sendMessage, isSending } = useNetworkConversationActions(peerUserId);
 
-  const drawerState = resolveConnectionDrawerState(connectionStatus, t);
+  const drawerState = resolveConnectionDrawerState(statusOverride ?? connectionStatus, t);
   const composerEnabled = canContribute && isComposerEnabled({
     canCompose: drawerState.canCompose,
     singleMessageOnly: drawerState.singleMessageOnly,
@@ -113,6 +115,7 @@ const NetworkMessageDrawer = ({
         setDraft('');
         setSentInSession(false);
         setLocalMessages([]);
+        setStatusOverride(null);
       }, 0);
       return () => clearTimeout(timer);
     }
@@ -139,6 +142,11 @@ const NetworkMessageDrawer = ({
         setDraft('');
         if (drawerState.singleMessageOnly) {
           setSentInSession(true);
+          setStatusOverride({
+            status: CONVERSATION_REQUEST_STATUS.PENDING,
+            cooldownUntil: null,
+            latestMessage: null,
+          });
         }
       },
     });
