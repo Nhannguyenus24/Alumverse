@@ -141,6 +141,16 @@ const MentorSignupTabProfile = ({ values, onChange }) => {
       const base64File = await fileToBase64(file);
       const res = await extractMentorshipCv({ base64File, originalFileName: file.name });
       const profile = res?.data?.data ?? {};
+
+      // Merge CV-detected skill tags into the existing (description-detected /
+      // manually-added) list so both sources feed the same priority-ordered
+      // tag list reviewed in the "content" tab — case-insensitive de-dup.
+      const existingTags = values.expertiseTags ?? [];
+      const existingLower = new Set(existingTags.map((tg) => tg.toLowerCase()));
+      const newTags = (profile.expertiseTags ?? [])
+        .map((tg) => (tg ?? '').trim())
+        .filter((tg) => tg && !existingLower.has(tg.toLowerCase()));
+
       onChange({
         ...values,
         cvFile: file,
@@ -152,6 +162,7 @@ const MentorSignupTabProfile = ({ values, onChange }) => {
         projects: (profile.projects?.length ? profile.projects : values.projects) ?? [],
         awards: (profile.awards?.length ? profile.awards : values.awards) ?? [],
         skills: (profile.skills?.length ? profile.skills : values.skills) ?? [],
+        expertiseTags: [...existingTags, ...newTags],
       });
     } catch (err) {
       setCvExtractError(err?.response?.data?.message ?? t('signup_profile_cv_extract_error'));

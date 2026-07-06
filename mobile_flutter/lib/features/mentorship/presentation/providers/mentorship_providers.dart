@@ -4,27 +4,22 @@ import '../../data/models/mentor_availability.dart';
 import '../../data/models/mentor_profile.dart';
 import '../../data/models/mentorship_session.dart';
 import '../../data/models/session_feedback.dart';
+import '../../data/models/skill.dart';
 import '../../data/repositories/mentorship_repository.dart';
 
-/// Browse filter state for the mentorship list screen.
+/// Browse filter state for the mentorship list screen. Replaces the old
+/// separate category/topic free-text filters with a single normalized
+/// "filter by skill" (multi-select over the skills catalog).
 class MentorQuery {
   final String keyword;
-  final String? category;
-  final String? expertise;
+  final List<Skill> skills;
 
-  const MentorQuery({this.keyword = '', this.category, this.expertise});
+  const MentorQuery({this.keyword = '', this.skills = const []});
 
-  MentorQuery copyWith({
-    String? keyword,
-    String? category,
-    String? expertise,
-    bool clearCategory = false,
-    bool clearExpertise = false,
-  }) {
+  MentorQuery copyWith({String? keyword, List<Skill>? skills}) {
     return MentorQuery(
       keyword: keyword ?? this.keyword,
-      category: clearCategory ? null : (category ?? this.category),
-      expertise: clearExpertise ? null : (expertise ?? this.expertise),
+      skills: skills ?? this.skills,
     );
   }
 }
@@ -40,18 +35,18 @@ final mentorListProvider = FutureProvider<List<MentorProfile>>((ref) async {
       .watch(mentorshipRepositoryProvider)
       .browseMentors(
         keyword: q.keyword,
-        category: q.category,
-        expertise: q.expertise,
+        skillIds: q.skills.map((s) => s.id).toList(),
         limit: 20,
       );
 });
 
-final expertiseCategoriesProvider = FutureProvider<List<String>>((ref) {
-  return ref.watch(mentorshipRepositoryProvider).getExpertiseCategories();
-});
-
-final expertiseTopicsProvider = FutureProvider<List<String>>((ref) {
-  return ref.watch(mentorshipRepositoryProvider).getExpertiseTopics();
+/// Skill catalog search backing the "filter by skill" dropdown, keyed by the
+/// current search text (%LIKE%, sorted A-Z by the backend).
+final skillSearchProvider = FutureProvider.family<List<Skill>, String>((
+  ref,
+  search,
+) {
+  return ref.watch(mentorshipRepositoryProvider).searchSkills(search: search);
 });
 
 final mentorProfileProvider = FutureProvider.family<MentorProfile, int>((

@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import apiClient from '../../utils/axios';
-import { addMyExpertise, createMentorProfile } from '../../utils/api';
+import { createMentorProfile } from '../../utils/api';
 import { fileToBase64 } from '../../utils/imageUtils';
 import useAuthStore from '../../stores/authStore';
 
@@ -16,9 +16,10 @@ const uploadImageIfPresent = async (image) => {
 /**
  * Submits the full mentor signup form:
  *   1. (optional) Upload avatar + cover images
- *   2. POST /mentor/profile  — core profile + image URLs + meeting link
- *   3. POST /mentor/expertise — one row per AI-extracted skill tag (Tab 2),
- *      stored as topic + tag for mentee filtering.
+ *   2. POST /mentor/profile — core profile + image URLs + meeting link +
+ *      expertiseTags (priority-ordered, from CV + description extraction,
+ *      confirmed at the review step). The backend normalizes these into the
+ *      skills catalog (mentor_skills) used by the mentee "filter by skill".
  */
 const submitMentorSignup = async ({
   profile,
@@ -41,22 +42,9 @@ const submitMentorSignup = async ({
     coverUrl: coverUrl ?? undefined,
     defaultMeetingLink: defaultMeetingLink || undefined,
     extendedProfile,
+    expertiseTags: (expertiseTags ?? []).map((tag) => (tag ?? '').trim()).filter(Boolean),
   });
-  const profileData = profileRes?.data?.data ?? null;
-
-  // Each AI-extracted (or manually-added) tag becomes one expertise row so the
-  // existing mentee tag/topic filtering keeps working.
-  for (const rawTag of expertiseTags ?? []) {
-    const tag = (rawTag ?? '').trim();
-    if (!tag) continue;
-    await addMyExpertise({
-      topic: tag.slice(0, 255),
-      yearsExperience: 0,
-      tag: tag.slice(0, 100),
-    });
-  }
-
-  return profileData;
+  return profileRes?.data?.data ?? null;
 };
 
 export const useCreateMentorSignup = () => {

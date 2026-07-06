@@ -13,11 +13,10 @@ import { useSnackbar } from 'notistack';
 import SearchBar from '../SearchBar';
 import MentorshipCard from './MentorshipCard';
 import DynamicFilterBar from '../DynamicFilterBar';
+import MentorSkillFilter from './MentorSkillFilter';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useBrowseMentors } from '../../hooks/mentorship/useBrowseMentors';
 import { useMentorshipAccessState } from '../../hooks/mentorship/useMentorshipAccessState';
-import { useExpertiseTopics } from '../../hooks/mentorship/useExpertiseTopics';
-import { useExpertiseCategories } from '../../hooks/mentorship/useExpertiseCategories';
 import { formatRating } from '../../utils/numberFormatter';
 
 const PAGE_SIZE = 9;
@@ -33,38 +32,17 @@ const MentorshipMentorListSection = () => {
   const [page, setPage] = useState(0);
   const [filters, setFilters] = useState({
     all: true,
-    categories: [],
-    topics: [],
     status: [],
     availableOn: '',
   });
+  const [skillFilter, setSkillFilter] = useState([]);
 
   const access = useMentorshipAccessState();
   const ownMentorMemberId = access.mentorMemberId;
   const browseEnabled = access.canPreviewMentors;
 
-  const categoriesQuery = useExpertiseCategories({ enabled: browseEnabled });
-  const categoryOptions = useMemo(() => categoriesQuery.data ?? [], [categoriesQuery.data]);
-
-  const topicsQuery = useExpertiseTopics({ enabled: browseEnabled });
-  const topicOptions = useMemo(() => topicsQuery.data ?? [], [topicsQuery.data]);
-
   const filterConfig = useMemo(
     () => [
-      {
-        type: 'dropdown',
-        key: 'categories',
-        label: t('mentorship:filter_field'),
-        multiple: true,
-        options: categoryOptions,
-      },
-      {
-        type: 'dropdown',
-        key: 'topics',
-        label: t('mentorship:filter_topic'),
-        multiple: true,
-        options: topicOptions,
-      },
       {
         type: 'date',
         key: 'availableOn',
@@ -76,19 +54,17 @@ const MentorshipMentorListSection = () => {
         options: [t('mentorship:filter_trending')],
       },
     ],
-    [categoryOptions, topicOptions, t],
+    [t],
   );
 
-  const categoryFilter = useMemo(() => (filters.categories ?? [])[0] ?? '', [filters.categories]);
-  const expertiseFilter = useMemo(() => (filters.topics ?? [])[0] ?? '', [filters.topics]);
+  const skillIds = useMemo(() => skillFilter.map((s) => s.id), [skillFilter]);
   const hasAvailability = (filters.status ?? []).includes(t('mentorship:filter_trending'));
   const availableFrom = startOfDayIso(filters.availableOn);
   const availableTo = endOfDayIso(filters.availableOn);
 
   const browseQuery = useBrowseMentors({
     keyword: searchQuery,
-    category: categoryFilter,
-    expertise: expertiseFilter,
+    skillIds,
     hasAvailability,
     availableFrom,
     availableTo,
@@ -149,14 +125,23 @@ const MentorshipMentorListSection = () => {
         />
       </Box>
 
-      <DynamicFilterBar
-        config={filterConfig}
-        value={filters}
-        onChange={(next) => {
-          setFilters(next);
-          setPage(0);
-        }}
-      />
+      <Stack direction="row" gap={1.5} flexWrap="wrap" alignItems="center">
+        <MentorSkillFilter
+          value={skillFilter}
+          onChange={(next) => {
+            setSkillFilter(next);
+            setPage(0);
+          }}
+        />
+        <DynamicFilterBar
+          config={filterConfig}
+          value={filters}
+          onChange={(next) => {
+            setFilters(next);
+            setPage(0);
+          }}
+        />
+      </Stack>
 
       {browseQuery.isLoading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>

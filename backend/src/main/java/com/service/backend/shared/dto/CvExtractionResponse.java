@@ -25,4 +25,11 @@ public class CvExtractionResponse {
     private List<CvProjectEntry> projects;
     private List<CvAwardEntry> awards;
     private List<CvSkillEntry> skills;
+
+    /**
+     * AI-suggested expertise/skill tags derived from the CV text, in the same
+     * normalized shape as the description-based extraction (ME-02) so the
+     * signup form can merge both sources into one priority-ordered tag list.
+     */
+    private List<String> expertiseTags;
 }

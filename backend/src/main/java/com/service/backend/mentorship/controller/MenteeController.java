@@ -1,6 +1,7 @@
 package com.service.backend.mentorship.controller;
 
 import com.service.backend.mentorship.dto.*;
+import com.service.backend.mentorship.service.SkillService;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.mentorship.service.MenteeService;
 import com.service.backend.shared.dto.ApiResponse;
@@ -30,6 +31,7 @@ public class MenteeController {
 
     private final MenteeService menteeService;
     private final com.service.backend.mentorship.service.MentorshipSessionService sessionService;
+    private final SkillService skillService;
 
     @GetMapping("/mentors")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<MentorProfileResponse>>>> getApprovedMentors(
@@ -61,31 +63,26 @@ public class MenteeController {
     @GetMapping("/mentors/filter")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<MentorProfileResponse>>>> filterMentors(
             @RequestParam(required = false) String search,
-            @RequestParam(required = false) String category,
-            @RequestParam(required = false) String expertise,
+            @RequestParam(required = false) List<Integer> skillIds,
             @RequestParam(required = false) BigDecimal minRating,
             @RequestParam(defaultValue = "false") boolean hasAvailability,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime availableFrom,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime availableTo,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int limit) {
-        return menteeService.filterMentors(search, category, expertise, minRating, hasAvailability, availableFrom, availableTo, page, limit)
+        return menteeService.filterMentors(search, skillIds, minRating, hasAvailability, availableFrom, availableTo, page, limit)
                 .map(response -> ResponseEntity
                         .ok(new ApiResponse<>("Filtered mentors retrieved successfully", response)));
     }
 
-    @GetMapping("/expertise-topics")
-    public Mono<ResponseEntity<ApiResponse<List<String>>>> getExpertiseTopics() {
-        return menteeService.getDistinctExpertiseTopics()
-                .map(topics -> ResponseEntity
-                        .ok(new ApiResponse<>("Expertise topics retrieved successfully", topics)));
-    }
-
-    @GetMapping("/expertise-categories")
-    public Mono<ResponseEntity<ApiResponse<List<String>>>> getExpertiseCategories() {
-        return menteeService.getDistinctExpertiseCategories()
-                .map(categories -> ResponseEntity
-                        .ok(new ApiResponse<>("Expertise categories retrieved successfully", categories)));
+    @GetMapping("/skills")
+    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<SkillResponse>>>> searchSkills(
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "20") @Min(1) int limit) {
+        return skillService.searchSkills(search, page, limit)
+                .map(response -> ResponseEntity
+                        .ok(new ApiResponse<>("Skills retrieved successfully", response)));
     }
 
     @GetMapping("/mentors/{mentorMemberId}/expertise")

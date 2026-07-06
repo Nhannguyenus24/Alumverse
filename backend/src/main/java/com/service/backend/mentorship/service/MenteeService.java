@@ -199,27 +199,19 @@ public class MenteeService {
     }
 
     public Mono<PaginatedResponse<MentorProfileResponse>> filterMentors(
-            String search, String category, String expertise, BigDecimal minRating, boolean hasAvailability,
+            String search, List<Integer> skillIds, BigDecimal minRating, boolean hasAvailability,
             LocalDateTime availableFrom, LocalDateTime availableTo,
             int page, int limit) {
         int offset = page * limit;
+        boolean hasSkillFilter = skillIds != null && !skillIds.isEmpty();
+        List<Integer> safeSkillIds = hasSkillFilter ? skillIds : List.of(-1);
         return accessService.requireEmailVerifiedForMentorBrowse()
                 .then(PaginationHelper.paginate(
-                        profileRepository.filterMentors(search, category, expertise, minRating, hasAvailability, availableFrom, availableTo, limit, offset).map(MentorProfileResponse::from).collectList(),
-                        profileRepository.countFilterMentors(search, category, expertise, minRating, hasAvailability, availableFrom, availableTo),
+                        profileRepository.filterMentors(search, hasSkillFilter, safeSkillIds, minRating, hasAvailability, availableFrom, availableTo, limit, offset).map(MentorProfileResponse::from).collectList(),
+                        profileRepository.countFilterMentors(search, hasSkillFilter, safeSkillIds, minRating, hasAvailability, availableFrom, availableTo),
                         page,
                         limit,
                         list -> attachProfileDisplay(list).flatMap(this::applyBrowseAccessView)));
-    }
-
-    public Mono<List<String>> getDistinctExpertiseTopics() {
-        return accessService.requireEmailVerifiedForMentorBrowse()
-                .then(expertiseRepository.findDistinctTopics().collectList());
-    }
-
-    public Mono<List<String>> getDistinctExpertiseCategories() {
-        return accessService.requireEmailVerifiedForMentorBrowse()
-                .then(expertiseRepository.findDistinctCategories().collectList());
     }
 
     public Mono<List<MentorExpertiseResponse>> getMentorExpertise(Integer mentorMemberId) {

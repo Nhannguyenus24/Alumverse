@@ -50,7 +50,7 @@ const MentorshipHubActions = ({ tone = 'default' }) => {
   // Logged in but email not verified yet.
   if (access.needsEmailVerification) {
     return (
-      <Button variant="contained" color="warning" onClick={() => navigate('/settings/account')}>
+      <Button variant="contained" color="warning" onClick={() => navigate('/organization-registration')}>
         {t('mentorship:verify_email_to_start')}
       </Button>
     );
@@ -63,7 +63,7 @@ const MentorshipHubActions = ({ tone = 'default' }) => {
       <Button
         variant={onPrimary ? 'outlined' : 'contained'}
         color={onPrimary ? undefined : 'warning'}
-        onClick={() => navigate('/settings/account')}
+        onClick={() => navigate('/organization-registration')}
         sx={outlinedOnPrimarySx}
       >
         {t('mentorship:verify_academic_to_join')}
