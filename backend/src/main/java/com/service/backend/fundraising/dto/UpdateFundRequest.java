@@ -74,4 +74,13 @@ public class UpdateFundRequest {
     @Email
     @Schema(example = "manager@hcmus.edu.vn")
     private String managerEmail;
+
+    /**
+     * Optional URL of the fund's attached document (pdf/doc/docx). ADMIN-only (full edit).
+     * Semantics in the service: {@code null} keeps the current document; {@code ""} removes it.
+     * No {@code @URL} constraint so the empty-string "remove" signal is not rejected.
+     */
+    @Size(max = 500)
+    @Schema(example = "https://example.com/funds/quyet-dinh-thanh-lap.pdf")
+    private String fundDocumentUrl;
 }
