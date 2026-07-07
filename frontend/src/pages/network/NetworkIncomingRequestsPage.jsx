@@ -18,6 +18,10 @@ import usePaginationScrollToTop from '../../hooks/usePaginationScrollToTop';
 import { useNetworkIncomingRequests } from '../../hooks/network/useNetworkIncomingRequests';
 import { useRespondConversationRequest } from '../../hooks/network/useRespondConversationRequest';
 import { useNotification } from '../../hooks/useNotification';
+import {
+  DEFAULT_NETWORK_INCOMING_REQUEST_FILTERS,
+  getNetworkIncomingRequestFilterConfig,
+} from '../../constants/networkConfig';
 
 const PAGE_SIZE = 5;
 
@@ -27,10 +31,7 @@ const NetworkIncomingRequestsPage = () => {
   const [searchInput, setSearchInput] = useState('');
   const [appliedFullName, setAppliedFullName] = useState('');
   const [page, setPage] = useState(1);
-  const [filters, setFilters] = useState({
-    all: true,
-    status: '',
-  });
+  const [filters, setFilters] = useState(DEFAULT_NETWORK_INCOMING_REQUEST_FILTERS);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [respondingId, setRespondingId] = useState(null);
@@ -38,21 +39,7 @@ const NetworkIncomingRequestsPage = () => {
 
   const { showSuccess, showError } = useNotification();
 
-  const STATUS_FILTERS = useMemo(
-    () => [
-      {
-        type: 'dropdown',
-        key: 'status',
-        label: t('incoming_filter_status_label'),
-        multiple: false,
-        options: [
-          { value: 'PENDING', label: t('incoming_status_pending') },
-          { value: 'REJECTED', label: t('incoming_status_rejected') },
-        ],
-      },
-    ],
-    [t],
-  );
+  const statusFilters = useMemo(() => getNetworkIncomingRequestFilterConfig(t), [t]);
 
   const { items, totalPage, isLoading, isError } = useNetworkIncomingRequests({
     appliedFullName,
@@ -208,7 +195,7 @@ const NetworkIncomingRequestsPage = () => {
         </Typography>
 
         <DynamicFilterBar
-          config={STATUS_FILTERS}
+          config={statusFilters}
           value={filters}
           onChange={(next) => {
             setFilters(next);

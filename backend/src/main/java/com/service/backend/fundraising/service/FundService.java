@@ -19,6 +19,7 @@ import com.service.backend.fundraising.dto.FundListItemResponse;
 import com.service.backend.fundraising.dto.FundStatisticsResponse;
 import com.service.backend.fundraising.dto.FundFilterRequest;
 import com.service.backend.fundraising.dto.UpdateFundRequest;
+import com.service.backend.fundraising.dto.UpdateFundBasicInfoRequest;
 import com.service.backend.fundraising.dto.BanksPayloadDto;
 import com.service.backend.fundraising.dto.BankInfoDto;
 import com.service.backend.fundraising.dto.SupportedBanksResponse;
@@ -30,6 +31,7 @@ import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.service.ImageService;
 import com.service.backend.shared.utils.CacheUtils;
 import com.service.backend.shared.utils.JsonUtils;
+import com.service.backend.shared.utils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -82,6 +84,7 @@ public class FundService {
         ).flatMap(tuple -> imageService.uploadBase64IfPresent(request.getLogoBase64())
                 .defaultIfEmpty(request.getLogoUrl() == null ? "" : request.getLogoUrl())
                 .flatMap(logoUrl -> {
+                    String documentUrl = request.getFundDocumentUrl();
                     Funds fund = Funds.builder()
                             .organizationId(organizationId)
                                             .fundReceivingInfoId(fundReceivingInfoId)
@@ -91,6 +94,8 @@ public class FundService {
                                             .descriptionFull(request.getDescriptionFull())
                                             .managerName(request.getManagerName())
                                             .managerEmail(request.getManagerEmail())
+                                            .fundDocumentUrl(
+                                                    documentUrl == null || documentUrl.isBlank() ? null : documentUrl)
                                             .targetAmount(request.getTargetAmount())
                                             .currentAmount(java.math.BigDecimal.ZERO)
                                             .timeStarted(request.getTimeStarted())
@@ -403,11 +408,16 @@ public class FundService {
                             )))
                             .flatMap(existingReceivingInfo -> {
                                 String newLogoUrl = request.getLogoUrl();
+                                String newDocUrl = request.getFundDocumentUrl();
                                 existing.setName(request.getName());
                                 existing.setDescriptionShort(request.getDescriptionShort());
                                 existing.setDescriptionFull(request.getDescriptionFull());
                                 if (newLogoUrl != null) {
                                     existing.setLogoUrl(newLogoUrl.isEmpty() ? null : newLogoUrl);
+                                }
+                                // null = keep existing document, "" = remove it (same pattern as logoUrl)
+                                if (newDocUrl != null) {
+                                    existing.setFundDocumentUrl(newDocUrl.isEmpty() ? null : newDocUrl);
                                 }
                                 existing.setManagerName(request.getManagerName());
                                 existing.setManagerEmail(request.getManagerEmail());
@@ -416,6 +426,40 @@ public class FundService {
                                 existing.setTimeStarted(newStart);
                                 existing.setTimeEnded(newEnd);
                                 if (request.getTopic() != null) existing.setTopic(request.getTopic());
+                                return fundR2dbcRepository.save(existing);
+                            });
+                });
+    }
+
+    public Mono<Funds> updateFundBasicInfo(Long fundId, UpdateFundBasicInfoRequest request) {
+        return Mono.zip(
+                        SecurityUtils.getCurrentUserRole(),
+                        SecurityUtils.getCurrentOrganizationId().map(Optional::of).defaultIfEmpty(Optional.empty()))
+                .flatMap(ctx -> {
+                    String role = ctx.getT1();
+                    Integer currentOrgId = ctx.getT2().orElse(null);
+                    boolean isStaff = "STAFF".equalsIgnoreCase(role);
+                    return fundR2dbcRepository.findById(fundId)
+                            .switchIfEmpty(Mono.error(new ApplicationException(
+                                    ErrorCode.FUND_NOT_FOUND, "Fund not found with id: " + fundId)))
+                            .flatMap(existing -> {
+                                if (isStaff && (currentOrgId == null
+                                        || !existing.getOrganizationId().equals(currentOrgId))) {
+                                    return Mono.error(new ApplicationException(ErrorCode.FORBIDDEN));
+                                }
+
+                                LocalDateTime now = LocalDateTime.now();
+                                boolean isEnded = existing.getTimeStarted().isBefore(existing.getTimeEnded())
+                                        && existing.getTimeEnded().isBefore(now);
+                                if (isEnded) {
+                                    return Mono.error(new ApplicationException(
+                                            ErrorCode.FUND_ALREADY_ENDED,
+                                            "Quỹ đã kết thúc, không thể chỉnh sửa bất kì cái gì"));
+                                }
+
+                                existing.setManagerName(request.getManagerName());
+                                existing.setManagerEmail(request.getManagerEmail());
+                                existing.setDescriptionFull(request.getDescriptionFull());
                                 return fundR2dbcRepository.save(existing);
                             });
                 });

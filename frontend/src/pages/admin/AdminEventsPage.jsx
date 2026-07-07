@@ -7,7 +7,6 @@ import { useOrgNavigate, useOrgPath } from "../../hooks/useOrgNavigate";
 import {
   Box,
   Button,
-  Chip,
   IconButton,
   MenuItem,
   Stack,
@@ -35,25 +34,20 @@ import EventBusyOutlinedIcon from "@mui/icons-material/EventBusyOutlined";
 import AdminConfirmDeleteDialog from "../../components/admin/AdminConfirmDeleteDialog";
 import AdminDataTable from "../../components/admin/AdminDataTable";
 import {
-  ADMIN_EVENT_SORT_OPTIONS,
-  ADMIN_EVENT_STATUS_OPTIONS,
+  getAdminEventSortOptions,
+  getAdminEventStatusOptions,
 } from "../../constants/adminDefaultEvents";
-import {
-  ADMIN_STATUS_CHIP_SX,
-} from "../../constants/adminUiShared";
 import useAdminEvents from "../../hooks/admin/useAdminEvents";
 import { useAdminSystemContext } from "../../stores/AdminStore";
 import { formatDateTime } from "../../utils/dateFormatter";
 import AdminDashboardMetricTile from "../../components/admin/AdminDashboardMetricTile";
+import AdminStatusChip from "../../components/admin/AdminStatusChip";
 
 const AdminEventsPage = () => {
   const { t } = useTranslation(["admin", "common", "event"]);
   const { enqueueSnackbar } = useSnackbar();
 
-  const publishStatusChip = (isPublished) =>
-    isPublished
-      ? { color: "success", label: t("admin:published_chip") }
-      : { color: "default", label: t("admin:draft_chip") };
+  const publishStatus = (isPublished) => (isPublished ? "PUBLISHED" : "DRAFT");
   const orgNavigate = useOrgNavigate();
   const toOrgPath = useOrgPath();
   const { stableOrgId } = useAdminSystemContext();
@@ -92,6 +86,8 @@ const AdminEventsPage = () => {
   }, [setBreadcrumbs, t]);
 
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const eventStatusOptions = useMemo(() => getAdminEventStatusOptions(t), [t]);
+  const eventSortOptions = useMemo(() => getAdminEventSortOptions(t), [t]);
 
   const orgNameById = useMemo(() => {
     const map = new Map();
@@ -129,19 +125,6 @@ const AdminEventsPage = () => {
   const openEventEdit = (event) => openInNewTab(`/post/event/${event.id}`);
 
   const orgLabel = (id) => orgNameById.get(id) ?? `#${id ?? "-"}`;
-  const eventStatusLabel = (value) => {
-    if (value === "ALL") return t("admin:event_status_all");
-    if (value === "PUBLISHED") return t("admin:event_status_published");
-    if (value === "DRAFT") return t("admin:event_status_draft");
-    return value;
-  };
-  const eventSortLabel = (value) => {
-    if (value === "createdAt") return t("admin:event_sort_created_at");
-    if (value === "startTime") return t("admin:event_sort_start_time");
-    if (value === "title") return t("admin:event_sort_title");
-    if (value === "interestedCount") return t("admin:event_sort_interested_count");
-    return value;
-  };
   const eventMetricRows = statistics
     ? [
         [
@@ -304,17 +287,9 @@ const AdminEventsPage = () => {
             {
               id: "isPublished",
               label: t("admin:col_status"),
-              render: (val) => {
-                const chip = publishStatusChip(val);
-                return (
-                  <Chip
-                    size="small"
-                    color={chip.color}
-                    label={chip.label}
-                    sx={ADMIN_STATUS_CHIP_SX}
-                  />
-                );
-              },
+              render: (val) => (
+                <AdminStatusChip status={publishStatus(val)} category="event" />
+              ),
             },
             {
               id: "time",
@@ -351,7 +326,7 @@ const AdminEventsPage = () => {
                   }}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <Tooltip title="Chi tiết">
+                  <Tooltip title={t("admin:tooltip_detail")}>
                     <IconButton
                       size="small"
                       sx={{ color: "primary.main" }}
@@ -360,7 +335,7 @@ const AdminEventsPage = () => {
                       <LaunchOutlinedIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
-                  <Tooltip title="Chỉnh sửa">
+                  <Tooltip title={t("admin:tooltip_edit")}>
                     <IconButton
                       size="small"
                       sx={{ color: "secondary.main" }}
@@ -432,9 +407,9 @@ const AdminEventsPage = () => {
               }}
               sx={{ minWidth: 160 }}
             >
-              {ADMIN_EVENT_STATUS_OPTIONS.map((opt) => (
+              {eventStatusOptions.map((opt) => (
                 <MenuItem key={opt.value} value={opt.value}>
-                  {eventStatusLabel(opt.value)}
+                  {opt.label}
                 </MenuItem>
               ))}
             </TextField>
@@ -446,9 +421,9 @@ const AdminEventsPage = () => {
               onChange={(e) => setSortBy(e.target.value)}
               sx={{ minWidth: 140 }}
             >
-              {ADMIN_EVENT_SORT_OPTIONS.map((opt) => (
+              {eventSortOptions.map((opt) => (
                 <MenuItem key={opt.value} value={opt.value}>
-                  {eventSortLabel(opt.value)}
+                  {opt.label}
                 </MenuItem>
               ))}
             </TextField>

@@ -18,7 +18,7 @@ import '../widgets/fund_filter_sheet.dart';
 
 /// Fundraising campaigns list — native port of the web `DonationPage`.
 /// Free-text search (triggered from the keyboard), a filter sheet, and
-/// page-by-page navigation (3 campaigns per page).
+/// page-by-page navigation (9 campaigns per page).
 class FundraisingListPage extends ConsumerStatefulWidget {
   const FundraisingListPage({super.key});
 
@@ -74,7 +74,7 @@ class _FundraisingListPageState extends ConsumerState<FundraisingListPage> {
     final fundsAsync = ref.watch(fundsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: Text('donation.funds'.tr())),
+      appBar: AppBar(title: Text('donation.title'.tr())),
       body: Column(
         children: [
           Padding(
@@ -144,6 +144,17 @@ class _FundraisingListPageState extends ConsumerState<FundraisingListPage> {
                   return ListView(
                     padding: const EdgeInsets.all(16),
                     children: [
+                      Text(
+                        'donation.title_upper'.tr(),
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(
+                              fontSize: 30,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 0.2,
+                              color: AppColors.primary,
+                            ),
+                      ),
+                      const SizedBox(height: 16),
                       for (var i = 0; i < funds.length; i++)
                         Padding(
                           padding: const EdgeInsets.only(bottom: 16),
@@ -170,15 +181,6 @@ class _FundraisingListPageState extends ConsumerState<FundraisingListPage> {
   }
 }
 
-String _dateRange(FundSummary f) {
-  // DateFormat is available via easy_localization's intl re-export
-  final df = DateFormat('dd/MM/yyyy');
-  if (f.timeStarted == null && f.timeEnded == null) return '';
-  final start = f.timeStarted != null ? df.format(f.timeStarted!) : '?';
-  final end = f.timeEnded != null ? df.format(f.timeEnded!) : '?';
-  return '$start → $end';
-}
-
 class _FundCard extends StatelessWidget {
   const _FundCard({required this.fund});
 
@@ -187,7 +189,6 @@ class _FundCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final logo = resolveImageUrl(fund.logoUrl);
-    final range = _dateRange(fund);
 
     return InkWell(
       onTap: () => context.push('${RouteNames.fundraising}/${fund.id}'),
@@ -241,6 +242,7 @@ class _FundCard extends StatelessWidget {
                   _FundProgress(fund: fund),
                   const SizedBox(height: 10),
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
                         child: _IconLine(
@@ -250,12 +252,9 @@ class _FundCard extends StatelessWidget {
                           ),
                         ),
                       ),
-                      if (range.isNotEmpty)
+                      if (fund.timeStarted != null || fund.timeEnded != null)
                         Expanded(
-                          child: _IconLine(
-                            icon: Icons.event_outlined,
-                            text: range,
-                          ),
+                          child: _FundDates(fund: fund),
                         ),
                     ],
                   ),
@@ -264,6 +263,57 @@ class _FundCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _FundDates extends StatelessWidget {
+  const _FundDates({required this.fund});
+
+  final FundSummary fund;
+
+  @override
+  Widget build(BuildContext context) {
+    final df = DateFormat('dd/MM/yyyy');
+    final start = fund.timeStarted != null ? df.format(fund.timeStarted!) : '?';
+    final end = fund.timeEnded != null ? df.format(fund.timeEnded!) : '?';
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Icon(Icons.event_outlined, size: 13, color: AppColors.textSecondary),
+        const SizedBox(width: 4),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _DateLabel(label: 'donation.start_date'.tr(), value: start),
+              const SizedBox(height: 2),
+              _DateLabel(label: 'donation.end_date'.tr(), value: end),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _DateLabel extends StatelessWidget {
+  const _DateLabel({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      '$label: $value',
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: const TextStyle(
+        color: AppColors.textSecondary,
+        fontSize: 12,
       ),
     );
   }

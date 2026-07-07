@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/article_topic_label.dart';
 import '../../../../core/utils/html_utils.dart';
 import '../../../../core/utils/image_url.dart';
 import '../../../../shared/widgets/empty_view.dart';
@@ -96,7 +97,7 @@ class NewsListPage extends ConsumerWidget {
                             crossAxisCount: 2,
                             mainAxisSpacing: 12,
                             crossAxisSpacing: 12,
-                            childAspectRatio: 0.68,
+                            childAspectRatio: 0.58,
                           ),
                       delegate: SliverChildBuilderDelegate(
                         (_, i) => _NewsCard(article: rest[i])
@@ -131,6 +132,7 @@ class _FeaturedNewsCard extends StatelessWidget {
         article.publishedAt != null
             ? DateFormat('dd/MM/yyyy').format(article.publishedAt!)
             : null;
+    final topicLabel = articleTopicLabel(article.topic);
 
     return InkWell(
       onTap: () => context.push('${RouteNames.articles}/${article.id}'),
@@ -163,9 +165,9 @@ class _FeaturedNewsCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (article.topic != null && article.topic!.isNotEmpty) ...[
+                  if (topicLabel.isNotEmpty) ...[
                     Text(
-                      article.topic!.toUpperCase(),
+                      topicLabel.toUpperCase(),
                       style: const TextStyle(
                         color: AppColors.primary,
                         fontSize: 11,
@@ -224,6 +226,7 @@ class _NewsCard extends StatelessWidget {
         article.publishedAt != null
             ? DateFormat('dd/MM/yyyy').format(article.publishedAt!)
             : null;
+    final topicLabel = articleTopicLabel(article.topic);
 
     return InkWell(
       onTap: () => context.push('${RouteNames.articles}/${article.id}'),
@@ -257,9 +260,23 @@ class _NewsCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    if (topicLabel.isNotEmpty) ...[
+                      Text(
+                        topicLabel.toUpperCase(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: AppColors.primary,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.4,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                    ],
                     Text(
                       article.title,
-                      maxLines: 3,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontWeight: FontWeight.w800,
@@ -270,7 +287,7 @@ class _NewsCard extends StatelessWidget {
                       const SizedBox(height: 5),
                       Text(
                         snippet,
-                        maxLines: 3,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           color: AppColors.textSecondary,
@@ -279,6 +296,7 @@ class _NewsCard extends StatelessWidget {
                         ),
                       ),
                     ],
+                    const Spacer(),
                     if (date != null) const SizedBox(height: 8),
                     if (date != null) _DateLine(date: date),
                   ],

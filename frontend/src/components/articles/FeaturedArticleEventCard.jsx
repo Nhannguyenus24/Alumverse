@@ -22,10 +22,16 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
   const [checkingRegistration, setCheckingRegistration] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [openJoinDialog, setOpenJoinDialog] = useState(false);
-  const { data: questions = [] } = useEventQuestions(article?.id, !isAdmin && Boolean(article?.id));
+  const { data: questions = [] } = useEventQuestions(article?.id, !isAdmin && canContribute && Boolean(article?.id));
 
   useEffect(() => {
     if (isAdmin || !article?.id) return;
+    if (!canContribute) {
+      setIsInterested(false);
+      setIsJoined(getEventRegisteredState(article));
+      setCheckingRegistration(false);
+      return;
+    }
     eventApi.checkInterest(article.id)
       .then((res) => setIsInterested(res?.isInterested ?? false))
       .catch(() => {});
@@ -34,7 +40,7 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
       .then((res) => setIsJoined(getEventRegisteredState(res)))
       .catch(() => {})
       .finally(() => setCheckingRegistration(false));
-  }, [article?.id, isAdmin]);
+  }, [article, article?.id, canContribute, isAdmin]);
 
   const handleInterest = async (e) => {
     e.stopPropagation();
@@ -91,7 +97,7 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
       sx={{
         display: 'flex',
         flexDirection: { xs: 'column', md: 'row' },
-        alignItems: { xs: 'stretch', md: 'center' },
+        alignItems: { xs: 'stretch', md: 'stretch' },
         width: '100%',
         gap: 3,
         transition: 'transform 0.25s ease',
@@ -136,6 +142,10 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
               sx={{
                 flex: 1,
                 fontSize: { xs: '1.4rem', md: '2rem' },
+                display: '-webkit-box',
+                overflow: 'hidden',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
                 color: hovered ? 'primary.main' : 'text.primary',
                 transition: 'color 0.2s ease',
               }}
@@ -176,11 +186,9 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
           {article.description}
         </Typography>
 
-        <Box sx={{ flex: 1 }} />
-
         {/* ACTION BUTTONS */}
         {isAdmin ? (
-          <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
+          <Stack direction="row" spacing={1} sx={{ mt: 'auto' }}>
             <Button
               fullWidth
               variant="outlined"
@@ -196,8 +204,8 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
             </Button>
           </Stack>
         ) : (
-          <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
-            <ContributeGuardTooltip sx={{ flex: 1 }}>
+          <Stack direction="row" spacing={1} sx={{ mt: 'auto' }}>
+            <ContributeGuardTooltip sx={{ flex: 1, opacity: canContribute ? 1 : 0.58, filter: canContribute ? 'none' : 'grayscale(0.25)' }}>
               <Button
                 fullWidth
                 variant={isInterested ? 'outlined' : 'contained'}
@@ -209,7 +217,7 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
               </Button>
             </ContributeGuardTooltip>
 
-            <ContributeGuardTooltip sx={{ flex: 1 }}>
+            <ContributeGuardTooltip sx={{ flex: 1, opacity: canContribute ? 1 : 0.58, filter: canContribute ? 'none' : 'grayscale(0.25)' }}>
               <Button
                 fullWidth
                 variant={isJoined ? 'outlined' : 'contained'}

@@ -1,13 +1,10 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
-import { Box, Button, CircularProgress, Paper, Stack, Typography } from '@mui/material';
+import { Box, Button, CircularProgress, Paper, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { useSnackbar } from 'notistack';
 
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import SchoolIcon from '@mui/icons-material/School';
-import MenuBookIcon from '@mui/icons-material/MenuBook';
 import WorkIcon from '@mui/icons-material/Work';
 
 import ArticleCard from '../../components/articles/ArticleCard';
@@ -20,48 +17,12 @@ import { usePublishedLearning } from '../../hooks/articles/usePublishedLearning'
 import { toCardShape } from '../../hooks/articles/toCardShape';
 import apiClient from '../../utils/axios';
 import { deleteArticleByChannel, getArticleAdminEditPath } from '../../utils/articleAdminActions';
-
-const getSidebar = (t) => [
-  { id: '/development', label: t('dev:title'), icon: <TrendingUpIcon /> },
-  { id: '/development/mentorship', label: t('mentorship:title'), icon: <SchoolIcon /> },
-  { id: '/development/academics', label: t('dev:academics'), icon: <MenuBookIcon /> },
-  { id: '/development/jobs', label: t('dev:jobs'), icon: <WorkIcon /> },
-];
-
-const getFilters = (t) => [
-  {
-    type: 'dropdown',
-    key: 'type',
-    label: t('dev:filter_topic'),
-    multiple: true,
-    options: [t('dev:topic_scholarship'), t('dev:topic_exchange'), t('dev:topic_research'), 'Workshop', t('dev:topic_course')],
-  },
-  {
-    type: 'dropdown',
-    key: 'format',
-    label: t('dev:filter_format'),
-    options: ['Online', 'Offline', 'Hybrid'],
-  },
-  {
-    type: 'dropdown',
-    key: 'location',
-    label: t('dev:filter_location'),
-    multiple: true,
-    options: [t('dev:location_hcm'), t('dev:location_domestic'), t('dev:location_abroad')],
-  },
-  {
-    type: 'date',
-    key: 'date',
-    label: t('dev:filter_deadline'),
-  },
-  {
-    type: 'dropdown',
-    key: 'level',
-    label: t('dev:filter_level'),
-    multiple: true,
-    options: [t('dev:level_bachelor'), t('dev:level_master'), t('dev:level_phd')],
-  },
-];
+import {
+  ARTICLE_FETCH_LIMIT,
+  applyArticleFilters,
+  getArticleFilterConfig,
+} from '../../utils/articleListFilters';
+import { getDevelopmentSidebarItems } from '../../constants/developmentNav';
 
 const PreviewSection = ({
   title,
@@ -143,24 +104,35 @@ const DevelopmentPage = () => {
   const queryClient = useQueryClient();
   const { user, isAuthenticated } = useAuth();
   const isAdmin = isAuthenticated && user?.role === 'ADMIN';
-  const sidebar = getSidebar(t);
-  const filters = getFilters(t);
+  const sidebar = getDevelopmentSidebarItems(t);
+  const filters = useMemo(() => getArticleFilterConfig(t, ['learning', 'job']), [t]);
 
   const {
     resources: academics,
     isPending: academicsPending,
     errorMessage: academicsError,
-  } = usePublishedLearning(0, 3);
+  } = usePublishedLearning(0, ARTICLE_FETCH_LIMIT);
 
   const {
     jobs,
     isPending: jobsPending,
     errorMessage: jobsError,
-  } = usePublishedJobs(0, 3);
+  } = usePublishedJobs(0, ARTICLE_FETCH_LIMIT);
 
   const [filterValues, setFilterValues] = useState({ all: true });
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
+
+  const filteredDevelopmentArticles = useMemo(
+    () => applyArticleFilters([...academics, ...jobs], filterValues),
+    [academics, jobs, filterValues],
+  );
+  const visibleAcademics = filteredDevelopmentArticles
+    .filter((article) => article.channel === 'learning')
+    .slice(0, 3);
+  const visibleJobs = filteredDevelopmentArticles
+    .filter((article) => article.channel === 'job')
+    .slice(0, 3);
 
   const openArticle = (article) => {
     if (!article?.id) return;
@@ -199,24 +171,14 @@ const DevelopmentPage = () => {
       description={t('dev:subtitle')}
       uppercaseTitle
       actions={isAdmin && (
-        <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="flex-end" useFlexGap>
-          <Button
-            variant="outlined"
-            color="accent"
-            startIcon={<SchoolIcon />}
-            onClick={() => navigate('/admin/mentorship')}
-          >
-            {t('dev:manage_mentorship')}
-          </Button>
-          <Button
-            variant="outlined"
-            color="primary"
-            startIcon={<WorkIcon />}
-            onClick={() => navigate('/admin/article')}
-          >
-            {t('dev:manage_opportunities')}
-          </Button>
-        </Stack>
+        <Button
+          variant="outlined"
+          color="primary"
+          startIcon={<WorkIcon />}
+          onClick={() => navigate('/admin/article')}
+        >
+          {t('dev:manage_opportunities')}
+        </Button>
       )}
       filters={{ config: filters, value: filterValues, onChange: setFilterValues }}
       search={{ value: filterValues.search, onChange: (val) => setFilterValues((prev) => ({ ...prev, search: val })) }}
@@ -224,7 +186,7 @@ const DevelopmentPage = () => {
 
               {/* MENTORSHIP SECTION */}
               <Box>
-                <Typography variant="h4" fontWeight={700} mb={1}>
+                <Typography variant="h4" fontWeight={700} color="primary.main" mb={1}>
                   {t('mentorship:title')}
                 </Typography>
                 <Paper
@@ -233,12 +195,12 @@ const DevelopmentPage = () => {
                     p: 4,
                     bgcolor: (theme) => theme.palette.mode === 'dark'
                       ? alpha(theme.palette.primary.main, 0.18)
-                      : 'primary.light',
+                      : 'primary.lighter',
                     color: (theme) => theme.palette.mode === 'dark' ? 'common.white' : 'text.primary',
                     border: '1px solid',
                     borderColor: (theme) => theme.palette.mode === 'dark'
                       ? alpha(theme.palette.primary.main, 0.32)
-                      : alpha(theme.palette.primary.main, 0.18),
+                      : alpha(theme.palette.primary.main, 0.2),
                     boxShadow: (theme) => theme.palette.mode === 'dark'
                       ? `0 0 34px ${alpha(theme.palette.primary.main, 0.16)}`
                       : 'none',
@@ -249,7 +211,7 @@ const DevelopmentPage = () => {
                   }}
                 >
                   <Box sx={{ flex: 1 }}>
-                    <Typography variant="h3" mb={1}>
+                    <Typography variant="h3" color="primary.main" mb={1}>
                       {t('dev:mentorship_program_title')}
                     </Typography>
                     <Typography variant="body1">
@@ -257,7 +219,7 @@ const DevelopmentPage = () => {
                     </Typography>
                   </Box>
 
-                  <Button variant="contained" onClick={() => navigate('/development/mentorship')}>
+                  <Button variant="contained" onClick={() => navigate('/mentorship')}>
                     {t('dev:find_mentor_now')}
                   </Button>
                 </Paper>
@@ -269,7 +231,7 @@ const DevelopmentPage = () => {
                 description={t('dev:academics_desc')}
                 isPending={academicsPending}
                 errorMessage={academicsError}
-                articles={academics.slice(0, 3)}
+                articles={visibleAcademics}
                 onOpenArticle={openArticle}
                 onSeeMore={() => navigate('/development/academics')}
                 seeMoreLabel={t('common:view_all')}
@@ -285,7 +247,7 @@ const DevelopmentPage = () => {
                 description={t('dev:jobs_desc')}
                 isPending={jobsPending}
                 errorMessage={jobsError}
-                articles={jobs.slice(0, 3)}
+                articles={visibleJobs}
                 onOpenArticle={openArticle}
                 onSeeMore={() => navigate('/development/jobs')}
                 seeMoreLabel={t('common:view_all')}

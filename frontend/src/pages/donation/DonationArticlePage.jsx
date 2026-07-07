@@ -43,6 +43,7 @@ export default function DonationArticlePage() {
   const navigate = useOrgNavigate();
   const { user, isAuthenticated } = useAuth();
   const isAdmin = isAuthenticated && user?.role === "ADMIN";
+  const canEditFund = isAuthenticated && (user?.role === "ADMIN" || user?.role === "STAFF");
 
   const [fundDetail, setFundDetail] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
@@ -112,9 +113,11 @@ export default function DonationArticlePage() {
             sx={{
               width: "100%",
               maxWidth: 1200,
-              backgroundColor: "#fff",
+              backgroundColor: "background.paper",
               borderRadius: 2,
-              boxShadow: "0 4px 24px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06)",
+              border: "1px solid",
+              borderColor: "divider",
+              boxShadow: "none",
               py: { xs: 5, md: 6 },
               px: { xs: 4, md: 6 },
             }}
@@ -122,28 +125,32 @@ export default function DonationArticlePage() {
             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: { xs: 4, md: 5 }, flexWrap: "wrap" }}>
               <Breadcrumb items={[{ label: t('title').toUpperCase(), path: "/donations" }, { label: pageTitle }]} fontSize="0.8rem" />
               <Box sx={{ flexGrow: 1 }} />
-              {isAdmin && (
+              {(canEditFund || isAdmin) && (
                 <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                  <Button
-                    variant="contained"
-                    color="secondary"
-                    size="medium"
-                    startIcon={<EditOutlinedIcon />}
-                    onClick={() => navigate(`/donations/${id}/edit`)}
-                    sx={{ textTransform: "none", fontWeight: 700 }}
-                  >
-                    Sửa quỹ
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    color="primary"
-                    size="medium"
-                    startIcon={<VolunteerActivismOutlinedIcon />}
-                    onClick={() => navigate("/admin/donations")}
-                    sx={{ textTransform: "none", fontWeight: 700 }}
-                  >
-                    Quản lý quỹ
-                  </Button>
+                  {canEditFund && (
+                    <Button
+                      variant="contained"
+                      color="secondary"
+                      size="medium"
+                      startIcon={<EditOutlinedIcon />}
+                      onClick={() => navigate(`/donations/${id}/edit`)}
+                      sx={{ textTransform: "none", fontWeight: 700 }}
+                    >
+                      {t('edit_fund_short')}
+                    </Button>
+                  )}
+                  {isAdmin && (
+                    <Button
+                      variant="outlined"
+                      color="primary"
+                      size="medium"
+                      startIcon={<VolunteerActivismOutlinedIcon />}
+                      onClick={() => navigate("/admin/donations")}
+                      sx={{ textTransform: "none", fontWeight: 700 }}
+                    >
+                      {t('manage_fund')}
+                    </Button>
+                  )}
                 </Stack>
               )}
             </Box>
@@ -168,7 +175,21 @@ export default function DonationArticlePage() {
                   {fundDetail.name}
                 </Typography>
 
-                <Box sx={{ mt: 3, mb: 6, p: 5, bgcolor: "primary.light", borderRadius: 2, display: "flex", flexDirection: { xs: "column", md: "row" }, gap: 3, alignItems: { md: "stretch" } }}>
+                <Box
+                  sx={(theme) => ({
+                    mt: 3,
+                    mb: 6,
+                    p: { xs: 3, md: 5 },
+                    bgcolor: alpha(theme.palette.primary.main, theme.palette.mode === "dark" ? 0.12 : 0.08),
+                    border: "1px solid",
+                    borderColor: alpha(theme.palette.primary.main, theme.palette.mode === "dark" ? 0.24 : 0.16),
+                    borderRadius: 2,
+                    display: "flex",
+                    flexDirection: { xs: "column", md: "row" },
+                    gap: 3,
+                    alignItems: { md: "stretch" },
+                  })}
+                >
                   <Box sx={{ flex: 1 }}>
                     <DonationFundInfoPanel fundDetail={fundDetail} />
                   </Box>
@@ -215,7 +236,7 @@ export default function DonationArticlePage() {
         </Box>
 
         {!errorMessage && fundDetail && isAdmin ? (
-          <Box sx={{ px: { xs: 2, sm: 3 }, py: 6, backgroundColor: "#f3f5f9" }}>
+          <Box sx={{ px: { xs: 2, sm: 3 }, py: 6, backgroundColor: "background.default" }}>
             <Box sx={{ width: "100%", maxWidth: 1200, mx: "auto" }}>
               <DonationListSection fundId={id} />
             </Box>

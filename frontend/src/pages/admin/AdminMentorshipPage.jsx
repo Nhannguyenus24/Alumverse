@@ -43,6 +43,10 @@ import AdminDataTable from "../../components/admin/AdminDataTable";
 import {
   ADMIN_STATUS_CHIP_SX,
 } from "../../constants/adminUiShared";
+import {
+  getAdminMentorshipApprovalOptions,
+  getAdminMentorshipSessionStatusOptions,
+} from "../../constants/adminDefaultMentorship";
 import useAdminMentorship from "../../hooks/admin/useAdminMentorship";
 import { useAdminSystemContext } from "../../stores/AdminStore";
 import { formatDateTime } from "../../utils/dateFormatter";
@@ -75,20 +79,8 @@ const PersonCell = ({ name, email, fallback }) => (
 const AdminMentorshipPage = () => {
   const { t } = useTranslation('admin');
 
-  const SESSION_STATUS_OPTIONS = [
-    { value: "ALL", label: t('mentorship_status_all') },
-    { value: "Pending", label: t('mentorship_status_pending') },
-    { value: "Confirmed", label: t('mentorship_status_confirmed') },
-    { value: "Completed", label: t('mentorship_status_completed') },
-    { value: "Cancelled", label: t('mentorship_status_cancelled') },
-    { value: "Rejected", label: t('mentorship_status_rejected') },
-  ];
-
-  const APPROVAL_OPTIONS = [
-    { value: "ALL", label: t('mentorship_approval_all') },
-    { value: "PENDING", label: t('mentorship_approval_pending') },
-    { value: "APPROVED", label: t('mentorship_approval_approved') },
-  ];
+  const sessionStatusOptions = getAdminMentorshipSessionStatusOptions(t);
+  const approvalOptions = getAdminMentorshipApprovalOptions(t);
 
   const { enqueueSnackbar } = useSnackbar();
   const { setBreadcrumbs } = useOutletContext();
@@ -434,7 +426,7 @@ const AdminMentorshipPage = () => {
                     }}
                     sx={{ minWidth: 200 }}
                   >
-                    {SESSION_STATUS_OPTIONS.map((opt) => (
+                    {sessionStatusOptions.map((opt) => (
                       <MenuItem key={opt.value} value={opt.value}>
                         {opt.label}
                       </MenuItem>
@@ -561,7 +553,7 @@ const AdminMentorshipPage = () => {
                     }}
                     sx={{ minWidth: 200 }}
                   >
-                    {APPROVAL_OPTIONS.map((opt) => (
+                    {approvalOptions.map((opt) => (
                       <MenuItem key={opt.value} value={opt.value}>
                         {opt.label}
                       </MenuItem>

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import LinkIcon from '@mui/icons-material/Link';
 
 const FeaturedArticleCard = ({
   article,
@@ -19,7 +20,7 @@ const FeaturedArticleCard = ({
       sx={{
         display: 'flex',
         flexDirection: { xs: 'column', md: 'row' },
-        alignItems: 'center',
+        alignItems: { xs: 'stretch', md: 'stretch' },
         width: '100%',
         gap: 3,
         transition: 'transform 0.25s ease',
@@ -73,6 +74,10 @@ const FeaturedArticleCard = ({
             sx={{
               flex: 1,
               fontSize: { xs: '1.4rem', md: '2rem' },
+              display: '-webkit-box',
+              overflow: 'hidden',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
               color: hovered ? 'primary.main' : 'text.primary',
               transition: 'color 0.2s ease',
             }}
@@ -108,20 +113,33 @@ const FeaturedArticleCard = ({
           {article.description}
         </Typography>
 
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          sx={{ mt: 1 }}
-        >
-          {article.date}
-        </Typography>
-
-        {/* PUSH ACTIONS DOWN */}
-        <Box sx={{ flex: 1 }} />
+        <Box sx={{ display: 'flex', alignItems: 'center', mt: 2.5, gap: 2, flexWrap: 'wrap' }}>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+          >
+            {article.date}
+          </Typography>
+          {article.url && (
+            <Button
+              size="small"
+              variant="text"
+              color="primary"
+              endIcon={<LinkIcon />}
+              onClick={(e) => {
+                e.stopPropagation();
+                window.open(article.url, '_blank', 'noopener,noreferrer');
+              }}
+              sx={{ textTransform: 'none', fontWeight: 600, minWidth: 'auto', p: 0.5 }}
+            >
+              {t('common:link', 'Link')}
+            </Button>
+          )}
+        </Box>
 
         {/* ACTION BUTTONS */}
         {isAdmin && (
-          <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
+          <Stack direction="row" spacing={1} sx={{ mt: 3 }}>
             <Button
               fullWidth
               variant="outlined"

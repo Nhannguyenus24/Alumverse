@@ -89,6 +89,7 @@ const PostArticleForm = ({
   registrationQuestions = [], // event
   setRegistrationQuestions,   // event
   hideLocalQuestions = false,
+  showSourceUrl = true,
 }) => {
   const { t } = useTranslation(['article', 'event', 'donation']);
   const { infos: fundReceivingInfos } = useFundReceivingInfos();

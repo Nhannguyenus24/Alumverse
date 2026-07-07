@@ -48,6 +48,7 @@ import {
   validateVideoFile,
 } from '../../utils/imageUtils';
 import ChatMessageMedia from './ChatMessageMedia';
+import { exceedsLengthLimit, MAX_MESSAGE_LENGTH } from '../../utils/messageContent';
 
 function formatTime(isoString) {
   if (!isoString) return '';
@@ -207,13 +208,19 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
 
   // --- Send ---
   const isInputDisabled = !isOpen || isMessagingBlocked;
+  const charCount = draft.length;
+  const atLengthLimit = charCount >= MAX_MESSAGE_LENGTH;
 
   const handleSend = useCallback(() => {
     const text = draft.trim();
     if (!text || !activeChat?.id || !isOpen || isMessagingBlocked) return;
+    if (exceedsLengthLimit(text)) {
+      showError(t('network:chat.message_too_long', { max: MAX_MESSAGE_LENGTH }));
+      return;
+    }
     wsSendMessage({ groupId: activeChat.id, content: text, chatType: activeChat?.type });
     setDraft('');
-  }, [draft, activeChat, isOpen, isMessagingBlocked, wsSendMessage]);
+  }, [draft, activeChat, isOpen, isMessagingBlocked, wsSendMessage, showError, t]);
 
   const handleKeyDown = useCallback((event) => {
     if (event.key !== 'Enter' || event.shiftKey) return;
@@ -588,6 +595,21 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
           })}
       </Scrollbar>
 
+      {/* Character counter — shown as the message nears / reaches the limit */}
+      {charCount > MAX_MESSAGE_LENGTH * 0.8 && (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexShrink: 0, px: 2, pt: 0.5 }}>
+          <Typography
+            variant="caption"
+            sx={{ color: atLengthLimit ? 'primary.main' : 'text.secondary' }}
+          >
+            {t('network:chat.char_count', { count: charCount, max: MAX_MESSAGE_LENGTH })}
+          </Typography>
+          <Typography variant="caption" sx={{ color: atLengthLimit ? 'primary.main' : 'text.disabled' }}>
+            {t('network:chat.char_count_hint')}
+          </Typography>
+        </Box>
+      )}
+
       {/* Input area */}
       <Box
         sx={{
@@ -654,6 +676,7 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
             onChange={(event) => setDraft(event.target.value)}
             onKeyDown={handleKeyDown}
             disabled={isInputDisabled}
+            inputProps={{ maxLength: MAX_MESSAGE_LENGTH }}
             variant="outlined"
             size="small"
             sx={{
@@ -662,6 +685,11 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
                 minHeight: 48,
                 alignItems: 'center',
                 pr: 1,
+                ...(atLengthLimit && {
+                  '& fieldset': { borderColor: 'primary.main' },
+                  '&:hover fieldset': { borderColor: 'primary.main' },
+                  '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+                }),
               },
               '& .MuiOutlinedInput-input': {
                 py: 1,

@@ -5,7 +5,6 @@ import {
   Container,
   Stack,
   Typography,
-  Avatar,
   Button,
   Card,
   useTheme,
@@ -14,6 +13,7 @@ import {
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import Page from "../../components/Page";
 import { usePublishedAchievements } from "../../hooks/articles/usePublishedAchievements";
+import { usePublishedAlumniPosts } from "../../hooks/articles/usePublishedAlumniPosts";
 import { usePublishedNews } from "../../hooks/news/usePublishedNews";
 import { normalizeNews } from "../../hooks/articles/normalizeArticle";
 import { toCardShape } from "../../hooks/articles/toCardShape";
@@ -114,13 +114,13 @@ const RevealBox = ({ children, delay = 0, revealAnimation = sectionRevealAnimati
   );
 };
 
-const buildPagedAlumni = (items) => {
+const buildPagedCards = (items, pageSize = 2) => {
   if (!items.length) return [];
   const pages = [];
-  for (let i = 0; i < items.length; i += 4) {
-    const group = items.slice(i, i + 4);
-    if (group.length < 4 && items.length > group.length) {
-      group.push(...items.slice(0, 4 - group.length));
+  for (let i = 0; i < items.length; i += pageSize) {
+    const group = items.slice(i, i + pageSize);
+    if (group.length < pageSize && items.length > group.length) {
+      group.push(...items.slice(0, pageSize - group.length));
     }
     pages.push(group);
   }
@@ -132,7 +132,7 @@ const getExploreItems = (t) => [
     iconSrc: "/icons/ho_tro_tu_van.svg",
     title: t("home:explore_mentorship_title"),
     description: t("home:explore_mentorship_desc"),
-    path: "/development/mentorship",
+    path: "/mentorship",
   },
   {
     iconSrc: "/icons/ket_noi_csv.svg",
@@ -169,9 +169,10 @@ const PARTNER_LOGOS = [
 
 const HomePage = () => {
   const { t } = useTranslation(['home', 'common']);
-  const { achievements } = usePublishedAchievements(0, 12);
+  const { achievements } = usePublishedAchievements(0, 6);
+  const { articles: alumniArticles } = usePublishedAlumniPosts(0, 6);
   const { news: rawNews } = usePublishedNews(0, 6);
-  const [alumniPage, setAlumniPage] = useState(0);
+  const [featuredPage, setFeaturedPage] = useState(0);
   const [organizations, setOrganizations] = useState([]);
   const navigate = useOrgNavigate();
   const { organization } = useOrganizationStore();
@@ -193,21 +194,29 @@ const HomePage = () => {
   }, []);
 
   useEffect(() => {
-    if (achievements.length <= 4) return undefined;
+    const pageCount = Math.ceil(Math.min(achievements.length + alumniArticles.length, 6) / 2);
+    if (pageCount <= 1) return undefined;
     const timer = window.setInterval(() => {
-      setAlumniPage((current) => (current + 1) % Math.ceil(achievements.length / 4));
+      setFeaturedPage((current) => (current + 1) % pageCount);
     }, 3600);
     return () => window.clearInterval(timer);
-  }, [achievements.length]);
+  }, [achievements.length, alumniArticles.length]);
 
   const exploreItems = getExploreItems(t);
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
   const newsCards = rawNews.map(normalizeNews).filter(Boolean).map(toCardShape).filter(Boolean);
-  const alumniGroups = useMemo(() => {
-    return buildPagedAlumni(achievements);
-  }, [achievements]);
-  const visibleAlumni = alumniGroups[alumniPage] ?? alumniGroups[0] ?? [];
+  const featuredArticleGroups = useMemo(() => {
+    const combined = [...alumniArticles, ...achievements]
+      .filter(Boolean)
+      .sort((left, right) => new Date(right.publishedAt || 0) - new Date(left.publishedAt || 0))
+      .slice(0, 6)
+      .map(toCardShape)
+      .filter(Boolean);
+
+    return buildPagedCards(combined, 2);
+  }, [achievements, alumniArticles]);
+  const visibleFeaturedArticles = featuredArticleGroups[featuredPage] ?? featuredArticleGroups[0] ?? [];
   const repeatedPartners = [...PARTNER_LOGOS, ...PARTNER_LOGOS];
   const softSectionBg = theme.palette.mode === "dark"
     ? "background.paper"
@@ -289,6 +298,7 @@ const HomePage = () => {
                   fontWeight={800}
                   sx={{
                     fontSize: { xs: "1.75rem", sm: "2.5rem", md: "3.5rem", lg: "4rem" },
+                    lineHeight: 1.04,
                     letterSpacing: { xs: 1, md: 2 },
                     mb: 2,
                     textTransform: 'uppercase'
@@ -438,33 +448,18 @@ const HomePage = () => {
                       flexShrink: 0,
                     }}
                   >
-                    {theme.palette.mode === "dark" ? (
-                      <Box
-                        className="explore-icon"
-                        aria-hidden
-                        sx={{
-                          width: { xs: 40, md: 48 },
-                          height: { xs: 40, md: 48 },
-                          bgcolor: "primary.light",
-                          mask: `url(${iconSrc}) center / contain no-repeat`,
-                          WebkitMask: `url(${iconSrc}) center / contain no-repeat`,
-                          transition: "transform 0.28s ease",
-                        }}
-                      />
-                    ) : (
-                      <Box
-                        className="explore-icon"
-                        component="img"
-                        src={iconSrc}
-                        alt=""
-                        sx={{
-                          width: { xs: 40, md: 48 },
-                          height: { xs: 40, md: 48 },
-                          objectFit: "contain",
-                          transition: "transform 0.28s ease",
-                        }}
-                      />
-                    )}
+                    <Box
+                      className="explore-icon"
+                      aria-hidden
+                      sx={{
+                        width: { xs: 40, md: 48 },
+                        height: { xs: 40, md: 48 },
+                        bgcolor: theme.palette.mode === "dark" ? "primary.light" : "primary.main",
+                        mask: `url(${iconSrc}) center / contain no-repeat`,
+                        WebkitMask: `url(${iconSrc}) center / contain no-repeat`,
+                        transition: "transform 0.28s ease",
+                      }}
+                    />
                   </Box>
                   <Typography
                     variant="subtitle1"
@@ -570,7 +565,7 @@ const HomePage = () => {
                   sx={{
                     ...mainSectionTitleSx,
                     mb: 2,
-                    color: "primary.contrastText",
+                    color: "#fff",
                     textAlign: { xs: "center", md: "left" },
                   }}
                 >
@@ -578,7 +573,7 @@ const HomePage = () => {
                 </Typography>
               </RevealBox>
               <RevealBox delay={100}>
-                <Typography variant="body1" sx={{ color: alpha(theme.palette.primary.contrastText, 0.88), lineHeight: 1.8, mb: 3 }}>
+                <Typography variant="body1" sx={{ color: alpha("#fff", 0.9), lineHeight: 1.8, mb: 3 }}>
                   {t("home:section_featured_alumni_desc")}
                 </Typography>
               </RevealBox>
@@ -605,70 +600,59 @@ const HomePage = () => {
                 gap: { xs: 2, md: 3 },
               }}
             >
-              {visibleAlumni.map((item, index) => (
-                <RevealBox key={`${alumniPage}-${item.id}`} delay={index * 110} revealAnimation={alumniFlipIn} sx={{ minWidth: 0 }}>
-                <Card
-                  elevation={0}
+              {visibleFeaturedArticles.map((article, index) => (
+                <RevealBox
+                  key={`${featuredPage}-${article.channel}-${article.id}`}
+                  delay={index * 110}
+                  revealAnimation={alumniFlipIn}
+                  onClick={() => navigate(`/article/${article.channel}/${article.id}`)}
                   sx={{
-                    border: 1,
-                    borderColor: "divider",
-                    borderRadius: 2,
-                    textAlign: "left",
-                    p: { xs: 2, md: 2.5 },
-                    minHeight: 150,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 2,
-                    backgroundColor: "background.paper",
-                    boxShadow: "0 12px 26px rgba(15, 23, 42, 0.08)",
-                    transition: "transform 0.25s ease, box-shadow 0.25s ease",
-                    "&:hover": {
-                      transform: "translateY(-6px)",
-                      boxShadow: "0 20px 42px rgba(15, 23, 42, 0.14)",
+                    minWidth: 0,
+                    cursor: "pointer",
+                    "& > div": {
+                      height: "auto",
+                      minHeight: 0,
+                      p: 0,
+                      borderRadius: 2,
+                      bgcolor: "transparent",
+                      boxShadow: "none",
+                    },
+                    "& > div > div:first-of-type": {
+                      height: { xs: 150, sm: 170, md: 180, lg: 190 },
+                      borderRadius: 1.5,
+                    },
+                    "& > div > div:nth-of-type(2)": {
+                      minHeight: 0,
+                      gap: 1,
+                    },
+                    "& h4": {
+                      color: "#fff",
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                      fontSize: { xs: "1.15rem", md: "1.28rem", lg: "1.35rem" },
+                      lineHeight: 1.28,
+                    },
+                    "& p": {
+                      color: alpha("#fff", 0.9),
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                    },
+                    "& .MuiTypography-caption": {
+                      color: alpha("#fff", 0.72),
+                    },
+                    "& .MuiButton-root": {
+                      color: "accent.light",
+                    },
+                    "& svg": {
+                      color: "accent.light",
                     },
                   }}
                 >
-                  <Avatar
-                    src={item.memberAvatar}
-                    sx={{
-                      width: { xs: 62, md: 76 },
-                      height: { xs: 62, md: 76 },
-                      flexShrink: 0,
-                      bgcolor: "primary.main",
-                      fontWeight: 800,
-                    }}
-                  >
-                    {item.memberName?.charAt(0)}
-                  </Avatar>
-                  <Box sx={{ minWidth: 0 }}>
-                    <Typography
-                      variant="subtitle1"
-                      fontWeight={700}
-                      sx={{
-                        mb: 0.5,
-                        display: "-webkit-box",
-                        WebkitLineClamp: 1,
-                        WebkitBoxOrient: "vertical",
-                        overflow: "hidden",
-                      }}
-                    >
-                      {item.memberName || "Alumnus"}
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{
-                        display: "-webkit-box",
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: "vertical",
-                        overflow: "hidden",
-                        lineHeight: 1.55,
-                      }}
-                    >
-                      {item.memberJobTitle}{item.memberCompany ? `, ${item.memberCompany}` : ""}
-                    </Typography>
-                  </Box>
-                </Card>
+                  <ArticleCard article={article} stretch={false} />
                 </RevealBox>
               ))}
             </Box>

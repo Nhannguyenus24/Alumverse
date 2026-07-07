@@ -674,6 +674,7 @@ public class AdminUserService {
                 .status(user.getStatus())
                 .role(user.getRole())
                 .avatarUrl(user.getAvatarUrl())
+                .coverUrl(user.getCoverUrl())
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())
                 .build();

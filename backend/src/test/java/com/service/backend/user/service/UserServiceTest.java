@@ -71,7 +71,7 @@ class UserServiceTest {
 
             when(userProfileRepository.findProfileByUserId(1, null)).thenReturn(Mono.just(profile));
 
-            StepVerifier.create(userService.getMyProfile(1L))
+            StepVerifier.create(userService.getMyProfile(1L, null))
                     .assertNext(p -> assertThat(p.getFullName()).isEqualTo("Test User"))
                     .verifyComplete();
         }
@@ -81,7 +81,7 @@ class UserServiceTest {
         void getMyProfile_notFound() {
             when(userProfileRepository.findProfileByUserId(99, null)).thenReturn(Mono.empty());
 
-            StepVerifier.create(userService.getMyProfile(99L))
+            StepVerifier.create(userService.getMyProfile(99L, null))
                     .expectErrorMatches(err -> err instanceof ApplicationException &&
                             ((ApplicationException) err).getErrorCode() == ErrorCode.USER_NOT_FOUND)
                     .verify();

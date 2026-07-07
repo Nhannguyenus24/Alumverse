@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { Box, Button, Pagination, Typography } from '@mui/material';
@@ -20,39 +20,14 @@ import { usePublishedAchievements } from '../../hooks/articles/usePublishedAchie
 import { toCardShape } from '../../hooks/articles/toCardShape';
 import apiClient from '../../utils/axios';
 import { deleteArticleByChannel, getArticleAdminEditPath } from '../../utils/articleAdminActions';
-
-const getSidebar = (t) => [
-  { id: '/honors', label: t('honors:sidebar_honors'), icon: <EmojiEventsIcon /> },
-  { id: '/honors/alumni', label: t('honors:sidebar_alumni'), icon: <GroupsIcon /> },
-  { id: '/honors/achievements', label: t('honors:sidebar_achievements'), icon: <TrendingUpIcon /> },
-];
-
-const getFilters = (t) => [
-  {
-    type: 'topics',
-    key: 'topics',
-    label: t('honors:filter_topics_label'),
-    options: [t('honors:filter_topics_option_board')],
-  },
-  {
-    type: 'dropdown',
-    key: 'type',
-    label: t('honors:filter_type_label'),
-    multiple: true,
-    options: [
-      t('honors:filter_type_startup'),
-      t('honors:filter_type_technology'),
-      t('honors:filter_type_business'),
-      t('honors:filter_type_research'),
-      t('honors:filter_type_community'),
-    ],
-  },
-  {
-    type: 'date',
-    key: 'date',
-    label: t('honors:filter_date_label'),
-  },
-];
+import {
+  ARTICLE_FETCH_LIMIT,
+  ARTICLE_PAGE_SIZE,
+  applyArticleFilters,
+  getArticleFilterConfig,
+  paginateArticles,
+} from '../../utils/articleListFilters';
+import { getHonorsSidebarItems } from '../../constants/honorsNav';
 
 const HonorsAchievementsPage = () => {
   const { t } = useTranslation(['honors', 'common']);
@@ -62,17 +37,26 @@ const HonorsAchievementsPage = () => {
   const { user, isAuthenticated } = useAuth();
   const { canContribute } = useCanContribute();
   const isAdmin = isAuthenticated && user?.role === 'ADMIN';
-  const sidebar = getSidebar(t);
-  const filters = getFilters(t);
+  const sidebar = getHonorsSidebarItems(t);
+  const filters = useMemo(() => getArticleFilterConfig(t, ['achievement']), [t]);
 
   const [page, setPage] = useState(0);
-  const { achievements, pageInfo } = usePublishedAchievements(page, 10);
+  const { achievements } = usePublishedAchievements(0, ARTICLE_FETCH_LIMIT);
 
   const [filterValues, setFilterValues] = useState({ all: true });
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
-  const [featured, ...rest] = achievements;
+  const filteredAchievements = useMemo(
+    () => applyArticleFilters(achievements, filterValues),
+    [achievements, filterValues],
+  );
+  const { items: pagedAchievements, pageInfo } = useMemo(
+    () => paginateArticles(filteredAchievements, page, ARTICLE_PAGE_SIZE),
+    [filteredAchievements, page],
+  );
+
+  const [featured, ...rest] = pagedAchievements;
   const featuredCard = featured ? toCardShape(featured) : null;
   const cards = rest.slice(0, 9).map(toCardShape);
 
@@ -116,7 +100,8 @@ const HonorsAchievementsPage = () => {
           <Button
             variant="contained"
             disabled={!canContribute}
-            onClick={() => navigate('/honors/request-achievements')}
+            startIcon={<EmojiEventsIcon />}
+            onClick={() => navigate('/post/achievement')}
           >
             {t('honors:submit_achievement_request')}
           </Button>
@@ -126,8 +111,21 @@ const HonorsAchievementsPage = () => {
           {t('honors:manage_honors')}
         </Button>
       ) : null}
-      filters={{ config: filters, value: filterValues, onChange: setFilterValues }}
-      search={{ value: filterValues.search, onChange: (val) => setFilterValues((prev) => ({ ...prev, search: val })) }}
+      filters={{
+        config: filters,
+        value: filterValues,
+        onChange: (next) => {
+          setFilterValues(next);
+          setPage(0);
+        },
+      }}
+      search={{
+        value: filterValues.search,
+        onChange: (val) => {
+          setFilterValues((prev) => ({ ...prev, search: val }));
+          setPage(0);
+        },
+      }}
     >
               {/* FEATURED ARTICLE */}
               {featuredCard && (

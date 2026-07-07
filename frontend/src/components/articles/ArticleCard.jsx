@@ -2,9 +2,10 @@ import { Box, Typography, Button, Stack } from '@mui/material';
 import { useState } from 'react';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import LinkIcon from '@mui/icons-material/Link';
 import { useTranslation } from 'react-i18next';
 
-const ArticleCard = ({ article, isAdmin = false, onEdit }) => {
+const ArticleCard = ({ article, isAdmin = false, onEdit, stretch = true }) => {
   const { t } = useTranslation(['common']);
   const [hovered, setHovered] = useState(false);
 
@@ -15,8 +16,8 @@ const ArticleCard = ({ article, isAdmin = false, onEdit }) => {
       sx={{
         display: 'flex',
         flexDirection: 'column',
-        height: '100%', // kéo full chiều cao cell trong grid
-        gap: 1,
+        height: stretch ? '100%' : 'auto',
+        gap: 1.5,
         // Lift nhẹ toàn card khi hover
         transition: 'transform 0.25s ease',
         transform: hovered ? 'translateY(-4px)' : 'translateY(0)',
@@ -47,6 +48,10 @@ const ArticleCard = ({ article, isAdmin = false, onEdit }) => {
             fontWeight={700}
             sx={{
               flex: 1,
+              display: '-webkit-box',
+              overflow: 'hidden',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
               color: hovered ? 'primary.main' : 'text.primary',
               transition: 'color 0.2s ease',
             }}
@@ -81,16 +86,30 @@ const ArticleCard = ({ article, isAdmin = false, onEdit }) => {
           {article.description}
         </Typography>
 
-        <Typography variant="caption" color="text.secondary">
-          {article.date}
-        </Typography>
-
-        {/* Spacer đẩy buttons xuống đáy */}
-        <Box sx={{ flex: 1 }} />
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 'auto' }}>
+          <Typography variant="caption" color="text.secondary">
+            {article.date}
+          </Typography>
+          {article.url && (
+            <Button
+              size="small"
+              variant="text"
+              color="primary"
+              endIcon={<LinkIcon />}
+              onClick={(e) => {
+                e.stopPropagation();
+                window.open(article.url, '_blank', 'noopener,noreferrer');
+              }}
+              sx={{ textTransform: 'none', fontWeight: 600, minWidth: 'auto', p: 0.5 }}
+            >
+              {t('common:link', 'Link')}
+            </Button>
+          )}
+        </Box>
 
         {/* ACTION BUTTONS */}
         {isAdmin && (
-          <Stack direction="row" spacing={1}>
+          <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
             {/* EDIT BUTTON */}
             <Button
               fullWidth

@@ -29,6 +29,7 @@
   "content_placeholder": "Start writing content here...",
   "source_url_label": "Source link (URL)",
   "source_url_helper": "A link to verify that the article content is authentic (optional).",
+  "visit_link": "Open Original Link",
   "topics": {
     "school_announcement": "School announcement",
     "faculty_department": "Faculty / Department",

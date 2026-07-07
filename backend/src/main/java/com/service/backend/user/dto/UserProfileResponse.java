@@ -2,6 +2,7 @@ package com.service.backend.user.dto;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -19,6 +20,7 @@ public class UserProfileResponse {
     private String role;
     private String status;
     private String avatarUrl;
+    private String coverUrl;
     private LocalDateTime createdAt;
 
     private String fullName;
@@ -26,6 +28,9 @@ public class UserProfileResponse {
     private String bio;
     private LocalDate dob;
     private String gender;
+    private String currentJobTitle;
+    private String currentCompany;
+    private String links;
     private LocalDateTime profileUpdatedAt;
 
     private String startedYear;

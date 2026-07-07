@@ -1,0 +1,822 @@
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  IconButton,
+  Tooltip,
+  CircularProgress,
+  useTheme,
+  Alert,
+  Grid,
+  alpha
+} from '@mui/material';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  Legend,
+  ResponsiveContainer,
+  AreaChart,
+  Area
+} from 'recharts';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import axios from 'axios';
+import { useTranslation } from 'react-i18next';
+import dayjs from 'dayjs';
+
+const PROMETHEUS_URL_RANGE = 'http://168.144.102.181:9090/api/v1/query_range';
+const PROMETHEUS_URL_INSTANT = 'http://168.144.102.181:9090/api/v1/query';
+
+const QUERIES = {
+  requestRate: 'sum(rate(http_endpoint_requests_total[5m]))',
+  errorRate: 'sum(rate(http_endpoint_errors_total[5m]))',
+  latencyAvg: '(sum(rate(http_endpoint_latency_seconds_sum[5m])) / sum(rate(http_endpoint_latency_seconds_count[5m]))) * 1000',
+  latencyP50: 'histogram_quantile(0.50, sum(rate(http_endpoint_latency_seconds_bucket[5m])) by (le)) * 1000',
+  latencyP99: 'histogram_quantile(0.99, sum(rate(http_endpoint_latency_seconds_bucket[5m])) by (le)) * 1000',
+  cpuSystem: 'system_cpu_usage * 100',
+  cpuProcess: 'process_cpu_usage * 100',
+  memoryHeap: 'sum(jvm_memory_used_bytes{area="heap"}) / 1024 / 1024',
+  gcPause: 'sum(rate(jvm_gc_pause_seconds_sum[5m])) * 1000'
+};
+
+const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#d32f2f', '#1976d2', '#388e3c', '#fbc02d', '#7b1fa2', '#c2185b'];
+
+
+
+const fetchPrometheusRange = async (query, start, end, step) => {
+  try {
+    const res = await axios.get(PROMETHEUS_URL_RANGE, {
+      params: { query, start, end, step: `${step}s` },
+      timeout: 10000
+    });
+    if (res.data && res.data.data && res.data.data.result.length > 0) {
+      return res.data.data.result[0].values;
+    }
+    return [];
+  } catch (err) {
+    console.error(`Error fetching range query: ${query}`, err);
+    return [];
+  }
+};
+
+const fetchPrometheusRangeMultiple = async (query, start, end, step) => {
+  try {
+    const res = await axios.get(PROMETHEUS_URL_RANGE, {
+      params: { query, start, end, step: `${step}s` },
+      timeout: 10000
+    });
+    if (res.data && res.data.data && res.data.data.result) {
+      return res.data.data.result;
+    }
+    return [];
+  } catch (err) {
+    console.error(`Error fetching range multiple query: ${query}`, err);
+    return [];
+  }
+};
+
+const fetchPrometheusInstant = async (query, time) => {
+  try {
+    const res = await axios.get(PROMETHEUS_URL_INSTANT, {
+      params: { query, time },
+      timeout: 10000
+    });
+    if (res.data && res.data.data && res.data.data.result.length > 0) {
+      return res.data.data.result;
+    }
+    return [];
+  } catch (err) {
+    console.error(`Error fetching instant query: ${query}`, err);
+    return [];
+  }
+};
+
+const AdminSystemMonitoringPage = () => {
+  const theme = useTheme();
+  const { t } = useTranslation(['admin']);
+
+  const TIME_RANGES = useMemo(() => [
+    { label: t('admin:system_monitoring.last_1h'), value: 1 },
+    { label: t('admin:system_monitoring.last_3h'), value: 3 },
+    { label: t('admin:system_monitoring.last_6h'), value: 6 },
+    { label: t('admin:system_monitoring.last_12h'), value: 12 },
+    { label: t('admin:system_monitoring.last_24h'), value: 24 },
+    { label: t('admin:system_monitoring.custom_range'), value: 'custom' },
+  ], [t]);
+
+  const REFRESH_INTERVALS = useMemo(() => [
+    { label: t('admin:system_monitoring.off'), value: 0 },
+    { label: t('admin:system_monitoring.5s'), value: 5 },
+    { label: t('admin:system_monitoring.10s'), value: 10 },
+    { label: t('admin:system_monitoring.30s'), value: 30 },
+    { label: t('admin:system_monitoring.1m'), value: 60 },
+  ], [t]);
+  
+  const cardSx = {
+    borderRadius: 3,
+    border: `1px solid ${theme.palette.divider}`,
+    boxShadow: '0 4px 20px rgba(0,0,0,0.02)'
+  };
+
+  const [timeRange, setTimeRange] = useState(1);
+  const [customStart, setCustomStart] = useState(dayjs().subtract(1, 'hour'));
+  const [customEnd, setCustomEnd] = useState(dayjs());
+  const [refreshInterval, setRefreshInterval] = useState(10);
+  
+  const [loading, setLoading] = useState(false);
+  const [chartData, setChartData] = useState([]);
+  const [endpointStats, setEndpointStats] = useState([]);
+  const [exceptionStats, setExceptionStats] = useState([]);
+  const [summaryStats, setSummaryStats] = useState({ totalRequests: 0, totalErrors: 0, errorRate: 0, avgLatency: 0 });
+  const [availableErrorCodes, setAvailableErrorCodes] = useState([]);
+  const [availableStatusCodes, setAvailableStatusCodes] = useState([]);
+  const [isolatedSeries, setIsolatedSeries] = useState({});
+  const [error, setError] = useState(null);
+
+  const handleLegendClick = (chartId, dataKey) => {
+    setIsolatedSeries(prev => {
+      if (prev[chartId] === dataKey) {
+        const next = { ...prev };
+        delete next[chartId];
+        return next;
+      }
+      return { ...prev, [chartId]: dataKey };
+    });
+  };
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const rangeSeconds = timeRange === 'custom' 
+        ? Math.floor(customEnd.diff(customStart, 'second'))
+        : timeRange * 3600;
+        
+      if (rangeSeconds <= 0) {
+        setError(t('admin:system_monitoring.invalid_time_range'));
+        setLoading(false);
+        return;
+      }
+      
+      const start = timeRange === 'custom' ? customStart.unix() : Math.floor(Date.now() / 1000) - rangeSeconds;
+      const end = timeRange === 'custom' ? customEnd.unix() : Math.floor(Date.now() / 1000);
+      
+      // Calculate step for range charts (aim for ~100 data points)
+      const step = Math.max(15, Math.floor(rangeSeconds / 100));
+
+      const [
+        reqRateData,
+        errRateData,
+        latAvgData,
+        latP50Data,
+        latP99Data,
+        cpuSysData,
+        cpuProcData,
+        memHeapData,
+        gcPauseData,
+        endpointDataRes,
+        exceptionDataRes,
+        endpointLatencyRes,
+        exceptionTimeSeriesRes,
+        statusTimeSeriesRes,
+        totalRequestsRes,
+        totalErrorsRes,
+        currentAvgLatencyRes
+      ] = await Promise.all([
+        fetchPrometheusRange(QUERIES.requestRate, start, end, step),
+        fetchPrometheusRange(QUERIES.errorRate, start, end, step),
+        fetchPrometheusRange(QUERIES.latencyAvg, start, end, step),
+        fetchPrometheusRange(QUERIES.latencyP50, start, end, step),
+        fetchPrometheusRange(QUERIES.latencyP99, start, end, step),
+        fetchPrometheusRange(QUERIES.cpuSystem, start, end, step),
+        fetchPrometheusRange(QUERIES.cpuProcess, start, end, step),
+        fetchPrometheusRange(QUERIES.memoryHeap, start, end, step),
+        fetchPrometheusRange(QUERIES.gcPause, start, end, step),
+        fetchPrometheusInstant(`topk(50, sum by (path, method) (increase(http_endpoint_requests_total[${rangeSeconds}s])))`, end),
+        fetchPrometheusInstant(`topk(50, sum by (error_code) (increase(api_errors_count_total[${rangeSeconds}s])))`, end),
+        fetchPrometheusInstant(`sum by (path, method) (increase(http_endpoint_latency_seconds_sum[${rangeSeconds}s])) / sum by (path, method) (increase(http_endpoint_latency_seconds_count[${rangeSeconds}s])) * 1000`, end),
+        fetchPrometheusRangeMultiple(`sum by (error_code) (increase(api_errors_count_total[5m]))`, start, end, step),
+        fetchPrometheusRangeMultiple(`sum by (status) (rate(http_endpoint_requests_total[5m]))`, start, end, step),
+        fetchPrometheusInstant(`sum(http_endpoint_requests_total)`, end),
+        fetchPrometheusInstant(`sum(http_endpoint_errors_total)`, end),
+        fetchPrometheusInstant(`sum(rate(http_endpoint_latency_seconds_sum[5m])) / sum(rate(http_endpoint_latency_seconds_count[5m])) * 1000`, end)
+      ]);
+
+      // Merge time-series data
+      const mergedMap = new Map();
+      const formatString = rangeSeconds > 86400 ? 'MM/DD HH:mm' : 'HH:mm:ss';
+
+      const processSeries = (series, key) => {
+        series.forEach(([timestamp, value]) => {
+          const t = parseInt(timestamp, 10);
+          if (!mergedMap.has(t)) {
+            mergedMap.set(t, { time: t, timeFormatted: dayjs(t * 1000).format(formatString) });
+          }
+          let numVal = parseFloat(value);
+          if (isNaN(numVal)) numVal = 0;
+          mergedMap.get(t)[key] = numVal;
+        });
+      };
+
+      processSeries(reqRateData, 'reqRate');
+      processSeries(errRateData, 'errRate');
+      processSeries(latAvgData, 'latAvg');
+      processSeries(latP50Data, 'latP50');
+      processSeries(latP99Data, 'latP99');
+      processSeries(cpuSysData, 'cpuSys');
+      processSeries(cpuProcData, 'cpuProc');
+      processSeries(memHeapData, 'memHeap');
+      processSeries(gcPauseData, 'gcPause');
+
+      const errorCodesSet = new Set();
+      if (exceptionTimeSeriesRes) {
+        exceptionTimeSeriesRes.forEach(seriesObj => {
+          const errorCode = seriesObj.metric.error_code || 'UNKNOWN';
+          const key = `err_${errorCode}`;
+          errorCodesSet.add(errorCode);
+          
+          seriesObj.values.forEach(([timestamp, value]) => {
+            const t = parseInt(timestamp, 10);
+            if (!mergedMap.has(t)) {
+              mergedMap.set(t, { time: t, timeFormatted: dayjs(t * 1000).format(formatString) });
+            }
+            let numVal = parseFloat(value);
+            if (isNaN(numVal)) numVal = 0;
+            mergedMap.get(t)[key] = numVal;
+          });
+        });
+      }
+      setAvailableErrorCodes(Array.from(errorCodesSet));
+
+      const statusCodesSet = new Set();
+      if (statusTimeSeriesRes) {
+        statusTimeSeriesRes.forEach(seriesObj => {
+          const status = seriesObj.metric.status || 'UNKNOWN';
+          const key = `status_${status}`;
+          statusCodesSet.add(status);
+          
+          seriesObj.values.forEach(([timestamp, value]) => {
+            const t = parseInt(timestamp, 10);
+            if (!mergedMap.has(t)) {
+              mergedMap.set(t, { time: t, timeFormatted: dayjs(t * 1000).format(formatString) });
+            }
+            let numVal = parseFloat(value);
+            if (isNaN(numVal)) numVal = 0;
+            mergedMap.get(t)[key] = numVal;
+          });
+        });
+      }
+      setAvailableStatusCodes(Array.from(statusCodesSet));
+
+      const mergedArray = Array.from(mergedMap.values()).sort((a, b) => a.time - b.time);
+      setChartData(mergedArray);
+
+      const latencyMap = new Map();
+      if (endpointLatencyRes && endpointLatencyRes.length > 0) {
+        endpointLatencyRes.forEach(res => {
+          const key = `${res.metric.method || 'UNKNOWN'}-${res.metric.path || 'Unknown'}`;
+          let val = parseFloat(res.value[1]);
+          if (isNaN(val)) val = 0;
+          latencyMap.set(key, val);
+        });
+      }
+
+      // Process instant queries for tables
+      setEndpointStats(
+        endpointDataRes
+          .map(res => {
+            const path = res.metric.path || 'Unknown';
+            const method = res.metric.method || 'UNKNOWN';
+            const key = `${method}-${path}`;
+            return {
+              path,
+              method,
+              count: parseFloat(res.value[1]),
+              avgLatency: latencyMap.get(key) || 0
+            };
+          })
+          .sort((a, b) => b.count - a.count)
+      );
+
+      setExceptionStats(
+        exceptionDataRes
+          .map(res => ({
+            errorCode: res.metric.error_code || 'UNKNOWN_ERROR',
+            count: parseFloat(res.value[1])
+          }))
+          .sort((a, b) => b.count - a.count)
+      );
+      
+      const totalReq = totalRequestsRes.length > 0 ? parseFloat(totalRequestsRes[0].value[1]) : 0;
+      const totalErr = totalErrorsRes.length > 0 ? parseFloat(totalErrorsRes[0].value[1]) : 0;
+      const curAvgLat = currentAvgLatencyRes.length > 0 ? parseFloat(currentAvgLatencyRes[0].value[1]) : 0;
+      
+      setSummaryStats({
+        totalRequests: totalReq,
+        totalErrors: totalErr,
+        errorRate: totalReq > 0 ? (totalErr / totalReq) * 100 : 0,
+        avgLatency: curAvgLat
+      });
+
+    } catch (err) {
+      console.error(err);
+      setError(t('admin:system_monitoring.fetch_error'));
+    } finally {
+      setLoading(false);
+    }
+  }, [timeRange, customStart, customEnd]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  useEffect(() => {
+    if (refreshInterval > 0 && timeRange !== 'custom') {
+      const interval = setInterval(() => {
+        loadData();
+      }, refreshInterval * 1000);
+      return () => clearInterval(interval);
+    }
+  }, [refreshInterval, loadData, timeRange]);
+
+  const renderTooltip = (props) => {
+    const { active, payload, label } = props;
+    if (active && payload && payload.length) {
+      return (
+        <Box sx={{ bgcolor: 'background.paper', p: 1.5, border: '1px solid #ccc', borderRadius: 1, boxShadow: 1 }}>
+          <Typography variant="body2" color="text.secondary" mb={1}>{label}</Typography>
+          {payload.map((entry, index) => (
+            <Typography key={`item-${index}`} variant="body2" sx={{ color: entry.color }}>
+              {entry.name}: {entry.value != null ? entry.value.toFixed(2) : '0'}
+            </Typography>
+          ))}
+        </Box>
+      );
+    }
+    return null;
+  };
+
+  return (
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
+      <Box sx={{ p: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
+          <Box>
+            <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>
+              {t('admin:system_monitoring.title')}
+            </Typography>
+            <Typography variant="body1" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
+              {t('admin:system_monitoring.subtitle')}
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+            <FormControl size="small" sx={{ minWidth: 150 }}>
+              <InputLabel sx={{ fontSize: 13, fontWeight: 600 }}>{t('admin:system_monitoring.time_range')}</InputLabel>
+              <Select
+                value={timeRange}
+                label={t("admin:system_monitoring.time_range")}
+                onChange={(e) => setTimeRange(e.target.value)}
+                sx={{ fontSize: 13, fontWeight: 700, bgcolor: 'background.paper', borderRadius: 2 }}
+              >
+                {TIME_RANGES.map((r) => (
+                  <MenuItem key={r.value} value={r.value} sx={{ fontSize: 13, fontWeight: 600 }}>{r.label}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            {timeRange === 'custom' && (
+              <Stack direction="row" spacing={2}>
+                <DateTimePicker
+                  label={t("admin:system_monitoring.start_date")}
+                  value={customStart}
+                  onChange={(newValue) => setCustomStart(newValue)}
+                  slotProps={{ textField: { size: 'small', sx: { width: 180 } } }}
+                />
+                <DateTimePicker
+                  label={t("admin:system_monitoring.end_date")}
+                  value={customEnd}
+                  onChange={(newValue) => setCustomEnd(newValue)}
+                  slotProps={{ textField: { size: 'small', sx: { width: 180 } } }}
+                />
+              </Stack>
+            )}
+
+            <FormControl size="small" sx={{ minWidth: 120 }} disabled={timeRange === 'custom'}>
+              <InputLabel sx={{ fontSize: 13, fontWeight: 600 }}>{t('admin:system_monitoring.auto_refresh')}</InputLabel>
+              <Select
+                value={refreshInterval}
+                label={t("admin:system_monitoring.auto_refresh")}
+                onChange={(e) => setRefreshInterval(e.target.value)}
+                sx={{ fontSize: 13, fontWeight: 700, bgcolor: 'background.paper', borderRadius: 2 }}
+              >
+                {REFRESH_INTERVALS.map((r) => (
+                  <MenuItem key={r.value} value={r.value} sx={{ fontSize: 13, fontWeight: 600 }}>{r.label}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <Tooltip title={t("admin:system_monitoring.force_refresh")}>
+              <IconButton
+                size="small"
+                onClick={loadData}
+                disabled={loading}
+                sx={{
+                  color: 'primary.main',
+                  bgcolor: (theme) => alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.14 : 0.08),
+                  border: '1px solid',
+                  borderColor: (theme) => alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.24 : 0.12),
+                  '&:hover': {
+                    bgcolor: (theme) => alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.22 : 0.14),
+                  },
+                  '& svg': {
+                    transition: 'transform 0.1s',
+                    animation: loading ? 'dashboardSpin 0.8s linear infinite' : 'none',
+                    '@keyframes dashboardSpin': {
+                      from: { transform: 'rotate(0deg)' },
+                      to: { transform: 'rotate(360deg)' },
+                    },
+                  },
+                }}
+              >
+                <RefreshIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </Box>
+        </Box>
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
+
+        {loading && chartData.length === 0 && (
+          <Box sx={{ display: 'flex', justifyContent: 'center', p: 5 }}>
+            <CircularProgress />
+          </Box>
+        )}
+
+        {chartData.length > 0 && (
+          <Stack spacing={3}>
+            {/* Summary Stats */}
+            <Grid container spacing={3}>
+              <Grid item xs={12} sm={6} md={3}>
+                <Card elevation={0} sx={{ ...cardSx, bgcolor: 'primary.light', color: 'primary.contrastText', border: 'none' }}>
+                  <CardContent>
+                    <Typography variant="subtitle2" sx={{ opacity: 0.8 }}>{t('admin:system_monitoring.total_requests_all_time')}</Typography>
+                    <Typography variant="h4" fontWeight="bold">{summaryStats.totalRequests.toLocaleString()}</Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <Card elevation={0} sx={{ ...cardSx, bgcolor: summaryStats.totalErrors > 0 ? 'error.light' : 'success.light', color: 'primary.contrastText', border: 'none' }}>
+                  <CardContent>
+                    <Typography variant="subtitle2" sx={{ opacity: 0.8 }}>{t('admin:system_monitoring.total_errors_all_time')}</Typography>
+                    <Typography variant="h4" fontWeight="bold">{summaryStats.totalErrors.toLocaleString()}</Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <Card elevation={0} sx={{ ...cardSx, bgcolor: summaryStats.errorRate > 5 ? 'error.light' : summaryStats.errorRate > 1 ? 'warning.light' : 'success.light', color: 'primary.contrastText', border: 'none' }}>
+                  <CardContent>
+                    <Typography variant="subtitle2" sx={{ opacity: 0.8 }}>{t('admin:system_monitoring.error_rate')}</Typography>
+                    <Typography variant="h4" fontWeight="bold">{summaryStats.errorRate.toFixed(2)}%</Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <Card elevation={0} sx={{ ...cardSx, bgcolor: summaryStats.avgLatency > 1000 ? 'error.light' : summaryStats.avgLatency > 500 ? 'warning.light' : 'success.light', color: 'primary.contrastText', border: 'none' }}>
+                  <CardContent>
+                    <Typography variant="subtitle2" sx={{ opacity: 0.8 }}>{t('admin:system_monitoring.avg_latency_5m')}</Typography>
+                    <Typography variant="h4" fontWeight="bold">{summaryStats.avgLatency.toFixed(2)} ms</Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+            </Grid>
+
+            {/* Top Endpoints & Exceptions Tables */}
+            <Stack direction={{ xs: 'column', lg: 'row' }} spacing={3}>
+              <Card elevation={0} sx={{ flex: 1, ...cardSx }}>
+                <CardContent>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2, color: 'primary.main' }}>{t('admin:system_monitoring.endpoints_request_volume')}</Typography>
+                  <TableContainer component={Paper} sx={{ maxHeight: 300 }}>
+                    <Table stickyHeader size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>{t('admin:system_monitoring.method')}</TableCell>
+                          <TableCell>{t('admin:system_monitoring.endpoint_path')}</TableCell>
+                          <TableCell align="right">{t('admin:system_monitoring.requests')}</TableCell>
+                          <TableCell align="right">{t('admin:system_monitoring.avg_latency_ms')}</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {endpointStats.length === 0 && (
+                          <TableRow><TableCell colSpan={4} align="center">{t('admin:system_monitoring.no_data')}</TableCell></TableRow>
+                        )}
+                        {endpointStats.map((row, idx) => (
+                          <TableRow key={idx} hover>
+                            <TableCell sx={{ fontWeight: 'bold' }}>{row.method}</TableCell>
+                            <TableCell>{row.path}</TableCell>
+                            <TableCell align="right">{row.count.toFixed(0)}</TableCell>
+                            <TableCell align="right">{row.avgLatency.toFixed(2)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </CardContent>
+              </Card>
+
+              <Card elevation={0} sx={{ flex: 1, ...cardSx }}>
+                <CardContent>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2, color: 'primary.main' }}>{t('admin:system_monitoring.app_exceptions_breakdown')}</Typography>
+                  <TableContainer component={Paper} sx={{ maxHeight: 300 }}>
+                    <Table stickyHeader size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>{t('admin:system_monitoring.error_code_exception')}</TableCell>
+                          <TableCell align="right">{t('admin:system_monitoring.occurrences')}</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {exceptionStats.length === 0 && (
+                          <TableRow><TableCell colSpan={2} align="center">{t('admin:system_monitoring.no_data')}</TableCell></TableRow>
+                        )}
+                        {exceptionStats.map((row, idx) => (
+                          <TableRow key={idx} hover>
+                            <TableCell sx={{ color: 'error.main', fontWeight: 'bold' }}>{row.errorCode}</TableCell>
+                            <TableCell align="right">{row.count.toFixed(0)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </CardContent>
+              </Card>
+            </Stack>
+
+            {/* Request Volume */}
+            <Card elevation={0} sx={cardSx}>
+              <CardContent>
+                <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2, color: 'primary.main' }}>{t('admin:system_monitoring.request_rate_req_s')}</Typography>
+                <Box sx={{ height: 300 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="timeFormatted" minTickGap={30} />
+                      <YAxis />
+                      <RechartsTooltip content={renderTooltip} />
+                      <Legend />
+                      <Area type="monotone" dataKey="reqRate" name={t("admin:system_monitoring.total_requests")} stroke={theme.palette.primary.main} fill={theme.palette.primary.light} fillOpacity={0.3} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </Box>
+              </CardContent>
+            </Card>
+
+            {/* Latency */}
+            <Card elevation={0} sx={cardSx}>
+              <CardContent>
+                <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2, color: 'primary.main' }}>{t('admin:system_monitoring.latency_ms')}</Typography>
+                <Box sx={{ height: 300 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="timeFormatted" minTickGap={30} />
+                      <YAxis />
+                      <RechartsTooltip content={renderTooltip} />
+                      <Legend onClick={(e) => handleLegendClick('latency', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
+                      <Line type="monotone" dot={false} dataKey="latAvg" name={t("admin:system_monitoring.avg_latency")} stroke={theme.palette.success.main} strokeWidth={2} hide={isolatedSeries['latency'] && isolatedSeries['latency'] !== 'latAvg'} />
+                      <Line type="monotone" dot={false} dataKey="latP50" name={t("admin:system_monitoring.p50_latency")} stroke={theme.palette.info.main} strokeWidth={2} hide={isolatedSeries['latency'] && isolatedSeries['latency'] !== 'latP50'} />
+                      <Line type="monotone" dot={false} dataKey="latP99" name={t("admin:system_monitoring.p99_latency")} stroke={theme.palette.warning.main} strokeWidth={2} hide={isolatedSeries['latency'] && isolatedSeries['latency'] !== 'latP99'} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Box>
+              </CardContent>
+            </Card>
+
+            {/* Error Rate */}
+            <Card elevation={0} sx={cardSx}>
+              <CardContent>
+                <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2, color: 'primary.main' }}>{t('admin:system_monitoring.http_error_rate_s')}</Typography>
+                <Box sx={{ height: 300 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="timeFormatted" minTickGap={30} />
+                      <YAxis />
+                      <RechartsTooltip content={renderTooltip} />
+                      <Legend />
+                      <Area type="monotone" dataKey="errRate" name={t("admin:system_monitoring.http_errors")} stroke={theme.palette.error.main} fill={theme.palette.error.light} fillOpacity={0.3} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </Box>
+              </CardContent>
+            </Card>
+
+            {/* HTTP Status Breakdown Timeline */}
+            {availableStatusCodes.length > 0 && (
+              <Card elevation={0} sx={cardSx}>
+                <CardContent>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2, color: 'primary.main' }}>{t('admin:system_monitoring.http_status_breakdown')}</Typography>
+                  <Box sx={{ height: 300 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={chartData}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                        <XAxis dataKey="timeFormatted" minTickGap={30} />
+                        <YAxis />
+                        <RechartsTooltip content={renderTooltip} />
+                        <Legend onClick={(e) => handleLegendClick('status', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
+                        {availableStatusCodes.map((code, idx) => {
+                          const dataKey = `status_${code}`;
+                          const isIsolated = isolatedSeries['status'];
+                          let color = COLORS[idx % COLORS.length];
+                          if (code.startsWith('2')) color = theme.palette.success.main;
+                          else if (code.startsWith('3')) color = theme.palette.info.main;
+                          else if (code.startsWith('4')) color = theme.palette.warning.main;
+                          else if (code.startsWith('5')) color = theme.palette.error.main;
+
+                          return (
+                            <Area 
+                              key={code} 
+                              type="monotone" 
+                              dataKey={dataKey} 
+                              name={`HTTP ${code}`} 
+                              stackId="1"
+                              stroke={color} 
+                              fill={color} 
+                              fillOpacity={0.6} 
+                              hide={isIsolated && isIsolated !== dataKey}
+                            />
+                          );
+                        })}
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </Box>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Exceptions Breakdown Timeline */}
+            {availableErrorCodes.length > 0 && (
+              <Card elevation={0} sx={cardSx}>
+                <CardContent>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2, color: 'primary.main' }}>{t('admin:system_monitoring.app_exceptions_timeline')}</Typography>
+                  <Box sx={{ height: 300 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={chartData}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                        <XAxis dataKey="timeFormatted" minTickGap={30} />
+                        <YAxis />
+                        <RechartsTooltip content={renderTooltip} />
+                        <Legend onClick={(e) => handleLegendClick('exceptions', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
+                        {availableErrorCodes.map((code, idx) => {
+                          const dataKey = `err_${code}`;
+                          const isIsolated = isolatedSeries['exceptions'];
+                          return (
+                            <Area 
+                              key={code} 
+                              type="monotone" 
+                              dataKey={dataKey} 
+                              name={code} 
+                              stackId="1"
+                              stroke={COLORS[idx % COLORS.length]} 
+                              fill={COLORS[idx % COLORS.length]} 
+                              fillOpacity={0.6} 
+                              hide={isIsolated && isIsolated !== dataKey}
+                            />
+                          );
+                        })}
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </Box>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* CPU Usage */}
+            <Card elevation={0} sx={cardSx}>
+              <CardContent>
+                <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2, color: 'primary.main' }}>{t('admin:system_monitoring.cpu_usage_pct')}</Typography>
+                <Box sx={{ height: 300 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="timeFormatted" minTickGap={30} />
+                      <YAxis domain={[0, 100]} />
+                      <RechartsTooltip content={renderTooltip} />
+                      <Legend onClick={(e) => handleLegendClick('cpu', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
+                      <Line type="monotone" dot={false} dataKey="cpuSys" name={t("admin:system_monitoring.system_cpu")} stroke="#8884d8" strokeWidth={2} hide={isolatedSeries['cpu'] && isolatedSeries['cpu'] !== 'cpuSys'} />
+                      <Line type="monotone" dot={false} dataKey="cpuProc" name={t("admin:system_monitoring.jvm_cpu")} stroke="#82ca9d" strokeWidth={2} hide={isolatedSeries['cpu'] && isolatedSeries['cpu'] !== 'cpuProc'} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Box>
+              </CardContent>
+            </Card>
+
+            {/* Memory Usage */}
+            <Card elevation={0} sx={cardSx}>
+              <CardContent>
+                <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2, color: 'primary.main' }}>{t('admin:system_monitoring.memory_usage_mb')}</Typography>
+                <Box sx={{ height: 300 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="timeFormatted" minTickGap={30} />
+                      <YAxis />
+                      <RechartsTooltip content={renderTooltip} />
+                      <Legend />
+                      <Line type="monotone" dot={false} dataKey="memHeap" name={t("admin:system_monitoring.jvm_heap_used")} stroke="#ff7300" strokeWidth={2} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Box>
+              </CardContent>
+            </Card>
+
+            {/* GC Pause Time */}
+            <Card elevation={0} sx={cardSx}>
+              <CardContent>
+                <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2, color: 'primary.main' }}>{t('admin:system_monitoring.gc_pause_time_ms')}</Typography>
+                <Box sx={{ height: 300 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="timeFormatted" minTickGap={30} />
+                      <YAxis />
+                      <RechartsTooltip content={renderTooltip} />
+                      <Legend />
+                      <Line type="monotone" dot={false} dataKey="gcPause" name={t("admin:system_monitoring.gc_pause_time")} stroke="#9c27b0" strokeWidth={2} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Box>
+              </CardContent>
+            </Card>
+
+            {/* Data Table */}
+            <Card elevation={0} sx={cardSx}>
+              <CardContent>
+                <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2, color: 'primary.main' }}>{t('admin:system_monitoring.detailed_metrics_data')}</Typography>
+                <TableContainer component={Paper} sx={{ maxHeight: 400 }}>
+                  <Table stickyHeader size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>{t('admin:system_monitoring.time')}</TableCell>
+                        <TableCell align="right">{t('admin:system_monitoring.req_rate')}</TableCell>
+                        <TableCell align="right">{t('admin:system_monitoring.avg_latency_ms')}</TableCell>
+                        <TableCell align="right">{t('admin:system_monitoring.p50_latency_ms')}</TableCell>
+                        <TableCell align="right">{t('admin:system_monitoring.p99_latency_ms')}</TableCell>
+                        <TableCell align="right">{t('admin:system_monitoring.http_errors_s')}</TableCell>
+                        <TableCell align="right">{t('admin:system_monitoring.app_errors')}</TableCell>
+                        <TableCell align="right">{t('admin:system_monitoring.sys_cpu_pct')}</TableCell>
+                        <TableCell align="right">{t('admin:system_monitoring.jvm_cpu_pct')}</TableCell>
+                        <TableCell align="right">{t('admin:system_monitoring.heap_mb')}</TableCell>
+                        <TableCell align="right">GC Pause (ms)</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {[...chartData].reverse().map((row, idx) => (
+                        <TableRow key={idx} hover>
+                          <TableCell>{row.timeFormatted}</TableCell>
+                          <TableCell align="right">{row.reqRate?.toFixed(2) || 0}</TableCell>
+                          <TableCell align="right">{row.latAvg?.toFixed(2) || 0}</TableCell>
+                          <TableCell align="right">{row.latP50?.toFixed(2) || 0}</TableCell>
+                          <TableCell align="right">{row.latP99?.toFixed(2) || 0}</TableCell>
+                          <TableCell align="right">{row.errRate?.toFixed(2) || 0}</TableCell>
+                          <TableCell align="right">{row.appErr?.toFixed(2) || 0}</TableCell>
+                          <TableCell align="right">{row.cpuSys?.toFixed(2) || 0}</TableCell>
+                          <TableCell align="right">{row.cpuProc?.toFixed(2) || 0}</TableCell>
+                          <TableCell align="right">{row.memHeap?.toFixed(2) || 0}</TableCell>
+                          <TableCell align="right">{row.gcPause?.toFixed(2) || 0}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </CardContent>
+            </Card>
+          </Stack>
+        )}
+      </Box>
+    </LocalizationProvider>
+  );
+};
+
+export default AdminSystemMonitoringPage;

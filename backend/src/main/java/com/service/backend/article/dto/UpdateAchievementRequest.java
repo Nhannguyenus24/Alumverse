@@ -26,6 +26,9 @@ public class UpdateAchievementRequest {
     @URL
     private String imageUrl;
 
+    @URL
+    private String url;
+
     private String imageBase64;
 
     private LocalDate awardedDate;

@@ -27,10 +27,12 @@ public class JobService {
     private final CacheUtils cacheUtils;
 
     public Mono<JobResponse> create(CreateJobRequest request) {
-        return Mono.zip(SecurityUtils.getCurrentUserId(), SecurityUtils.getCurrentOrganizationId())
+        return Mono.zip(SecurityUtils.getCurrentUserId(), SecurityUtils.getCurrentOrganizationId(), SecurityUtils.getCurrentUserRole())
                 .flatMap(ctx -> {
                     Long userId = ctx.getT1();
                     Integer orgId = ctx.getT2();
+                    String role = ctx.getT3();
+                    boolean publishImmediately = "ADMIN".equalsIgnoreCase(role) || "STAFF".equalsIgnoreCase(role);
                     Job job = Job.builder()
                             .organizationId(orgId)
                             .posterMemberId(userId.intValue())
@@ -41,9 +43,10 @@ public class JobService {
                             .type(JobType.valueOf(request.getType().toUpperCase().replace("-", "_")))
                             .salaryRange(request.getSalaryRange())
                             .howToApply(request.getHowToApply())
+                            .url(request.getUrl())
                             .deadline(request.getDeadline())
                             .isReferral(request.getIsReferral() != null ? request.getIsReferral() : false)
-                            .isActive(true)
+                            .isActive(publishImmediately)
                             .createdAt(LocalDateTime.now())
                             .build();
 
@@ -64,6 +67,7 @@ public class JobService {
                     existing.setType(JobType.valueOf(request.getType().toUpperCase().replace("-", "_")));
                     existing.setSalaryRange(request.getSalaryRange());
                     existing.setHowToApply(request.getHowToApply());
+                    existing.setUrl(request.getUrl());
                     existing.setDeadline(request.getDeadline());
                     existing.setIsReferral(request.getIsReferral() != null ? request.getIsReferral() : false);
                     return jobRepository.save(existing);

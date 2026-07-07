@@ -17,40 +17,33 @@ import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
-import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
-import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
-import EmojiEventsOutlinedIcon from '@mui/icons-material/EmojiEventsOutlined';
-import WorkOutlineOutlinedIcon from '@mui/icons-material/WorkOutlineOutlined';
-import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
+import LinkIcon from '@mui/icons-material/Link';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
 import { useEffect, useState } from 'react';
 import { useOutletContext } from 'react-router';
 import { useSnackbar } from 'notistack';
+import { useTranslation } from 'react-i18next';
 import { useDebounce } from '../../hooks/useDebounce';
 import AdminDataTable from '../../components/admin/AdminDataTable';
 import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
+import AdminStatusChip from '../../components/admin/AdminStatusChip';
 import useAdminArticles from '../../hooks/admin/useAdminArticles';
 import { useAdminSystemContext } from '../../stores/AdminStore';
 import { useOrgNavigate, useOrgPath } from '../../hooks/useOrgNavigate';
 import { formatDateTime } from '../../utils/dateFormatter';
 import apiClient from '../../utils/axios';
-import { deleteArticleByChannel } from '../../utils/articleAdminActions';
-
-const CHANNEL_OPTIONS = [
-  { value: 'all', label: 'Tất cả' },
-  { value: 'news', label: 'Tin tức' },
-  { value: 'alumni', label: 'Cựu sinh viên' },
-  { value: 'achievement', label: 'Kênh thành tựu' },
-  { value: 'job', label: 'Cơ hội việc làm' },
-  { value: 'learning', label: 'Cơ hội học tập' },
-];
-
-const CREATE_CHANNEL_OPTIONS = [
-  { value: 'news', label: 'Tin tức', icon: <ArticleOutlinedIcon fontSize="small" /> },
-  { value: 'alumni', label: 'Cựu sinh viên', icon: <GroupsOutlinedIcon fontSize="small" /> },
-  { value: 'achievement', label: 'Kênh thành tựu', icon: <EmojiEventsOutlinedIcon fontSize="small" /> },
-  { value: 'job', label: 'Cơ hội việc làm', icon: <WorkOutlineOutlinedIcon fontSize="small" /> },
-  { value: 'learning', label: 'Cơ hội học tập', icon: <SchoolOutlinedIcon fontSize="small" /> },
-];
+import {
+  canToggleArticleVisibility,
+  deleteArticleByChannel,
+  getArticleVisibilityState,
+  toggleArticleVisibility,
+} from '../../utils/articleAdminActions';
+import {
+  getAdminArticleChannelLabel,
+  getAdminArticleChannelOptions,
+  getAdminArticleCreateChannelOptions,
+} from '../../constants/adminArticleChannels';
 
 const titleOf = (a) => a.title || a.name || a.position || '-';
 const idOf = (a) => a.id;
@@ -63,10 +56,16 @@ const createdOf = (a) =>
   || a.eventDate
   || a.deadline;
 const channelOf = (a, fallbackChannel) => a.channel || fallbackChannel;
-const channelLabelOf = (value) =>
-  CHANNEL_OPTIONS.find((item) => item.value === value)?.label ?? value ?? '-';
+const visibilityStatusOf = (article) => {
+  const state = getArticleVisibilityState(article);
+  if (state === 'published') return 'PUBLISHED';
+  if (state === 'rejected') return 'REJECTED';
+  if (state === 'hidden') return 'HIDDEN';
+  return 'UNSUPPORTED';
+};
 
 const AdminArticlesPage = () => {
+  const { t } = useTranslation(['admin', 'common']);
   const { setBreadcrumbs } = useOutletContext();
   const navigate = useOrgNavigate();
   const toOrgPath = useOrgPath();
@@ -86,18 +85,20 @@ const AdminArticlesPage = () => {
   const [createAnchorEl, setCreateAnchorEl] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [visibilityBusyId, setVisibilityBusyId] = useState(null);
   const debouncedSearch = useDebounce(searchTerm, 500);
+  const channelOptions = getAdminArticleChannelOptions(t);
+  const createChannelOptions = getAdminArticleCreateChannelOptions(t);
 
   useEffect(() => {
-    // Bỏ qua nếu giá trị không thay đổi (tránh double API call khi đổi channel)
     if (debouncedSearch === backendSearch) return;
     setBackendSearch(debouncedSearch);
-    setPage(0); // reset về trang đầu khi keyword thay đổi
+    setPage(0);
   }, [debouncedSearch, backendSearch, setBackendSearch, setPage]);
 
   useEffect(() => {
-    setBreadcrumbs?.([{ label: 'Bài viết', active: true }]);
-  }, [setBreadcrumbs]);
+    setBreadcrumbs?.([{ label: t('admin:articles'), active: true }]);
+  }, [setBreadcrumbs, t]);
 
   const openInNewTab = (path) => {
     window.open(toOrgPath(path), '_blank', 'noopener,noreferrer');
@@ -114,11 +115,11 @@ const AdminArticlesPage = () => {
     setDeleting(true);
     try {
       await deleteArticleByChannel(apiClient, deleteTarget);
-      enqueueSnackbar('Đã xóa bài viết.', { variant: 'success' });
+      enqueueSnackbar(t('admin:article_delete_success'), { variant: 'success' });
       setDeleteTarget(null);
       refresh();
     } catch (error) {
-      enqueueSnackbar(error?.response?.data?.message || 'Không thể xóa bài viết.', { variant: 'error' });
+      enqueueSnackbar(error?.response?.data?.message || t('admin:article_delete_failed'), { variant: 'error' });
     } finally {
       setDeleting(false);
     }
@@ -126,6 +127,23 @@ const AdminArticlesPage = () => {
   const handleCreateArticle = (itemChannel) => {
     setCreateAnchorEl(null);
     navigate(`/post/${itemChannel}`);
+  };
+  const handleToggleVisibility = async (article) => {
+    if (!canToggleArticleVisibility(article)) return;
+    const busyId = `${channelOf(article, channel)}-${idOf(article)}`;
+    setVisibilityBusyId(busyId);
+    try {
+      await toggleArticleVisibility(apiClient, { ...article, channel: channelOf(article, channel) });
+      const messageKey = getArticleVisibilityState(article) === 'published'
+        ? 'admin:article_unpublish_success'
+        : 'admin:article_publish_success';
+      enqueueSnackbar(t(messageKey), { variant: 'success' });
+      refresh();
+    } catch (error) {
+      enqueueSnackbar(error?.response?.data?.message || t('admin:article_visibility_update_failed'), { variant: 'error' });
+    } finally {
+      setVisibilityBusyId(null);
+    }
   };
 
   return (
@@ -142,14 +160,14 @@ const AdminArticlesPage = () => {
       >
         <Box>
           <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>
-            Quản lý bài viết
+            {t('admin:article_management_title')}
           </Typography>
           <Typography
             variant="body2"
             color="text.secondary"
             sx={{ mt: 0.5, fontWeight: 500 }}
           >
-            Quản lý 5 kênh: Tin tức, Cựu sinh viên, Kênh thành tựu, Cơ hội học tập và Cơ hội việc làm. Sự kiện và Quyên góp có tab riêng để xử lý.
+            {t('admin:article_management_desc')}
           </Typography>
         </Box>
         <Button
@@ -158,7 +176,7 @@ const AdminArticlesPage = () => {
           onClick={(event) => setCreateAnchorEl(event.currentTarget)}
           sx={{ textTransform: 'none', fontWeight: 700 }}
         >
-          Tạo bài viết
+          {t('admin:create_article')}
         </Button>
         <Menu
           anchorEl={createAnchorEl}
@@ -167,7 +185,7 @@ const AdminArticlesPage = () => {
           anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
           transformOrigin={{ vertical: 'top', horizontal: 'right' }}
         >
-          {CREATE_CHANNEL_OPTIONS.map((item) => (
+          {createChannelOptions.map((item) => (
             <MenuItem key={item.value} onClick={() => handleCreateArticle(item.value)}>
               <ListItemIcon>{item.icon}</ListItemIcon>
               <ListItemText>{item.label}</ListItemText>
@@ -184,7 +202,7 @@ const AdminArticlesPage = () => {
             { id: "id", label: "ID", render: (_, a) => idOf(a) },
             {
               id: "title",
-              label: 'Tiêu đề',
+              label: t('admin:col_title'),
               render: (_, a) => (
                 <Typography variant="body2" noWrap sx={{ maxWidth: 360 }}>
                   {titleOf(a)}
@@ -193,42 +211,80 @@ const AdminArticlesPage = () => {
             },
             {
               id: "channel",
-              label: "Loại",
+              label: t('admin:col_channel_type'),
               render: (value, a) => (
                 <Chip
                   size="small"
                   color="primary"
                   variant="outlined"
-                  label={channelLabelOf(value || channelOf(a, channel))}
+                  label={getAdminArticleChannelLabel(t, value || channelOf(a, channel))}
                   sx={{ fontWeight: 700 }}
                 />
               ),
             },
             {
               id: "createdAt",
-              label: 'Ngày tạo',
+              label: t('admin:col_created_at'),
               render: (_, a) => formatDateTime(createdOf(a)),
             },
             {
+              id: "visibility",
+              label: t('admin:col_status'),
+              render: (_, a) => (
+                <AdminStatusChip
+                  status={visibilityStatusOf(a)}
+                  category="article"
+                  variant={getArticleVisibilityState(a) === 'published' ? 'filled' : 'outlined'}
+                />
+              ),
+            },
+            {
               id: "actions",
-              label: 'Thao tác',
+              label: t('admin:col_actions'),
               align: "right",
               render: (_, a) => (
                 <Box
                   sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <Tooltip title="Xem trang công khai">
+                  <Tooltip title={t('admin:view_public_page')}>
                     <IconButton size="small" sx={{ color: 'primary.main' }} onClick={() => openView(a)}>
                       <VisibilityOutlinedIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
-                  <Tooltip title="Chỉnh sửa">
+                  {(a.url || a.linkUrl) && (
+                    <Tooltip title={t('admin:view_original_link')}>
+                      <IconButton
+                        size="small"
+                        sx={{ color: 'info.main' }}
+                        onClick={() => window.open(a.url || a.linkUrl, '_blank', 'noopener,noreferrer')}
+                      >
+                        <LinkIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  )}
+                  <Tooltip title={t('admin:tooltip_edit')}>
                     <IconButton size="small" sx={{ color: 'secondary.main' }} onClick={() => openEdit(a)}>
                       <EditOutlinedIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
-                  <Tooltip title="Xóa">
+                  {canToggleArticleVisibility(a) && (
+                    <Tooltip title={getArticleVisibilityState(a) === 'published' ? t('admin:tooltip_unpublish_article') : t('admin:tooltip_publish_article')}>
+                      <span>
+                        <IconButton
+                          size="small"
+                          sx={{ color: getArticleVisibilityState(a) === 'published' ? 'warning.main' : 'success.main' }}
+                          disabled={visibilityBusyId === `${channelOf(a, channel)}-${idOf(a)}`}
+                          onClick={() => handleToggleVisibility(a)}
+                        >
+                          {getArticleVisibilityState(a) === 'published'
+                            ? <CancelOutlinedIcon fontSize="small" />
+                            : <CheckCircleOutlineIcon fontSize="small" />}
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+                  )}
+                  <Tooltip title={t('admin:tooltip_delete')}>
                     <IconButton size="small" sx={{ color: 'error.main' }} onClick={() => openDeleteDialog(a)}>
                       <DeleteOutlineIcon fontSize="small" />
                     </IconButton>
@@ -252,14 +308,14 @@ const AdminArticlesPage = () => {
             setPage(0);
           }}
           searchValue={searchTerm}
-          searchPlaceholder="Tìm kiếm tiêu đề..."
+          searchPlaceholder={t('admin:search_title_placeholder')}
           onRowClick={(a) => openEdit(a)}
           filters={
             <Stack direction="row" spacing={1} alignItems="center">
               <TextField
                 select
                 size="small"
-                label="Kênh"
+                label={t('admin:channel_label')}
                 value={channel}
                 onChange={(e) => {
                   setChannel(e.target.value);
@@ -268,7 +324,7 @@ const AdminArticlesPage = () => {
                 }}
                 sx={{ minWidth: 220 }}
               >
-                {CHANNEL_OPTIONS.map((opt) => (
+                {channelOptions.map((opt) => (
                   <MenuItem key={opt.value} value={opt.value}>
                     {opt.label}
                   </MenuItem>
@@ -277,13 +333,13 @@ const AdminArticlesPage = () => {
               <TextField
                 select
                 size="small"
-                label="Sắp xếp"
+                label={t('admin:filter_sort_label')}
                 value={sortOrder}
                 onChange={(e) => setSortOrder(e.target.value)}
                 sx={{ minWidth: 150 }}
               >
-                <MenuItem value="DESC">Mới nhất</MenuItem>
-                <MenuItem value="ASC">Cũ nhất</MenuItem>
+                <MenuItem value="DESC">{t('admin:sort_newest')}</MenuItem>
+                <MenuItem value="ASC">{t('admin:sort_oldest')}</MenuItem>
               </TextField>
             </Stack>
           }
@@ -291,12 +347,12 @@ const AdminArticlesPage = () => {
       )}
       <AdminConfirmDeleteDialog
         open={Boolean(deleteTarget)}
-        title="Xóa bài viết"
-        description={`Bạn có chắc muốn xóa bài viết "${titleOf(deleteTarget ?? {})}"? Hành động này không thể hoàn tác.`}
+        title={t('admin:article_delete_title')}
+        description={t('admin:article_delete_desc', { title: titleOf(deleteTarget ?? {}) })}
         onClose={closeDeleteDialog}
         onConfirm={handleConfirmDelete}
         loading={deleting}
-        confirmLabel="Xóa"
+        confirmLabel={t('admin:delete')}
         titleColor="error.main"
         confirmColor="error"
       />

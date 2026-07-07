@@ -6,7 +6,9 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/app_toast.dart';
+import '../../../../shared/widgets/empty_view.dart';
 import '../../../../shared/widgets/error_view.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../data/repositories/event_repository.dart';
 import '../providers/event_provider.dart';
 
@@ -171,6 +173,18 @@ class _AdminEventManagePageState extends ConsumerState<AdminEventManagePage>
 
   @override
   Widget build(BuildContext context) {
+    final isStaff = ref.watch(isStaffProvider);
+    if (!isStaff) {
+      return Scaffold(
+        appBar: AppBar(title: Text('event.manage_title'.tr())),
+        body: EmptyView(
+          icon: Icons.lock_outline,
+          title: 'event.checkin_forbidden'.tr(),
+          message: 'event.checkin_forbidden_desc'.tr(),
+        ),
+      );
+    }
+
     final eventAsync = ref.watch(eventDetailProvider(widget.eventId));
     final statsAsync = ref.watch(_eventStatsProvider(widget.eventId));
 

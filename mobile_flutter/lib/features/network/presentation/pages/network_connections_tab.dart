@@ -9,9 +9,10 @@ import '../../../../../shared/widgets/app_toast.dart';
 import '../../../../../shared/widgets/empty_view.dart';
 import '../../../chat/presentation/pages/chat_room_page.dart';
 import '../../data/models/connection.dart';
+import '../../data/models/network_member.dart';
 import '../../data/repositories/network_repository.dart';
 import '../providers/network_provider.dart';
-import '../widgets/connection_card.dart';
+import '../widgets/network_member_card.dart';
 import '../widgets/network_search_bar.dart';
 
 class NetworkConnectionsTab extends ConsumerWidget {
@@ -100,9 +101,9 @@ class NetworkConnectionsTab extends ConsumerWidget {
                       );
                     }
                     final conn = result.items[i];
-                    return ConnectionCard(
-                      connection: conn,
-                      onChat: () => _openChat(context, conn),
+                    return NetworkMemberCard(
+                      member: _memberFromConnection(conn),
+                      onMessage: () => _openChat(context, conn),
                       onViewProfile:
                           () => context.push(
                             '${RouteNames.profile}/${conn.peerMemberId}',
@@ -128,6 +129,16 @@ class NetworkConnectionsTab extends ConsumerWidget {
   /// Open the chat with a connection. Prefer the existing private chat group
   /// (deep-links straight into the room); fall back to the chat list when the
   /// connection has no chat group id yet.
+  NetworkMember _memberFromConnection(Connection conn) {
+    return NetworkMember(
+      userId: conn.peerMemberId,
+      fullName: conn.fullName,
+      program: conn.program,
+      major: conn.major,
+      avatarUrl: conn.avatarUrl,
+    );
+  }
+
   void _openChat(BuildContext context, Connection conn) {
     final groupId = conn.chatGroupId;
     if (groupId == null) {

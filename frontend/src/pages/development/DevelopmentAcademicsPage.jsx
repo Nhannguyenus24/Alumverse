@@ -1,11 +1,9 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { Box, Button, Pagination, Typography } from '@mui/material';
 import { useSnackbar } from 'notistack';
 
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import SchoolIcon from '@mui/icons-material/School';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import WorkIcon from '@mui/icons-material/Work';
 
@@ -21,48 +19,14 @@ import { usePublishedLearning } from '../../hooks/articles/usePublishedLearning'
 import { toCardShape } from '../../hooks/articles/toCardShape';
 import apiClient from '../../utils/axios';
 import { deleteArticleByChannel, getArticleAdminEditPath } from '../../utils/articleAdminActions';
-
-const getSidebar = (t) => [
-  { id: '/development', label: t('dev:title'), icon: <TrendingUpIcon /> },
-  { id: '/development/mentorship', label: t('mentorship:title'), icon: <SchoolIcon /> },
-  { id: '/development/academics', label: t('dev:academics'), icon: <MenuBookIcon /> },
-  { id: '/development/jobs', label: t('dev:jobs'), icon: <WorkIcon /> },
-];
-
-const getFilters = (t) => [
-  {
-    type: 'dropdown',
-    key: 'type',
-    label: t('dev:filter_topic'),
-    multiple: true,
-    options: [t('dev:topic_scholarship'), t('dev:topic_exchange'), t('dev:topic_research'), 'Workshop', t('dev:topic_course')],
-  },
-  {
-    type: 'dropdown',
-    key: 'format',
-    label: t('dev:filter_format'),
-    options: ['Online', 'Offline', 'Hybrid'],
-  },
-  {
-    type: 'dropdown',
-    key: 'location',
-    label: t('dev:filter_location'),
-    multiple: true,
-    options: [t('dev:location_hcm'), t('dev:location_domestic'), t('dev:location_abroad')],
-  },
-  {
-    type: 'date',
-    key: 'date',
-    label: t('dev:filter_deadline'),
-  },
-  {
-    type: 'dropdown',
-    key: 'level',
-    label: t('dev:filter_level'),
-    multiple: true,
-    options: [t('dev:level_bachelor'), t('dev:level_master'), t('dev:level_phd')],
-  },
-];
+import {
+  ARTICLE_FETCH_LIMIT,
+  ARTICLE_PAGE_SIZE,
+  applyArticleFilters,
+  getArticleFilterConfig,
+  paginateArticles,
+} from '../../utils/articleListFilters';
+import { getDevelopmentSidebarItems } from '../../constants/developmentNav';
 
 const DevelopmentAcademicsPage = () => {
   const { t } = useTranslation(['dev', 'mentorship', 'common']);
@@ -72,17 +36,26 @@ const DevelopmentAcademicsPage = () => {
   const { user, isAuthenticated } = useAuth();
   const { canContribute } = useCanContribute();
   const isAdmin = isAuthenticated && user?.role === 'ADMIN';
-  const sidebar = getSidebar(t);
-  const filters = getFilters(t);
+  const sidebar = getDevelopmentSidebarItems(t);
+  const filters = useMemo(() => getArticleFilterConfig(t, ['learning']), [t]);
 
   const [page, setPage] = useState(0);
-  const { resources, pageInfo } = usePublishedLearning(page, 10);
+  const { resources } = usePublishedLearning(0, ARTICLE_FETCH_LIMIT);
 
   const [filterValues, setFilterValues] = useState({ all: true });
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
-  const [featured, ...rest] = resources;
+  const filteredResources = useMemo(
+    () => applyArticleFilters(resources, filterValues),
+    [resources, filterValues],
+  );
+  const { items: pagedResources, pageInfo } = useMemo(
+    () => paginateArticles(filteredResources, page, ARTICLE_PAGE_SIZE),
+    [filteredResources, page],
+  );
+
+  const [featured, ...rest] = pagedResources;
   const featuredCard = featured ? toCardShape(featured) : null;
   const cards = rest.slice(0, 9).map(toCardShape);
 
@@ -127,13 +100,31 @@ const DevelopmentAcademicsPage = () => {
         </Button>
       ) : (
         <ContributeGuardTooltip>
-          <Button variant="contained" disabled={!canContribute} onClick={() => navigate('/post/learning')}>
-            {t('common:create')}
+          <Button
+            variant="contained"
+            disabled={!canContribute}
+            startIcon={<MenuBookIcon />}
+            onClick={() => navigate('/post/learning')}
+          >
+            {t('dev:create_academic_opportunity')}
           </Button>
         </ContributeGuardTooltip>
       )}
-      filters={{ config: filters, value: filterValues, onChange: setFilterValues }}
-      search={{ value: filterValues.search, onChange: (val) => setFilterValues((prev) => ({ ...prev, search: val })) }}
+      filters={{
+        config: filters,
+        value: filterValues,
+        onChange: (next) => {
+          setFilterValues(next);
+          setPage(0);
+        },
+      }}
+      search={{
+        value: filterValues.search,
+        onChange: (val) => {
+          setFilterValues((prev) => ({ ...prev, search: val }));
+          setPage(0);
+        },
+      }}
     >
 
               {/* FEATURED ARTICLE */}

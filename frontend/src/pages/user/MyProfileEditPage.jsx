@@ -23,6 +23,8 @@ import PersonIcon from '@mui/icons-material/Person';
 import EmailIcon from '@mui/icons-material/Email'
 import PhoneIcon from '@mui/icons-material/Phone';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
+import WorkIcon from '@mui/icons-material/Work';
+import LinkIcon from '@mui/icons-material/Link';
 import Avatar from '@mui/material/Avatar';
 
 import Page from '../../components/Page';
@@ -57,7 +59,7 @@ import {
 } from '../../utils/imageUtils';
 import { userSettingsApi } from '../../utils/api';
 import { validateVietnamPhone } from '../../utils/regexUtils';
-import { getMentorProfileTabs, getMenteeProfileTabs } from '../../constants/mentorshipNav';
+import { getBaseProfileTabs, getMentorProfileTabs, getMenteeProfileTabs } from '../../constants/mentorshipNav';
 import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
 import { formatMentorHeadline, resolveProfileRoleLabel } from '../../utils/profileRoleUtils';
@@ -67,8 +69,6 @@ const DEFAULT_COVER =
   'https://ethnasia.com/cdn/shop/articles/sean-o-KMn4VEeEPR8-unsplash_edited.jpg?v=1621585619';
 const MENTORSHIP_COVER =
   'https://info.cognician.com/hubfs/220201%20mentorship-%20desktop.png';
-
-// TOP_TABS is computed inside component using t() — see getTopTabs()
 
 const STATUS_APPROVED = 'APPROVED';
 
@@ -178,7 +178,7 @@ const ProfileItem = ({ label, value, notUpdatedLabel = '—' }) => (
 const UnifiedProfileEditPage = () => {
   const { t } = useTranslation(['mentorship', 'profile']);
   const { enqueueSnackbar } = useSnackbar();
-  const TOP_TABS = [{ label: t('mentorship:profile'), path: '/profile' }];
+  const topTabs = getBaseProfileTabs(t);
   const navigate = useOrgNavigate();
   const location = useLocation();
   const isMentorshipEdit =
@@ -214,6 +214,7 @@ const UnifiedProfileEditPage = () => {
   const [success, setSuccess] = useState(false);
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [linksText, setLinksText] = useState('');
 
   const [editingExpertiseId, setEditingExpertiseId] = useState(null);
   const [draftExpertise, setDraftExpertise] = useState({
@@ -246,6 +247,9 @@ const UnifiedProfileEditPage = () => {
 
       setCoverPreview(m?.coverUrl || (isMentorshipEdit ? MENTORSHIP_COVER : DEFAULT_COVER));
       setCoverFile(null);
+      let parsedLinks = [];
+      try { parsedLinks = p?.links ? JSON.parse(p.links) : []; } catch (e) {}
+      setLinksText(Array.isArray(parsedLinks) ? parsedLinks.join('\n') : '');
       
       const extStr = m?.extendedProfile ?? p?.extendedProfile;
       const ext = parseExtended(extStr);
@@ -353,10 +357,14 @@ const UnifiedProfileEditPage = () => {
       }
       
       // Also update base profile (even if it ignores some fields, we send what we can)
+      const linksArray = linksText.split('\n').map(l => l.trim()).filter(Boolean);
       await updateBaseProfile({
         ...(organizationId ? { organizationId } : {}),
         bio: bio.trim(),
         phone: phone.trim() || undefined,
+        currentJobTitle: currentJobTitle.trim() || undefined,
+        currentCompany: currentCompany.trim() || undefined,
+        links: linksArray.length > 0 ? linksArray : null,
         ...buildPreservedAcademicPayload(orgMemberQuery.data),
       });
 
@@ -366,7 +374,7 @@ const UnifiedProfileEditPage = () => {
       queryClient.invalidateQueries({ queryKey: ['publicProfile'] });
 
       setSuccess(true);
-      setTimeout(() => navigate(isMentorshipEdit ? '/development/mentorship/profile' : '/profile'), 800);
+      setTimeout(() => navigate(isMentorshipEdit ? '/mentorship/profile' : '/profile'), 800);
     } catch (error) {
       enqueueSnackbar(
         error?.response?.data?.message ||
@@ -500,8 +508,8 @@ const UnifiedProfileEditPage = () => {
   );
 
   const tabs = isMentorshipEdit
-    ? (access.hasMentorProfile ? getMentorProfileTabs(t) : (access.hasMenteeProfile ? getMenteeProfileTabs(t) : TOP_TABS))
-    : TOP_TABS;
+    ? (access.hasMentorProfile ? getMentorProfileTabs(t) : (access.hasMenteeProfile ? getMenteeProfileTabs(t) : topTabs))
+    : topTabs;
 
   const renderPersonalSection = () => (
     <Stack spacing={3}>
@@ -521,6 +529,40 @@ const UnifiedProfileEditPage = () => {
         helperText={`${bio.length}/500`}
         FormHelperTextProps={{ sx: { textAlign: 'right', mr: 0 } }}
       />
+      
+      <Typography variant="h5" fontWeight={800} color="primary.main" mb={2} mt={4} display="flex" alignItems="center" gap={1}>
+        <WorkIcon />
+        {t('profile:job_info', { defaultValue: 'Thông tin công việc' })}
+      </Typography>
+      
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+        <TextField
+          label={t('profile:label_title')}
+          value={currentJobTitle}
+          onChange={(e) => setCurrentJobTitle(e.target.value)}
+          fullWidth
+        />
+        <TextField
+          label={t('profile:label_company')}
+          value={currentCompany}
+          onChange={(e) => setCurrentCompany(e.target.value)}
+          fullWidth
+        />
+      </Stack>
+
+      <Typography variant="h5" fontWeight={800} color="primary.main" mb={2} mt={4} display="flex" alignItems="center" gap={1}>
+        <LinkIcon />
+        {t('profile:social_links', { defaultValue: 'Liên kết mạng xã hội' })}
+      </Typography>
+      <TextField
+        fullWidth
+        multiline
+        minRows={3}
+        value={linksText}
+        onChange={(e) => setLinksText(e.target.value)}
+        placeholder={t('profile:links_placeholder', { defaultValue: 'Mỗi link một dòng (VD: https://facebook.com/...)' })}
+      />
+
       <Typography variant="h5" fontWeight={800} color="primary.main" mb={2} mt={4} display="flex" alignItems="center" gap={1}>
         <EmailIcon />
         {t('profile:email')}
@@ -561,10 +603,10 @@ const UnifiedProfileEditPage = () => {
               </Typography>
             </Alert>
             <Stack direction="row" spacing={1.5}>
-              <Button variant="outlined" onClick={() => navigate('/development/mentorship/profile')}>
+              <Button variant="outlined" onClick={() => navigate('/mentorship/profile')}>
                 {t('profile:back_to_profile_btn')}
               </Button>
-              <Button variant="contained" onClick={() => navigate('/development/mentorship/signup')}>
+              <Button variant="contained" onClick={() => navigate('/mentorship/signup')}>
                 {t('profile:reopen_signup_btn')}
               </Button>
             </Stack>
@@ -592,22 +634,6 @@ const UnifiedProfileEditPage = () => {
           {t('profile:section_public_profile')}
         </SectionTitle>
         <Stack spacing={2}>
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
-            <TextField
-              label={t('profile:label_title')}
-              value={currentJobTitle}
-              onChange={(e) => setCurrentJobTitle(e.target.value)}
-              fullWidth
-              size="small"
-            />
-            <TextField
-              label={t('profile:label_company')}
-              value={currentCompany}
-              onChange={(e) => setCurrentCompany(e.target.value)}
-              fullWidth
-              size="small"
-            />
-          </Stack>
           <TextField
             label={t('profile:mentor_public_bio_label', { defaultValue: 'Giới thiệu cố vấn' })}
             value={mentorBio}
@@ -938,7 +964,7 @@ const UnifiedProfileEditPage = () => {
               <Button
                 variant="outlined"
                 color="inherit"
-                onClick={() => navigate(isMentorshipEdit ? '/development/mentorship/profile' : '/profile')}
+                onClick={() => navigate(isMentorshipEdit ? '/mentorship/profile' : '/profile')}
                 disabled={saving}
               >
                 {t('profile:cancel_btn')}

@@ -27,10 +27,12 @@ public class NewsService {
     private final CacheUtils cacheUtils;
 
     public Mono<NewsResponse> create(CreateNewsRequest request) {
-        return Mono.zip(SecurityUtils.getCurrentUserId(), SecurityUtils.getCurrentOrganizationId())
+        return Mono.zip(SecurityUtils.getCurrentUserId(), SecurityUtils.getCurrentOrganizationId(), SecurityUtils.getCurrentUserRole())
                 .flatMap(ctx -> {
                     Long userId = ctx.getT1();
                     Integer orgId = ctx.getT2();
+                    String role = ctx.getT3();
+                    boolean publishImmediately = "ADMIN".equalsIgnoreCase(role) || "STAFF".equalsIgnoreCase(role);
                     return imageService.uploadBase64IfPresent(request.getThumbnailBase64())
                             .defaultIfEmpty(request.getThumbnailUrl() == null ? "" : request.getThumbnailUrl())
                             .flatMap(thumbnailUrl -> {
@@ -43,7 +45,7 @@ public class NewsService {
                                         .thumbnailUrl(thumbnailUrl.isEmpty() ? null : thumbnailUrl)
                                         .topic(request.getTopic())
                                         .url(request.getUrl())
-                                        .isHidden(true)
+                                        .isHidden(!publishImmediately)
                                         .publishedAt(LocalDateTime.now())
                                         .build();
 

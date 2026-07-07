@@ -148,7 +148,6 @@ public class MentorService {
                             if (request.getCurrentJobTitle() != null) existing.setCurrentJobTitle(request.getCurrentJobTitle());
                             if (request.getCurrentCompany() != null) existing.setCurrentCompany(request.getCurrentCompany());
                             if (request.getBio() != null) existing.setBio(request.getBio());
-                            if (request.getCoverUrl() != null) existing.setCoverUrl(request.getCoverUrl());
                             if (request.getDefaultMeetingLink() != null) existing.setDefaultMeetingLink(request.getDefaultMeetingLink());
                             if (request.getBookingWindowSettings() != null) existing.setBookingWindowSettings(request.getBookingWindowSettings());
                             if (request.getExtendedProfile() != null) existing.setExtendedProfile(request.getExtendedProfile());
@@ -172,7 +171,6 @@ public class MentorService {
                                     .ratingAvg(java.math.BigDecimal.ZERO)
                                     .totalSessions(0)
                                     .status(targetStatus)
-                                    .coverUrl(request.getCoverUrl())
                                     .defaultMeetingLink(request.getDefaultMeetingLink())
                                     .bookingWindowSettings(request.getBookingWindowSettings())
                                     .extendedProfile(request.getExtendedProfile())
@@ -199,7 +197,6 @@ public class MentorService {
                             if (request.getCurrentJobTitle() != null) existing.setCurrentJobTitle(request.getCurrentJobTitle());
                             if (request.getCurrentCompany() != null) existing.setCurrentCompany(request.getCurrentCompany());
                             if (request.getBio() != null) existing.setBio(request.getBio());
-                            if (request.getCoverUrl() != null) existing.setCoverUrl(request.getCoverUrl());
                             if (request.getDefaultMeetingLink() != null) existing.setDefaultMeetingLink(request.getDefaultMeetingLink());
                             if (request.getBookingWindowSettings() != null) existing.setBookingWindowSettings(request.getBookingWindowSettings());
                             if (request.getExtendedProfile() != null) existing.setExtendedProfile(request.getExtendedProfile());
@@ -409,7 +406,7 @@ public class MentorService {
                                                 session.getMenteeMemberId(),
                                                 "Lịch hẹn bị hủy",
                                                 "Cố vấn đã hủy một buổi hẹn với bạn. Bạn có thể chọn một cố vấn hoặc khung giờ khác phù hợp hơn.",
-                                                "/development/mentorship/my-bookings"))
+                                                "/mentorship/my-bookings"))
                                         .then(sessionRepository.findById(sessionId));
                                     });
                         })
@@ -465,7 +462,7 @@ public class MentorService {
                                                         session.getMenteeMemberId(),
                                                         "Cố vấn đề nghị dời lịch hẹn",
                                                         "Cố vấn đề xuất một khung giờ mới cho buổi hẹn. Vui lòng xem và phản hồi đồng ý hoặc từ chối.",
-                                                        "/development/mentorship/my-bookings"))
+                                                        "/mentorship/my-bookings"))
                                                 .then(sessionRepository.findById(sessionId));
                                     });
                         })
@@ -490,7 +487,7 @@ public class MentorService {
                                                     session.getMenteeMemberId(),
                                                     "Buổi cố vấn đã hoàn tất",
                                                     "Buổi cố vấn của bạn đã hoàn thành. Hãy dành chút thời gian để lại đánh giá cho cố vấn nhé!",
-                                                    "/development/mentorship/my-bookings");
+                                                    "/mentorship/my-bookings");
                                         }
                                     })
                                     .then(sessionRepository.findById(sessionId));
@@ -519,7 +516,7 @@ public class MentorService {
                                                     session.getMenteeMemberId(),
                                                     "Đã có link tham gia buổi mentoring",
                                                     "Cố vấn đã thêm link tham gia cho buổi hẹn của bạn. Hãy kiểm tra chi tiết buổi hẹn.",
-                                                    "/development/mentorship/my-bookings"))
+                                                    "/mentorship/my-bookings"))
                                             .then(sessionRepository.findById(sessionId));
                                 }))
                         .flatMap(this::enrich));

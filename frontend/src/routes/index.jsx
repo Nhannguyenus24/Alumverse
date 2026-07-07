@@ -1,5 +1,5 @@
 import { Suspense, lazy } from "react";
-import { createBrowserRouter, Navigate, Outlet } from "react-router";
+import { createBrowserRouter, Navigate, Outlet, useLocation } from "react-router";
 import { Box, CircularProgress } from "@mui/material";
 import MainLayout from "../layouts/MainLayout";
 import AuthLayout from "../layouts/AuthLayout";
@@ -135,6 +135,9 @@ const AdminMentorshipPage = Loadable(
 const AdminArticlesPage = Loadable(
   lazy(() => import("../pages/admin/AdminArticlesPage")),
 );
+const AdminArticleRequestsPage = Loadable(
+  lazy(() => import("../pages/admin/AdminArticleRequestsPage")),
+);
 const AdminEditArticlePage = Loadable(
   lazy(() => import("../pages/admin/AdminEditArticlePage")),
 );
@@ -143,6 +146,9 @@ const AdminFundraisingsPage = Loadable(
 );
 const AdminFundReceivingInfosPage = Loadable(
   lazy(() => import("../pages/admin/AdminFundReceivingInfosPage")),
+);
+const AdminSystemMonitoringPage = Loadable(
+  lazy(() => import("../pages/admin/AdminSystemMonitoringPage")),
 );
 const AdminAuditLogsPage = Loadable(
   lazy(() => import("../pages/admin/AdminAuditLogsPage")),
@@ -237,6 +243,82 @@ const MentorshipSignupPage = Loadable(
 const MenteeSignupPage = Loadable(
   lazy(() => import("../pages/mentorship/MenteeSignupPage")),
 );
+
+const MentorshipLegacyRedirect = () => {
+  const location = useLocation();
+  const nextPath = location.pathname.replace(/\/development\/mentorship(?=\/|$)/, "/mentorship");
+
+  return <Navigate to={`${nextPath}${location.search}${location.hash}`} replace />;
+};
+
+const mentorshipRouteChildren = [
+  {
+    index: true,
+    element: <MentorshipPage />,
+    handle: { hideFooter: true },
+  },
+  {
+    path: "browse",
+    element: <Navigate to=".." replace />,
+  },
+  {
+    path: "dashboard",
+    element: <MentorshipDashboardPage />,
+  },
+  {
+    path: "profile",
+    children: [
+      {
+        index: true,
+        element: <MyProfilePage />,
+      },
+      {
+        path: "edit",
+        element: <MyProfileEditPage />,
+      },
+    ],
+  },
+  {
+    path: "calendar",
+    element: <MentorshipYourCalendarPage />,
+  },
+  {
+    path: "mentors/:mentorId",
+    element: <MyProfilePage />,
+  },
+  {
+    path: "mentors/:mentorId/book",
+    element: (
+      <MentorshipBookingGate>
+        <MentorshipBookingPage />
+      </MentorshipBookingGate>
+    ),
+  },
+  {
+    path: "my-bookings",
+    element: (
+      <MentorshipFullAccessGate>
+        <MentorshipMyBookingsPage />
+      </MentorshipFullAccessGate>
+    ),
+  },
+  {
+    path: "signup",
+    element: (
+      <MentorshipFullAccessGate>
+        <MentorshipSignupPage />
+      </MentorshipFullAccessGate>
+    ),
+  },
+  {
+    path: "mentee-signup",
+    element: (
+      <MentorshipFullAccessGate>
+        <MenteeSignupPage />
+      </MentorshipFullAccessGate>
+    ),
+  },
+];
 
 // User pages
 const PostArticlePage = Loadable(
@@ -374,11 +456,7 @@ export const router = createBrowserRouter([
       },
       {
         path: "events",
-        element: (
-          <ProtectedRoute>
-            <ActivitiesEventsPage />
-          </ProtectedRoute>
-        ),
+        element: <ActivitiesEventsPage />,
       },
       {
         path: "news",
@@ -394,11 +472,7 @@ export const router = createBrowserRouter([
       },
       {
         path: "network",
-        element: (
-          <ProtectedRoute>
-            <Outlet />
-          </ProtectedRoute>
-        ),
+        element: <Outlet />,
         children: [
           {
             index: true,
@@ -406,15 +480,27 @@ export const router = createBrowserRouter([
           },
           {
             path: "requests",
-            element: <NetworkIncomingRequestsPage />,
+            element: (
+              <ProtectedRoute>
+                <NetworkIncomingRequestsPage />
+              </ProtectedRoute>
+            ),
           },
           {
             path: "connections",
-            element: <NetworkConnectionsPage />,
+            element: (
+              <ProtectedRoute>
+                <NetworkConnectionsPage />
+              </ProtectedRoute>
+            ),
           },
           {
             path: "restricted-connections",
-            element: <NetworkRestrictedConnectionsPage />,
+            element: (
+              <ProtectedRoute>
+                <NetworkRestrictedConnectionsPage />
+              </ProtectedRoute>
+            ),
           },
         ],
       },
@@ -580,81 +666,22 @@ export const router = createBrowserRouter([
             element: <DevelopmentAcademicsPage />,
           },
           {
+            path: "academic",
+            element: <Navigate to="../academics" replace />,
+          },
+          {
             path: "jobs",
             element: <DevelopmentJobsPage />,
           },
           {
-            path: "mentorship",
-            children: [
-              {
-                index: true,
-                element: <MentorshipPage />,
-                handle: { hideFooter: true },
-              },
-              {
-                path: "browse",
-                element: <Navigate to=".." replace />,
-              },
-              {
-                path: "dashboard",
-                element: <MentorshipDashboardPage />,
-              },
-              {
-                path: "profile",
-                children: [
-                  {
-                    index: true,
-                    element: <MyProfilePage />,
-                  },
-                  {
-                    path: "edit",
-                    element: <MyProfileEditPage />,
-                  },
-                ],
-              },
-              {
-                path: "calendar",
-                element: <MentorshipYourCalendarPage />,
-              },
-              {
-                path: "mentors/:mentorId",
-                element: <MyProfilePage />,
-              },
-              {
-                path: "mentors/:mentorId/book",
-                element: (
-                  <MentorshipBookingGate>
-                    <MentorshipBookingPage />
-                  </MentorshipBookingGate>
-                ),
-              },
-              {
-                path: "my-bookings",
-                element: (
-                  <MentorshipFullAccessGate>
-                    <MentorshipMyBookingsPage />
-                  </MentorshipFullAccessGate>
-                ),
-              },
-              {
-                path: "signup",
-                element: (
-                  <MentorshipFullAccessGate>
-                    <MentorshipSignupPage />
-                  </MentorshipFullAccessGate>
-                ),
-              },
-              {
-                path: "mentee-signup",
-                element: (
-                  <MentorshipFullAccessGate>
-                    <MenteeSignupPage />
-                  </MentorshipFullAccessGate>
-                ),
-              },
-            ],
+            path: "mentorship/*",
+            element: <MentorshipLegacyRedirect />,
           },
         ],
+      },
+      {
+        path: "mentorship",
+        children: mentorshipRouteChildren,
       },
       {
         path: "admin",
@@ -741,6 +768,14 @@ export const router = createBrowserRouter([
             ),
           },
           {
+            path: "monitoring",
+            element: (
+              <ProtectedRoute allowedRoles={["ADMIN"]}>
+                <AdminSystemMonitoringPage />
+              </ProtectedRoute>
+            ),
+          },
+          {
             path: "events/:eventId/organize",
             element: (
               <ProtectedRoute allowedRoles={["ADMIN", "STAFF"]}>
@@ -805,6 +840,18 @@ export const router = createBrowserRouter([
             ),
           },
           {
+            path: "submissions",
+            element: (
+              <ProtectedRoute allowedRoles={["ADMIN", "STAFF", "MODERATOR"]}>
+                <AdminArticleRequestsPage />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: "article-requests",
+            element: <Navigate to="../submissions" replace />,
+          },
+          {
             path: "article/:channel/:id/edit",
             element: (
               <ProtectedRoute allowedRoles={["ADMIN", "STAFF", "MODERATOR"]}>
@@ -848,7 +895,7 @@ export const router = createBrowserRouter([
           {
             path: ":id/edit",
             element: (
-              <ProtectedRoute allowedRoles={["ADMIN"]}>
+              <ProtectedRoute allowedRoles={["ADMIN", "STAFF"]}>
                 <EditDonationPage />
               </ProtectedRoute>
             ),
@@ -1020,6 +1067,14 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        path: "monitoring",
+        element: (
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminSystemMonitoringPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
         path: "events/:eventId/organize",
         element: (
           <ProtectedRoute allowedRoles={["ADMIN"]}>
@@ -1082,6 +1137,18 @@ export const router = createBrowserRouter([
             <AdminArticlesPage />
           </ProtectedRoute>
         ),
+      },
+      {
+        path: "submissions",
+        element: (
+          <ProtectedRoute allowedRoles={["ADMIN", "MODERATOR"]}>
+            <AdminArticleRequestsPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "article-requests",
+        element: <Navigate to="../submissions" replace />,
       },
       {
         path: "article/:channel/:id/edit",

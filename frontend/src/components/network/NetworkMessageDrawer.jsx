@@ -26,6 +26,8 @@ import {
   resolveConnectionDrawerState,
 } from '../../utils/networkConnectionDrawerUi';
 import { buildProgramMajorRows } from '../../utils/academicUtils';
+import { CONVERSATION_REQUEST_STATUS } from '../../constants/conversationRequestStatus';
+import { exceedsLengthLimit, MAX_MESSAGE_LENGTH } from '../../utils/messageContent';
 
 import ChatAvatar from '../ChatAvatar';
 
@@ -93,13 +95,16 @@ const NetworkMessageDrawer = ({
   const [draft, setDraft] = useState('');
   const [sentInSession, setSentInSession] = useState(false);
   const [localMessages, setLocalMessages] = useState([]);
+  const [statusOverride, setStatusOverride] = useState(null);
 
   const peerUserId = peer?.userId ?? null;
   const currentMemberId = useNetworkCurrentMemberId();
   const { canContribute } = useCanContribute();
   const { sendMessage, isSending } = useNetworkConversationActions(peerUserId);
 
-  const drawerState = resolveConnectionDrawerState(connectionStatus, t);
+  const drawerState = resolveConnectionDrawerState(statusOverride ?? connectionStatus, t);
+  const charCount = draft.length;
+  const atLengthLimit = charCount >= MAX_MESSAGE_LENGTH;
   const composerEnabled = canContribute && isComposerEnabled({
     canCompose: drawerState.canCompose,
     singleMessageOnly: drawerState.singleMessageOnly,
@@ -113,6 +118,7 @@ const NetworkMessageDrawer = ({
         setDraft('');
         setSentInSession(false);
         setLocalMessages([]);
+        setStatusOverride(null);
       }, 0);
       return () => clearTimeout(timer);
     }
@@ -124,7 +130,7 @@ const NetworkMessageDrawer = ({
 
   const handleSend = () => {
     const text = draft.trim();
-    if (!text || !composerEnabled) return;
+    if (!text || !composerEnabled || exceedsLengthLimit(text)) return;
 
     sendMessage(text, {
       onSuccess: () => {
@@ -139,6 +145,11 @@ const NetworkMessageDrawer = ({
         setDraft('');
         if (drawerState.singleMessageOnly) {
           setSentInSession(true);
+          setStatusOverride({
+            status: CONVERSATION_REQUEST_STATUS.PENDING,
+            cooldownUntil: null,
+            latestMessage: null,
+          });
         }
       },
     });
@@ -161,8 +172,19 @@ const NetworkMessageDrawer = ({
         sx: {
           width: { xs: '100%', sm: 420, md: 440 },
           maxWidth: '100%',
+          // Full screen on mobile; a ~2/3-height panel on larger screens docked
+          // to the bottom (LinkedIn-style) — flush with the bottom edge, gap
+          // only at the top — and nudged in from the right edge.
+          height: { xs: '100%', sm: '66vh' },
+          maxHeight: '100%',
+          top: { xs: 0, sm: 'auto' },
+          bottom: 0,
+          right: { xs: 0, sm: '8vw' },
+          borderRadius: { xs: 0, sm: '12px 12px 0 0' },
+          boxShadow: (theme) => theme.shadows[16],
           display: 'flex',
           flexDirection: 'column',
+          overflow: 'hidden',
         },
       }}
     >
@@ -277,6 +299,24 @@ const NetworkMessageDrawer = ({
           disabled={!composerEnabled || isSending}
           variant="outlined"
           size="small"
+          inputProps={{ maxLength: MAX_MESSAGE_LENGTH }}
+          sx={{
+            ...(atLengthLimit && {
+              '& .MuiOutlinedInput-root': {
+                '& fieldset': { borderColor: 'primary.main' },
+                '&:hover fieldset': { borderColor: 'primary.main' },
+                '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+              },
+            }),
+          }}
+          helperText={
+            charCount > MAX_MESSAGE_LENGTH * 0.8
+              ? `${t('network:chat.char_count', { count: charCount, max: MAX_MESSAGE_LENGTH })} · ${t('network:chat.char_count_hint')}`
+              : undefined
+          }
+          FormHelperTextProps={{
+            sx: { color: atLengthLimit ? 'primary.main' : 'text.secondary' },
+          }}
         />
         <IconButton
           color="primary"

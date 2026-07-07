@@ -51,6 +51,7 @@ import AcademicInfoSection from '../../components/profile/AcademicInfoSection';
 import PersonalInfoRow from '../../components/profile/PersonalInfoRow';
 import ProfileSectionTitle from '../../components/profile/ProfileSectionTitle';
 import ExtendedProfileInfoCard from '../../components/profile/ExtendedProfileInfoCard'
+import SocialLinksRenderer from '../../components/profile/SocialLinksRenderer';
 
 import { getMentorProfileTabs, getMenteeProfileTabs } from '../../constants/mentorshipNav';
 import { useTranslation } from 'react-i18next';
@@ -419,6 +420,7 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
                 {personalFields.map((field, index) => (
                   <PersonalInfoRow key={index} icon={field.icon} label={field.label} value={field.value} />
                 ))}
+                <SocialLinksRenderer linksRaw={profile?.links} />
               </Box>
             </Box>
           </Grid>
@@ -445,10 +447,10 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
               </Typography>
             </Alert>
             <Stack direction="row" spacing={2} flexWrap="wrap">
-              <Button variant="contained" size="large" sx={{ borderRadius: 2 }} onClick={() => navigate('/development/mentorship/mentee-signup')}>
+              <Button variant="contained" size="large" sx={{ borderRadius: 2 }} onClick={() => navigate('/mentorship/mentee-signup')}>
                 {t('profile:find_mentor_btn')}
               </Button>
-              <Button variant="outlined" size="large" sx={{ borderRadius: 2 }} onClick={() => navigate('/development/mentorship/signup')}>
+              <Button variant="outlined" size="large" sx={{ borderRadius: 2 }} onClick={() => navigate('/mentorship/signup')}>
                 {t('profile:become_mentor_btn')}
               </Button>
             </Stack>
@@ -634,7 +636,7 @@ const PublicMentorProfile = ({ mentorMemberId, navigate }) => {
 
   useEffect(() => {
     if (isOwnProfile) {
-      navigate('/development/mentorship/profile', { replace: true });
+      navigate('/mentorship/profile', { replace: true });
     }
   }, [isOwnProfile, navigate]);
 

@@ -1,5 +1,6 @@
 import React from 'react';
 import Chip from '@mui/material/Chip';
+import { useTranslation } from 'react-i18next';
 import { resolveAdminStatusChip } from '../../constants/adminStatusDisplay';
 
 const AdminStatusChip = ({
@@ -11,7 +12,8 @@ const AdminStatusChip = ({
   sx,
   ...chipProps
 }) => {
-  const { label, color } = resolveAdminStatusChip(status, category);
+  const { t } = useTranslation('admin');
+  const { label, color } = resolveAdminStatusChip(status, category, t);
 
   return (
     <Chip
@@ -23,7 +25,7 @@ const AdminStatusChip = ({
       sx={[
         {
           fontWeight: 700,
-          textTransform: 'capitalize',
+          textTransform: 'none',
           letterSpacing: 0.02,
           px: 0.5,
           height: 'auto',

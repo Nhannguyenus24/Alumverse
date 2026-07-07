@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useLocation } from "react-router";
 import { Box, Button, Chip, Grid, LinearProgress, Typography } from "@mui/material";
 import ConnectWithoutContactOutlinedIcon from "@mui/icons-material/ConnectWithoutContactOutlined";
+import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import dayjs from "dayjs";
 import { useTranslation } from "react-i18next";
 import NetworkMessageDrawer from "../network/NetworkMessageDrawer";
@@ -55,21 +56,21 @@ export default function DonationFundInfoPanel({ fundDetail }) {
 
   return (
     <Box sx={{ p: { xs: 0, md: 1 }, height: "100%", display: "flex", flexDirection: "column" }}>
-      <Typography sx={{ color: "#113f86", fontWeight: 800, fontSize: { xs: "1.2rem", md: "1.3rem" }, mb: 1.2 }}>
+      <Typography sx={{ color: "primary.main", fontWeight: 800, fontSize: { xs: "1.2rem", md: "1.3rem" }, mb: 1.2 }}>
         {t("fund_info")}
       </Typography>
-      <Typography sx={{ mt: 1.2, color: "#42618c", fontSize: "0.98rem", fontWeight: 600 }}>
+      <Typography sx={{ mt: 1.2, color: "text.secondary", fontSize: "0.98rem", fontWeight: 600 }}>
         {t("manager_label")}:{" "}
-        <Box component="span" sx={{ color: "#16335f", fontWeight: 700 }}>
+        <Box component="span" sx={{ color: "text.primary", fontWeight: 700 }}>
           {fundDetail?.managerName || "--"}
         </Box>
       </Typography>
 
       {/* Email + nút Kết nối / chip "bạn là manager" */}
       <Box sx={{ mt: 1.2, display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
-        <Typography sx={{ color: "#42618c", fontSize: "0.98rem", fontWeight: 600 }}>
+        <Typography sx={{ color: "text.secondary", fontSize: "0.98rem", fontWeight: 600 }}>
           {t("manager_email_label")}:{" "}
-          <Box component="span" sx={{ color: "#16335f", fontWeight: 700 }}>
+          <Box component="span" sx={{ color: "text.primary", fontWeight: 700 }}>
             {fundDetail?.managerEmail || "--"}
           </Box>
         </Typography>
@@ -95,43 +96,73 @@ export default function DonationFundInfoPanel({ fundDetail }) {
         )}
       </Box>
 
-      <Typography sx={{ mt: 1.2, color: "#42618c", fontSize: "0.98rem", fontWeight: 600 }}>
+      <Typography sx={{ mt: 1.2, color: "text.secondary", fontSize: "0.98rem", fontWeight: 600 }}>
         {t("start_date_label")}:{" "}
-        <Box component="span" sx={{ color: "#16335f", fontWeight: 700 }}>
+        <Box component="span" sx={{ color: "text.primary", fontWeight: 700 }}>
           {fundDetail?.timeStarted ? dayjs(fundDetail.timeStarted).format("DD/MM/YYYY") : "--"}
         </Box>
       </Typography>
-      <Typography sx={{ mt: 0.4, color: "#42618c", fontSize: "0.98rem", fontWeight: 600 }}>
+      <Typography sx={{ mt: 0.4, color: "text.secondary", fontSize: "0.98rem", fontWeight: 600 }}>
         {t("end_date_label")}:{" "}
-        <Box component="span" sx={{ color: "#16335f", fontWeight: 700 }}>
+        <Box component="span" sx={{ color: "text.primary", fontWeight: 700 }}>
           {fundDetail?.timeEnded ? dayjs(fundDetail.timeEnded).format("DD/MM/YYYY") : "--"}
         </Box>
       </Typography>
 
+      {fundDetail?.fundDocumentUrl && (
+        <Box sx={{ mt: 1.2, display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+          <Typography sx={{ color: "text.secondary", fontSize: "0.98rem", fontWeight: 600 }}>
+            {t("fund_document_label")}:
+          </Typography>
+          <Button
+            size="small"
+            variant="outlined"
+            startIcon={<DescriptionOutlinedIcon fontSize="small" />}
+            component="a"
+            href={fundDetail.fundDocumentUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            sx={{ textTransform: "none", fontSize: "0.82rem", py: 0.3, px: 1.2 }}
+          >
+            {t("fund_document_view")}
+          </Button>
+        </Box>
+      )}
+
       <Box sx={{ mt: 1.4 }}>
         <Box sx={{ mb: 0.7, display: "flex", alignItems: "center", justifyContent: "flex-start", gap: 0.8 }}>
-          <Typography sx={{ color: "#42618c", fontSize: "0.88rem", fontWeight: 600, fontStyle: "italic" }}>
+          <Typography sx={{ color: "text.secondary", fontSize: "0.88rem", fontWeight: 600, fontStyle: "italic" }}>
             {t("progress_label")}
           </Typography>
-          <Typography sx={{ color: "#16335f", fontWeight: 800, fontSize: "0.92rem" }}>
+          <Typography sx={{ color: "text.primary", fontWeight: 800, fontSize: "0.92rem" }}>
             {formatVndDisplay(fundDetail?.currentAmount)} / {formatVndDisplay(fundDetail?.targetAmount)}
           </Typography>
         </Box>
-        <LinearProgress variant="determinate" value={progressValue} sx={{ height: 28, borderRadius: 999, backgroundColor: "#e4e7ef", overflow: "hidden", "& .MuiLinearProgress-bar": { borderRadius: 999, backgroundColor: "#123b7a" } }} />
+        <LinearProgress
+          variant="determinate"
+          value={progressValue}
+          sx={{
+            height: 28,
+            borderRadius: 999,
+            backgroundColor: "action.hover",
+            overflow: "hidden",
+            "& .MuiLinearProgress-bar": { borderRadius: 999, backgroundColor: "primary.main" },
+          }}
+        />
       </Box>
 
       <Grid container spacing={2} sx={{ mt: 1.8 }}>
         <Grid size={6}>
-          <Typography sx={{ fontWeight: 800, color: "#102f59", fontSize: "1.5rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          <Typography sx={{ fontWeight: 800, color: "text.primary", fontSize: "1.5rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
             {formatDonorCountDisplay(donorCountValue)}
           </Typography>
-          <Typography sx={{ color: "#42618c", fontSize: "0.92rem", fontWeight: 600 }}>{t("donor_count_label")}</Typography>
+          <Typography sx={{ color: "text.secondary", fontSize: "0.92rem", fontWeight: 600 }}>{t("donor_count_label")}</Typography>
         </Grid>
         <Grid size={6}>
-          <Typography sx={{ fontWeight: 800, color: "#102f59", fontSize: "1.2rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          <Typography sx={{ fontWeight: 800, color: "text.primary", fontSize: "1.2rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
             {formatAverageDonationDisplay(averageDonationValue)}
           </Typography>
-          <Typography sx={{ color: "#42618c", fontSize: "0.92rem", fontWeight: 600 }}>{t("average_label")}</Typography>
+          <Typography sx={{ color: "text.secondary", fontSize: "0.92rem", fontWeight: 600 }}>{t("average_label")}</Typography>
         </Grid>
       </Grid>
 

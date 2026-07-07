@@ -35,6 +35,9 @@ public class UpdateJobRequest {
 
     private String howToApply;
 
+    @org.hibernate.validator.constraints.URL
+    private String url;
+
     private LocalDate deadline;
 
     private Boolean isReferral;

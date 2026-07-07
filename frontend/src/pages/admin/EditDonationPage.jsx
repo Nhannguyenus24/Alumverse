@@ -25,11 +25,20 @@ import Page from "../../components/Page";
 import WYSIWYG from "../../components/WYSIWYG";
 import FundReceivingInfoSelect from "../../components/FundReceivingInfoSelect";
 import { fundApi } from "../../utils/api";
+import { useAuth } from "../../hooks/useAuth";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
 import Breadcrumb from "../../components/Breadcrumb";
 import MoneyField from "../../components/MoneyField";
 import FundLogoPreview from "../../components/FundLogoPreview";
-import { useUploadImage, validateImageFile, IMAGE_ACCEPT, FUND_CONTENT_EDITOR_HEIGHT } from "../../utils/imageUtils";
+import {
+  useUploadImage,
+  useUploadFundDocument,
+  validateImageFile,
+  validateFundDocumentFile,
+  IMAGE_ACCEPT,
+  FUND_DOCUMENT_ACCEPT,
+  FUND_CONTENT_EDITOR_HEIGHT,
+} from "../../utils/imageUtils";
 
 const isEmptyHtml = (html) => {
   if (!html || typeof html !== "string") return true;
@@ -139,12 +148,19 @@ export default function EditDonationPage() {
   const navigate = useOrgNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const { id } = useParams();
+  const { user } = useAuth();
+  const isStaff = user?.role === "STAFF";
   const { uploadFile: uploadLogo, isPending: isUploadingLogo } = useUploadImage();
+  const { uploadFile: uploadFundDocument, isPending: isUploadingDocument } = useUploadFundDocument();
   const [receivingOptions, setReceivingOptions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const logoInputRef = useRef(null);
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState(null);
+  const documentInputRef = useRef(null);
+  const [documentFile, setDocumentFile] = useState(null);
+  // Currently stored document URL; "" means "no document / remove on save".
+  const [documentUrl, setDocumentUrl] = useState("");
 
   const now = useMemo(() => dayjs(), []);
   const minAllowedTime = useMemo(() => now.add(10, "minute"), [now]);
@@ -218,6 +234,24 @@ export default function EditDonationPage() {
     );
   };
 
+  const handleDocumentChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const result = validateFundDocumentFile(file, t);
+    if (!result.valid) {
+      enqueueSnackbar(result.message, { variant: "warning" });
+      e.target.value = "";
+      return;
+    }
+    setDocumentFile(file);
+  };
+
+  const handleDocumentRemove = () => {
+    setDocumentFile(null);
+    setDocumentUrl("");
+    if (documentInputRef.current) documentInputRef.current.value = "";
+  };
+
   useEffect(() => {
     let mounted = true;
 
@@ -248,6 +282,8 @@ export default function EditDonationPage() {
         setDonationDetail(normalizedDetail);
         setLogoFile(null);
         setLogoPreview(normalizedDetail.logoUrl || null);
+        setDocumentFile(null);
+        setDocumentUrl(detail?.fundDocumentUrl ?? "");
         reset({
           name: normalizedDetail.name,
           managerName: detail?.managerName ?? "",
@@ -289,6 +325,8 @@ export default function EditDonationPage() {
   const disableEndDate = disableAllFields;
   const disableTargetAmount = disableAllFields || phase === "active";
   const disableFundReceivingInfo = phase !== "before_start";
+  // STAFF may only edit managerName, managerEmail, descriptionFull — every other field is locked.
+  const lockForStaff = isStaff;
 
   const noteMessage = {
     before_start: t('admin:edit_fund_note_before_start'),
@@ -304,24 +342,39 @@ export default function EditDonationPage() {
     }
 
     try {
-      const logoUrl = logoFile
-        ? await uploadLogo(logoFile)
-        : donationDetail.logoUrl?.trim() || null;
+      if (isStaff) {
+        await fundApi.updateFundBasicInfo(id, {
+          managerName: values.managerName?.trim(),
+          managerEmail: values.managerEmail?.trim(),
+          description_full: values.descriptionFull,
+        });
+      } else {
+        const logoUrl = logoFile
+          ? await uploadLogo(logoFile)
+          : donationDetail.logoUrl?.trim() || null;
 
-      const payload = {
-        name: values.name?.trim(),
-        managerName: values.managerName?.trim(),
-        managerEmail: values.managerEmail?.trim(),
-        logoUrl,
-        description_short: values.descriptionShort?.trim(),
-        description_full: values.descriptionFull,
-        targetAmount: Number(values.targetAmount),
-        fundReceivingInfoId: Number(values.fundReceivingInfoId),
-        timeStarted: values.startDate?.format("YYYY-MM-DDTHH:mm:ss"),
-        timeEnded: values.endDate?.format("YYYY-MM-DDTHH:mm:ss"),
-      };
+        // A newly chosen file is uploaded; otherwise send the current URL, or ""
+        // to signal removal (backend: null = keep, "" = remove).
+        const fundDocumentUrl = documentFile
+          ? await uploadFundDocument(documentFile)
+          : documentUrl?.trim() || "";
 
-      await fundApi.updateFund(id, payload);
+        const payload = {
+          name: values.name?.trim(),
+          managerName: values.managerName?.trim(),
+          managerEmail: values.managerEmail?.trim(),
+          logoUrl,
+          fundDocumentUrl,
+          description_short: values.descriptionShort?.trim(),
+          description_full: values.descriptionFull,
+          targetAmount: Number(values.targetAmount),
+          fundReceivingInfoId: Number(values.fundReceivingInfoId),
+          timeStarted: values.startDate?.format("YYYY-MM-DDTHH:mm:ss"),
+          timeEnded: values.endDate?.format("YYYY-MM-DDTHH:mm:ss"),
+        };
+
+        await fundApi.updateFund(id, payload);
+      }
       enqueueSnackbar(t('admin:edit_fund_success'), { variant: "success" });
       navigate(`/donations/${id}`);
     } catch (error) {
@@ -331,7 +384,7 @@ export default function EditDonationPage() {
     }
   };
 
-  const isBusy = isSubmitting || isUploadingLogo;
+  const isBusy = isSubmitting || isUploadingLogo || isUploadingDocument;
 
   return (
     <Page title={t('admin:edit_fund_page_title')} meta={<meta name="description" content={t('admin:edit_fund_page_title')} />}>
@@ -363,6 +416,11 @@ export default function EditDonationPage() {
               {t('admin:edit_fund_note_label')}
             </Typography>
             <Typography sx={{ mt: 0.3, color: "#214c90", fontWeight: 600, lineHeight: 1.6 }}>{noteMessage}</Typography>
+            {isStaff && (
+              <Typography sx={{ mt: 0.6, color: "#214c90", fontWeight: 600, lineHeight: 1.6 }}>
+                {t('admin:edit_fund_staff_note')}
+              </Typography>
+            )}
           </Box>
 
           {isLoading && <LinearProgress sx={{ mb: 2.2 }} />}
@@ -373,7 +431,7 @@ export default function EditDonationPage() {
                   <Box component="form" onSubmit={handleSubmit(onSubmit)}>
                     <Grid container spacing={2}>
                       <Grid size={12}>
-                        <TextField fullWidth label={t('donation:fund_name')} InputLabelProps={{ shrink: true }} {...register("name")} disabled={disableAllFields} error={!!errors.name} helperText={errors.name?.message} />
+                        <TextField fullWidth label={t('donation:fund_name')} InputLabelProps={{ shrink: true }} {...register("name")} disabled={disableAllFields || lockForStaff} error={!!errors.name} helperText={errors.name?.message} />
                       </Grid>
                       <Grid size={12}>
                         <TextField
@@ -419,19 +477,88 @@ export default function EditDonationPage() {
                               accept={IMAGE_ACCEPT}
                               style={{ display: "none" }}
                               onChange={handleLogoChange}
-                              disabled={disableAllFields}
+                              disabled={disableAllFields || lockForStaff}
                             />
                             <Button
                               variant="outlined"
                               size="small"
                               onClick={() => logoInputRef.current?.click()}
-                              disabled={disableAllFields}
+                              disabled={disableAllFields || lockForStaff}
                               sx={{ textTransform: "none" }}
                             >
                               {logoPreview ? t('admin:edit_fund_logo_change') : t('admin:edit_fund_logo_select')}
                             </Button>
                           </Stack>
                         </Box>
+                      </Grid>
+                      <Grid size={12}>
+                        <Typography
+                          variant="body2"
+                          sx={{ mb: 1.2, fontWeight: 600, color: "text.secondary" }}
+                        >
+                          {t('admin:edit_fund_document_label')}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
+                          {t('admin:edit_fund_document_hint')}
+                        </Typography>
+                        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                          {documentFile ? (
+                            <Typography variant="body2" sx={{ color: "text.primary", wordBreak: "break-all" }}>
+                              {documentFile.name}
+                            </Typography>
+                          ) : documentUrl ? (
+                            <Button
+                              variant="text"
+                              size="small"
+                              component="a"
+                              href={documentUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              sx={{ textTransform: "none" }}
+                            >
+                              {t('admin:edit_fund_document_view')}
+                            </Button>
+                          ) : (
+                            <Typography variant="body2" color="text.secondary">
+                              {t('admin:edit_fund_document_none')}
+                            </Typography>
+                          )}
+                          {!lockForStaff && (
+                            <>
+                              <input
+                                ref={documentInputRef}
+                                type="file"
+                                accept={FUND_DOCUMENT_ACCEPT}
+                                style={{ display: "none" }}
+                                onChange={handleDocumentChange}
+                                disabled={disableAllFields}
+                              />
+                              <Button
+                                variant="outlined"
+                                size="small"
+                                onClick={() => documentInputRef.current?.click()}
+                                disabled={disableAllFields}
+                                sx={{ textTransform: "none" }}
+                              >
+                                {documentFile || documentUrl
+                                  ? t('admin:edit_fund_document_change')
+                                  : t('admin:edit_fund_document_select')}
+                              </Button>
+                              {(documentFile || documentUrl) && (
+                                <Button
+                                  variant="text"
+                                  size="small"
+                                  color="primary"
+                                  onClick={handleDocumentRemove}
+                                  disabled={disableAllFields}
+                                  sx={{ textTransform: "none" }}
+                                >
+                                  {t('admin:edit_fund_document_remove')}
+                                </Button>
+                              )}
+                            </>
+                          )}
+                        </Stack>
                       </Grid>
                       <Grid size={12}>
                         <TextField
@@ -442,7 +569,7 @@ export default function EditDonationPage() {
                           InputLabelProps={{ shrink: true }}
                           inputProps={{ maxLength: 100 }}
                           {...register("descriptionShort")}
-                          disabled={disableAllFields}
+                          disabled={disableAllFields || lockForStaff}
                           error={!!errors.descriptionShort}
                           helperText={errors.descriptionShort?.message}
                         />
@@ -488,7 +615,7 @@ export default function EditDonationPage() {
                               value={field.value}
                               onChange={field.onChange}
                               onBlur={field.onBlur}
-                              disabled={disableTargetAmount}
+                              disabled={disableTargetAmount || lockForStaff}
                               error={!!errors.targetAmount}
                               helperText={errors.targetAmount?.message}
                             />
@@ -504,7 +631,7 @@ export default function EditDonationPage() {
                               value={field.value}
                               onChange={field.onChange}
                               options={receivingOptions}
-                              disabled={disableFundReceivingInfo}
+                              disabled={disableFundReceivingInfo || lockForStaff}
                               error={!!errors.fundReceivingInfoId}
                               helperText={errors.fundReceivingInfoId?.message}
                               labelId="fund-receiving-info-label"
@@ -522,7 +649,7 @@ export default function EditDonationPage() {
                               value={field.value}
                               onChange={field.onChange}
                               views={["year", "month", "day", "hours", "minutes", "seconds"]}
-                              disabled={disableStartDate}
+                              disabled={disableStartDate || lockForStaff}
                               slotProps={{
                                 textField: {
                                   fullWidth: true,
@@ -544,7 +671,7 @@ export default function EditDonationPage() {
                               value={field.value}
                               onChange={field.onChange}
                               views={["year", "month", "day", "hours", "minutes", "seconds"]}
-                              disabled={disableEndDate}
+                              disabled={disableEndDate || lockForStaff}
                               slotProps={{
                                 textField: {
                                   fullWidth: true,

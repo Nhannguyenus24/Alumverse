@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { Box, Button, Typography } from '@mui/material';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import SwapVertIcon from '@mui/icons-material/SwapVert';
+import { useTranslation } from 'react-i18next';
 
 const CoverUpload = ({
   value,
@@ -11,10 +12,13 @@ const CoverUpload = ({
   minHeightSx,
   positionY = 50,
   onPositionYChange,
-  editLabel = 'Sửa ảnh đại diện',
-  addLabel = 'Thêm ảnh đại diện',
+  editLabel,
+  addLabel,
 }) => {
+  const { t } = useTranslation('common');
   const dragRef = useRef(null);
+  const resolvedEditLabel = editLabel ?? t('edit_avatar_image');
+  const resolvedAddLabel = addLabel ?? t('add_avatar_image');
   const updatePosition = (nextPosition) => {
     onPositionYChange?.(Math.min(100, Math.max(0, nextPosition)));
   };
@@ -89,7 +93,7 @@ const CoverUpload = ({
               textOverflow: 'ellipsis',
             }}
           >
-            Kéo ảnh lên/xuống để căn khung
+            {t('drag_image_to_reposition')}
           </Typography>
         </Box>
       ) : null}
@@ -113,7 +117,7 @@ const CoverUpload = ({
           zIndex: 2,
         }}
       >
-        {value ? editLabel : addLabel}
+        {value ? resolvedEditLabel : resolvedAddLabel}
         <input
           hidden
           type="file"

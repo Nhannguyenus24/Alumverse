@@ -884,6 +884,11 @@ export const fundApi = {
 		return unwrap(response);
 	},
 
+	async updateFundBasicInfo(fundId, payload) {
+		const response = await apiClient.patch(`${BASE_FUND}/${fundId}/basic-info`, payload);
+		return unwrap(response);
+	},
+
 	async closeFund(fundId) {
 		const response = await apiClient.put(`${BASE_FUND}/${fundId}/close`);
 		return unwrap(response);
@@ -1302,4 +1307,3 @@ export const notificationApi = {
 		return unwrap(response);
 	},
 };
-

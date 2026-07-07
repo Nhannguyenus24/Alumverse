@@ -17,6 +17,7 @@ const MainLayout = () => {
   const normalizedPathname = getNormalizedPathname(location.pathname, slug);
 
   const isHomePage = normalizedPathname === "/";
+  const isSlugAdminRoute = normalizedPathname === "/admin" || normalizedPathname.startsWith("/admin/");
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
@@ -29,6 +30,10 @@ const MainLayout = () => {
     () => <Box sx={{ height: HEADER_HEIGHT, flexShrink: 0 }} />,
     []
   );
+
+  if (isSlugAdminRoute) {
+    return <Outlet />;
+  }
 
   return (
     <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>

@@ -17,5 +17,6 @@ export const toCardShape = (article) => {
     description,
     date,
     image: article.thumbnailUrl ?? "/placeholder-image.png",
+    url: article.url || article.linkUrl,
   };
 };

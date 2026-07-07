@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/article_topic_label.dart';
 import '../../../../core/utils/html_utils.dart';
 import '../../../../core/utils/image_url.dart';
 import '../../../article/data/models/article.dart';
@@ -76,6 +77,7 @@ class _NewsCard extends StatelessWidget {
         article.publishedAt != null
             ? DateFormat('dd/MM/yyyy').format(article.publishedAt!)
             : null;
+    final topicLabel = articleTopicLabel(article.topic);
 
     return Card(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
@@ -105,9 +107,9 @@ class _NewsCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (article.topic != null && article.topic!.isNotEmpty) ...[
+                  if (topicLabel.isNotEmpty) ...[
                     Text(
-                      article.topic!.toUpperCase(),
+                      topicLabel.toUpperCase(),
                       style: const TextStyle(
                         color: AppColors.primary,
                         fontSize: 11,

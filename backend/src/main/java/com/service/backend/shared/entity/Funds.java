@@ -64,6 +64,9 @@ public class Funds {
     @Column("manager_email")
     private String managerEmail;
 
+    @Column("fund_document_url")
+    private String fundDocumentUrl;
+
     @CreatedDate
     @Column("created_at")
     private LocalDateTime createdAt;

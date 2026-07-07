@@ -42,6 +42,9 @@ public class User {
     @Column("avatar_url")
     private String avatarUrl;
 
+    @Column("cover_url")
+    private String coverUrl;
+
     @Column("full_name")
     private String fullName;
 
@@ -62,6 +65,15 @@ public class User {
 
     @Column("must_change_password")
     private boolean mustChangePassword;
+
+    @Column("current_job_title")
+    private String currentJobTitle;
+
+    @Column("current_company")
+    private String currentCompany;
+
+    @Column("links")
+    private String links;
 
     @CreatedDate
     @Column("created_at")
