@@ -8,6 +8,7 @@ create table users
     status               text,
     role                 text,
     avatar_url           text,
+    cover_url            text,
     created_at           timestamp default CURRENT_TIMESTAMP,
     updated_at           timestamp default CURRENT_TIMESTAMP,
     full_name            text,
@@ -331,7 +332,6 @@ create table mentor_profiles
     review_note             text,
     reviewed_at             timestamp,
     reviewed_by             integer,
-    cover_url               text,
     default_meeting_link    text,
     booking_window_settings text,
     extended_profile        text,
@@ -1021,4 +1021,3 @@ create index idx_education_change_requests_member
 
 create index idx_education_change_requests_org_status
     on education_change_requests (organization_id, status);
-

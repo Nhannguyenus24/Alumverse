@@ -33,6 +33,7 @@ import { useMyMentorProfile } from '../../hooks/mentorship/useMyMentorProfile';
 import { useMyMenteeProfile } from '../../hooks/mentorship/useMyMenteeProfile';
 import { useCancelMenteeSession } from '../../hooks/mentorship/useCancelMenteeSession';
 import { useSubmitSessionFeedback } from '../../hooks/mentorship/useSubmitSessionFeedback';
+import { resolveMediaUrl } from '../../utils/imageUtils';
 import { useJoinSession } from '../../hooks/mentorship/useJoinSession';
 import { useMentorshipAccessState } from '../../hooks/mentorship/useMentorshipAccessState';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
@@ -385,8 +386,8 @@ const MentorshipMyBookingsPage = () => {
     role: isMentorProfile
       ? formatMentorHeadline({ jobTitle: profile?.currentJobTitle, company: profile?.currentCompany, t })
       : t('mentee'),
-    avatar: profile?.avatarUrl ?? '',
-    cover: profile?.coverUrl ?? DEFAULT_COVER,
+    avatar: resolveMediaUrl(profile?.avatarUrl ?? ''),
+    cover: resolveMediaUrl(profile?.coverUrl) || DEFAULT_COVER,
   };
 
   const tabs = isMentorProfile ? getMentorProfileTabs(t) : getMenteeProfileTabs(t);

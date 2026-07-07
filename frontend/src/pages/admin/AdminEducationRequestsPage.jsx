@@ -25,20 +25,29 @@ const getEduFieldLabels = (t) => ({
   graduationStatus: t('admin:edu_field_graduation_status'),
 });
 
-const EduDataSection = ({ title, data, eduFieldLabels }) => {
+const formatEduValue = (key, value, t) => {
+  if (key !== 'graduationStatus') return String(value);
+  const statusKey = String(value || '').toUpperCase();
+  return t(`admin:graduation_status.${statusKey}`, { defaultValue: String(value) });
+};
+
+const EduDataSection = ({ title, data, eduFieldLabels, t }) => {
   if (!data) return <Typography variant="body2" color="text.secondary">—</Typography>;
   return (
     <Box>
       <Typography variant="caption" color="text.secondary" fontWeight={600}>{title}</Typography>
       {Object.entries(eduFieldLabels).map(([key, label]) => {
         const values = Array.isArray(data[key]) ? data[key] : [];
+        const displayValue = values.length > 0
+          ? values.map((value) => formatEduValue(key, value, t)).join(', ')
+          : '—';
         return (
           <Box key={key} sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
             <Typography variant="body2" color="text.secondary" sx={{ minWidth: 160, flexShrink: 0 }}>
               {label}:
             </Typography>
             <Typography variant="body2">
-              {values.length > 0 ? values.join(', ') : '—'}
+              {displayValue}
             </Typography>
           </Box>
         );
@@ -125,31 +134,43 @@ const AdminEducationRequestsPage = () => {
 
   const columns = [
     {
-      field: 'memberStudentId',
-      headerName: t('edu_col_student_id'),
-      width: 130,
-      render: (row) => row.memberStudentId ?? `Member #${row.memberId}`,
-    },
-    {
-      field: 'createdAt',
-      headerName: t('edu_col_sent_date'),
-      width: 160,
-      render: (row) => formatDateTime(row.createdAt, '—'),
-    },
-    {
-      field: 'status',
-      headerName: t('col_status'),
-      width: 130,
-      render: (row) => (
-        <AdminStatusChip status={row.status} category="education" />
+      id: 'memberFullName',
+      label: t('edu_col_requester'),
+      width: 220,
+      render: (value, row) => (
+        <Box>
+          <Typography variant="body2" fontWeight={700}>
+            {value || t('event_member_fallback', { id: row.memberId })}
+          </Typography>
+          {row.memberStudentId ? (
+            <Typography variant="caption" color="text.secondary">
+              {row.memberStudentId}
+            </Typography>
+          ) : null}
+        </Box>
       ),
     },
     {
-      field: 'actions',
-      headerName: t('col_actions'),
+      id: 'createdAt',
+      label: t('edu_col_sent_date'),
+      width: 160,
+      render: (value) => formatDateTime(value, '—'),
+    },
+    {
+      id: 'status',
+      label: t('col_status'),
+      width: 130,
+      render: (value) => (
+        <AdminStatusChip status={value} category="education" />
+      ),
+    },
+    {
+      id: 'actions',
+      label: '',
+      align: 'right',
       width: 140,
-      render: (row) => (
-        <Stack direction="row" spacing={1}>
+      render: (_, row) => (
+        <Stack direction="row" spacing={1} justifyContent="flex-end">
           <Button
             size="small"
             variant="outlined"
@@ -165,7 +186,14 @@ const AdminEducationRequestsPage = () => {
 
   return (
     <Box>
-      <Typography variant="h4" fontWeight={700} mb={2}>{t('edu_requests_title')}</Typography>
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="h3" color="primary.main" fontWeight={800}>
+          {t('edu_requests_title')}
+        </Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ mt: 0.75 }}>
+          {t('edu_requests_subtitle')}
+        </Typography>
+      </Box>
 
       <Tabs value={activeTab} onChange={(_, v) => { setActiveTab(v); setPage(0); }} sx={{ mb: 2 }}>
         <Tab label={t('filter_all')} />
@@ -180,6 +208,7 @@ const AdminEducationRequestsPage = () => {
         total={total}
         page={page}
         pageSize={pageSize}
+        rowsPerPage={pageSize}
         loading={loading}
         onPageChange={setPage}
         emptyMessage={t('edu_empty')}
@@ -193,9 +222,10 @@ const AdminEducationRequestsPage = () => {
           {reviewDialog.request && (
             <Stack spacing={2} sx={{ mt: 1 }}>
               <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                <Typography variant="body2" color="text.secondary">{t('edu_col_student_id')}:</Typography>
+                <Typography variant="body2" color="text.secondary">{t('edu_col_requester')}:</Typography>
                 <Typography variant="body2" fontWeight={600}>
-                  {reviewDialog.request.memberStudentId ?? `Member #${reviewDialog.request.memberId}`}
+                  {reviewDialog.request.memberFullName ?? t('event_member_fallback', { id: reviewDialog.request.memberId })}
+                  {reviewDialog.request.memberStudentId ? ` (${reviewDialog.request.memberStudentId})` : ''}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">{t('edu_col_sent_date')}:</Typography>
                 <Typography variant="body2">{formatDateTime(reviewDialog.request.createdAt, '—')}</Typography>
@@ -203,10 +233,10 @@ const AdminEducationRequestsPage = () => {
 
               <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
                 <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1, p: 2 }}>
-                  <EduDataSection title={t('edu_old_data')} data={reviewDialog.request.oldData} eduFieldLabels={EDU_FIELD_LABELS} />
+                  <EduDataSection title={t('edu_old_data')} data={reviewDialog.request.oldData} eduFieldLabels={EDU_FIELD_LABELS} t={t} />
                 </Box>
                 <Box sx={{ border: 1, borderColor: 'primary.main', borderRadius: 1, p: 2, bgcolor: 'primary.lighter' }}>
-                  <EduDataSection title={t('edu_new_data')} data={reviewDialog.request.newData} eduFieldLabels={EDU_FIELD_LABELS} />
+                  <EduDataSection title={t('edu_new_data')} data={reviewDialog.request.newData} eduFieldLabels={EDU_FIELD_LABELS} t={t} />
                 </Box>
               </Box>
 

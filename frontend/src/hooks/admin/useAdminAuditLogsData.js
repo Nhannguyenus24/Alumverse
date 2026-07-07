@@ -37,22 +37,31 @@ const normalizeActivitiesPayload = (payload) => {
   return [];
 };
 
+const fallbackActorLabel = (id) => (id ? `Quản trị viên #${id}` : 'Quản trị viên');
+
 const mapActivityToAuditLog = (item, usersById) => {
   const actor = usersById.get(Number(item?.adminUserId));
+  const actorName = item?.adminFullName || actor?.fullName || actor?.name || fallbackActorLabel(item?.adminUserId);
+  const actorEmail = item?.adminEmail || actor?.email || '';
+  const resourceType = item.resourceType || 'RESOURCE';
+  const resourceId = item.resourceId || '-';
+  const action = item.action || 'ACTION';
+
   return {
     id: item.id,
     timestamp: item.timestamp,
     userId: item.adminUserId,
-    studentId: actor?.studentId || `admin#${item.adminUserId ?? '-'}`,
-    userEmail: actor?.email || '',
-    action: item.action,
-    entityType: item.resourceType,
-    entityId: item.resourceId,
-    entityName: item.resourceType && item.resourceId ? `${item.resourceType} #${item.resourceId}` : '',
+    actorName,
+    studentId: actor?.studentId || actorName,
+    userEmail: actorEmail,
+    action,
+    entityType: resourceType,
+    entityId: resourceId,
+    entityName: resourceType && resourceId ? `${resourceType} #${resourceId}` : '',
     status: 'SUCCESS',
     description: item.metadata
-      ? `${item.action || 'ACTION'} on ${item.resourceType || 'RESOURCE'} #${item.resourceId || '-'} (${item.metadata})`
-      : `${item.action || 'ACTION'} on ${item.resourceType || 'RESOURCE'} #${item.resourceId || '-'}`,
+      ? `${action} on ${resourceType} #${resourceId} (${item.metadata})`
+      : `${action} on ${resourceType} #${resourceId}`,
     ipAddress: null,
     userAgent: null,
     requestPath: null,
@@ -82,7 +91,7 @@ const useAdminAuditLogsData = () => {
 
     const [activitiesPayload, users, rawLoginLogs] = await Promise.all([
       fetchSafe(() => apiClient.get('/admin/dashboard/activities', { params: { page: 0, size: 200 } }), []),
-      fetchSafe(() => apiClient.get('/admin/users', { params: { page: 0, size: 20 } }), []),
+      fetchSafe(() => apiClient.get('/admin/users', { params: { page: 0, size: 500 } }), []),
       fetchSafe(() => apiClient.get('/admin/audit/login-history', { params: { page: 0, size: 20 } }), null),
     ]);
 

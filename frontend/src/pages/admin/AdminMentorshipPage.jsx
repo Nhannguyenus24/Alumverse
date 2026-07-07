@@ -591,9 +591,17 @@ const AdminMentorshipPage = () => {
               {detailItem.menteeName || `#${detailItem.menteeMemberId ?? "-"}`}{" "}
               {detailItem.menteeEmail ? `(${detailItem.menteeEmail})` : ""}
             </Typography>
-            <Typography variant="body2">
-              <strong>{t('col_status')}:</strong> {detailItem.status || "-"}
-            </Typography>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Typography variant="body2" component="span">
+                <strong>{t('col_status')}:</strong>
+              </Typography>
+              <Chip
+                size="small"
+                color={statusChip(detailItem.status, t).color}
+                label={statusChip(detailItem.status, t).label}
+                sx={ADMIN_STATUS_CHIP_SX}
+              />
+            </Box>
             <Typography variant="body2">
               <strong>{t('mentorship_detail_session_type')}:</strong> {detailItem.sessionType || "-"}
             </Typography>

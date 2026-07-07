@@ -54,6 +54,7 @@ import {
   fileToCroppedCoverBase64,
   getJsonPayloadByteSize,
   MAX_JSON_PAYLOAD_BYTES,
+  resolveMediaUrl,
   useUploadImage,
   validateImageFile,
 } from '../../utils/imageUtils';
@@ -237,15 +238,15 @@ const UnifiedProfileEditPage = () => {
     
     if (p || m) {
        
-      setCurrentJobTitle(m?.currentJobTitle ?? p?.currentJobTitle ?? '');
-      setCurrentCompany(m?.currentCompany ?? p?.currentCompany ?? '');
+      setCurrentJobTitle(p?.currentJobTitle ?? m?.currentJobTitle ?? '');
+      setCurrentCompany(p?.currentCompany ?? m?.currentCompany ?? '');
       setBio(p?.bio ?? '');
       setMentorBio(m?.bio ?? '');
       setDefaultMeetingLink(m?.defaultMeetingLink ?? '');
       setEmail(p?.email ?? '');
       setPhone(p?.phone ?? '');
 
-      setCoverPreview(m?.coverUrl || (isMentorshipEdit ? MENTORSHIP_COVER : DEFAULT_COVER));
+      setCoverPreview(resolveMediaUrl(p?.coverUrl) || (isMentorshipEdit ? MENTORSHIP_COVER : DEFAULT_COVER));
       setCoverFile(null);
       let parsedLinks = [];
       try { parsedLinks = p?.links ? JSON.parse(p.links) : []; } catch (e) {}
@@ -300,19 +301,8 @@ const UnifiedProfileEditPage = () => {
       
       const previousExt = parseExtended(mentorQuery.data?.extendedProfile ?? profileQuery.data?.extendedProfile);
       const nextExt = { ...previousExt, experiences, educations };
-      let uploadedCoverUrl = null;
 
       if (coverFile) {
-        if (!access.hasMentorProfile) {
-          enqueueSnackbar(
-            t('profile:cover_requires_mentor_profile', {
-              defaultValue: 'Hiện backend chỉ lưu ảnh bìa qua hồ sơ cố vấn. Vui lòng tạo hồ sơ cố vấn trước.',
-            }),
-            { variant: 'warning' },
-          );
-          return;
-        }
-
         try {
           const coverBase64 = await fileToCroppedCoverBase64(coverFile, coverPositionY);
           if (getJsonPayloadByteSize({ base64String: coverBase64 }) > MAX_JSON_PAYLOAD_BYTES) {
@@ -325,28 +315,20 @@ const UnifiedProfileEditPage = () => {
             return;
           }
 
-          uploadedCoverUrl = await uploadBase64(coverBase64);
+          const uploadedCoverUrl = await uploadBase64(coverBase64);
           if (!uploadedCoverUrl) throw new Error('empty_upload_response');
+          await userSettingsApi.updateCover(uploadedCoverUrl);
         } catch (error) {
           enqueueSnackbar(getCoverUploadErrorMessage(error, t), { variant: 'error' });
           return;
         }
       }
       
-      // The mentor profile owns the reusable cover/job data. Updating the cover
-      // from /profile/edit keeps MyProfile and Mentorship Profile in sync.
-      if (access.hasMentorProfile && (isMentorshipEdit || uploadedCoverUrl)) {
+      if (access.hasMentorProfile && isMentorshipEdit) {
         await updateMentorProfile({
-          currentJobTitle: isMentorshipEdit
-            ? currentJobTitle.trim()
-            : mentorQuery.data?.currentJobTitle,
-          currentCompany: isMentorshipEdit
-            ? currentCompany.trim()
-            : mentorQuery.data?.currentCompany,
           bio: isMentorshipEdit
             ? mentorBio.trim()
             : mentorQuery.data?.bio,
-          coverUrl: uploadedCoverUrl ?? undefined,
           defaultMeetingLink: isMentorshipEdit
             ? (defaultMeetingLink.trim() || undefined)
             : mentorQuery.data?.defaultMeetingLink,
@@ -362,9 +344,9 @@ const UnifiedProfileEditPage = () => {
         ...(organizationId ? { organizationId } : {}),
         bio: bio.trim(),
         phone: phone.trim() || undefined,
-        currentJobTitle: currentJobTitle.trim() || undefined,
-        currentCompany: currentCompany.trim() || undefined,
-        links: linksArray.length > 0 ? linksArray : null,
+        currentJobTitle: currentJobTitle.trim(),
+        currentCompany: currentCompany.trim(),
+        links: linksArray,
         ...buildPreservedAcademicPayload(orgMemberQuery.data),
       });
 
@@ -462,7 +444,7 @@ const UnifiedProfileEditPage = () => {
     role: isMentorshipEdit
       ? formatMentorHeadline({ jobTitle: currentJobTitle, company: currentCompany, t })
       : resolveProfileRoleLabel({ profile, academicProfile: orgMemberQuery.data, t }),
-    avatar: profile?.avatarUrl ?? '',
+    avatar: resolveMediaUrl(profile?.avatarUrl ?? ''),
     cover: coverPreview,
   };
   

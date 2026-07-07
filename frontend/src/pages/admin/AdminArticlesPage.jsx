@@ -64,6 +64,12 @@ const visibilityStatusOf = (article) => {
   return 'UNSUPPORTED';
 };
 
+const ActionSlot = ({ children }) => (
+  <Box sx={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+    {children}
+  </Box>
+);
+
 const AdminArticlesPage = () => {
   const { t } = useTranslation(['admin', 'common']);
   const { setBreadcrumbs } = useOutletContext();
@@ -244,15 +250,18 @@ const AdminArticlesPage = () => {
               align: "right",
               render: (_, a) => (
                 <Box
-                  sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}
+                  sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5, width: 172, ml: 'auto' }}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <Tooltip title={t('admin:view_public_page')}>
-                    <IconButton size="small" sx={{ color: 'primary.main' }} onClick={() => openView(a)}>
-                      <VisibilityOutlinedIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                  {(a.url || a.linkUrl) && (
+                  <ActionSlot>
+                    <Tooltip title={t('admin:view_public_page')}>
+                      <IconButton size="small" sx={{ color: 'primary.main' }} onClick={() => openView(a)}>
+                        <VisibilityOutlinedIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </ActionSlot>
+                  <ActionSlot>
+                    {(a.url || a.linkUrl) && (
                     <Tooltip title={t('admin:view_original_link')}>
                       <IconButton
                         size="small"
@@ -262,13 +271,17 @@ const AdminArticlesPage = () => {
                         <LinkIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
-                  )}
-                  <Tooltip title={t('admin:tooltip_edit')}>
-                    <IconButton size="small" sx={{ color: 'secondary.main' }} onClick={() => openEdit(a)}>
-                      <EditOutlinedIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                  {canToggleArticleVisibility(a) && (
+                    )}
+                  </ActionSlot>
+                  <ActionSlot>
+                    <Tooltip title={t('admin:tooltip_edit')}>
+                      <IconButton size="small" sx={{ color: 'secondary.main' }} onClick={() => openEdit(a)}>
+                        <EditOutlinedIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </ActionSlot>
+                  <ActionSlot>
+                    {canToggleArticleVisibility(a) && (
                     <Tooltip title={getArticleVisibilityState(a) === 'published' ? t('admin:tooltip_unpublish_article') : t('admin:tooltip_publish_article')}>
                       <span>
                         <IconButton
@@ -283,12 +296,15 @@ const AdminArticlesPage = () => {
                         </IconButton>
                       </span>
                     </Tooltip>
-                  )}
-                  <Tooltip title={t('admin:tooltip_delete')}>
-                    <IconButton size="small" sx={{ color: 'error.main' }} onClick={() => openDeleteDialog(a)}>
-                      <DeleteOutlineIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
+                    )}
+                  </ActionSlot>
+                  <ActionSlot>
+                    <Tooltip title={t('admin:tooltip_delete')}>
+                      <IconButton size="small" sx={{ color: 'error.main' }} onClick={() => openDeleteDialog(a)}>
+                        <DeleteOutlineIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </ActionSlot>
                 </Box>
               ),
             },

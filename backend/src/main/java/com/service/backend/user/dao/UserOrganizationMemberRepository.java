@@ -17,6 +17,7 @@ import reactor.core.publisher.Mono;
 public interface UserOrganizationMemberRepository extends R2dbcRepository<OrganizationMember, Integer> {
 
     public record PrimaryOrg(Integer userId, Integer organizationId, String organizationName) {}
+    public record MemberIdentity(Integer memberId, String studentId, String fullName) {}
 
     @Query("""
             SELECT om.user_id, om.organization_id, o.name AS organization_name
@@ -32,6 +33,14 @@ public interface UserOrganizationMemberRepository extends R2dbcRepository<Organi
 
     @Query("SELECT * FROM organization_members WHERE user_id = :userId")
     Mono<OrganizationMember> findByUserId(@Param("userId") Integer userId);
+
+    @Query("""
+            SELECT om.id AS member_id, om.student_id, u.full_name
+            FROM organization_members om
+            LEFT JOIN users u ON u.id = om.user_id
+            WHERE om.id = :memberId
+            """)
+    Mono<MemberIdentity> findIdentityByMemberId(@Param("memberId") Integer memberId);
 
     @Modifying
     @Query("""

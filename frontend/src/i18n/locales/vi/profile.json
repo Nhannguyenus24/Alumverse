@@ -179,5 +179,6 @@
   "pub_own_profile_msg": "Đây là hồ sơ của bạn, nên không thể tự nhắn tin.",
   "pub_check_connection_error": "Không thể kiểm tra trạng thái kết nối. Vui lòng thử lại.",
   "pub_load_profile_error": "Không tải được hồ sơ người dùng. Vui lòng thử lại.",
-  "pub_no_bio": "Người dùng này chưa cập nhật phần giới thiệu."
+  "pub_no_bio": "Người dùng này chưa cập nhật phần giới thiệu.",
+  "go_to_organization": "Đi tới tổ chức"
 }

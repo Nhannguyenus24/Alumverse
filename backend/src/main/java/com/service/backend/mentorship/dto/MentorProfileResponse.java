@@ -33,6 +33,7 @@ public class MentorProfileResponse {
 
     private String fullName;
     private String avatarUrl;
+    private String coverUrl;
 
     private List<String> expertiseTopics;
 
@@ -58,9 +59,17 @@ public class MentorProfileResponse {
                 .build();
     }
 
-    public MentorProfileResponse withDisplay(String fullName, String avatarUrl) {
+    public MentorProfileResponse withDisplay(String fullName, String avatarUrl, String coverUrl,
+                                             String currentJobTitle, String currentCompany) {
         this.fullName = fullName;
         this.avatarUrl = avatarUrl;
+        this.coverUrl = coverUrl;
+        if (currentJobTitle != null && !currentJobTitle.isBlank()) {
+            this.currentJobTitle = currentJobTitle;
+        }
+        if (currentCompany != null && !currentCompany.isBlank()) {
+            this.currentCompany = currentCompany;
+        }
         return this;
     }
 

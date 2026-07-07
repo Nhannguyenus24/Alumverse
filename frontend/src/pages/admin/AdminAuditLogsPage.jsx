@@ -7,7 +7,6 @@ import {
   Button,
   Checkbox,
   FormControl,
-  InputAdornment,
   InputLabel,
   ListItemText,
   MenuItem,
@@ -17,7 +16,6 @@ import {
   Stack,
   TextField,
   Typography,
-  Grid,
 } from '@mui/material';
 import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
@@ -28,7 +26,7 @@ import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetri
 import AdminDataTable from '../../components/admin/AdminDataTable';
 import useAdminAuditLogsData from '../../hooks/admin/useAdminAuditLogsData';
 import { formatDateTimeWithSeconds } from '../../utils/dateFormatter';
-import { stringifyJson, truncateText } from '../../utils/stringUtils';
+import { stringifyJson } from '../../utils/stringUtils';
 
 const DEFAULT_ENTITY_TYPES = [
   'USER',
@@ -41,6 +39,58 @@ const DEFAULT_ENTITY_TYPES = [
 ];
 
 const DEFAULT_ACTIONS = ['CREATE', 'UPDATE', 'DELETE', 'BAN', 'UNBAN', 'APPROVE', 'REJECT'];
+
+const AUDIT_ACTION_LABEL_KEYS = {
+  CREATE: 'audit_action_create',
+  UPDATE: 'audit_action_update',
+  DELETE: 'audit_action_delete',
+  BAN: 'audit_action_ban',
+  UNBAN: 'audit_action_unban',
+  APPROVE: 'audit_action_approve',
+  REJECT: 'audit_action_reject',
+  RESET_PASSWORD: 'audit_action_reset_password',
+  UPDATE_TOPIC_LOCK: 'audit_action_update_topic_lock',
+  UPDATE_POST_VISIBILITY: 'audit_action_update_post_visibility',
+  BAN_POST: 'audit_action_ban_post',
+  WARN_USER: 'audit_action_warn_user',
+  LOGIN: 'audit_action_login',
+};
+
+const AUDIT_ENTITY_LABEL_KEYS = {
+  USER: 'audit_entity_user',
+  FORUM_POST: 'audit_entity_forum_post',
+  FORUM_TOPIC: 'audit_entity_forum_topic',
+  FORUM_CATEGORY: 'audit_entity_forum_category',
+  ORGANIZATION: 'audit_entity_organization',
+  EVENT: 'audit_entity_event',
+  ORGANIZATION_MEMBER: 'audit_entity_organization_member',
+  FORUM_REPORT: 'audit_entity_forum_report',
+};
+
+const formatEnumFallback = (raw) =>
+  String(raw || '—')
+    .toLowerCase()
+    .split('_')
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+
+const formatAuditLabel = (t, map, raw) => {
+  const key = String(raw || '').toUpperCase();
+  const i18nKey = map[key];
+  return i18nKey ? t(i18nKey, { defaultValue: formatEnumFallback(raw) }) : formatEnumFallback(raw);
+};
+
+const formatAuditDescription = (t, log) => {
+  const action = formatAuditLabel(t, AUDIT_ACTION_LABEL_KEYS, log.action);
+  const entity = formatAuditLabel(t, AUDIT_ENTITY_LABEL_KEYS, log.entityType);
+  const id = log.entityId || '—';
+  const metadata = log.description?.match(/\((.*)\)$/)?.[1];
+
+  return metadata
+    ? t('audit_description_with_meta', { action, entity, id, metadata })
+    : t('audit_description', { action, entity, id });
+};
 
 
 const AdminAuditLogsPage = () => {
@@ -82,7 +132,7 @@ const AdminAuditLogsPage = () => {
       }
 
       if (q) {
-        const haystack = [log.description, log.studentId, log.userEmail, log.entityType, String(log.entityId ?? ''), log.entityName, log.action]
+        const haystack = [log.description, log.actorName, log.studentId, log.userEmail, log.entityType, String(log.entityId ?? ''), log.entityName, log.action]
           .filter(Boolean).join(' ').toLowerCase();
         if (!haystack.includes(q)) return false;
       }
@@ -125,7 +175,7 @@ const AdminAuditLogsPage = () => {
       label: t('audit_col_actor'),
       render: (val, row) => (
         <Box>
-          <Typography variant="body2" sx={{ fontWeight: 600 }}>{val || '-'}</Typography>
+          <Typography variant="body2" sx={{ fontWeight: 600 }}>{row.actorName || val || '-'}</Typography>
           <Typography variant="caption" color="text.secondary">{row.userEmail || ''}</Typography>
         </Box>
       )
@@ -135,11 +185,11 @@ const AdminAuditLogsPage = () => {
       label: t('audit_col_action'),
       render: (val) => (
         <Typography variant="caption" sx={{ fontWeight: 700, px: 1, py: 0.5, bgcolor: 'action.hover', borderRadius: 1 }}>
-          {String(val || '-').toUpperCase()}
+          {formatAuditLabel(t, AUDIT_ACTION_LABEL_KEYS, val)}
         </Typography>
       )
     },
-    { id: 'entityType', label: t('audit_col_entity') },
+    { id: 'entityType', label: t('audit_col_entity'), render: (val) => formatAuditLabel(t, AUDIT_ENTITY_LABEL_KEYS, val) },
     { id: 'entityId', label: t('audit_col_entity_id') },
     {
       id: 'status',
@@ -149,14 +199,25 @@ const AdminAuditLogsPage = () => {
     {
       id: 'description',
       label: t('audit_col_desc'),
-      render: (val) => <Typography variant="body2" noWrap sx={{ maxWidth: 240 }}>{truncateText(val, 60)}</Typography>
+      render: (_, row) => (
+        <Typography variant="body2" sx={{ maxWidth: 360, whiteSpace: 'normal', lineHeight: 1.45 }}>
+          {formatAuditDescription(t, row)}
+        </Typography>
+      )
     }
   ];
 
   const renderExpandableRow = (log) => (
-    <Box sx={{ p: 2, bgcolor: 'primary.light', borderRadius: 1 }}>
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={4}>
+    <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', md: 'repeat(3, minmax(0, 1fr))' },
+          gap: 3,
+          alignItems: 'stretch',
+        }}
+      >
+        <Box sx={{ minWidth: 0 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>{t('audit_request_info')}</Typography>
           <Stack spacing={0.5}>
             <Typography variant="caption"><strong>IP:</strong> {log.ipAddress || '-'}</Typography>
@@ -164,33 +225,34 @@ const AdminAuditLogsPage = () => {
             <Typography variant="caption"><strong>User Agent:</strong> {log.userAgent || '-'}</Typography>
             <Typography variant="caption"><strong>Execution:</strong> {log.executionTime != null ? `${log.executionTime}ms` : '-'}</Typography>
           </Stack>
-        </Grid>
-        <Grid item xs={12} md={4}>
+        </Box>
+        <Box sx={{ minWidth: 0 }}>
           <Paper variant="outlined" sx={{ p: 1.5, height: '100%' }}>
             <Typography variant="caption" sx={{ fontWeight: 700, mb: 1, display: 'block' }}>{t('audit_old_value')}</Typography>
             <Box component="pre" sx={{ m: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-all', fontSize: 11, color: 'text.secondary' }}>
               {stringifyJson(log.oldValue)}
             </Box>
           </Paper>
-        </Grid>
-        <Grid item xs={12} md={4}>
+        </Box>
+        <Box sx={{ minWidth: 0 }}>
           <Paper variant="outlined" sx={{ p: 1.5, height: '100%' }}>
             <Typography variant="caption" sx={{ fontWeight: 700, mb: 1, display: 'block' }}>{t('audit_new_value')}</Typography>
             <Box component="pre" sx={{ m: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-all', fontSize: 11, color: 'text.secondary' }}>
               {stringifyJson(log.newValue)}
             </Box>
           </Paper>
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
     </Box>
   );
 
   const Filters = (
     <Stack direction="row" spacing={1}>
       <FormControl size="small" sx={{ minWidth: 160 }}>
-        <InputLabel>{t('audit_entity_filter')}</InputLabel>
+        <InputLabel shrink>{t('audit_entity_filter')}</InputLabel>
         <Select
           multiple
+          displayEmpty
           value={entityFilter}
           onChange={(e) => { setEntityFilter(e.target.value); setPage(0); }}
           input={<OutlinedInput label={t('audit_entity_filter')} />}
@@ -199,7 +261,7 @@ const AdminAuditLogsPage = () => {
           {entityOptions.map((e) => (
             <MenuItem key={e} value={e}>
               <Checkbox checked={entityFilter.includes(e)} size="small" />
-              <ListItemText primary={e} />
+              <ListItemText primary={formatAuditLabel(t, AUDIT_ENTITY_LABEL_KEYS, e)} />
             </MenuItem>
           ))}
         </Select>

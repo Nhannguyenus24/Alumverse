@@ -6,69 +6,9 @@ import WYSIWYG from './WYSIWYG';
 import Input from './Input';
 import Dropdown from './Dropdown';
 import { useFundReceivingInfos } from '../hooks/news/useFundReceivingInfos';
+import { getTopicsByChannel } from '../utils/articleTopics';
 
-const getTopicsByChannel = (t) => ({
-  news: [
-    { value: 'school_announcement', label: t('article:topics.school_announcement') },
-    { value: 'faculty_department', label: t('article:topics.faculty_department') },
-    { value: 'student_activities', label: t('article:topics.student_activities') },
-    { value: 'alumni_news', label: t('article:topics.alumni_news') },
-    { value: 'enterprise_cooperation', label: t('article:topics.enterprise_cooperation') },
-    { value: 'academic_research', label: t('article:topics.academic_research') },
-    { value: 'admission_scholarship', label: t('article:topics.admission_scholarship') },
-  ],
-  event: [
-    { value: 'workshop', label: t('article:topics.workshop') },
-    { value: 'talkshow', label: t('article:topics.talkshow') },
-    { value: 'career_fair', label: t('article:topics.career_fair') },
-    { value: 'networking', label: t('article:topics.networking') },
-    { value: 'reunion', label: t('article:topics.reunion') },
-    { value: 'academic_seminar', label: t('article:topics.academic_seminar') },
-    { value: 'club_activities', label: t('article:topics.club_activities') },
-  ],
-  donation: [
-    { value: 'student_scholarship', label: t('article:topics.student_scholarship') },
-    { value: 'hardship_support', label: t('article:topics.hardship_support') },
-    { value: 'research', label: t('article:topics.research') },
-    { value: 'facilities', label: t('article:topics.facilities') },
-    { value: 'community_activities', label: t('article:topics.community_activities') },
-    { value: 'emergency', label: t('article:topics.emergency') },
-  ],
-  alumni: [
-    { value: 'entrepreneur', label: t('article:topics.entrepreneur') },
-    { value: 'technology', label: t('article:topics.technology') },
-    { value: 'academic_research_alumni', label: t('article:topics.academic_research_alumni') },
-    { value: 'study_abroad', label: t('article:topics.study_abroad') },
-    { value: 'startup', label: t('article:topics.startup') },
-    { value: 'leadership', label: t('article:topics.leadership') },
-    { value: 'arts_creativity', label: t('article:topics.arts_creativity') },
-  ],
-  achievement: [
-    { value: 'award', label: t('article:topics.award') },
-    { value: 'achievement_scholarship', label: t('article:topics.achievement_scholarship') },
-    { value: 'career_achievement', label: t('article:topics.career_achievement') },
-    { value: 'science_research', label: t('article:topics.science_research') },
-    { value: 'startup', label: t('article:topics.startup') },
-    { value: 'international', label: t('article:topics.international') },
-  ],
-  learning: [
-    { value: 'achievement_scholarship', label: t('article:topics.achievement_scholarship') },
-    { value: 'masters', label: t('article:topics.masters') },
-    { value: 'study_abroad', label: t('article:topics.study_abroad') },
-    { value: 'online_course', label: t('article:topics.online_course') },
-    { value: 'certificate', label: t('article:topics.certificate') },
-    { value: 'student_exchange', label: t('article:topics.student_exchange') },
-    { value: 'research', label: t('article:topics.research') },
-  ],
-  job: [
-    { value: 'internship', label: t('article:topics.internship') },
-    { value: 'full_time', label: t('article:topics.full_time') },
-    { value: 'part_time', label: t('article:topics.part_time') },
-    { value: 'freelance', label: t('article:topics.freelance') },
-    { value: 'internal_referral', label: t('article:topics.internal_referral') },
-    { value: 'remote', label: t('article:topics.remote') },
-  ],
-});
+const CAPTION_REQUIRED_CHANNELS = new Set(['news', 'alumni', 'achievement', 'job', 'learning', 'event']);
 
 const PostArticleForm = ({
   channel,
@@ -82,6 +22,8 @@ const PostArticleForm = ({
   url,
   setUrl,
   mainImagePreview,
+  mainImageCaption,
+  setMainImageCaption,
   donationData = {},
   handleDonationInputChange,
   eventData = {},
@@ -95,6 +37,8 @@ const PostArticleForm = ({
   const { infos: fundReceivingInfos } = useFundReceivingInfos();
 
   const topicsByChannel = useMemo(() => getTopicsByChannel(t), [t]);
+  const requiresImageCaptions = CAPTION_REQUIRED_CHANNELS.has(channel);
+  const showMainImageCaption = requiresImageCaptions && Boolean(mainImagePreview);
 
   const fundReceivingOptions = useMemo(
     () => fundReceivingInfos.map((i) => ({
@@ -360,7 +304,7 @@ const PostArticleForm = ({
       />
 
       {mainImagePreview && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1, mb: 1 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 1, mb: 1 }}>
           <Box
             component="img"
             src={mainImagePreview}
@@ -374,6 +318,18 @@ const PostArticleForm = ({
               boxShadow: '0 2px 12px rgba(0,0,0,0.12)',
             }}
           />
+          {showMainImageCaption && (
+            <TextField
+              fullWidth
+              size="small"
+              label={t('article:main_image_caption_label')}
+              placeholder={t('article:image_caption_placeholder')}
+              helperText={t('article:main_image_caption_helper')}
+              value={mainImageCaption ?? ''}
+              onChange={(e) => setMainImageCaption?.(e.target.value)}
+              sx={{ mt: 1.5, maxWidth: { xs: '100%', md: '72%' } }}
+            />
+          )}
         </Box>
       )}
 
@@ -383,6 +339,7 @@ const PostArticleForm = ({
           onChange={setContent}
           placeholder={t('article:content_placeholder')}
           height={400}
+          requireImageCaptions={requiresImageCaptions}
         />
       </Box>
 
