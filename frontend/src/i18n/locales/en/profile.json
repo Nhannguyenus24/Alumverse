@@ -179,5 +179,6 @@
   "pub_own_profile_msg": "This is your own profile, so you cannot message yourself.",
   "pub_check_connection_error": "Could not check connection status. Please try again.",
   "pub_load_profile_error": "Failed to load user profile. Please try again.",
-  "pub_no_bio": "This user hasn't updated their bio yet."
+  "pub_no_bio": "This user hasn't updated their bio yet.",
+  "go_to_organization": "Go to organization"
 }

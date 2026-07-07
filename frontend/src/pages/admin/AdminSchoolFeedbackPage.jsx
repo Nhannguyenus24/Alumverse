@@ -8,7 +8,6 @@ import {
   Tooltip,
   Typography,
   Stack,
-  Grid,
 } from '@mui/material';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import MarkEmailReadOutlinedIcon from '@mui/icons-material/MarkEmailReadOutlined';
@@ -119,14 +118,27 @@ const AdminSchoolFeedbackPage = () => {
       id: 'actions',
       label: '',
       align: 'right',
+      width: 96,
       render: (_, row) => (
-        <Stack direction="row" spacing={0.5} justifyContent="flex-end" onClick={(e) => e.stopPropagation()}>
-          <Tooltip title={t('tooltip_view_detail')}>
-            <IconButton size="small" onClick={() => handleViewDetails(row)}>
-              <VisibilityOutlinedIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          {!row.isRead && (
+        <Box
+          onClick={(e) => e.stopPropagation()}
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: '34px 34px',
+            justifyContent: 'end',
+            alignItems: 'center',
+            gap: 0.5,
+          }}
+        >
+          <Box sx={{ width: 34, height: 34, display: 'grid', placeItems: 'center' }}>
+            <Tooltip title={t('tooltip_view_detail')}>
+              <IconButton size="small" onClick={() => handleViewDetails(row)}>
+                <VisibilityOutlinedIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </Box>
+          <Box sx={{ width: 34, height: 34, display: 'grid', placeItems: 'center' }}>
+            {!row.isRead ? (
             <Tooltip title={t('feedback_mark_as_read')}>
               <IconButton
                 size="small"
@@ -136,8 +148,9 @@ const AdminSchoolFeedbackPage = () => {
                 <MarkEmailReadOutlinedIcon fontSize="small" />
               </IconButton>
             </Tooltip>
-          )}
-        </Stack>
+            ) : null}
+          </Box>
+        </Box>
       )
     }
   ];

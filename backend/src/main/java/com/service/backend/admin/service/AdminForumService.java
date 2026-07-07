@@ -13,10 +13,12 @@ import java.util.HashMap;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import com.service.backend.shared.dto.IdCountDTO;
+import com.service.backend.shared.dao.UserDisplayInfo;
 
 import com.service.backend.admin.dao.AdminAuditLogRepository;
 import com.service.backend.organization.dao.OrganizationRepository;
 import com.service.backend.admin.dao.AdminUserRepository;
+import com.service.backend.user.dao.UserProfileRepository;
 import com.service.backend.user.service.NotificationService;
 import com.service.backend.admin.dto.ForumStatisticsDTO;
 import com.service.backend.admin.dto.MonthlyActivityDTO;
@@ -62,6 +64,7 @@ public class AdminForumService {
     private final AdminUserRepository adminUserRepository;
     private final AdminAuditLogRepository adminAuditLogRepository;
     private final NotificationService notificationService;
+    private final UserProfileRepository userProfileRepository;
 
     // ========== VIEW NEW POSTS ==========
 
@@ -695,6 +698,7 @@ public class AdminForumService {
             if (posts.isEmpty()) return Flux.empty();
             Set<Integer> topicIds = posts.stream().map(ForumPost::getTopicId).filter(Objects::nonNull).collect(Collectors.toSet());
             Set<Integer> postIds = posts.stream().map(ForumPost::getId).filter(Objects::nonNull).collect(Collectors.toSet());
+            Set<Integer> authorIds = posts.stream().map(ForumPost::getAuthorMemberId).filter(Objects::nonNull).collect(Collectors.toSet());
             Set<Integer> categoryIds = new HashSet<>();
 
             Mono<Map<Integer, ForumTopic>> topicsMapMono = topicIds.isEmpty() ? Mono.just(new HashMap<>()) :
@@ -703,6 +707,9 @@ public class AdminForumService {
             Mono<Map<Integer, Long>> flagsCountMapMono = postIds.isEmpty() ? Mono.just(new HashMap<>()) :
                     forumPostReportRepository.countByPostIds(postIds).collectMap(IdCountDTO::getId, IdCountDTO::getCount);
 
+            Mono<Map<Integer, UserDisplayInfo>> authorsMapMono = authorIds.isEmpty() ? Mono.just(new HashMap<>()) :
+                    userProfileRepository.findByUserIds(authorIds);
+
             return topicsMapMono.flatMapMany(topicsMap -> {
                 for (ForumTopic topic : topicsMap.values()) {
                     if (topic.getCategoryId() != null) categoryIds.add(topic.getCategoryId());
@@ -710,15 +717,21 @@ public class AdminForumService {
                 Mono<Map<Integer, ForumCategory>> categoriesMapMono = categoryIds.isEmpty() ? Mono.just(new HashMap<>()) :
                         forumCategoryRepository.findAllById(categoryIds).collectMap(ForumCategory::getId);
 
-                return categoriesMapMono.flatMapMany(categoriesMap -> flagsCountMapMono.flatMapMany(flagsCountMap -> Flux.fromIterable(posts).map(post -> {
+                return categoriesMapMono.flatMapMany(categoriesMap ->
+                        Mono.zip(flagsCountMapMono, authorsMapMono).flatMapMany(tuple -> Flux.fromIterable(posts).map(post -> {
+                    Map<Integer, Long> flagsCountMap = tuple.getT1();
+                    Map<Integer, UserDisplayInfo> authorsMap = tuple.getT2();
                     ForumTopic topic = topicsMap.getOrDefault(post.getTopicId(), ForumTopic.builder().build());
                     ForumCategory category = categoriesMap.getOrDefault(topic.getCategoryId(), ForumCategory.builder().build());
                     Long flagsCount = flagsCountMap.getOrDefault(post.getId(), 0L);
+                    UserDisplayInfo author = post.getAuthorMemberId() != null ? authorsMap.get(post.getAuthorMemberId()) : null;
 
                     return ForumPostDTO.builder()
                             .id(post.getId())
                             .topicId(post.getTopicId())
                             .authorMemberId(post.getAuthorMemberId())
+                            .authorName(author != null ? author.getFullName() : null)
+                            .authorAvatarUrl(author != null ? author.getAvatarUrl() : null)
                             .topicTitle(topic.getTitle())
                             .categoryName(category.getName())
                             .flagsCount(flagsCount)

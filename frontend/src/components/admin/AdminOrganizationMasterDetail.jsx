@@ -474,6 +474,16 @@ const AdminOrganizationMasterDetail = ({
                     >
                       {t('admin:org_edit_info_btn')}
                     </Button>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      size="small"
+                      startIcon={<VisibilityOutlinedIcon />}
+                      onClick={() => window.open(`/${selectedOrg.slug}`, '_blank', 'noopener,noreferrer')}
+                      disabled={!selectedOrg.slug}
+                    >
+                      {t('admin:org_open_site_btn')}
+                    </Button>
                     <IconButton 
                       size="small" 
                       color="error"

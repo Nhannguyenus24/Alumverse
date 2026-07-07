@@ -38,6 +38,15 @@ import useAdminAuditLogsData from '../../hooks/admin/useAdminAuditLogsData';
 import { getLoginHistoryByUser, getUserActivity, adminOrganizationApi } from '../../utils/api';
 import { formatDateTime } from '../../utils/dateFormatter';
 
+const formatEnumText = (value) => {
+  if (value == null || value === '') return '-';
+  return String(value)
+    .replace(/_/g, ' ')
+    .trim()
+    .toLowerCase()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
 const AdminUserDetailPage = () => {
   const { t } = useTranslation('admin');
   const { userId } = useParams();
@@ -325,7 +334,14 @@ const AdminUserDetailPage = () => {
                   <ListItem key={m.organizationName} disablePadding sx={{ py: 0.5 }}>
                     <ListItemText
                       primary={m.organizationName}
-                      secondary={`${t('user_detail_membership_verification')}: ${m.verificationLevel} · ${t('col_status')}: ${m.status}`}
+                      secondary={
+                        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap sx={{ mt: 0.5 }}>
+                          <Typography variant="caption" color="text.secondary">
+                            {t('user_detail_membership_verification')}: {formatEnumText(m.verificationLevel)}
+                          </Typography>
+                          <AdminStatusChip status={m.status} category="verification" />
+                        </Stack>
+                      }
                     />
                   </ListItem>
                 ))}
@@ -432,7 +448,12 @@ const AdminUserDetailPage = () => {
                       {userVerificationLogs.map((item, idx) => (
                         <ListItem key={`${item.id || idx}`} disablePadding sx={{ py: 0.5 }}>
                           <ListItemText
-                            primary={`#${item.id || '-'} · ${item.status || t('user_detail_status_unknown')}`}
+                            primary={
+                              <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                                <Typography variant="body2">#{item.id || '-'}</Typography>
+                                <AdminStatusChip status={item.status || t('user_detail_status_unknown')} category="verification" />
+                              </Stack>
+                            }
                             secondary={`${t('user_detail_type_label')}: ${item.documentType || '-'} · ${t('user_detail_created_at_label')}: ${formatDateTime(item.createdAt)}`}
                           />
                         </ListItem>

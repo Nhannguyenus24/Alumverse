@@ -203,8 +203,9 @@ public class EventService {
                 .flatMap(memberId -> eventRepository.checkUserRegistered(eventId, memberId));
     }
 
-    public Mono<PaginatedResponse<EventInterest>> getEventInterests(Long eventId, int page, int limit) {
-        return eventRepository.findEventInterests(eventId, page, limit);
+    public Mono<PaginatedResponse<EventInterestDetailResponse>> getEventInterests(Long eventId, int page, int limit) {
+        return eventRepository.findEventInterests(eventId, page, limit)
+                .flatMap(this::mapInterestPageWithMembers);
     }
 
     // ─── Step 1: Invite users ─────────────────────────────────────────────────
@@ -560,15 +561,18 @@ public class EventService {
                 .flatMap(this::toDetailWithAttendee);
     }
 
-    public Mono<PaginatedResponse<EventTicket>> getTicketsByEvent(Long eventId, String status, String keyword, int page, int limit) {
+    public Mono<PaginatedResponse<EventTicketDetailResponse>> getTicketsByEvent(Long eventId, String status, String keyword, int page, int limit) {
+        Mono<PaginatedResponse<EventTicket>> ticketsPage;
         if (keyword != null && !keyword.isBlank()) {
-            return status != null
+            ticketsPage = status != null
                     ? eventRepository.searchTicketsByEventAndStatus(eventId, status, keyword.trim(), page, limit)
                     : eventRepository.searchTicketsByEvent(eventId, keyword.trim(), page, limit);
+        } else {
+            ticketsPage = status != null
+                    ? eventRepository.findTicketsByEventAndStatus(eventId, status, page, limit)
+                    : eventRepository.findTicketsByEvent(eventId, page, limit);
         }
-        return status != null
-                ? eventRepository.findTicketsByEventAndStatus(eventId, status, page, limit)
-                : eventRepository.findTicketsByEvent(eventId, page, limit);
+        return ticketsPage.flatMap(this::mapDetailPageWithAttendees);
     }
 
     public Mono<PaginatedResponse<EventTicketDetailResponse>> getMyTickets(int page, int limit) {
@@ -614,16 +618,86 @@ public class EventService {
                 .build();
     }
 
+    private Mono<PaginatedResponse<EventTicketDetailResponse>> mapDetailPageWithAttendees(PaginatedResponse<EventTicket> page) {
+        return Flux.fromIterable(page.getItems())
+                .concatMap(this::toDetailWithAttendee)
+                .collectList()
+                .map(items -> PaginatedResponse.<EventTicketDetailResponse>builder()
+                        .items(items)
+                        .currentPage(page.getCurrentPage())
+                        .pageSize(page.getPageSize())
+                        .totalPage(page.getTotalPage())
+                        .totalItem(page.getTotalItem())
+                        .hasNext(page.getHasNext())
+                        .hasPrevious(page.getHasPrevious())
+                        .build());
+    }
+
     // ─── Invitation queries ───────────────────────────────────────────────────
 
-    public Mono<PaginatedResponse<EventInvitation>> getInvitationsByEvent(Long eventId, int page, int limit) {
-        return eventRepository.findInvitationsByEvent(eventId, page, limit);
+    public Mono<PaginatedResponse<EventInvitationDetailResponse>> getInvitationsByEvent(Long eventId, int page, int limit) {
+        return eventRepository.findInvitationsByEvent(eventId, page, limit)
+                .flatMap(this::mapInvitationPageWithMembers);
     }
 
     // ─── Email log queries ────────────────────────────────────────────────────
 
     public Mono<PaginatedResponse<EventEmailLog>> getEmailLogsByEvent(Long eventId, int page, int limit) {
         return eventRepository.findEmailLogsByEvent(eventId, page, limit);
+    }
+
+    private Mono<EventInterestDetailResponse> toInterestDetailWithMember(EventInterest interest) {
+        EventInterestDetailResponse.EventInterestDetailResponseBuilder builder = EventInterestDetailResponse.fromInterest(interest);
+        if (interest.getMemberId() == null) return Mono.just(builder.build());
+        return userProfileRepository.findAttendeeProfileByUserId(interest.getMemberId().intValue())
+                .map(profile -> builder
+                        .memberName(profile.fullName())
+                        .memberEmail(profile.email())
+                        .memberAvatarUrl(profile.avatarUrl())
+                        .build())
+                .defaultIfEmpty(builder.build());
+    }
+
+    private Mono<PaginatedResponse<EventInterestDetailResponse>> mapInterestPageWithMembers(PaginatedResponse<EventInterest> page) {
+        return Flux.fromIterable(page.getItems())
+                .concatMap(this::toInterestDetailWithMember)
+                .collectList()
+                .map(items -> PaginatedResponse.<EventInterestDetailResponse>builder()
+                        .items(items)
+                        .currentPage(page.getCurrentPage())
+                        .pageSize(page.getPageSize())
+                        .totalPage(page.getTotalPage())
+                        .totalItem(page.getTotalItem())
+                        .hasNext(page.getHasNext())
+                        .hasPrevious(page.getHasPrevious())
+                        .build());
+    }
+
+    private Mono<EventInvitationDetailResponse> toInvitationDetailWithMember(EventInvitation invitation) {
+        EventInvitationDetailResponse.EventInvitationDetailResponseBuilder builder = EventInvitationDetailResponse.fromInvitation(invitation);
+        if (invitation.getMemberId() == null) return Mono.just(builder.build());
+        return userProfileRepository.findAttendeeProfileByUserId(invitation.getMemberId().intValue())
+                .map(profile -> builder
+                        .memberName(profile.fullName())
+                        .memberEmail(profile.email())
+                        .memberAvatarUrl(profile.avatarUrl())
+                        .build())
+                .defaultIfEmpty(builder.build());
+    }
+
+    private Mono<PaginatedResponse<EventInvitationDetailResponse>> mapInvitationPageWithMembers(PaginatedResponse<EventInvitation> page) {
+        return Flux.fromIterable(page.getItems())
+                .concatMap(this::toInvitationDetailWithMember)
+                .collectList()
+                .map(items -> PaginatedResponse.<EventInvitationDetailResponse>builder()
+                        .items(items)
+                        .currentPage(page.getCurrentPage())
+                        .pageSize(page.getPageSize())
+                        .totalPage(page.getTotalPage())
+                        .totalItem(page.getTotalItem())
+                        .hasNext(page.getHasNext())
+                        .hasPrevious(page.getHasPrevious())
+                        .build());
     }
 
     // ─── Statistics ───────────────────────────────────────────────────────────

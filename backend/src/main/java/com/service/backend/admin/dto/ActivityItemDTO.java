@@ -8,6 +8,8 @@ public class ActivityItemDTO {
     private Long id;
     private LocalDateTime timestamp;
     private Integer adminUserId;
+    private String adminFullName;
+    private String adminEmail;
     private Integer targetUserId;
     private String action;
     private String resourceType;

@@ -980,6 +980,11 @@ export const userSettingsApi = {
 		return unwrap(response);
 	},
 
+	async updateCover(coverUrl) {
+		const response = await apiClient.put('/users/me/cover', { coverUrl });
+		return unwrap(response);
+	},
+
 	async updateNotificationSettings(payload) {
 		const response = await apiClient.put('/users/me/notification-settings', payload);
 		return unwrap(response);

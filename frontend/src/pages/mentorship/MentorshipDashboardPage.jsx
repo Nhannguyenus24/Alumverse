@@ -33,6 +33,7 @@ import { useMyMentorProfile } from '../../hooks/mentorship/useMyMentorProfile';
 import { useMyMentorFeedbacks } from '../../hooks/mentorship/useMyMentorFeedbacks';
 import { useJoinSession } from '../../hooks/mentorship/useJoinSession';
 import { formatDate } from '../../utils/dateFormatter';
+import { resolveMediaUrl } from '../../utils/imageUtils';
 import { formatRating } from '../../utils/numberFormatter';
 import {
   cancelMentorSession,
@@ -280,8 +281,8 @@ const MentorshipDashboardPage = () => {
       profile && (profile.currentJobTitle || profile.currentCompany)
         ? [profile.currentJobTitle, profile.currentCompany].filter(Boolean).join(' @ ')
         : t('mentor'),
-    avatar: profile?.avatarUrl ?? '',
-    cover: profile?.coverUrl ?? DEFAULT_COVER,
+    avatar: resolveMediaUrl(profile?.avatarUrl ?? ''),
+    cover: resolveMediaUrl(profile?.coverUrl) || DEFAULT_COVER,
   }), [profile, t]);
 
   const ratingAvg = formatRating(profile?.ratingAvg);

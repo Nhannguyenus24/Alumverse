@@ -23,9 +23,12 @@ import reactor.core.publisher.Mono;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -101,9 +104,39 @@ public class AdminDashboardService {
             total = adminAuditLogRepository.countAdminActionLogs(null, null, null);
         }
 
-        return PaginationHelper.paginate(items, total, page, size)
-                .flatMap(m -> cacheUtils.putWithTtl("admin:activities", "page:" + page, m, Duration.ofMinutes(1)).thenReturn(m))
+        String cacheKey = (organizationId == null ? "global" : "org:" + organizationId) + ":page:" + page + ":size:" + size;
+        return PaginationHelper.paginate(enrichActivityActors(items), total, page, size)
+                .flatMap(m -> cacheUtils.putWithTtl("admin:activities", cacheKey, m, Duration.ofMinutes(1)).thenReturn(m))
                 .doOnSuccess(r -> log.info("getActivities result: {}", JsonUtils.toJson(r)));
+    }
+
+    private Flux<ActivityItemDTO> enrichActivityActors(Flux<ActivityItemDTO> items) {
+        return items.collectList().flatMapMany(activityItems -> {
+            if (activityItems.isEmpty()) {
+                return Flux.empty();
+            }
+
+            Set<Integer> adminIds = activityItems.stream()
+                    .map(ActivityItemDTO::getAdminUserId)
+                    .filter(id -> id != null)
+                    .collect(Collectors.toCollection(HashSet::new));
+
+            if (adminIds.isEmpty()) {
+                return Flux.fromIterable(activityItems);
+            }
+
+            return adminUserRepository.findAllById(adminIds)
+                    .collectMap(user -> user.getId())
+                    .flatMapMany(usersById -> Flux.fromIterable(activityItems)
+                            .map(item -> {
+                                var user = usersById.get(item.getAdminUserId());
+                                if (user != null) {
+                                    item.setAdminFullName(user.getFullName());
+                                    item.setAdminEmail(user.getEmail());
+                                }
+                                return item;
+                            }));
+        });
     }
 
     private ActivityItemDTO toDto(AdminAuditLog log) {

@@ -7,6 +7,7 @@ export const getTopicsByChannel = (t) => ({
     { value: 'enterprise_cooperation', label: t('article:topics.enterprise_cooperation') },
     { value: 'academic_research', label: t('article:topics.academic_research') },
     { value: 'admission_scholarship', label: t('article:topics.admission_scholarship') },
+    { value: 'donation', label: t('article:topics.donation') },
   ],
   event: [
     { value: 'workshop', label: t('article:topics.workshop') },

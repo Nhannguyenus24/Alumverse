@@ -24,6 +24,36 @@ export const FUND_LOGO_PREVIEW_SX = {
   display: "block",
 };
 
+export const resolveMediaUrl = (url) => {
+  if (!url || typeof url !== "string") return url;
+
+  const trimmed = url.trim();
+  const apiOrigin = import.meta.env.VITE_API_BASE_URL?.replace(/\/+$/, "");
+
+  if (
+    trimmed.startsWith("http://") ||
+    trimmed.startsWith("https://") ||
+    trimmed.startsWith("data:") ||
+    trimmed.startsWith("blob:")
+  ) {
+    return trimmed;
+  }
+
+  if (trimmed.startsWith("//")) {
+    return `${window.location.protocol}${trimmed}`;
+  }
+
+  if (trimmed.startsWith("/images/") || trimmed.startsWith("/files/")) {
+    return apiOrigin ? `${apiOrigin}${trimmed}` : trimmed;
+  }
+
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.[a-z0-9]+$/i.test(trimmed)) {
+    return apiOrigin ? `${apiOrigin}/images/${trimmed}` : `/images/${trimmed}`;
+  }
+
+  return trimmed;
+};
+
 /**
  * Validate an image file (type + max size).
  * @param {File} file
@@ -238,7 +268,7 @@ export const isAnimatedGif = (fileName = "") => fileName.toLowerCase().endsWith(
  */
 const uploadImageBase64 = async (base64String) => {
   const res = await apiClient.post("/images/upload", { base64String });
-  return res?.data?.data ?? null;
+  return resolveMediaUrl(res?.data?.data) ?? null;
 };
 
 /**

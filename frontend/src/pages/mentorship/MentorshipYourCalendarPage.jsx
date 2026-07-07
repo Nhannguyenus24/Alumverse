@@ -33,6 +33,7 @@ import MentorshipBookingWindowCard from '../../components/mentorship/MentorshipB
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useMyMentorProfile } from '../../hooks/mentorship/useMyMentorProfile';
 import { useMyMentorSessions } from '../../hooks/mentorship/useMyMentorSessions';
+import { resolveMediaUrl } from '../../utils/imageUtils';
 import { useMyAvailabilities } from '../../hooks/mentorship/useMyAvailabilities';
 import { useAddAvailability } from '../../hooks/mentorship/useAddAvailability';
 import { useDeleteAvailability } from '../../hooks/mentorship/useDeleteAvailability';
@@ -290,8 +291,8 @@ const MentorshipYourCalendarPage = () => {
       profile && (profile.currentJobTitle || profile.currentCompany)
         ? [profile.currentJobTitle, profile.currentCompany].filter(Boolean).join(' @ ')
         : t('mentor'),
-    avatar: profile?.avatarUrl ?? '',
-    cover: profile?.coverUrl ?? DEFAULT_COVER,
+    avatar: resolveMediaUrl(profile?.avatarUrl ?? ''),
+    cover: resolveMediaUrl(profile?.coverUrl) || DEFAULT_COVER,
   }), [profile, t]);
 
   return (

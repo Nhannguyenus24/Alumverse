@@ -21,7 +21,6 @@ import {
   Stack,
   alpha,
   useTheme,
-  Grid,
 } from '@mui/material';
 import { useOutletContext } from 'react-router';
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
@@ -82,35 +81,43 @@ const CategoryBranch = ({ node, depth = 0, expanded, toggle, onEdit, onDelete, o
         sx={{ 
           borderRadius: 2, 
           mb: 0.5,
+          display: 'grid',
+          gridTemplateColumns: 'minmax(0, 1fr) 120px 180px',
+          gap: 2,
+          alignItems: 'center',
           '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.05) }
         }}
       >
-        {hasChildren ? (
-          <IconButton size="small" edge="start" sx={{ mr: 1, color: 'primary.main' }}>
-            {open ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
-          </IconButton>
-        ) : (
-          <Box sx={{ width: 36 }} />
-        )}
-        <ListItemText
-          primary={
-            <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>
-              {node.name}
-            </Typography>
-          }
-          secondary={
-            <Typography variant="caption" color="text.secondary">
-              {node.description || t('admin:no_description')}
-            </Typography>
-          }
-        />
-        <Stack direction="row" spacing={0.5} alignItems="center" onClick={(e) => e.stopPropagation()}>
+        <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
+          {hasChildren ? (
+            <IconButton size="small" edge="start" sx={{ mr: 1, color: 'primary.main', flexShrink: 0 }}>
+              {open ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
+            </IconButton>
+          ) : (
+            <Box sx={{ width: 36, flexShrink: 0 }} />
+          )}
+          <ListItemText
+            sx={{ minWidth: 0 }}
+            primary={
+              <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                {node.name}
+              </Typography>
+            }
+            secondary={
+              <Typography variant="caption" color="text.secondary">
+                {node.description || t('admin:no_description')}
+              </Typography>
+            }
+          />
+        </Box>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
           <AdminStatusChip
             status={node.status || 'ACTIVE'}
             category="forum"
             label={statusLabel(node.status)}
-            sx={{ mr: 0.5 }}
           />
+        </Box>
+        <Stack direction="row" spacing={0.5} alignItems="center" onClick={(e) => e.stopPropagation()}>
           <Tooltip title={isActive ? t('admin:forum_status_inactive') : t('admin:forum_status_active')}>
             <IconButton
               size="small"
@@ -123,6 +130,7 @@ const CategoryBranch = ({ node, depth = 0, expanded, toggle, onEdit, onDelete, o
           <Tooltip title={t('admin:view_on_forum')}>
             <IconButton
               size="small"
+              color="primary"
               onClick={() => {
                 const slug = activeOrganization?.slug;
                 if (slug) {
@@ -327,11 +335,23 @@ const AdminForumCategoriesPage = () => {
       </Box>
 
       <Box sx={{ bgcolor: 'background.paper', borderRadius: 3, border: 1, borderColor: 'divider', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
-        <Box sx={{ display: 'flex', bgcolor: (t) => t.palette.mode === 'light' ? 'primary.main' : 'primary.dark', px: 2, py: 2 }}>
-          <Typography sx={{ flex: 1, fontWeight: 700, color: 'primary.contrastText', fontSize: 13, textTransform: 'uppercase', letterSpacing: 0.5, pl: 6 }}>
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: 'minmax(0, 1fr) 120px 180px',
+            gap: 2,
+            bgcolor: (t) => t.palette.mode === 'light' ? 'primary.main' : 'primary.dark',
+            px: 2,
+            py: 2,
+          }}
+        >
+          <Typography sx={{ fontWeight: 700, color: 'primary.contrastText', fontSize: 13, textTransform: 'uppercase', letterSpacing: 0.5, pl: 6 }}>
             {t('admin:forum_cat_name_col')}
           </Typography>
-          <Typography sx={{ width: 120, fontWeight: 700, color: 'primary.contrastText', fontSize: 13, textTransform: 'uppercase', letterSpacing: 0.5, textAlign: 'right', pr: 1 }}>
+          <Typography sx={{ fontWeight: 700, color: 'primary.contrastText', fontSize: 13, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            {t('admin:col_status')}
+          </Typography>
+          <Typography sx={{ fontWeight: 700, color: 'primary.contrastText', fontSize: 13, textTransform: 'uppercase', letterSpacing: 0.5, textAlign: 'right', pr: 1 }}>
             {t('admin:actions')}
           </Typography>
         </Box>

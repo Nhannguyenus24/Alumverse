@@ -30,8 +30,10 @@ const AdminDataTable = ({
   columns,
   rows,
   totalCount,
+  total,
   page,
   rowsPerPage,
+  pageSize,
   onPageChange,
   onRowsPerPageChange,
   onSearchChange,
@@ -46,11 +48,15 @@ const AdminDataTable = ({
   onRowClick,
   renderExpandableRow,
   getRowId,
+  loading = false,
 }) => {
   const { t } = useTranslation(['common', 'admin']);
   const theme = useTheme();
   const resolvedSearchPlaceholder = searchPlaceholder ?? t('common:search_placeholder');
   const resolvedEmptyMessage = emptyMessage ?? t('common:no_data_found');
+  const resolvedRows = rows ?? [];
+  const resolvedTotalCount = totalCount ?? total ?? resolvedRows.length;
+  const resolvedRowsPerPage = rowsPerPage ?? pageSize ?? 10;
   const [expandedRow, setExpandedRow] = useState(null);
   const tableHeadBg = theme.palette.mode === 'dark'
     ? theme.palette.primary.dark
@@ -58,6 +64,19 @@ const AdminDataTable = ({
   const tableHeadColor = theme.palette.mode === 'dark'
     ? theme.palette.text.primary
     : theme.palette.primary.contrastText;
+
+  const handlePageChange = (event, nextPage) => {
+    if (!onPageChange) return;
+    if (onPageChange.length <= 1) {
+      onPageChange(nextPage);
+      return;
+    }
+    onPageChange(event, nextPage);
+  };
+
+  const handleRowsPerPageChange = (event) => {
+    onRowsPerPageChange?.(event);
+  };
 
   const handleRowExpand = (id, e) => {
     e.stopPropagation();
@@ -148,6 +167,8 @@ const AdminDataTable = ({
                   key={column.id}
                   align={column.align || 'left'}
                   sx={{
+                    width: column.width,
+                    minWidth: column.minWidth || column.width,
                     bgcolor: tableHeadBg,
                     fontWeight: 700,
                     color: tableHeadColor,
@@ -163,7 +184,15 @@ const AdminDataTable = ({
             </TableRow>
           </TableHead>
           <TableBody>
-            {rows.length === 0 ? (
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={columns.length + (renderExpandableRow ? 1 : 0)} sx={{ py: 10, textAlign: 'center' }}>
+                  <Typography variant="body2" color="text.secondary">
+                    {t('common:loading')}
+                  </Typography>
+                </TableCell>
+              </TableRow>
+            ) : resolvedRows.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={columns.length + (renderExpandableRow ? 1 : 0)} sx={{ py: 10, textAlign: 'center' }}>
                   <Typography variant="body2" color="text.disabled" sx={{ fontStyle: 'italic' }}>
@@ -172,7 +201,7 @@ const AdminDataTable = ({
                 </TableCell>
               </TableRow>
             ) : (
-              rows.map((row, idx) => {
+              resolvedRows.map((row, idx) => {
                 const rowId = getRowId ? getRowId(row, idx) : (row.id ?? idx);
                 const isExpanded = expandedRow === rowId;
                 
@@ -197,7 +226,16 @@ const AdminDataTable = ({
                       {columns.map((column) => {
                         const value = row[column.id];
                         return (
-                          <TableCell key={column.id} align={column.align || 'left'} sx={{ py: 2, fontSize: 14 }}>
+                          <TableCell
+                            key={column.id}
+                            align={column.align || 'left'}
+                            sx={{
+                              py: 2,
+                              fontSize: 14,
+                              width: column.width,
+                              minWidth: column.minWidth || column.width,
+                            }}
+                          >
                             {column.render ? column.render(value, row) : (value || '—')}
                           </TableCell>
                         );
@@ -225,12 +263,12 @@ const AdminDataTable = ({
       {/* Pagination */}
       <TablePagination
         component="div"
-        count={totalCount}
+        count={resolvedTotalCount}
         page={page}
-        onPageChange={onPageChange}
-        rowsPerPage={rowsPerPage}
-        onRowsPerPageChange={onRowsPerPageChange}
-        rowsPerPageOptions={[10, 25, 50]}
+        onPageChange={handlePageChange}
+        rowsPerPage={resolvedRowsPerPage}
+        onRowsPerPageChange={handleRowsPerPageChange}
+        rowsPerPageOptions={[5, 10, 20, 25, 50]}
         labelRowsPerPage={t('common:rows_per_page')}
         sx={{ borderTop: `1px solid ${theme.palette.divider}` }}
       />
