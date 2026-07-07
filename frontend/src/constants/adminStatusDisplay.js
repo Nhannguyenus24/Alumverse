@@ -105,11 +105,14 @@ const formatEventStatusLabel = (status, t) => {
     ONGOING: 'admin:stats_ongoing',
     PAST: 'admin:stats_past',
     REGISTERED: 'admin:event_ticket_registered',
-    PENDING: 'admin:status_processing',
+    PENDING: 'admin:event_ticket_pending',
+    ISSUED: 'admin:event_ticket_issued',
     CHECKED_IN: 'admin:event_ticket_checked_in',
     USED: 'admin:event_ticket_used',
     CANCELLED: 'admin:event_ticket_cancelled',
     EXPIRED: 'admin:event_ticket_expired',
+    CONFIRMED: 'admin:status_success',
+    DECLINED: 'admin:forum_status_rejected',
   };
   return resolveLabel(t, map, key, status);
 };
@@ -164,12 +167,26 @@ const STATUS_COLORS = {
   ONGOING: 'primary',
   PAST: 'default',
   REGISTERED: 'info',
+  ISSUED: 'info',
   CHECKED_IN: 'success',
   USED: 'success',
   CANCELLED: 'error',
   EXPIRED: 'default',
   CONFIRMED: 'info',
   COMPLETED: 'success',
+};
+
+const TICKET_STATUS_COLORS = {
+  PENDING: 'warning',
+  REGISTERED: 'primary',
+  ISSUED: 'info',
+  CHECKED_IN: 'success',
+  USED: 'success',
+  CANCELLED: 'error',
+  EXPIRED: 'default',
+  CONFIRMED: 'success',
+  DECLINED: 'error',
+  REJECTED: 'error',
 };
 
 /**
@@ -233,6 +250,8 @@ export const resolveAdminStatusChip = (status, category, t) => {
     label,
     color: category === 'fundraising'
       ? (FUNDRAISING_STATUS_COLORS[key] || 'default')
-      : (STATUS_COLORS[key] || 'default'),
+      : category === 'ticket'
+        ? (TICKET_STATUS_COLORS[key] || 'default')
+        : (STATUS_COLORS[key] || 'default'),
   };
 };

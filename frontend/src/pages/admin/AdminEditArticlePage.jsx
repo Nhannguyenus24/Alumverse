@@ -20,6 +20,7 @@ import {
   MAX_JSON_PAYLOAD_BYTES,
   validateImageFile,
 } from '../../utils/imageUtils';
+import { extractMainImageCaption, withMainImageCaption } from '../../utils/articleContentCaption';
 import { useNotification } from '../../hooks/useNotification';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
@@ -39,8 +40,10 @@ const articleContent = (a) =>
 const articleThumbnail = (a) =>
   a?.thumbnailUrl ?? a?.imageUrl ?? a?.bannerUrl ?? a?.logoUrl ?? null;
 
+const CAPTION_REQUIRED_CHANNELS = new Set(['news', 'alumni', 'achievement', 'job', 'learning']);
+
 const AdminEditArticlePage = () => {
-  const { t } = useTranslation('admin');
+  const { t } = useTranslation(['admin', 'article']);
   const CHANNEL_LABELS = getChannelLabels(t);
   const { channel, id } = useParams();
   const navigate = useOrgNavigate();
@@ -56,12 +59,15 @@ const AdminEditArticlePage = () => {
   const [coverCroppedPreview, setCoverCroppedPreview] = useState(null);
   const [coverPositionY, setCoverPositionY] = useState(50);
   const [url, setUrl] = useState('');
+  const [mainImageCaption, setMainImageCaption] = useState('');
 
   useEffect(() => {
     if (!article) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setTitle(article.title ?? '');
-    setContent(articleContent(article));
+    const parsedContent = extractMainImageCaption(articleContent(article));
+    setContent(parsedContent.content);
+    setMainImageCaption(parsedContent.caption);
     setCoverPreview(articleThumbnail(article));
     setTopic(article.topic ?? article.type ?? '');
     setUrl(article.url || article.linkUrl || '');
@@ -109,12 +115,16 @@ const AdminEditArticlePage = () => {
         return;
       }
     }
+    if (CAPTION_REQUIRED_CHANNELS.has(channel) && (coverFile || articleThumbnail(article)) && !mainImageCaption.trim()) {
+      showError(t('article:main_image_caption_required'));
+      return;
+    }
 
     try {
       const thumbnailBase64 = coverFile ? await fileToCroppedCoverBase64(coverFile, coverPositionY) : null;
       const payload = {
         title: title.trim(),
-        content: content.trim(),
+        content: withMainImageCaption(content.trim(), mainImageCaption),
         thumbnailBase64,
         thumbnailUrl: thumbnailBase64 ? null : articleThumbnail(article),
         topic: topic || null,
@@ -196,6 +206,8 @@ const AdminEditArticlePage = () => {
               url={url}
               setUrl={setUrl}
               mainImagePreview={coverCroppedPreview ?? coverPreview}
+              mainImageCaption={mainImageCaption}
+              setMainImageCaption={setMainImageCaption}
             />
 
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, pt: 2, mt: 3 }}>

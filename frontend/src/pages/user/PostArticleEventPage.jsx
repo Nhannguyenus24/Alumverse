@@ -13,6 +13,7 @@ import { useNotification } from '../../hooks/useNotification';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { eventApi } from '../../utils/api';
 import { mapQuestionToApi } from '../../hooks/events/useEventQuestions';
+import { extractMainImageCaption, withMainImageCaption } from '../../utils/articleContentCaption';
 
 const normalizeQuestions = (questions = []) =>
   questions
@@ -58,7 +59,7 @@ const PostEventPage = () => {
   const isEditMode = Boolean(eventId && !Number.isNaN(eventId));
 
   const navigate = useOrgNavigate();
-  const { t } = useTranslation('event');
+  const { t } = useTranslation(['event', 'article']);
   const { showSuccess, showError } = useNotification();
   const { createEvent, isPending: isCreating } = useCreateEvent();
   const {
@@ -73,6 +74,7 @@ const PostEventPage = () => {
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [mainImageCaption, setMainImageCaption] = useState('');
   const [topic, setTopic] = useState('');
   const [registrationQuestions, setRegistrationQuestions] = useState([]);
   const [eventData, setEventData] = useState(emptyEventData);
@@ -86,8 +88,10 @@ const PostEventPage = () => {
 
   useEffect(() => {
     if (!existingEvent) return;
+    const parsedContent = extractMainImageCaption(existingEvent.description || '');
     setTitle(existingEvent.title || '');
-    setContent(existingEvent.description || '');
+    setContent(parsedContent.content);
+    setMainImageCaption(parsedContent.caption);
     setTopic(existingEvent.topic || '');
     setEventData({
       location: existingEvent.location || '',
@@ -111,7 +115,7 @@ const PostEventPage = () => {
     const bannerBase64 = coverFile ? await fileToCroppedCoverBase64(coverFile, coverPositionY) : null;
     return {
       title: title.trim(),
-      description: content.trim(),
+      description: withMainImageCaption(content.trim(), mainImageCaption),
       topic: topic || null,
       bannerBase64,
       location: eventData.location || null,
@@ -130,6 +134,10 @@ const PostEventPage = () => {
     }
     if (!eventData.startDate || !eventData.endDate) {
       showError(t('error_time_required'));
+      return;
+    }
+    if ((coverFile || coverPreview) && !mainImageCaption.trim()) {
+      showError(t('article:main_image_caption_required'));
       return;
     }
 
@@ -203,6 +211,8 @@ const PostEventPage = () => {
         setRegistrationQuestions={setRegistrationQuestions}
         hideLocalQuestions={isEditMode}
         mainImagePreview={coverCroppedPreview ?? coverPreview}
+        mainImageCaption={mainImageCaption}
+        setMainImageCaption={setMainImageCaption}
       />
       {isEditMode && eventId ? (
         <Box sx={{ mt: 3 }}>

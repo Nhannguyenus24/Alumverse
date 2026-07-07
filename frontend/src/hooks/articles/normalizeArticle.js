@@ -1,3 +1,5 @@
+import { resolveMediaUrl } from "../../utils/imageUtils";
+
 export const normalizeNews = (data) => {
   if (!data) return null;
   const publishedAt = data.publishedAt ?? data.published_at ?? data.createdAt ?? data.created_at;
@@ -6,7 +8,7 @@ export const normalizeNews = (data) => {
     channel: "news",
     title: data.title,
     content: data.content,
-    thumbnailUrl: data.thumbnailUrl,
+    thumbnailUrl: resolveMediaUrl(data.thumbnailUrl),
     publishedAt,
     topic: data.topic,
     url: data.url,
@@ -21,7 +23,7 @@ export const normalizeAlumniPost = (data) => {
     channel: "alumni",
     title: data.title,
     content: data.content,
-    thumbnailUrl: data.thumbnailUrl,
+    thumbnailUrl: resolveMediaUrl(data.thumbnailUrl),
     publishedAt,
     topic: data.topic,
     url: data.url,
@@ -35,7 +37,7 @@ export const normalizeEvent = (data) => {
     channel: "event",
     title: data.title,
     content: data.description,
-    thumbnailUrl: data.bannerUrl,
+    thumbnailUrl: resolveMediaUrl(data.bannerUrl),
     publishedAt: data.createdAt,
     organizer: data.organizer ?? null,
     eventDate: data.startTime,
@@ -80,7 +82,7 @@ export const normalizeAchievement = (data) => {
     channel: "achievement",
     title: data.title,
     content: data.description,
-    thumbnailUrl: data.imageUrl,
+    thumbnailUrl: resolveMediaUrl(data.imageUrl),
     publishedAt,
     status: data.status,
     topic: data.topic,
@@ -116,7 +118,7 @@ export const normalizeFund = (data) => {
     channel: "donation",
     title: data.name,
     content: data.descriptionFull,
-    thumbnailUrl: data.logoUrl,
+    thumbnailUrl: resolveMediaUrl(data.logoUrl),
     publishedAt: data.timeStarted,
     organizer: data.managerName,
     donationDate: data.timeStarted,

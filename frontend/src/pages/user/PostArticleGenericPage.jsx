@@ -18,6 +18,7 @@ import { useNotification } from '../../hooks/useNotification';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
+import { withMainImageCaption } from '../../utils/articleContentCaption';
 
 const JOB_TYPE_BY_TOPIC = {
   internship: 'INTERNSHIP',
@@ -165,6 +166,7 @@ const PostArticleGenericPage = () => {
   const [content, setContent] = useState('');
   const [topic, setTopic] = useState('');
   const [url, setUrl] = useState('');
+  const [mainImageCaption, setMainImageCaption] = useState('');
 
   const allHooks = useAllHooks();
   const config = CHANNEL_CONFIG[channel];
@@ -188,6 +190,10 @@ const PostArticleGenericPage = () => {
       showError(t('error_topic_required', { defaultValue: 'Vui lòng chọn chủ đề' }));
       return;
     }
+    if (coverFile && !mainImageCaption.trim()) {
+      showError(t('main_image_caption_required'));
+      return;
+    }
     if (coverFile) {
       const imageValidation = validateImageFile(coverFile);
       if (!imageValidation.valid) {
@@ -201,7 +207,7 @@ const PostArticleGenericPage = () => {
         : undefined;
       const payload = config.buildPayload({
         title: title.trim(),
-        content: content.trim(),
+        content: withMainImageCaption(content.trim(), mainImageCaption),
         topic,
         url: url.trim(),
         imageBase64,
@@ -247,6 +253,8 @@ const PostArticleGenericPage = () => {
         url={url}
         setUrl={setUrl}
         mainImagePreview={coverCroppedPreview ?? coverPreview}
+        mainImageCaption={mainImageCaption}
+        setMainImageCaption={setMainImageCaption}
         showSourceUrl={!isAdminLike}
       />
     </PostArticleShell>

@@ -15,17 +15,27 @@ import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
 import ConfirmationNumberOutlinedIcon from "@mui/icons-material/ConfirmationNumberOutlined";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
+import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../hooks/useAuth";
 import { useOrgNavigate, useOrgPath } from '../hooks/useOrgNavigate';
+import useOrganizationStore from "../stores/organizationStore";
+import { resolveMediaUrl } from "../utils/imageUtils";
 
 const AVATAR_SX = {
   borderRadius: "50%",
-  bgcolor: "primary.main",
-  color: "primary.contrastText",
+  bgcolor: "action.disabledBackground",
+  color: "text.primary",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
+};
+
+const FALLBACK_PERSON_ICON_SX = {
+  fontSize: 22,
+  color: (theme) => theme.palette.mode === "dark"
+    ? theme.palette.text.primary
+    : theme.palette.common.white,
 };
 
 const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode, textColor }) => {
@@ -43,13 +53,23 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode, textCo
   const open = Boolean(anchorEl);
   const { logout, verificationLevel, user } = useAuth();
   const toOrgPath = useOrgPath();
+  const organization = useOrganizationStore((state) => state.organization);
+  const currentSlug = useOrganizationStore((state) => state.currentSlug);
   const isGuestVerificationLevel = verificationLevel === 0;
   const isAdmin = user?.role === 'ADMIN';
+  const isStaff = user?.role === 'STAFF';
+  const staffOrgSlug = organization?.slug || currentSlug;
   const handleOpen = useCallback((event) => {
     event.stopPropagation();
     setAnchorEl(event.currentTarget);
   }, []);
   const handleClose = useCallback(() => setAnchorEl(null), []);
+
+  const handleOpenStaffOrganization = useCallback(() => {
+    if (!staffOrgSlug) return;
+    handleClose();
+    window.open(`/${staffOrgSlug}`, '_blank', 'noopener,noreferrer');
+  }, [handleClose, staffOrgSlug]);
 
   const handleLogout = useCallback(async () => {
     handleClose();
@@ -57,7 +77,7 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode, textCo
     navigate("/");
   }, [handleClose, logout, navigate]);
 
-  const resolvedAvatarUrl = !avatarLoadFailed && avatarUrl ? avatarUrl : undefined;
+  const resolvedAvatarUrl = !avatarLoadFailed && avatarUrl ? resolveMediaUrl(avatarUrl) : undefined;
   const avatarImgProps = useMemo(() => ({
     referrerPolicy: "no-referrer",
     onError: () => setAvatarLoadFailed(true),
@@ -85,7 +105,7 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode, textCo
             slotProps={{ img: avatarImgProps }}
             sx={{ width: "100%", height: "100%" }}
           >
-            <PersonIcon sx={{ fontSize: 22 }} />
+            <PersonIcon sx={FALLBACK_PERSON_ICON_SX} />
           </Avatar>
         </Box>
         <Box
@@ -163,7 +183,7 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode, textCo
             slotProps={{ img: avatarImgProps }}
             sx={{ ...AVATAR_SX, width: 40, height: 40 }}
           >
-            <PersonIcon sx={{ fontSize: 22 }} />
+            <PersonIcon sx={FALLBACK_PERSON_ICON_SX} />
           </Avatar>
           <Box sx={{ minWidth: 0 }}>
             <Typography
@@ -228,6 +248,19 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode, textCo
           >
             <AdminPanelSettingsOutlinedIcon fontSize="small" />
             <Typography variant="body2">{t('nav:admin')}</Typography>
+          </MenuItem>
+        )}
+
+        {isStaff && staffOrgSlug && (
+          <MenuItem
+            onClick={handleOpenStaffOrganization}
+            sx={{
+              color: "primary.main",
+              "& .MuiSvgIcon-root": { color: "primary.main" },
+            }}
+          >
+            <OpenInNewRoundedIcon fontSize="small" />
+            <Typography variant="body2">{t('profile:go_to_organization')}</Typography>
           </MenuItem>
         )}
 
