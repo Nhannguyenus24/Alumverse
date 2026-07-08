@@ -3,9 +3,14 @@ import useAuthStore from '../stores/authStore';
 import useOrganizationStore from '../stores/organizationStore';
 import { userFromAccessToken } from './jwt';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL
-  ? `${import.meta.env.VITE_API_BASE_URL}/api`
-  : '/api';
+// Always talk to the API on the SAME ORIGIN as the app (`/api`). This keeps the
+// httpOnly refresh-token cookie first-party so it is actually stored and sent — a
+// cross-site cookie (frontend on *.vercel.app, backend on *.duckdns.org) is treated
+// as third-party and dropped by browsers, which breaks /auth/refresh and
+// /auth/switch-organization ("refreshToken cookie present: false" → forced logout).
+// The same origin is proxied to the real backend by the Vite dev server (see
+// vite.config.js) in development and by Vercel rewrites (see vercel.json) in production.
+const BASE_URL = '/api';
 
 // Exact paths — avoid includes() to prevent substring bypass
 const AUTH_WHITELIST = ['/auth/login', '/auth/google-login', '/auth/refresh', '/auth/logout'];

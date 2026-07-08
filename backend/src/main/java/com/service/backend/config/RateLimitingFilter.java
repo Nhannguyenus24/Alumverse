@@ -5,6 +5,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.Refill;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.Getter;
 import org.jspecify.annotations.NonNull;
 import org.springframework.http.HttpStatus;
@@ -29,9 +30,11 @@ import java.time.Duration;
 public class RateLimitingFilter implements WebFilter {
     
     private final ObjectMapper objectMapper;
+    private final MeterRegistry meterRegistry;
 
-    public RateLimitingFilter(ObjectMapper objectMapper) {
+    public RateLimitingFilter(ObjectMapper objectMapper, MeterRegistry meterRegistry) {
         this.objectMapper = objectMapper;
+        this.meterRegistry = meterRegistry;
     }
 
     @Getter
@@ -77,6 +80,7 @@ public class RateLimitingFilter implements WebFilter {
         if (bucket != null && bucket.tryConsume(1)) {
             return chain.filter(exchange);
         } else {
+            meterRegistry.counter("ratelimit.rejected", "plan", plan.name()).increment();
             exchange.getResponse().setStatusCode(HttpStatus.TOO_MANY_REQUESTS);
             exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
             
