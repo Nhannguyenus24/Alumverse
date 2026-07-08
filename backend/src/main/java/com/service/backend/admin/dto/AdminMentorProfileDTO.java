@@ -19,7 +19,7 @@ public class AdminMentorProfileDTO {
     private String mentorEmail;
     private String currentJobTitle;
     private String currentCompany;
-    private String bio;
+
     private BigDecimal ratingAvg;
     private Integer totalSessions;
     private String status;

@@ -156,7 +156,6 @@ const MentorSignupTabProfile = ({ values, onChange }) => {
         cvFile: file,
         currentJobTitle: profile.currentJobTitle || values.currentJobTitle,
         currentCompany: profile.currentCompany || values.currentCompany,
-        bio: profile.bio || values.bio,
         educations: (profile.educations?.length ? profile.educations : values.educations) ?? [],
         experiences: (profile.experiences?.length ? profile.experiences : values.experiences) ?? [],
         projects: (profile.projects?.length ? profile.projects : values.projects) ?? [],
@@ -264,16 +263,6 @@ const MentorSignupTabProfile = ({ values, onChange }) => {
             onChange={(e) => update('currentCompany', e.target.value)}
             fullWidth
             size="small"
-          />
-          <TextField
-            label={t('signup_profile_bio_label')}
-            placeholder={t('signup_profile_bio_placeholder')}
-            value={values.bio ?? ''}
-            onChange={(e) => update('bio', e.target.value)}
-            fullWidth
-            size="small"
-            multiline
-            minRows={3}
           />
         </Stack>
       </Box>

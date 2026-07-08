@@ -40,7 +40,6 @@ const initialValues = {
   cvFile: null,
   currentJobTitle: '',
   currentCompany: '',
-  bio: '',
   educations: [],
   experiences: [],
   projects: [],
@@ -58,7 +57,6 @@ const validateProfile = (v) =>
   Boolean(v.avatarFile) &&
   v.currentJobTitle.trim() &&
   v.currentCompany.trim() &&
-  v.bio.trim() &&
   (v.educations ?? []).length > 0 &&
   (v.experiences ?? []).length > 0;
 
@@ -92,7 +90,6 @@ const MentorshipSignupPage = () => {
       ...initialValues,
       currentJobTitle: profile.currentJobTitle ?? '',
       currentCompany: profile.currentCompany ?? '',
-      bio: profile.bio ?? '',
       defaultMeetingLink: profile.defaultMeetingLink ?? '',
       avatarPreview: profile.avatarUrl ?? '',
       experienceSummary: extended.experienceSummary ?? '',
@@ -142,7 +139,6 @@ const MentorshipSignupPage = () => {
         profile: {
           currentJobTitle: values.currentJobTitle.trim(),
           currentCompany: values.currentCompany.trim(),
-          bio: values.bio.trim(),
         },
         expertiseTags: values.expertiseTags ?? [],
         avatarFile: values.avatarFile,
@@ -172,7 +168,6 @@ const MentorshipSignupPage = () => {
         profile: {
           currentJobTitle: values.currentJobTitle?.trim() || null,
           currentCompany: values.currentCompany?.trim() || null,
-          bio: values.bio?.trim() || null,
         },
         expertiseTags: values.expertiseTags ?? [],
         avatarFile: values.avatarFile,

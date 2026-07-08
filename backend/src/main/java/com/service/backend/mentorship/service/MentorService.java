@@ -168,7 +168,6 @@ public class MentorService {
                             }
                             if (request.getCurrentJobTitle() != null) existing.setCurrentJobTitle(request.getCurrentJobTitle());
                             if (request.getCurrentCompany() != null) existing.setCurrentCompany(request.getCurrentCompany());
-                            if (request.getBio() != null) existing.setBio(request.getBio());
                             if (request.getDefaultMeetingLink() != null) existing.setDefaultMeetingLink(request.getDefaultMeetingLink());
                             if (request.getBookingWindowSettings() != null) existing.setBookingWindowSettings(request.getBookingWindowSettings());
                             if (request.getExtendedProfile() != null) existing.setExtendedProfile(request.getExtendedProfile());
@@ -192,7 +191,7 @@ public class MentorService {
                                     .memberId(memberId)
                                     .currentJobTitle(request.getCurrentJobTitle())
                                     .currentCompany(request.getCurrentCompany())
-                                    .bio(request.getBio())
+
                                     .ratingAvg(java.math.BigDecimal.ZERO)
                                     .totalSessions(0)
                                     .status(targetStatus)
@@ -225,7 +224,6 @@ public class MentorService {
                         .flatMap(existing -> {
                             if (request.getCurrentJobTitle() != null) existing.setCurrentJobTitle(request.getCurrentJobTitle());
                             if (request.getCurrentCompany() != null) existing.setCurrentCompany(request.getCurrentCompany());
-                            if (request.getBio() != null) existing.setBio(request.getBio());
                             if (request.getDefaultMeetingLink() != null) existing.setDefaultMeetingLink(request.getDefaultMeetingLink());
                             if (request.getBookingWindowSettings() != null) existing.setBookingWindowSettings(request.getBookingWindowSettings());
                             if (request.getExtendedProfile() != null) existing.setExtendedProfile(request.getExtendedProfile());

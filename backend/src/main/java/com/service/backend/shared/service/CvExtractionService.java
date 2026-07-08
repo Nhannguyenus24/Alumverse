@@ -22,7 +22,7 @@ public interface CvExtractionService {
            {
              "currentJobTitle": string | null,
              "currentCompany": string | null,
-             "bio": string | null,
+
              "educations": [{"school": string, "degree": string, "period": string}],
              "experiences": [{"title": string, "company": string, "period": string, "description": string}],
              "projects": [{"name": string, "description": string, "link": string}],
@@ -31,9 +31,7 @@ public interface CvExtractionService {
            }
         2. "currentJobTitle"/"currentCompany" are the person's MOST RECENT role and
            employer (first/most recent entry in the work experience section).
-        3. "bio" is a short 2-4 sentence professional summary. If the CV has an
-           explicit "Summary"/"About" section, use and lightly clean it; otherwise
-           synthesize one from the experience/education present.
+
         4. "period" fields are free text as found (e.g. "2019 - 2023", "06/2021 - Present").
         5. "skills[].issuer" is the certifying body/platform if present (e.g.
            "Coursera", "AWS"), otherwise null.
