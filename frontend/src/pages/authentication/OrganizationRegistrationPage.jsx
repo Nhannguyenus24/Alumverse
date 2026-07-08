@@ -87,6 +87,8 @@ const formatVerifierSubtitle = (programData, majorData) => {
   return pairs;
 };
 
+const getVerifierUserId = (verifier) => verifier?.userId ?? verifier?.id ?? verifier?.user_id;
+
 // ─── Verification option card ─────────────────────────────────────────────────
 const VerificationOptionCard = ({ icon, title, description, selected, onClick }) => (
   <Box
@@ -169,7 +171,11 @@ const OrganizationRegistrationPage = () => {
   });
 
   const memberVerificationLevel = Number(myOrganizationMemberQuery.data?.verificationLevel ?? 0);
-  const effectiveVerificationLevel = Math.max(Number(verificationLevel ?? 0), memberVerificationLevel);
+  const hasFetchedMemberVerificationLevel = myOrganizationMemberQuery.data?.verificationLevel !== undefined
+    && myOrganizationMemberQuery.data?.verificationLevel !== null;
+  const effectiveVerificationLevel = hasFetchedMemberVerificationLevel
+    ? memberVerificationLevel
+    : Number(verificationLevel ?? 0);
   const hasSubmittedVerification = effectiveVerificationLevel >= 1;
 
   const programOptions = useMemo(() => parseOrganizationOptions(organization?.programs), [organization?.programs]);
@@ -201,7 +207,8 @@ const OrganizationRegistrationPage = () => {
       setTrustedVerifiersLoading(true);
       try {
         const response = await getTrustedVerifiers(organizationId);
-        const verifiers = Array.isArray(response?.data?.data) ? response.data.data : [];
+        const rawVerifiers = response?.data?.data ?? response?.data ?? [];
+        const verifiers = Array.isArray(rawVerifiers) ? rawVerifiers : [];
         if (!cancelled) setTrustedVerifiers(verifiers);
       } catch (err) {
         if (!cancelled) { setTrustedVerifiers([]); console.error("Failed to load trusted verifiers", err); }
@@ -519,12 +526,13 @@ const OrganizationRegistrationPage = () => {
                 ) : (
                   <Box sx={{ display: "flex", flexDirection: "column" }}>
                     {trustedVerifiers.map((verifier, idx) => {
-                      const isSelected = selectedVerifierUserIds.includes(String(verifier.userId));
+                      const verifierUserId = getVerifierUserId(verifier);
+                      const isSelected = selectedVerifierUserIds.includes(String(verifierUserId));
                       const academicPairs = formatVerifierSubtitle(verifier.program, verifier.major);
                       return (
                         <Box
-                          key={verifier.userId}
-                          onClick={() => toggleVerifier(verifier.userId)}
+                          key={verifierUserId ?? `${verifier.email || verifier.studentId || "verifier"}-${idx}`}
+                          onClick={() => verifierUserId != null && toggleVerifier(verifierUserId)}
                           sx={{
                             display: "flex", alignItems: "center", gap: 2, px: 2.5, py: 2,
                             cursor: "pointer",

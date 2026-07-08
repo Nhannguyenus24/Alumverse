@@ -320,8 +320,9 @@ const AdminEventManagePage = () => {
             { id: 'checkedInAt', label: t('event:col_checked_in_at'), render: (value) => formatDateTime(value) },
             {
               id: 'actions',
-              label: '',
+              label: t('admin:actions'),
               align: 'right',
+              width: 96,
               render: (_, ticket) => {
                 const cancellable = !['CANCELLED', 'USED', 'EXPIRED', 'CHECKED_IN'].includes(String(ticket.status).toUpperCase());
                 return cancellable ? (

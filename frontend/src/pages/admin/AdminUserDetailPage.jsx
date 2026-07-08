@@ -26,6 +26,8 @@ import {
 } from '@mui/material';
 import ArrowBackOutlinedIcon from '@mui/icons-material/ArrowBackOutlined';
 import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import LockOpenOutlinedIcon from '@mui/icons-material/LockOpenOutlined';
 import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
 import AdminStatusChip from '../../components/admin/AdminStatusChip';
@@ -45,6 +47,26 @@ const formatEnumText = (value) => {
     .trim()
     .toLowerCase()
     .replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
+const getDisplayStatus = (user) => {
+  const accountStatus = String(user?.status || '').toUpperCase();
+  if (accountStatus && accountStatus !== 'ACTIVE') return accountStatus;
+
+  if (user?.verificationLevel === null || user?.verificationLevel === undefined) {
+    return accountStatus || 'UNKNOWN';
+  }
+  const level = Number(user.verificationLevel);
+  if (!Number.isFinite(level)) return accountStatus || 'UNKNOWN';
+  if (level >= 2) return 'ACTIVE';
+  if (level === 1) return 'VERIFYING';
+  return 'UNVERIFIED';
+};
+
+const formatDisplayStatusLabel = (user, t) => {
+  const status = getDisplayStatus(user);
+  if (status === 'VERIFYING') return t('status_verifying', { defaultValue: 'Verifying' });
+  return formatAccountStatusLabel(status, t);
 };
 
 const AdminUserDetailPage = () => {
@@ -67,7 +89,7 @@ const AdminUserDetailPage = () => {
         { label: user.fullName || `ID: ${user.studentId}` || `ID: ${user.id}`, active: true },
       ]);
     }
-  }, [setBreadcrumbs, user, adminBase]);
+  }, [setBreadcrumbs, user, adminBase, t]);
 
   const [tab, setTab] = useState(0);
   const [editOpen, setEditOpen] = useState(false);
@@ -136,7 +158,7 @@ const AdminUserDetailPage = () => {
           .catch(() => setUserLoginHistory(auditTrail));
       })
       .finally(() => setAuditLoading(false));
-  }, [userId, userLoginHistory, auditTrail]);
+  }, [userId, userLoginHistory, auditTrail, t]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -176,6 +198,7 @@ const AdminUserDetailPage = () => {
     status: user?.membershipStatus || '-',
     createdAt: user?.createdAt,
   }] : [];
+  const displayStatus = getDisplayStatus(user);
   const activity = userActivitySummary || {
     postsCreated: user?.postsCreated ?? '-',
     comments: user?.commentsCount ?? '-',
@@ -221,14 +244,25 @@ const AdminUserDetailPage = () => {
               </Typography>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1, alignItems: 'center' }}>
                 <Chip size="small" label={user.role || '-'} color="primary" variant="outlined" />
-                <AdminStatusChip status={user.status} category="account" />
+                <AdminStatusChip
+                  status={displayStatus}
+                  category="account"
+                  label={formatDisplayStatusLabel(user, t)}
+                />
               </Box>
               <Typography variant="caption" display="block" color="text.secondary" sx={{ mt: 1 }}>
                 {t('user_detail_created_at')}: {formatDateTime(user.createdAt)} · {t('user_detail_updated_at')}: {formatDateTime(user.updatedAt)}
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, ml: { md: 'auto' } }}>
-              <Button variant="outlined" color="secondary" size="small" onClick={() => setEditOpen(true)} sx={{ textTransform: 'none' }}>
+              <Button
+                variant="outlined"
+                color="secondary"
+                size="small"
+                startIcon={<EditOutlinedIcon />}
+                onClick={() => setEditOpen(true)}
+                sx={{ textTransform: 'none' }}
+              >
                 {t('user_detail_edit_info')}
               </Button>
               {user.status === 'BANNED' ? (
@@ -260,7 +294,14 @@ const AdminUserDetailPage = () => {
                   {t('ban')}
                 </Button>
               )}
-              <Button variant="contained" color="error" size="small" onClick={() => setDeleteOpen(true)} sx={{ textTransform: 'none' }}>
+              <Button
+                variant="contained"
+                color="error"
+                size="small"
+                startIcon={<DeleteOutlineIcon />}
+                onClick={() => setDeleteOpen(true)}
+                sx={{ textTransform: 'none' }}
+              >
                 {t('user_detail_delete_account')}
               </Button>
             </Box>
@@ -358,7 +399,7 @@ const AdminUserDetailPage = () => {
             {tab === 4 ? (
               <Stack spacing={1}>
                 <Typography variant="body2">
-                  <strong>{t('user_detail_account_status')}:</strong> {formatAccountStatusLabel(user.status, t)}
+                  <strong>{t('user_detail_account_status')}:</strong> {formatDisplayStatusLabel(user, t)}
                 </Typography>
                 {user.banReason ? (
                   <Typography variant="body2">

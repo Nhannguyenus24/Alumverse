@@ -150,15 +150,29 @@ const AdminDataTable = ({
 
       {/* Table Content */}
       <TableContainer sx={{ maxHeight: 600 }}>
-        <Table stickyHeader size="medium">
+        <Table
+          stickyHeader
+          size="medium"
+          sx={{
+            borderSpacing: 0,
+            '& .MuiTableCell-stickyHeader': {
+              borderLeft: '0 !important',
+              borderRight: '0 !important',
+              backgroundClip: 'border-box',
+              boxShadow: 'none',
+            },
+          }}
+        >
           <TableHead>
-            <TableRow>
+            <TableRow sx={{ bgcolor: tableHeadBg }}>
               {renderExpandableRow && (
                 <TableCell
                   sx={{
                     width: 48,
                     bgcolor: tableHeadBg,
                     color: tableHeadColor,
+                    borderLeft: 0,
+                    borderRight: 0,
                   }}
                 />
               )}
@@ -176,6 +190,8 @@ const AdminDataTable = ({
                     py: 2,
                     textTransform: 'uppercase',
                     letterSpacing: 0.5,
+                    borderLeft: 0,
+                    borderRight: 0,
                   }}
                 >
                   {column.label}

@@ -21,6 +21,7 @@ import com.service.backend.shared.utils.SecurityUtils;
 import com.service.backend.user.dto.ChangeMyPasswordRequest;
 import com.service.backend.user.dto.CreateVerificationRequest;
 import com.service.backend.user.dto.DirectVerifyRequest;
+import com.service.backend.user.dto.JoinOrganizationRequest;
 import com.service.backend.user.dto.NotificationResponse;
 import com.service.backend.user.dto.NotificationSettingsResponse;
 import com.service.backend.user.dto.PendingPeerVerificationResponse;
@@ -88,6 +89,15 @@ public class UserController {
         return SecurityUtils.getCurrentUserId()
                 .flatMap(userId -> userService.getMyOrganizationMember(userId, organizationId))
                 .map(member -> ResponseEntity.ok(new ApiResponse<>("Organization member retrieved successfully", member)));
+    }
+
+    @PostMapping("/organization-member")
+    public Mono<ResponseEntity<ApiResponse<Boolean>>> joinOrganization(
+            @Valid @RequestBody JoinOrganizationRequest request) {
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(userId -> userService.joinOrganization(userId, request))
+                .thenReturn(ResponseEntity.status(HttpStatus.CREATED)
+                        .body(new ApiResponse<>("Organization membership registered successfully", true)));
     }
 
     @PutMapping("/password")

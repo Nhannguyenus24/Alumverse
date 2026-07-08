@@ -1,6 +1,7 @@
 package com.service.backend.admin.dto;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import com.service.backend.shared.enums.Status;
 import com.service.backend.shared.enums.UserRole;
@@ -29,4 +30,12 @@ public class UserResponse {
     /** Primary organization_members row (lowest id) for this user, if any. */
     private Integer organizationId;
     private String organizationName;
+    private Integer verificationLevel;
+    private Boolean isTrustedVerifier;
+    private String membershipStatus;
+    private List<String> startedYear;
+    private List<Integer> graduatedYear;
+    private List<String> graduationStatus;
+    private List<String> program;
+    private List<String> major;
 }

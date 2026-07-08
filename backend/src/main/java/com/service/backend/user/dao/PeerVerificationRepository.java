@@ -20,6 +20,34 @@ public interface PeerVerificationRepository extends R2dbcRepository<PeerVerifica
     @Query("UPDATE peer_verifications SET \"status\" = :status WHERE id = :id")
     Mono<Integer> updateStatus(@Param("id") Integer id, @Param("status") Status status);
 
+    @Modifying
+    @Query("""
+        UPDATE peer_verifications
+        SET "status" = :status
+        WHERE organization_id = :organizationId
+          AND target_member_id = :targetMemberId
+          AND "status" = 'PENDING'
+          AND id <> :acceptedRequestId
+    """)
+    Mono<Integer> resolveOtherPendingRequestsForTarget(
+            @Param("organizationId") Integer organizationId,
+            @Param("targetMemberId") Integer targetMemberId,
+            @Param("acceptedRequestId") Integer acceptedRequestId,
+            @Param("status") Status status);
+
+    @Modifying
+    @Query("""
+        UPDATE peer_verifications
+        SET "status" = :status
+        WHERE organization_id = :organizationId
+          AND target_member_id = :targetMemberId
+          AND "status" = 'PENDING'
+    """)
+    Mono<Integer> markPendingRequestsForTarget(
+            @Param("organizationId") Integer organizationId,
+            @Param("targetMemberId") Integer targetMemberId,
+            @Param("status") Status status);
+
     @Query("SELECT * FROM peer_verifications WHERE \"organization_id\" = :organizationId AND \"target_member_id\" = :targetMemberId AND \"verifier_member_id\" = :verifierMemberId AND \"status\" = 'PENDING'")
     Mono<PeerVerification> findPendingRequest(@Param("organizationId") Integer organizationId, @Param("targetMemberId") Integer targetMemberId, @Param("verifierMemberId") Integer verifierMemberId);
 

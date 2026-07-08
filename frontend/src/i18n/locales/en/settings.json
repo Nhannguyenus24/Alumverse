@@ -68,6 +68,7 @@
   "no_pending_verifications": "No pending verification requests.",
   "verif_user_id": "User ID",
   "verif_sent_date": "Sent date",
+  "view_profile": "View profile",
   "confirm_verification": "Confirm",
   "warn_no_org": "Could not determine current organization. Please try refreshing the page.",
   "success_save_profile": "Personal information updated successfully.",
