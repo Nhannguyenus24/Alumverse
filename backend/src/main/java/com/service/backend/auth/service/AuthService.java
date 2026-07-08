@@ -391,7 +391,9 @@ public class AuthService {
                                             if (finalOrgId == null) {
                                                 return Mono.just(LoginResponse.builder()
                                                         .accessToken(newAccessToken)
-                                                        .verificationLevel(1) // Admin level
+                                                        // Must match the login path (AuthController#buildLoginResponse)
+                                                        // so refresh doesn't silently downgrade a system admin.
+                                                        .verificationLevel(4) // Default for system admin (non-zero)
                                                         .build());
                                             }
 
