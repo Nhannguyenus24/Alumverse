@@ -18,8 +18,8 @@ create table users
     gender               text,
     current_job_title    text,
     current_company      text,
-    links                json,
-    settings             json,
+    links                jsonb,
+    settings             jsonb,
     must_change_password boolean   default false not null
 );
 
@@ -46,10 +46,10 @@ create table organizations
     slug            text
         unique,
     logo_url        text,
-    brand_config    json,
-    features_config json,
-    programs        json,
-    majors          json,
+    brand_config    jsonb,
+    features_config jsonb,
+    programs        jsonb,
+    majors          jsonb,
     status          text      default 'ACTIVE'::text,
     created_at      timestamp default CURRENT_TIMESTAMP,
     updated_at      timestamp default CURRENT_TIMESTAMP,
@@ -75,8 +75,8 @@ create table organization_introductions
     core_values          text,
     image_urls           text,
     banner_url           text,
-    leaders              json,
-    team_members         json,
+    leaders              jsonb,
+    team_members         jsonb,
     leaders_content      text,
     team_members_content text,
     updated_at           timestamp default CURRENT_TIMESTAMP
@@ -322,7 +322,7 @@ create table mentor_profiles
         references organization_members (user_id),
     current_job_title       text,
     current_company         text,
-    bio                     text,
+
     rating_avg              numeric default 0,
     total_sessions          integer default 0,
     status                  text    default 'DRAFT'::text not null

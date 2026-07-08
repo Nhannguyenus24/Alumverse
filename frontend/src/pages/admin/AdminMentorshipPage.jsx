@@ -690,11 +690,6 @@ const AdminMentorshipPage = () => {
               <strong>{t('mentorship_col_created_at')}:</strong>{" "}
               {formatDateTime(mentorDetail.createdAt)}
             </Typography>
-            {mentorDetail.bio ? (
-              <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
-                <strong>{t('mentorship_detail_bio')}:</strong> {mentorDetail.bio}
-              </Typography>
-            ) : null}
           </DialogContent>
         ) : null}
         <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>

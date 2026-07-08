@@ -219,7 +219,7 @@ export default function SettingPage() {
           currentCompany: profile?.currentCompany ?? '',
           linksText: (() => {
             let parsedLinks = [];
-            try { parsedLinks = profile?.links ? JSON.parse(profile.links) : []; } catch (e) {}
+            try { parsedLinks = profile?.links ? JSON.parse(profile.links) : []; } catch { /* ignore */ }
             return Array.isArray(parsedLinks) ? parsedLinks.join('\n') : '';
           })(),
           role: profile?.role ?? profile?.userRole ?? user?.role ?? '',
