@@ -19,7 +19,9 @@ import {
   CircularProgress,
   useTheme,
   Alert,
-  alpha
+  alpha,
+  Card,
+  CardContent
 } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -127,6 +129,12 @@ const monitoringChartBoxSx = {
 
 const monitoringPanelSx = {
   mb: 0,
+  borderRadius: 2,
+};
+
+const cardSx = {
+  border: '1px solid',
+  borderColor: 'divider',
   borderRadius: 2,
 };
 
@@ -240,11 +248,22 @@ const AdminSystemMonitoringPage = () => {
         return;
       }
       
-      const start = timeRange === 'custom' ? customStart.unix() : Math.floor(Date.now() / 1000) - rangeSeconds;
-      const end = timeRange === 'custom' ? customEnd.unix() : Math.floor(Date.now() / 1000);
+      // Calculate a clean step for range charts
+      let step;
+      if (rangeSeconds <= 3600) step = 30; // 30 seconds
+      else if (rangeSeconds <= 3 * 3600) step = 60; // 1 minute
+      else if (rangeSeconds <= 6 * 3600) step = 120; // 2 minutes
+      else if (rangeSeconds <= 12 * 3600) step = 300; // 5 minutes
+      else if (rangeSeconds <= 24 * 3600) step = 600; // 10 minutes
+      else step = Math.max(900, Math.floor(rangeSeconds / 100));
+
+      // Snap end time to a clean interval so timestamps look neat
+      let endUnix = timeRange === 'custom' ? customEnd.unix() : Math.floor(Date.now() / 1000);
+      const snapInterval = step >= 60 ? step : 60;
+      endUnix = endUnix - (endUnix % snapInterval);
       
-      // Calculate step for range charts (aim for ~100 data points)
-      const step = Math.max(15, Math.floor(rangeSeconds / 100));
+      const end = endUnix;
+      const start = timeRange === 'custom' ? (customStart.unix() - (customStart.unix() % snapInterval)) : end - rangeSeconds;
 
       const [
         reqRateData,
@@ -298,7 +317,7 @@ const AdminSystemMonitoringPage = () => {
 
       // Merge time-series data
       const mergedMap = new Map();
-      const formatString = rangeSeconds > 86400 ? 'MM/DD HH:mm' : 'HH:mm:ss';
+      const formatString = rangeSeconds > 86400 ? 'MM/DD HH:mm' : (step < 60 ? 'HH:mm:ss' : 'HH:mm');
 
       const processSeries = (series, key) => {
         series.forEach(([timestamp, value]) => {
