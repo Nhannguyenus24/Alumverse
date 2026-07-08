@@ -43,6 +43,7 @@ import QueryStatsOutlinedIcon from '@mui/icons-material/QueryStatsOutlined';
 import ErrorOutlineOutlinedIcon from '@mui/icons-material/ErrorOutlineOutlined';
 import SpeedOutlinedIcon from '@mui/icons-material/SpeedOutlined';
 import TimerOutlinedIcon from '@mui/icons-material/TimerOutlined';
+import AccessTimeOutlinedIcon from '@mui/icons-material/AccessTimeOutlined';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 import dayjs from 'dayjs';
@@ -57,6 +58,7 @@ const QUERIES = {
   errorRate: 'sum(rate(http_endpoint_errors_total[5m]))',
   latencyAvg: '(sum(rate(http_endpoint_latency_seconds_sum[5m])) / sum(rate(http_endpoint_latency_seconds_count[5m]))) * 1000',
   latencyP50: 'histogram_quantile(0.50, sum(rate(http_endpoint_latency_seconds_bucket[5m])) by (le)) * 1000',
+  latencyP95: 'histogram_quantile(0.95, sum(rate(http_endpoint_latency_seconds_bucket[5m])) by (le)) * 1000',
   latencyP99: 'histogram_quantile(0.99, sum(rate(http_endpoint_latency_seconds_bucket[5m])) by (le)) * 1000',
   cpuSystem: 'system_cpu_usage * 100',
   cpuProcess: 'process_cpu_usage * 100',
@@ -67,7 +69,34 @@ const QUERIES = {
   jvmThreadsPeak: 'sum(jvm_threads_peak_threads)',
   dbActiveConns: 'sum(r2dbc_pool_acquired_connections)',
   dbIdleConns: 'sum(r2dbc_pool_idle_connections)',
-  dbPendingConns: 'sum(r2dbc_pool_pending_connections)'
+  dbPendingConns: 'sum(r2dbc_pool_pending_connections)',
+
+  // --- Tier 1: custom application I/O metrics (already emitted by backend) ---
+  emailLatency: '(sum(rate(email_send_time_seconds_sum[5m])) / sum(rate(email_send_time_seconds_count[5m]))) * 1000',
+  ocrLatency: '(sum(rate(ocr_processing_time_seconds_sum[5m])) / sum(rate(ocr_processing_time_seconds_count[5m]))) * 1000',
+  imageLatency: '(sum(rate(image_processing_time_seconds_sum[5m])) / sum(rate(image_processing_time_seconds_count[5m]))) * 1000',
+  fileUploadLatency: '(sum(rate(file_upload_processing_time_seconds_sum[5m])) / sum(rate(file_upload_processing_time_seconds_count[5m]))) * 1000',
+  storageSize: 'sum(image_storage_size_bytes) / 1024 / 1024',
+
+  // --- Tier 2: standard Micrometer / JVM metrics (scraped via enable.all=true) ---
+  memoryNonHeap: 'sum(jvm_memory_used_bytes{area="nonheap"}) / 1024 / 1024',
+  heapUtilPct: 'sum(jvm_memory_used_bytes{area="heap"}) / sum(jvm_memory_max_bytes{area="heap"}) * 100',
+  systemLoad: 'system_load_average_1m',
+  cpuCount: 'system_cpu_count',
+  logErrors: 'sum(rate(logback_events_total{level="error"}[5m]))',
+  logWarns: 'sum(rate(logback_events_total{level="warn"}[5m]))',
+  gcCount: 'sum(rate(jvm_gc_pause_seconds_count[5m]))',
+  fdUsagePct: 'process_files_open_files / process_max_file_descriptors * 100',
+  dbSaturationPct: 'sum(r2dbc_pool_acquired_connections) / sum(r2dbc_pool_max_allocated_connections) * 100',
+
+  // --- Tier 3: newly added backend metrics ---
+  authLoginSuccess: 'sum(rate(auth_login_total{result="success"}[5m]))',
+  authLoginFailure: 'sum(rate(auth_login_total{result="failure"}[5m]))',
+  authRefreshSuccess: 'sum(rate(auth_token_refresh_total{result="success"}[5m]))',
+  authRefreshFailure: 'sum(rate(auth_token_refresh_total{result="failure"}[5m]))',
+  rateLimitRejected: 'sum(rate(ratelimit_rejected_total[5m]))',
+  wsActiveSessions: 'sum(chat_websocket_active_sessions)',
+  wsActiveGroups: 'sum(chat_websocket_active_groups)'
 };
 
 const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#d32f2f', '#1976d2', '#388e3c', '#fbc02d', '#7b1fa2', '#c2185b'];
@@ -138,6 +167,16 @@ const cardSx = {
   borderRadius: 2,
 };
 
+
+const formatUptime = (totalSeconds) => {
+  if (!Number.isFinite(totalSeconds) || totalSeconds <= 0) return '—';
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  if (days > 0) return `${days}d ${hours}h`;
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  return `${minutes}m`;
+};
 
 const fetchPrometheusRange = async (query, start, end, step) => {
   try {
@@ -217,7 +256,7 @@ const AdminSystemMonitoringPage = () => {
   const [chartData, setChartData] = useState([]);
   const [endpointStats, setEndpointStats] = useState([]);
   const [exceptionStats, setExceptionStats] = useState([]);
-  const [summaryStats, setSummaryStats] = useState({ totalRequests: 0, totalErrors: 0, errorRate: 0, avgLatency: 0 });
+  const [summaryStats, setSummaryStats] = useState({ totalRequests: 0, totalErrors: 0, errorRate: 0, avgLatency: 0, uptimeSeconds: 0 });
   const [availableErrorCodes, setAvailableErrorCodes] = useState([]);
   const [availableStatusCodes, setAvailableStatusCodes] = useState([]);
   const [isolatedSeries, setIsolatedSeries] = useState({});
@@ -270,6 +309,7 @@ const AdminSystemMonitoringPage = () => {
         errRateData,
         latAvgData,
         latP50Data,
+        latP95Data,
         latP99Data,
         cpuSysData,
         cpuProcData,
@@ -281,6 +321,27 @@ const AdminSystemMonitoringPage = () => {
         dbActiveConnsData,
         dbIdleConnsData,
         dbPendingConnsData,
+        emailLatData,
+        ocrLatData,
+        imageLatData,
+        fileUploadLatData,
+        storageSizeData,
+        memNonHeapData,
+        heapUtilData,
+        systemLoadData,
+        cpuCountData,
+        logErrorsData,
+        logWarnsData,
+        gcCountData,
+        fdUsageData,
+        dbSaturationData,
+        authLoginSuccessData,
+        authLoginFailureData,
+        authRefreshSuccessData,
+        authRefreshFailureData,
+        rateLimitRejectedData,
+        wsActiveSessionsData,
+        wsActiveGroupsData,
         endpointDataRes,
         exceptionDataRes,
         endpointLatencyRes,
@@ -288,12 +349,14 @@ const AdminSystemMonitoringPage = () => {
         statusTimeSeriesRes,
         totalRequestsRes,
         totalErrorsRes,
-        currentAvgLatencyRes
+        currentAvgLatencyRes,
+        uptimeRes
       ] = await Promise.all([
         fetchPrometheusRange(QUERIES.requestRate, start, end, step),
         fetchPrometheusRange(QUERIES.errorRate, start, end, step),
         fetchPrometheusRange(QUERIES.latencyAvg, start, end, step),
         fetchPrometheusRange(QUERIES.latencyP50, start, end, step),
+        fetchPrometheusRange(QUERIES.latencyP95, start, end, step),
         fetchPrometheusRange(QUERIES.latencyP99, start, end, step),
         fetchPrometheusRange(QUERIES.cpuSystem, start, end, step),
         fetchPrometheusRange(QUERIES.cpuProcess, start, end, step),
@@ -305,6 +368,27 @@ const AdminSystemMonitoringPage = () => {
         fetchPrometheusRange(QUERIES.dbActiveConns, start, end, step),
         fetchPrometheusRange(QUERIES.dbIdleConns, start, end, step),
         fetchPrometheusRange(QUERIES.dbPendingConns, start, end, step),
+        fetchPrometheusRange(QUERIES.emailLatency, start, end, step),
+        fetchPrometheusRange(QUERIES.ocrLatency, start, end, step),
+        fetchPrometheusRange(QUERIES.imageLatency, start, end, step),
+        fetchPrometheusRange(QUERIES.fileUploadLatency, start, end, step),
+        fetchPrometheusRange(QUERIES.storageSize, start, end, step),
+        fetchPrometheusRange(QUERIES.memoryNonHeap, start, end, step),
+        fetchPrometheusRange(QUERIES.heapUtilPct, start, end, step),
+        fetchPrometheusRange(QUERIES.systemLoad, start, end, step),
+        fetchPrometheusRange(QUERIES.cpuCount, start, end, step),
+        fetchPrometheusRange(QUERIES.logErrors, start, end, step),
+        fetchPrometheusRange(QUERIES.logWarns, start, end, step),
+        fetchPrometheusRange(QUERIES.gcCount, start, end, step),
+        fetchPrometheusRange(QUERIES.fdUsagePct, start, end, step),
+        fetchPrometheusRange(QUERIES.dbSaturationPct, start, end, step),
+        fetchPrometheusRange(QUERIES.authLoginSuccess, start, end, step),
+        fetchPrometheusRange(QUERIES.authLoginFailure, start, end, step),
+        fetchPrometheusRange(QUERIES.authRefreshSuccess, start, end, step),
+        fetchPrometheusRange(QUERIES.authRefreshFailure, start, end, step),
+        fetchPrometheusRange(QUERIES.rateLimitRejected, start, end, step),
+        fetchPrometheusRange(QUERIES.wsActiveSessions, start, end, step),
+        fetchPrometheusRange(QUERIES.wsActiveGroups, start, end, step),
         fetchPrometheusInstant(`topk(50, sum by (path, method) (increase(http_endpoint_requests_total[${rangeSeconds}s])))`, end),
         fetchPrometheusInstant(`topk(50, sum by (error_code) (increase(api_errors_count_total[${rangeSeconds}s])))`, end),
         fetchPrometheusInstant(`sum by (path, method) (increase(http_endpoint_latency_seconds_sum[${rangeSeconds}s])) / sum by (path, method) (increase(http_endpoint_latency_seconds_count[${rangeSeconds}s])) * 1000`, end),
@@ -312,7 +396,8 @@ const AdminSystemMonitoringPage = () => {
         fetchPrometheusRangeMultiple(`sum by (status) (rate(http_endpoint_requests_total[5m]))`, start, end, step),
         fetchPrometheusInstant(`sum(http_endpoint_requests_total)`, end),
         fetchPrometheusInstant(`sum(http_endpoint_errors_total)`, end),
-        fetchPrometheusInstant(`sum(rate(http_endpoint_latency_seconds_sum[5m])) / sum(rate(http_endpoint_latency_seconds_count[5m])) * 1000`, end)
+        fetchPrometheusInstant(`sum(rate(http_endpoint_latency_seconds_sum[5m])) / sum(rate(http_endpoint_latency_seconds_count[5m])) * 1000`, end),
+        fetchPrometheusInstant(`process_uptime_seconds`, end)
       ]);
 
       // Merge time-series data
@@ -335,6 +420,7 @@ const AdminSystemMonitoringPage = () => {
       processSeries(errRateData, 'errRate');
       processSeries(latAvgData, 'latAvg');
       processSeries(latP50Data, 'latP50');
+      processSeries(latP95Data, 'latP95');
       processSeries(latP99Data, 'latP99');
       processSeries(cpuSysData, 'cpuSys');
       processSeries(cpuProcData, 'cpuProc');
@@ -346,6 +432,30 @@ const AdminSystemMonitoringPage = () => {
       processSeries(dbActiveConnsData, 'dbActive');
       processSeries(dbIdleConnsData, 'dbIdle');
       processSeries(dbPendingConnsData, 'dbPending');
+      // Tier 1: application I/O metrics
+      processSeries(emailLatData, 'emailLat');
+      processSeries(ocrLatData, 'ocrLat');
+      processSeries(imageLatData, 'imageLat');
+      processSeries(fileUploadLatData, 'fileUploadLat');
+      processSeries(storageSizeData, 'storageSize');
+      // Tier 2: JVM / system metrics
+      processSeries(memNonHeapData, 'memNonHeap');
+      processSeries(heapUtilData, 'heapUtil');
+      processSeries(systemLoadData, 'systemLoad');
+      processSeries(cpuCountData, 'cpuCount');
+      processSeries(logErrorsData, 'logErrors');
+      processSeries(logWarnsData, 'logWarns');
+      processSeries(gcCountData, 'gcCount');
+      processSeries(fdUsageData, 'fdUsage');
+      processSeries(dbSaturationData, 'dbSaturation');
+      // Tier 3: newly added backend metrics
+      processSeries(authLoginSuccessData, 'authLoginSuccess');
+      processSeries(authLoginFailureData, 'authLoginFailure');
+      processSeries(authRefreshSuccessData, 'authRefreshSuccess');
+      processSeries(authRefreshFailureData, 'authRefreshFailure');
+      processSeries(rateLimitRejectedData, 'rateLimitRejected');
+      processSeries(wsActiveSessionsData, 'wsActiveSessions');
+      processSeries(wsActiveGroupsData, 'wsActiveGroups');
 
       const errorCodesSet = new Set();
       if (exceptionTimeSeriesRes) {
@@ -429,12 +539,14 @@ const AdminSystemMonitoringPage = () => {
       const totalReq = totalRequestsRes.length > 0 ? parseFloat(totalRequestsRes[0].value[1]) : 0;
       const totalErr = totalErrorsRes.length > 0 ? parseFloat(totalErrorsRes[0].value[1]) : 0;
       const curAvgLat = currentAvgLatencyRes.length > 0 ? parseFloat(currentAvgLatencyRes[0].value[1]) : 0;
-      
+      const uptimeSec = uptimeRes.length > 0 ? parseFloat(uptimeRes[0].value[1]) : 0;
+
       setSummaryStats({
         totalRequests: totalReq,
         totalErrors: totalErr,
         errorRate: totalReq > 0 ? (totalErr / totalReq) * 100 : 0,
-        avgLatency: curAvgLat
+        avgLatency: curAvgLat,
+        uptimeSeconds: uptimeSec
       });
 
     } catch (err) {
@@ -603,6 +715,12 @@ const AdminSystemMonitoringPage = () => {
                 icon={<TimerOutlinedIcon />}
                 sx={{ flex: 'unset', borderRadius: 2.5 }}
               />
+              <AdminDashboardMetricTile
+                label={t('admin:system_monitoring.uptime')}
+                value={formatUptime(summaryStats.uptimeSeconds)}
+                icon={<AccessTimeOutlinedIcon />}
+                sx={{ flex: 'unset', borderRadius: 2.5 }}
+              />
             </Box>
 
             {/* Top Endpoints & Exceptions Tables */}
@@ -705,6 +823,7 @@ const AdminSystemMonitoringPage = () => {
                       <Legend onClick={(e) => handleLegendClick('latency', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
                       <Line type="monotone" dot={false} dataKey="latAvg" name={t("admin:system_monitoring.avg_latency")} stroke={theme.palette.success.main} strokeWidth={2} hide={isolatedSeries['latency'] && isolatedSeries['latency'] !== 'latAvg'} />
                       <Line type="monotone" dot={false} dataKey="latP50" name={t("admin:system_monitoring.p50_latency")} stroke={theme.palette.info.main} strokeWidth={2} hide={isolatedSeries['latency'] && isolatedSeries['latency'] !== 'latP50'} />
+                      <Line type="monotone" dot={false} dataKey="latP95" name={t("admin:system_monitoring.p95_latency")} stroke={theme.palette.secondary.main} strokeWidth={2} hide={isolatedSeries['latency'] && isolatedSeries['latency'] !== 'latP95'} />
                       <Line type="monotone" dot={false} dataKey="latP99" name={t("admin:system_monitoring.p99_latency")} stroke={theme.palette.warning.main} strokeWidth={2} hide={isolatedSeries['latency'] && isolatedSeries['latency'] !== 'latP99'} />
                     </LineChart>
                   </ResponsiveContainer>
@@ -847,8 +966,9 @@ const AdminSystemMonitoringPage = () => {
                       <XAxis dataKey="timeFormatted" minTickGap={30} />
                       <YAxis />
                       <RechartsTooltip content={renderTooltip} />
-                      <Legend />
-                      <Line type="monotone" dot={false} dataKey="memHeap" name={t("admin:system_monitoring.jvm_heap_used")} stroke="#ff7300" strokeWidth={2} />
+                      <Legend onClick={(e) => handleLegendClick('memory', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
+                      <Line type="monotone" dot={false} dataKey="memHeap" name={t("admin:system_monitoring.jvm_heap_used")} stroke="#ff7300" strokeWidth={2} hide={isolatedSeries['memory'] && isolatedSeries['memory'] !== 'memHeap'} />
+                      <Line type="monotone" dot={false} dataKey="memNonHeap" name={t("admin:system_monitoring.jvm_nonheap_used")} stroke="#0288d1" strokeWidth={2} hide={isolatedSeries['memory'] && isolatedSeries['memory'] !== 'memNonHeap'} />
                     </LineChart>
                   </ResponsiveContainer>
                 </Box>
@@ -870,6 +990,197 @@ const AdminSystemMonitoringPage = () => {
                       <Legend />
                       <Line type="monotone" dot={false} dataKey="gcPause" name={t("admin:system_monitoring.gc_pause_time")} stroke="#9c27b0" strokeWidth={2} />
                     </LineChart>
+                  </ResponsiveContainer>
+                </Box>
+              </AdminSectionPanel>
+
+              {/* GC Collections Rate (Tier 2) */}
+              <AdminSectionPanel
+                title={t('admin:system_monitoring.gc_collections')}
+                subtitle={t('admin:system_monitoring.gc_collections_desc')}
+                sx={monitoringPanelSx}
+              >
+                <Box sx={monitoringChartBoxSx}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="timeFormatted" minTickGap={30} />
+                      <YAxis />
+                      <RechartsTooltip content={renderTooltip} />
+                      <Legend />
+                      <Line type="monotone" dot={false} dataKey="gcCount" name={t("admin:system_monitoring.gc_collections")} stroke="#7b1fa2" strokeWidth={2} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Box>
+              </AdminSectionPanel>
+
+              {/* Resource Utilization % (Tier 2) */}
+              <AdminSectionPanel
+                title={t('admin:system_monitoring.resource_utilization')}
+                subtitle={t('admin:system_monitoring.resource_utilization_desc')}
+                sx={monitoringPanelSx}
+              >
+                <Box sx={monitoringChartBoxSx}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="timeFormatted" minTickGap={30} />
+                      <YAxis domain={[0, 100]} />
+                      <RechartsTooltip content={renderTooltip} />
+                      <Legend onClick={(e) => handleLegendClick('util', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
+                      <Line type="monotone" dot={false} dataKey="heapUtil" name={t("admin:system_monitoring.heap_utilization")} stroke={theme.palette.error.main} strokeWidth={2} hide={isolatedSeries['util'] && isolatedSeries['util'] !== 'heapUtil'} />
+                      <Line type="monotone" dot={false} dataKey="fdUsage" name={t("admin:system_monitoring.fd_usage")} stroke={theme.palette.warning.main} strokeWidth={2} hide={isolatedSeries['util'] && isolatedSeries['util'] !== 'fdUsage'} />
+                      <Line type="monotone" dot={false} dataKey="dbSaturation" name={t("admin:system_monitoring.db_saturation")} stroke={theme.palette.info.main} strokeWidth={2} hide={isolatedSeries['util'] && isolatedSeries['util'] !== 'dbSaturation'} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Box>
+              </AdminSectionPanel>
+
+              {/* System Load Average (Tier 2) */}
+              <AdminSectionPanel
+                title={t('admin:system_monitoring.system_load')}
+                subtitle={t('admin:system_monitoring.system_load_desc')}
+                sx={monitoringPanelSx}
+              >
+                <Box sx={monitoringChartBoxSx}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="timeFormatted" minTickGap={30} />
+                      <YAxis />
+                      <RechartsTooltip content={renderTooltip} />
+                      <Legend onClick={(e) => handleLegendClick('load', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
+                      <Line type="monotone" dot={false} dataKey="systemLoad" name={t("admin:system_monitoring.load_1m")} stroke={theme.palette.primary.main} strokeWidth={2} hide={isolatedSeries['load'] && isolatedSeries['load'] !== 'systemLoad'} />
+                      <Line type="monotone" dot={false} dataKey="cpuCount" name={t("admin:system_monitoring.cpu_count")} stroke={theme.palette.text.secondary} strokeWidth={1} strokeDasharray="4 4" hide={isolatedSeries['load'] && isolatedSeries['load'] !== 'cpuCount'} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Box>
+              </AdminSectionPanel>
+
+              {/* Log Events Rate (Tier 2) */}
+              <AdminSectionPanel
+                title={t('admin:system_monitoring.log_events')}
+                subtitle={t('admin:system_monitoring.log_events_desc')}
+                sx={monitoringPanelSx}
+              >
+                <Box sx={monitoringChartBoxSx}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="timeFormatted" minTickGap={30} />
+                      <YAxis />
+                      <RechartsTooltip content={renderTooltip} />
+                      <Legend onClick={(e) => handleLegendClick('logs', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
+                      <Area type="monotone" dataKey="logWarns" name={t("admin:system_monitoring.log_warn")} stackId="1" stroke={theme.palette.warning.main} fill={theme.palette.warning.light} fillOpacity={0.5} hide={isolatedSeries['logs'] && isolatedSeries['logs'] !== 'logWarns'} />
+                      <Area type="monotone" dataKey="logErrors" name={t("admin:system_monitoring.log_error")} stackId="1" stroke={theme.palette.error.main} fill={theme.palette.error.light} fillOpacity={0.5} hide={isolatedSeries['logs'] && isolatedSeries['logs'] !== 'logErrors'} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </Box>
+              </AdminSectionPanel>
+
+              {/* Background I/O Latency (Tier 1) */}
+              <AdminSectionPanel
+                title={t('admin:system_monitoring.io_latency')}
+                subtitle={t('admin:system_monitoring.io_latency_desc')}
+                sx={monitoringPanelSx}
+              >
+                <Box sx={monitoringChartBoxSx}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="timeFormatted" minTickGap={30} />
+                      <YAxis />
+                      <RechartsTooltip content={renderTooltip} />
+                      <Legend onClick={(e) => handleLegendClick('io', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
+                      <Line type="monotone" dot={false} dataKey="emailLat" name={t("admin:system_monitoring.email_latency")} stroke="#8884d8" strokeWidth={2} hide={isolatedSeries['io'] && isolatedSeries['io'] !== 'emailLat'} />
+                      <Line type="monotone" dot={false} dataKey="ocrLat" name={t("admin:system_monitoring.ocr_latency")} stroke="#82ca9d" strokeWidth={2} hide={isolatedSeries['io'] && isolatedSeries['io'] !== 'ocrLat'} />
+                      <Line type="monotone" dot={false} dataKey="imageLat" name={t("admin:system_monitoring.image_latency")} stroke="#ffc658" strokeWidth={2} hide={isolatedSeries['io'] && isolatedSeries['io'] !== 'imageLat'} />
+                      <Line type="monotone" dot={false} dataKey="fileUploadLat" name={t("admin:system_monitoring.file_upload_latency")} stroke="#ff7300" strokeWidth={2} hide={isolatedSeries['io'] && isolatedSeries['io'] !== 'fileUploadLat'} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Box>
+              </AdminSectionPanel>
+
+              {/* Storage Size (Tier 1) */}
+              <AdminSectionPanel
+                title={t('admin:system_monitoring.storage_size')}
+                subtitle={t('admin:system_monitoring.storage_size_desc')}
+                sx={monitoringPanelSx}
+              >
+                <Box sx={monitoringChartBoxSx}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="timeFormatted" minTickGap={30} />
+                      <YAxis />
+                      <RechartsTooltip content={renderTooltip} />
+                      <Legend />
+                      <Area type="monotone" dataKey="storageSize" name={t("admin:system_monitoring.storage_size_mb")} stroke={theme.palette.success.main} fill={theme.palette.success.light} fillOpacity={0.3} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </Box>
+              </AdminSectionPanel>
+
+              {/* Authentication Events (Tier 3) */}
+              <AdminSectionPanel
+                title={t('admin:system_monitoring.auth_events')}
+                subtitle={t('admin:system_monitoring.auth_events_desc')}
+                sx={monitoringPanelSx}
+              >
+                <Box sx={monitoringChartBoxSx}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="timeFormatted" minTickGap={30} />
+                      <YAxis />
+                      <RechartsTooltip content={renderTooltip} />
+                      <Legend onClick={(e) => handleLegendClick('auth', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
+                      <Line type="monotone" dot={false} dataKey="authLoginSuccess" name={t("admin:system_monitoring.login_success")} stroke={theme.palette.success.main} strokeWidth={2} hide={isolatedSeries['auth'] && isolatedSeries['auth'] !== 'authLoginSuccess'} />
+                      <Line type="monotone" dot={false} dataKey="authLoginFailure" name={t("admin:system_monitoring.login_failure")} stroke={theme.palette.error.main} strokeWidth={2} hide={isolatedSeries['auth'] && isolatedSeries['auth'] !== 'authLoginFailure'} />
+                      <Line type="monotone" dot={false} dataKey="authRefreshSuccess" name={t("admin:system_monitoring.refresh_success")} stroke={theme.palette.info.main} strokeWidth={2} hide={isolatedSeries['auth'] && isolatedSeries['auth'] !== 'authRefreshSuccess'} />
+                      <Line type="monotone" dot={false} dataKey="authRefreshFailure" name={t("admin:system_monitoring.refresh_failure")} stroke={theme.palette.warning.main} strokeWidth={2} hide={isolatedSeries['auth'] && isolatedSeries['auth'] !== 'authRefreshFailure'} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Box>
+              </AdminSectionPanel>
+
+              {/* Rate Limit Rejections (Tier 3) */}
+              <AdminSectionPanel
+                title={t('admin:system_monitoring.ratelimit_rejections')}
+                subtitle={t('admin:system_monitoring.ratelimit_rejections_desc')}
+                sx={monitoringPanelSx}
+              >
+                <Box sx={monitoringChartBoxSx}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="timeFormatted" minTickGap={30} />
+                      <YAxis />
+                      <RechartsTooltip content={renderTooltip} />
+                      <Legend />
+                      <Area type="monotone" dataKey="rateLimitRejected" name={t("admin:system_monitoring.ratelimit_rejected")} stroke={theme.palette.error.main} fill={theme.palette.error.light} fillOpacity={0.4} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </Box>
+              </AdminSectionPanel>
+
+              {/* Active WebSocket Connections (Tier 3) */}
+              <AdminSectionPanel
+                title={t('admin:system_monitoring.websocket_connections')}
+                subtitle={t('admin:system_monitoring.websocket_connections_desc')}
+                sx={monitoringPanelSx}
+              >
+                <Box sx={monitoringChartBoxSx}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="timeFormatted" minTickGap={30} />
+                      <YAxis />
+                      <RechartsTooltip content={renderTooltip} />
+                      <Legend onClick={(e) => handleLegendClick('ws', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
+                      <Area type="monotone" dataKey="wsActiveSessions" name={t("admin:system_monitoring.ws_sessions")} stroke={theme.palette.primary.main} fill={theme.palette.primary.light} fillOpacity={0.4} hide={isolatedSeries['ws'] && isolatedSeries['ws'] !== 'wsActiveSessions'} />
+                      <Area type="monotone" dataKey="wsActiveGroups" name={t("admin:system_monitoring.ws_groups")} stroke={theme.palette.secondary.main} fill={theme.palette.secondary.light} fillOpacity={0.4} hide={isolatedSeries['ws'] && isolatedSeries['ws'] !== 'wsActiveGroups'} />
+                    </AreaChart>
                   </ResponsiveContainer>
                 </Box>
               </AdminSectionPanel>

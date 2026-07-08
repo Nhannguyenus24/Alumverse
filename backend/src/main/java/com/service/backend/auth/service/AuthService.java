@@ -14,6 +14,7 @@ import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
 
 import com.service.backend.shared.exception.ApplicationException;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -63,13 +64,15 @@ public class AuthService {
     private final SecureRandom secureRandom;
     private final NotificationService notificationService;
     private final GoogleIdTokenVerifier googleIdTokenVerifier;
+    private final MeterRegistry meterRegistry;
 
     public AuthService(AuthRepository authRepository, PasswordEncoder passwordEncoder,
                       EmailService emailService, CacheUtils cacheUtils,
                       JwtUtils jwtUtils,
                       UserLoginHistoryRepository userLoginHistoryRepository,
                       @Value("${google.oauth.client-id:}") String googleClientId,
-                      NotificationService notificationService) {
+                      NotificationService notificationService,
+                      MeterRegistry meterRegistry) {
         this.authRepository = authRepository;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
@@ -79,6 +82,7 @@ public class AuthService {
         this.googleClientId = googleClientId == null ? "" : googleClientId.trim();
         this.secureRandom = new SecureRandom();
         this.notificationService = notificationService;
+        this.meterRegistry = meterRegistry;
         this.googleIdTokenVerifier = new GoogleIdTokenVerifier.Builder(
                 new NetHttpTransport(),
                 GsonFactory.getDefaultInstance())
@@ -137,8 +141,14 @@ public class AuthService {
                             }
                         }))
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND)))
-                .doOnSuccess(u -> logger.info("loginByEmail result: {}", JsonUtils.toJson(u)))
-                .doOnError(error -> logger.error("Login error for email: {} - {}", email, error.getMessage()));
+                .doOnSuccess(u -> {
+                    recordLoginMetric("EMAIL", "success");
+                    logger.info("loginByEmail result: {}", JsonUtils.toJson(u));
+                })
+                .doOnError(error -> {
+                    recordLoginMetric("EMAIL", "failure");
+                    logger.error("Login error for email: {} - {}", email, error.getMessage());
+                });
     }
 
 
@@ -159,8 +169,14 @@ public class AuthService {
                         .flatMap(existingUser -> loginExistingGoogleUser(existingUser, tokenInfo.picture(), organizationId, userAgent, loginIp))
                         .switchIfEmpty(registerGoogleUser(tokenInfo, organizationId, userAgent, loginIp))
                 )
-                .doOnSuccess(u -> logger.info("loginWithGoogle result: {}", JsonUtils.toJson(u)))
-                .doOnError(error -> logger.error("Google login failed: {}", error.getMessage()));
+                .doOnSuccess(u -> {
+                    recordLoginMetric("GOOGLE", "success");
+                    logger.info("loginWithGoogle result: {}", JsonUtils.toJson(u));
+                })
+                .doOnError(error -> {
+                    recordLoginMetric("GOOGLE", "failure");
+                    logger.error("Google login failed: {}", error.getMessage());
+                });
     }
 
     public Mono<Void> activateUser(Integer userId) {
@@ -400,7 +416,13 @@ public class AuthService {
                                                 .map(level -> buildRefreshResponse(user, finalOrgId, level));
                                     });
                         })
-                        .doOnSuccess(res -> logger.info("refreshAccessToken: userId={} token refreshed for organizationId={}", userId, organizationId)));
+                        .doOnSuccess(res -> logger.info("refreshAccessToken: userId={} token refreshed for organizationId={}", userId, organizationId)))
+                .doOnSuccess(res -> meterRegistry.counter("auth.token.refresh", "result", "success").increment())
+                .doOnError(error -> meterRegistry.counter("auth.token.refresh", "result", "failure").increment());
+    }
+
+    private void recordLoginMetric(String method, String result) {
+        meterRegistry.counter("auth.login", "method", method, "result", result).increment();
     }
 
     private LoginResponse buildRefreshResponse(User user, Integer organizationId, Integer verificationLevel) {
