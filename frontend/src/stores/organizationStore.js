@@ -32,7 +32,8 @@ const normalizeOrganization = (organization) => {
  * Deduplicate concurrent organization switches (StrictMode double-invoke,
  * re-renders, full-page reload racing with auth bootstrap). Multiple callers
  * targeting the same org share a single /auth/switch-organization request so we
- * never rotate tokens more than once for one navigation.
+ * never re-issue the access token more than once for one navigation. The refresh
+ * token is never touched by a switch — only the access token is rotated.
  */
 let switchInFlight = null; // { orgId, promise }
 
@@ -115,9 +116,9 @@ const useOrganizationStore = create((set) => ({
             await switchOrganizationOnce(organization.id);
           } catch (err) {
             console.error("Failed to switch organization", err);
-            // Do not force logout here. The backend issues fresh tokens without
-            // revoking the old refresh token, so a failed/duplicate switch leaves
-            // the previous session intact; the user simply stays on their prior org.
+            // Do not force logout here. A switch only re-issues the access token and
+            // never touches the refresh token, so a failed/duplicate switch leaves the
+            // previous session intact; the user simply stays on their prior org.
           }
         }
       }

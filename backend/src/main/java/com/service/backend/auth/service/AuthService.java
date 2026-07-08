@@ -4,7 +4,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.dao.DataIntegrityViolationException;
 import java.security.SecureRandom;
 import java.time.Duration;
-import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Collections;
@@ -34,10 +33,11 @@ import com.service.backend.shared.utils.JwtUtils;
 import com.service.backend.user.dao.UserLoginHistoryRepository;
 import com.service.backend.shared.entity.UserLoginHistory;
 import com.service.backend.shared.enums.Status;
+import com.service.backend.shared.enums.UserRole;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import com.service.backend.user.service.NotificationService;
-import reactor.util.function.Tuple3;
+import reactor.util.function.Tuple2;
 
 @Service
 public class AuthService {
@@ -359,57 +359,58 @@ public class AuthService {
                 });
     }
 
-    public Mono<LoginResponse> refreshAccessToken(String refreshToken) {
+    public Mono<LoginResponse> refreshAccessToken(String refreshToken, Integer organizationId) {
         if (!StringUtils.hasText(refreshToken)) {
             return Mono.error(new ApplicationException(ErrorCode.REFRESH_TOKEN_NOT_FOUND));
         }
 
         return Mono.fromCallable(() -> {
             com.nimbusds.jwt.JWTClaimsSet claims = jwtUtils.validateToken(refreshToken);
-            Integer userId = Integer.valueOf(claims.getSubject());
-            Object orgIdClaim = claims.getClaim("organizationId");
-            Integer orgId = orgIdClaim instanceof Number ? ((Number) orgIdClaim).intValue() : null;
-            return new AbstractMap.SimpleEntry<>(userId, orgId);
+            return Integer.valueOf(claims.getSubject());
         })
                 .onErrorMap(e -> new ApplicationException(ErrorCode.INVALID_REFRESH_TOKEN, e))
-                .flatMap(entry -> {
-                    Integer userId = entry.getKey();
-                    Integer organizationIdFromRefresh = entry.getValue();
+                .flatMap(userId -> authRepository.findById(userId)
+                        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND)))
+                        .flatMap(user -> {
+                            // The refresh token no longer carries the organization. The client passes the
+                            // organization it is currently viewing so the refreshed access token stays scoped
+                            // to it. ADMINs operate without an org ("all orgs") and get the system-admin level.
+                            if (organizationId != null) {
+                                return getVerificationLevel(user.getId(), organizationId)
+                                        .defaultIfEmpty(0)
+                                        .map(level -> buildRefreshResponse(user, organizationId, level));
+                            }
 
-                    return authRepository.findById(userId)
-                            .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND)))
-                            .flatMap(user -> {
-                                Mono<Integer> orgMono = organizationIdFromRefresh != null
-                                        ? Mono.just(organizationIdFromRefresh)
-                                        : authRepository.getOrganizationIdByUserId(userId).next();
+                            if (user.getRole() == UserRole.ADMIN) {
+                                // Must match the login path (AuthController#buildLoginResponse)
+                                // so refresh doesn't silently downgrade a system admin.
+                                return Mono.just(buildRefreshResponse(user, null, 4));
+                            }
 
-                                return orgMono.defaultIfEmpty(-1)
-                                        .flatMap(orgId -> {
-                                            Integer finalOrgId = (orgId == -1) ? null : orgId;
-                                            String newAccessToken = jwtUtils.generateAccessToken(user, finalOrgId);
-
-                                            if (finalOrgId == null) {
-                                                return Mono.just(LoginResponse.builder()
-                                                        .accessToken(newAccessToken)
-                                                        // Must match the login path (AuthController#buildLoginResponse)
-                                                        // so refresh doesn't silently downgrade a system admin.
-                                                        .verificationLevel(4) // Default for system admin (non-zero)
-                                                        .build());
-                                            }
-
-                                            return getVerificationLevel(user.getId(), finalOrgId)
-                                                    .defaultIfEmpty(0)
-                                                    .map(level -> LoginResponse.builder()
-                                                            .accessToken(newAccessToken)
-                                                            .verificationLevel(level)
-                                                            .build());
-                                        });
-                            })
-                            .doOnSuccess(res -> logger.info("refreshAccessToken: userId={} token refreshed", userId));
-                });
+                            // No org supplied by a non-admin (rare) — fall back to the user's first org.
+                            return authRepository.getOrganizationIdByUserId(userId).next()
+                                    .defaultIfEmpty(-1)
+                                    .flatMap(orgId -> {
+                                        Integer finalOrgId = (orgId == -1) ? null : orgId;
+                                        if (finalOrgId == null) {
+                                            return Mono.just(buildRefreshResponse(user, null, 0));
+                                        }
+                                        return getVerificationLevel(user.getId(), finalOrgId)
+                                                .defaultIfEmpty(0)
+                                                .map(level -> buildRefreshResponse(user, finalOrgId, level));
+                                    });
+                        })
+                        .doOnSuccess(res -> logger.info("refreshAccessToken: userId={} token refreshed for organizationId={}", userId, organizationId)));
     }
 
-    public Mono<Tuple3<String, String, Integer>> switchOrganization(String refreshToken, Integer newOrganizationId) {
+    private LoginResponse buildRefreshResponse(User user, Integer organizationId, Integer verificationLevel) {
+        return LoginResponse.builder()
+                .accessToken(jwtUtils.generateAccessToken(user, organizationId))
+                .verificationLevel(verificationLevel)
+                .build();
+    }
+
+    public Mono<Tuple2<String, Integer>> switchOrganization(String refreshToken, Integer newOrganizationId) {
         if (!StringUtils.hasText(refreshToken)) {
             return Mono.error(new ApplicationException(ErrorCode.REFRESH_TOKEN_NOT_FOUND));
         }
@@ -425,21 +426,17 @@ public class AuthService {
                     // Allow switching to any organization. Membership is not required:
                     // non-members simply receive verificationLevel 0 (guest) for that org.
                     //
-                    // Do NOT revoke the incoming refresh token here. Switching org can race
-                    // with the client's auto-refresh machinery (and StrictMode/double calls),
-                    // which may still present the old refresh token; revoking it mid-session
-                    // turns those concurrent /auth/refresh calls into 401s and force-logs the
-                    // user out. Like /auth/refresh, we just issue new tokens and let the old
-                    // refresh token expire naturally.
-                    long expiration = 604800000L;
+                    // Only the access token is re-issued. The refresh token is left untouched —
+                    // it carries just the user identity, so switching org never rotates it. This
+                    // also avoids racing with the client's auto-refresh machinery (StrictMode /
+                    // double calls) that may still present the current refresh token.
                     String newAccessToken = jwtUtils.generateAccessToken(user, newOrganizationId);
-                    String newRefreshToken = jwtUtils.generateRefreshToken(user.getId(), newOrganizationId, expiration);
 
                     return getVerificationLevel(user.getId(), newOrganizationId)
                             .defaultIfEmpty(0)
-                            .map(level -> reactor.util.function.Tuples.of(newAccessToken, newRefreshToken, level))
+                            .map(level -> reactor.util.function.Tuples.of(newAccessToken, level))
                             .doOnSuccess(tuple -> {
-                                Integer level = tuple.getT3();
+                                Integer level = tuple.getT2();
                                 if (level == 0) {
                                     logger.info("switchOrganization: userId={} switched to organizationId={} as GUEST (not a member, verificationLevel=0)", userId, newOrganizationId);
                                 } else {
