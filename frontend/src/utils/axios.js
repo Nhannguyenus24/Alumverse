@@ -133,7 +133,12 @@ export async function refreshSessionAccessToken() {
 
   refreshPromise = (async () => {
     try {
-      const res = await refreshClient.post('/auth/refresh');
+      // The refresh token carries only the user identity — the organization is not stored
+      // in it. Pass the org the client is currently on so the refreshed access token stays
+      // scoped to it. ADMINs have no org (undefined) → refreshed as system admin.
+      const organizationId = useAuthStore.getState().user?.organizationId;
+      const config = organizationId != null ? { params: { organizationId } } : undefined;
+      const res = await refreshClient.post('/auth/refresh', null, config);
       const data = res?.data?.data; // { accessToken, verificationLevel }
 
       if (!data?.accessToken || typeof data.accessToken !== 'string') {

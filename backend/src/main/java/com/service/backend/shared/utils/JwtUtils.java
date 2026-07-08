@@ -81,21 +81,24 @@ public class JwtUtils {
         return signAndSerialize(claimsSet);
     }
 
-    public String generateRefreshToken(Integer userId, Integer organizationId) {
-        return generateRefreshToken(userId, organizationId, refreshTokenExpirationMs);
+    public String generateRefreshToken(Integer userId) {
+        return generateRefreshToken(userId, refreshTokenExpirationMs);
     }
 
-    public String generateRefreshToken(Integer userId, Integer organizationId, long expirationMs) {
+    /**
+     * Refresh tokens carry the user identity only — never the organization. The active
+     * organization lives solely in the access token; switching org or refreshing re-issues
+     * the access token without touching the refresh token.
+     */
+    public String generateRefreshToken(Integer userId, long expirationMs) {
         Instant now = Instant.now();
-        JWTClaimsSet.Builder builder = new JWTClaimsSet.Builder()
+        JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
                 .subject(String.valueOf(userId))
                 .jwtID(UUID.randomUUID().toString())
                 .issueTime(Date.from(now))
-                .expirationTime(Date.from(now.plusMillis(expirationMs)));
-        if (organizationId != null) {
-            builder.claim("organizationId", organizationId);
-        }
-        return signAndSerialize(builder.build());
+                .expirationTime(Date.from(now.plusMillis(expirationMs)))
+                .build();
+        return signAndSerialize(claimsSet);
     }
 
     /**

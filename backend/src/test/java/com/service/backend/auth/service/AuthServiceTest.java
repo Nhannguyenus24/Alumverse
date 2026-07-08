@@ -366,7 +366,7 @@ class AuthServiceTest {
         @Test
         @DisplayName("should fail when refresh token is blank")
         void refresh_blankToken() {
-            StepVerifier.create(authService.refreshAccessToken(""))
+            StepVerifier.create(authService.refreshAccessToken("", null))
                     .expectErrorMatches(err -> err instanceof ApplicationException &&
                             ((ApplicationException) err).getErrorCode() == ErrorCode.REFRESH_TOKEN_NOT_FOUND)
                     .verify();
@@ -375,7 +375,7 @@ class AuthServiceTest {
         @Test
         @DisplayName("should fail when refresh token is null")
         void refresh_nullToken() {
-            StepVerifier.create(authService.refreshAccessToken(null))
+            StepVerifier.create(authService.refreshAccessToken(null, null))
                     .expectErrorMatches(err -> err instanceof ApplicationException &&
                             ((ApplicationException) err).getErrorCode() == ErrorCode.REFRESH_TOKEN_NOT_FOUND)
                     .verify();
