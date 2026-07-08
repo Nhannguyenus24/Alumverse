@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router';
 import { useTranslation } from 'react-i18next';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import {
   Box, Typography, Button, TextField,
   Stack, Table, TableBody, TableCell, TableContainer,
@@ -11,7 +13,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
 
-const FITBOT_API_URL = '/ngrok-api';
+const FITBOT_API_URL = '/fitbot-api';
 
 const AdminAIBotConfigPage = () => {
   const { t } = useTranslation('admin');
@@ -174,10 +176,10 @@ const AdminAIBotConfigPage = () => {
                     </TableRow>
                   ) : (
                     files.map((file) => (
-                      <TableRow key={file}>
-                        <TableCell>{file}</TableCell>
+                      <TableRow key={file.filename}>
+                        <TableCell>{file.filename}</TableCell>
                         <TableCell align="right">
-                          <IconButton color="error" onClick={() => handleDeleteFile(file)}>
+                          <IconButton color="error" onClick={() => handleDeleteFile(file.filename)}>
                             <DeleteIcon />
                           </IconButton>
                         </TableCell>
@@ -214,16 +216,25 @@ const AdminAIBotConfigPage = () => {
             {botResponse && (
               <Box sx={{ mt: 3, p: 2, bgcolor: 'background.default', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
                 <Typography variant="subtitle2" color="text.secondary" mb={1}>{t('bot_answer_label')}</Typography>
-                <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
-                  {botResponse.answer}
-                </Typography>
+                <Box sx={{ 
+                  '& p': { margin: '0 0 0.5em 0', '&:last-child': { margin: 0 } },
+                  '& ul, & ol': { margin: '0 0 0.5em 0', paddingLeft: '1.5em' },
+                  '& li': { marginBottom: '0.2em' },
+                  fontSize: '0.95rem',
+                  lineHeight: 1.5,
+                  wordWrap: 'break-word',
+                }}>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {botResponse.answer}
+                  </ReactMarkdown>
+                </Box>
                 
                 {botResponse.sources && botResponse.sources.length > 0 && (
                   <Box mt={2}>
                     <Typography variant="subtitle2" color="text.secondary" mb={1}>{t('bot_sources_label')}</Typography>
                     <Stack direction="row" flexWrap="wrap" gap={1}>
-                      {botResponse.sources.map((src, i) => (
-                        <Chip key={i} label={src.metadata?.source || `Source ${i+1}`} size="small" variant="outlined" />
+                      {[...new Set(botResponse.sources.map((src, i) => src.metadata?.source || `Source ${i+1}`))].map((uniqueSource, i) => (
+                        <Chip key={i} label={uniqueSource} size="small" variant="outlined" />
                       ))}
                     </Stack>
                   </Box>

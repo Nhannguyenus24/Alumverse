@@ -1,8 +1,15 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+  // In dev the app talks to a same-origin `/api` (so the httpOnly refresh cookie stays
+  // first-party); Vite proxies it to the real backend. Point it at VITE_API_BASE_URL
+  // (e.g. the duckdns backend) when set, otherwise a locally-running backend.
+  const apiTarget = env.VITE_API_BASE_URL || 'http://localhost:8080'
+
+  return {
   plugins: [react()],
   optimizeDeps: {
     include: [
@@ -28,14 +35,23 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:8080',
+        target: apiTarget,
         changeOrigin: true,
+        secure: true,
       },
       '/ngrok-api': {
         target: 'https://glimmer-clustered-exorcist.ngrok-free.dev',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/ngrok-api/, ''),
         secure: false,
+      },
+      '/fitbot-api': {
+        target: 'http://167.99.79.46',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/fitbot-api/, ''),
+        secure: false,
+        timeout: 600000,
+        proxyTimeout: 600000,
       },
     },
   },
@@ -56,4 +72,5 @@ export default defineConfig({
       },
     },
   },
+  }
 })
