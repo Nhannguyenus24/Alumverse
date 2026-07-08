@@ -3,9 +3,14 @@ import useAuthStore from '../stores/authStore';
 import useOrganizationStore from '../stores/organizationStore';
 import { userFromAccessToken } from './jwt';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL
-  ? `${import.meta.env.VITE_API_BASE_URL}/api`
-  : '/api';
+// Always talk to the API on the SAME ORIGIN as the app (`/api`). This keeps the
+// httpOnly refresh-token cookie first-party so it is actually stored and sent — a
+// cross-site cookie (frontend on *.vercel.app, backend on *.duckdns.org) is treated
+// as third-party and dropped by browsers, which breaks /auth/refresh and
+// /auth/switch-organization ("refreshToken cookie present: false" → forced logout).
+// The same origin is proxied to the real backend by the Vite dev server (see
+// vite.config.js) in development and by Vercel rewrites (see vercel.json) in production.
+const BASE_URL = '/api';
 
 // Exact paths — avoid includes() to prevent substring bypass
 const AUTH_WHITELIST = ['/auth/login', '/auth/google-login', '/auth/refresh', '/auth/logout'];
@@ -133,7 +138,12 @@ export async function refreshSessionAccessToken() {
 
   refreshPromise = (async () => {
     try {
-      const res = await refreshClient.post('/auth/refresh');
+      // The refresh token carries only the user identity — the organization is not stored
+      // in it. Pass the org the client is currently on so the refreshed access token stays
+      // scoped to it. ADMINs have no org (undefined) → refreshed as system admin.
+      const organizationId = useAuthStore.getState().user?.organizationId;
+      const config = organizationId != null ? { params: { organizationId } } : undefined;
+      const res = await refreshClient.post('/auth/refresh', null, config);
       const data = res?.data?.data; // { accessToken, verificationLevel }
 
       if (!data?.accessToken || typeof data.accessToken !== 'string') {

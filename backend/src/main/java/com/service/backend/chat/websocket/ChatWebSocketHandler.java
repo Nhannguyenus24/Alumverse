@@ -8,6 +8,8 @@ import com.service.backend.shared.dao.UserDisplayInfo;
 import com.service.backend.user.dao.UserProfileRepository;
 import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.utils.JwtUtils;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Gauge;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.socket.WebSocketHandler;
@@ -45,11 +47,20 @@ public class ChatWebSocketHandler implements WebSocketHandler {
             ChatService chatService,
             ChatGroupMemberRepository chatGroupMemberRepository,
             UserProfileRepository userProfileRepository,
-            JwtUtils jwtUtils) {
+            JwtUtils jwtUtils,
+            MeterRegistry meterRegistry) {
         this.chatService = chatService;
         this.chatGroupMemberRepository = chatGroupMemberRepository;
         this.userProfileRepository = userProfileRepository;
         this.jwtUtils = jwtUtils;
+
+        // Real-time gauge of currently connected WebSocket sessions and active chat groups.
+        Gauge.builder("chat.websocket.active_sessions", sessionToMember, Map::size)
+                .description("Number of currently connected chat WebSocket sessions")
+                .register(meterRegistry);
+        Gauge.builder("chat.websocket.active_groups", groupToSessions, Map::size)
+                .description("Number of chat groups with at least one active subscriber")
+                .register(meterRegistry);
     }
 
     @Override

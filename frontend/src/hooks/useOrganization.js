@@ -8,8 +8,9 @@ import useOrganizationStore from '../stores/organizationStore';
  * - Re-fetches when slug changes.
  * - Avoids duplicate requests while loading.
  * - Switching to a different organization is handled seamlessly by
- *   fetchOrganization (rotates access/refresh tokens via /auth/switch-organization);
- *   the user stays logged in — non-members simply get verificationLevel 0.
+ *   fetchOrganization (re-issues the access token via /auth/switch-organization;
+ *   the refresh token is left untouched); the user stays logged in — non-members
+ *   simply get verificationLevel 0.
  */
 export const useOrganization = ({ enabled = true } = {}) => {
   const { slug: routeSlug } = useParams();
@@ -31,7 +32,7 @@ export const useOrganization = ({ enabled = true } = {}) => {
 
     // Keep one in-flight request per slug and avoid automatic retry loop on error.
     // On an org switch (currentSlug !== slug) this falls through so fetchOrganization
-    // runs and seamlessly rotates the session tokens for the new org.
+    // runs and seamlessly re-issues the access token for the new org.
     if (currentSlug === slug && (loading || organization || error)) return;
 
     fetchOrganization(slug);

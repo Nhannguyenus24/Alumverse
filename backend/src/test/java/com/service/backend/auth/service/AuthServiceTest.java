@@ -11,6 +11,7 @@ import com.service.backend.shared.utils.CacheUtils;
 import com.service.backend.shared.utils.JwtUtils;
 import com.service.backend.user.dao.UserLoginHistoryRepository;
 import com.service.backend.user.service.NotificationService;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -47,6 +48,8 @@ class AuthServiceTest {
     private UserLoginHistoryRepository userLoginHistoryRepository;
     @Mock
     private NotificationService notificationService;
+    @Mock
+    private MeterRegistry meterRegistry;
 
     private AuthService authService;
 
@@ -55,7 +58,7 @@ class AuthServiceTest {
         authService = new AuthService(
                 authRepository, passwordEncoder, emailService, cacheUtils,
                 jwtUtils, userLoginHistoryRepository,
-                "test-client-id", notificationService
+                "test-client-id", notificationService, meterRegistry
         );
     }
 
@@ -198,7 +201,7 @@ class AuthServiceTest {
             AuthService serviceNoGoogle = new AuthService(
                     authRepository, passwordEncoder, emailService, cacheUtils,
                     jwtUtils, userLoginHistoryRepository,
-                    "", notificationService
+                    "", notificationService, meterRegistry
             );
 
             StepVerifier.create(serviceNoGoogle.loginWithGoogle("token", 1, "agent", "127.0.0.1"))
@@ -366,7 +369,7 @@ class AuthServiceTest {
         @Test
         @DisplayName("should fail when refresh token is blank")
         void refresh_blankToken() {
-            StepVerifier.create(authService.refreshAccessToken(""))
+            StepVerifier.create(authService.refreshAccessToken("", null))
                     .expectErrorMatches(err -> err instanceof ApplicationException &&
                             ((ApplicationException) err).getErrorCode() == ErrorCode.REFRESH_TOKEN_NOT_FOUND)
                     .verify();
@@ -375,7 +378,7 @@ class AuthServiceTest {
         @Test
         @DisplayName("should fail when refresh token is null")
         void refresh_nullToken() {
-            StepVerifier.create(authService.refreshAccessToken(null))
+            StepVerifier.create(authService.refreshAccessToken(null, null))
                     .expectErrorMatches(err -> err instanceof ApplicationException &&
                             ((ApplicationException) err).getErrorCode() == ErrorCode.REFRESH_TOKEN_NOT_FOUND)
                     .verify();
