@@ -1,5 +1,6 @@
 import axios from 'axios';
 import useAuthStore from '../stores/authStore';
+import useOrganizationStore from '../stores/organizationStore';
 import { userFromAccessToken } from './jwt';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL
@@ -7,7 +8,7 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL
   : '/api';
 
 // Exact paths — avoid includes() to prevent substring bypass
-const AUTH_WHITELIST = ['/auth/login', '/auth/google-login', '/auth/refresh'];
+const AUTH_WHITELIST = ['/auth/login', '/auth/google-login', '/auth/refresh', '/auth/logout'];
 
 const apiClient = axios.create({
   baseURL: BASE_URL,
@@ -92,8 +93,8 @@ const isAuthWhitelistedURL = (url = '') => {
  * Logs the user out and redirects to login
  */
 const forceLogout = () => {
-  // Capture slug from auth store BEFORE reset clears it
-  const storeSlug = useAuthStore.getState().slug;
+  // Capture slug from organization store BEFORE reset clears it
+  const storeSlug = useOrganizationStore.getState().currentSlug;
 
   useAuthStore.getState().reset();
 

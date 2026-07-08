@@ -1,14 +1,3 @@
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import SchoolIcon from '@mui/icons-material/School';
-import MenuBookIcon from '@mui/icons-material/MenuBook';
-import WorkIcon from '@mui/icons-material/Work';
-
-export const getMentorshipSidebar = (t) => [
-  { id: '/development', label: t('nav:development'), icon: <TrendingUpIcon /> },
-  { id: '/mentorship', label: t('nav:mentorship'), icon: <SchoolIcon /> },
-  { id: '/development/academics', label: t('nav:academics'), icon: <MenuBookIcon /> },
-  { id: '/development/jobs', label: t('nav:jobs'), icon: <WorkIcon /> },
-];
 
 export const getMentorshipStats = (t) => [
   { value: '500+', label: t('mentorship:stats_mentors') },
@@ -40,16 +29,16 @@ export const getMentorSignupTabs = (t) => [
   { key: 'terms', label: t('mentorship:mentor_signup_tab_terms') },
 ];
 
-export const MENTORSHIP_ACTIVE_SESSION_STATUSES = new Set([
+const MENTORSHIP_ACTIVE_SESSION_STATUSES = new Set([
   'PENDING',
   'CONFIRMED',
   'IN_PROGRESS',
   'RESCHEDULE_PROPOSED',
 ]);
 
-export const MENTORSHIP_PAST_SESSION_STATUSES = new Set(['COMPLETED', 'EXPIRED']);
+const MENTORSHIP_PAST_SESSION_STATUSES = new Set(['COMPLETED', 'EXPIRED']);
 
-export const MENTORSHIP_CANCELLED_SESSION_STATUSES = new Set([
+const MENTORSHIP_CANCELLED_SESSION_STATUSES = new Set([
   'CANCELLED',
   'CANCELLED_BY_MENTEE',
   'CANCELLED_BY_MENTOR',

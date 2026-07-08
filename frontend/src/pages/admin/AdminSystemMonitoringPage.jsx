@@ -59,7 +59,13 @@ const QUERIES = {
   cpuSystem: 'system_cpu_usage * 100',
   cpuProcess: 'process_cpu_usage * 100',
   memoryHeap: 'sum(jvm_memory_used_bytes{area="heap"}) / 1024 / 1024',
-  gcPause: 'sum(rate(jvm_gc_pause_seconds_sum[5m])) * 1000'
+  gcPause: 'sum(rate(jvm_gc_pause_seconds_sum[5m])) * 1000',
+  jvmThreadsCurrent: 'sum(jvm_threads_live_threads)',
+  jvmThreadsDaemon: 'sum(jvm_threads_daemon_threads)',
+  jvmThreadsPeak: 'sum(jvm_threads_peak_threads)',
+  dbActiveConns: 'sum(r2dbc_pool_acquired_connections)',
+  dbIdleConns: 'sum(r2dbc_pool_idle_connections)',
+  dbPendingConns: 'sum(r2dbc_pool_pending_connections)'
 };
 
 const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#d32f2f', '#1976d2', '#388e3c', '#fbc02d', '#7b1fa2', '#c2185b'];
@@ -250,6 +256,12 @@ const AdminSystemMonitoringPage = () => {
         cpuProcData,
         memHeapData,
         gcPauseData,
+        jvmThreadsCurrentData,
+        jvmThreadsDaemonData,
+        jvmThreadsPeakData,
+        dbActiveConnsData,
+        dbIdleConnsData,
+        dbPendingConnsData,
         endpointDataRes,
         exceptionDataRes,
         endpointLatencyRes,
@@ -268,6 +280,12 @@ const AdminSystemMonitoringPage = () => {
         fetchPrometheusRange(QUERIES.cpuProcess, start, end, step),
         fetchPrometheusRange(QUERIES.memoryHeap, start, end, step),
         fetchPrometheusRange(QUERIES.gcPause, start, end, step),
+        fetchPrometheusRange(QUERIES.jvmThreadsCurrent, start, end, step),
+        fetchPrometheusRange(QUERIES.jvmThreadsDaemon, start, end, step),
+        fetchPrometheusRange(QUERIES.jvmThreadsPeak, start, end, step),
+        fetchPrometheusRange(QUERIES.dbActiveConns, start, end, step),
+        fetchPrometheusRange(QUERIES.dbIdleConns, start, end, step),
+        fetchPrometheusRange(QUERIES.dbPendingConns, start, end, step),
         fetchPrometheusInstant(`topk(50, sum by (path, method) (increase(http_endpoint_requests_total[${rangeSeconds}s])))`, end),
         fetchPrometheusInstant(`topk(50, sum by (error_code) (increase(api_errors_count_total[${rangeSeconds}s])))`, end),
         fetchPrometheusInstant(`sum by (path, method) (increase(http_endpoint_latency_seconds_sum[${rangeSeconds}s])) / sum by (path, method) (increase(http_endpoint_latency_seconds_count[${rangeSeconds}s])) * 1000`, end),
@@ -303,6 +321,12 @@ const AdminSystemMonitoringPage = () => {
       processSeries(cpuProcData, 'cpuProc');
       processSeries(memHeapData, 'memHeap');
       processSeries(gcPauseData, 'gcPause');
+      processSeries(jvmThreadsCurrentData, 'threadsCurrent');
+      processSeries(jvmThreadsDaemonData, 'threadsDaemon');
+      processSeries(jvmThreadsPeakData, 'threadsPeak');
+      processSeries(dbActiveConnsData, 'dbActive');
+      processSeries(dbIdleConnsData, 'dbIdle');
+      processSeries(dbPendingConnsData, 'dbPending');
 
       const errorCodesSet = new Set();
       if (exceptionTimeSeriesRes) {
@@ -831,6 +855,48 @@ const AdminSystemMonitoringPage = () => {
                 </Box>
               </AdminSectionPanel>
             </Box>
+
+            {/* JVM Threads */}
+            <Card elevation={0} sx={cardSx}>
+              <CardContent>
+                <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2, color: 'primary.main' }}>{t('admin:system_monitoring.jvm_threads', 'JVM Threads')}</Typography>
+                <Box sx={{ height: 300 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="timeFormatted" minTickGap={30} />
+                      <YAxis />
+                      <RechartsTooltip content={renderTooltip} />
+                      <Legend onClick={(e) => handleLegendClick('threads', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
+                      <Line type="monotone" dot={false} dataKey="threadsCurrent" name={t("admin:system_monitoring.threads_current", "Current Threads")} stroke={theme.palette.info.main} strokeWidth={2} hide={isolatedSeries['threads'] && isolatedSeries['threads'] !== 'threadsCurrent'} />
+                      <Line type="monotone" dot={false} dataKey="threadsDaemon" name={t("admin:system_monitoring.threads_daemon", "Daemon Threads")} stroke={theme.palette.secondary.main} strokeWidth={2} hide={isolatedSeries['threads'] && isolatedSeries['threads'] !== 'threadsDaemon'} />
+                      <Line type="monotone" dot={false} dataKey="threadsPeak" name={t("admin:system_monitoring.threads_peak", "Peak Threads")} stroke={theme.palette.error.main} strokeWidth={2} hide={isolatedSeries['threads'] && isolatedSeries['threads'] !== 'threadsPeak'} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Box>
+              </CardContent>
+            </Card>
+
+            {/* DB Connection Pool */}
+            <Card elevation={0} sx={cardSx}>
+              <CardContent>
+                <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2, color: 'primary.main' }}>{t('admin:system_monitoring.db_connections', 'Database Connections (R2DBC)')}</Typography>
+                <Box sx={{ height: 300 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="timeFormatted" minTickGap={30} />
+                      <YAxis />
+                      <RechartsTooltip content={renderTooltip} />
+                      <Legend onClick={(e) => handleLegendClick('db', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
+                      <Area type="monotone" dataKey="dbActive" name={t("admin:system_monitoring.db_active", "Active")} stackId="1" stroke={theme.palette.success.main} fill={theme.palette.success.light} fillOpacity={0.6} hide={isolatedSeries['db'] && isolatedSeries['db'] !== 'dbActive'} />
+                      <Area type="monotone" dataKey="dbIdle" name={t("admin:system_monitoring.db_idle", "Idle")} stackId="1" stroke={theme.palette.info.main} fill={theme.palette.info.light} fillOpacity={0.6} hide={isolatedSeries['db'] && isolatedSeries['db'] !== 'dbIdle'} />
+                      <Area type="monotone" dataKey="dbPending" name={t("admin:system_monitoring.db_pending", "Pending")} stackId="1" stroke={theme.palette.warning.main} fill={theme.palette.warning.light} fillOpacity={0.6} hide={isolatedSeries['db'] && isolatedSeries['db'] !== 'dbPending'} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </Box>
+              </CardContent>
+            </Card>
 
             {/* Data Table */}
             <AdminSectionPanel

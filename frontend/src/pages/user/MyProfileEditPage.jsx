@@ -249,7 +249,7 @@ const UnifiedProfileEditPage = () => {
       setCoverPreview(resolveMediaUrl(p?.coverUrl) || (isMentorshipEdit ? MENTORSHIP_COVER : DEFAULT_COVER));
       setCoverFile(null);
       let parsedLinks = [];
-      try { parsedLinks = p?.links ? JSON.parse(p.links) : []; } catch (e) {}
+      try { parsedLinks = p?.links ? JSON.parse(p.links) : []; } catch { /* ignore */ }
       setLinksText(Array.isArray(parsedLinks) ? parsedLinks.join('\n') : '');
       
       const extStr = m?.extendedProfile ?? p?.extendedProfile;
