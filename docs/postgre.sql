@@ -322,7 +322,7 @@ create table mentor_profiles
         references organization_members (user_id),
     current_job_title       text,
     current_company         text,
-    bio                     text,
+
     rating_avg              numeric default 0,
     total_sessions          integer default 0,
     status                  text    default 'DRAFT'::text not null

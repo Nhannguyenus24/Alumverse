@@ -353,7 +353,6 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
   const currentJobTitle = profile?.currentJobTitle || mentor?.currentJobTitle;
   const currentCompany = profile?.currentCompany || mentor?.currentCompany;
   const personalBio = profile?.bio;
-  const mentorBio = mentor?.bio;
   const extendedProfile = (shouldUseMentorDisplayData ? mentor?.extendedProfile : null) || profile?.extendedProfile;
 
   const user = {
@@ -471,7 +470,7 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
         { value: feedbacks.length, label: t('profile:stats_feedbacks') },
       ];
       const tags = Array.from(new Set([...expertiseTags, ...mentorTopicFallback]));
-      const hasMentorBio = !!mentorBio?.trim();
+      const hasMentorBio = !!personalBio?.trim();
 
       const totalPages = Math.max(1, Math.ceil(feedbacks.length / ITEMS_PER_PAGE));
       const paginatedReviews = feedbacks.slice((feedbackPage - 1) * ITEMS_PER_PAGE, feedbackPage * ITEMS_PER_PAGE);
@@ -499,7 +498,7 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
                 color={hasMentorBio ? 'text.secondary' : 'text.disabled'}
                 sx={{ whiteSpace: 'pre-line', fontSize: '1.05rem', lineHeight: 1.7, fontStyle: hasMentorBio ? 'normal' : 'italic' }}
               >
-                {mentorBio?.trim() || t('profile:no_intro')}
+                {personalBio?.trim() || t('profile:no_intro')}
               </Typography>
             </Box>
           )}

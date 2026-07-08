@@ -208,7 +208,6 @@ const UnifiedProfileEditPage = () => {
   const [currentJobTitle, setCurrentJobTitle] = useState('');
   const [currentCompany, setCurrentCompany] = useState('');
   const [bio, setBio] = useState('');
-  const [mentorBio, setMentorBio] = useState('');
   const [defaultMeetingLink, setDefaultMeetingLink] = useState('');
   const [experiences, setExperiences] = useState([]);
   const [educations, setEducations] = useState([]);
@@ -241,7 +240,6 @@ const UnifiedProfileEditPage = () => {
       setCurrentJobTitle(p?.currentJobTitle ?? m?.currentJobTitle ?? '');
       setCurrentCompany(p?.currentCompany ?? m?.currentCompany ?? '');
       setBio(p?.bio ?? '');
-      setMentorBio(m?.bio ?? '');
       setDefaultMeetingLink(m?.defaultMeetingLink ?? '');
       setEmail(p?.email ?? '');
       setPhone(p?.phone ?? '');
@@ -326,9 +324,6 @@ const UnifiedProfileEditPage = () => {
       
       if (access.hasMentorProfile && isMentorshipEdit) {
         await updateMentorProfile({
-          bio: isMentorshipEdit
-            ? mentorBio.trim()
-            : mentorQuery.data?.bio,
           defaultMeetingLink: isMentorshipEdit
             ? (defaultMeetingLink.trim() || undefined)
             : mentorQuery.data?.defaultMeetingLink,
@@ -611,21 +606,6 @@ const UnifiedProfileEditPage = () => {
             {t('profile:mentor_pending_edit_warning')}
           </Alert>
         )}
-
-        <SectionTitle hint={t('profile:section_public_profile_hint')}>
-          {t('profile:section_public_profile')}
-        </SectionTitle>
-        <Stack spacing={2}>
-          <TextField
-            label={t('profile:mentor_public_bio_label', { defaultValue: 'Giới thiệu cố vấn' })}
-            value={mentorBio}
-            onChange={(e) => setMentorBio(e.target.value.slice(0, 5000))}
-            fullWidth
-            multiline
-            minRows={4}
-            placeholder={t('profile:mentor_public_bio_placeholder', { defaultValue: 'Giới thiệu kinh nghiệm, định hướng chia sẻ và phong cách cố vấn của bạn...' })}
-          />
-        </Stack>
 
         <SectionTitle hint={t('profile:section_exp_edu_hint')}>
           {t('profile:section_exp_edu')}

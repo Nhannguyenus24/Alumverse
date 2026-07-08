@@ -322,7 +322,7 @@ public class AdminMentorshipService {
                 .mentorEmail(u != null ? u.getEmail() : null)
                 .currentJobTitle(p.getCurrentJobTitle())
                 .currentCompany(p.getCurrentCompany())
-                .bio(p.getBio())
+
                 .ratingAvg(p.getRatingAvg())
                 .totalSessions(p.getTotalSessions())
                 .status(p.getStatus() != null ? p.getStatus().getValue() : null)
