@@ -138,7 +138,12 @@ public class MenteeService {
             for (MentorProfileResponse r : list) {
                 UserDisplayInfo info = dmap.get(r.getMemberId());
                 if (info != null) {
-                    r.withDisplay(info.getFullName(), info.getAvatarUrl());
+                    r.withDisplay(
+                            info.getFullName(),
+                            info.getAvatarUrl(),
+                            info.getCoverUrl(),
+                            info.getCurrentJobTitle(),
+                            info.getCurrentCompany());
                 }
                 java.util.List<String> topics = tmap.get(r.getMemberId());
                 if (topics != null) {

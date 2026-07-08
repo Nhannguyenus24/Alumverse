@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
-import { Box, Button, CircularProgress, Paper, Typography } from '@mui/material';
+import { Box, Button, CircularProgress, ListItemIcon, ListItemText, Menu, MenuItem, Paper, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { useSnackbar } from 'notistack';
 
+import MenuBookIcon from '@mui/icons-material/MenuBook';
 import WorkIcon from '@mui/icons-material/Work';
 
 import ArticleCard from '../../components/articles/ArticleCard';
@@ -12,6 +13,8 @@ import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteD
 import AlumniContentLayout from '../../layouts/AlumniContentLayout';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useAuth } from '../../hooks/useAuth';
+import { useCanContribute } from '../../hooks/useCanContribute';
+import { ContributeGuardTooltip } from '../../components/ContributeGuard';
 import { usePublishedJobs } from '../../hooks/articles/usePublishedJobs';
 import { usePublishedLearning } from '../../hooks/articles/usePublishedLearning';
 import { toCardShape } from '../../hooks/articles/toCardShape';
@@ -103,6 +106,7 @@ const DevelopmentPage = () => {
   const { enqueueSnackbar } = useSnackbar();
   const queryClient = useQueryClient();
   const { user, isAuthenticated } = useAuth();
+  const { canContribute } = useCanContribute();
   const isAdmin = isAuthenticated && user?.role === 'ADMIN';
   const sidebar = getDevelopmentSidebarItems(t);
   const filters = useMemo(() => getArticleFilterConfig(t, ['learning', 'job']), [t]);
@@ -120,6 +124,7 @@ const DevelopmentPage = () => {
   } = usePublishedJobs(0, ARTICLE_FETCH_LIMIT);
 
   const [filterValues, setFilterValues] = useState({ all: true });
+  const [submitAnchorEl, setSubmitAnchorEl] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -170,7 +175,7 @@ const DevelopmentPage = () => {
       title={t('dev:title')}
       description={t('dev:subtitle')}
       uppercaseTitle
-      actions={isAdmin && (
+      actions={isAdmin ? (
         <Button
           variant="outlined"
           color="primary"
@@ -179,7 +184,32 @@ const DevelopmentPage = () => {
         >
           {t('dev:manage_opportunities')}
         </Button>
-      )}
+      ) : isAuthenticated ? (
+        <ContributeGuardTooltip>
+          <Button
+            variant="contained"
+            disabled={!canContribute}
+            startIcon={<WorkIcon />}
+            onClick={(event) => setSubmitAnchorEl(event.currentTarget)}
+          >
+            {t('dev:create_opportunity')}
+          </Button>
+          <Menu
+            anchorEl={submitAnchorEl}
+            open={Boolean(submitAnchorEl)}
+            onClose={() => setSubmitAnchorEl(null)}
+          >
+            <MenuItem onClick={() => { setSubmitAnchorEl(null); navigate('/post/job'); }}>
+              <ListItemIcon><WorkIcon fontSize="small" /></ListItemIcon>
+              <ListItemText>{t('dev:create_job_opportunity')}</ListItemText>
+            </MenuItem>
+            <MenuItem onClick={() => { setSubmitAnchorEl(null); navigate('/post/learning'); }}>
+              <ListItemIcon><MenuBookIcon fontSize="small" /></ListItemIcon>
+              <ListItemText>{t('dev:create_academic_opportunity')}</ListItemText>
+            </MenuItem>
+          </Menu>
+        </ContributeGuardTooltip>
+      ) : null}
       filters={{ config: filters, value: filterValues, onChange: setFilterValues }}
       search={{ value: filterValues.search, onChange: (val) => setFilterValues((prev) => ({ ...prev, search: val })) }}
     >

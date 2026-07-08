@@ -20,10 +20,28 @@ import reactor.core.publisher.Mono;
 @Repository
 public interface UserProfileRepository extends R2dbcRepository<User, Integer> {
 
-    @Query("SELECT id AS user_id, avatar_url, full_name FROM users WHERE id IN (:userIds)")
+    @Query("""
+            SELECT id AS user_id,
+                   avatar_url,
+                   cover_url,
+                   full_name,
+                   current_job_title,
+                   current_company
+            FROM users
+            WHERE id IN (:userIds)
+            """)
     Flux<UserDisplayInfo> streamByUserIds(@Param("userIds") Collection<Integer> userIds);
 
-    @Query("SELECT om.id AS user_id, u.avatar_url, u.full_name FROM organization_members om JOIN users u ON om.user_id = u.id WHERE om.id IN (:memberIds)")
+    @Query("""
+            SELECT id AS user_id,
+                   avatar_url,
+                   cover_url,
+                   full_name,
+                   current_job_title,
+                   current_company
+            FROM users
+            WHERE id IN (:memberIds)
+            """)
     Flux<UserDisplayInfo> streamByMemberIds(@Param("memberIds") Collection<Integer> memberIds);
 
     default Mono<Map<Integer, UserDisplayInfo>> findByUserIds(Collection<Integer> userIds) {
@@ -106,4 +124,17 @@ public interface UserProfileRepository extends R2dbcRepository<User, Integer> {
     Mono<Void> updateUserAvatar(
             @Param("userId") Integer userId,
             @Param("avatarUrl") String avatarUrl);
+
+    @Modifying
+    @Query("""
+            UPDATE users
+            SET current_job_title = COALESCE(:currentJobTitle, current_job_title),
+                current_company = COALESCE(:currentCompany, current_company),
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = :userId
+            """)
+    Mono<Void> updateUserWorkInfo(
+            @Param("userId") Integer userId,
+            @Param("currentJobTitle") String currentJobTitle,
+            @Param("currentCompany") String currentCompany);
 }

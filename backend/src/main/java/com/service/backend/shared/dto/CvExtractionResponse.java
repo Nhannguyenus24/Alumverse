@@ -19,7 +19,7 @@ import java.util.List;
 public class CvExtractionResponse {
     private String currentJobTitle;
     private String currentCompany;
-    private String bio;
+
     private List<CvEducationEntry> educations;
     private List<CvExperienceEntry> experiences;
     private List<CvProjectEntry> projects;

@@ -91,6 +91,9 @@ const ThemeProvider = ({ children }) => {
               '*::-webkit-scrollbar-corner': {
                 backgroundColor: 'transparent',
               },
+              'input[type="date"]::-webkit-calendar-picker-indicator, input[type="datetime-local"]::-webkit-calendar-picker-indicator': {
+                filter: isLight ? 'none' : 'invert(1) opacity(0.78)',
+              },
             },
           },
         },

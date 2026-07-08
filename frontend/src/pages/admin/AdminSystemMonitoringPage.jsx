@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Box,
-  Card,
-  CardContent,
   Typography,
   Select,
   MenuItem,
@@ -21,8 +19,9 @@ import {
   CircularProgress,
   useTheme,
   Alert,
-  Grid,
-  alpha
+  alpha,
+  Card,
+  CardContent
 } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -40,9 +39,15 @@ import {
   Area
 } from 'recharts';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import QueryStatsOutlinedIcon from '@mui/icons-material/QueryStatsOutlined';
+import ErrorOutlineOutlinedIcon from '@mui/icons-material/ErrorOutlineOutlined';
+import SpeedOutlinedIcon from '@mui/icons-material/SpeedOutlined';
+import TimerOutlinedIcon from '@mui/icons-material/TimerOutlined';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 import dayjs from 'dayjs';
+import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetricTile';
+import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
 
 const PROMETHEUS_URL_RANGE = 'http://168.144.102.181:9090/api/v1/query_range';
 const PROMETHEUS_URL_INSTANT = 'http://168.144.102.181:9090/api/v1/query';
@@ -56,11 +61,82 @@ const QUERIES = {
   cpuSystem: 'system_cpu_usage * 100',
   cpuProcess: 'process_cpu_usage * 100',
   memoryHeap: 'sum(jvm_memory_used_bytes{area="heap"}) / 1024 / 1024',
-  gcPause: 'sum(rate(jvm_gc_pause_seconds_sum[5m])) * 1000'
+  gcPause: 'sum(rate(jvm_gc_pause_seconds_sum[5m])) * 1000',
+  jvmThreadsCurrent: 'sum(jvm_threads_live_threads)',
+  jvmThreadsDaemon: 'sum(jvm_threads_daemon_threads)',
+  jvmThreadsPeak: 'sum(jvm_threads_peak_threads)',
+  dbActiveConns: 'sum(r2dbc_pool_acquired_connections)',
+  dbIdleConns: 'sum(r2dbc_pool_idle_connections)',
+  dbPendingConns: 'sum(r2dbc_pool_pending_connections)'
 };
 
 const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#d32f2f', '#1976d2', '#388e3c', '#fbc02d', '#7b1fa2', '#c2185b'];
 
+
+const adminTableContainerSx = {
+  maxHeight: 320,
+  border: '1px solid',
+  borderColor: 'divider',
+  borderRadius: 2,
+  bgcolor: 'background.paper',
+  overflow: 'auto',
+  boxShadow: 'none',
+};
+
+const adminTableHeadCellSx = {
+  bgcolor: 'primary.main',
+  color: 'primary.contrastText',
+  fontWeight: 800,
+  fontSize: 12,
+  letterSpacing: 0.3,
+  textTransform: 'uppercase',
+  py: 1.5,
+};
+
+const monitoringMetricGridSx = {
+  display: 'grid',
+  gridTemplateColumns: {
+    xs: '1fr',
+    sm: 'repeat(2, minmax(0, 1fr))',
+    lg: 'repeat(4, minmax(0, 1fr))',
+  },
+  gap: 3,
+  alignItems: 'stretch',
+  '& > *': {
+    minWidth: 0,
+    height: '100%',
+  },
+};
+
+const monitoringPanelGridSx = {
+  display: 'grid',
+  gridTemplateColumns: {
+    xs: '1fr',
+    xl: 'repeat(2, minmax(0, 1fr))',
+  },
+  gap: 3,
+  alignItems: 'stretch',
+  '& > *': {
+    minWidth: 0,
+    mb: '0 !important',
+  },
+};
+
+const monitoringChartBoxSx = {
+  height: { xs: 300, md: 340 },
+  minWidth: 0,
+};
+
+const monitoringPanelSx = {
+  mb: 0,
+  borderRadius: 2,
+};
+
+const cardSx = {
+  border: '1px solid',
+  borderColor: 'divider',
+  borderRadius: 2,
+};
 
 
 const fetchPrometheusRange = async (query, start, end, step) => {
@@ -132,12 +208,6 @@ const AdminSystemMonitoringPage = () => {
     { label: t('admin:system_monitoring.1m'), value: 60 },
   ], [t]);
   
-  const cardSx = {
-    borderRadius: 3,
-    border: `1px solid ${theme.palette.divider}`,
-    boxShadow: '0 4px 20px rgba(0,0,0,0.02)'
-  };
-
   const [timeRange, setTimeRange] = useState(1);
   const [customStart, setCustomStart] = useState(dayjs().subtract(1, 'hour'));
   const [customEnd, setCustomEnd] = useState(dayjs());
@@ -178,11 +248,22 @@ const AdminSystemMonitoringPage = () => {
         return;
       }
       
-      const start = timeRange === 'custom' ? customStart.unix() : Math.floor(Date.now() / 1000) - rangeSeconds;
-      const end = timeRange === 'custom' ? customEnd.unix() : Math.floor(Date.now() / 1000);
+      // Calculate a clean step for range charts
+      let step;
+      if (rangeSeconds <= 3600) step = 30; // 30 seconds
+      else if (rangeSeconds <= 3 * 3600) step = 60; // 1 minute
+      else if (rangeSeconds <= 6 * 3600) step = 120; // 2 minutes
+      else if (rangeSeconds <= 12 * 3600) step = 300; // 5 minutes
+      else if (rangeSeconds <= 24 * 3600) step = 600; // 10 minutes
+      else step = Math.max(900, Math.floor(rangeSeconds / 100));
+
+      // Snap end time to a clean interval so timestamps look neat
+      let endUnix = timeRange === 'custom' ? customEnd.unix() : Math.floor(Date.now() / 1000);
+      const snapInterval = step >= 60 ? step : 60;
+      endUnix = endUnix - (endUnix % snapInterval);
       
-      // Calculate step for range charts (aim for ~100 data points)
-      const step = Math.max(15, Math.floor(rangeSeconds / 100));
+      const end = endUnix;
+      const start = timeRange === 'custom' ? (customStart.unix() - (customStart.unix() % snapInterval)) : end - rangeSeconds;
 
       const [
         reqRateData,
@@ -194,6 +275,12 @@ const AdminSystemMonitoringPage = () => {
         cpuProcData,
         memHeapData,
         gcPauseData,
+        jvmThreadsCurrentData,
+        jvmThreadsDaemonData,
+        jvmThreadsPeakData,
+        dbActiveConnsData,
+        dbIdleConnsData,
+        dbPendingConnsData,
         endpointDataRes,
         exceptionDataRes,
         endpointLatencyRes,
@@ -212,6 +299,12 @@ const AdminSystemMonitoringPage = () => {
         fetchPrometheusRange(QUERIES.cpuProcess, start, end, step),
         fetchPrometheusRange(QUERIES.memoryHeap, start, end, step),
         fetchPrometheusRange(QUERIES.gcPause, start, end, step),
+        fetchPrometheusRange(QUERIES.jvmThreadsCurrent, start, end, step),
+        fetchPrometheusRange(QUERIES.jvmThreadsDaemon, start, end, step),
+        fetchPrometheusRange(QUERIES.jvmThreadsPeak, start, end, step),
+        fetchPrometheusRange(QUERIES.dbActiveConns, start, end, step),
+        fetchPrometheusRange(QUERIES.dbIdleConns, start, end, step),
+        fetchPrometheusRange(QUERIES.dbPendingConns, start, end, step),
         fetchPrometheusInstant(`topk(50, sum by (path, method) (increase(http_endpoint_requests_total[${rangeSeconds}s])))`, end),
         fetchPrometheusInstant(`topk(50, sum by (error_code) (increase(api_errors_count_total[${rangeSeconds}s])))`, end),
         fetchPrometheusInstant(`sum by (path, method) (increase(http_endpoint_latency_seconds_sum[${rangeSeconds}s])) / sum by (path, method) (increase(http_endpoint_latency_seconds_count[${rangeSeconds}s])) * 1000`, end),
@@ -224,7 +317,7 @@ const AdminSystemMonitoringPage = () => {
 
       // Merge time-series data
       const mergedMap = new Map();
-      const formatString = rangeSeconds > 86400 ? 'MM/DD HH:mm' : 'HH:mm:ss';
+      const formatString = rangeSeconds > 86400 ? 'MM/DD HH:mm' : (step < 60 ? 'HH:mm:ss' : 'HH:mm');
 
       const processSeries = (series, key) => {
         series.forEach(([timestamp, value]) => {
@@ -247,6 +340,12 @@ const AdminSystemMonitoringPage = () => {
       processSeries(cpuProcData, 'cpuProc');
       processSeries(memHeapData, 'memHeap');
       processSeries(gcPauseData, 'gcPause');
+      processSeries(jvmThreadsCurrentData, 'threadsCurrent');
+      processSeries(jvmThreadsDaemonData, 'threadsDaemon');
+      processSeries(jvmThreadsPeakData, 'threadsPeak');
+      processSeries(dbActiveConnsData, 'dbActive');
+      processSeries(dbIdleConnsData, 'dbIdle');
+      processSeries(dbPendingConnsData, 'dbPending');
 
       const errorCodesSet = new Set();
       if (exceptionTimeSeriesRes) {
@@ -378,8 +477,8 @@ const AdminSystemMonitoringPage = () => {
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
-      <Box sx={{ p: 3 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
+      <Box>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4, flexWrap: 'wrap', gap: 2 }}>
           <Box>
             <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>
               {t('admin:system_monitoring.title')}
@@ -395,7 +494,7 @@ const AdminSystemMonitoringPage = () => {
                 value={timeRange}
                 label={t("admin:system_monitoring.time_range")}
                 onChange={(e) => setTimeRange(e.target.value)}
-                sx={{ fontSize: 13, fontWeight: 700, bgcolor: 'background.paper', borderRadius: 2 }}
+                sx={{ fontSize: 13, fontWeight: 700, bgcolor: 'background.paper', borderRadius: 1.5 }}
               >
                 {TIME_RANGES.map((r) => (
                   <MenuItem key={r.value} value={r.value} sx={{ fontSize: 13, fontWeight: 600 }}>{r.label}</MenuItem>
@@ -426,7 +525,7 @@ const AdminSystemMonitoringPage = () => {
                 value={refreshInterval}
                 label={t("admin:system_monitoring.auto_refresh")}
                 onChange={(e) => setRefreshInterval(e.target.value)}
-                sx={{ fontSize: 13, fontWeight: 700, bgcolor: 'background.paper', borderRadius: 2 }}
+                sx={{ fontSize: 13, fontWeight: 700, bgcolor: 'background.paper', borderRadius: 1.5 }}
               >
                 {REFRESH_INTERVALS.map((r) => (
                   <MenuItem key={r.value} value={r.value} sx={{ fontSize: 13, fontWeight: 600 }}>{r.label}</MenuItem>
@@ -434,30 +533,32 @@ const AdminSystemMonitoringPage = () => {
               </Select>
             </FormControl>
             <Tooltip title={t("admin:system_monitoring.force_refresh")}>
-              <IconButton
-                size="small"
-                onClick={loadData}
-                disabled={loading}
-                sx={{
-                  color: 'primary.main',
-                  bgcolor: (theme) => alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.14 : 0.08),
-                  border: '1px solid',
-                  borderColor: (theme) => alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.24 : 0.12),
-                  '&:hover': {
-                    bgcolor: (theme) => alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.22 : 0.14),
-                  },
-                  '& svg': {
-                    transition: 'transform 0.1s',
-                    animation: loading ? 'dashboardSpin 0.8s linear infinite' : 'none',
-                    '@keyframes dashboardSpin': {
-                      from: { transform: 'rotate(0deg)' },
-                      to: { transform: 'rotate(360deg)' },
+              <span>
+                <IconButton
+                  size="small"
+                  onClick={loadData}
+                  disabled={loading}
+                  sx={{
+                    color: 'primary.main',
+                    bgcolor: (theme) => alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.14 : 0.08),
+                    border: '1px solid',
+                    borderColor: (theme) => alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.24 : 0.12),
+                    '&:hover': {
+                      bgcolor: (theme) => alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.22 : 0.14),
                     },
-                  },
-                }}
-              >
-                <RefreshIcon fontSize="small" />
-              </IconButton>
+                    '& svg': {
+                      transition: 'transform 0.1s',
+                      animation: loading ? 'dashboardSpin 0.8s linear infinite' : 'none',
+                      '@keyframes dashboardSpin': {
+                        from: { transform: 'rotate(0deg)' },
+                        to: { transform: 'rotate(360deg)' },
+                      },
+                    },
+                  }}
+                >
+                  <RefreshIcon fontSize="small" />
+                </IconButton>
+              </span>
             </Tooltip>
           </Box>
         </Box>
@@ -477,54 +578,48 @@ const AdminSystemMonitoringPage = () => {
         {chartData.length > 0 && (
           <Stack spacing={3}>
             {/* Summary Stats */}
-            <Grid container spacing={3}>
-              <Grid item xs={12} sm={6} md={3}>
-                <Card elevation={0} sx={{ ...cardSx, bgcolor: 'primary.light', color: 'primary.contrastText', border: 'none' }}>
-                  <CardContent>
-                    <Typography variant="subtitle2" sx={{ opacity: 0.8 }}>{t('admin:system_monitoring.total_requests_all_time')}</Typography>
-                    <Typography variant="h4" fontWeight="bold">{summaryStats.totalRequests.toLocaleString()}</Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <Card elevation={0} sx={{ ...cardSx, bgcolor: summaryStats.totalErrors > 0 ? 'error.light' : 'success.light', color: 'primary.contrastText', border: 'none' }}>
-                  <CardContent>
-                    <Typography variant="subtitle2" sx={{ opacity: 0.8 }}>{t('admin:system_monitoring.total_errors_all_time')}</Typography>
-                    <Typography variant="h4" fontWeight="bold">{summaryStats.totalErrors.toLocaleString()}</Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <Card elevation={0} sx={{ ...cardSx, bgcolor: summaryStats.errorRate > 5 ? 'error.light' : summaryStats.errorRate > 1 ? 'warning.light' : 'success.light', color: 'primary.contrastText', border: 'none' }}>
-                  <CardContent>
-                    <Typography variant="subtitle2" sx={{ opacity: 0.8 }}>{t('admin:system_monitoring.error_rate')}</Typography>
-                    <Typography variant="h4" fontWeight="bold">{summaryStats.errorRate.toFixed(2)}%</Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <Card elevation={0} sx={{ ...cardSx, bgcolor: summaryStats.avgLatency > 1000 ? 'error.light' : summaryStats.avgLatency > 500 ? 'warning.light' : 'success.light', color: 'primary.contrastText', border: 'none' }}>
-                  <CardContent>
-                    <Typography variant="subtitle2" sx={{ opacity: 0.8 }}>{t('admin:system_monitoring.avg_latency_5m')}</Typography>
-                    <Typography variant="h4" fontWeight="bold">{summaryStats.avgLatency.toFixed(2)} ms</Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-            </Grid>
+            <Box sx={monitoringMetricGridSx}>
+              <AdminDashboardMetricTile
+                label={t('admin:system_monitoring.total_requests_all_time')}
+                value={summaryStats.totalRequests.toLocaleString()}
+                icon={<QueryStatsOutlinedIcon />}
+                sx={{ flex: 'unset', borderRadius: 2.5 }}
+              />
+              <AdminDashboardMetricTile
+                label={t('admin:system_monitoring.total_errors_all_time')}
+                value={summaryStats.totalErrors.toLocaleString()}
+                icon={<ErrorOutlineOutlinedIcon />}
+                sx={{ flex: 'unset', borderRadius: 2.5 }}
+              />
+              <AdminDashboardMetricTile
+                label={t('admin:system_monitoring.error_rate')}
+                value={`${summaryStats.errorRate.toFixed(2)}%`}
+                icon={<SpeedOutlinedIcon />}
+                sx={{ flex: 'unset', borderRadius: 2.5 }}
+              />
+              <AdminDashboardMetricTile
+                label={t('admin:system_monitoring.avg_latency_5m')}
+                value={`${Number.isFinite(summaryStats.avgLatency) ? summaryStats.avgLatency.toFixed(2) : '0.00'} ms`}
+                icon={<TimerOutlinedIcon />}
+                sx={{ flex: 'unset', borderRadius: 2.5 }}
+              />
+            </Box>
 
             {/* Top Endpoints & Exceptions Tables */}
-            <Stack direction={{ xs: 'column', lg: 'row' }} spacing={3}>
-              <Card elevation={0} sx={{ flex: 1, ...cardSx }}>
-                <CardContent>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2, color: 'primary.main' }}>{t('admin:system_monitoring.endpoints_request_volume')}</Typography>
-                  <TableContainer component={Paper} sx={{ maxHeight: 300 }}>
+            <Box sx={monitoringPanelGridSx}>
+              <AdminSectionPanel
+                title={t('admin:system_monitoring.endpoints_request_volume')}
+                subtitle={t('admin:system_monitoring.endpoints_request_volume_desc')}
+                sx={monitoringPanelSx}
+              >
+                  <TableContainer component={Paper} sx={adminTableContainerSx}>
                     <Table stickyHeader size="small">
                       <TableHead>
                         <TableRow>
-                          <TableCell>{t('admin:system_monitoring.method')}</TableCell>
-                          <TableCell>{t('admin:system_monitoring.endpoint_path')}</TableCell>
-                          <TableCell align="right">{t('admin:system_monitoring.requests')}</TableCell>
-                          <TableCell align="right">{t('admin:system_monitoring.avg_latency_ms')}</TableCell>
+                          <TableCell sx={adminTableHeadCellSx}>{t('admin:system_monitoring.method')}</TableCell>
+                          <TableCell sx={adminTableHeadCellSx}>{t('admin:system_monitoring.endpoint_path')}</TableCell>
+                          <TableCell align="right" sx={adminTableHeadCellSx}>{t('admin:system_monitoring.requests')}</TableCell>
+                          <TableCell align="right" sx={adminTableHeadCellSx}>{t('admin:system_monitoring.avg_latency_ms')}</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
@@ -542,18 +637,19 @@ const AdminSystemMonitoringPage = () => {
                       </TableBody>
                     </Table>
                   </TableContainer>
-                </CardContent>
-              </Card>
+              </AdminSectionPanel>
 
-              <Card elevation={0} sx={{ flex: 1, ...cardSx }}>
-                <CardContent>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2, color: 'primary.main' }}>{t('admin:system_monitoring.app_exceptions_breakdown')}</Typography>
-                  <TableContainer component={Paper} sx={{ maxHeight: 300 }}>
+              <AdminSectionPanel
+                title={t('admin:system_monitoring.app_exceptions_breakdown')}
+                subtitle={t('admin:system_monitoring.app_exceptions_breakdown_desc')}
+                sx={monitoringPanelSx}
+              >
+                  <TableContainer component={Paper} sx={adminTableContainerSx}>
                     <Table stickyHeader size="small">
                       <TableHead>
                         <TableRow>
-                          <TableCell>{t('admin:system_monitoring.error_code_exception')}</TableCell>
-                          <TableCell align="right">{t('admin:system_monitoring.occurrences')}</TableCell>
+                          <TableCell sx={adminTableHeadCellSx}>{t('admin:system_monitoring.error_code_exception')}</TableCell>
+                          <TableCell align="right" sx={adminTableHeadCellSx}>{t('admin:system_monitoring.occurrences')}</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
@@ -569,15 +665,17 @@ const AdminSystemMonitoringPage = () => {
                       </TableBody>
                     </Table>
                   </TableContainer>
-                </CardContent>
-              </Card>
-            </Stack>
+              </AdminSectionPanel>
+            </Box>
 
-            {/* Request Volume */}
-            <Card elevation={0} sx={cardSx}>
-              <CardContent>
-                <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2, color: 'primary.main' }}>{t('admin:system_monitoring.request_rate_req_s')}</Typography>
-                <Box sx={{ height: 300 }}>
+            <Box sx={monitoringPanelGridSx}>
+              {/* Request Volume */}
+              <AdminSectionPanel
+                title={t('admin:system_monitoring.request_rate_req_s')}
+                subtitle={t('admin:system_monitoring.request_rate_desc')}
+                sx={monitoringPanelSx}
+              >
+                <Box sx={monitoringChartBoxSx}>
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={chartData}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -589,14 +687,15 @@ const AdminSystemMonitoringPage = () => {
                     </AreaChart>
                   </ResponsiveContainer>
                 </Box>
-              </CardContent>
-            </Card>
+              </AdminSectionPanel>
 
-            {/* Latency */}
-            <Card elevation={0} sx={cardSx}>
-              <CardContent>
-                <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2, color: 'primary.main' }}>{t('admin:system_monitoring.latency_ms')}</Typography>
-                <Box sx={{ height: 300 }}>
+              {/* Latency */}
+              <AdminSectionPanel
+                title={t('admin:system_monitoring.latency_ms')}
+                subtitle={t('admin:system_monitoring.latency_desc')}
+                sx={monitoringPanelSx}
+              >
+                <Box sx={monitoringChartBoxSx}>
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -610,14 +709,15 @@ const AdminSystemMonitoringPage = () => {
                     </LineChart>
                   </ResponsiveContainer>
                 </Box>
-              </CardContent>
-            </Card>
+              </AdminSectionPanel>
 
-            {/* Error Rate */}
-            <Card elevation={0} sx={cardSx}>
-              <CardContent>
-                <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2, color: 'primary.main' }}>{t('admin:system_monitoring.http_error_rate_s')}</Typography>
-                <Box sx={{ height: 300 }}>
+              {/* Error Rate */}
+              <AdminSectionPanel
+                title={t('admin:system_monitoring.http_error_rate_s')}
+                subtitle={t('admin:system_monitoring.http_error_rate_desc')}
+                sx={monitoringPanelSx}
+              >
+                <Box sx={monitoringChartBoxSx}>
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={chartData}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -629,15 +729,16 @@ const AdminSystemMonitoringPage = () => {
                     </AreaChart>
                   </ResponsiveContainer>
                 </Box>
-              </CardContent>
-            </Card>
+              </AdminSectionPanel>
 
-            {/* HTTP Status Breakdown Timeline */}
-            {availableStatusCodes.length > 0 && (
-              <Card elevation={0} sx={cardSx}>
-                <CardContent>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2, color: 'primary.main' }}>{t('admin:system_monitoring.http_status_breakdown')}</Typography>
-                  <Box sx={{ height: 300 }}>
+              {/* HTTP Status Breakdown Timeline */}
+              {availableStatusCodes.length > 0 && (
+                <AdminSectionPanel
+                  title={t('admin:system_monitoring.http_status_breakdown')}
+                  subtitle={t('admin:system_monitoring.http_status_breakdown_desc')}
+                  sx={monitoringPanelSx}
+                >
+                  <Box sx={monitoringChartBoxSx}>
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={chartData}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -671,16 +772,17 @@ const AdminSystemMonitoringPage = () => {
                       </AreaChart>
                     </ResponsiveContainer>
                   </Box>
-                </CardContent>
-              </Card>
-            )}
+                </AdminSectionPanel>
+              )}
 
-            {/* Exceptions Breakdown Timeline */}
-            {availableErrorCodes.length > 0 && (
-              <Card elevation={0} sx={cardSx}>
-                <CardContent>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2, color: 'primary.main' }}>{t('admin:system_monitoring.app_exceptions_timeline')}</Typography>
-                  <Box sx={{ height: 300 }}>
+              {/* Exceptions Breakdown Timeline */}
+              {availableErrorCodes.length > 0 && (
+                <AdminSectionPanel
+                  title={t('admin:system_monitoring.app_exceptions_timeline')}
+                  subtitle={t('admin:system_monitoring.app_exceptions_timeline_desc')}
+                  sx={monitoringPanelSx}
+                >
+                  <Box sx={monitoringChartBoxSx}>
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={chartData}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -708,15 +810,16 @@ const AdminSystemMonitoringPage = () => {
                       </AreaChart>
                     </ResponsiveContainer>
                   </Box>
-                </CardContent>
-              </Card>
-            )}
+                </AdminSectionPanel>
+              )}
 
-            {/* CPU Usage */}
-            <Card elevation={0} sx={cardSx}>
-              <CardContent>
-                <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2, color: 'primary.main' }}>{t('admin:system_monitoring.cpu_usage_pct')}</Typography>
-                <Box sx={{ height: 300 }}>
+              {/* CPU Usage */}
+              <AdminSectionPanel
+                title={t('admin:system_monitoring.cpu_usage_pct')}
+                subtitle={t('admin:system_monitoring.cpu_usage_desc')}
+                sx={monitoringPanelSx}
+              >
+                <Box sx={monitoringChartBoxSx}>
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -729,14 +832,15 @@ const AdminSystemMonitoringPage = () => {
                     </LineChart>
                   </ResponsiveContainer>
                 </Box>
-              </CardContent>
-            </Card>
+              </AdminSectionPanel>
 
-            {/* Memory Usage */}
-            <Card elevation={0} sx={cardSx}>
-              <CardContent>
-                <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2, color: 'primary.main' }}>{t('admin:system_monitoring.memory_usage_mb')}</Typography>
-                <Box sx={{ height: 300 }}>
+              {/* Memory Usage */}
+              <AdminSectionPanel
+                title={t('admin:system_monitoring.memory_usage_mb')}
+                subtitle={t('admin:system_monitoring.memory_usage_desc')}
+                sx={monitoringPanelSx}
+              >
+                <Box sx={monitoringChartBoxSx}>
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -748,14 +852,15 @@ const AdminSystemMonitoringPage = () => {
                     </LineChart>
                   </ResponsiveContainer>
                 </Box>
-              </CardContent>
-            </Card>
+              </AdminSectionPanel>
 
-            {/* GC Pause Time */}
-            <Card elevation={0} sx={cardSx}>
-              <CardContent>
-                <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2, color: 'primary.main' }}>{t('admin:system_monitoring.gc_pause_time_ms')}</Typography>
-                <Box sx={{ height: 300 }}>
+              {/* GC Pause Time */}
+              <AdminSectionPanel
+                title={t('admin:system_monitoring.gc_pause_time_ms')}
+                subtitle={t('admin:system_monitoring.gc_pause_time_desc')}
+                sx={monitoringPanelSx}
+              >
+                <Box sx={monitoringChartBoxSx}>
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -767,28 +872,72 @@ const AdminSystemMonitoringPage = () => {
                     </LineChart>
                   </ResponsiveContainer>
                 </Box>
+              </AdminSectionPanel>
+            </Box>
+
+            {/* JVM Threads */}
+            <Card elevation={0} sx={cardSx}>
+              <CardContent>
+                <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2, color: 'primary.main' }}>{t('admin:system_monitoring.jvm_threads', 'JVM Threads')}</Typography>
+                <Box sx={{ height: 300 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="timeFormatted" minTickGap={30} />
+                      <YAxis />
+                      <RechartsTooltip content={renderTooltip} />
+                      <Legend onClick={(e) => handleLegendClick('threads', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
+                      <Line type="monotone" dot={false} dataKey="threadsCurrent" name={t("admin:system_monitoring.threads_current", "Current Threads")} stroke={theme.palette.info.main} strokeWidth={2} hide={isolatedSeries['threads'] && isolatedSeries['threads'] !== 'threadsCurrent'} />
+                      <Line type="monotone" dot={false} dataKey="threadsDaemon" name={t("admin:system_monitoring.threads_daemon", "Daemon Threads")} stroke={theme.palette.secondary.main} strokeWidth={2} hide={isolatedSeries['threads'] && isolatedSeries['threads'] !== 'threadsDaemon'} />
+                      <Line type="monotone" dot={false} dataKey="threadsPeak" name={t("admin:system_monitoring.threads_peak", "Peak Threads")} stroke={theme.palette.error.main} strokeWidth={2} hide={isolatedSeries['threads'] && isolatedSeries['threads'] !== 'threadsPeak'} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Box>
+              </CardContent>
+            </Card>
+
+            {/* DB Connection Pool */}
+            <Card elevation={0} sx={cardSx}>
+              <CardContent>
+                <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2, color: 'primary.main' }}>{t('admin:system_monitoring.db_connections', 'Database Connections (R2DBC)')}</Typography>
+                <Box sx={{ height: 300 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="timeFormatted" minTickGap={30} />
+                      <YAxis />
+                      <RechartsTooltip content={renderTooltip} />
+                      <Legend onClick={(e) => handleLegendClick('db', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
+                      <Area type="monotone" dataKey="dbActive" name={t("admin:system_monitoring.db_active", "Active")} stackId="1" stroke={theme.palette.success.main} fill={theme.palette.success.light} fillOpacity={0.6} hide={isolatedSeries['db'] && isolatedSeries['db'] !== 'dbActive'} />
+                      <Area type="monotone" dataKey="dbIdle" name={t("admin:system_monitoring.db_idle", "Idle")} stackId="1" stroke={theme.palette.info.main} fill={theme.palette.info.light} fillOpacity={0.6} hide={isolatedSeries['db'] && isolatedSeries['db'] !== 'dbIdle'} />
+                      <Area type="monotone" dataKey="dbPending" name={t("admin:system_monitoring.db_pending", "Pending")} stackId="1" stroke={theme.palette.warning.main} fill={theme.palette.warning.light} fillOpacity={0.6} hide={isolatedSeries['db'] && isolatedSeries['db'] !== 'dbPending'} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </Box>
               </CardContent>
             </Card>
 
             {/* Data Table */}
-            <Card elevation={0} sx={cardSx}>
-              <CardContent>
-                <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2, color: 'primary.main' }}>{t('admin:system_monitoring.detailed_metrics_data')}</Typography>
-                <TableContainer component={Paper} sx={{ maxHeight: 400 }}>
+            <AdminSectionPanel
+              title={t('admin:system_monitoring.detailed_metrics_data')}
+              subtitle={t('admin:system_monitoring.detailed_metrics_data_desc')}
+              sx={monitoringPanelSx}
+            >
+                <TableContainer component={Paper} sx={{ ...adminTableContainerSx, maxHeight: 420 }}>
                   <Table stickyHeader size="small">
                     <TableHead>
                       <TableRow>
-                        <TableCell>{t('admin:system_monitoring.time')}</TableCell>
-                        <TableCell align="right">{t('admin:system_monitoring.req_rate')}</TableCell>
-                        <TableCell align="right">{t('admin:system_monitoring.avg_latency_ms')}</TableCell>
-                        <TableCell align="right">{t('admin:system_monitoring.p50_latency_ms')}</TableCell>
-                        <TableCell align="right">{t('admin:system_monitoring.p99_latency_ms')}</TableCell>
-                        <TableCell align="right">{t('admin:system_monitoring.http_errors_s')}</TableCell>
-                        <TableCell align="right">{t('admin:system_monitoring.app_errors')}</TableCell>
-                        <TableCell align="right">{t('admin:system_monitoring.sys_cpu_pct')}</TableCell>
-                        <TableCell align="right">{t('admin:system_monitoring.jvm_cpu_pct')}</TableCell>
-                        <TableCell align="right">{t('admin:system_monitoring.heap_mb')}</TableCell>
-                        <TableCell align="right">GC Pause (ms)</TableCell>
+                        <TableCell sx={adminTableHeadCellSx}>{t('admin:system_monitoring.time')}</TableCell>
+                        <TableCell align="right" sx={adminTableHeadCellSx}>{t('admin:system_monitoring.req_rate')}</TableCell>
+                        <TableCell align="right" sx={adminTableHeadCellSx}>{t('admin:system_monitoring.avg_latency_ms')}</TableCell>
+                        <TableCell align="right" sx={adminTableHeadCellSx}>{t('admin:system_monitoring.p50_latency_ms')}</TableCell>
+                        <TableCell align="right" sx={adminTableHeadCellSx}>{t('admin:system_monitoring.p99_latency_ms')}</TableCell>
+                        <TableCell align="right" sx={adminTableHeadCellSx}>{t('admin:system_monitoring.http_errors_s')}</TableCell>
+                        <TableCell align="right" sx={adminTableHeadCellSx}>{t('admin:system_monitoring.app_errors')}</TableCell>
+                        <TableCell align="right" sx={adminTableHeadCellSx}>{t('admin:system_monitoring.sys_cpu_pct')}</TableCell>
+                        <TableCell align="right" sx={adminTableHeadCellSx}>{t('admin:system_monitoring.jvm_cpu_pct')}</TableCell>
+                        <TableCell align="right" sx={adminTableHeadCellSx}>{t('admin:system_monitoring.heap_mb')}</TableCell>
+                        <TableCell align="right" sx={adminTableHeadCellSx}>{t('admin:system_monitoring.gc_pause_ms')}</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -810,8 +959,7 @@ const AdminSystemMonitoringPage = () => {
                     </TableBody>
                   </Table>
                 </TableContainer>
-              </CardContent>
-            </Card>
+            </AdminSectionPanel>
           </Stack>
         )}
       </Box>

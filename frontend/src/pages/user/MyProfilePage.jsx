@@ -58,6 +58,7 @@ import { useTranslation } from 'react-i18next';
 import { formatDate } from '../../utils/dateFormatter';
 import { formatRating } from '../../utils/numberFormatter';
 import { formatMentorHeadline, resolveProfileRoleLabel } from '../../utils/profileRoleUtils';
+import { resolveMediaUrl } from '../../utils/imageUtils';
 
 const DEFAULT_COVER =
   'https://ethnasia.com/cdn/shop/articles/sean-o-KMn4VEeEPR8-unsplash_edited.jpg?v=1621585619';
@@ -348,11 +349,10 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
 
   const shouldUseMentorDisplayData = isMentorshipPath;
   // Derived user details
-  const coverUrl = mentor?.coverUrl || (shouldUseMentorDisplayData ? MENTORSHIP_COVER : DEFAULT_COVER);
-  const currentJobTitle = (shouldUseMentorDisplayData ? mentor?.currentJobTitle : null) || profile?.currentJobTitle || mentor?.currentJobTitle;
-  const currentCompany = (shouldUseMentorDisplayData ? mentor?.currentCompany : null) || profile?.currentCompany || mentor?.currentCompany;
+  const coverUrl = resolveMediaUrl(profile?.coverUrl) || (shouldUseMentorDisplayData ? MENTORSHIP_COVER : DEFAULT_COVER);
+  const currentJobTitle = profile?.currentJobTitle || mentor?.currentJobTitle;
+  const currentCompany = profile?.currentCompany || mentor?.currentCompany;
   const personalBio = profile?.bio;
-  const mentorBio = mentor?.bio;
   const extendedProfile = (shouldUseMentorDisplayData ? mentor?.extendedProfile : null) || profile?.extendedProfile;
 
   const user = {
@@ -360,7 +360,7 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
     role: shouldUseMentorDisplayData
       ? formatMentorHeadline({ jobTitle: currentJobTitle, company: currentCompany, t })
       : resolveProfileRoleLabel({ profile, academicProfile: orgMember, t }),
-    avatar: profile?.avatarUrl ?? '',
+    avatar: resolveMediaUrl(profile?.avatarUrl ?? ''),
     cover: coverUrl,
   };
 
@@ -470,7 +470,7 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
         { value: feedbacks.length, label: t('profile:stats_feedbacks') },
       ];
       const tags = Array.from(new Set([...expertiseTags, ...mentorTopicFallback]));
-      const hasMentorBio = !!mentorBio?.trim();
+      const hasMentorBio = !!personalBio?.trim();
 
       const totalPages = Math.max(1, Math.ceil(feedbacks.length / ITEMS_PER_PAGE));
       const paginatedReviews = feedbacks.slice((feedbackPage - 1) * ITEMS_PER_PAGE, feedbackPage * ITEMS_PER_PAGE);
@@ -498,7 +498,7 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
                 color={hasMentorBio ? 'text.secondary' : 'text.disabled'}
                 sx={{ whiteSpace: 'pre-line', fontSize: '1.05rem', lineHeight: 1.7, fontStyle: hasMentorBio ? 'normal' : 'italic' }}
               >
-                {mentorBio?.trim() || t('profile:no_intro')}
+                {personalBio?.trim() || t('profile:no_intro')}
               </Typography>
             </Box>
           )}
@@ -660,9 +660,13 @@ const PublicMentorProfile = ({ mentorMemberId, navigate }) => {
 
   const user = {
     name: mentor.fullName ?? `Mentor #${mentor.memberId}`,
-    role: formatMentorHeadline({ jobTitle: mentor.currentJobTitle, company: mentor.currentCompany, t }),
-    avatar: mentor.avatarUrl ?? '',
-    cover: mentor.coverUrl || MENTORSHIP_COVER,
+    role: formatMentorHeadline({
+      jobTitle: mentor.currentJobTitle,
+      company: mentor.currentCompany,
+      t,
+    }),
+    avatar: resolveMediaUrl(mentor.avatarUrl ?? ''),
+    cover: resolveMediaUrl(mentor.coverUrl) || MENTORSHIP_COVER,
   };
 
   const stats = [

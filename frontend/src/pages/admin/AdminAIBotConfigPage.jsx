@@ -2,14 +2,14 @@ import { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import {
-  Box, Card, CardContent, Typography, Button, TextField,
+  Box, Typography, Button, TextField,
   Stack, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Paper, IconButton, CircularProgress,
   Chip, Alert,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
-import SmartToyOutlinedIcon from '@mui/icons-material/SmartToyOutlined';
+import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
 
 const FITBOT_API_URL = '/ngrok-api';
 
@@ -120,38 +120,41 @@ const AdminAIBotConfigPage = () => {
 
   return (
     <Box>
-      <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 2 }}>
-        <SmartToyOutlinedIcon sx={{ fontSize: 40, color: 'primary.main' }} />
-        <Typography variant="h4" fontWeight={700}>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>
           {t('bot_config_title')}
+        </Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
+          {t('bot_config_subtitle')}
         </Typography>
       </Box>
 
       <Stack spacing={4}>
         {/* Document Management Section */}
-        <Card>
-          <CardContent>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-              <Typography variant="h6" fontWeight={600}>{t('bot_kb_title')}</Typography>
-              <Button
-                variant="contained"
-                component="label"
-                startIcon={uploading ? <CircularProgress size={20} color="inherit" /> : <UploadFileIcon />}
-                disabled={uploading}
-              >
-                {t('bot_upload_btn')}
-                <input type="file" hidden onChange={handleFileUpload} accept=".txt,.pdf,.md,.csv,.json" />
-              </Button>
-            </Box>
+        <AdminSectionPanel
+          title={t('bot_kb_title')}
+          subtitle={t('bot_kb_subtitle')}
+          action={(
+            <Button
+              variant="contained"
+              component="label"
+              startIcon={uploading ? <CircularProgress size={20} color="inherit" /> : <UploadFileIcon />}
+              disabled={uploading}
+            >
+              {t('bot_upload_btn')}
+              <input type="file" hidden onChange={handleFileUpload} accept=".txt,.pdf,.md,.csv,.json" />
+            </Button>
+          )}
+        >
             
             {uploadError && <Alert severity="error" sx={{ mb: 2 }}>{uploadError}</Alert>}
 
             <TableContainer component={Paper} variant="outlined">
               <Table>
-                <TableHead sx={{ bgcolor: 'action.hover' }}>
+                <TableHead>
                   <TableRow>
-                    <TableCell>{t('bot_filename')}</TableCell>
-                    <TableCell align="right">{t('col_actions')}</TableCell>
+                    <TableCell sx={{ bgcolor: 'primary.main', color: 'primary.contrastText', fontWeight: 800 }}>{t('bot_filename')}</TableCell>
+                    <TableCell align="right" sx={{ bgcolor: 'primary.main', color: 'primary.contrastText', fontWeight: 800 }}>{t('col_actions')}</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -184,13 +187,10 @@ const AdminAIBotConfigPage = () => {
                 </TableBody>
               </Table>
             </TableContainer>
-          </CardContent>
-        </Card>
+        </AdminSectionPanel>
 
         {/* Bot Testing Section */}
-        <Card>
-          <CardContent>
-            <Typography variant="h6" fontWeight={600} mb={2}>{t('bot_test_title')}</Typography>
+        <AdminSectionPanel title={t('bot_test_title')} subtitle={t('bot_test_subtitle')}>
             <Stack direction="row" spacing={2} mb={2}>
               <TextField
                 fullWidth
@@ -230,8 +230,7 @@ const AdminAIBotConfigPage = () => {
                 )}
               </Box>
             )}
-          </CardContent>
-        </Card>
+        </AdminSectionPanel>
       </Stack>
     </Box>
   );

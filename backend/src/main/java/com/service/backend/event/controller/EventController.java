@@ -148,7 +148,7 @@ public class EventController {
     }
 
     @GetMapping("/{eventId}/interests")
-    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<EventInterest>>>> getEventInterests(
+    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<EventInterestDetailResponse>>>> getEventInterests(
             @Parameter(example = "1") @PathVariable @Min(1) Long eventId,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int limit) {
@@ -168,7 +168,7 @@ public class EventController {
     }
 
     @GetMapping("/{eventId}/invitations")
-    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<EventInvitation>>>> getInvitations(
+    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<EventInvitationDetailResponse>>>> getInvitations(
             @Parameter(example = "1") @PathVariable @Min(1) Long eventId,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int limit) {
@@ -252,7 +252,7 @@ public class EventController {
     }
 
     @GetMapping("/{eventId}/tickets")
-    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<EventTicket>>>> getTicketsByEvent(
+    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<EventTicketDetailResponse>>>> getTicketsByEvent(
             @Parameter(example = "1") @PathVariable @Min(1) Long eventId,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String keyword,

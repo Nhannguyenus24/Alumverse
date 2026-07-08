@@ -24,6 +24,7 @@ import { useCanContribute } from "../../hooks/useCanContribute";
 import { ContributeGuardTooltip, VerificationRequiredAlert } from "../../components/ContributeGuard";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
 import { getEventRegisteredState } from "../../utils/eventRegistration";
+import { extractMainImageCaption } from "../../utils/articleContentCaption";
 
 const normalizeArticleHtml = (html) => {
   if (!html || typeof document === "undefined") return html;
@@ -315,10 +316,13 @@ const ArticlePage = () => {
   const loadErrorShownRef = useRef(false);
   const { article, isPending, isError, errorMessage } = useArticleById(channel, id);
 
-  const cleanContent = useMemo(
-    () => normalizeArticleHtml(article?.content ? DOMPurify.sanitize(article.content) : ""),
-    [article]
-  );
+  const { cleanContent, mainImageCaption } = useMemo(() => {
+    const parsedContent = extractMainImageCaption(article?.content ?? "");
+    return {
+      cleanContent: normalizeArticleHtml(parsedContent.content ? DOMPurify.sanitize(parsedContent.content) : ""),
+      mainImageCaption: parsedContent.caption,
+    };
+  }, [article]);
   
   const navigate = useOrgNavigate();
   const contentRef = useRef(null);
@@ -487,8 +491,16 @@ const ArticlePage = () => {
 
               {/* Thumbnail */}
               {article.thumbnailUrl && (
-                <Box sx={{ display: "flex", justifyContent: "center", mt: { xs: 2, md: 3 }, mb: { xs: 5, md: 6 } }}>
+                <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", mt: { xs: 2, md: 3 }, mb: { xs: 5, md: 6 } }}>
                   <Box component="img" src={article.thumbnailUrl} alt={article.title} sx={{ width: { xs: "100%", md: "72%" }, aspectRatio: "16 / 10", objectFit: "cover", borderRadius: 2, boxShadow: "0 2px 10px rgba(0,0,0,0.1)" }} />
+                  {mainImageCaption && (
+                    <Typography
+                      variant="caption"
+                      sx={{ color: "text.secondary", mt: 1, fontStyle: "italic", textAlign: "center", maxWidth: { xs: "100%", md: "72%" } }}
+                    >
+                      {mainImageCaption}
+                    </Typography>
+                  )}
                 </Box>
               )}
 
@@ -543,6 +555,14 @@ const ArticlePage = () => {
                   "& img": {
                     maxWidth: "100%",
                     height: "auto",
+                  },
+                  "& img + p, & p:has(img) + p": {
+                    color: "text.secondary",
+                    fontSize: theme.typography.caption.fontSize,
+                    fontStyle: "italic",
+                    textAlign: "center",
+                    mt: 0.75,
+                    mb: 2,
                   },
                   "& a": {
                     color: "primary.main",

@@ -48,6 +48,22 @@ public class MentorService {
         return SecurityUtils.getCurrentUserId().map(Long::intValue);
     }
 
+    private Mono<Void> updateUserAvatarIfPresent(Integer memberId, String avatarUrl) {
+        if (avatarUrl == null || avatarUrl.isBlank()) {
+            return Mono.empty();
+        }
+        return userProfileRepository.updateUserAvatar(memberId, avatarUrl.trim());
+    }
+
+    private Mono<Void> updateUserWorkInfoIfPresent(Integer memberId, String currentJobTitle, String currentCompany) {
+        String title = currentJobTitle != null && !currentJobTitle.isBlank() ? currentJobTitle.trim() : null;
+        String company = currentCompany != null && !currentCompany.isBlank() ? currentCompany.trim() : null;
+        if (title == null && company == null) {
+            return Mono.empty();
+        }
+        return userProfileRepository.updateUserWorkInfo(memberId, title, company);
+    }
+
     private Mono<MentorshipSessionResponse> enrich(MentorshipSession session) {
         return enrichAll(List.of(session)).map(list -> list.get(0));
     }
@@ -105,7 +121,12 @@ public class MentorService {
     private Mono<MentorProfileResponse> attachProfileDisplay(MentorProfileResponse single) {
         if (single.getMemberId() == null) return Mono.just(single);
         Mono<MentorProfileResponse> displayMono = userProfileRepository.findDisplayInfoByUserId(single.getMemberId())
-                .map(info -> single.withDisplay(info.getFullName(), info.getAvatarUrl()))
+                .map(info -> single.withDisplay(
+                        info.getFullName(),
+                        info.getAvatarUrl(),
+                        info.getCoverUrl(),
+                        info.getCurrentJobTitle(),
+                        info.getCurrentCompany()))
                 .defaultIfEmpty(single);
         Mono<List<String>> topicsMono = expertiseRepository.findByMentorMemberId(single.getMemberId())
                 .map(MentorExpertise::getTopic)
@@ -147,7 +168,6 @@ public class MentorService {
                             }
                             if (request.getCurrentJobTitle() != null) existing.setCurrentJobTitle(request.getCurrentJobTitle());
                             if (request.getCurrentCompany() != null) existing.setCurrentCompany(request.getCurrentCompany());
-                            if (request.getBio() != null) existing.setBio(request.getBio());
                             if (request.getDefaultMeetingLink() != null) existing.setDefaultMeetingLink(request.getDefaultMeetingLink());
                             if (request.getBookingWindowSettings() != null) existing.setBookingWindowSettings(request.getBookingWindowSettings());
                             if (request.getExtendedProfile() != null) existing.setExtendedProfile(request.getExtendedProfile());
@@ -159,7 +179,11 @@ public class MentorService {
                             }
                             existing.setUpdatedAt(LocalDateTime.now());
                             existing.setNew(false);
-                            return userProfileRepository.updateUserAvatar(memberId, request.getAvatarUrl())
+                            return updateUserAvatarIfPresent(memberId, request.getAvatarUrl())
+                                    .then(updateUserWorkInfoIfPresent(
+                                            memberId,
+                                            request.getCurrentJobTitle(),
+                                            request.getCurrentCompany()))
                                     .then(profileRepository.save(existing));
                         })
                         .switchIfEmpty(Mono.defer(() -> {
@@ -167,7 +191,7 @@ public class MentorService {
                                     .memberId(memberId)
                                     .currentJobTitle(request.getCurrentJobTitle())
                                     .currentCompany(request.getCurrentCompany())
-                                    .bio(request.getBio())
+
                                     .ratingAvg(java.math.BigDecimal.ZERO)
                                     .totalSessions(0)
                                     .status(targetStatus)
@@ -177,7 +201,11 @@ public class MentorService {
                                     .createdAt(LocalDateTime.now())
                                     .updatedAt(LocalDateTime.now())
                                     .build();
-                            return userProfileRepository.updateUserAvatar(memberId, request.getAvatarUrl())
+                            return updateUserAvatarIfPresent(memberId, request.getAvatarUrl())
+                                    .then(updateUserWorkInfoIfPresent(
+                                            memberId,
+                                            request.getCurrentJobTitle(),
+                                            request.getCurrentCompany()))
                                     .then(profileRepository.save(profile));
                         }))
                         .flatMap(saved -> applyExpertiseTags(memberId, request.getExpertiseTags()).thenReturn(saved))
@@ -196,12 +224,15 @@ public class MentorService {
                         .flatMap(existing -> {
                             if (request.getCurrentJobTitle() != null) existing.setCurrentJobTitle(request.getCurrentJobTitle());
                             if (request.getCurrentCompany() != null) existing.setCurrentCompany(request.getCurrentCompany());
-                            if (request.getBio() != null) existing.setBio(request.getBio());
                             if (request.getDefaultMeetingLink() != null) existing.setDefaultMeetingLink(request.getDefaultMeetingLink());
                             if (request.getBookingWindowSettings() != null) existing.setBookingWindowSettings(request.getBookingWindowSettings());
                             if (request.getExtendedProfile() != null) existing.setExtendedProfile(request.getExtendedProfile());
                             existing.setNew(false);
-                            return userProfileRepository.updateUserAvatar(memberId, request.getAvatarUrl())
+                            return updateUserAvatarIfPresent(memberId, request.getAvatarUrl())
+                                    .then(updateUserWorkInfoIfPresent(
+                                            memberId,
+                                            request.getCurrentJobTitle(),
+                                            request.getCurrentCompany()))
                                     .then(profileRepository.save(existing));
                         })
                         .flatMap(saved -> applyExpertiseTags(memberId, request.getExpertiseTags()).thenReturn(saved))

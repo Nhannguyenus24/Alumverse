@@ -8,6 +8,7 @@ create table users
     status               text,
     role                 text,
     avatar_url           text,
+    cover_url            text,
     created_at           timestamp default CURRENT_TIMESTAMP,
     updated_at           timestamp default CURRENT_TIMESTAMP,
     full_name            text,
@@ -17,8 +18,8 @@ create table users
     gender               text,
     current_job_title    text,
     current_company      text,
-    links                json,
-    settings             json,
+    links                jsonb,
+    settings             jsonb,
     must_change_password boolean   default false not null
 );
 
@@ -45,10 +46,10 @@ create table organizations
     slug            text
         unique,
     logo_url        text,
-    brand_config    json,
-    features_config json,
-    programs        json,
-    majors          json,
+    brand_config    jsonb,
+    features_config jsonb,
+    programs        jsonb,
+    majors          jsonb,
     status          text      default 'ACTIVE'::text,
     created_at      timestamp default CURRENT_TIMESTAMP,
     updated_at      timestamp default CURRENT_TIMESTAMP,
@@ -74,8 +75,8 @@ create table organization_introductions
     core_values          text,
     image_urls           text,
     banner_url           text,
-    leaders              json,
-    team_members         json,
+    leaders              jsonb,
+    team_members         jsonb,
     leaders_content      text,
     team_members_content text,
     updated_at           timestamp default CURRENT_TIMESTAMP
@@ -321,7 +322,7 @@ create table mentor_profiles
         references organization_members (user_id),
     current_job_title       text,
     current_company         text,
-    bio                     text,
+
     rating_avg              numeric default 0,
     total_sessions          integer default 0,
     status                  text    default 'DRAFT'::text not null
@@ -331,7 +332,6 @@ create table mentor_profiles
     review_note             text,
     reviewed_at             timestamp,
     reviewed_by             integer,
-    cover_url               text,
     default_meeting_link    text,
     booking_window_settings text,
     extended_profile        text,
@@ -1021,4 +1021,3 @@ create index idx_education_change_requests_member
 
 create index idx_education_change_requests_org_status
     on education_change_requests (organization_id, status);
-

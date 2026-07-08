@@ -19,7 +19,7 @@ public class MentorProfileResponse {
     private Integer memberId;
     private String currentJobTitle;
     private String currentCompany;
-    private String bio;
+
     private BigDecimal ratingAvg;
     private Integer totalSessions;
     private String status;
@@ -33,6 +33,7 @@ public class MentorProfileResponse {
 
     private String fullName;
     private String avatarUrl;
+    private String coverUrl;
 
     private List<String> expertiseTopics;
 
@@ -44,7 +45,7 @@ public class MentorProfileResponse {
                 .memberId(profile.getMemberId())
                 .currentJobTitle(profile.getCurrentJobTitle())
                 .currentCompany(profile.getCurrentCompany())
-                .bio(profile.getBio())
+
                 .ratingAvg(profile.getRatingAvg())
                 .totalSessions(profile.getTotalSessions())
                 .status(profile.getStatus() != null ? profile.getStatus().getValue() : null)
@@ -58,9 +59,17 @@ public class MentorProfileResponse {
                 .build();
     }
 
-    public MentorProfileResponse withDisplay(String fullName, String avatarUrl) {
+    public MentorProfileResponse withDisplay(String fullName, String avatarUrl, String coverUrl,
+                                             String currentJobTitle, String currentCompany) {
         this.fullName = fullName;
         this.avatarUrl = avatarUrl;
+        this.coverUrl = coverUrl;
+        if (currentJobTitle != null && !currentJobTitle.isBlank()) {
+            this.currentJobTitle = currentJobTitle;
+        }
+        if (currentCompany != null && !currentCompany.isBlank()) {
+            this.currentCompany = currentCompany;
+        }
         return this;
     }
 
@@ -71,9 +80,7 @@ public class MentorProfileResponse {
         this.extendedProfile = null;
         this.reviewNote = null;
         this.reviewedAt = null;
-        if (this.bio != null && this.bio.length() > 280) {
-            this.bio = this.bio.substring(0, 277) + "...";
-        }
+
         return this;
     }
 }

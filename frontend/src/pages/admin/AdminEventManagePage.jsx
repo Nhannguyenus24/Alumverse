@@ -12,12 +12,6 @@ import {
   MenuItem,
   Stack,
   Tab,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TablePagination,
-  TableRow,
   Tabs,
   TextField,
   Tooltip,
@@ -38,6 +32,7 @@ import { eventApi } from '../../utils/api';
 import { formatDateTime } from '../../utils/dateFormatter';
 import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetricTile';
 import AdminStatusChip from '../../components/admin/AdminStatusChip';
+import AdminDataTable from '../../components/admin/AdminDataTable';
 import FavoriteBorderOutlinedIcon from '@mui/icons-material/FavoriteBorderOutlined';
 import ConfirmationNumberOutlinedIcon from '@mui/icons-material/ConfirmationNumberOutlined';
 import EventAvailableOutlinedIcon from '@mui/icons-material/EventAvailableOutlined';
@@ -49,6 +44,7 @@ const extractPage = (data) => data ?? fallbackPage;
 
 const getTicketStatusChip = (t, status) => {
   const key = String(status || '').toUpperCase();
+  if (key === 'REGISTERED') return { color: 'primary', label: t('event:ticket_status_registered') };
   if (key === 'PENDING') return { color: 'warning', label: t('event:ticket_status_pending') };
   if (key === 'ISSUED') return { color: 'info', label: t('event:ticket_status_issued') };
   if (key === 'CHECKED_IN') return { color: 'success', label: t('event:ticket_status_checked_in') };
@@ -217,6 +213,10 @@ const AdminEventManagePage = () => {
     { label: t('event:stat_available'), value: stats.availableSlots ?? '-', icon: <EventAvailableOutlinedIcon /> },
   ] : [];
 
+  const memberFallback = (memberId) => (memberId ? t('admin:event_member_fallback', { id: memberId }) : '—');
+  const displayMemberName = (row) => row.attendeeName || row.memberName || row.guestName || memberFallback(row.memberId);
+  const displayMemberEmail = (row) => row.attendeeEmail || row.memberEmail || row.guestEmail || row.email || '—';
+
   if (eventLoading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
@@ -262,12 +262,6 @@ const AdminEventManagePage = () => {
           <Button color="secondary" variant="outlined" startIcon={<EditOutlinedIcon />} onClick={() => orgNavigate(`/post/event/${eventId}`)}>
             {t('common:edit')}
           </Button>
-          <Button color="primary" variant="contained" startIcon={<OpenInNewIcon />} onClick={handlePreview}>
-            {t('event:preview_public')}
-          </Button>
-          <Button color="accent" variant="contained" startIcon={<HowToRegOutlinedIcon />} onClick={() => orgNavigate(`/admin/events/${eventId}/organize`)}>
-            {t('event:check_in')}
-          </Button>
           <Button
             variant="contained"
             color={event.isPublished ? 'warning' : 'success'}
@@ -275,6 +269,12 @@ const AdminEventManagePage = () => {
             onClick={handlePublishToggle}
           >
             {event.isPublished ? t('admin:tooltip_unpublish') : t('admin:tooltip_publish')}
+          </Button>
+          <Button color="primary" variant="contained" startIcon={<OpenInNewIcon />} onClick={handlePreview}>
+            {t('event:preview_public')}
+          </Button>
+          <Button color="accent" variant="contained" startIcon={<HowToRegOutlinedIcon />} onClick={() => orgNavigate(`/admin/events/${eventId}/organize`)}>
+            {t('event:check_in')}
           </Button>
         </Stack>
       </Stack>
@@ -309,142 +309,84 @@ const AdminEventManagePage = () => {
       </Tabs>
 
       {tab === 'participants' && (
-        <Box>
-          <Stack direction="row" spacing={1} sx={{ mb: 2 }} flexWrap="wrap" useFlexGap>
-            <TextField
-              size="small"
-              label={t('common:search')}
-              value={ticketKeyword}
-              onChange={(e) => { setTicketKeyword(e.target.value); setTicketsPage(0); }}
-              sx={{ minWidth: 200 }}
-            />
+        <AdminDataTable
+          columns={[
+            { id: 'id', label: 'ID' },
+            { id: 'ticketCode', label: t('event:ticket_code'), render: (value) => value || '—' },
+            { id: 'member', label: t('admin:event_col_guest'), render: (_, row) => displayMemberName(row) },
+            { id: 'email', label: 'Email', render: (_, row) => displayMemberEmail(row) },
+            { id: 'status', label: t('admin:col_status'), render: (value) => <AdminStatusChip status={value} category="ticket" /> },
+            { id: 'registeredAt', label: t('event:col_registered_at'), render: (value) => formatDateTime(value) },
+            { id: 'checkedInAt', label: t('event:col_checked_in_at'), render: (value) => formatDateTime(value) },
+            {
+              id: 'actions',
+              label: '',
+              align: 'right',
+              render: (_, ticket) => {
+                const cancellable = !['CANCELLED', 'USED', 'EXPIRED', 'CHECKED_IN'].includes(String(ticket.status).toUpperCase());
+                return cancellable ? (
+                  <Tooltip title={t('event:tooltip_cancel_ticket')}>
+                    <IconButton size="small" color="warning" onClick={() => handleCancelTicket(ticket)}>
+                      <DoDisturbAltIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                ) : null;
+              },
+            },
+          ]}
+          rows={ticketsData.items ?? []}
+          totalCount={ticketsData.totalItem ?? 0}
+          page={ticketsPage}
+          rowsPerPage={ticketsSize}
+          onPageChange={(_, p) => setTicketsPage(p)}
+          onRowsPerPageChange={(e) => { setTicketsSize(Number(e.target.value)); setTicketsPage(0); }}
+          onSearchChange={(value) => { setTicketKeyword(value); setTicketsPage(0); }}
+          searchValue={ticketKeyword}
+          searchPlaceholder={t('common:search')}
+          loading={ticketsLoading}
+          emptyMessage={t('event:tickets_empty')}
+          filters={(
             <TextField
               select
               size="small"
-              label={t('common:col_status')}
+              label={t('admin:col_status')}
               value={ticketStatus}
               onChange={(e) => { setTicketStatus(e.target.value); setTicketsPage(0); }}
-              sx={{ minWidth: 140 }}
+              sx={{ minWidth: 180 }}
             >
               <MenuItem value="">{t('common:all')}</MenuItem>
-              {['PENDING', 'ISSUED', 'CHECKED_IN', 'CANCELLED'].map((status) => (
+              {['PENDING', 'ISSUED', 'REGISTERED', 'CHECKED_IN', 'CANCELLED'].map((status) => (
                 <MenuItem key={status} value={status}>
                   {getTicketStatusChip(t, status).label}
                 </MenuItem>
               ))}
             </TextField>
-          </Stack>
-          {ticketsLoading ? (
-            <Stack alignItems="center" sx={{ py: 4 }}><CircularProgress size={24} /></Stack>
-          ) : (
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>ID</TableCell>
-                  <TableCell>{t('event:ticket_code')}</TableCell>
-                  <TableCell>Member</TableCell>
-                  <TableCell>Guest</TableCell>
-                  <TableCell>{t('common:col_status')}</TableCell>
-                  <TableCell>{t('event:col_registered_at')}</TableCell>
-                  <TableCell>{t('event:col_checked_in_at')}</TableCell>
-                  <TableCell align="right">{t('common:col_actions')}</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {(ticketsData.items?.length ?? 0) === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={8}>
-                      <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>{t('event:tickets_empty')}</Typography>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  ticketsData.items.map((ticket) => {
-                    const chip = getTicketStatusChip(t, ticket.status);
-                    const cancellable = !['CANCELLED', 'USED', 'EXPIRED', 'CHECKED_IN'].includes(String(ticket.status).toUpperCase());
-                    return (
-                      <TableRow key={ticket.id}>
-                        <TableCell>{ticket.id}</TableCell>
-                        <TableCell>{ticket.ticketCode || '—'}</TableCell>
-                        <TableCell>{ticket.memberId ?? '—'}</TableCell>
-                        <TableCell>{ticket.guestEmail || ticket.guestName || '—'}</TableCell>
-                        <TableCell><Chip size="small" color={chip.color} label={chip.label} /></TableCell>
-                        <TableCell>{formatDateTime(ticket.registeredAt)}</TableCell>
-                        <TableCell>{formatDateTime(ticket.checkedInAt)}</TableCell>
-                        <TableCell align="right">
-                          {cancellable && (
-                            <Tooltip title={t('event:tooltip_cancel_ticket')}>
-                              <IconButton size="small" color="warning" onClick={() => handleCancelTicket(ticket)}>
-                                <DoDisturbAltIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
           )}
-          <TablePagination
-            component="div"
-            count={ticketsData.totalItem ?? 0}
-            page={ticketsPage}
-            rowsPerPage={ticketsSize}
-            onPageChange={(_, p) => setTicketsPage(p)}
-            onRowsPerPageChange={(e) => { setTicketsSize(Number(e.target.value)); setTicketsPage(0); }}
-            rowsPerPageOptions={[10, 20, 50]}
-          />
-        </Box>
+        />
       )}
 
       {tab === 'interests' && (
-        <Box>
-          {interestsLoading ? (
-            <Stack alignItems="center" sx={{ py: 4 }}><CircularProgress size={24} /></Stack>
-          ) : (
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>ID</TableCell>
-                  <TableCell>Member ID</TableCell>
-                  <TableCell>{t('common:col_time')}</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {(interestsData.items?.length ?? 0) === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={3}>
-                      <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>{t('event:interests_empty')}</Typography>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  interestsData.items.map((i) => (
-                    <TableRow key={i.id}>
-                      <TableCell>{i.id}</TableCell>
-                      <TableCell>{i.memberId ?? '—'}</TableCell>
-                      <TableCell>{formatDateTime(i.createdAt)}</TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          )}
-          <TablePagination
-            component="div"
-            count={interestsData.totalItem ?? 0}
-            page={interestsPage}
-            rowsPerPage={interestsSize}
-            onPageChange={(_, p) => setInterestsPage(p)}
-            onRowsPerPageChange={(e) => { setInterestsSize(Number(e.target.value)); setInterestsPage(0); }}
-            rowsPerPageOptions={[10, 20, 50]}
-          />
-        </Box>
+        <AdminDataTable
+          columns={[
+            { id: 'id', label: 'ID' },
+            { id: 'member', label: t('admin:event_col_guest'), render: (_, row) => displayMemberName(row) },
+            { id: 'email', label: 'Email', render: (_, row) => displayMemberEmail(row) },
+            { id: 'createdAt', label: t('common:col_time'), render: (value) => formatDateTime(value) },
+          ]}
+          rows={interestsData.items ?? []}
+          totalCount={interestsData.totalItem ?? 0}
+          page={interestsPage}
+          rowsPerPage={interestsSize}
+          onPageChange={(_, p) => setInterestsPage(p)}
+          onRowsPerPageChange={(e) => { setInterestsSize(Number(e.target.value)); setInterestsPage(0); }}
+          loading={interestsLoading}
+          emptyMessage={t('event:interests_empty')}
+        />
       )}
 
       {tab === 'invitations' && (
         <Box>
-          <Stack direction="row" spacing={1} sx={{ mb: 2 }} alignItems="flex-start">
+          <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} sx={{ mb: 2 }} alignItems={{ xs: 'stretch', md: 'flex-start' }}>
             <TextField
               fullWidth
               multiline
@@ -454,70 +396,42 @@ const AdminEventManagePage = () => {
               value={inviteEmails}
               onChange={(e) => setInviteEmails(e.target.value)}
               helperText={t('event:invite_auto_email_hint')}
+              sx={{ flex: 1 }}
             />
             <Button
               variant="contained"
               startIcon={<SendIcon />}
               onClick={handleInvite}
               disabled={inviting}
-              sx={{ minWidth: 120, mt: 1 }}
+              sx={{ minWidth: 180, whiteSpace: 'nowrap', mt: { md: 1 } }}
             >
               {t('event:btn_invite')}
             </Button>
           </Stack>
-          {invitationsLoading ? (
-            <Stack alignItems="center" sx={{ py: 4 }}><CircularProgress size={24} /></Stack>
-          ) : (
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>ID</TableCell>
-                  <TableCell>Email</TableCell>
-                  <TableCell>Member</TableCell>
-                  <TableCell>{t('common:col_status')}</TableCell>
-                  <TableCell>{t('event:col_invited_at')}</TableCell>
-                  <TableCell>{t('event:col_confirmed_at')}</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {(invitationsData.items?.length ?? 0) === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6}>
-                      <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>{t('event:invitations_empty')}</Typography>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  invitationsData.items.map((inv) => (
-                    <TableRow key={inv.id}>
-                      <TableCell>{inv.id}</TableCell>
-                      <TableCell>{inv.email || '—'}</TableCell>
-                      <TableCell>{inv.memberId ?? '—'}</TableCell>
-                      <TableCell>
-                        <AdminStatusChip status={inv.status} category="audit" />
-                      </TableCell>
-                      <TableCell>{formatDateTime(inv.invitedAt)}</TableCell>
-                      <TableCell>{formatDateTime(inv.confirmedAt)}</TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          )}
-          <TablePagination
-            component="div"
-            count={invitationsData.totalItem ?? 0}
+          <AdminDataTable
+            columns={[
+              { id: 'id', label: 'ID' },
+              { id: 'email', label: 'Email', render: (value, row) => value || displayMemberEmail(row) },
+              { id: 'member', label: t('admin:event_col_guest'), render: (_, row) => displayMemberName(row) },
+              { id: 'status', label: t('admin:col_status'), render: (value) => <AdminStatusChip status={value} category="ticket" /> },
+              { id: 'invitedAt', label: t('event:col_invited_at'), render: (value) => formatDateTime(value) },
+              { id: 'confirmedAt', label: t('event:col_confirmed_at'), render: (value) => formatDateTime(value) },
+            ]}
+            rows={invitationsData.items ?? []}
+            totalCount={invitationsData.totalItem ?? 0}
             page={invitationsPage}
             rowsPerPage={invitationsSize}
             onPageChange={(_, p) => setInvitationsPage(p)}
             onRowsPerPageChange={(e) => { setInvitationsSize(Number(e.target.value)); setInvitationsPage(0); }}
-            rowsPerPageOptions={[10, 20, 50]}
+            loading={invitationsLoading}
+            emptyMessage={t('event:invitations_empty')}
           />
         </Box>
       )}
 
       {tab === 'emails' && (
         <Box>
-          <Stack direction="row" spacing={1} sx={{ mb: 2 }} flexWrap="wrap" useFlexGap>
+          <Stack direction="row" spacing={1} sx={{ mb: 2, justifyContent: 'flex-end' }} flexWrap="wrap" useFlexGap>
             <Button variant="contained" startIcon={<MarkEmailReadIcon />} onClick={handleSendTicketEmails}>
               {t('event:btn_send_ticket_emails')}
             </Button>
@@ -525,48 +439,22 @@ const AdminEventManagePage = () => {
               {t('event:btn_send_reminders')}
             </Button>
           </Stack>
-          {emailLogsLoading ? (
-            <Stack alignItems="center" sx={{ py: 4 }}><CircularProgress size={24} /></Stack>
-          ) : (
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>ID</TableCell>
-                  <TableCell>{t('event:col_template')}</TableCell>
-                  <TableCell>{t('event:col_subject')}</TableCell>
-                  <TableCell>{t('event:col_recipients')}</TableCell>
-                  <TableCell>{t('event:col_sent_at')}</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {(emailLogsData.items?.length ?? 0) === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5}>
-                      <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>{t('event:email_logs_empty')}</Typography>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  emailLogsData.items.map((log) => (
-                    <TableRow key={log.id}>
-                      <TableCell>{log.id}</TableCell>
-                      <TableCell>{log.templateName || '—'}</TableCell>
-                      <TableCell>{log.subject || '—'}</TableCell>
-                      <TableCell>{log.recipientCount ?? '—'}</TableCell>
-                      <TableCell>{formatDateTime(log.sentAt)}</TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          )}
-          <TablePagination
-            component="div"
-            count={emailLogsData.totalItem ?? 0}
+          <AdminDataTable
+            columns={[
+              { id: 'id', label: 'ID' },
+              { id: 'templateName', label: t('event:col_template'), render: (value) => value || '—' },
+              { id: 'subject', label: t('event:col_subject'), render: (value) => value || '—' },
+              { id: 'recipientCount', label: t('event:col_recipients'), render: (value) => value ?? '—' },
+              { id: 'sentAt', label: t('event:col_sent_at'), render: (value) => formatDateTime(value) },
+            ]}
+            rows={emailLogsData.items ?? []}
+            totalCount={emailLogsData.totalItem ?? 0}
             page={emailLogsPage}
             rowsPerPage={emailLogsSize}
             onPageChange={(_, p) => setEmailLogsPage(p)}
             onRowsPerPageChange={(e) => { setEmailLogsSize(Number(e.target.value)); setEmailLogsPage(0); }}
-            rowsPerPageOptions={[10, 20, 50]}
+            loading={emailLogsLoading}
+            emptyMessage={t('event:email_logs_empty')}
           />
         </Box>
       )}

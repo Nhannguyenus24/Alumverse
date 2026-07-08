@@ -33,7 +33,7 @@ public class MentorProfile implements Persistable<Integer> {
     @Column("current_company")
     private String currentCompany;
 
-    private String bio;
+
 
     @Column("rating_avg")
     @Builder.Default

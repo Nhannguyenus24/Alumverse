@@ -69,7 +69,7 @@ const normalizePostRowForAdmin = (dto) => {
     ...dto,
     postedAt: dto.postedAt || dto.createdAt,
     moderationStatus,
-    authorName: dto.authorName ?? (dto.authorMemberId != null ? `Member #${dto.authorMemberId}` : '-'),
+    authorName: dto.authorName ?? null,
     topicTitle: dto.topicTitle ?? (dto.topicId != null ? `Topic #${dto.topicId}` : '-'),
     categoryName: dto.categoryName ?? '-',
     flagsCount: Number(dto.flagsCount) || 0,

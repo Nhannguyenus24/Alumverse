@@ -21,9 +21,6 @@ public class UpdateMentorProfileRequest {
     @Size(max = 255)
     private String currentCompany;
 
-    @Size(max = 5000)
-    private String bio;
-
     @Size(max = 500)
     private String avatarUrl;
 

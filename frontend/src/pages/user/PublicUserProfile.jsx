@@ -26,6 +26,7 @@ import { useNetworkCurrentMemberId } from '../../hooks/network/useNetworkCurrent
 import { useNotification } from '../../hooks/useNotification';
 import { usePublicProfile } from '../../hooks/profile/usePublicProfile';
 import { resolveProfileRoleLabel } from '../../utils/profileRoleUtils';
+import { resolveMediaUrl } from '../../utils/imageUtils';
 
 const DEFAULT_COVER =
   'https://ethnasia.com/cdn/shop/articles/sean-o-KMn4VEeEPR8-unsplash_edited.jpg?v=1621585619';
@@ -96,8 +97,8 @@ const PublicUserProfile = ({ userId, navigate }) => {
       academicProfile: profile.organizationMember ?? profile,
       t,
     }),
-    avatar: profile.avatarUrl ?? '',
-    cover: profile.coverUrl || DEFAULT_COVER,
+    avatar: resolveMediaUrl(profile.avatarUrl ?? ''),
+    cover: resolveMediaUrl(profile.coverUrl) || DEFAULT_COVER,
   };
 
   const hasBio = !!profile.bio?.trim();
@@ -111,7 +112,7 @@ const PublicUserProfile = ({ userId, navigate }) => {
   const messagePeer = {
     userId: profile.userId ?? userId,
     fullName: profile.fullName,
-    avatarUrl: profile.avatarUrl,
+    avatarUrl: resolveMediaUrl(profile.avatarUrl),
     program: academicProfile.program,
     major: academicProfile.major,
   };

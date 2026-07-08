@@ -55,9 +55,9 @@ public class AdminEducationService {
         }
 
         Flux<EducationChangeRequestAdminDTO> enrichedFlux = requestFlux
-                .flatMap(request -> userOrganizationMemberRepository.findById(request.getMemberId())
-                        .map(member -> toAdminDTO(request, member.getStudentId()))
-                        .defaultIfEmpty(toAdminDTO(request, null)));
+                .flatMap(request -> userOrganizationMemberRepository.findIdentityByMemberId(request.getMemberId())
+                        .map(identity -> toAdminDTO(request, identity.studentId(), identity.fullName()))
+                        .defaultIfEmpty(toAdminDTO(request, null, null)));
 
         return PaginationHelper.paginate(enrichedFlux, countMono, page, size);
     }
@@ -130,7 +130,7 @@ public class AdminEducationService {
     }
 
     private EducationChangeRequestAdminDTO toAdminDTO(EducationChangeRequest request,
-            String studentId) {
+            String studentId, String fullName) {
         return EducationChangeRequestAdminDTO.builder()
                 .id(request.getId())
                 .memberId(request.getMemberId())
@@ -143,7 +143,7 @@ public class AdminEducationService {
                 .createdAt(request.getCreatedAt())
                 .reviewedAt(request.getReviewedAt())
                 .memberStudentId(studentId)
-                .memberFullName(null)
+                .memberFullName(fullName)
                 .build();
     }
 }

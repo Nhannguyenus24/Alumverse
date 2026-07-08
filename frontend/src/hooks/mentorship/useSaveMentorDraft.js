@@ -31,11 +31,13 @@ const submitDraft = async ({
   const res = await saveMentorProfileDraft({
     ...(profile ?? {}),
     avatarUrl: avatarUrl ?? undefined,
-    coverUrl: coverUrl ?? undefined,
     defaultMeetingLink: defaultMeetingLink || undefined,
     extendedProfile,
     expertiseTags: (expertiseTags ?? []).map((tag) => (tag ?? '').trim()).filter(Boolean),
   });
+  if (coverUrl) {
+    await apiClient.put('/users/me/cover', { coverUrl });
+  }
   return res?.data?.data ?? null;
 };
 

@@ -6,17 +6,10 @@ import {
   Button,
   Chip,
   CircularProgress,
-  Collapse,
   Container,
   IconButton,
   Paper,
   Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TablePagination,
-  TableRow,
   TextField,
   Typography,
 } from '@mui/material';
@@ -32,20 +25,13 @@ import { useCheckInTicket } from '../../hooks/events/useCheckInTicket';
 import { eventApi } from '../../utils/api';
 import { formatDateTime } from '../../utils/dateFormatter';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
+import AdminDataTable from '../../components/admin/AdminDataTable';
+import AdminStatusChip from '../../components/admin/AdminStatusChip';
 
 const AdminEventOrganizePage = () => {
   const { t } = useTranslation(['admin', 'event', 'common']);
   const { eventId } = useParams();
   const orgNavigate = useOrgNavigate();
-
-  const statusChip = (status) => {
-    const key = String(status || '').toUpperCase();
-    if (key === 'REGISTERED' || key === 'PENDING') return { color: 'default', label: t('event:ticket_status_registered') };
-    if (key === 'ISSUED') return { color: 'info', label: t('event:status_issued') };
-    if (key === 'USED' || key === 'CHECKED_IN') return { color: 'success', label: t('event:status_used') };
-    if (key === 'CANCELLED') return { color: 'error', label: t('event:status_cancelled') };
-    return { color: 'default', label: status || '-' };
-  };
 
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 400);
@@ -54,7 +40,6 @@ const AdminEventOrganizePage = () => {
   const [ticketCode, setTicketCode] = useState('');
   const [checkResult, setCheckResult] = useState(null);
   const [checkedTicket, setCheckedTicket] = useState(null);
-  const [expandedId, setExpandedId] = useState(null);
   const [eventTitle, setEventTitle] = useState('');
 
   const numericEventId = Number(eventId);
@@ -69,6 +54,10 @@ const AdminEventOrganizePage = () => {
 
   const participants = data?.items ?? [];
   const total = data?.totalItem ?? 0;
+  const displayMemberName = (ticket) =>
+    ticket.attendeeName || ticket.guestName || (ticket.memberId ? t('admin:event_member_fallback', { id: ticket.memberId }) : '—');
+  const displayMemberEmail = (ticket) =>
+    ticket.attendeeEmail || ticket.guestEmail || '—';
 
   useEffect(() => {
     if (!eventId) return;
@@ -174,7 +163,7 @@ const AdminEventOrganizePage = () => {
                   </Avatar>
                   <Box sx={{ minWidth: 0 }}>
                     <Typography variant="subtitle1" fontWeight={700} noWrap>
-                      {checkedTicket.attendeeName || checkedTicket.guestName || `Member #${checkedTicket.memberId}`}
+                      {checkedTicket.attendeeName || checkedTicket.guestName || (checkedTicket.memberId ? t('admin:event_member_fallback', { id: checkedTicket.memberId }) : '—')}
                     </Typography>
                     <Typography variant="body2" color="text.secondary" noWrap>
                       {checkedTicket.attendeeEmail || checkedTicket.guestEmail || '-'}
@@ -201,87 +190,42 @@ const AdminEventOrganizePage = () => {
 
           <SearchBar value={search} onChange={setSearch} placeholder={t('admin:event_search_placeholder')} />
 
-          <Paper variant="outlined">
-            {isPending ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                <CircularProgress />
-              </Box>
-            ) : (
-              <>
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>{t('admin:event_col_ticket_code')}</TableCell>
-                      <TableCell>{t('admin:event_col_guest')}</TableCell>
-                      <TableCell>Email</TableCell>
-                      <TableCell>{t('admin:col_status')}</TableCell>
-                      <TableCell>{t('admin:event_col_registered_at')}</TableCell>
-                      <TableCell align="right">{t('admin:event_col_detail')}</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {participants.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={6} align="center">
-                          <Typography color="text.secondary" sx={{ py: 2 }}>{t('admin:event_no_attendees')}</Typography>
-                        </TableCell>
-                      </TableRow>
-                    ) : participants.map((ticket) => {
-                      const chip = statusChip(ticket.status);
-                      const displayName = ticket.guestName || `Member #${ticket.memberId}`;
-                      const displayEmail = ticket.guestEmail || '-';
-                      const answers = ticket.registrationAnswers;
-                      return (
-                        <TableRow key={ticket.id} hover>
-                          <TableCell>{ticket.ticketCode}</TableCell>
-                          <TableCell>{displayName}</TableCell>
-                          <TableCell>{displayEmail}</TableCell>
-                          <TableCell><Chip size="small" color={chip.color} label={chip.label} /></TableCell>
-                          <TableCell>{formatDateTime(ticket.registeredAt)}</TableCell>
-                          <TableCell align="right">
-                            {answers?.length > 0 ? (
-                              <Button size="small" onClick={() => setExpandedId(expandedId === ticket.id ? null : ticket.id)}>
-                                {expandedId === ticket.id ? t('admin:hide') : t('admin:answers')}
-                              </Button>
-                            ) : '-'}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-                {participants.map((ticket) => {
-                  const answers = ticket.registrationAnswers;
-                  if (!answers?.length) return null;
-                  return (
-                    <Collapse key={`answers-${ticket.id}`} in={expandedId === ticket.id}>
-                      <Box sx={{ p: 2, bgcolor: 'grey.50' }}>
-                        <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1 }}>
-                          {t('admin:ticket_answers', { code: ticket.ticketCode })}
-                        </Typography>
-                        {answers.map((a, idx) => (
-                          <Typography key={idx} variant="body2" sx={{ mb: 0.5 }}>
-                            <strong>#{a.questionId}:</strong>{' '}
-                            {Array.isArray(a.value) ? a.value.join(', ') : String(a.value)}
-                          </Typography>
-                        ))}
-                      </Box>
-                    </Collapse>
-                  );
-                })}
-                <TablePagination
-                  component="div"
-                  count={total}
-                  page={page}
-                  onPageChange={(_, p) => setPage(p)}
-                  rowsPerPage={size}
-                  onRowsPerPageChange={(e) => { setSize(parseInt(e.target.value, 10)); setPage(0); }}
-                  rowsPerPageOptions={[5, 10, 25]}
-                  labelRowsPerPage={t('common:rows_per_page')}
-                />
-              </>
-            )}
-          </Paper>
+          <AdminDataTable
+            columns={[
+              { id: 'ticketCode', label: t('admin:event_col_ticket_code'), render: (value) => value || '—' },
+              { id: 'guest', label: t('admin:event_col_guest'), render: (_, row) => displayMemberName(row) },
+              { id: 'email', label: 'Email', render: (_, row) => displayMemberEmail(row) },
+              { id: 'status', label: t('admin:col_status'), render: (value) => <AdminStatusChip status={value} category="ticket" /> },
+              { id: 'registeredAt', label: t('admin:event_col_registered_at'), render: (value) => formatDateTime(value) },
+            ]}
+            rows={participants}
+            totalCount={total}
+            page={page}
+            rowsPerPage={size}
+            onPageChange={(_, p) => setPage(p)}
+            onRowsPerPageChange={(e) => { setSize(parseInt(e.target.value, 10)); setPage(0); }}
+            loading={isPending}
+            emptyMessage={t('admin:event_no_attendees')}
+            renderExpandableRow={(ticket) => {
+              const answers = ticket.registrationAnswers;
+              if (!answers?.length) {
+                return <Typography variant="body2" color="text.secondary">—</Typography>;
+              }
+              return (
+                <Box>
+                  <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1 }}>
+                    {t('admin:ticket_answers', { code: ticket.ticketCode })}
+                  </Typography>
+                  {answers.map((a, idx) => (
+                    <Typography key={idx} variant="body2" sx={{ mb: 0.5 }}>
+                      <strong>#{a.questionId}:</strong>{' '}
+                      {Array.isArray(a.value) ? a.value.join(', ') : String(a.value)}
+                    </Typography>
+                  ))}
+                </Box>
+              );
+            }}
+          />
         </Stack>
       </Container>
     </Page>
