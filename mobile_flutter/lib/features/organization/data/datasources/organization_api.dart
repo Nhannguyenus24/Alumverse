@@ -41,26 +41,26 @@ class OrganizationApi {
         .toList();
   }
 
-  /// Join an organization with academic info. Mirrors the web
-  /// `joinOrganization` body (`POST /admin/users/organization-member`).
+  /// Join an organization with academic info. Self-service — the current
+  /// user is resolved server-side from the JWT. Mirrors the web
+  /// `joinOrganization` body (`POST /users/me/organization-member`).
   Future<void> joinOrganization({
     required int organizationId,
-    required int userId,
+    String? studentId,
+    List<String>? startedYear,
     List<String>? program,
     List<String>? major,
     List<int>? graduatedYear,
   }) {
     return _dio.post(
-      ApiEndpoints.adminOrganizationMember,
+      ApiEndpoints.meOrganizationMember,
       data: {
         'organizationId': organizationId,
-        'userId': userId,
+        if (studentId != null) 'studentId': studentId,
+        'startedYear': startedYear,
         'graduatedYear': graduatedYear,
-        'graduationStatus': null,
         'program': program,
         'major': major,
-        'verificationLevel': 0,
-        'status': 'active',
       },
     );
   }
@@ -105,6 +105,7 @@ class OrganizationApi {
   /// Upload a proof document for admin verification
   /// (`POST /users/me/verification-requests`).
   Future<void> createVerificationRequest({
+    required int organizationId,
     required String base64File,
     required String originalFileName,
     required String documentType,
@@ -112,6 +113,7 @@ class OrganizationApi {
     return _dio.post(
       ApiEndpoints.meVerificationRequests,
       data: {
+        'organizationId': organizationId,
         'base64File': base64File,
         'originalFileName': originalFileName,
         'documentType': documentType,
