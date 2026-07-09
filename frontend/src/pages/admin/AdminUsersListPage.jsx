@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate, useOutletContext } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import {
@@ -37,10 +37,54 @@ import AdminBanUserDialog from '../../components/admin/AdminBanUserDialog';
 import AdminDataTable from '../../components/admin/AdminDataTable';
 import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetricTile';
 import { formatAccountStatusLabel } from '../../constants/adminStatusDisplay';
-import { USER_ROLES, USER_STATUSES } from '../../constants/adminDefaultUsers';
+import { USER_ROLES } from '../../constants/adminDefaultUsers';
 import { useAdminUsersContext } from '../../stores/AdminStore';
 import { adminOrganizationApi } from '../../utils/api';
 import { formatDateTime } from '../../utils/dateFormatter';
+
+const USER_STATUS_FILTERS = [
+  'ACTIVE',
+  'VERIFYING',
+  'UNVERIFIED',
+  'INACTIVE',
+  'BANNED',
+  'SUSPENDED',
+  'DELETED',
+  'DISABLED',
+];
+
+const USER_STATUS_ACTIONS = [
+  'ACTIVE',
+  'INACTIVE',
+  'BANNED',
+  'SUSPENDED',
+  'DELETED',
+  'DISABLED',
+];
+
+const getDisplayStatus = (user) => {
+  const accountStatus = String(user?.status || '').toUpperCase();
+  if (accountStatus && accountStatus !== 'ACTIVE') {
+    return accountStatus;
+  }
+
+  if (user?.verificationLevel === null || user?.verificationLevel === undefined) {
+    return accountStatus || 'UNKNOWN';
+  }
+  const level = Number(user.verificationLevel);
+  if (!Number.isFinite(level)) return accountStatus || 'UNKNOWN';
+  if (level >= 2) return 'ACTIVE';
+  if (level === 1) return 'VERIFYING';
+  return 'UNVERIFIED';
+};
+
+const formatDisplayStatusLabel = (user, t) => {
+  const status = getDisplayStatus(user);
+  if (status === 'VERIFYING') {
+    return t('admin:status_verifying', { defaultValue: 'Verifying' });
+  }
+  return formatAccountStatusLabel(status, t);
+};
 
 const AdminUsersListPage = () => {
   const theme = useTheme();
@@ -87,7 +131,7 @@ const AdminUsersListPage = () => {
       [t('admin:export_col_fullname')]: u.fullName || u.studentId,
       Email: u.email,
       [t('admin:export_col_role')]: u.role,
-      [t('admin:export_col_status')]: formatAccountStatusLabel(u.status, t),
+      [t('admin:export_col_status')]: formatDisplayStatusLabel(u, t),
       [t('admin:export_col_organization')]: u.organizationName || '-',
       [t('admin:export_col_joined_at')]: formatDateTime(u.createdAt)
     }));
@@ -119,7 +163,10 @@ const AdminUsersListPage = () => {
     return () => { active = false; };
   }, []);
 
-  const roleLabel = (role) => (role ? t(`admin:role.${role}`, { defaultValue: role }) : '');
+  const roleLabel = useCallback(
+    (role) => (role ? t(`admin:role.${role}`, { defaultValue: role }) : ''),
+    [t],
+  );
 
   const columns = useMemo(() => [
     {
@@ -148,25 +195,32 @@ const AdminUsersListPage = () => {
     {
       id: 'status',
       label: t('admin:col_status'),
-      render: (status, u) => (
-        <AdminStatusChip
-          status={status}
-          category="account"
-          label={formatAccountStatusLabel(status, t)}
-          onClick={(e) => {
-            e.stopPropagation();
-            setUserStatusMenu({ anchorEl: e.currentTarget, user: u });
-          }}
-          sx={{ cursor: 'pointer' }}
-        />
-      )
+      render: (_, u) => {
+        const displayStatus = getDisplayStatus(u);
+        if (displayStatus === 'UNKNOWN') {
+          return <Typography variant="body2" color="text.secondary">-</Typography>;
+        }
+        return (
+          <AdminStatusChip
+            status={displayStatus}
+            category="account"
+            label={formatDisplayStatusLabel(u, t)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setUserStatusMenu({ anchorEl: e.currentTarget, user: u });
+            }}
+            sx={{ cursor: 'pointer' }}
+          />
+        );
+      }
     },
     { id: 'organizationName', label: t('admin:col_organization') },
     { id: 'createdAt', label: t('admin:col_joined_at'), render: (val) => formatDateTime(val) },
     {
       id: 'actions',
-      label: '',
+      label: t('admin:actions'),
       align: 'right',
+      width: 160,
       render: (_, u) => (
         <Stack direction="row" spacing={0.5} justifyContent="flex-end" onClick={(e) => e.stopPropagation()}>
           <Tooltip title={t('admin:tooltip_view_detail')}>
@@ -209,7 +263,7 @@ const AdminUsersListPage = () => {
         </Stack>
       )
     }
-  ], [theme, navigate, unbanUser, setBanTarget, setDeleteTarget, setUserStatusMenu, setUserFormMode, setEditingUser, setUserFormOpen, t]);
+  ], [theme, navigate, unbanUser, setBanTarget, setDeleteTarget, setUserStatusMenu, setUserFormMode, setEditingUser, setUserFormOpen, roleLabel, t]);
 
   const Filters = (
     <Stack direction="row" spacing={1}>
@@ -233,7 +287,7 @@ const AdminUsersListPage = () => {
         sx={{ minWidth: 140 }}
       >
         <MenuItem value="ALL">{t('admin:filter_all')}</MenuItem>
-        {USER_STATUSES.map((s) => <MenuItem key={s} value={s}>{formatAccountStatusLabel(s, t)}</MenuItem>)}
+        {USER_STATUS_FILTERS.map((s) => <MenuItem key={s} value={s}>{formatAccountStatusLabel(s, t)}</MenuItem>)}
       </TextField>
     </Stack>
   );
@@ -353,12 +407,14 @@ const AdminUsersListPage = () => {
         onClose={() => setUserStatusMenu(null)}
         PaperProps={{ sx: { borderRadius: 2, mt: 1, minWidth: 160, boxShadow: theme.shadows[10] } }}
       >
-        {USER_STATUSES.map((st) => (
+        {USER_STATUS_ACTIONS.map((st) => (
           <MenuItem
             key={st}
-            selected={userStatusMenu?.user.status === st}
+            selected={userStatusMenu?.user && getDisplayStatus(userStatusMenu.user) === st}
             onClick={async () => {
-              try { await updateUserStatus(userStatusMenu.user.id, st); } catch (e) { console.error(e); }
+              try {
+                await updateUserStatus(userStatusMenu.user.id, st);
+              } catch (e) { console.error(e); }
               setUserStatusMenu(null);
             }}
             sx={{ fontSize: 14, fontWeight: 500 }}

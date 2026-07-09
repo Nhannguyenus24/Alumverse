@@ -14,5 +14,7 @@ public class ActivityItemDTO {
     private String action;
     private String resourceType;
     private String resourceId;
+    private String beforeData;
+    private String afterData;
     private String metadata;
 }

@@ -116,7 +116,7 @@ const AdminSchoolFeedbackPage = () => {
     { id: 'createdAt', label: t('feedback_col_sent_date'), render: (val) => formatDateTime(val) },
     {
       id: 'actions',
-      label: '',
+      label: t('actions'),
       align: 'right',
       width: 96,
       render: (_, row) => (

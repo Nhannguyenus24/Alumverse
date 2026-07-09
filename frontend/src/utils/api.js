@@ -1,5 +1,4 @@
 import apiClient from '../utils/axios';
-import useAuthStore from '../stores/authStore';
 
 const unwrap = (response) => response?.data?.data;
 
@@ -205,6 +204,16 @@ const adminUserApi = {
 		return apiClient.put(`${BASE_ADMIN_USERS}/${userId}`, payload);
 	},
 
+	resetPasswordByAdmin(userId, newPassword, reason = 'Admin reset from user management') {
+		return apiClient.post(`${BASE_ADMIN_USERS}/${userId}/reset-password`, { newPassword, reason });
+	},
+
+	updateTrustedVerifier(userId, organizationId, isTrusted) {
+		return apiClient.patch(`${BASE_ADMIN_USERS}/${userId}/organizations/${organizationId}/trusted-verifier`, null, {
+			params: { isTrusted },
+		});
+	},
+
 	createAdminAccount(body) {
 		return apiClient.post(`${BASE_ADMIN_USERS}/admins`, body);
 	},
@@ -222,6 +231,10 @@ const adminUserApi = {
 
 	reviewVerificationRequest(requestId, status, adminNote) {
 		return apiClient.put(`${BASE_ADMIN_USERS}/verification-requests/${requestId}`, { status, adminNote });
+	},
+
+	reopenVerificationRequest(requestId, requestType, adminNote) {
+		return apiClient.post(`${BASE_ADMIN_USERS}/verification-requests/${requestId}/reopen`, { requestType, adminNote });
 	},
 
 	addOrganizationMember(payload) {
@@ -243,8 +256,11 @@ export const {
 	unbanUser,
 	deleteUser,
 	updateUser,
+	resetPasswordByAdmin,
+	updateTrustedVerifier,
 	getVerificationRequests,
 	reviewVerificationRequest,
+	reopenVerificationRequest,
 	addOrganizationMember,
 	bulkImportMembers,
 	getUserActivity,
@@ -913,18 +929,26 @@ export const networkApi = {
 
 const userApi = {
 	joinOrganization(payload) {
-		const userId = useAuthStore.getState().user?.id;
+		const toStringList = (value) => {
+			const list = Array.isArray(value) ? value : value ? [value] : [];
+			return list.map((item) => String(item).trim()).filter(Boolean);
+		};
+		const toNumberList = (value) => {
+			const list = Array.isArray(value) ? value : value ? [value] : [];
+			return list
+				.map((item) => Number(item))
+				.filter((item) => Number.isFinite(item));
+		};
 		const body = {
 			organizationId: Number(payload.organizationId),
-			userId: Number(userId),
-			graduatedYear: payload.graduatedYear ? [Number(payload.graduatedYear)] : null,
-			graduationStatus: payload.graduationStatus ?? null,
-			program: payload.program ?? null,
-			major: payload.major ?? null,
-			verificationLevel: 0,
-			status: 'active',
+			studentId: payload.studentId ?? payload.studentCode ?? null,
+			startedYear: toStringList(payload.startedYear ?? payload.startYear),
+			graduatedYear: toNumberList(payload.graduatedYear),
+			graduationStatus: toStringList(payload.graduationStatus),
+			program: toStringList(payload.program),
+			major: toStringList(payload.major),
 		};
-		return apiClient.post('/admin/users/organization-member', body);
+		return apiClient.post('/users/me/organization-member', body);
 	},
 
 	getTrustedVerifiers(organizationId) {

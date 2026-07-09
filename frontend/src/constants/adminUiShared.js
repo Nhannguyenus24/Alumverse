@@ -19,9 +19,7 @@ export const ADMIN_STATUS_CHIP_SX = {
 };
 
 const formatStatusLabel = (status) =>
-  String(status || '')
-    .toLowerCase()
-    .split('_')
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ');
+  (() => {
+    const label = String(status || '').replace(/_/g, ' ').trim().toLowerCase();
+    return label.charAt(0).toUpperCase() + label.slice(1);
+  })();

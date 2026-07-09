@@ -16,6 +16,14 @@ import { notificationApi } from "../utils/api";
 import { useOrgNavigate } from "../hooks/useOrgNavigate";
 import useAuthStore from "../stores/authStore";
 
+const isPeerVerificationNotification = (notification) => {
+  const title = String(notification?.title || "").toLowerCase();
+  return (
+    title.includes("xác thực đồng nghiệp")
+    || title.includes("peer verification")
+  );
+};
+
 const Notification = ({ headerTextColor = "text.primary" }) => {
   const { t } = useTranslation(['notification', 'common']);
   const navigate = useOrgNavigate();
@@ -82,7 +90,9 @@ const Notification = ({ headerTextColor = "text.primary" }) => {
         console.error("Failed to mark notification as read:", error);
       }
     }
-    const targetLink = notification.link || "";
+    const targetLink = notification.link || (isPeerVerificationNotification(notification)
+      ? "/settings?tab=verification"
+      : "");
     
     if (targetLink) {
       handleClose();
@@ -156,7 +166,7 @@ const Notification = ({ headerTextColor = "text.primary" }) => {
           sx: {
             width: 360,
             maxHeight: 500,
-            mt: 1.5,
+            mt: 4,
             boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.1)",
             p: 1
           },

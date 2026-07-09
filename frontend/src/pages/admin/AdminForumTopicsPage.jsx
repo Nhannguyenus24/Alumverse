@@ -152,8 +152,9 @@ const AdminForumTopicsPage = () => {
     { id: "createdAt", label: t('forum_col_created_at_date'), render: (val) => formatDate(val) },
     {
       id: "actions",
-      label: "",
+      label: t('actions'),
       align: "right",
+      width: 130,
       render: (_, row) => (
         <Stack
           direction="row"
