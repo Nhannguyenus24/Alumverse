@@ -39,6 +39,16 @@ const normalizeActivitiesPayload = (payload) => {
 
 const fallbackActorLabel = (id) => (id ? `Quản trị viên #${id}` : 'Quản trị viên');
 
+const parseMetadata = (metadata) => {
+  if (metadata == null || metadata === '') return null;
+  if (typeof metadata === 'object') return metadata;
+  try {
+    return JSON.parse(metadata);
+  } catch {
+    return metadata;
+  }
+};
+
 const mapActivityToAuditLog = (item, usersById) => {
   const actor = usersById.get(Number(item?.adminUserId));
   const actorName = item?.adminFullName || actor?.fullName || actor?.name || fallbackActorLabel(item?.adminUserId);
@@ -46,6 +56,7 @@ const mapActivityToAuditLog = (item, usersById) => {
   const resourceType = item.resourceType || 'RESOURCE';
   const resourceId = item.resourceId || '-';
   const action = item.action || 'ACTION';
+  const metadata = parseMetadata(item.metadata);
 
   return {
     id: item.id,
@@ -62,12 +73,13 @@ const mapActivityToAuditLog = (item, usersById) => {
     description: item.metadata
       ? `${action} on ${resourceType} #${resourceId} (${item.metadata})`
       : `${action} on ${resourceType} #${resourceId}`,
+    metadata,
     ipAddress: null,
     userAgent: null,
     requestPath: null,
     executionTime: null,
-    oldValue: null,
-    newValue: null,
+    oldValue: parseMetadata(item.beforeData),
+    newValue: parseMetadata(item.afterData),
     errorMessage: null,
   };
 };

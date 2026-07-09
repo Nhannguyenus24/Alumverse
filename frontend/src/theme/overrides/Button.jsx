@@ -106,6 +106,13 @@ const Button = (theme) => {
         },
       },
     },
+    MuiTab: {
+      styleOverrides: {
+        root: {
+          textTransform: "none",
+        },
+      },
+    },
   };
 };
 

@@ -11,6 +11,7 @@ import com.service.backend.shared.enums.Status;
 import com.service.backend.shared.enums.UserRole;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.JsonUtils;
+import com.service.backend.shared.utils.CacheUtils;
 import com.service.backend.user.dao.UserOrganizationMemberRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,6 +37,7 @@ import com.service.backend.shared.entity.User;
 import com.service.backend.shared.entity.AdminAuditLog;
 import com.service.backend.user.service.NotificationService;
 import com.service.backend.shared.dao.UserDisplayInfo;
+import com.service.backend.user.dao.PeerVerificationRepository;
 import com.service.backend.user.dao.UserProfileRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -49,13 +51,16 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class AdminUserService {
     private static final Logger logger = LoggerFactory.getLogger(AdminUserService.class);
+    private static final String ORG_CACHE = "organization_cache";
 
     private final AdminUserRepository adminUserRepository;
     private final AdminAuditLogRepository adminAuditLogRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserProfileRepository userProfileRepository;
     private final UserOrganizationMemberRepository userOrganizationMemberRepository;
+    private final PeerVerificationRepository peerVerificationRepository;
     private final NotificationService notificationService;
+    private final CacheUtils cacheUtils;
 
     public Mono<PaginatedResponse<UserResponse>> getAllUsers(int page, int size, String search, String role, String status, Integer organizationId) {
         int offset = page * size;
@@ -215,6 +220,9 @@ public class AdminUserService {
                         trustedVerifier,
                         upperStatus))
                 .map(count -> count > 0)
+                .delayUntil(success -> success && trustedVerifier
+                        ? cacheUtils.evict(ORG_CACHE, "trustedVerifiers:" + organizationId)
+                        : Mono.empty())
                 .doOnSuccess(success -> logger.info("createOrganizationMember: userId={}, organizationId={}, success={}", actualUserId, organizationId, success))
                 .doOnError(error -> logger.error("Error adding user {} to organization {}: {}", actualUserId, organizationId, error.getMessage()))
             );
@@ -321,6 +329,13 @@ public class AdminUserService {
     }
 
     public Mono<UserResponse> updateUser(Integer userId, UpdateUserRequest request) {
+        if (isStatusOnlyPatch(request)) {
+            return adminUserRepository.updateUserStatusById(userId, request.getStatus().getValue())
+                    .flatMap(count -> count > 0 ? getUserById(userId) : Mono.empty())
+                    .doOnSuccess(u -> logger.info("updateUser status-only result: {}", JsonUtils.toJson(u)))
+                    .doOnError(e -> logger.error("Error updating user status {}", e.getMessage()));
+        }
+
         return adminUserRepository.findById(userId)
                 .flatMap(user -> {
                     if (request.getEmail() != null) user.setEmail(request.getEmail());
@@ -334,6 +349,15 @@ public class AdminUserService {
                 .doOnError(e -> logger.error("Error updating user {}", e.getMessage()));
     }
 
+    private boolean isStatusOnlyPatch(UpdateUserRequest request) {
+        return request.getStatus() != null
+                && request.getEmail() == null
+                && request.getRole() == null
+                && !StringUtils.hasText(request.getStudentId())
+                && !StringUtils.hasText(request.getFullName())
+                && !hasMembershipPatch(request);
+    }
+
     private Mono<Void> applyProfileAndOrg(Integer userId, UpdateUserRequest request) {
         Mono<Void> profile = Mono.empty();
         if (StringUtils.hasText(request.getFullName())) {
@@ -341,15 +365,48 @@ public class AdminUserService {
                     .upsertGlobalProfileFullName(userId, request.getFullName().trim())
                     .then();
         }
-        Mono<Void> org = Mono.empty();
-        if (request.getOrganizationId() != null) {
-            org = syncPrimaryOrganization(userId, request.getOrganizationId());
-        }
+        Mono<Void> org = syncPrimaryOrganization(userId, request);
         return Mono.when(profile, org);
     }
 
-    private Mono<Void> syncPrimaryOrganization(Integer userId, Integer organizationId) {
-        return adminUserRepository.upsertOrganizationMemberByUserId(organizationId, userId).then();
+    private boolean hasMembershipPatch(UpdateUserRequest request) {
+        return request.getOrganizationId() != null
+                || StringUtils.hasText(request.getStudentId())
+                || request.getGraduatedYear() != null
+                || request.getGraduationStatus() != null
+                || request.getProgram() != null
+                || request.getMajor() != null
+                || request.getVerificationLevel() != null
+                || request.getIsTrustedVerifier() != null;
+    }
+
+    private Mono<Void> syncPrimaryOrganization(Integer userId, UpdateUserRequest request) {
+        if (!hasMembershipPatch(request)) {
+            return Mono.empty();
+        }
+
+        Mono<Integer> ensureMembership = request.getOrganizationId() == null
+                ? Mono.just(1)
+                : adminUserRepository.existsOrganizationMemberByUserId(userId)
+                    .flatMap(exists -> exists
+                            ? Mono.just(1)
+                            : adminUserRepository.upsertOrganizationMemberByUserId(request.getOrganizationId(), userId));
+
+        return ensureMembership
+                .then(adminUserRepository.updatePrimaryOrganizationMemberDetails(
+                        userId,
+                        request.getOrganizationId(),
+                        request.getStudentId(),
+                        JsonUtils.toJson(request.getGraduatedYear()),
+                        JsonUtils.toJson(request.getGraduationStatus()),
+                        JsonUtils.toJson(request.getProgram()),
+                        JsonUtils.toJson(request.getMajor()),
+                        request.getVerificationLevel(),
+                        request.getIsTrustedVerifier()))
+                .delayUntil(count -> request.getOrganizationId() != null && request.getIsTrustedVerifier() != null
+                        ? cacheUtils.evict(ORG_CACHE, "trustedVerifiers:" + request.getOrganizationId())
+                        : Mono.empty())
+                .then();
     }
 
     private Mono<Map<Integer, UserOrganizationMemberRepository.PrimaryOrg>> getPrimaryOrgMap(Collection<Integer> userIds) {
@@ -406,53 +463,64 @@ public class AdminUserService {
         if (org != null && org.organizationId() != null) {
             b.organizationId(org.organizationId());
             b.organizationName(org.organizationName());
+            b.studentId(org.studentId());
+            b.verificationLevel(org.verificationLevel());
+            b.isTrustedVerifier(org.isTrustedVerifier());
+            b.membershipStatus(org.membershipStatus());
+            b.startedYear(parseStringList(org.startedYear()));
+            b.graduatedYear(parseIntegerList(org.graduatedYear()));
+            b.graduationStatus(parseStringList(org.graduationStatus()));
+            b.program(parseStringList(org.program()));
+            b.major(parseStringList(org.major()));
         }
         return b.build();
     }
-    public Mono<PaginatedResponse<VerificationRequestResponse>> getAllVerificationRequests(Integer organizationId, String keyword, int page, int size) {
-        int offset = page * size;
-        String kw = (keyword != null && !keyword.trim().isEmpty()) ? "%" + keyword.trim() + "%" : null;
-        if (organizationId != null) {
-            return PaginationHelper.paginate(
-                    adminUserRepository.findAllVerificationRequestsByOrganization(organizationId, kw, size, offset).collectList(),
-                    adminUserRepository.countAllVerificationRequestsByOrganization(organizationId, kw),
-                    page,
-                    size
-            )
-             .doOnSuccess(r -> logger.info("getAllVerificationRequests (org={}) result: {}", organizationId, JsonUtils.toJson(r)))
-             .doOnError(e -> logger.error("Error fetching verification requests for org {}", e.getMessage()));
+
+    private List<String> parseStringList(String jsonValue) {
+        if (jsonValue == null || jsonValue.trim().isEmpty() || "null".equalsIgnoreCase(jsonValue.trim())) {
+            return List.of();
         }
-        return PaginationHelper.paginate(
-                adminUserRepository.findAllVerificationRequests(kw, size, offset).collectList(),
-                adminUserRepository.countAllVerificationRequests(kw),
-                page,
-                size
-        )
-         .doOnSuccess(r -> logger.info("getAllVerificationRequests result: {}", JsonUtils.toJson(r)))
-         .doOnError(e -> logger.error("Error fetching verification requests: {}", e.getMessage()));
+        if (JsonUtils.isJsonArray(jsonValue)) {
+            List<String> values = JsonUtils.fromJsonToList(jsonValue, String.class);
+            return values == null ? List.of() : values;
+        }
+        return List.of(jsonValue);
+    }
+
+    private List<Integer> parseIntegerList(String jsonValue) {
+        if (jsonValue == null || jsonValue.trim().isEmpty() || "null".equalsIgnoreCase(jsonValue.trim())) {
+            return List.of();
+        }
+        if (JsonUtils.isJsonArray(jsonValue)) {
+            List<Integer> values = JsonUtils.fromJsonToList(jsonValue, Integer.class);
+            return values == null ? List.of() : values;
+        }
+        try {
+            return List.of(Integer.valueOf(jsonValue.trim()));
+        } catch (NumberFormatException ex) {
+            return List.of();
+        }
+    }
+
+    public Mono<PaginatedResponse<VerificationRequestResponse>> getAllVerificationRequests(Integer organizationId, String keyword, int page, int size) {
+        return getVerificationRequests(organizationId, keyword, false, page, size);
     }
 
     public Mono<PaginatedResponse<VerificationRequestResponse>> getPendingVerificationRequests(Integer organizationId, String keyword, int page, int size) {
+        return getVerificationRequests(organizationId, keyword, true, page, size);
+    }
+
+    private Mono<PaginatedResponse<VerificationRequestResponse>> getVerificationRequests(Integer organizationId, String keyword, boolean pendingOnly, int page, int size) {
         int offset = page * size;
         String kw = (keyword != null && !keyword.trim().isEmpty()) ? "%" + keyword.trim() + "%" : null;
-        if (organizationId != null) {
-            return PaginationHelper.paginate(
-                    adminUserRepository.findPendingVerificationRequestsByOrganization(organizationId, kw, size, offset).collectList(),
-                    adminUserRepository.countPendingVerificationRequestsByOrganization(organizationId, kw),
-                    page,
-                    size
-            )
-             .doOnSuccess(r -> logger.info("getPendingVerificationRequests (org={}) result: {}", organizationId, JsonUtils.toJson(r)))
-             .doOnError(e -> logger.error("Error fetching pending verification requests for org {}", e.getMessage()));
-        }
         return PaginationHelper.paginate(
-                adminUserRepository.findPendingVerificationRequests(kw, size, offset).collectList(),
-                adminUserRepository.countPendingVerificationRequests(kw),
+                adminUserRepository.findUnifiedVerificationRequests(organizationId, kw, pendingOnly, size, offset).collectList(),
+                adminUserRepository.countUnifiedVerificationRequests(organizationId, kw, pendingOnly),
                 page,
                 size
         )
-         .doOnSuccess(r -> logger.info("getPendingVerificationRequests result: {}", JsonUtils.toJson(r)))
-         .doOnError(e -> logger.error("Error fetching pending verification requests: {}", e.getMessage()));
+         .doOnSuccess(r -> logger.info("getVerificationRequests: org={}, pendingOnly={}, result={}", organizationId, pendingOnly, JsonUtils.toJson(r)))
+         .doOnError(e -> logger.error("Error fetching verification requests: {}", e.getMessage()));
     }
 
     public Mono<Boolean> reviewVerificationRequest(Integer requestId, String status, String adminNote) {
@@ -478,16 +546,68 @@ public class AdminUserService {
                                 if (StringUtils.hasText(adminNote)) {
                                     msg += " Lý do: " + adminNote;
                                 }
+                                msg += " Bạn có thể gửi lại form xác thực.";
                                 String finalMsg = msg;
                                 Mono.fromRunnable(() -> notificationService.createNotificationAsync(memberId, "Xác thực thất bại", finalMsg))
                                         .subscribeOn(Schedulers.boundedElastic())
                                         .subscribe();
+                                return userOrganizationMemberRepository.updateVerificationLevelByOrgAndUser(organizationId, memberId, 0)
+                                        .thenReturn(true);
                             }
                             return Mono.just(true);
                         });
                 })
                 .doOnSuccess(ok -> logger.info("reviewVerificationRequest: requestId={}, status={}, success={}", requestId, upperStatus, ok))
                 .doOnError(e -> logger.error("Error reviewing verification request {}", e.getMessage()))
+                .defaultIfEmpty(false);
+    }
+
+    @Transactional
+    public Mono<Boolean> reopenVerificationRequest(Integer requestId, String requestType, String adminNote) {
+        String normalizedType = StringUtils.hasText(requestType) ? requestType.trim().toUpperCase() : "PROOF";
+        if ("PEER".equals(normalizedType)) {
+            return peerVerificationRepository.findById(requestId)
+                    .flatMap(request -> peerVerificationRepository
+                            .markPendingRequestsForTarget(request.getOrganizationId(), request.getTargetMemberId(), Status.NEED_UPDATE)
+                            .flatMap(count -> {
+                                if (count == null || count <= 0) {
+                                    return Mono.just(false);
+                                }
+                                return userOrganizationMemberRepository
+                                        .updateVerificationLevelByOrgAndUser(request.getOrganizationId(), request.getTargetMemberId(), 0)
+                                        .then(Mono.fromRunnable(() -> notificationService.createNotificationAsync(
+                                                request.getTargetMemberId(),
+                                                "Vui lòng gửi lại yêu cầu xác thực",
+                                                "Quản trị viên đã mở lại form xác thực. Bạn có thể chọn lại minh chứng hoặc người xác thực đồng nghiệp.",
+                                                "/organization-registration")))
+                                        .thenReturn(true);
+                            }))
+                    .doOnSuccess(ok -> logger.info("reopenVerificationRequest peer: requestId={}, success={}", requestId, ok))
+                    .doOnError(e -> logger.error("Error reopening peer verification request {}", e.getMessage()))
+                    .defaultIfEmpty(false);
+        }
+
+        return Mono.zip(
+                        adminUserRepository.findMemberIdByRequestId(requestId),
+                        adminUserRepository.findOrganizationIdByRequestId(requestId))
+                .flatMap(tuple -> adminUserRepository.markVerificationRequestNeedsUpdate(requestId, adminNote)
+                        .flatMap(count -> {
+                            if (count == null || count <= 0) {
+                                return Mono.just(false);
+                            }
+                            Integer memberId = tuple.getT1();
+                            Integer organizationId = tuple.getT2();
+                            return userOrganizationMemberRepository
+                                    .updateVerificationLevelByOrgAndUser(organizationId, memberId, 0)
+                                    .then(Mono.fromRunnable(() -> notificationService.createNotificationAsync(
+                                            memberId,
+                                            "Vui lòng gửi lại yêu cầu xác thực",
+                                            "Quản trị viên đã mở lại form xác thực. Bạn có thể chọn lại minh chứng hoặc người xác thực đồng nghiệp.",
+                                            "/organization-registration")))
+                                    .thenReturn(true);
+                        }))
+                .doOnSuccess(ok -> logger.info("reopenVerificationRequest proof: requestId={}, success={}", requestId, ok))
+                .doOnError(e -> logger.error("Error reopening proof verification request {}", e.getMessage()))
                 .defaultIfEmpty(false);
     }
 
@@ -601,6 +721,9 @@ public class AdminUserService {
         logger.info("Updating is_trusted_verifier for user {} in organization {} to {}", userId, organizationId, isTrusted);
         return adminUserRepository.updateIsTrustedVerifier(userId, organizationId, isTrusted)
                 .map(count -> count > 0)
+                .delayUntil(success -> success
+                        ? cacheUtils.evict(ORG_CACHE, "trustedVerifiers:" + organizationId)
+                        : Mono.empty())
                 .doOnSuccess(success -> {
                     if (success) {
                         logger.info("Successfully updated is_trusted_verifier for user {} in organization {}", userId, organizationId);

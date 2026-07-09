@@ -166,7 +166,7 @@ const AdminEducationRequestsPage = () => {
     },
     {
       id: 'actions',
-      label: '',
+      label: t('actions'),
       align: 'right',
       width: 140,
       render: (_, row) => (

@@ -156,8 +156,9 @@ const AdminForumPostsPage = () => {
     { id: 'postedAt', label: t('forum_col_posted_at'), render: (val) => formatDateTime(val) },
     {
       id: 'actions',
-      label: '',
+      label: t('actions'),
       align: 'right',
+      width: 96,
       render: (_, p) => (
         <Stack direction="row" spacing={0.5} justifyContent="flex-end" onClick={(e) => e.stopPropagation()}>
           <Tooltip title={t('forum_action_ban')}>
@@ -183,8 +184,9 @@ const AdminForumPostsPage = () => {
     { id: 'updatedAt', label: t('forum_col_banned_at'), render: (val) => formatDateTime(val) },
     {
       id: 'actions',
-      label: '',
+      label: t('actions'),
       align: 'right',
+      width: 96,
       render: (_, p) => (
         <Stack direction="row" spacing={0.5} justifyContent="flex-end" onClick={(e) => e.stopPropagation()}>
           <Tooltip title={t('forum_action_restore')}>
@@ -354,8 +356,9 @@ const AdminForumPostsPage = () => {
             { id: 'status', label: t('forum_col_status'), render: (v) => <AdminStatusChip status={v} category="forum" /> },
             {
               id: 'actions',
-              label: '',
+              label: t('actions'),
               align: 'right',
+              width: 140,
               render: (_, r) => (
                 <Stack direction="row" spacing={0.5} justifyContent="flex-end">
                   <Tooltip title={t('forum_action_hide_post')}>

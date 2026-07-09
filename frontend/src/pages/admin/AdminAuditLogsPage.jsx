@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import {
   Box,
   Button,
+  Chip,
   Checkbox,
   FormControl,
   InputLabel,
@@ -16,6 +17,8 @@ import {
   Stack,
   TextField,
   Typography,
+  alpha,
+  useTheme,
 } from '@mui/material';
 import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
@@ -51,7 +54,10 @@ const AUDIT_ACTION_LABEL_KEYS = {
   RESET_PASSWORD: 'audit_action_reset_password',
   UPDATE_TOPIC_LOCK: 'audit_action_update_topic_lock',
   UPDATE_POST_VISIBILITY: 'audit_action_update_post_visibility',
+  UPDATE_CATEGORY_STATUS: 'audit_action_update_category_status',
+  UPDATE_TOPIC_STATUS: 'audit_action_update_topic_status',
   BAN_POST: 'audit_action_ban_post',
+  UNBAN_POST: 'audit_action_unban_post',
   WARN_USER: 'audit_action_warn_user',
   LOGIN: 'audit_action_login',
 };
@@ -81,20 +87,111 @@ const formatAuditLabel = (t, map, raw) => {
   return i18nKey ? t(i18nKey, { defaultValue: formatEnumFallback(raw) }) : formatEnumFallback(raw);
 };
 
+const parseMaybeJson = (value) => {
+  if (value == null || value === '') return null;
+  if (typeof value !== 'string') return value;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
+  }
+};
+
+const extractDescriptionMetadata = (description) => {
+  const match = String(description || '').match(/\((.*)\)$/);
+  return match ? parseMaybeJson(match[1]) : null;
+};
+
+const METADATA_LABEL_KEYS = {
+  reason: 'audit_meta_reason',
+  source: 'audit_meta_source',
+  reportId: 'audit_meta_report_id',
+  adminUserId: 'audit_meta_admin_user_id',
+  hidden: 'audit_meta_hidden',
+  status: 'audit_meta_status',
+};
+
+const formatMetadataKey = (t, key) => {
+  const i18nKey = METADATA_LABEL_KEYS[key];
+  if (i18nKey) return t(i18nKey, { defaultValue: formatEnumFallback(key) });
+  return String(key || '')
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replaceAll('_', ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/^./, (char) => char.toUpperCase());
+};
+
+const formatMetadataValue = (t, value) => {
+  const parsed = parseMaybeJson(value);
+  if (parsed == null || parsed === '') return '—';
+  if (Array.isArray(parsed)) return parsed.map((item) => formatMetadataValue(t, item)).join(', ');
+  if (typeof parsed === 'object') {
+    return Object.entries(parsed)
+      .filter(([, entryValue]) => entryValue != null && entryValue !== '')
+      .map(([entryKey, entryValue]) => `${formatMetadataKey(t, entryKey)}: ${formatMetadataValue(t, entryValue)}`)
+      .join('; ');
+  }
+  if (typeof parsed === 'boolean') return parsed ? t('yes', { defaultValue: 'Có' }) : t('no', { defaultValue: 'Không' });
+  return String(parsed).replace(/^["']|["']$/g, '');
+};
+
+const formatAuditMetadata = (t, metadata) => {
+  const parsed = parseMaybeJson(metadata);
+  if (parsed == null || parsed === '') return '';
+  return formatMetadataValue(t, parsed);
+};
+
 const formatAuditDescription = (t, log) => {
   const action = formatAuditLabel(t, AUDIT_ACTION_LABEL_KEYS, log.action);
   const entity = formatAuditLabel(t, AUDIT_ENTITY_LABEL_KEYS, log.entityType);
   const id = log.entityId || '—';
-  const metadata = log.description?.match(/\((.*)\)$/)?.[1];
+  const metadata = formatAuditMetadata(t, log.metadata ?? extractDescriptionMetadata(log.description));
 
   return metadata
-    ? t('audit_description_with_meta', { action, entity, id, metadata })
+    ? t('audit_description_with_details', { action, entity, id, metadata })
     : t('audit_description', { action, entity, id });
 };
 
+const getActionChipSx = (theme, action) => {
+  const key = String(action || '').toUpperCase();
+  const paletteKey = key.includes('UNBAN') || key.includes('RESTORE') || key.includes('APPROVE')
+    ? 'success'
+    : key.includes('DELETE') || key.includes('BAN') || key.includes('REJECT')
+      ? 'error'
+      : key.includes('CREATE')
+        ? 'info'
+        : 'primary';
+  const main = theme.palette[paletteKey].main;
+
+  return {
+    width: '100%',
+    maxWidth: '100%',
+    height: 'auto',
+    minHeight: 30,
+    justifyContent: 'flex-start',
+    alignItems: 'stretch',
+    borderRadius: 1.5,
+    color: main,
+    bgcolor: alpha(main, theme.palette.mode === 'dark' ? 0.16 : 0.08),
+    border: `1px solid ${alpha(main, theme.palette.mode === 'dark' ? 0.28 : 0.16)}`,
+    '& .MuiChip-label': {
+      display: 'block',
+      width: '100%',
+      whiteSpace: 'normal',
+      overflow: 'visible',
+      textOverflow: 'clip',
+      lineHeight: 1.35,
+      fontWeight: 800,
+      px: 1,
+      py: 0.65,
+    },
+  };
+};
 
 const AdminAuditLogsPage = () => {
   const { t } = useTranslation('admin');
+  const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
   const { setBreadcrumbs } = useOutletContext();
 
@@ -169,10 +266,11 @@ const AdminAuditLogsPage = () => {
   };
 
   const columns = [
-    { id: 'timestamp', label: t('audit_col_time'), render: (val) => formatDateTimeWithSeconds(val) },
+    { id: 'timestamp', label: t('audit_col_time'), minWidth: 150, render: (val) => formatDateTimeWithSeconds(val) },
     {
       id: 'studentId',
       label: t('audit_col_actor'),
+      minWidth: 190,
       render: (val, row) => (
         <Box>
           <Typography variant="body2" sx={{ fontWeight: 600 }}>{row.actorName || val || '-'}</Typography>
@@ -183,14 +281,18 @@ const AdminAuditLogsPage = () => {
     {
       id: 'action',
       label: t('audit_col_action'),
+      minWidth: 170,
       render: (val) => (
-        <Typography variant="caption" sx={{ fontWeight: 700, px: 1, py: 0.5, bgcolor: 'action.hover', borderRadius: 1 }}>
-          {formatAuditLabel(t, AUDIT_ACTION_LABEL_KEYS, val)}
-        </Typography>
+        <Chip
+          label={formatAuditLabel(t, AUDIT_ACTION_LABEL_KEYS, val)}
+          size="small"
+          variant="outlined"
+          sx={getActionChipSx(theme, val)}
+        />
       )
     },
-    { id: 'entityType', label: t('audit_col_entity'), render: (val) => formatAuditLabel(t, AUDIT_ENTITY_LABEL_KEYS, val) },
-    { id: 'entityId', label: t('audit_col_entity_id') },
+    { id: 'entityType', label: t('audit_col_entity'), minWidth: 150, render: (val) => formatAuditLabel(t, AUDIT_ENTITY_LABEL_KEYS, val) },
+    { id: 'entityId', label: t('audit_col_entity_id'), minWidth: 110 },
     {
       id: 'status',
       label: t('audit_col_result'),
@@ -199,15 +301,19 @@ const AdminAuditLogsPage = () => {
     {
       id: 'description',
       label: t('audit_col_desc'),
+      minWidth: 380,
       render: (_, row) => (
-        <Typography variant="body2" sx={{ maxWidth: 360, whiteSpace: 'normal', lineHeight: 1.45 }}>
+        <Typography variant="body2" sx={{ maxWidth: 420, whiteSpace: 'normal', lineHeight: 1.45 }}>
           {formatAuditDescription(t, row)}
         </Typography>
       )
     }
   ];
 
-  const renderExpandableRow = (log) => (
+  const renderExpandableRow = (log) => {
+    const hasRequestInfo = Boolean(log.ipAddress || log.requestPath || log.userAgent || log.executionTime != null);
+
+    return (
     <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
       <Box
         sx={{
@@ -219,12 +325,18 @@ const AdminAuditLogsPage = () => {
       >
         <Box sx={{ minWidth: 0 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>{t('audit_request_info')}</Typography>
-          <Stack spacing={0.5}>
-            <Typography variant="caption"><strong>IP:</strong> {log.ipAddress || '-'}</Typography>
-            <Typography variant="caption"><strong>Path:</strong> {log.requestPath || '-'}</Typography>
-            <Typography variant="caption"><strong>User Agent:</strong> {log.userAgent || '-'}</Typography>
-            <Typography variant="caption"><strong>Execution:</strong> {log.executionTime != null ? `${log.executionTime}ms` : '-'}</Typography>
-          </Stack>
+          {hasRequestInfo ? (
+            <Stack spacing={0.5}>
+              <Typography variant="caption"><strong>IP:</strong> {log.ipAddress || '-'}</Typography>
+              <Typography variant="caption"><strong>Path:</strong> {log.requestPath || '-'}</Typography>
+              <Typography variant="caption"><strong>User Agent:</strong> {log.userAgent || '-'}</Typography>
+              <Typography variant="caption"><strong>Execution:</strong> {log.executionTime != null ? `${log.executionTime}ms` : '-'}</Typography>
+            </Stack>
+          ) : (
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.6 }}>
+              {t('audit_request_unavailable')}
+            </Typography>
+          )}
         </Box>
         <Box sx={{ minWidth: 0 }}>
           <Paper variant="outlined" sx={{ p: 1.5, height: '100%' }}>
@@ -245,6 +357,7 @@ const AdminAuditLogsPage = () => {
       </Box>
     </Box>
   );
+  };
 
   const Filters = (
     <Stack direction="row" spacing={1}>

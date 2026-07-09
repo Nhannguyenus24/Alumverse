@@ -2,6 +2,7 @@ package com.service.backend.user.service;
 
 import com.service.backend.user.dto.*;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.dao.DataIntegrityViolationException;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -9,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import com.service.backend.auth.dao.AuthRepository;
 import com.service.backend.shared.entity.OrganizationMember;
@@ -84,24 +86,33 @@ public class UserService {
                                 if (exists) {
                                     return Mono.error(new ApplicationException(ErrorCode.RESOURCES_DUPLICATE, "Pending verification request already exists"));
                                 }
+                                Mono<PeerVerification> saveRequest = peerVerificationRepository.save(PeerVerification.builder()
+                                        .organizationId(organizationId)
+                                        .targetMemberId(targetMember.getUserId())
+                                        .verifierMemberId(verifierMember.getUserId())
+                                        .status(Status.PENDING)
+                                        .createdAt(LocalDateTime.now())
+                                        .build())
+                                        .flatMap(saved -> {
+                                            if (!Boolean.TRUE.equals(verifierMember.getIsTrustedVerifier())) {
+                                                return Mono.just(saved);
+                                            }
+                                            return userProfileRepository.findDisplayInfoByUserId(targetMember.getUserId())
+                                                    .map(info -> StringUtils.hasText(info.getFullName())
+                                                            ? info.getFullName().trim()
+                                                            : "Người dùng " + targetMember.getUserId())
+                                                    .defaultIfEmpty("Người dùng " + targetMember.getUserId())
+                                                    .doOnNext(requesterName -> notificationService.createNotificationAsync(
+                                                            verifierUserId,
+                                                            "Yêu cầu xác thực đồng nghiệp",
+                                                            String.format("%s đã gửi yêu cầu xác thực đồng nghiệp cho bạn.", requesterName),
+                                                            "/settings?tab=verification"
+                                                    ))
+                                                    .thenReturn(saved);
+                                        });
+
                                 return Mono.when(
-                                        peerVerificationRepository.save(PeerVerification.builder()
-                                                .organizationId(organizationId)
-                                                .targetMemberId(targetMember.getUserId())
-                                                .verifierMemberId(verifierMember.getUserId())
-                                                .status(Status.PENDING)
-                                                .createdAt(LocalDateTime.now())
-                                                .build())
-                                                .doOnSuccess(saved -> {
-                                                    if (Boolean.TRUE.equals(verifierMember.getIsTrustedVerifier())) {
-                                                        notificationService.createNotificationAsync(
-                                                                verifierUserId,
-                                                                "Yêu cầu xác thực đồng nghiệp",
-                                                                String.format("Người dùng %s đã gửi yêu cầu xác thực đồng nghiệp cho bạn.", targetMember.getUserId()),
-                                                                "/profile/" + targetMember.getUserId()
-                                                        );
-                                                    }
-                                                }),
+                                        saveRequest,
                                         userOrganizationMemberRepository.updateVerificationLevelByOrgAndUser(organizationId, targetMember.getUserId(), 1)
                                 );
                             });
@@ -129,6 +140,11 @@ public class UserService {
 
                                 return Mono.when(
                                         peerVerificationRepository.updateStatus(requestId, Status.APPROVED),
+                                        peerVerificationRepository.resolveOtherPendingRequestsForTarget(
+                                                request.getOrganizationId(),
+                                                request.getTargetMemberId(),
+                                                requestId,
+                                                Status.CANCELLED),
                                         userOrganizationMemberRepository.incrementVerificationLevelByOrgAndUser(request.getOrganizationId(), request.getTargetMemberId())
                                 );
                             });
@@ -209,6 +225,44 @@ public class UserService {
                         ErrorCode.USER_NOT_FOUND,
                         "User not found with id: " + userId))))
                 .doOnSuccess(r -> logger.info("getPublicProfile result: {}", JsonUtils.toJson(r)));
+    }
+
+    @Transactional
+    public Mono<Void> joinOrganization(Long currentUserId, JoinOrganizationRequest request) {
+        Integer userId = currentUserId.intValue();
+        String studentId = StringUtils.hasText(request.getStudentId())
+                ? request.getStudentId().trim()
+                : null;
+
+        return userOrganizationMemberRepository.upsertSelfRegistration(
+                        request.getOrganizationId(),
+                        userId,
+                        studentId,
+                        JsonUtils.toJson(request.getStartedYear()),
+                        JsonUtils.toJson(request.getGraduatedYear()),
+                        JsonUtils.toJson(request.getGraduationStatus()),
+                        JsonUtils.toJson(request.getProgram()),
+                        JsonUtils.toJson(request.getMajor()))
+                .flatMap(updatedRows -> {
+                    if (updatedRows == null || updatedRows <= 0) {
+                        return Mono.error(new ApplicationException(
+                                ErrorCode.RESOURCES_NOT_FOUND,
+                                "Failed to register organization membership"));
+                    }
+                    return Mono.just(updatedRows);
+                })
+                .onErrorMap(DataIntegrityViolationException.class, error -> {
+                    String message = error.getMessage() != null ? error.getMessage().toLowerCase() : "";
+                    if (message.contains("student_id")) {
+                        return new ApplicationException(ErrorCode.STUDENT_ID_ALREADY_EXISTS, error);
+                    }
+                    return error;
+                })
+                .doOnSuccess(v -> logger.info(
+                        "joinOrganization: userId={} organizationId={} updated",
+                        userId,
+                        request.getOrganizationId()))
+                .then();
     }
 
     public Mono<List<UserLoginHistoryResponse>> getMyLoginHistory(Long currentUserId, int page, int limit) {

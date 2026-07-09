@@ -22,10 +22,10 @@ import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import {
   GRADUATION_STATUSES,
   USER_ROLES,
-  USER_STATUSES,
   VERIFICATION_LEVELS,
 } from '../../constants/adminDefaultUsers';
 import { formatAccountStatusLabel } from '../../constants/adminStatusDisplay';
+import { getTrustedVerifiers } from '../../utils/api';
 
 const defaultEmptyForm = {
   email: '',
@@ -51,6 +51,33 @@ const resolvedFullNameForEdit = (u) => {
   return typeof found === 'string' ? found : '';
 };
 
+const getVerifierUserId = (verifier) => verifier?.userId ?? verifier?.id ?? verifier?.user_id;
+
+const normalizeComparableValue = (value) => {
+  if (Array.isArray(value)) {
+    const normalized = value
+      .map(normalizeComparableValue)
+      .filter((item) => item !== null && item !== '');
+    return normalized.length === 1 ? normalized[0] : normalized;
+  }
+  if (typeof value === 'string') return value.trim();
+  if (value === undefined || value === null || value === '') return null;
+  return value;
+};
+
+const sameFormValue = (left, right) => (
+  JSON.stringify(normalizeComparableValue(left)) === JSON.stringify(normalizeComparableValue(right))
+);
+
+const ACCOUNT_STATUS_OPTIONS = [
+  'ACTIVE',
+  'INACTIVE',
+  'BANNED',
+  'SUSPENDED',
+  'DELETED',
+  'DISABLED',
+];
+
 const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organizationOptions = [] }) => {
   const { t } = useTranslation(['admin', 'common', 'profile']);
   const { enqueueSnackbar } = useSnackbar();
@@ -61,33 +88,63 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
   const [form, setForm] = useState(() => ({ ...defaultEmptyForm, organizationId: firstOrganizationId }));
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
+  const [initialTrustedVerifier, setInitialTrustedVerifier] = useState(false);
+  const [initialForm, setInitialForm] = useState(null);
+  const isEditMode = mode === 'edit';
+  const isMembershipReadOnly = isEditMode;
+  const isProfileReadOnly = isEditMode;
 
   useEffect(() => {
     if (!open) return;
+    let active = true;
     const timer = setTimeout(() => {
       setShowPassword(false);
       if (mode === 'edit' && user) {
-        setForm({
+        const resolvedOrganizationId = user.organizationId ?? firstOrganizationId;
+        const trustedVerifierValue = Boolean(user.isTrustedVerifier);
+        const nextForm = {
           email: user.email || '',
           studentId: user.studentId || '',
           fullName: resolvedFullNameForEdit(user),
           password: '',
           role: user.role || 'USER',
           status: user.status || 'ACTIVE',
-          organizationId: user.organizationId ?? firstOrganizationId,
+          organizationId: resolvedOrganizationId,
           verificationLevel: user.verificationLevel ?? 0,
-          isTrustedVerifier: user.isTrustedVerifier ?? false,
+          isTrustedVerifier: trustedVerifierValue,
           program: Array.isArray(user.program) ? user.program[0] ?? '' : user.program || '',
           major: Array.isArray(user.major) ? user.major[0] ?? '' : user.major || '',
           graduatedYear: Array.isArray(user.graduatedYear) ? user.graduatedYear[0] ?? '' : user.graduatedYear || '',
           graduationStatus: Array.isArray(user.graduationStatus) ? user.graduationStatus[0] ?? '' : user.graduationStatus || '',
-        });
+        };
+        setInitialTrustedVerifier(trustedVerifierValue);
+        setInitialForm(nextForm);
+        setForm(nextForm);
+        if (resolvedOrganizationId && (user.isTrustedVerifier === undefined || user.isTrustedVerifier === null)) {
+          getTrustedVerifiers(resolvedOrganizationId)
+            .then((response) => {
+              if (!active) return;
+              const verifiers = Array.isArray(response?.data?.data) ? response.data.data : [];
+              const isTrusted = verifiers.some((verifier) => Number(getVerifierUserId(verifier)) === Number(user.id));
+              setInitialTrustedVerifier(isTrusted);
+              setInitialForm((prev) => (prev ? { ...prev, isTrustedVerifier: isTrusted } : prev));
+              setForm((prev) => ({ ...prev, isTrustedVerifier: isTrusted }));
+            })
+            .catch(() => {
+              // Keep the current form value if the public verifier lookup is unavailable.
+            });
+        }
       } else {
+        setInitialTrustedVerifier(false);
+        setInitialForm(null);
         setForm({ ...defaultEmptyForm, role: 'USER', organizationId: firstOrganizationId });
       }
       setErrors({});
     }, 0);
-    return () => clearTimeout(timer);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
   }, [open, mode, user, firstOrganizationId]);
 
   const handleChange = (field) => (event) => {
@@ -116,21 +173,36 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
       return;
     }
     const org = organizationOptions.find((o) => Number(o.id) === Number(form.organizationId));
-    const payload = {
+    const fullPayload = {
       email: form.email,
-      studentId: form.studentId,
-      fullName: form.fullName,
       role: form.role,
       status: form.status,
-      organizationId: Number(form.organizationId),
-      organizationName: org?.name ?? '',
-      verificationLevel: Number(form.verificationLevel),
-      isTrustedVerifier: Boolean(form.isTrustedVerifier),
-      program: form.program.trim() ? [form.program.trim()] : undefined,
-      major: form.major.trim() ? [form.major.trim()] : undefined,
-      graduatedYear: form.graduatedYear ? [Number(form.graduatedYear)] : undefined,
-      graduationStatus: form.graduationStatus ? [form.graduationStatus] : undefined,
     };
+    if (!isEditMode) {
+      Object.assign(fullPayload, {
+        studentId: form.studentId,
+        fullName: form.fullName,
+        organizationId: Number(form.organizationId),
+        organizationName: org?.name ?? '',
+        verificationLevel: Number(form.verificationLevel),
+        program: form.program.trim() ? [form.program.trim()] : undefined,
+        major: form.major.trim() ? [form.major.trim()] : undefined,
+        graduatedYear: form.graduatedYear ? [Number(form.graduatedYear)] : undefined,
+        graduationStatus: form.graduationStatus ? [form.graduationStatus] : undefined,
+      });
+    }
+    const payload = mode === 'edit' && initialForm ? {} : { ...fullPayload };
+    if (mode === 'edit' && initialForm) {
+      Object.entries(fullPayload).forEach(([key, value]) => {
+        if (!sameFormValue(value, initialForm[key])) {
+          payload[key] = value;
+        }
+      });
+    }
+    if (mode !== 'edit' || Boolean(form.isTrustedVerifier) !== initialTrustedVerifier) {
+      payload.isTrustedVerifier = Boolean(form.isTrustedVerifier);
+      payload.organizationId = Number(form.organizationId);
+    }
     if (form.password) payload.password = form.password;
     try {
       await Promise.resolve(onSubmit(payload));
@@ -168,6 +240,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
             label={t('admin:student_id_label')}
             value={form.studentId}
             onChange={handleChange('studentId')}
+            disabled={isMembershipReadOnly}
             fullWidth
             slotProps={slotProps}
           />
@@ -176,6 +249,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
             value={form.fullName}
             onChange={handleChange('fullName')}
             error={!!errors.fullName}
+            disabled={isProfileReadOnly}
             fullWidth
             required
             slotProps={slotProps}
@@ -208,6 +282,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
           label={t('admin:organization_label')}
           value={form.organizationId}
           onChange={handleChange('organizationId')}
+          disabled={isMembershipReadOnly}
           fullWidth
           slotProps={slotProps}
         >
@@ -234,7 +309,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
             fullWidth
             slotProps={slotProps}
           >
-            {USER_STATUSES.map((s) => <MenuItem key={s} value={s}>{formatAccountStatusLabel(s, t)}</MenuItem>)}
+            {ACCOUNT_STATUS_OPTIONS.map((s) => <MenuItem key={s} value={s}>{formatAccountStatusLabel(s, t)}</MenuItem>)}
           </TextField>
         </Box>
 
@@ -249,6 +324,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
             label={t('admin:education_program_label')}
             value={form.program}
             onChange={handleChange('program')}
+            disabled={isMembershipReadOnly}
             fullWidth
             placeholder={t('admin:education_program_placeholder')}
             slotProps={slotProps}
@@ -257,6 +333,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
             label={t('admin:education_major_label')}
             value={form.major}
             onChange={handleChange('major')}
+            disabled={isMembershipReadOnly}
             fullWidth
             placeholder={t('admin:education_major_placeholder')}
             slotProps={slotProps}
@@ -269,6 +346,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
             onChange={handleChange('graduatedYear')}
             error={!!errors.graduatedYear}
             helperText={errors.graduatedYear}
+            disabled={isMembershipReadOnly}
             fullWidth
             placeholder={t('admin:year_placeholder')}
             slotProps={slotProps}
@@ -278,6 +356,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
             label={t('admin:graduation_status_label')}
             value={form.graduationStatus}
             onChange={handleChange('graduationStatus')}
+            disabled={isMembershipReadOnly}
             fullWidth
             slotProps={slotProps}
           >
@@ -294,6 +373,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
           label={t('admin:verification_level_label')}
           value={form.verificationLevel}
           onChange={handleChange('verificationLevel')}
+          disabled={isMembershipReadOnly}
           fullWidth
           slotProps={slotProps}
         >

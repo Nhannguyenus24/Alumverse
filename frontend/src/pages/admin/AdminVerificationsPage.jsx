@@ -19,20 +19,33 @@ import {
   DialogContent,
   DialogActions,
   Link,
+  Chip,
+  Divider,
 } from '@mui/material';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
+import RestartAltOutlinedIcon from '@mui/icons-material/RestartAltOutlined';
 import Page from "../../components/Page";
 import AdminStatusChip from '../../components/admin/AdminStatusChip';
 import AdminDataTable from '../../components/admin/AdminDataTable';
 import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
 import Iconify from '../../components/Iconify';
-import { getVerificationRequests, reviewVerificationRequest } from '../../utils/api';
+import { getVerificationRequests, reopenVerificationRequest, reviewVerificationRequest } from '../../utils/api';
 import { formatDateTime } from '../../utils/dateFormatter';
 import { useDebounce } from '../../hooks/useDebounce';
 import { useAdminSystemContext } from '../../stores/AdminStore';
+
+const getRequestType = (request) => String(request?.requestType || 'PROOF').toUpperCase();
+const isPeerRequest = (request) => getRequestType(request) === 'PEER';
+const isProofRequest = (request) => getRequestType(request) === 'PROOF';
+const isPendingRequest = (request) => String(request?.status || '').toUpperCase() === 'PENDING';
+
+const parseVerifierList = (value) => String(value || '')
+  .split(',')
+  .map((item) => item.trim())
+  .filter(Boolean);
 
 const AdminVerificationsPage = () => {
   const { t } = useTranslation('admin');
@@ -74,7 +87,7 @@ const AdminVerificationsPage = () => {
       const res = await getVerificationRequests(pendingOnly, page, rowsPerPage, searchQuery, stableOrgId || null);
       const data = res?.data?.data || {};
       setRequests(data.items || []);
-      setTotalCount(data.totalElements || 0);
+      setTotalCount(data.totalElements || data.totalItem || data.totalItems || 0);
     } catch (error) {
       enqueueSnackbar(error?.response?.data?.message || t('verif_error_load'), { variant: 'error' });
     } finally {
@@ -110,6 +123,98 @@ const AdminVerificationsPage = () => {
     }
   };
 
+  const submitReopen = async (request, note = '') => {
+    if (!request) return;
+    setSubLoading(true);
+    try {
+      await reopenVerificationRequest(request.id, getRequestType(request), note);
+      enqueueSnackbar(t('verif_reopen_success'), { variant: 'success' });
+      setReviewDialogOpen(false);
+      void fetchRequests();
+    } catch (error) {
+      console.error('Reopen verification request error:', error);
+      enqueueSnackbar(error?.response?.data?.message || t('verif_error_reopen'), { variant: 'error' });
+    } finally {
+      setSubLoading(false);
+    }
+  };
+
+  const renderRequestType = (request) => (
+    <Stack direction="row" spacing={1} alignItems="center">
+      {isPeerRequest(request) ? (
+        <Iconify icon="mdi:account-group-check-outline" width={20} height={20} color={theme.palette.info.main} />
+      ) : (
+        <DescriptionOutlinedIcon fontSize="small" color="action" />
+      )}
+      <Box>
+        <Typography variant="body2" sx={{ fontWeight: 700 }}>
+          {isPeerRequest(request) ? t('verif_type_peer') : t('verif_type_proof')}
+        </Typography>
+        {isProofRequest(request) && request.documentType && (
+          <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase' }}>
+            {request.documentType}
+          </Typography>
+        )}
+      </Box>
+    </Stack>
+  );
+
+  const renderEvidence = (request) => {
+    if (isPeerRequest(request)) {
+      const confirmed = parseVerifierList(request.confirmedVerifiers);
+      const pending = parseVerifierList(request.pendingVerifiers);
+      const fallback = parseVerifierList(request.evidenceSummary);
+      const statusTagSx = {
+        height: 22,
+        borderColor: alpha(theme.palette.text.secondary, 0.18),
+        bgcolor: alpha(theme.palette.text.secondary, 0.06),
+        color: 'text.secondary',
+        fontWeight: 700,
+      };
+      return (
+        <Stack spacing={0.75} sx={{ minWidth: 220 }}>
+          {confirmed.map((name) => (
+            <Stack key={`ok-${name}`} direction="row" spacing={0.75} alignItems="center">
+              <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                {name}
+              </Typography>
+              <Chip size="small" variant="outlined" label={t('verif_peer_confirmed')} sx={statusTagSx} />
+            </Stack>
+          ))}
+          {pending.map((name) => (
+            <Stack key={`pending-${name}`} direction="row" spacing={0.75} alignItems="center">
+              <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                {name}
+              </Typography>
+              <Chip size="small" variant="outlined" label={t('verif_peer_pending')} sx={statusTagSx} />
+            </Stack>
+          ))}
+          {confirmed.length === 0 && pending.length === 0 && fallback.length > 0 && (
+            <Typography variant="body2" color="text.secondary">
+              {fallback.join(', ')}
+            </Typography>
+          )}
+        </Stack>
+      );
+    }
+
+    if (!request.documentUrl) {
+      return <Typography variant="body2" color="text.secondary">-</Typography>;
+    }
+
+    return (
+      <Link
+        href={request.documentUrl}
+        target="_blank"
+        rel="noopener"
+        sx={{ fontSize: 13, fontWeight: 600 }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {t('verif_view_document')}
+      </Link>
+    );
+  };
+
   const columns = useMemo(() => [
     {
       id: 'user',
@@ -134,29 +239,14 @@ const AdminVerificationsPage = () => {
       )
     },
     {
-      id: 'documentType',
+      id: 'requestType',
       label: t('verif_col_doc_type'),
-      render: (val) => (
-        <Stack direction="row" spacing={1} alignItems="center">
-          <DescriptionOutlinedIcon fontSize="small" color="action" />
-          <Typography variant="body2" sx={{ textTransform: 'uppercase' }}>{val}</Typography>
-        </Stack>
-      )
+      render: (_, r) => renderRequestType(r)
     },
     {
       id: 'documentUrl',
       label: t('verif_col_document'),
-      render: (val) => (
-        <Link
-          href={val}
-          target="_blank"
-          rel="noopener"
-          sx={{ fontSize: 13, fontWeight: 600 }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {t('verif_view_document')}
-        </Link>
-      )
+      render: (_, r) => renderEvidence(r)
     },
     {
       id: 'status',
@@ -168,10 +258,11 @@ const AdminVerificationsPage = () => {
     { id: 'createdAt', label: t('verif_col_submitted_at'), render: (val) => formatDateTime(val) },
     {
       id: 'actions',
-      label: '',
+      label: t('actions'),
       align: 'right',
+      width: 130,
       render: (_, r) => {
-        const isPending = r.status?.toLowerCase() === 'pending';
+        const isPending = isPendingRequest(r);
         return (
           <Stack direction="row" spacing={0.5} justifyContent="flex-end">
             <Tooltip title={t('tooltip_view_detail')}>
@@ -180,7 +271,7 @@ const AdminVerificationsPage = () => {
               </IconButton>
             </Tooltip>
             
-            {isPending && (
+            {isPending && isProofRequest(r) && (
               <Tooltip title={t('verif_quick_approve')}>
                 <IconButton 
                   size="small" 
@@ -191,6 +282,20 @@ const AdminVerificationsPage = () => {
                   }}
                 >
                   <CheckCircleOutlineIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+            {isPending && (
+              <Tooltip title={t('verif_reopen_form')}>
+                <IconButton
+                  size="small"
+                  color="warning"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    submitReopen(r);
+                  }}
+                >
+                  <RestartAltOutlinedIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
             )}
@@ -256,17 +361,29 @@ const AdminVerificationsPage = () => {
 
               <Box>
                 <Typography variant="caption" color="text.secondary" gutterBottom display="block">
-                  {t('verif_dialog_document')}
+                  {t('verif_col_doc_type')}
                 </Typography>
-                <Button
-                  variant="outlined"
-                  href={selectedRequest.documentUrl}
-                  target="_blank"
-                  startIcon={<DescriptionOutlinedIcon />}
-                  sx={{ borderRadius: 2, textTransform: 'none' }}
-                >
-                  {t('verif_open_document')}
-                </Button>
+                {renderRequestType(selectedRequest)}
+              </Box>
+
+              <Divider />
+
+              <Box>
+                <Typography variant="caption" color="text.secondary" gutterBottom display="block">
+                  {isPeerRequest(selectedRequest) ? t('verif_dialog_peer_evidence') : t('verif_dialog_document')}
+                </Typography>
+                {isPeerRequest(selectedRequest) ? (
+                  renderEvidence(selectedRequest)
+                ) : (
+                  <Button
+                    variant="contained"
+                    href={selectedRequest.documentUrl}
+                    target="_blank"
+                    startIcon={<DescriptionOutlinedIcon />}
+                  >
+                    {t('verif_open_document')}
+                  </Button>
+                )}
               </Box>
 
               {selectedRequest.aiSummary && (
@@ -302,32 +419,42 @@ const AdminVerificationsPage = () => {
             disabled={submitting} 
             onClick={() => setReviewDialogOpen(false)} 
             color="inherit"
-            sx={{ borderRadius: 2, fontWeight: 700, textTransform: 'none' }}
           >
             {t('verif_btn_close')}
           </Button>
-          {selectedRequest?.status === 'PENDING' && (
+          {isPendingRequest(selectedRequest) && (
             <>
-              <Button 
-                variant="contained" 
-                color="error" 
-                disabled={submitting} 
-                startIcon={<HighlightOffIcon />}
-                onClick={() => submitReview(selectedRequest, 'REJECTED', adminNote)}
-                sx={{ borderRadius: 2, fontWeight: 700, textTransform: 'none' }}
-              >
-                {t('verif_btn_reject')}
-              </Button>
               <Button
                 variant="contained"
-                color="success"
+                color="warning"
                 disabled={submitting}
-                startIcon={<CheckCircleOutlineIcon />}
-                onClick={() => submitReview(selectedRequest, 'APPROVED', adminNote)}
-                sx={{ borderRadius: 2, fontWeight: 700, textTransform: 'none' }}
+                startIcon={<RestartAltOutlinedIcon />}
+                onClick={() => submitReopen(selectedRequest, adminNote)}
               >
-                {t('verif_btn_approve')}
+                {t('verif_reopen_form')}
               </Button>
+              {isProofRequest(selectedRequest) && (
+                <>
+                  <Button
+                    variant="contained"
+                    color="error"
+                    disabled={submitting}
+                    startIcon={<HighlightOffIcon />}
+                    onClick={() => submitReview(selectedRequest, 'REJECTED', adminNote)}
+                  >
+                    {t('verif_btn_reject')}
+                  </Button>
+                  <Button
+                    variant="contained"
+                    color="success"
+                    disabled={submitting}
+                    startIcon={<CheckCircleOutlineIcon />}
+                    onClick={() => submitReview(selectedRequest, 'APPROVED', adminNote)}
+                  >
+                    {t('verif_btn_approve')}
+                  </Button>
+                </>
+              )}
             </>
           )}
         </DialogActions>
@@ -337,4 +464,3 @@ const AdminVerificationsPage = () => {
 };
 
 export default AdminVerificationsPage;
-Page;

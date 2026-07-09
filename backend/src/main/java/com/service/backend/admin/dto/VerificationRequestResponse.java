@@ -1,6 +1,5 @@
 package com.service.backend.admin.dto;
 
-import com.service.backend.shared.enums.DocumentType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -19,6 +18,18 @@ public class VerificationRequestResponse {
     @Column("member_id")
     private Integer memberId;
 
+    @Column("organization_id")
+    private Integer organizationId;
+
+    @Column("request_type")
+    private String requestType;
+
+    @Column("full_name")
+    private String fullName;
+
+    @Column("avatar_url")
+    private String avatarUrl;
+
     private String email;
 
     @Column("student_id")
@@ -28,10 +39,19 @@ public class VerificationRequestResponse {
     private String documentUrl;
 
     @Column("document_type")
-    private DocumentType documentType;
+    private String documentType;
 
     @Column("ai_summary")
     private String aiSummary;
+
+    @Column("evidence_summary")
+    private String evidenceSummary;
+
+    @Column("confirmed_verifiers")
+    private String confirmedVerifiers;
+
+    @Column("pending_verifiers")
+    private String pendingVerifiers;
 
     private String status;
 

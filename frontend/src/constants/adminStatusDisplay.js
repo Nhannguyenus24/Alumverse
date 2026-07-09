@@ -1,14 +1,14 @@
-const formatTitleCase = (raw) => {
+const formatSentenceCase = (raw) => {
   if (raw == null || raw === '') {
     return '—';
   }
   const s = String(raw).replace(/_/g, ' ').trim().toLowerCase();
-  return s.replace(/\b\w/g, (c) => c.toUpperCase());
+  return s.charAt(0).toUpperCase() + s.slice(1);
 };
 
 const resolveLabel = (t, map, key, fallback) => {
   const i18nKey = map[key];
-  return i18nKey && t ? t(i18nKey) : formatTitleCase(fallback);
+  return i18nKey && t ? t(i18nKey) : formatSentenceCase(fallback);
 };
 
 export const formatAccountStatusLabel = (status, t) => {
@@ -21,6 +21,7 @@ export const formatAccountStatusLabel = (status, t) => {
     DELETED: 'admin:status_deleted',
     DISABLED: 'admin:status_disabled',
     PENDING: 'admin:status_pending',
+    VERIFYING: 'admin:status_verifying',
     UNVERIFIED: 'admin:status_unverified',
   };
   return resolveLabel(t, map, key, status);
@@ -146,6 +147,7 @@ const STATUS_COLORS = {
   DELETED: 'secondary',
   DISABLED: 'tertiary',
   UNVERIFIED: 'primary',
+  VERIFYING: 'info',
 
   SUCCESS: 'success',
   FAILED: 'error',
@@ -243,7 +245,7 @@ export const resolveAdminStatusChip = (status, category, t) => {
       break;
 
     default:
-      label = formatTitleCase(status);
+      label = formatSentenceCase(status);
   }
 
   return {

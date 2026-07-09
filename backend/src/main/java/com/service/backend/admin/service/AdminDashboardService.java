@@ -148,6 +148,8 @@ public class AdminDashboardService {
         dto.setAction(log.getAction());
         dto.setResourceType(log.getResourceType());
         dto.setResourceId(log.getResourceId());
+        dto.setBeforeData(log.getBeforeData());
+        dto.setAfterData(log.getAfterData());
         dto.setMetadata(log.getMetadata());
         return dto;
     }

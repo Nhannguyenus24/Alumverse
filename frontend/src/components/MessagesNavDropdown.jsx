@@ -11,7 +11,7 @@ const MessagesNavDropdown = ({ headerTextColor }) => {
   const { t } = useTranslation(['network', 'common']);
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
-  const { menuActionsRef, slotProps, updateMenuPosition } = useMessagesPreviewMenu({ mt: 1.5 });
+  const { menuActionsRef, slotProps, updateMenuPosition } = useMessagesPreviewMenu({ mt: 4 });
   const { canAccessChat } = useCanAccessChat();
 
   const handleOpen = (event) => {

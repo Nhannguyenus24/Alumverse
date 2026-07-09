@@ -59,7 +59,7 @@ const typography = {
 		fontWeight: 700,
 		lineHeight: 1.71,
 		fontSize: '0.875rem',
-		textTransform: 'capitalize',
+		textTransform: 'none',
 	},
 };
 

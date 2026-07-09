@@ -15,6 +15,26 @@ const normalizeList = (payload) => {
   return [];
 };
 
+const hasOwn = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
+
+const compactObject = (obj) => Object.fromEntries(
+  Object.entries(obj).filter(([, value]) => value !== undefined),
+);
+
+const toComparable = (value) => {
+  if (Array.isArray(value)) {
+    const normalized = value
+      .map(toComparable)
+      .filter((item) => item !== null && item !== '');
+    return normalized.length === 1 ? normalized[0] : normalized;
+  }
+  if (typeof value === 'string') return value.trim();
+  if (value === '') return null;
+  return value ?? null;
+};
+
+const sameValue = (left, right) => JSON.stringify(toComparable(left)) === JSON.stringify(toComparable(right));
+
 const useAdminUsersLocal = (stableOrgId, shouldFetch = true) => {
   // ── Server-fetched users ──────────────────────────────────────────────────
   const [serverUsers, setServerUsers] = useState([]);
@@ -121,22 +141,59 @@ const useAdminUsersLocal = (stableOrgId, shouldFetch = true) => {
       const uid = Number(id);
       const snapshot = serverUsersRef.current;
       const {
-        password: _omit,
-        fullName,
+        password,
+        fullName: _fullName,
         organizationId,
         organizationName: _orgName,
-        membershipStatus,
+        membershipStatus: _membershipStatus,
+        verificationLevel: _verificationLevel,
+        isTrustedVerifier,
+        studentId: _studentId,
+        program: _program,
+        major: _major,
+        graduatedYear: _graduatedYear,
+        graduationStatus: _graduationStatus,
         ...rest
       } = payload;
       const now = new Date().toISOString();
+      const currentUser = snapshot.find((u) => Number(u.id) === uid) ?? {};
 
-      const body = {
-        ...rest,
-        ...(fullName !== undefined ? { fullName: String(fullName || '').trim() } : {}),
-        ...(organizationId !== undefined && organizationId !== '' && !Number.isNaN(Number(organizationId))
-          ? { organizationId: Number(organizationId) }
-          : {}),
+      const explicitOrganizationNumber = organizationId !== undefined && organizationId !== '' && !Number.isNaN(Number(organizationId))
+        ? Number(organizationId)
+        : undefined;
+      const currentOrganizationNumber = currentUser.organizationId !== undefined && currentUser.organizationId !== null && !Number.isNaN(Number(currentUser.organizationId))
+        ? Number(currentUser.organizationId)
+        : undefined;
+      const organizationNumber = explicitOrganizationNumber ?? currentOrganizationNumber;
+
+      const desired = compactObject({
+        email: rest.email !== undefined ? String(rest.email || '').trim() : undefined,
+        role: rest.role,
+        status: rest.status,
+        organizationId: organizationNumber,
+        isTrustedVerifier: typeof isTrustedVerifier === 'boolean' ? isTrustedVerifier : undefined,
+      });
+
+      const shouldSend = (key, value) => {
+        if (value === undefined) return false;
+
+        const currentValue = currentUser[key];
+        if (!hasOwn(currentUser, key) || currentValue === undefined || currentValue === null) {
+          if (key === 'isTrustedVerifier') return value === true;
+          if (key === 'verificationLevel') return Number(value) !== 0;
+          if (key === 'organizationId') return false;
+          if (Array.isArray(value)) return value.length > 0;
+          return typeof value === 'string' ? value.trim() !== '' : value !== null;
+        }
+
+        return !sameValue(currentValue, value);
       };
+
+      const body = compactObject({
+        email: shouldSend('email', desired.email) ? desired.email : undefined,
+        role: shouldSend('role', desired.role) ? desired.role : undefined,
+        status: shouldSend('status', desired.status) ? desired.status : undefined,
+      });
 
       setServerUsers((prev) =>
         prev.map((u) =>
@@ -144,10 +201,7 @@ const useAdminUsersLocal = (stableOrgId, shouldFetch = true) => {
             ? {
                 ...u,
                 ...rest,
-                ...(fullName !== undefined ? { fullName } : {}),
-                ...(organizationId !== undefined ? { organizationId: Number(organizationId) } : {}),
-                ...(payload.organizationName !== undefined ? { organizationName: payload.organizationName } : {}),
-                ...(membershipStatus !== undefined ? { membershipStatus } : {}),
+                ...(typeof isTrustedVerifier === 'boolean' ? { isTrustedVerifier } : {}),
                 updatedAt: now,
               }
             : u,
@@ -155,7 +209,26 @@ const useAdminUsersLocal = (stableOrgId, shouldFetch = true) => {
       );
 
       try {
-        await adminUserApi.updateUser(uid, body);
+        if (Object.keys(body).length > 0) {
+          await adminUserApi.updateUser(uid, body);
+        }
+
+        if (
+          organizationNumber !== undefined &&
+          typeof isTrustedVerifier === 'boolean' &&
+          (
+            hasOwn(currentUser, 'isTrustedVerifier')
+              ? Boolean(currentUser.isTrustedVerifier) !== isTrustedVerifier
+              : true
+          )
+        ) {
+          await adminUserApi.updateTrustedVerifier(uid, organizationNumber, isTrustedVerifier);
+        }
+
+        if (password) {
+          await adminUserApi.resetPasswordByAdmin(uid, password);
+        }
+
         await loadUsers();
         setLocalOverlay((prev) => {
           const next = { ...prev };
@@ -211,7 +284,15 @@ const useAdminUsersLocal = (stableOrgId, shouldFetch = true) => {
     );
 
     try {
-      await adminUserApi.updateUser(uid, { status });
+      if (status === 'ACTIVE') {
+        await adminUserApi.unbanUser(uid);
+      } else if (status === 'BANNED') {
+        await adminUserApi.banUser(uid);
+      } else if (status === 'DELETED') {
+        await adminUserApi.deleteUser(uid, false);
+      } else {
+        await adminUserApi.updateUser(uid, { status });
+      }
       await loadUsers();
       enqueueSnackbar('User status saved.', { variant: 'success' });
     } catch (e) {
