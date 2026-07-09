@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/models/mentee_profile.dart';
 import '../../data/models/mentor_availability.dart';
 import '../../data/models/mentor_profile.dart';
 import '../../data/models/mentorship_session.dart';
@@ -125,3 +126,7 @@ final menteeSessionByIdProvider = FutureProvider.family<MentorshipSession, int>(
         .getMenteeSessionById(sessionId);
   },
 );
+
+final myMenteeProfileProvider = FutureProvider<MenteeProfile?>((ref) {
+  return ref.watch(mentorshipRepositoryProvider).getMyMenteeProfile();
+});
