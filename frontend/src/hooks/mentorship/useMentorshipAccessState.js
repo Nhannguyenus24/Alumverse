@@ -14,8 +14,10 @@ import { getMyMenteeProfile } from '../../utils/api';
  *   canUseMentorship      – logged in, verificationLevel >= 2
  *
  * Mentor sub-states (only meaningful when canUseMentorship):
- *   isMentorPending  – profile status DRAFT | PENDING
- *   isMentorApproved – profile status APPROVED
+ *   hasMentorProfile     – any mentor profile record exists
+ *   isMentorPending      – profile has been submitted and is waiting for review
+ *   isMentorApproved     – profile status APPROVED
+ *   hasJoinedMentorship  – user can use appointment flows as mentee or approved mentor
  */
 export const useMentorshipAccessState = () => {
   const user = useAuthStore((state) => state.user);
@@ -63,14 +65,17 @@ export const useMentorshipAccessState = () => {
   });
   const hasMenteeProfile = Boolean(menteeProfileQuery.data?.memberId);
 
-  const isMentorPending =
-    canUseMentorship &&
-    (mentorStatus === 'PENDING' || mentorStatus === 'DRAFT' || mentorStatus === 'NEED_UPDATE');
+  const hasMentorProfile = canUseMentorship && Boolean(mentorStatus);
+  const isMentorDraft = canUseMentorship && mentorStatus === 'DRAFT';
+  const isMentorPending = canUseMentorship && mentorStatus === 'PENDING';
+  const isMentorRejected = canUseMentorship && mentorStatus === 'REJECTED';
+  const isMentorNeedUpdate = canUseMentorship && mentorStatus === 'NEED_UPDATE';
+  const isMentorActionable = isMentorDraft || isMentorRejected || isMentorNeedUpdate;
   const isMentorApproved = canUseMentorship && mentorStatus === 'APPROVED';
-  const hasMentorProfile = isMentorPending || isMentorApproved;
 
-  // "Joined mentorship" = has completed a mentee or mentor sign-up.
-  const hasJoinedMentorship = canUseMentorship && (hasMenteeProfile || hasMentorProfile);
+  // "Joined mentorship" = can participate in booking flows now.
+  // A submitted-but-pending mentor profile still needs admin approval first.
+  const hasJoinedMentorship = canUseMentorship && (hasMenteeProfile || isMentorApproved);
 
   const canPreviewMentors = isLoggedIn && level >= 1;
 
@@ -88,7 +93,11 @@ export const useMentorshipAccessState = () => {
     canPreviewMentors,
     mentorStatus,
     mentorMemberId,
+    isMentorDraft,
     isMentorPending,
+    isMentorRejected,
+    isMentorNeedUpdate,
+    isMentorActionable,
     isMentorApproved,
     hasMentorProfile,
     hasMenteeProfile,

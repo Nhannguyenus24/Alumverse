@@ -12,6 +12,7 @@ const AuthLayout = () => {
     ? '/alumverse_logo/Logo_White_Full.svg'
     : '/alumverse_logo/Logo_Main_Full.svg';
   const logoSrc = organization?.logoUrl || defaultLogoSrc;
+  const shouldGlowLogo = theme.palette.mode === 'dark';
 
   return (
     <Box
@@ -53,6 +54,12 @@ const AuthLayout = () => {
             src={logoSrc}
             alt="ALUMVERSE HCMUS"
             size="medium"
+            sx={{
+              filter: shouldGlowLogo
+                ? 'drop-shadow(0 0 2px rgba(255,255,255,0.95)) drop-shadow(0 0 8px rgba(255,255,255,0.72)) drop-shadow(0 0 14px rgba(255,255,255,0.42))'
+                : 'none',
+              transition: 'filter 0.25s ease',
+            }}
           />
         </Box>
 

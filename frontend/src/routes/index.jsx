@@ -10,6 +10,7 @@ import LoadingScreen from "../components/LoadingScreen";
 import { Loadable, AuthLoadable } from "./loadable";
 import MentorshipFullAccessGate from "../components/mentorship/MentorshipFullAccessGate";
 import MentorshipBookingGate from "../components/mentorship/MentorshipBookingGate";
+import MentorshipApprovedMentorGate from "../components/mentorship/MentorshipApprovedMentorGate";
 import ChatAccessGate from "../components/network/ChatAccessGate";
 
 if (typeof window !== "undefined") {
@@ -263,7 +264,11 @@ const mentorshipRouteChildren = [
   },
   {
     path: "dashboard",
-    element: <MentorshipDashboardPage />,
+    element: (
+      <MentorshipApprovedMentorGate>
+        <MentorshipDashboardPage />
+      </MentorshipApprovedMentorGate>
+    ),
   },
   {
     path: "profile",
@@ -280,7 +285,11 @@ const mentorshipRouteChildren = [
   },
   {
     path: "calendar",
-    element: <MentorshipYourCalendarPage />,
+    element: (
+      <MentorshipApprovedMentorGate>
+        <MentorshipYourCalendarPage />
+      </MentorshipApprovedMentorGate>
+    ),
   },
   {
     path: "mentors/:mentorId",
@@ -297,9 +306,9 @@ const mentorshipRouteChildren = [
   {
     path: "my-bookings",
     element: (
-      <MentorshipFullAccessGate>
+      <MentorshipBookingGate>
         <MentorshipMyBookingsPage />
-      </MentorshipFullAccessGate>
+      </MentorshipBookingGate>
     ),
   },
   {

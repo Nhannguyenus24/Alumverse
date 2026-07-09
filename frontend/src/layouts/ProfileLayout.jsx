@@ -1,6 +1,9 @@
 import { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Box, Container, Stack, Typography, Avatar, Button } from '@mui/material';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import SchoolIcon from '@mui/icons-material/School';
 import TopTabFilter from '../components/mentorship/TopTabFilter';
 import CoverUpload from '../components/CoverUpload';
 
@@ -36,18 +39,19 @@ const ProfileLayout = ({
 
   const BUTTON_CONFIG = useMemo(() => ({
     mentor: [
-      { label: t('back_to_mentorship'), variant: 'outlined', onClick: () => onNavigate('/mentorship') },
+      { label: t('back_to_mentorship'), variant: 'outlined', startIcon: <ArrowBackIcon />, onClick: () => onNavigate('/mentorship') },
       {
-        label: t('edit_profile'),
+        label: t('edit_mentorship_profile'),
         variant: 'outlined',
         color: 'secondary',
+        startIcon: <EditOutlinedIcon />,
         onClick: () => onNavigate('/mentorship/profile/edit', { state: { profileEditContext: 'mentorship' } }),
       },
     ],
     mentorEdit: [],
     menteeOwn: [
-      { label: t('edit_mentee_profile'), variant: 'outlined', onClick: () => onNavigate('/mentorship/mentee-signup') },
-      { label: t('become_mentor'), variant: 'contained', color: 'primary', onClick: () => onNavigate('/mentorship/signup') },
+      { label: t('edit_mentorship_profile'), variant: 'outlined', color: 'secondary', startIcon: <EditOutlinedIcon />, onClick: () => onNavigate('/mentorship/mentee-signup') },
+      { label: t('become_mentor'), variant: 'contained', color: 'accent', startIcon: <SchoolIcon />, onClick: () => onNavigate('/mentorship/signup') },
     ],
     mentee: [
       { label: t('back_to_mentorship'), variant: 'outlined', onClick: () => onNavigate('/mentorship') },

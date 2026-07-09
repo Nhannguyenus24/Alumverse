@@ -7,11 +7,14 @@ import {
   Container,
   Paper,
   Stack,
-  Tab,
-  Tabs,
+  Step,
+  StepLabel,
+  Stepper,
   Typography,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import CheckIcon from '@mui/icons-material/Check';
 import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined';
 import { useTranslation } from 'react-i18next';
 
@@ -21,10 +24,15 @@ import MentorSignupTabContent from '../../components/mentorship/signup/MentorSig
 import MentorSignupTabTerms from '../../components/mentorship/signup/MentorSignupTabTerms';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useMyOrganizationMember } from '../../hooks/useMyOrganizationMember';
+import { useOrganization } from '../../hooks/useOrganization';
 import { useCreateMentorSignup } from '../../hooks/mentorship/useCreateMentorSignup';
 import { useSaveMentorDraft } from '../../hooks/mentorship/useSaveMentorDraft';
 import { useMyMentorProfile } from '../../hooks/mentorship/useMyMentorProfile';
+import { useMyMenteeProfile } from '../../hooks/mentorship/useMyMenteeProfile';
+import { useMyProfile } from '../../hooks/profile/useMyProfile';
 import { getMentorSignupTabs } from '../../constants/mentorshipNav';
+import { buildAcademicRecords } from '../../utils/academicUtils';
+import { resolveMediaUrl } from '../../utils/imageUtils';
 
 const MIN_VERIFICATION_LEVEL = 2;
 const STATUS_DRAFT = 'DRAFT';
@@ -32,6 +40,7 @@ const STATUS_PENDING = 'PENDING';
 const STATUS_APPROVED = 'APPROVED';
 const STATUS_REJECTED = 'REJECTED';
 const STATUS_NEED_UPDATE = 'NEED_UPDATE';
+const TAB_ORDER = ['profile', 'content', 'terms'];
 
 const initialValues = {
   // Tab 1
@@ -54,7 +63,7 @@ const initialValues = {
 };
 
 const validateProfile = (v) =>
-  Boolean(v.avatarFile) &&
+  Boolean(v.avatarFile || v.avatarPreview) &&
   v.currentJobTitle.trim() &&
   v.currentCompany.trim() &&
   (v.educations ?? []).length > 0 &&
@@ -65,13 +74,72 @@ const validateContent = (v) =>
 
 const validateTerms = (v) => Boolean(v.termsAccepted);
 
+const toEducationRows = (member, organizationName) =>
+  buildAcademicRecords(member)
+    .map((record) => ({
+      school: record.faculty || record.department || organizationName || '',
+      degree: [
+        record.major ? `Cử nhân ${record.major}` : '',
+        record.program ? `Chương trình ${record.program}` : '',
+      ].filter(Boolean).join(' - '),
+      period: [record.startedYear, record.graduatedYear].filter(Boolean).join(' - '),
+    }))
+    .filter((row) => row.school || row.degree || row.period);
+
+const MentorSignupStepIcon = ({ active, completed, icon }) => (
+  <Box
+    sx={(theme) => ({
+      position: 'relative',
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: 32,
+      height: 32,
+      borderRadius: '50%',
+      fontWeight: 800,
+      border: '2px solid',
+      borderColor: active || completed ? 'primary.main' : 'divider',
+      color: active || completed ? 'primary.main' : 'text.secondary',
+      bgcolor: completed
+        ? (theme.palette.mode === 'dark' ? 'background.paper' : 'primary.lighter')
+        : 'background.paper',
+    })}
+  >
+    {icon}
+    {completed && (
+      <Box
+        sx={{
+          position: 'absolute',
+          right: -8,
+          top: -7,
+          width: 18,
+          height: 18,
+          borderRadius: '50%',
+          bgcolor: 'success.main',
+          color: 'success.contrastText',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          border: '2px solid',
+          borderColor: 'background.paper',
+        }}
+      >
+        <CheckIcon sx={{ fontSize: 12 }} />
+      </Box>
+    )}
+  </Box>
+);
+
 const MentorshipSignupPage = () => {
   const navigate = useOrgNavigate();
   const { t } = useTranslation('mentorship');
   const orgMemberQuery = useMyOrganizationMember();
+  const { organization } = useOrganization();
+  const baseProfileQuery = useMyProfile();
   const submitMutation = useCreateMentorSignup();
   const draftMutation = useSaveMentorDraft();
   const existingProfileQuery = useMyMentorProfile();
+  const menteeProfileQuery = useMyMenteeProfile();
 
   const tabs = useMemo(() => getMentorSignupTabs(t), [t]);
 
@@ -91,7 +159,7 @@ const MentorshipSignupPage = () => {
       currentJobTitle: profile.currentJobTitle ?? '',
       currentCompany: profile.currentCompany ?? '',
       defaultMeetingLink: profile.defaultMeetingLink ?? '',
-      avatarPreview: profile.avatarUrl ?? '',
+      avatarPreview: resolveMediaUrl(profile.avatarUrl ?? ''),
       experienceSummary: extended.experienceSummary ?? '',
       expertiseTags: Array.isArray(extended.expertiseTags) ? extended.expertiseTags : [],
       educations: Array.isArray(extended.educations) ? extended.educations : [],
@@ -102,7 +170,41 @@ const MentorshipSignupPage = () => {
     };
   }, [existingProfileQuery.data]);
 
-  const [tabKey, setTabKey] = useState('profile');
+  const accountValues = useMemo(() => {
+    const profile = baseProfileQuery.data;
+    const orgMember = orgMemberQuery.data;
+    const mentee = menteeProfileQuery.data;
+    if (!profile && !orgMember && !mentee) return null;
+
+    const currentJobTitle = profile?.currentJobTitle ?? '';
+    const currentCompany = profile?.currentCompany ?? '';
+    const menteeInterests = (mentee?.interests ?? '')
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
+    const workExperience = currentJobTitle || currentCompany
+      ? [{
+          title: currentJobTitle,
+          company: currentCompany,
+          period: '',
+          description: '',
+        }]
+      : [];
+
+    return {
+      ...initialValues,
+      avatarPreview: resolveMediaUrl(profile?.avatarUrl ?? ''),
+      currentJobTitle,
+      currentCompany,
+      educations: toEducationRows(orgMember, orgMember?.organizationName || organization?.name),
+      experiences: workExperience,
+      experienceSummary: profile?.bio?.trim() || mentee?.mentoringGoal?.trim() || '',
+      expertiseTags: menteeInterests,
+      skills: menteeInterests,
+    };
+  }, [baseProfileQuery.data, menteeProfileQuery.data, orgMemberQuery.data, organization?.name]);
+
+  const [tabKey, setTabKey] = useState(TAB_ORDER[0]);
   const [values, setValues] = useState(initialValues);
   const [hydratedKey, setHydratedKey] = useState(null);
   const [success, setSuccess] = useState(false);
@@ -114,9 +216,19 @@ const MentorshipSignupPage = () => {
   const draftKey = existingProfileQuery.data?.updatedAt
     ?? existingProfileQuery.data?.createdAt
     ?? null;
-  if (draftValues && draftKey && hydratedKey !== draftKey) {
-    setValues(draftValues);
-    setHydratedKey(draftKey);
+  const accountKey = accountValues
+    ? [
+        'account',
+        baseProfileQuery.data?.updatedAt ?? baseProfileQuery.data?.userId ?? '',
+        orgMemberQuery.data?.updatedAt ?? orgMemberQuery.data?.userId ?? '',
+        menteeProfileQuery.data?.updatedAt ?? menteeProfileQuery.data?.memberId ?? '',
+      ].join(':')
+    : null;
+  const hydrationValues = draftValues ?? accountValues;
+  const hydrationKey = draftValues && draftKey ? `mentor:${draftKey}` : accountKey;
+  if (hydrationValues && hydrationKey && hydratedKey !== hydrationKey) {
+    setValues(hydrationValues);
+    setHydratedKey(hydrationKey);
   }
 
   const handleChange = (next) => setValues(next);
@@ -131,6 +243,20 @@ const MentorshipSignupPage = () => {
   );
 
   const allValid = tabValid.profile && tabValid.content && tabValid.terms;
+  const currentStep = Math.max(0, TAB_ORDER.indexOf(tabKey));
+  const isFirstStep = currentStep === 0;
+  const isLastStep = currentStep === TAB_ORDER.length - 1;
+  const currentStepValid = Boolean(tabValid[tabKey]);
+
+  const goToPreviousStep = () => {
+    if (isFirstStep) return;
+    setTabKey(TAB_ORDER[currentStep - 1]);
+  };
+
+  const goToNextStep = () => {
+    if (isLastStep || !currentStepValid) return;
+    setTabKey(TAB_ORDER[currentStep + 1]);
+  };
 
   const handleSubmit = async () => {
     if (!allValid) return;
@@ -335,36 +461,16 @@ const MentorshipSignupPage = () => {
         )}
 
         <Paper variant="outlined" sx={{ borderRadius: 2 }}>
-          <Tabs
-            value={tabKey}
-            onChange={(_, v) => setTabKey(v)}
-            variant="fullWidth"
-            sx={{ borderBottom: 1, borderColor: 'divider' }}
-          >
+          <Stepper activeStep={currentStep} alternativeLabel sx={{ px: { xs: 1, md: 3 }, pt: 3, pb: 2 }}>
             {tabs.map((tab) => (
-              <Tab
+              <Step
                 key={tab.key}
-                value={tab.key}
-                label={
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <span>{tab.label}</span>
-                    {tabValid[tab.key] && (
-                      <Box
-                        component="span"
-                        sx={{
-                          width: 8,
-                          height: 8,
-                          borderRadius: '50%',
-                          bgcolor: 'success.main',
-                          display: 'inline-block',
-                        }}
-                      />
-                    )}
-                  </Stack>
-                }
-              />
+                completed={tabValid[tab.key]}
+              >
+                <StepLabel StepIconComponent={MentorSignupStepIcon}>{tab.label}</StepLabel>
+              </Step>
             ))}
-          </Tabs>
+          </Stepper>
 
           <Box sx={{ p: { xs: 2, md: 3 } }}>
             {tabKey === 'profile' && (
@@ -391,13 +497,34 @@ const MentorshipSignupPage = () => {
           >
             {draftMutation.isPending ? t('mentor_signup_saving') : t('mentor_signup_save_draft')}
           </Button>
-          <Button
-            variant="contained"
-            disabled={!allValid || submitMutation.isPending || draftMutation.isPending}
-            onClick={handleSubmit}
-          >
-            {submitMutation.isPending ? t('mentor_signup_sending') : t('mentor_signup_complete')}
-          </Button>
+          {!isFirstStep && (
+            <Button
+              variant="outlined"
+              startIcon={<ArrowBackIcon />}
+              disabled={draftMutation.isPending || submitMutation.isPending}
+              onClick={goToPreviousStep}
+            >
+              {t('mentor_signup_previous')}
+            </Button>
+          )}
+          {isLastStep ? (
+            <Button
+              variant="contained"
+              disabled={!allValid || submitMutation.isPending || draftMutation.isPending}
+              onClick={handleSubmit}
+            >
+              {submitMutation.isPending ? t('mentor_signup_sending') : t('mentor_signup_complete')}
+            </Button>
+          ) : (
+            <Button
+              variant="contained"
+              endIcon={<ArrowForwardIcon />}
+              disabled={!currentStepValid || draftMutation.isPending || submitMutation.isPending}
+              onClick={goToNextStep}
+            >
+              {t('mentor_signup_next')}
+            </Button>
+          )}
         </Stack>
       </Container>
     </Page>

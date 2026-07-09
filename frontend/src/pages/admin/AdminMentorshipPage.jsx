@@ -63,6 +63,15 @@ const statusChip = (status, t) => {
   return { color: "default", label: status || "-" };
 };
 
+const mentorApproval = (mentor) => {
+  const status = String(mentor?.status || '').toUpperCase();
+  return {
+    status,
+    isApproved: status === 'APPROVED',
+    isPending: status === 'PENDING',
+  };
+};
+
 const PersonCell = ({ name, email, fallback }) => (
   <Box>
     <Typography variant="body2" sx={{ fontWeight: 600 }}>
@@ -497,8 +506,8 @@ const AdminMentorshipPage = () => {
                     render: (_, m) => (
                       <Chip
                         size="small"
-                        color={m.isApproved ? "success" : "warning"}
-                        label={m.isApproved ? t('mentorship_approval_approved') : t('mentorship_approval_pending')}
+                        color={mentorApproval(m).isApproved ? "success" : "warning"}
+                        label={mentorApproval(m).isApproved ? t('mentorship_approval_approved') : t('mentorship_approval_pending')}
                         sx={ADMIN_STATUS_CHIP_SX}
                       />
                     ),
@@ -519,7 +528,7 @@ const AdminMentorshipPage = () => {
                             <VisibilityOutlinedIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
-                        {!m.isApproved && (
+                        {mentorApproval(m).isPending && (
                           <Tooltip title={t('mentorship_tooltip_approve_mentor')}>
                             <IconButton size="small" color="success" onClick={() => handleApprove(m)}>
                               <CheckCircleOutlineIcon fontSize="small" />
@@ -677,7 +686,7 @@ const AdminMentorshipPage = () => {
             </Typography>
             <Typography variant="body2">
               <strong>{t('mentorship_col_approval')}:</strong>{" "}
-              {mentorDetail.isApproved ? t('mentorship_approval_approved') : t('mentorship_approval_pending')}
+              {mentorApproval(mentorDetail).isApproved ? t('mentorship_approval_approved') : t('mentorship_approval_pending')}
             </Typography>
             <Typography variant="body2">
               <strong>{t('mentorship_col_rating')}:</strong>{" "}
@@ -693,7 +702,7 @@ const AdminMentorshipPage = () => {
           </DialogContent>
         ) : null}
         <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
-          {mentorDetail && !mentorDetail.isApproved ? (
+          {mentorDetail && mentorApproval(mentorDetail).isPending ? (
             <Button
               variant="contained"
               color="success"

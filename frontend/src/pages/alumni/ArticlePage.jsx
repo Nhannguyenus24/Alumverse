@@ -523,6 +523,18 @@ const ArticlePage = () => {
                     wordBreak: "normal",
                     hyphens: "none",
                   },
+                  ...(theme.palette.mode === "dark" && {
+                    "& span, & p, & strong, & em, & u, & s, & h1, & h2, & h3, & h4, & h5, & h6, & li, & blockquote": {
+                      backgroundColor: "transparent !important",
+                      color: `${theme.palette.text.primary} !important`,
+                    },
+                    "& [style*='background-color'], & [style*='background:']": {
+                      backgroundColor: "transparent !important",
+                    },
+                    "& [style*='color: rgb(0'], & [style*='color:#000'], & [style*='color: #000'], & [style*='color:black'], & [style*='color: black']": {
+                      color: `${theme.palette.text.primary} !important`,
+                    },
+                  }),
                   "& p": {
                     ...theme.typography.body1,
                     my: 1.25,

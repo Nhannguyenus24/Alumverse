@@ -506,23 +506,38 @@ public class MentorService {
                 sessionRepository.findById(sessionId)
                         .switchIfEmpty(Mono.error(new ApplicationException(
                                 ErrorCode.SESSION_NOT_FOUND, "Session not found with id: " + sessionId)))
-                        .flatMap(session -> {
-                            Mono<Integer> updateStatus = sessionRepository.updateStatus(sessionId, request.getStatus());
-                            Mono<Integer> updateLink = request.getMeetingLink() != null
-                                    ? sessionRepository.updateMeetingLink(sessionId, request.getMeetingLink())
-                                    : Mono.just(0);
-                            return Mono.when(updateStatus, updateLink)
-                                    .doOnSuccess(ignored -> {
-                                        if ("COMPLETED".equals(request.getStatus())) {
-                                            notificationService.createNotificationAsync(
+                        .flatMap(session -> availabilityRepository.findById(session.getAvailabilityId())
+                                .switchIfEmpty(Mono.error(new ApplicationException(
+                                        ErrorCode.AVAILABILITY_NOT_FOUND, "Availability not found")))
+                                .flatMap(avail -> {
+                                    if (!mentorMemberId.equals(avail.getMentorMemberId())) {
+                                        return Mono.error(new ApplicationException(
+                                                ErrorCode.FORBIDDEN, "Bạn không có quyền cập nhật buổi mentoring này"));
+                                    }
+
+                                    String requestedStatus = request.getStatus().trim().toUpperCase();
+                                    if (!Status.COMPLETED.getValue().equals(requestedStatus)) {
+                                        return Mono.error(new ApplicationException(
+                                                ErrorCode.BAD_REQUEST, "Mentor chỉ có thể đánh dấu buổi mentoring là đã hoàn tất"));
+                                    }
+                                    if (!Status.CONFIRMED.equals(session.getStatus())
+                                            && !Status.IN_PROGRESS.equals(session.getStatus())) {
+                                        return Mono.error(new ApplicationException(
+                                                ErrorCode.BAD_REQUEST, "Chỉ có thể hoàn tất buổi mentoring đã được xác nhận hoặc đang diễn ra"));
+                                    }
+
+                                    Mono<Integer> updateStatus = sessionRepository.updateStatus(sessionId, requestedStatus);
+                                    Mono<Integer> updateLink = request.getMeetingLink() != null
+                                            ? sessionRepository.updateMeetingLink(sessionId, request.getMeetingLink())
+                                            : Mono.just(0);
+                                    return Mono.when(updateStatus, updateLink)
+                                            .doOnSuccess(ignored -> notificationService.createNotificationAsync(
                                                     session.getMenteeMemberId(),
                                                     "Buổi cố vấn đã hoàn tất",
                                                     "Buổi cố vấn của bạn đã hoàn thành. Hãy dành chút thời gian để lại đánh giá cho cố vấn nhé!",
-                                                    "/mentorship/my-bookings");
-                                        }
-                                    })
-                                    .then(sessionRepository.findById(sessionId));
-                        })
+                                                    "/mentorship/my-bookings"))
+                                            .then(sessionRepository.findById(sessionId));
+                                }))
                         .flatMap(this::enrich));
     }
 
