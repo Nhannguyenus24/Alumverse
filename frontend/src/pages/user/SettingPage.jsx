@@ -33,9 +33,11 @@ import Sidebar from '../../components/Sidebar';
 import { userSettingsApi } from '../../utils/api';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import SendIcon from '@mui/icons-material/Send';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import useAuthStore from '../../stores/authStore';
 import { useNotification } from '../../hooks/useNotification';
 import { useOrganization } from '../../hooks/useOrganization';
+import { useOrgPath } from '../../hooks/useOrgNavigate';
 import { formatDateTime } from '../../utils/dateFormatter';
 import AvatarUploadDialog from "../../components/profile/AvatarUploadDialog";
 import useAvatarCrop from "../../hooks/profile/useAvatarCrop";
@@ -156,6 +158,7 @@ export default function SettingPage() {
   };
 
   const navigate = useNavigate();
+  const toOrgPath = useOrgPath();
   const { user } = useAuthStore();
   const verificationLevel = useAuthStore((state) => state.verificationLevel);
   const setAuthUser = useAuthStore((state) => state.setUser);
@@ -415,12 +418,17 @@ export default function SettingPage() {
     try {
       await userSettingsApi.acceptPeerVerification(requestId);
       showSuccess(t('success_accept_verification'));
-      setPendingRequests((prev) => prev.filter((r) => r.requestId !== requestId));
+      await loadPendingRequests();
     } catch (error) {
       console.error('Failed to accept verification', error);
       showError(getErrorMessage(error, t('error_accept_verification')));
     }
   };
+
+  const openRequesterProfile = useCallback((requesterUserId) => {
+    if (!requesterUserId) return;
+    window.open(toOrgPath(`/profile/${requesterUserId}`), '_blank', 'noopener,noreferrer');
+  }, [toOrgPath]);
 
   const parseUserAgent = (userAgent = '') => {
     const ua = String(userAgent ?? '').toLowerCase();
@@ -697,7 +705,17 @@ export default function SettingPage() {
                   <Typography variant="body2" color="textSecondary">{t('verif_user_id')}: {request.requesterUserId}</Typography>
                   <Typography variant="caption" color="textSecondary">{t('verif_sent_date')}: {formatDateTime(request.createdAt)}</Typography>
                 </Stack>
-                <Button variant="contained" color="success" startIcon={<CheckCircleIcon />} onClick={() => handleAcceptVerification(request.requestId)}>{t('confirm_verification')}</Button>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Button
+                    variant="outlined"
+                    color="secondary"
+                    startIcon={<OpenInNewIcon />}
+                    onClick={() => openRequesterProfile(request.requesterUserId)}
+                  >
+                    {t('view_profile')}
+                  </Button>
+                  <Button variant="contained" color="success" startIcon={<CheckCircleIcon />} onClick={() => handleAcceptVerification(request.requestId)}>{t('confirm_verification')}</Button>
+                </Stack>
               </Stack>
             </Paper>
           ))}

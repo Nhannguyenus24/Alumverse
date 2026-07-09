@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 
+const AVATAR_OUTPUT_SIZE = 512;
+const AVATAR_JPEG_QUALITY = 0.86;
+
 export default function useAvatarCrop() {
   const [open, setOpen] = useState(false);
 
@@ -35,8 +38,8 @@ export default function useAvatarCrop() {
     image.onload = () => {
       const canvas = document.createElement("canvas");
 
-      canvas.width = croppedAreaPixels.width;
-      canvas.height = croppedAreaPixels.height;
+      canvas.width = AVATAR_OUTPUT_SIZE;
+      canvas.height = AVATAR_OUTPUT_SIZE;
 
       const ctx = canvas.getContext("2d");
 
@@ -48,11 +51,11 @@ export default function useAvatarCrop() {
         croppedAreaPixels.height,
         0,
         0,
-        croppedAreaPixels.width,
-        croppedAreaPixels.height
+        AVATAR_OUTPUT_SIZE,
+        AVATAR_OUTPUT_SIZE
       );
 
-      const croppedUrl = canvas.toDataURL("image/jpeg");
+      const croppedUrl = canvas.toDataURL("image/jpeg", AVATAR_JPEG_QUALITY);
 
       setAvatarUrl(croppedUrl);
 

@@ -42,6 +42,8 @@ import AdminStatusChip from '../../components/admin/AdminStatusChip';
 import { useAdminForumContext, useAdminSystemContext } from '../../stores/AdminStore';
 import { formatDate } from '../../utils/dateFormatter';
 
+const CATEGORY_TABLE_COLUMNS = 'minmax(0, 1fr) 320px';
+
 /* ─── Build tree from flat list ─── */
 const buildTree = (flatList) => {
   if (!Array.isArray(flatList) || flatList.length === 0) return [];
@@ -75,20 +77,20 @@ const CategoryBranch = ({ node, depth = 0, expanded, toggle, onEdit, onDelete, o
   };
 
   return (
-    <Box sx={{ pl: depth * 2.5 }}>
+    <Box>
       <ListItemButton 
         onClick={() => hasChildren && toggle(node.id)} 
         sx={{ 
           borderRadius: 2, 
           mb: 0.5,
           display: 'grid',
-          gridTemplateColumns: 'minmax(0, 1fr) 120px 180px',
+          gridTemplateColumns: CATEGORY_TABLE_COLUMNS,
           gap: 2,
           alignItems: 'center',
           '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.05) }
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0, pl: depth * 3 }}>
           {hasChildren ? (
             <IconButton size="small" edge="start" sx={{ mr: 1, color: 'primary.main', flexShrink: 0 }}>
               {open ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
@@ -110,14 +112,20 @@ const CategoryBranch = ({ node, depth = 0, expanded, toggle, onEdit, onDelete, o
             }
           />
         </Box>
-        <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
-          <AdminStatusChip
-            status={node.status || 'ACTIVE'}
-            category="forum"
-            label={statusLabel(node.status)}
-          />
-        </Box>
-        <Stack direction="row" spacing={0.5} alignItems="center" onClick={(e) => e.stopPropagation()}>
+        <Stack
+          direction="row"
+          alignItems="center"
+          justifyContent="flex-end"
+          sx={{ justifySelf: 'stretch', gap: 0.5 }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Box sx={{ mr: 3, display: 'flex', justifyContent: 'flex-end' }}>
+            <AdminStatusChip
+              status={node.status || 'ACTIVE'}
+              category="forum"
+              label={statusLabel(node.status)}
+            />
+          </Box>
           <Tooltip title={isActive ? t('admin:forum_status_inactive') : t('admin:forum_status_active')}>
             <IconButton
               size="small"
@@ -338,7 +346,7 @@ const AdminForumCategoriesPage = () => {
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: 'minmax(0, 1fr) 120px 180px',
+            gridTemplateColumns: CATEGORY_TABLE_COLUMNS,
             gap: 2,
             bgcolor: (t) => t.palette.mode === 'light' ? 'primary.main' : 'primary.dark',
             px: 2,
@@ -347,9 +355,6 @@ const AdminForumCategoriesPage = () => {
         >
           <Typography sx={{ fontWeight: 700, color: 'primary.contrastText', fontSize: 13, textTransform: 'uppercase', letterSpacing: 0.5, pl: 6 }}>
             {t('admin:forum_cat_name_col')}
-          </Typography>
-          <Typography sx={{ fontWeight: 700, color: 'primary.contrastText', fontSize: 13, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-            {t('admin:col_status')}
           </Typography>
           <Typography sx={{ fontWeight: 700, color: 'primary.contrastText', fontSize: 13, textTransform: 'uppercase', letterSpacing: 0.5, textAlign: 'right', pr: 1 }}>
             {t('admin:actions')}

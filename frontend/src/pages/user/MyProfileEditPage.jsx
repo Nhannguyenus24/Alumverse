@@ -157,6 +157,20 @@ const buildPreservedAcademicPayload = (academicProfile) => {
   };
 };
 
+const parseLinks = (raw) => {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw.map((link) => String(link).trim()).filter(Boolean);
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.map((link) => String(link).trim()).filter(Boolean) : [];
+  } catch {
+    return [];
+  }
+};
+
+const areArraysEqual = (left, right) =>
+  left.length === right.length && left.every((item, index) => item === right[index]);
+
 const ProfileItem = ({ label, value, notUpdatedLabel = '—' }) => (
   <Box
     sx={{
@@ -284,6 +298,8 @@ const UnifiedProfileEditPage = () => {
     setSuccess(false);
     if (phoneError) return; // invalid phone — error already shown under field
     try {
+      let didUpdateMedia = false;
+
       // Persist a newly-cropped avatar: upload the base64 data URL, then point
       // the user's profile at the returned image URL.
       if (avatarCrop.avatarUrl && avatarCrop.avatarUrl.startsWith('data:')) {
@@ -294,6 +310,7 @@ const UnifiedProfileEditPage = () => {
             ...useAuthStore.getState().user,
             avatarUrl: avatarImageUrl,
           });
+          didUpdateMedia = true;
         }
       }
       
@@ -316,6 +333,8 @@ const UnifiedProfileEditPage = () => {
           const uploadedCoverUrl = await uploadBase64(coverBase64);
           if (!uploadedCoverUrl) throw new Error('empty_upload_response');
           await userSettingsApi.updateCover(uploadedCoverUrl);
+          setCoverFile(null);
+          didUpdateMedia = true;
         } catch (error) {
           enqueueSnackbar(getCoverUploadErrorMessage(error, t), { variant: 'error' });
           return;
@@ -335,15 +354,28 @@ const UnifiedProfileEditPage = () => {
       
       // Also update base profile (even if it ignores some fields, we send what we can)
       const linksArray = linksText.split('\n').map(l => l.trim()).filter(Boolean);
-      await updateBaseProfile({
-        ...(organizationId ? { organizationId } : {}),
-        bio: bio.trim(),
-        phone: phone.trim() || undefined,
-        currentJobTitle: currentJobTitle.trim(),
-        currentCompany: currentCompany.trim(),
-        links: linksArray,
-        ...buildPreservedAcademicPayload(orgMemberQuery.data),
-      });
+      const existingLinks = parseLinks(profileQuery.data?.links);
+      const hasBaseProfileChanges =
+        bio.trim() !== (profileQuery.data?.bio ?? '').trim() ||
+        phone.trim() !== (profileQuery.data?.phone ?? '').trim() ||
+        currentJobTitle.trim() !== (profileQuery.data?.currentJobTitle ?? '').trim() ||
+        currentCompany.trim() !== (profileQuery.data?.currentCompany ?? '').trim() ||
+        !areArraysEqual(linksArray, existingLinks);
+
+      if (hasBaseProfileChanges) {
+        await updateBaseProfile({
+          ...(organizationId ? { organizationId } : {}),
+          bio: bio.trim(),
+          phone: phone.trim() || undefined,
+          currentJobTitle: currentJobTitle.trim(),
+          currentCompany: currentCompany.trim(),
+          links: linksArray,
+          ...buildPreservedAcademicPayload(orgMemberQuery.data),
+        });
+      } else if (!didUpdateMedia && !isMentorshipEdit) {
+        enqueueSnackbar(t('profile:no_changes', { defaultValue: 'Không có thay đổi để lưu.' }), { variant: 'info' });
+        return;
+      }
 
       queryClient.invalidateQueries({ queryKey: ['user', 'me', 'profile'] });
       queryClient.invalidateQueries({ queryKey: ['user', 'me', 'organization-member'] });

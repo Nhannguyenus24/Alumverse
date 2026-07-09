@@ -211,8 +211,9 @@ const AdminForumReportsPage = () => {
     },
     {
       id: "actions",
-      label: "",
+      label: t('actions'),
       align: "right",
+      width: 96,
       render: (_, row) => {
         const isPending = !row.status || row.status === "PENDING";
         return (
@@ -236,8 +237,9 @@ const AdminForumReportsPage = () => {
     { id: "updatedAt", label: t('forum_col_banned_at'), render: (val) => formatDateTime(val) },
     {
       id: "actions",
-      label: "",
+      label: t('actions'),
       align: "right",
+      width: 96,
       render: (_, row) => (
         <Tooltip title={t('forum_action_restore')}>
           <IconButton size="small" color="success" onClick={() => handleUnban(row.id)}>
@@ -256,8 +258,9 @@ const AdminForumReportsPage = () => {
     { id: "updatedAt", label: t('forum_col_hidden_at'), render: (val) => formatDateTime(val) },
     {
       id: "actions",
-      label: "",
+      label: t('actions'),
       align: "right",
+      width: 96,
       render: (_, row) => (
         <Tooltip title={t('forum_action_unhide')}>
           <IconButton size="small" color="success" onClick={() => handleUnhide(row.id)}>

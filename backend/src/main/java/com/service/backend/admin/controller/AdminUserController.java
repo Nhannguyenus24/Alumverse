@@ -21,6 +21,7 @@ import com.service.backend.admin.dto.BulkImportResult;
 import com.service.backend.admin.dto.CreateAdminRequest;
 import com.service.backend.admin.dto.CreateOrganizationMemberRequest;
 import com.service.backend.admin.dto.DeleteUserRequest;
+import com.service.backend.admin.dto.ReopenVerificationRequest;
 import com.service.backend.admin.dto.ReviewVerificationRequest;
 import com.service.backend.admin.dto.UnbanUserRequest;
 import com.service.backend.admin.dto.UpdateUserRequest;
@@ -215,6 +216,20 @@ public class AdminUserController {
                 });
     }
 
+    @PostMapping("/verification-requests/{requestId}/reopen")
+    public Mono<ResponseEntity<ApiResponse<Boolean>>> reopenVerificationRequest(
+            @PathVariable Integer requestId,
+            @Valid @RequestBody ReopenVerificationRequest request) {
+        return adminUserService.reopenVerificationRequest(requestId, request.getRequestType(), request.getAdminNote())
+                .flatMap(success -> {
+                    if (success) {
+                        return Mono.just(ResponseEntity.ok(
+                                new ApiResponse<>("Verification request reopened successfully", true)));
+                    }
+                    return Mono.error(new ApplicationException(ErrorCode.RESOURCES_NOT_FOUND, "Pending verification request not found"));
+                });
+    }
+
     /**
      * Add user to organization
      */
@@ -317,6 +332,13 @@ public class AdminUserController {
             @PathVariable Integer requestId,
             @Valid @RequestBody ReviewVerificationRequest request) {
         return reviewVerificationRequest(requestId, request);
+    }
+
+    @PostMapping("/alumni/verification-requests/{requestId}/reopen")
+    public Mono<ResponseEntity<ApiResponse<Boolean>>> reopenAlumniVerificationRequest(
+            @PathVariable Integer requestId,
+            @Valid @RequestBody ReopenVerificationRequest request) {
+        return reopenVerificationRequest(requestId, request);
     }
 
     @GetMapping("/growth-statistics")

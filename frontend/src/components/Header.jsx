@@ -430,7 +430,7 @@ const Header = () => {
         <Box
           sx={{
             position: 'fixed',
-            top: HEADER_HEIGHT,
+            top: { xs: HEADER_HEIGHT.xs + 24, md: HEADER_HEIGHT.md + 24 },
             left: '50%',
             transform: 'translateX(-50%)',
             width: { xs: 'calc(100% - 32px)', sm: 'max-content' },

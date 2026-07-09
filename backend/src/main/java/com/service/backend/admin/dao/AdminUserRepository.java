@@ -87,6 +87,10 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
     @Query("UPDATE users SET \"status\" = 'ACTIVE', updated_at = CURRENT_TIMESTAMP WHERE id = :userId")
     Mono<Integer> unbanUserById(@Param("userId") Integer userId);
 
+    @Modifying
+    @Query("UPDATE users SET \"status\" = :status, updated_at = CURRENT_TIMESTAMP WHERE id = :userId")
+    Mono<Integer> updateUserStatusById(@Param("userId") Integer userId, @Param("status") String status);
+
     /**
      * Fetch all verification requests joined with user info, paginated
      */
@@ -131,6 +135,154 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
            "AND (:keyword IS NULL OR u.email ILIKE :keyword OR om.student_id ILIKE :keyword OR u.full_name ILIKE :keyword)")
     Mono<Long> countPendingVerificationRequests(@Param("keyword") String keyword);
 
+    @Query("""
+            SELECT *
+            FROM (
+                SELECT
+                    vr.id AS id,
+                    vr.member_id AS member_id,
+                    vr.organization_id AS organization_id,
+                    'PROOF' AS request_type,
+                    u.full_name AS full_name,
+                    u.avatar_url AS avatar_url,
+                    u.email AS email,
+                    om.student_id AS student_id,
+                    vr.document_url AS document_url,
+                    CAST(vr.document_type AS text) AS document_type,
+                    vr.ai_summary AS ai_summary,
+                    NULL::text AS evidence_summary,
+                    NULL::text AS confirmed_verifiers,
+                    NULL::text AS pending_verifiers,
+                    CAST(vr."status" AS text) AS status,
+                    vr.admin_note AS admin_note,
+                    vr.reviewed_by_member_id AS reviewed_by_member_id,
+                    vr.created_at AS created_at,
+                    vr.updated_at AS updated_at
+                FROM verification_requests vr
+                JOIN users u ON vr.member_id = u.id
+                JOIN organization_members om ON vr.member_id = om.user_id AND vr.organization_id = om.organization_id
+
+                UNION ALL
+
+                SELECT
+                    MIN(pv.id) AS id,
+                    pv.target_member_id AS member_id,
+                    pv.organization_id AS organization_id,
+                    'PEER' AS request_type,
+                    target_user.full_name AS full_name,
+                    target_user.avatar_url AS avatar_url,
+                    target_user.email AS email,
+                    target_member.student_id AS student_id,
+                    NULL::text AS document_url,
+                    NULL::text AS document_type,
+                    NULL::text AS ai_summary,
+                    STRING_AGG(
+                        CONCAT(COALESCE(verifier_user.full_name, verifier_user.email, CONCAT('User ', pv.verifier_member_id)), ' - ', CAST(pv."status" AS text)),
+                        ', ' ORDER BY pv.created_at
+                    ) AS evidence_summary,
+                    STRING_AGG(
+                        COALESCE(verifier_user.full_name, verifier_user.email, CONCAT('User ', pv.verifier_member_id)),
+                        ', ' ORDER BY pv.created_at
+                    ) FILTER (WHERE CAST(pv."status" AS text) IN ('APPROVED', 'ACCEPTED')) AS confirmed_verifiers,
+                    STRING_AGG(
+                        COALESCE(verifier_user.full_name, verifier_user.email, CONCAT('User ', pv.verifier_member_id)),
+                        ', ' ORDER BY pv.created_at
+                    ) FILTER (WHERE CAST(pv."status" AS text) = 'PENDING') AS pending_verifiers,
+                    CASE
+                        WHEN COUNT(*) FILTER (WHERE CAST(pv."status" AS text) IN ('APPROVED', 'ACCEPTED')) > 0 THEN 'APPROVED'
+                        WHEN COUNT(*) FILTER (WHERE CAST(pv."status" AS text) = 'PENDING') > 0 THEN 'PENDING'
+                        WHEN COUNT(*) FILTER (WHERE CAST(pv."status" AS text) = 'NEED_UPDATE') > 0 THEN 'NEED_UPDATE'
+                        WHEN COUNT(*) FILTER (WHERE CAST(pv."status" AS text) = 'REJECTED') > 0 THEN 'REJECTED'
+                        ELSE MAX(CAST(pv."status" AS text))
+                    END AS status,
+                    NULL::text AS admin_note,
+                    NULL::integer AS reviewed_by_member_id,
+                    MIN(pv.created_at) AS created_at,
+                    MAX(pv.created_at) AS updated_at
+                FROM peer_verifications pv
+                JOIN users target_user ON target_user.id = pv.target_member_id
+                JOIN organization_members target_member
+                    ON target_member.user_id = pv.target_member_id
+                   AND target_member.organization_id = pv.organization_id
+                LEFT JOIN users verifier_user ON verifier_user.id = pv.verifier_member_id
+                GROUP BY pv.organization_id, pv.target_member_id, target_user.full_name,
+                         target_user.avatar_url, target_user.email, target_member.student_id
+            ) combined
+            WHERE (CAST(:organizationId AS INTEGER) IS NULL OR combined.organization_id = :organizationId)
+              AND (:pendingOnly = FALSE OR combined.status = 'PENDING')
+              AND (
+                  CAST(:keyword AS TEXT) IS NULL
+                  OR combined.email ILIKE :keyword
+                  OR combined.student_id ILIKE :keyword
+                  OR combined.full_name ILIKE :keyword
+                  OR combined.evidence_summary ILIKE :keyword
+              )
+            ORDER BY combined.created_at DESC
+            LIMIT :limit OFFSET :offset
+            """)
+    Flux<VerificationRequestResponse> findUnifiedVerificationRequests(
+            @Param("organizationId") Integer organizationId,
+            @Param("keyword") String keyword,
+            @Param("pendingOnly") boolean pendingOnly,
+            @Param("limit") int limit,
+            @Param("offset") int offset);
+
+    @Query("""
+            SELECT COUNT(*)
+            FROM (
+                SELECT
+                    vr.organization_id AS organization_id,
+                    u.full_name AS full_name,
+                    u.email AS email,
+                    om.student_id AS student_id,
+                    NULL::text AS evidence_summary,
+                    CAST(vr."status" AS text) AS status
+                FROM verification_requests vr
+                JOIN users u ON vr.member_id = u.id
+                JOIN organization_members om ON vr.member_id = om.user_id AND vr.organization_id = om.organization_id
+
+                UNION ALL
+
+                SELECT
+                    pv.organization_id AS organization_id,
+                    target_user.full_name AS full_name,
+                    target_user.email AS email,
+                    target_member.student_id AS student_id,
+                    STRING_AGG(
+                        COALESCE(verifier_user.full_name, verifier_user.email, CONCAT('User ', pv.verifier_member_id)),
+                        ', ' ORDER BY pv.created_at
+                    ) AS evidence_summary,
+                    CASE
+                        WHEN COUNT(*) FILTER (WHERE CAST(pv."status" AS text) IN ('APPROVED', 'ACCEPTED')) > 0 THEN 'APPROVED'
+                        WHEN COUNT(*) FILTER (WHERE CAST(pv."status" AS text) = 'PENDING') > 0 THEN 'PENDING'
+                        WHEN COUNT(*) FILTER (WHERE CAST(pv."status" AS text) = 'NEED_UPDATE') > 0 THEN 'NEED_UPDATE'
+                        WHEN COUNT(*) FILTER (WHERE CAST(pv."status" AS text) = 'REJECTED') > 0 THEN 'REJECTED'
+                        ELSE MAX(CAST(pv."status" AS text))
+                    END AS status
+                FROM peer_verifications pv
+                JOIN users target_user ON target_user.id = pv.target_member_id
+                JOIN organization_members target_member
+                    ON target_member.user_id = pv.target_member_id
+                   AND target_member.organization_id = pv.organization_id
+                LEFT JOIN users verifier_user ON verifier_user.id = pv.verifier_member_id
+                GROUP BY pv.organization_id, pv.target_member_id, target_user.full_name,
+                         target_user.email, target_member.student_id
+            ) combined
+            WHERE (CAST(:organizationId AS INTEGER) IS NULL OR combined.organization_id = :organizationId)
+              AND (:pendingOnly = FALSE OR combined.status = 'PENDING')
+              AND (
+                  CAST(:keyword AS TEXT) IS NULL
+                  OR combined.email ILIKE :keyword
+                  OR combined.student_id ILIKE :keyword
+                  OR combined.full_name ILIKE :keyword
+                  OR combined.evidence_summary ILIKE :keyword
+              )
+            """)
+    Mono<Long> countUnifiedVerificationRequests(
+            @Param("organizationId") Integer organizationId,
+            @Param("keyword") String keyword,
+            @Param("pendingOnly") boolean pendingOnly);
+
     /**
      * Update verification request "status" and admin note
      */
@@ -141,6 +293,18 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
     Mono<Integer> reviewVerificationRequest(
             @Param("requestId") Integer requestId,
             @Param("status") String status,
+            @Param("adminNote") String adminNote);
+
+    @Modifying
+    @Query("""
+            UPDATE verification_requests
+            SET "status" = 'NEED_UPDATE',
+                admin_note = :adminNote,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = :requestId AND "status" = 'PENDING'
+            """)
+    Mono<Integer> markVerificationRequestNeedsUpdate(
+            @Param("requestId") Integer requestId,
             @Param("adminNote") String adminNote);
 
     /**
@@ -238,6 +402,36 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
             @Param("userId") Integer userId);
 
     @Modifying
+    @Query("""
+            UPDATE organization_members
+            SET organization_id = COALESCE(:organizationId, organization_id),
+                student_id = COALESCE(NULLIF(:studentId, ''), student_id),
+                graduated_year = COALESCE(CAST(:graduatedYear AS jsonb), graduated_year),
+                graduation_status = COALESCE(CAST(:graduationStatus AS jsonb), graduation_status),
+                program = COALESCE(CAST(:program AS jsonb), program),
+                major = COALESCE(CAST(:major AS jsonb), major),
+                verification_level = COALESCE(:verificationLevel, verification_level),
+                is_trusted_verifier = COALESCE(:isTrustedVerifier, is_trusted_verifier),
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = (
+                SELECT id FROM organization_members
+                WHERE user_id = :userId
+                ORDER BY id ASC
+                LIMIT 1
+            )
+            """)
+    Mono<Integer> updatePrimaryOrganizationMemberDetails(
+            @Param("userId") Integer userId,
+            @Param("organizationId") Integer organizationId,
+            @Param("studentId") String studentId,
+            @Param("graduatedYear") String graduatedYear,
+            @Param("graduationStatus") String graduationStatus,
+            @Param("program") String program,
+            @Param("major") String major,
+            @Param("verificationLevel") Integer verificationLevel,
+            @Param("isTrustedVerifier") Boolean isTrustedVerifier);
+
+    @Modifying
     @Query("UPDATE organization_members SET is_trusted_verifier = :isTrusted, updated_at = CURRENT_TIMESTAMP " +
            "WHERE user_id = :userId AND organization_id = :organizationId")
     Mono<Integer> updateIsTrustedVerifier(
@@ -246,15 +440,41 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
             @Param("isTrusted") boolean isTrusted);
 
     @Query("""
-        SELECT u.* FROM users u
-        WHERE u.id IN (
-            SELECT u2.id FROM users u2
-            LEFT JOIN organization_members om ON u2.id = om.user_id
-            WHERE (CAST(:search AS TEXT) IS NULL OR u2.email ILIKE :search OR om.student_id ILIKE :search OR u2.full_name ILIKE :search)
-              AND (CAST(:role AS TEXT) IS NULL OR CAST(u2.role AS TEXT) = :role)
-              AND (CAST(:status AS TEXT) IS NULL OR CAST(u2."status" AS TEXT) = :status)
-              AND (CAST(:organizationId AS INTEGER) IS NULL OR om.organization_id = :organizationId)
-        )
+        SELECT DISTINCT u.id, u.email, u.password_hash, u.status, u.role, u.avatar_url, u.cover_url,
+                        u.full_name, u.phone, u.bio, u.dob, u.gender, u.settings,
+                        u.created_at, u.updated_at
+        FROM users u
+        LEFT JOIN organization_members om ON u.id = om.user_id
+        WHERE (CAST(:search AS TEXT) IS NULL OR u.email ILIKE :search OR om.student_id ILIKE :search OR u.full_name ILIKE :search)
+          AND (CAST(:role AS TEXT) IS NULL OR CAST(u.role AS TEXT) = :role)
+          AND (
+              CAST(:status AS TEXT) IS NULL
+              OR (
+                  :status = 'VERIFYING'
+                  AND CAST(u."status" AS TEXT) = 'ACTIVE'
+                  AND COALESCE(om.verification_level, 0) = 1
+              )
+              OR (
+                  :status = 'UNVERIFIED'
+                  AND (
+                      CAST(u."status" AS TEXT) = 'UNVERIFIED'
+                      OR (
+                          CAST(u."status" AS TEXT) = 'ACTIVE'
+                          AND COALESCE(om.verification_level, 0) = 0
+                      )
+                  )
+              )
+              OR (
+                  :status = 'ACTIVE'
+                  AND CAST(u."status" AS TEXT) = 'ACTIVE'
+                  AND COALESCE(om.verification_level, 2) >= 2
+              )
+              OR (
+                  :status NOT IN ('VERIFYING', 'UNVERIFIED', 'ACTIVE')
+                  AND CAST(u."status" AS TEXT) = :status
+              )
+          )
+          AND (CAST(:organizationId AS INTEGER) IS NULL OR om.organization_id = :organizationId)
         ORDER BY u.created_at DESC
         LIMIT :limit OFFSET :offset
         """)
@@ -268,15 +488,38 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
     );
 
     @Query("""
-        SELECT COUNT(*) FROM users u
-        WHERE u.id IN (
-            SELECT u2.id FROM users u2
-            LEFT JOIN organization_members om ON u2.id = om.user_id
-            WHERE (CAST(:search AS TEXT) IS NULL OR u2.email ILIKE :search OR om.student_id ILIKE :search OR u2.full_name ILIKE :search)
-              AND (CAST(:role AS TEXT) IS NULL OR CAST(u2.role AS TEXT) = :role)
-              AND (CAST(:status AS TEXT) IS NULL OR CAST(u2."status" AS TEXT) = :status)
-              AND (CAST(:organizationId AS INTEGER) IS NULL OR om.organization_id = :organizationId)
-        )
+        SELECT COUNT(DISTINCT u.id) FROM users u
+        LEFT JOIN organization_members om ON u.id = om.user_id
+        WHERE (CAST(:search AS TEXT) IS NULL OR u.email ILIKE :search OR om.student_id ILIKE :search OR u.full_name ILIKE :search)
+          AND (CAST(:role AS TEXT) IS NULL OR CAST(u.role AS TEXT) = :role)
+          AND (
+              CAST(:status AS TEXT) IS NULL
+              OR (
+                  :status = 'VERIFYING'
+                  AND CAST(u."status" AS TEXT) = 'ACTIVE'
+                  AND COALESCE(om.verification_level, 0) = 1
+              )
+              OR (
+                  :status = 'UNVERIFIED'
+                  AND (
+                      CAST(u."status" AS TEXT) = 'UNVERIFIED'
+                      OR (
+                          CAST(u."status" AS TEXT) = 'ACTIVE'
+                          AND COALESCE(om.verification_level, 0) = 0
+                      )
+                  )
+              )
+              OR (
+                  :status = 'ACTIVE'
+                  AND CAST(u."status" AS TEXT) = 'ACTIVE'
+                  AND COALESCE(om.verification_level, 2) >= 2
+              )
+              OR (
+                  :status NOT IN ('VERIFYING', 'UNVERIFIED', 'ACTIVE')
+                  AND CAST(u."status" AS TEXT) = :status
+              )
+          )
+          AND (CAST(:organizationId AS INTEGER) IS NULL OR om.organization_id = :organizationId)
         """)
     Mono<Long> countUsersWithFilters(
         @Param("search") String search,
