@@ -132,20 +132,21 @@ class _OrganizationRegistrationPageState
       AppToast.error(context, 'organization.missing_org_or_account'.tr());
       return;
     }
-    final parsedUserId = int.tryParse(userId);
-    if (parsedUserId == null) return;
 
     setState(() => _submitting = true);
     try {
       final program = _program(programOptions);
       final major = _major(majorOptions);
       final gradYear = int.tryParse(_graduatedYearCtl.text.trim());
+      final studentCode = _studentCodeCtl.text.trim();
+      final startYear = _startYearCtl.text.trim();
 
       await ref
           .read(organizationRepositoryProvider)
           .joinOrganization(
             organizationId: orgId,
-            userId: parsedUserId,
+            studentId: studentCode.isNotEmpty ? studentCode : null,
+            startedYear: startYear.isNotEmpty ? [startYear] : null,
             program: (program != null && program.isNotEmpty) ? [program] : null,
             major: (major != null && major.isNotEmpty) ? [major] : null,
             graduatedYear: gradYear != null ? [gradYear] : null,
@@ -186,6 +187,7 @@ class _OrganizationRegistrationPageState
           await ref
               .read(organizationRepositoryProvider)
               .createVerificationRequest(
+                organizationId: orgId,
                 base64File: base64Encode(bytes),
                 originalFileName: _proofFile!.name,
                 documentType: 'image',
@@ -193,9 +195,13 @@ class _OrganizationRegistrationPageState
           if (mounted) {
             AppToast.success(context, 'organization.proof_sent'.tr());
           }
-        } catch (_) {
+        } catch (e) {
           if (mounted) {
-            AppToast.error(context, 'organization.proof_send_failed'.tr());
+            AppToast.fromError(
+              context,
+              e,
+              fallback: 'organization.proof_send_failed'.tr(),
+            );
           }
         }
       }
