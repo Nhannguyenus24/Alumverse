@@ -74,7 +74,7 @@ const CreateGroupChatDialog = ({ open, onClose, onCreated }) => {
         return prev.filter((m) => m.peerMemberId !== contact.peerMemberId);
       }
       if (prev.length >= MAX_OTHER_MEMBERS) return prev;
-      return [...prev, { peerMemberId: contact.peerMemberId, peerStudentId: contact.peerStudentId, peerAvatarUrl: contact.peerAvatarUrl }];
+      return [...prev, { peerMemberId: contact.peerMemberId, peerFullName: contact.peerFullName, peerAvatarUrl: contact.peerAvatarUrl }];
     });
   }, []);
 
@@ -150,7 +150,7 @@ const CreateGroupChatDialog = ({ open, onClose, onCreated }) => {
             {selectedMembers.map((m) => (
               <Chip
                 key={m.peerMemberId}
-                label={m.peerStudentId}
+                label={m.peerFullName}
                 size="small"
                 onDelete={() => handleRemoveSelected(m.peerMemberId)}
                 disabled={isCreating}
@@ -209,12 +209,12 @@ const CreateGroupChatDialog = ({ open, onClose, onCreated }) => {
                       <ListItemAvatar sx={{ minWidth: 40 }}>
                         <ChatAvatar
                           avatarUrl={contact.peerAvatarUrl}
-                          name={contact.peerStudentId}
+                          name={contact.peerFullName}
                           size={32}
                         />
                       </ListItemAvatar>
                       <ListItemText
-                        primary={contact.peerStudentId}
+                        primary={contact.peerFullName}
                         primaryTypographyProps={{ variant: 'body2', fontWeight: 500 }}
                       />
                       <Checkbox
