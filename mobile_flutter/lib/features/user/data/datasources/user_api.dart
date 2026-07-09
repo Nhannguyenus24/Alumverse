@@ -40,6 +40,24 @@ class UserApi {
     return false;
   }
 
+  /// The current user's `verificationLevel` in [organizationId] (0 = unverified
+  /// email, 1 = email verified, 2+ = academic/org verified). Reads from the
+  /// same `GET /users/me/organization-member` record web uses to gate mentee
+  /// signup.
+  Future<int> getMyVerificationLevel(int organizationId) async {
+    final res = await _dio.get(
+      ApiEndpoints.meOrganizationMember,
+      queryParameters: {'organizationId': organizationId},
+    );
+    final data = res.data is Map ? res.data['data'] : res.data;
+    if (data is Map) {
+      final v = data['verificationLevel'];
+      if (v is int) return v;
+      if (v is num) return v.toInt();
+    }
+    return 0;
+  }
+
   /// Update profile. The backend requires organizationId; academic fields are
   /// optional lists. [extra] carries optional bio/phone/gender etc.
   Future<void> updateProfile({
