@@ -13,6 +13,7 @@ import {
   getJsonPayloadByteSize,
   MAX_JSON_PAYLOAD_BYTES,
   validateImageFile,
+  useUploadImage,
 } from '../../utils/imageUtils';
 import { useNotification } from '../../hooks/useNotification';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
@@ -125,14 +126,16 @@ const CHANNEL_CONFIG = {
     successMsgKey: 'success_learning',
     redirect: (id) => `/article/learning/${id}`,
     useHook: useCreateLearningResource,
-    payloadKey: null,
-    useBase64: false,
+    payloadKey: 'thumbnailUrl',
+    useBase64: true,
+    uploadThumbnailFirst: true,
     contentKey: 'description',
-    buildPayload: ({ title, content, topic, url }) => ({
+    buildPayload: ({ title, content, topic, url, thumbnailUrl }) => ({
       title,
       description: content,
       type: LEARNING_TYPE_BY_TOPIC[topic],
       linkUrl: url || null,
+      ...(thumbnailUrl ? { thumbnailUrl } : {}),
     }),
   },
 };
@@ -161,6 +164,7 @@ const PostArticleGenericPage = () => {
     handleCoverUpload,
     setCoverPositionY,
   } = useCoverUpload();
+  const { uploadBase64 } = useUploadImage();
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -205,12 +209,23 @@ const PostArticleGenericPage = () => {
       const imageBase64 = config.useBase64 && coverFile
         ? await fileToCroppedCoverBase64(coverFile, coverPositionY)
         : undefined;
+
+      let thumbnailUrl;
+      if (config.uploadThumbnailFirst && imageBase64) {
+        if (getJsonPayloadByteSize({ base64String: imageBase64 }) > MAX_JSON_PAYLOAD_BYTES) {
+          showError('Ảnh chính quá lớn để tải lên. Vui lòng chọn ảnh nhỏ hơn.');
+          return;
+        }
+        thumbnailUrl = await uploadBase64(imageBase64);
+      }
+
       const payload = config.buildPayload({
         title: title.trim(),
         content: withMainImageCaption(content.trim(), mainImageCaption),
         topic,
         url: url.trim(),
-        imageBase64,
+        imageBase64: config.uploadThumbnailFirst ? undefined : imageBase64,
+        thumbnailUrl,
         isAdminLike,
       });
       if ((channel === 'job' || channel === 'learning') && !payload.type) {

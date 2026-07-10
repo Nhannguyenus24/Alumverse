@@ -604,6 +604,7 @@ create table learning_resources
     type               text,
     link_url           text,
     description        text,
+    thumbnail_url      text,
     created_at         timestamp,
     updated_at         timestamp default CURRENT_TIMESTAMP
 );
