@@ -11,9 +11,10 @@ import { useSkillSearch } from '../../hooks/mentorship/useSkillSearch';
  * value/onChange work with an array of { id, name } options so the caller can
  * derive skillIds for the API without a second lookup.
  */
-const MentorSkillFilter = ({ value = [], onChange, sx }) => {
+const MentorSkillFilter = ({ value = [], onChange, label, sx }) => {
   const { t } = useTranslation(['mentorship']);
   const [inputValue, setInputValue] = useState('');
+  const resolvedLabel = label ?? t('mentorship:filter_skill');
 
   const skillsQuery = useSkillSearch(inputValue);
   const options = useMemo(() => {
@@ -46,8 +47,8 @@ const MentorSkillFilter = ({ value = [], onChange, sx }) => {
       renderInput={(params) => (
         <TextField
           {...params}
-          placeholder={value.length ? '' : t('mentorship:filter_skill')}
-          label={t('mentorship:filter_skill')}
+          placeholder={value.length ? '' : resolvedLabel}
+          label={resolvedLabel}
         />
       )}
     />

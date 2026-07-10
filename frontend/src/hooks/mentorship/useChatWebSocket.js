@@ -16,11 +16,16 @@ function getWsUrl() {
  * - MESSAGE_CREATED { payload: { id, groupId, senderMemberId, senderFullName, senderAvatarUrl, content, ... } }
  * - ERROR { message }
  */
-export function useChatWebSocket({ token, onEvent }) {
+export function useChatWebSocket({ token, onEvent, onReconnect }) {
   const onEventRef = useRef(onEvent);
   useEffect(() => {
     onEventRef.current = onEvent;
   }, [onEvent]);
+
+  const onReconnectRef = useRef(onReconnect);
+  useEffect(() => {
+    onReconnectRef.current = onReconnect;
+  }, [onReconnect]);
 
   const [status, setStatus] = useState("closed"); // connecting | open | closed | error
 
@@ -29,6 +34,11 @@ export function useChatWebSocket({ token, onEvent }) {
   const reconnectAttemptRef = useRef(0);
   const outboxRef = useRef([]);
   const intentionalCloseRef = useRef(false);
+  // groupIds joined so far; re-sent on every (re)open so a fresh connection
+  // (after any drop — busy uplink, sleep, wifi switch, network blip) is
+  // always routed correctly server-side, regardless of what caused the drop.
+  const joinedGroupsRef = useRef(new Set());
+  const hasOpenedOnceRef = useRef(false);
 
   const wsUrl = useMemo(() => {
     if (!token) return null;
@@ -98,6 +108,13 @@ export function useChatWebSocket({ token, onEvent }) {
       reconnectAttemptRef.current = 0;
       setStatus("open");
       flushOutbox();
+      joinedGroupsRef.current.forEach((gid) => {
+        ws.send(JSON.stringify({ type: "JOIN_GROUP", groupId: gid }));
+      });
+      if (hasOpenedOnceRef.current) {
+        onReconnectRef.current?.();
+      }
+      hasOpenedOnceRef.current = true;
     };
 
     ws.onmessage = (e) => {
@@ -134,6 +151,7 @@ export function useChatWebSocket({ token, onEvent }) {
     cleanup();
     outboxRef.current = [];
     reconnectAttemptRef.current = 0;
+    hasOpenedOnceRef.current = false;
     if (!wsUrl) {
       const timer = setTimeout(() => setStatus("closed"), 0);
       return () => {
@@ -148,21 +166,36 @@ export function useChatWebSocket({ token, onEvent }) {
     };
   }, [cleanup, connect, wsUrl]);
 
-  const joinGroup = useCallback(
-    (groupId) => {
-      if (groupId == null) return false;
-      return sendJson({ type: "JOIN_GROUP", groupId: Number(groupId) });
-    },
-    [sendJson],
-  );
+  // joinGroup/leaveGroup intentionally do NOT go through sendJson's outbox
+  // queue: joinedGroupsRef is already re-sent in full on every ws.onopen
+  // (initial connect and every reconnect). Queuing here too would cause a
+  // duplicate JOIN_GROUP send (once from the flushed outbox, once from the
+  // onopen re-join loop) whenever the socket wasn't open yet when this was
+  // called (e.g. the very first join on mount, before the socket finishes
+  // connecting).
+  const joinGroup = useCallback((groupId) => {
+    if (groupId == null) return false;
+    const gid = Number(groupId);
+    joinedGroupsRef.current.add(gid);
+    const ws = wsRef.current;
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: "JOIN_GROUP", groupId: gid }));
+      return true;
+    }
+    return false;
+  }, []);
 
-  const leaveGroup = useCallback(
-    (groupId) => {
-      if (groupId == null) return false;
-      return sendJson({ type: "LEAVE_GROUP", groupId: Number(groupId) });
-    },
-    [sendJson],
-  );
+  const leaveGroup = useCallback((groupId) => {
+    if (groupId == null) return false;
+    const gid = Number(groupId);
+    joinedGroupsRef.current.delete(gid);
+    const ws = wsRef.current;
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: "LEAVE_GROUP", groupId: gid }));
+      return true;
+    }
+    return false;
+  }, []);
 
   const sendMessage = useCallback(
     ({ groupId, content, chatType, messageType = "TEXT", metadata = null }) => {

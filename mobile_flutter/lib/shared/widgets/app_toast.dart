@@ -11,8 +11,15 @@ enum ToastType { success, error, info, warning }
 /// Top-right slide-in toast with a colour matched to the message type
 /// (success=green, error=red, info=blue, warning=amber). Rendered via the
 /// app Overlay so it works from anywhere — no Scaffold/SnackBar needed.
+///
+/// Multiple toasts shown in quick succession (e.g. a flow that reports
+/// several sequential results) stack vertically instead of rendering on top
+/// of each other, since each one auto-dismisses independently after its own
+/// delay rather than waiting for the previous one to clear.
 class AppToast {
   AppToast._();
+
+  static final List<_ActiveToast> _active = [];
 
   static void success(BuildContext context, String message) =>
       _show(context, message, ToastType.success);
@@ -73,28 +80,46 @@ class AppToast {
     final overlay = Overlay.maybeOf(context, rootOverlay: true);
     if (overlay == null) return;
 
+    final toast = _ActiveToast();
     late OverlayEntry entry;
     entry = OverlayEntry(
       builder:
           (_) => _ToastWidget(
             message: message,
             type: type,
-            onDismissed: () => entry.remove(),
+            toast: toast,
+            onDismissed: () {
+              _active.remove(toast);
+              entry.remove();
+              for (final t in _active) {
+                t.ping();
+              }
+            },
           ),
     );
+    _active.add(toast);
     overlay.insert(entry);
   }
+}
+
+/// Tracks one toast's position among currently-visible toasts. Pinged
+/// whenever an earlier toast dismisses, so later ones can animate up to
+/// fill the gap.
+class _ActiveToast extends ChangeNotifier {
+  void ping() => notifyListeners();
 }
 
 class _ToastWidget extends StatefulWidget {
   const _ToastWidget({
     required this.message,
     required this.type,
+    required this.toast,
     required this.onDismissed,
   });
 
   final String message;
   final ToastType type;
+  final _ActiveToast toast;
   final VoidCallback onDismissed;
 
   @override
@@ -164,66 +189,77 @@ class _ToastWidgetState extends State<_ToastWidget>
     }
   }
 
+  static const double _slotHeight = 64;
+
   @override
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
     final s = _style;
-    return Positioned(
-      top: media.padding.top + AppSpacing.sm,
-      right: AppSpacing.lg,
-      left: AppSpacing.lg,
-      child: Align(
-        alignment: Alignment.topRight,
-        child: SlideTransition(
-          position: _slide,
-          child: FadeTransition(
-            opacity: _fade,
-            child: Material(
-              color: Colors.transparent,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 420),
-                child: GestureDetector(
-                  onTap: _dismiss,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.md,
-                      vertical: AppSpacing.md,
-                    ),
-                    decoration: BoxDecoration(
-                      color: s.bg,
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x33000000),
-                          blurRadius: 12,
-                          offset: Offset(0, 4),
+    return AnimatedBuilder(
+      animation: widget.toast,
+      builder: (context, _) {
+        final index = AppToast._active.indexOf(widget.toast);
+        final slot = index < 0 ? 0 : index;
+        return AnimatedPositioned(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOut,
+          top: media.padding.top + AppSpacing.sm + slot * _slotHeight,
+          right: AppSpacing.lg,
+          left: AppSpacing.lg,
+          child: Align(
+            alignment: Alignment.topRight,
+            child: SlideTransition(
+              position: _slide,
+              child: FadeTransition(
+                opacity: _fade,
+                child: Material(
+                  color: Colors.transparent,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 420),
+                    child: GestureDetector(
+                      onTap: _dismiss,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.md,
+                          vertical: AppSpacing.md,
                         ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(s.icon, color: s.fg, size: 20),
-                        const SizedBox(width: AppSpacing.sm),
-                        Flexible(
-                          child: Text(
-                            widget.message,
-                            style: TextStyle(
-                              color: s.fg,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
+                        decoration: BoxDecoration(
+                          color: s.bg,
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x33000000),
+                              blurRadius: 12,
+                              offset: Offset(0, 4),
                             ),
-                          ),
+                          ],
                         ),
-                      ],
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(s.icon, color: s.fg, size: 20),
+                            const SizedBox(width: AppSpacing.sm),
+                            Flexible(
+                              child: Text(
+                                widget.message,
+                                style: TextStyle(
+                                  color: s.fg,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

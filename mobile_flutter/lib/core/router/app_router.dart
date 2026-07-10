@@ -44,6 +44,7 @@ import '../../features/mentorship/presentation/pages/mentorship_page.dart';
 import '../../features/mentorship/presentation/pages/mentor_profile_page.dart';
 import '../../features/mentorship/presentation/pages/mentor_booking_page.dart';
 import '../../features/mentorship/presentation/pages/my_bookings_page.dart';
+import '../../features/mentorship/presentation/pages/mentee_signup_page.dart';
 import '../../features/mentorship/presentation/pages/mentor_signup_page.dart';
 import '../../features/mentorship/presentation/pages/mentor_dashboard_page.dart';
 import '../../features/mentorship/presentation/pages/mentor_availability_page.dart';
@@ -263,6 +264,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: RouteNames.mentorshipSignup,
         builder: (_, __) => const MentorSignupPage(),
+      ),
+      GoRoute(
+        path: RouteNames.menteeSignup,
+        builder: (_, __) => const MenteeSignupPage(),
       ),
       GoRoute(
         path: RouteNames.mentorDashboard,

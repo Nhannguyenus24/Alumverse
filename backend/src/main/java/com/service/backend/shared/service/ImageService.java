@@ -37,6 +37,8 @@ public class ImageService {
 
     private final MeterRegistry meterRegistry;
 
+    private static final long IMAGE_MAX_BYTES = 10L * 1024 * 1024;
+
     public ImageService(MeterRegistry meterRegistry) {
         this.meterRegistry = meterRegistry;
     }
@@ -77,14 +79,25 @@ public class ImageService {
             String pureBase64 = extractPureBase64(base64String);
 
             // 2. Decode Base64 string to byte array
-            byte[] imageBytes = Base64.getDecoder().decode(pureBase64);
+            byte[] imageBytes;
+            try {
+                imageBytes = Base64.getDecoder().decode(pureBase64);
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Invalid Base64 string", e);
+            }
 
-            // 3. Generate unique filename using UUID to prevent overwriting
+            // 3. Reject oversized payloads before the expensive decode/resize/encode below.
+            if (imageBytes.length > IMAGE_MAX_BYTES) {
+                throw new IllegalArgumentException(
+                        "Image exceeds " + (IMAGE_MAX_BYTES / (1024 * 1024)) + "MB limit");
+            }
+
+            // 4. Generate unique filename using UUID to prevent overwriting
             String fileName = UUID.randomUUID() + ".webp";
             var targetPath = Paths.get(uploadDir + fileName);
             Files.createDirectories(targetPath.getParent());
 
-            // 4. Use Scrimage to:
+            // 5. Use Scrimage to:
             //    - Load byte array as image object
             //    - Convert to WebP format (auto compressed)
             //    - Save file to disk
@@ -96,10 +109,20 @@ public class ImageService {
             return domain + fileName;
 
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Invalid Base64 string", e);
+            throw e;
         } catch (Exception e) {
             throw new Exception("Error processing image: " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * Reactive wrapper around {@link #uploadBase64Image(String)}; offloads the blocking
+     * decode/resize/encode work to the bounded elastic scheduler instead of the WebFlux
+     * event-loop thread.
+     */
+    public Mono<String> uploadBase64ImageReactive(String base64String) {
+        return Mono.fromCallable(() -> uploadBase64Image(base64String))
+                .subscribeOn(Schedulers.boundedElastic());
     }
 
     /**

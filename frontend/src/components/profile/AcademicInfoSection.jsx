@@ -110,7 +110,9 @@ const AcademicInfoSection = ({ academicProfile }) => {
             <AcademicInfoRowCard
               icon={field.icon}
               label={t(`profile:${field.labelKey}`)}
-              value={activeRecord[field.key] || t('profile:not_updated')}
+              value={(field.key === 'faculty'
+                ? activeRecord.faculty || activeRecord.organizationName
+                : activeRecord[field.key]) || t('profile:not_updated')}
             />
           </Grid>
         ))}
