@@ -51,16 +51,18 @@ class OrganizationApi {
     List<String>? program,
     List<String>? major,
     List<int>? graduatedYear,
+    List<String>? graduationStatus,
   }) {
     return _dio.post(
       ApiEndpoints.meOrganizationMember,
       data: {
         'organizationId': organizationId,
         if (studentId != null) 'studentId': studentId,
-        'startedYear': startedYear,
-        'graduatedYear': graduatedYear,
-        'program': program,
-        'major': major,
+        'startedYear': startedYear ?? const <String>[],
+        'graduatedYear': graduatedYear ?? const <int>[],
+        'graduationStatus': graduationStatus ?? const <String>[],
+        'program': program ?? const <String>[],
+        'major': major ?? const <String>[],
       },
     );
   }

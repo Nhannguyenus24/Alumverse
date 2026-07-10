@@ -36,6 +36,16 @@ class _MentorProfilePageState extends ConsumerState<MentorProfilePage>
   @override
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(mentorProfileProvider(widget.memberId));
+    final myMentorAsync = ref.watch(myMentorProfileProvider);
+    final myMenteeAsync = ref.watch(myMenteeProfileProvider);
+    final myMentor = myMentorAsync.valueOrNull;
+    final isMentorPending = (myMentor?.status ?? '').toUpperCase() == 'PENDING';
+    final isOwnMentorProfile = myMentor?.memberId == widget.memberId;
+    final canBook =
+        !isMentorPending &&
+        !isOwnMentorProfile &&
+        ((myMentor?.status ?? '').toUpperCase() == 'APPROVED' ||
+            myMenteeAsync.valueOrNull != null);
 
     return Scaffold(
       appBar: AppBar(
@@ -148,9 +158,11 @@ class _MentorProfilePageState extends ConsumerState<MentorProfilePage>
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         onPressed:
-                            () => context.push(
-                              '${RouteNames.mentorship}/mentors/${widget.memberId}/book',
-                            ),
+                            canBook
+                                ? () => context.push(
+                                  '${RouteNames.mentorship}/mentors/${widget.memberId}/book',
+                                )
+                                : null,
                         icon: const Icon(Icons.calendar_month, size: 18),
                         label: Text('mentorship.book_appointment'.tr()),
                         style: ElevatedButton.styleFrom(
@@ -171,10 +183,8 @@ class _MentorProfilePageState extends ConsumerState<MentorProfilePage>
                     // Tab 1: Info
                     Builder(
                       builder: (_) {
-                        final tags = {
-                          ...m.expertiseTags,
-                          ...m.expertiseTopics,
-                        }.toList();
+                        final tags =
+                            {...m.expertiseTags, ...m.expertiseTopics}.toList();
                         return ListView(
                           padding: const EdgeInsets.all(16),
                           children: [

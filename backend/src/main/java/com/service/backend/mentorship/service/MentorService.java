@@ -222,6 +222,11 @@ public class MentorService {
                 profileRepository.findById(memberId)
                         .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.MENTOR_PROFILE_NOT_FOUND, "Mentor profile not found")))
                         .flatMap(existing -> {
+                            if (!Status.APPROVED.equals(existing.getStatus())) {
+                                return Mono.error(new ApplicationException(
+                                        ErrorCode.FORBIDDEN,
+                                        "Chỉ hồ sơ cố vấn đã được duyệt mới có thể chỉnh sửa"));
+                            }
                             if (request.getCurrentJobTitle() != null) existing.setCurrentJobTitle(request.getCurrentJobTitle());
                             if (request.getCurrentCompany() != null) existing.setCurrentCompany(request.getCurrentCompany());
                             if (request.getDefaultMeetingLink() != null) existing.setDefaultMeetingLink(request.getDefaultMeetingLink());
@@ -530,7 +535,7 @@ public class MentorService {
                                     Mono<Integer> updateLink = request.getMeetingLink() != null
                                             ? sessionRepository.updateMeetingLink(sessionId, request.getMeetingLink())
                                             : Mono.just(0);
-                                    return Mono.when(updateStatus, updateLink)
+                                    return Mono.when(updateStatus, updateLink, profileRepository.incrementTotalSessions(mentorMemberId))
                                             .doOnSuccess(ignored -> notificationService.createNotificationAsync(
                                                     session.getMenteeMemberId(),
                                                     "Buổi cố vấn đã hoàn tất",

@@ -118,6 +118,13 @@ class EventRepository {
     return EventTicket.fromJson(data);
   }
 
+  Future<void> cancelTicketByCode(String code, String reason) async {
+    await _dio.post(
+      ApiEndpoints.eventCancelTicket(code),
+      data: {'reason': reason},
+    );
+  }
+
   /// Admin/staff check-in for [eventId]. Provide either the scanned encrypted
   /// [qrToken] (preferred) or the raw ticket [code] (manual fallback).
   /// (`POST /api/events/{eventId}/tickets/check-in`). The backend decrypts/verifies
@@ -232,10 +239,7 @@ class EventRepository {
         message: 'event.ticket_not_found'.tr(),
       );
     }
-    await _dio.post(
-      ApiEndpoints.eventCancelTicket(code),
-      data: {'reason': reason},
-    );
+    await cancelTicketByCode(code, reason);
   }
 
   /// Find the (non-cancelled) ticket code the current user holds for [eventId].
@@ -252,7 +256,9 @@ class EventRepository {
       if (raw is! Map) continue;
       final tEventId = (raw['eventId'] as num?)?.toInt();
       final status = raw['status']?.toString().toUpperCase();
-      if (tEventId == eventId && status != 'CANCELLED') {
+      final canCancel =
+          status == 'PENDING' || status == 'ISSUED' || status == 'ACTIVE';
+      if (tEventId == eventId && canCancel) {
         final code = raw['ticketCode']?.toString();
         if (code != null && code.isNotEmpty) return code;
       }

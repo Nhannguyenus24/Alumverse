@@ -39,6 +39,7 @@
   "default_organizer": "Ban tổ chức",
   "cancel_ticket_success": "Vé của bạn đã được huỷ.",
   "cancel_ticket_error": "Huỷ vé thất bại.",
+  "ticket_not_found": "Không tìm thấy vé đăng ký để hủy.",
   "cancel_ticket_reason_prompt": "Vui lòng cho biết lý do bạn không thể tham gia sự kiện.",
   "cancel_reason_label": "Lý do không tham gia",
   "confirm_cancel_ticket": "Xác nhận huỷ vé",

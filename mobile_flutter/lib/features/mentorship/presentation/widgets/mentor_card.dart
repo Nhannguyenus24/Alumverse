@@ -13,12 +13,12 @@ class MentorCard extends StatelessWidget {
     super.key,
     required this.mentor,
     required this.onViewProfile,
-    required this.onBook,
+    this.onBook,
   });
 
   final MentorProfile mentor;
   final VoidCallback onViewProfile;
-  final VoidCallback onBook;
+  final VoidCallback? onBook;
 
   @override
   Widget build(BuildContext context) {

@@ -1,6 +1,7 @@
 import {
   Box,
   alpha,
+  Alert,
   Button,
   Card,
   Stack,
@@ -213,12 +214,23 @@ const GuestLandingContent = () => {
 const HubContent = () => {
   const { t } = useTranslation(['nav', 'mentorship']);
   const { user, isAuthenticated } = useAuth();
+  const access = useMentorshipAccessState();
   const navigate = useOrgNavigate();
   const isAdmin = isAuthenticated && user?.role === 'ADMIN';
 
   return (
     <Stack spacing={4}>
       <Stack spacing={2}>
+        {access.isMentorPending && (
+          <Alert severity="info" sx={{ borderRadius: 2 }}>
+            <Typography fontWeight={800} mb={0.5}>
+              {t('mentorship:mentor_pending_hub_title')}
+            </Typography>
+            <Typography variant="body2">
+              {t('mentorship:mentor_pending_hub_desc')}
+            </Typography>
+          </Alert>
+        )}
         <Box
           sx={{
             display: 'flex',

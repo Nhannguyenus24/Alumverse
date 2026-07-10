@@ -212,27 +212,37 @@ public class EventService {
 
     public Mono<Integer> inviteUsers(Long eventId, InviteUsersRequest request) {
         return SecurityUtils.getCurrentUserId().flatMap(invitedBy ->
-                eventRepository.findEventById(eventId)
-                        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId)))
+                assertEventInCurrentOrg(eventId)
                         .flatMap(event -> Flux.fromIterable(request.getInvitees())
                                 .flatMap(invitee -> {
-                                    String email = invitee.getEmail();
+                                    String normalizedEmail = invitee.getEmail() != null
+                                            ? invitee.getEmail().trim().toLowerCase(Locale.ROOT)
+                                            : null;
+                                    String email = normalizedEmail != null && !normalizedEmail.isBlank() ? normalizedEmail : null;
                                     Long memberId = invitee.getMemberId();
                                     if (email == null && memberId == null) return Mono.empty();
 
-                                    EventInvitation invitation = EventInvitation.builder()
-                                            .eventId(eventId)
-                                            .memberId(memberId)
-                                            .email(email != null ? email : "")
-                                            .token(UUID.randomUUID().toString())
-                                            .invitedBy(invitedBy)
-                                            .expiresAt(LocalDateTime.now().plusDays(7))
-                                            .build();
+                                    Mono<Optional<Long>> resolvedMemberId = memberId != null
+                                            ? Mono.just(Optional.of(memberId))
+                                            : userProfileRepository.findAttendeeProfileByEmail(email)
+                                                    .map(profile -> Optional.of(profile.id().longValue()))
+                                                    .defaultIfEmpty(Optional.empty());
 
-                                    return eventRepository.createInvitation(invitation)
-                                            .flatMap(inv -> sendInvitationEmail(event, inv)
-                                                    .then(notifyInvitation(event, inv)))
-                                            .thenReturn(1);
+                                    return resolvedMemberId.flatMap(resolved -> {
+                                        EventInvitation invitation = EventInvitation.builder()
+                                                .eventId(eventId)
+                                                .memberId(resolved.orElse(null))
+                                                .email(email != null ? email : "")
+                                                .token(UUID.randomUUID().toString())
+                                                .invitedBy(invitedBy)
+                                                .expiresAt(LocalDateTime.now().plusDays(7))
+                                                .build();
+
+                                        return eventRepository.createInvitation(invitation)
+                                                .flatMap(inv -> sendInvitationEmail(event, inv)
+                                                        .then(notifyInvitation(event, inv)))
+                                                .thenReturn(1);
+                                    });
                                 }, BULK_EMAIL_CONCURRENCY)
                                 .reduce(0, Integer::sum)));
     }
@@ -636,7 +646,8 @@ public class EventService {
     // ─── Invitation queries ───────────────────────────────────────────────────
 
     public Mono<PaginatedResponse<EventInvitationDetailResponse>> getInvitationsByEvent(Long eventId, int page, int limit) {
-        return eventRepository.findInvitationsByEvent(eventId, page, limit)
+        return assertEventInCurrentOrg(eventId)
+                .then(eventRepository.findInvitationsByEvent(eventId, page, limit))
                 .flatMap(this::mapInvitationPageWithMembers);
     }
 

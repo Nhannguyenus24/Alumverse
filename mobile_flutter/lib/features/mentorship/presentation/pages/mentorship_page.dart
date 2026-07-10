@@ -42,16 +42,36 @@ class _MentorshipPageState extends ConsumerState<MentorshipPage> {
   Widget build(BuildContext context) {
     final mentorsAsync = ref.watch(mentorListProvider);
     final query = ref.watch(mentorQueryProvider);
+    final mentorProfileAsync = ref.watch(myMentorProfileProvider);
+    final menteeProfileAsync = ref.watch(myMenteeProfileProvider);
+    final myMentor = mentorProfileAsync.valueOrNull;
+    final mentorStatus = mentorProfileAsync.maybeWhen(
+      data: (profile) => (profile?.status ?? '').toUpperCase(),
+      orElse: () => '',
+    );
+    final isMentorPending = mentorStatus == 'PENDING';
+    final isMentorStatusLoading = mentorProfileAsync.isLoading;
+    final hasActiveMentorship =
+        mentorProfileAsync.maybeWhen(
+          data:
+              (profile) => (profile?.status ?? '').toUpperCase() == 'APPROVED',
+          orElse: () => false,
+        ) ||
+        menteeProfileAsync.maybeWhen(
+          data: (profile) => profile != null,
+          orElse: () => false,
+        );
 
     return Scaffold(
       appBar: AppBar(
         title: Text('mentorship.title'.tr()),
         actions: [
-          TextButton.icon(
-            onPressed: () => context.push(RouteNames.mentorshipMyBookings),
-            icon: const Icon(Icons.event_note, size: 18),
-            label: Text('mentorship.appointments'.tr()),
-          ),
+          if (!isMentorPending && hasActiveMentorship)
+            TextButton.icon(
+              onPressed: () => context.push(RouteNames.mentorshipMyBookings),
+              icon: const Icon(Icons.event_note, size: 18),
+              label: Text('mentorship.appointments'.tr()),
+            ),
         ],
       ),
       body: RefreshIndicator(
@@ -81,8 +101,10 @@ class _MentorshipPageState extends ConsumerState<MentorshipPage> {
             ),
             const SizedBox(height: 12),
             const _BecomeMentorBanner(),
-            const SizedBox(height: 12),
-            const _BecomeMenteeBanner(),
+            if (!isMentorPending && !isMentorStatusLoading) ...[
+              const SizedBox(height: 12),
+              const _BecomeMenteeBanner(),
+            ],
             const SizedBox(height: 16),
             const _StatsBanner(),
             const SizedBox(height: 20),
@@ -141,9 +163,13 @@ class _MentorshipPageState extends ConsumerState<MentorshipPage> {
                                       '${RouteNames.mentorship}/mentors/${m.memberId}',
                                     ),
                                 onBook:
-                                    () => context.push(
-                                      '${RouteNames.mentorship}/mentors/${m.memberId}/book',
-                                    ),
+                                    (!isMentorPending &&
+                                            hasActiveMentorship &&
+                                            myMentor?.memberId != m.memberId)
+                                        ? () => context.push(
+                                          '${RouteNames.mentorship}/mentors/${m.memberId}/book',
+                                        )
+                                        : null,
                               ),
                             ),
                           )
@@ -465,7 +491,10 @@ class _SkillFilterSheetState extends ConsumerState<_SkillFilterSheet> {
             children: [
               Text(
                 'mentorship.filter_skill'.tr(),
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
               ),
               const SizedBox(height: 12),
               TextField(
@@ -479,11 +508,16 @@ class _SkillFilterSheetState extends ConsumerState<_SkillFilterSheet> {
               const SizedBox(height: 8),
               Expanded(
                 child: resultsAsync.when(
-                  loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (_, __) => Center(child: Text('mentorship.load_failed'.tr())),
+                  loading:
+                      () => const Center(child: CircularProgressIndicator()),
+                  error:
+                      (_, __) =>
+                          Center(child: Text('mentorship.load_failed'.tr())),
                   data: (skills) {
                     if (skills.isEmpty) {
-                      return Center(child: Text('mentorship.no_skill_found'.tr()));
+                      return Center(
+                        child: Text('mentorship.no_skill_found'.tr()),
+                      );
                     }
                     return ListView.builder(
                       controller: scrollController,

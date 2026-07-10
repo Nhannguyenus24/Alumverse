@@ -66,6 +66,9 @@ public interface UserProfileRepository extends R2dbcRepository<User, Integer> {
     @Query("SELECT id, full_name, email, avatar_url FROM users WHERE id = :userId")
     Mono<AttendeeProfile> findAttendeeProfileByUserId(@Param("userId") Integer userId);
 
+    @Query("SELECT id, full_name, email, avatar_url FROM users WHERE LOWER(email) = LOWER(:email) LIMIT 1")
+    Mono<AttendeeProfile> findAttendeeProfileByEmail(@Param("email") String email);
+
     @Query("""
             SELECT u.id AS user_id,
                    u.email,

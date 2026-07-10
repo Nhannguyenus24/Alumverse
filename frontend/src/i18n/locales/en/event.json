@@ -39,6 +39,7 @@
   "default_organizer": "Organizer",
   "cancel_ticket_success": "Your ticket has been cancelled.",
   "cancel_ticket_error": "Failed to cancel ticket.",
+  "ticket_not_found": "No registration ticket found to cancel.",
   "cancel_ticket_reason_prompt": "Please tell us why you cannot attend the event.",
   "cancel_reason_label": "Reason for not attending",
   "confirm_cancel_ticket": "Confirm Cancellation",

@@ -72,6 +72,11 @@ class EventTicket {
     return s == 'CHECKED_IN' || s == 'USED';
   }
 
+  bool get canCancel {
+    final s = status.toUpperCase();
+    return s == 'PENDING' || s == 'ISSUED' || s == 'ACTIVE';
+  }
+
   /// i18n key for the status label. Use `.tr()` in the UI layer.
   String get statusKey {
     switch (status.toUpperCase()) {
