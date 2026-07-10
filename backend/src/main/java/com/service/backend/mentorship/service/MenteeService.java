@@ -45,6 +45,7 @@ public class MenteeService {
     private final MentorshipAccessService accessService;
     private final NotificationService notificationService;
     private final MentorshipReportR2dbcRepository reportRepository;
+    private final SkillService skillService;
 
     private Mono<Integer> currentMemberId() {
         return SecurityUtils.getCurrentUserId().map(Long::intValue);
@@ -52,17 +53,21 @@ public class MenteeService {
 
     private Mono<Void> requireJoinedMentorship() {
         return currentMemberId().flatMap(memberId ->
-                menteeProfileRepository.findById(memberId).hasElement()
-                        .zipWith(profileRepository.findById(memberId).hasElement())
+                menteeProfileRepository.findById(memberId)
+                        .map(profile -> Boolean.TRUE.equals(profile.getIsActive()))
+                        .defaultIfEmpty(false)
+                        .zipWith(profileRepository.findById(memberId)
+                                .map(profile -> Status.APPROVED.equals(profile.getStatus()))
+                                .defaultIfEmpty(false))
                         .flatMap(tuple -> {
                             boolean hasMentee = tuple.getT1();
-                            boolean hasMentor = tuple.getT2();
-                            if (hasMentee || hasMentor) {
+                            boolean hasApprovedMentor = tuple.getT2();
+                            if (hasMentee || hasApprovedMentor) {
                                 return Mono.empty();
                             }
                             return Mono.error(new ApplicationException(
                                     ErrorCode.FORBIDDEN,
-                                    "Bạn cần đăng ký trở thành mentee hoặc cố vấn trước khi đặt lịch hẹn."));
+                                    "Bạn cần đăng ký trở thành mentee hoặc được duyệt làm cố vấn trước khi đặt lịch hẹn."));
                         }));
     }
 
@@ -84,7 +89,8 @@ public class MenteeService {
                             .defaultIfEmpty(MentorshipSessionResponse.from(s));
                 })
                 .collectList()
-                .flatMap(this::attachUserDisplay);
+                .flatMap(this::attachUserDisplay)
+                .flatMap(this::attachFeedbackState);
     }
 
     private Mono<List<MentorshipSessionResponse>> attachUserDisplay(List<MentorshipSessionResponse> list) {
@@ -113,6 +119,25 @@ public class MenteeService {
                 });
     }
 
+    private Mono<List<MentorshipSessionResponse>> attachFeedbackState(List<MentorshipSessionResponse> list) {
+        Set<Integer> sessionIds = new HashSet<>();
+        for (MentorshipSessionResponse r : list) {
+            if (r.getId() != null) sessionIds.add(r.getId());
+        }
+        if (sessionIds.isEmpty()) return Mono.just(list);
+
+        return feedbackRepository.findBySessionIds(sessionIds)
+                .collectMap(SessionFeedback::getSessionId)
+                .map(map -> {
+                    for (MentorshipSessionResponse r : list) {
+                        SessionFeedback feedback = r.getId() != null ? map.get(r.getId()) : null;
+                        r.setHasFeedback(feedback != null);
+                        r.setFeedbackId(feedback != null ? feedback.getId() : null);
+                    }
+                    return list;
+                });
+    }
+
     private Mono<List<MentorProfileResponse>> attachProfileDisplay(List<MentorProfileResponse> list) {
         if (list.isEmpty()) return Mono.just(list);
         Set<Integer> ids = new HashSet<>();
@@ -131,10 +156,17 @@ public class MenteeService {
                     mm.forEach((k, v) -> out.put(k, new java.util.ArrayList<>(v)));
                     return out;
                 });
+        Mono<Map<Integer, java.util.List<String>>> tagsMono = Flux.fromIterable(ids)
+                .flatMap(memberId -> skillService.getMentorSkills(memberId)
+                        .map(skills -> Map.entry(memberId, skills.stream()
+                                .map(SkillResponse::getName)
+                                .toList())))
+                .collectMap(Map.Entry::getKey, Map.Entry::getValue);
 
-        return Mono.zip(displayMono, topicsMono).map(tuple -> {
+        return Mono.zip(displayMono, topicsMono, tagsMono).map(tuple -> {
             Map<Integer, UserDisplayInfo> dmap = tuple.getT1();
             Map<Integer, java.util.List<String>> tmap = tuple.getT2();
+            Map<Integer, java.util.List<String>> smap = tuple.getT3();
             for (MentorProfileResponse r : list) {
                 UserDisplayInfo info = dmap.get(r.getMemberId());
                 if (info != null) {
@@ -148,6 +180,10 @@ public class MenteeService {
                 java.util.List<String> topics = tmap.get(r.getMemberId());
                 if (topics != null) {
                     r.setExpertiseTopics(topics);
+                }
+                java.util.List<String> tags = smap.get(r.getMemberId());
+                if (tags != null) {
+                    r.setExpertiseTags(tags);
                 }
             }
             return list;
@@ -457,6 +493,11 @@ public class MenteeService {
                 sessionRepository.findById(sessionId)
                         .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.SESSION_NOT_FOUND, "Session not found")))
                         .flatMap(session -> {
+                            if (!memberId.equals(session.getMenteeMemberId())) {
+                                return Mono.error(new ApplicationException(
+                                        ErrorCode.FORBIDDEN,
+                                        "Bạn không có quyền đánh giá buổi mentoring này"));
+                            }
                             if (!Status.COMPLETED.equals(session.getStatus())) {
                                 return Mono.error(new ApplicationException(ErrorCode.SESSION_NOT_COMPLETED, "Can only provide feedback for completed sessions"));
                             }

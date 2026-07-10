@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { Box, IconButton, Stack, Typography, alpha } from '@mui/material';
-import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+import { Box, Chip, Stack, Typography, alpha } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { useTranslation } from 'react-i18next';
 
@@ -35,56 +34,47 @@ const TagPriorityList = ({ tags, onReorder, onRemove }) => {
       <Typography variant="caption" color="text.secondary">
         {t('signup_tab_tags_priority_hint')}
       </Typography>
-      {tags.map((tag, index) => (
-        <Box
-          key={tag}
-          draggable
-          onDragStart={() => setDragIndex(index)}
-          onDragOver={(e) => {
-            e.preventDefault();
-            if (overIndex !== index) setOverIndex(index);
-          }}
-          onDrop={(e) => {
-            e.preventDefault();
-            handleDrop(index);
-          }}
-          onDragEnd={() => {
-            setDragIndex(null);
-            setOverIndex(null);
-          }}
-          sx={(theme) => ({
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1,
-            px: 1.5,
-            py: 1,
-            borderRadius: 1.5,
-            border: '1px solid',
-            borderColor: overIndex === index ? theme.palette.primary.main : theme.palette.divider,
-            bgcolor: overIndex === index
-              ? alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.14 : 0.06)
-              : 'transparent',
-            opacity: dragIndex === index ? 0.5 : 1,
-            cursor: 'grab',
-          })}
-        >
-          <IconButton size="small" onClick={() => onRemove(tag)} aria-label={t('signup_tab_remove_tag')}>
-            <CloseIcon fontSize="small" />
-          </IconButton>
-          <Typography
-            variant="caption"
-            fontWeight={700}
-            color="text.secondary"
-            sx={{ width: 20, textAlign: 'center', flexShrink: 0 }}
-          >
-            {index + 1}
-          </Typography>
-          <Typography sx={{ flexGrow: 1, fontWeight: 600 }} noWrap>
-            {tag}
-          </Typography>
-          <DragIndicatorIcon fontSize="small" sx={{ color: 'text.disabled', flexShrink: 0 }} />
-        </Box>
-      ))}
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+        {tags.map((tag, index) => (
+          <Chip
+            key={tag}
+            draggable
+            label={`${index + 1}. ${tag}`}
+            deleteIcon={<CloseIcon />}
+            onDelete={() => onRemove(tag)}
+            onDragStart={() => setDragIndex(index)}
+            onDragOver={(e) => {
+              e.preventDefault();
+              if (overIndex !== index) setOverIndex(index);
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              handleDrop(index);
+            }}
+            onDragEnd={() => {
+              setDragIndex(null);
+              setOverIndex(null);
+            }}
+            sx={(theme) => ({
+              borderRadius: 1,
+              maxWidth: '100%',
+              fontWeight: 700,
+              border: '1px solid',
+              borderColor: overIndex === index ? theme.palette.primary.main : theme.palette.divider,
+              bgcolor: overIndex === index
+                ? alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.14 : 0.06)
+                : 'background.paper',
+              opacity: dragIndex === index ? 0.5 : 1,
+              cursor: 'grab',
+              '& .MuiChip-label': {
+                maxWidth: 280,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              },
+            })}
+          />
+        ))}
+      </Box>
     </Stack>
   );
 };

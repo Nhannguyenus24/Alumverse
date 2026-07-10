@@ -237,7 +237,7 @@ const MentorSignupTabProfile = ({ values, onChange }) => {
             startIcon={<PhotoCameraIcon />}
             onClick={() => avatarCrop.setOpen(true)}
           >
-            {values.avatarFile ? t('signup_profile_change_avatar') : t('signup_profile_pick_avatar')}
+            {values.avatarFile || values.avatarPreview ? t('signup_profile_change_avatar') : t('signup_profile_pick_avatar')}
           </Button>
         </Stack>
       </Box>

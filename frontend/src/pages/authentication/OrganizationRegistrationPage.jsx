@@ -40,6 +40,7 @@ const getValidationSchema = (t) => z.object({
     z.number({ required_error: t("auth:validation_graduated_year_required"), invalid_type_error: t("auth:validation_graduated_year_required") })
       .positive(t("auth:validation_must_be_positive")).int(),
   ),
+  graduationStatus: z.string().min(1, t("auth:validation_graduation_status_required")),
   degreeType: z.string().min(1, t("auth:validation_major_required")),
 });
 
@@ -88,6 +89,12 @@ const formatVerifierSubtitle = (programData, majorData) => {
 };
 
 const getVerifierUserId = (verifier) => verifier?.userId ?? verifier?.id ?? verifier?.user_id;
+
+const GRADUATION_STATUS_OPTIONS = [
+  { value: "STUDYING", labelKey: "graduation_status_studying" },
+  { value: "GRADUATED", labelKey: "graduation_status_graduated" },
+  { value: "DROPPED", labelKey: "graduation_status_dropped" },
+];
 
 // ─── Verification option card ─────────────────────────────────────────────────
 const VerificationOptionCard = ({ icon, title, description, selected, onClick }) => (
@@ -187,7 +194,7 @@ const OrganizationRegistrationPage = () => {
     resolver: zodResolver(getValidationSchema(t)),
     defaultValues: {
       organizationId: organizationId ?? undefined,
-      studentCode: "", className: "", startYear: undefined, graduatedYear: undefined, degreeType: "",
+      studentCode: "", className: "", startYear: undefined, graduatedYear: undefined, graduationStatus: "", degreeType: "",
     },
   });
 
@@ -256,6 +263,7 @@ const OrganizationRegistrationPage = () => {
         program: data.className ? [data.className] : null,
         major: data.degreeType ? [data.degreeType] : null,
         graduatedYear: data.graduatedYear ? [data.graduatedYear] : null,
+        graduationStatus: data.graduationStatus ? [data.graduationStatus] : null,
         ...(data.studentCode && { studentCode: data.studentCode }),
         ...(data.startYear && { startYear: data.startYear }),
       };
@@ -433,6 +441,15 @@ const OrganizationRegistrationPage = () => {
               <Input label={t("auth:start_year_label")} type="number" placeholder={t("auth:start_year_placeholder")} error={!!errors.startYear} helperText={errors.startYear?.message} sx={{ flex: 1 }} {...register("startYear", { valueAsNumber: true })} />
               <Input label={t("auth:graduated_year_label")} type="number" placeholder={t("auth:graduated_year_placeholder")} error={!!errors.graduatedYear} helperText={errors.graduatedYear?.message} sx={{ flex: 1 }} {...register("graduatedYear", { valueAsNumber: true })} />
             </Stack>
+
+            <TextField select label={t("auth:graduation_status_label")} error={!!errors.graduationStatus} helperText={errors.graduationStatus?.message} defaultValue="" {...register("graduationStatus")}>
+              <MenuItem value="">{t("auth:graduation_status_placeholder")}</MenuItem>
+              {GRADUATION_STATUS_OPTIONS.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {t(`auth:${option.labelKey}`)}
+                </MenuItem>
+              ))}
+            </TextField>
 
             {majorOptions.length > 0 ? (
               <TextField select label={t("auth:major_label")} error={!!errors.degreeType} helperText={errors.degreeType?.message} defaultValue="" {...register("degreeType")}>

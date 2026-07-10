@@ -31,10 +31,27 @@ public interface MentorProfileR2dbcRepository extends ReactiveCrudRepository<Men
 
     // ===================== Search by keyword =====================
 
-    @Query("SELECT * FROM mentor_profiles WHERE status = 'APPROVED' AND (LOWER(current_job_title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(current_company) LIKE LOWER(CONCAT('%', :keyword, '%'))) ORDER BY rating_avg DESC LIMIT :limit OFFSET :offset")
+    @Query("SELECT * FROM mentor_profiles mp WHERE mp.status = 'APPROVED' AND " +
+            "(LOWER(mp.current_job_title) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+            "OR LOWER(mp.current_company) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+            "OR EXISTS (SELECT 1 FROM mentor_expertise me WHERE me.mentor_member_id = mp.member_id " +
+            "    AND (LOWER(me.topic) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+            "      OR LOWER(me.category) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+            "      OR LOWER(me.tag) LIKE LOWER(CONCAT('%', :keyword, '%')))) " +
+            "OR EXISTS (SELECT 1 FROM mentor_skills ms JOIN skills s ON s.id = ms.skill_id " +
+            "    WHERE ms.mentor_member_id = mp.member_id AND LOWER(s.name) LIKE LOWER(CONCAT('%', :keyword, '%')))) " +
+            "ORDER BY mp.rating_avg DESC LIMIT :limit OFFSET :offset")
     Flux<MentorProfile> searchMentors(String keyword, int limit, int offset);
 
-    @Query("SELECT COUNT(*) FROM mentor_profiles WHERE status = 'APPROVED' AND (LOWER(current_job_title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(current_company) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    @Query("SELECT COUNT(*) FROM mentor_profiles mp WHERE mp.status = 'APPROVED' AND " +
+            "(LOWER(mp.current_job_title) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+            "OR LOWER(mp.current_company) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+            "OR EXISTS (SELECT 1 FROM mentor_expertise me WHERE me.mentor_member_id = mp.member_id " +
+            "    AND (LOWER(me.topic) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+            "      OR LOWER(me.category) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+            "      OR LOWER(me.tag) LIKE LOWER(CONCAT('%', :keyword, '%')))) " +
+            "OR EXISTS (SELECT 1 FROM mentor_skills ms JOIN skills s ON s.id = ms.skill_id " +
+            "    WHERE ms.mentor_member_id = mp.member_id AND LOWER(s.name) LIKE LOWER(CONCAT('%', :keyword, '%'))))")
     Mono<Long> countSearchMentors(String keyword);
 
     // ===================== Combined filter =====================
@@ -50,8 +67,13 @@ public interface MentorProfileR2dbcRepository extends ReactiveCrudRepository<Men
             "WHERE mp.status = 'APPROVED' " +
             "AND (:search IS NULL OR LOWER(mp.current_job_title) LIKE LOWER(CONCAT('%', :search, '%')) " +
             "     OR LOWER(mp.current_company) LIKE LOWER(CONCAT('%', :search, '%')) " +
-
-            "     OR LOWER(gp.full_name) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+            "     OR LOWER(gp.full_name) LIKE LOWER(CONCAT('%', :search, '%')) " +
+            "     OR EXISTS (SELECT 1 FROM mentor_expertise me WHERE me.mentor_member_id = mp.member_id " +
+            "         AND (LOWER(me.topic) LIKE LOWER(CONCAT('%', :search, '%')) " +
+            "           OR LOWER(me.category) LIKE LOWER(CONCAT('%', :search, '%')) " +
+            "           OR LOWER(me.tag) LIKE LOWER(CONCAT('%', :search, '%')))) " +
+            "     OR EXISTS (SELECT 1 FROM mentor_skills ms JOIN skills s ON s.id = ms.skill_id " +
+            "         WHERE ms.mentor_member_id = mp.member_id AND LOWER(s.name) LIKE LOWER(CONCAT('%', :search, '%')))) " +
             "AND (:hasSkillFilter = false OR mp.member_id IN " +
             "     (SELECT ms.mentor_member_id FROM mentor_skills ms WHERE ms.skill_id IN (:skillIds))) " +
             "AND (:minRating IS NULL OR mp.rating_avg >= :minRating) " +
@@ -71,8 +93,13 @@ public interface MentorProfileR2dbcRepository extends ReactiveCrudRepository<Men
             "WHERE mp.status = 'APPROVED' " +
             "AND (:search IS NULL OR LOWER(mp.current_job_title) LIKE LOWER(CONCAT('%', :search, '%')) " +
             "     OR LOWER(mp.current_company) LIKE LOWER(CONCAT('%', :search, '%')) " +
-
-            "     OR LOWER(gp.full_name) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+            "     OR LOWER(gp.full_name) LIKE LOWER(CONCAT('%', :search, '%')) " +
+            "     OR EXISTS (SELECT 1 FROM mentor_expertise me WHERE me.mentor_member_id = mp.member_id " +
+            "         AND (LOWER(me.topic) LIKE LOWER(CONCAT('%', :search, '%')) " +
+            "           OR LOWER(me.category) LIKE LOWER(CONCAT('%', :search, '%')) " +
+            "           OR LOWER(me.tag) LIKE LOWER(CONCAT('%', :search, '%')))) " +
+            "     OR EXISTS (SELECT 1 FROM mentor_skills ms JOIN skills s ON s.id = ms.skill_id " +
+            "         WHERE ms.mentor_member_id = mp.member_id AND LOWER(s.name) LIKE LOWER(CONCAT('%', :search, '%')))) " +
             "AND (:hasSkillFilter = false OR mp.member_id IN " +
             "     (SELECT ms.mentor_member_id FROM mentor_skills ms WHERE ms.skill_id IN (:skillIds))) " +
             "AND (:minRating IS NULL OR mp.rating_avg >= :minRating) " +
@@ -93,8 +120,13 @@ public interface MentorProfileR2dbcRepository extends ReactiveCrudRepository<Men
             "WHERE mp.status = 'APPROVED' " +
             "AND (LOWER(mp.current_job_title) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
             "     OR LOWER(mp.current_company) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
-
-            "     OR LOWER(gp.full_name) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+            "     OR LOWER(gp.full_name) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+            "     OR EXISTS (SELECT 1 FROM mentor_expertise me WHERE me.mentor_member_id = mp.member_id " +
+            "         AND (LOWER(me.topic) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+            "           OR LOWER(me.category) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+            "           OR LOWER(me.tag) LIKE LOWER(CONCAT('%', :keyword, '%')))) " +
+            "     OR EXISTS (SELECT 1 FROM mentor_skills ms JOIN skills s ON s.id = ms.skill_id " +
+            "         WHERE ms.mentor_member_id = mp.member_id AND LOWER(s.name) LIKE LOWER(CONCAT('%', :keyword, '%')))) " +
             "ORDER BY mp.rating_avg DESC LIMIT :limit OFFSET :offset")
     Flux<MentorProfile> searchMentorsWithName(String keyword, int limit, int offset);
 
@@ -104,8 +136,13 @@ public interface MentorProfileR2dbcRepository extends ReactiveCrudRepository<Men
             "WHERE mp.status = 'APPROVED' " +
             "AND (LOWER(mp.current_job_title) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
             "     OR LOWER(mp.current_company) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
-
-            "     OR LOWER(gp.full_name) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+            "     OR LOWER(gp.full_name) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+            "     OR EXISTS (SELECT 1 FROM mentor_expertise me WHERE me.mentor_member_id = mp.member_id " +
+            "         AND (LOWER(me.topic) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+            "           OR LOWER(me.category) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+            "           OR LOWER(me.tag) LIKE LOWER(CONCAT('%', :keyword, '%')))) " +
+            "     OR EXISTS (SELECT 1 FROM mentor_skills ms JOIN skills s ON s.id = ms.skill_id " +
+            "         WHERE ms.mentor_member_id = mp.member_id AND LOWER(s.name) LIKE LOWER(CONCAT('%', :keyword, '%'))))")
     Mono<Long> countSearchMentorsWithName(String keyword);
 
     // ===================== Status transitions (admin) =====================
