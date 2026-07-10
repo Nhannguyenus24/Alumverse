@@ -1024,6 +1024,7 @@
   "org_feat_fundraising": "Fundraising feature",
   "org_feat_events": "Events feature",
   "org_feat_forum": "Forum feature",
+  "org_feat_fitbot": "FitBot assistant",
   "org_feature_updated": "Feature \"{{name}}\" updated",
   "org_feature_update_failed": "Failed to update feature",
   "org_feature_toggle_desc": "Enable or disable {{feature}} for this organization.",

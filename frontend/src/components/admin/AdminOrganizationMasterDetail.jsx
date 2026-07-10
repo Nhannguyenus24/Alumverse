@@ -764,7 +764,9 @@ const AdminOrganizationMasterDetail = ({
                             fund: t('admin:org_feat_fundraising'),
                             events: t('admin:org_feat_events'),
                             forum: t('admin:org_feat_forum'),
+                            fitbot: t('admin:org_feat_fitbot'),
                           };
+                          const featureKeys = Object.keys(featureLabels);
 
                           const handleToggle = async (key) => {
                             try {
@@ -776,14 +778,14 @@ const AdminOrganizationMasterDetail = ({
                             }
                           };
 
-                          return Object.keys(featureLabels).map((key) => (
+                          return featureKeys.map((key, idx) => (
                             <Box key={key} sx={{
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'space-between',
                               py: 1.5,
                               px: 1,
-                              borderBottom: key !== 'forum' ? 1 : 0,
+                              borderBottom: idx !== featureKeys.length - 1 ? 1 : 0,
                               borderColor: 'divider'
                             }}>
                               <Box>

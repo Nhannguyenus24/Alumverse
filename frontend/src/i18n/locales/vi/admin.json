@@ -1048,6 +1048,7 @@
   "org_feat_fundraising": "Tính năng gây quỹ (Fundraising)",
   "org_feat_events": "Tính năng sự kiện (Events)",
   "org_feat_forum": "Tính năng diễn đàn (Forum)",
+  "org_feat_fitbot": "Trợ lý FitBot",
   "org_feature_updated": "Đã cập nhật tính năng \"{{name}}\"",
   "org_feature_update_failed": "Không thể cập nhật tính năng",
   "org_feature_toggle_desc": "Bật hoặc tắt hiển thị {{feature}} cho tổ chức này.",
