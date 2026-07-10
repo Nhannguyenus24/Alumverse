@@ -6,6 +6,7 @@ import AuthLayout from "../layouts/AuthLayout";
 import ProtectedRoute from "./ProtectedRoute";
 import PublicRoute from "./PublicRoute";
 import RequireSlugRoute from "./RequireSlugRoute";
+import FeatureRoute from "./FeatureRoute";
 import LoadingScreen from "../components/LoadingScreen";
 import { Loadable, AuthLoadable } from "./loadable";
 import MentorshipFullAccessGate from "../components/mentorship/MentorshipFullAccessGate";
@@ -393,6 +394,11 @@ export const router = createBrowserRouter([
       },
       {
         path: "forum",
+        element: (
+          <FeatureRoute feature="forum">
+            <Outlet />
+          </FeatureRoute>
+        ),
         children: [
           {
             index: true,
@@ -465,7 +471,11 @@ export const router = createBrowserRouter([
       },
       {
         path: "events",
-        element: <ActivitiesEventsPage />,
+        element: (
+          <FeatureRoute feature="events">
+            <ActivitiesEventsPage />
+          </FeatureRoute>
+        ),
       },
       {
         path: "news",
@@ -680,7 +690,11 @@ export const router = createBrowserRouter([
           },
           {
             path: "jobs",
-            element: <DevelopmentJobsPage />,
+            element: (
+              <FeatureRoute feature="job">
+                <DevelopmentJobsPage />
+              </FeatureRoute>
+            ),
           },
           {
             path: "mentorship/*",
@@ -690,6 +704,11 @@ export const router = createBrowserRouter([
       },
       {
         path: "mentorship",
+        element: (
+          <FeatureRoute feature="mentorship">
+            <Outlet />
+          </FeatureRoute>
+        ),
         children: mentorshipRouteChildren,
       },
       {
@@ -896,6 +915,11 @@ export const router = createBrowserRouter([
       },
       {
         path: "donations",
+        element: (
+          <FeatureRoute feature="fund">
+            <Outlet />
+          </FeatureRoute>
+        ),
         children: [
           {
             index: true,

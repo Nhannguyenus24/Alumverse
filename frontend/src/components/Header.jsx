@@ -25,6 +25,8 @@ import useThemeModeStore from '../stores/themeModeStore';
 import useOrganizationStore from '../stores/organizationStore';
 import { HEADER_HEIGHT } from '../constants/layout';
 import { getMainNavItems } from '../constants/mainNav';
+import { useFeatureFlags } from '../hooks/useFeatureFlags';
+import { filterNavItemsByFeatures } from '../utils/featureFlags';
 
 const LOGO_SRC = '/alumverse_logo/Logo_Main_Full.svg';
 const LOGO_SRC_WHITE = '/alumverse_logo/Logo_White_Full.svg';
@@ -123,7 +125,11 @@ const Header = () => {
     return { displayName: name, displayRole: isAdmin ? 'Admin' : verLabel };
   }, [user, verificationLevel, isAdmin]);
 
-  const navItems = useMemo(() => getMainNavItems(t), [t]);
+  const { isEnabled: isFeatureEnabled } = useFeatureFlags();
+  const navItems = useMemo(
+    () => filterNavItemsByFeatures(getMainNavItems(t), isFeatureEnabled),
+    [t, isFeatureEnabled]
+  );
   const getVisibleChildren = useCallback((item) => {
     if (!item.children?.length) return [];
     if (!isAuthenticated && item.hideChildrenWhenGuest) return [];

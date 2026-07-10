@@ -4,6 +4,7 @@ import { useLocation, useParams } from 'react-router';
 
 import ChatFloatingButton from './ChatFloatingButton';
 import { getNormalizedPathname } from '../utils/pathUtils';
+import { useFeatureEnabled } from '../hooks/useFeatureFlags';
 
 const HIDDEN_PATHS = ['/chat'];
 const FitBot = lazy(() => import('./FitBot'));
@@ -12,6 +13,7 @@ export default function FloatingChatActions() {
   const location = useLocation();
   const { slug } = useParams();
   const normalizedPath = getNormalizedPathname(location.pathname, slug);
+  const fitbotEnabled = useFeatureEnabled('fitbot');
   const [activeWidget, setActiveWidget] = useState(null);
 
   const openMessages = useCallback(() => setActiveWidget('messages'), []);
@@ -40,14 +42,16 @@ export default function FloatingChatActions() {
           onClose={() => closeWidget('messages')}
         />
       </Box>
-      <Suspense fallback={null}>
-        <FitBot
-          isOpen={activeWidget === 'fitbot'}
-          isBlocked={activeWidget === 'messages'}
-          onOpen={openFitBot}
-          onClose={() => closeWidget('fitbot')}
-        />
-      </Suspense>
+      {fitbotEnabled && (
+        <Suspense fallback={null}>
+          <FitBot
+            isOpen={activeWidget === 'fitbot'}
+            isBlocked={activeWidget === 'messages'}
+            onOpen={openFitBot}
+            onClose={() => closeWidget('fitbot')}
+          />
+        </Suspense>
+      )}
     </>
   );
 }
