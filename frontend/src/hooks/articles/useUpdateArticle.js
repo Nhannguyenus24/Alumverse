@@ -57,11 +57,18 @@ const buildPayload = (channel, input) => {
         ...rest,
       };
     case 'job':
+      return {
+        title,
+        description: content,
+        type: topic ?? null,
+        ...rest,
+      };
     case 'learning':
       return {
         title,
         description: content,
         type: topic ?? null,
+        thumbnailUrl: thumbnailUrl ?? null,
         ...rest,
       };
     default:
