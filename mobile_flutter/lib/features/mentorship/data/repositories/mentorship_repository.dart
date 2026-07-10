@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/api_endpoints.dart';
 import '../../../../core/network/dio_client.dart';
+import '../models/mentee_profile.dart';
 import '../models/mentor_availability.dart';
 import '../models/mentor_profile.dart';
 import '../models/mentorship_session.dart';
@@ -157,6 +158,37 @@ class MentorshipRepository {
   Future<MentorshipSession> cancelSession(int sessionId) async {
     final res = await _dio.post(ApiEndpoints.menteeSessionCancel(sessionId));
     return MentorshipSession.fromJson(_dataMap(res.data));
+  }
+
+  Future<MenteeProfile?> getMyMenteeProfile() async {
+    try {
+      final res = await _dio.get(ApiEndpoints.menteeProfile);
+      final data = _dataMap(res.data);
+      if (data.isEmpty) return null;
+      return MenteeProfile.fromJson(data);
+    } on DioException {
+      return null;
+    }
+  }
+
+  Future<MenteeProfile> createOrUpdateMenteeProfile({
+    required String mentoringGoal,
+    required String major,
+    required String academicYear,
+    String? interests,
+    bool termsAccepted = true,
+  }) async {
+    final res = await _dio.post(
+      ApiEndpoints.menteeProfile,
+      data: {
+        'mentoringGoal': mentoringGoal,
+        'major': major,
+        'academicYear': academicYear,
+        if (interests != null && interests.isNotEmpty) 'interests': interests,
+        'termsAccepted': termsAccepted,
+      },
+    );
+    return MenteeProfile.fromJson(_dataMap(res.data));
   }
 
   // --- Mentor side ---

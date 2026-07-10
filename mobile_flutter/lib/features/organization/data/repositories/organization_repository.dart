@@ -29,13 +29,15 @@ class OrganizationRepository {
 
   Future<void> joinOrganization({
     required int organizationId,
-    required int userId,
+    String? studentId,
+    List<String>? startedYear,
     List<String>? program,
     List<String>? major,
     List<int>? graduatedYear,
   }) => api.joinOrganization(
     organizationId: organizationId,
-    userId: userId,
+    studentId: studentId,
+    startedYear: startedYear,
     program: program,
     major: major,
     graduatedYear: graduatedYear,
@@ -59,10 +61,12 @@ class OrganizationRepository {
       api.acceptPeerVerification(requestId);
 
   Future<void> createVerificationRequest({
+    required int organizationId,
     required String base64File,
     required String originalFileName,
     required String documentType,
   }) => api.createVerificationRequest(
+    organizationId: organizationId,
     base64File: base64File,
     originalFileName: originalFileName,
     documentType: documentType,

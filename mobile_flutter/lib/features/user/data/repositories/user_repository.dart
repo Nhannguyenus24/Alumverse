@@ -20,6 +20,10 @@ class UserRepository {
   Future<bool> isTrustedVerifier(int organizationId) =>
       _api.isTrustedVerifier(organizationId);
 
+  /// The current user's `verificationLevel` in [organizationId].
+  Future<int> getMyVerificationLevel(int organizationId) =>
+      _api.getMyVerificationLevel(organizationId);
+
   Future<void> updateProfile({
     required int organizationId,
     String? phone,

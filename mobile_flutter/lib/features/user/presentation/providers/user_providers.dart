@@ -22,6 +22,15 @@ final isTrustedVerifierProvider = FutureProvider<bool>((ref) async {
   }
 });
 
+/// The current user's `verificationLevel` in the active organization (0 =
+/// unverified email, 1 = email verified, 2+ = academic/org verified). Mirrors
+/// the web mentee-signup eligibility gate (`MIN_VERIFICATION_LEVEL = 2`).
+final myVerificationLevelProvider = FutureProvider<int>((ref) async {
+  final org = ref.watch(organizationStateProvider).valueOrNull;
+  if (org == null) return 0;
+  return ref.read(userRepositoryProvider).getMyVerificationLevel(org.id);
+});
+
 final notificationSettingsProvider = FutureProvider<NotificationSettings>((
   ref,
 ) {

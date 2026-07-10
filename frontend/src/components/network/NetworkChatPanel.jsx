@@ -90,7 +90,7 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
     onSuccess: () => setBlockConfirmOpen(false),
   });
 
-  const { messages, isLoading, isLoadingMore, hasMore, loadMore, appendMessage } = useChatMessages(
+  const { messages, isLoading, isLoadingMore, hasMore, loadMore, appendMessage, resyncMessages } = useChatMessages(
     activeChat?.id ?? null,
   );
 
@@ -126,9 +126,17 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
     });
   }, []);
 
+  const resyncMessagesRef = useRef(resyncMessages);
+  useEffect(() => { resyncMessagesRef.current = resyncMessages; }, [resyncMessages]);
+
+  const handleWsReconnect = useCallback(() => {
+    resyncMessagesRef.current?.();
+  }, []);
+
   const { joinGroup, leaveGroup, sendMessage: wsSendMessage, isOpen } = useChatWebSocket({
     token,
     onEvent: handleWsEvent,
+    onReconnect: handleWsReconnect,
   });
 
   // Join the active group; leave the previous one when switching
