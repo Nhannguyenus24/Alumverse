@@ -45,6 +45,12 @@ import ChangeEmailModal from '../../components/profile/ChangeEmailModal';
 import { useUploadImage } from '../../utils/imageUtils';
 import { GENDER_OPTIONS, GENDER_LABEL_KEYS } from '../../constants/gender';
 import { resolveProfileRoleLabel } from '../../utils/profileRoleUtils';
+import {
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
+  getStaggerDelay,
+} from '../../components/animations/ScrollReveal';
 
 const parseOrganizationOptions = (value) => {
   if (!value) return [];
@@ -450,9 +456,9 @@ export default function SettingPage() {
   };
 
   const renderPersonalSettings = () => (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%' }}>
+    <ScrollRevealGroup stagger={0.08} sx={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%' }}>
       {/* Avatar Row */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <ScrollRevealItem sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <Box sx={{ position: 'relative', width: 96, height: 96, borderRadius: '50%', overflow: 'hidden', cursor: isEditMode ? 'pointer' : 'default',
                ...(isEditMode && { '&:hover .avatar-overlay': { opacity: 1, }, }), }}
@@ -500,10 +506,10 @@ export default function SettingPage() {
             </Button>
           )}
         </Box>
-      </Box>
+      </ScrollRevealItem>
 
       {/* Basic Info */}
-      <Box>
+      <ScrollRevealItem>
         <Typography variant="h4" fontWeight="bold" sx={{ mb: 2 }}>{t('basic_info')}</Typography>
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
           <TextField fullWidth label={t('label_fullname')} name="fullName" value={formData.fullName} InputProps={{ readOnly: !isEditMode }} />
@@ -523,10 +529,10 @@ export default function SettingPage() {
           <TextField fullWidth label={t('label_company', { defaultValue: 'Công ty' })} name="currentCompany" value={formData.currentCompany} InputProps={{ readOnly: !isEditMode }} onChange={handleFormChange} />
           <TextField fullWidth multiline minRows={3} label={t('label_social_links', { defaultValue: 'Liên kết mạng xã hội' })} name="linksText" value={formData.linksText} InputProps={{ readOnly: !isEditMode }} onChange={handleFormChange} sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }} placeholder={t('placeholder_links', { defaultValue: 'Mỗi link một dòng (VD: https://facebook.com/...)' })} />
         </Box>
-      </Box>
+      </ScrollRevealItem>
 
       {/* Education Info */}
-      <Box>
+      <ScrollRevealItem>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
           <Typography variant="h4" fontWeight="bold">{t('education_info')}</Typography>
           {isEditMode && (
@@ -550,7 +556,7 @@ export default function SettingPage() {
 
         <Stack spacing={3}>
           {formData.educations.map((edu, index) => (
-            <Card key={index} variant="outlined" sx={{ p: 3, position: 'relative', bgcolor: 'background.default' }}>
+            <ScrollReveal key={index} delay={getStaggerDelay(index, 0.06)}><Card variant="outlined" sx={{ p: 3, position: 'relative', bgcolor: 'background.default' }}>
               {isEduEditMode && formData.educations.length > 1 && (
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
                   <Typography variant="h5">{t('education_label')}</Typography>
@@ -568,7 +574,7 @@ export default function SettingPage() {
                 <Autocomplete freeSolo options={organizationMajorOptions} value={edu.major} disabled={!isEditMode} onInputChange={(_e, value) => handleEducationChange(index, 'major', value)} onChange={(_e, value) => handleEducationChange(index, 'major', value || '')} renderInput={(params) => <TextField {...params} label={t('label_major')} />} />
                 <Autocomplete freeSolo options={[t('grad_status_graduated'), t('grad_status_studying')]} value={edu.graduationStatus} disabled={!isEditMode} onInputChange={(_e, value) => handleEducationChange(index, 'graduationStatus', value)} onChange={(_e, value) => handleEducationChange(index, 'graduationStatus', value || '')} renderInput={(params) => <TextField {...params} label={t('label_grad_status')} />} />
               </Box>
-            </Card>
+            </Card></ScrollReveal>
           ))}
         </Stack>
 
@@ -586,22 +592,22 @@ export default function SettingPage() {
             </Button>
           </Box>
         )}
-      </Box>
+      </ScrollRevealItem>
 
       {/* Actions — chỉ lưu thông tin cơ bản */}
       {isEditMode && (
-        <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+        <ScrollRevealItem sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
           <Button variant="outlined" color="inherit" sx={{ px: 4 }} onClick={handleCancelEdit}>{t('cancel')}</Button>
           <Button variant="contained" color="primary" onClick={handleSaveProfile} sx={{ px: 4 }}>{t('save_changes')}</Button>
-       </Box>
+       </ScrollRevealItem>
       )}
-    </Box>
+    </ScrollRevealGroup>
   );
 
   const renderAccountSettings = () => (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+    <ScrollRevealGroup stagger={0.08} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
       {/* Email Section */}
-      <Box>
+      <ScrollRevealItem>
         <Typography variant="h4" sx={{ mb: 2 }}>{t('email_section')}</Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, border: 1, borderColor: 'divider', borderRadius: 1, p: 2 }}>
           <Box sx={{ flex: 1 }}>
@@ -610,12 +616,12 @@ export default function SettingPage() {
           </Box>
           <Button variant="outlined" startIcon={<EditIcon />} onClick={() => setIsChangeEmailModalOpen(true)}>{t('change_email')}</Button>
         </Box>
-      </Box>
+      </ScrollRevealItem>
 
-      <Divider />
+      <ScrollRevealItem><Divider /></ScrollRevealItem>
 
       {/* Change Password Section */}
-      <Box>
+      <ScrollRevealItem>
         <Typography variant="h4" sx={{ mb: 2 }}>{t('password_section')}</Typography>
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' }, gap: 2 }}>
           <TextField fullWidth name="oldPassword" value={passwordForm.oldPassword} onChange={handlePasswordChange} label={t('label_old_password')} type={showOldPassword ? 'text' : 'password'} placeholder={t('placeholder_old_password')} slotProps={{ input: { endAdornment: (<InputAdornment position="end"><IconButton aria-label={showOldPassword ? t('hide_password') : t('show_password')} onClick={() => setShowOldPassword((v) => !v)} onMouseDown={(e) => e.preventDefault()} edge="end">{showOldPassword ? <VisibilityOff /> : <Visibility />}</IconButton></InputAdornment>) } }} />
@@ -626,12 +632,12 @@ export default function SettingPage() {
           <Button variant="contained" color="primary" onClick={handleChangePassword}>{t('update_password')}</Button>
           <Button variant="outlined" color="secondary">{t('cancel')}</Button>
         </Box>
-      </Box>
+      </ScrollRevealItem>
 
-      <Divider />
+      <ScrollRevealItem><Divider /></ScrollRevealItem>
 
       {/* Logged In Devices Section */}
-      <Box>
+      <ScrollRevealItem>
         <Typography variant="h4" sx={{ mb: 2 }}>{t('devices_section')}</Typography>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
           {loginHistory.length === 0 && <Typography variant="body2" color="text.secondary">{t('no_login_history')}</Typography>}
@@ -647,13 +653,13 @@ export default function SettingPage() {
             </Box>
           ))}
         </Box>
-      </Box>
-    </Box>
+      </ScrollRevealItem>
+    </ScrollRevealGroup>
   );
 
   const renderNotificationSettings = () => (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-      <Box>
+    <ScrollRevealGroup stagger={0.08} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <ScrollRevealItem>
         <Typography variant="h4" sx={{ mb: 2 }}>{t('notif_section')}</Typography>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
           <FormControlLabel control={<Switch name="forumReplyEnabled" checked={notificationSettings.forumReplyEnabled} onChange={handleNotificationChange} />} label={t('notif_forum_reply')} />
@@ -662,30 +668,30 @@ export default function SettingPage() {
           <FormControlLabel control={<Switch name="emailEnabled" checked={notificationSettings.emailEnabled} onChange={handleNotificationChange} />} label={t('notif_email')} />
           <FormControlLabel control={<Switch name="pushEnabled" checked={notificationSettings.pushEnabled} onChange={handleNotificationChange} />} label={t('notif_push')} />
         </Box>
-      </Box>
+      </ScrollRevealItem>
 
-      <Box sx={{ mt: 2, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+      <ScrollRevealItem sx={{ mt: 2, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
         <Button variant="contained" color="primary" onClick={handleSaveNotificationSettings}>{t('save_changes')}</Button>
         <Button variant="outlined" color="secondary">{t('cancel')}</Button>
-      </Box>
-    </Box>
+      </ScrollRevealItem>
+    </ScrollRevealGroup>
   );
 
   const renderAdvisorSettings = () => (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <Typography variant="h4">{t('advisor_section')}</Typography>
-      <Typography variant="body1" color="textSecondary">{t('advisor_no_advisor')}</Typography>
-      <Paper variant="outlined" sx={{ p: 3, bgcolor: 'background.default' }}>
+    <ScrollRevealGroup stagger={0.08} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <ScrollRevealItem><Typography variant="h4">{t('advisor_section')}</Typography></ScrollRevealItem>
+      <ScrollRevealItem><Typography variant="body1" color="textSecondary">{t('advisor_no_advisor')}</Typography></ScrollRevealItem>
+      <ScrollRevealItem><Paper variant="outlined" sx={{ p: 3, bgcolor: 'background.default' }}>
         <Typography variant="h5" sx={{ color: 'primary.main' }}>{t('advisor_contact_title')}</Typography>
         <Typography variant="body1" color="text.primary" display="block" sx={{ mt: 2, fontWeight: 600 }}>{organization?.departmentName || 'Khoa Công nghệ Thông tin'}</Typography>
         <Typography variant="body1" color="text.secondary" display="block" sx={{ mt: 0.5 }}>Email: {organization?.contactEmail || 'admin@hcmus.edu.vn'}</Typography>
         <Typography variant="body1" color="text.secondary" display="block">Phone: {organization?.contactPhone || '(028) 6288 4499'}</Typography>
-      </Paper>
-    </Box>
+      </Paper></ScrollRevealItem>
+    </ScrollRevealGroup>
   );
 
   const renderVerificationManagement = () => (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+    <ScrollRevealGroup stagger={0.08} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
       <Typography variant="h4">{t('verification_section')}</Typography>
       <Typography variant="body1" color="textSecondary">{t('verification_desc')}</Typography>
 
@@ -698,7 +704,7 @@ export default function SettingPage() {
       ) : (
         <List sx={{ width: '100%', bgcolor: 'background.paper' }}>
           {pendingRequests.map((request) => (
-            <Paper key={request.requestId} variant="outlined" sx={{ mb: 2, p: 2, '&:hover': { bgcolor: 'action.hover' } }}>
+            <ScrollReveal key={request.requestId}><Paper variant="outlined" sx={{ mb: 2, p: 2, '&:hover': { bgcolor: 'action.hover' } }}>
               <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2}>
                 <Stack spacing={0.5}>
                   <Typography variant="h5" fontWeight="bold">{request.requesterName}</Typography>
@@ -717,11 +723,11 @@ export default function SettingPage() {
                   <Button variant="contained" color="success" startIcon={<CheckCircleIcon />} onClick={() => handleAcceptVerification(request.requestId)}>{t('confirm_verification')}</Button>
                 </Stack>
               </Stack>
-            </Paper>
+            </Paper></ScrollReveal>
           ))}
         </List>
       )}
-    </Box>
+    </ScrollRevealGroup>
   );
 
   const renderConnectionsSettings = () => (
@@ -751,19 +757,19 @@ export default function SettingPage() {
       <Page title={t('page_title')} meta={<meta name="description" content={t('page_title')} />}>
         <Container maxWidth="xl" sx={{ minHeight: 'calc(100vh - 60px)', display: 'flex', alignItems: 'stretch', pt: { xs: 2, sm: 3, md: 4 }, px: { xs: 2, sm: 3, lg: 6 }, pb: { xs: 2, sm: 3, lg: 6 } }}>
           <Box sx={{ display: 'flex', width: '100%', flexDirection: { xs: 'column', md: 'row' }, gap: { xs: 2, md: 3 } }}>
-            <Stack spacing={2} sx={{ width: { xs: '100%', md: 260 } }}>
+            <ScrollReveal direction="right" sx={{ width: { xs: '100%', md: 260 } }}>
               <Sidebar items={menuItems} value={activeTab} onChange={setActiveTab} useRouting={false} />
-            </Stack>
+            </ScrollReveal>
 
             {/* Right Content Area */}
-            <Stack spacing={2} sx={{ flex: 1, minWidth: 0, px: { xs: 1.5, sm: 2, md: 2.75 } }}>
-              <Stack gap={2}>
+            <ScrollReveal direction="left" sx={{ flex: 1, minWidth: 0, px: { xs: 1.5, sm: 2, md: 2.75 } }}>
+              <Stack spacing={2}>
                 <Typography variant="h1" fontWeight={800} color="primary.main">{t('page_heading')}</Typography>
               </Stack>
               <Card sx={{ p: 4, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', border: 1, borderColor: 'divider', borderRadius: 1, bgcolor: 'background.paper' }}>
-                {renderContent()}
+                <ScrollReveal key={activeTab}>{renderContent()}</ScrollReveal>
               </Card>
-            </Stack>
+            </ScrollReveal>
           </Box>
         </Container>
 

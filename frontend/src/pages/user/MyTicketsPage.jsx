@@ -1,12 +1,18 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useSearchParams } from "react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Container, Stack, Box, Typography, CircularProgress } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import Page from "../../components/Page";
 import SearchBar from "../../components/SearchBar";
 import MyTicketCard from "../../components/MyTicketCard";
 import { eventApi } from "../../utils/api";
+import useOrganizationStore from "../../stores/organizationStore";
+import {
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from "../../components/animations/ScrollReveal";
 
 const useMyTickets = () => {
   return useQuery({
@@ -16,6 +22,25 @@ const useMyTickets = () => {
   });
 };
 
+const getTicketEventTitle = (ticket) =>
+  ticket?.eventTitle
+  ?? ticket?.eventName
+  ?? ticket?.event?.title
+  ?? ticket?.title
+  ?? null;
+
+const getTicketOrganizer = (ticket) =>
+  ticket?.organizer
+  ?? ticket?.organizationName
+  ?? ticket?.event?.organizer
+  ?? ticket?.event?.organizationName
+  ?? null;
+
+const getOrganizationLabel = (organization) =>
+  organization?.name
+  ?? organization?.departmentName
+  ?? null;
+
 const MyTicketsPage = () => {
   const { t } = useTranslation(["event"]);
   const [search, setSearch] = useState("");
@@ -24,6 +49,57 @@ const MyTicketsPage = () => {
   const scrolledRef = useRef(false);
   const queryClient = useQueryClient();
   const { data: tickets = [], isPending, isError } = useMyTickets();
+  const organization = useOrganizationStore((state) => state.organization);
+  const organizationLabel = getOrganizationLabel(organization);
+  const missingEventIds = useMemo(
+    () => [...new Set(tickets
+      .filter((ticket) => ticket?.eventId && (!getTicketEventTitle(ticket) || !getTicketOrganizer(ticket)))
+      .map((ticket) => ticket.eventId))],
+    [tickets],
+  );
+  const eventDetailQueries = useQueries({
+    queries: missingEventIds.map((eventId) => ({
+      queryKey: ["event", eventId, "ticket-detail"],
+      queryFn: () => eventApi.getEventById(eventId),
+      enabled: Boolean(eventId),
+      staleTime: 5 * 60 * 1000,
+    })),
+  });
+  const eventDetailById = useMemo(() => {
+    const entries = missingEventIds.map((eventId, index) => {
+      const event = eventDetailQueries[index]?.data;
+      return [String(eventId), event || null];
+    });
+    return new Map(entries.filter(([, event]) => Boolean(event)));
+  }, [eventDetailQueries, missingEventIds]);
+  const enrichedTickets = useMemo(
+    () => tickets.map((ticket) => {
+      if (!ticket?.eventId) {
+        return getTicketOrganizer(ticket) || !organizationLabel
+          ? ticket
+          : { ...ticket, organizer: organizationLabel };
+      }
+
+      const event = eventDetailById.get(String(ticket.eventId));
+      const eventTitle = getTicketEventTitle(ticket) ?? event?.title ?? null;
+      const organizer = getTicketOrganizer(ticket)
+        ?? event?.organizer
+        ?? event?.organizationName
+        ?? organizationLabel
+        ?? null;
+
+      if (eventTitle === getTicketEventTitle(ticket) && organizer === getTicketOrganizer(ticket)) {
+        return ticket;
+      }
+
+      return {
+        ...ticket,
+        ...(eventTitle ? { eventTitle } : {}),
+        ...(organizer ? { organizer } : {}),
+      };
+    }),
+    [eventDetailById, organizationLabel, tickets],
+  );
 
   useEffect(() => {
     if (!highlightCode || scrolledRef.current || isPending) return;
@@ -32,10 +108,10 @@ const MyTicketsPage = () => {
       scrolledRef.current = true;
       setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "center" }), 200);
     }
-  }, [highlightCode, isPending, tickets]);
+  }, [highlightCode, isPending, enrichedTickets]);
 
-  const filtered = tickets.filter((t) =>
-    (t.eventTitle ?? t.ticketCode ?? "").toLowerCase().includes(search.toLowerCase())
+  const filtered = enrichedTickets.filter((ticket) =>
+    (getTicketEventTitle(ticket) ?? ticket.ticketCode ?? "").toLowerCase().includes(search.toLowerCase())
   );
 
   const handleCancelled = () => {
@@ -53,8 +129,8 @@ const MyTicketsPage = () => {
         }}
       >
         <Stack spacing={3}>
-          <Stack gap={2}>
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <ScrollRevealGroup stagger={0.08} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <ScrollRevealItem sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <Typography
                 variant="h1"
                 fontWeight={800}
@@ -63,10 +139,10 @@ const MyTicketsPage = () => {
               >
                 {t("event:my_tickets").toUpperCase()}
               </Typography>
-            </Box>
+            </ScrollRevealItem>
 
-            <SearchBar value={search} onChange={setSearch} />
-          </Stack>
+            <ScrollRevealItem><SearchBar value={search} onChange={setSearch} /></ScrollRevealItem>
+          </ScrollRevealGroup>
 
           {isPending && (
             <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
@@ -86,16 +162,15 @@ const MyTicketsPage = () => {
             </Typography>
           )}
 
-          <Stack spacing={2}>
+          <ScrollRevealGroup stagger={0.07} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             {filtered.map((ticket) => (
-              <MyTicketCard
-                key={ticket.id}
+              <ScrollRevealItem key={ticket.id}><MyTicketCard
                 ticket={ticket}
                 highlighted={highlightCode === ticket.ticketCode}
                 onCancelled={handleCancelled}
-              />
+              /></ScrollRevealItem>
             ))}
-          </Stack>
+          </ScrollRevealGroup>
         </Stack>
       </Container>
     </Page>

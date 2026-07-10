@@ -12,6 +12,11 @@ import Breadcrumb from "../../components/Breadcrumb";
 import Scrollbar from "../../components/Scrollbar";
 import DonationFundInfoPanel from "../../components/donation/DonationFundInfoPanel";
 import DonationListSection from "../../components/donation/DonationListSection";
+import {
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from "../../components/animations/ScrollReveal";
 import { fundApi } from "../../utils/api";
 import { useAuth } from "../../hooks/useAuth";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
@@ -88,7 +93,9 @@ export default function DonationArticlePage() {
   return (
     <Page title={pageTitle} meta={<meta name="description" content={t('meta_description')} />}>
       <Container maxWidth={false} disableGutters sx={{ display: "flex", flexDirection: "column" }}>
-        <Box
+        <ScrollReveal
+          direction="none"
+          duration={0.8}
           sx={{
             height: { xs: "32vh", sm: "36vh", md: "40vh" },
             minHeight: { xs: 200, sm: 240, md: 280 },
@@ -109,7 +116,8 @@ export default function DonationArticlePage() {
             mb: { xs: 4, md: 6 },
           }}
         >
-          <Box
+          <ScrollRevealGroup
+            stagger={0.09}
             sx={{
               width: "100%",
               maxWidth: 1200,
@@ -122,7 +130,7 @@ export default function DonationArticlePage() {
               px: { xs: 4, md: 6 },
             }}
           >
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: { xs: 4, md: 5 }, flexWrap: "wrap" }}>
+            <ScrollRevealItem sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: { xs: 4, md: 5 }, flexWrap: "wrap" }}>
               <Breadcrumb items={[{ label: t('title').toUpperCase(), path: "/donations" }, { label: pageTitle }]} fontSize="0.8rem" />
               <Box sx={{ flexGrow: 1 }} />
               {(canEditFund || isAdmin) && (
@@ -153,10 +161,10 @@ export default function DonationArticlePage() {
                   )}
                 </Stack>
               )}
-            </Box>
+            </ScrollRevealItem>
 
             {errorMessage && (
-              <Box
+              <ScrollRevealItem
                 sx={(theme) => ({
                   p: 3,
                   borderRadius: 2,
@@ -166,16 +174,18 @@ export default function DonationArticlePage() {
                 })}
               >
                 <Typography sx={{ color: "error.main", fontWeight: 600 }}>{errorMessage}</Typography>
-              </Box>
+              </ScrollRevealItem>
             )}
 
             {!errorMessage && fundDetail && (
-              <>
+              <ScrollRevealGroup stagger={0.09}>
+                <ScrollRevealItem>
                 <Typography variant="h1" component="h1" fontWeight={700} color="primary.main" textAlign="center" sx={{ mb: 4, fontSize: { xs: "1.8rem", md: "2.1rem" } }}>
                   {fundDetail.name}
                 </Typography>
+                </ScrollRevealItem>
 
-                <Box
+                <ScrollRevealItem
                   sx={(theme) => ({
                     mt: 3,
                     mb: 6,
@@ -217,30 +227,32 @@ export default function DonationArticlePage() {
                       </Button>
                     </Box>
                   )}
-                </Box>
+                </ScrollRevealItem>
 
-                <Box sx={{ display: "flex", alignItems: "center", gap: 2, my: 3 }}>
+                <ScrollRevealItem sx={{ display: "flex", alignItems: "center", gap: 2, my: 3 }}>
                   <Divider sx={{ flex: 1 }} />
                   <Typography variant="h1" component="h2" fontWeight={700} color="primary.main" sx={{ whiteSpace: "nowrap", fontSize: { xs: "1.8rem", md: "2.1rem" } }}>
                     {t('article_section_title')}
                   </Typography>
                   <Divider sx={{ flex: 1 }} />
-                </Box>
+                </ScrollRevealItem>
 
-                <Scrollbar sx={{ maxHeight: DESCRIPTION_MAX_HEIGHT, pr: 1 }}>
-                  <Box sx={descriptionContentSx} dangerouslySetInnerHTML={{ __html: cleanDescription }} />
-                </Scrollbar>
-              </>
+                <ScrollRevealItem>
+                  <Scrollbar sx={{ maxHeight: DESCRIPTION_MAX_HEIGHT, pr: 1 }}>
+                    <Box sx={descriptionContentSx} dangerouslySetInnerHTML={{ __html: cleanDescription }} />
+                  </Scrollbar>
+                </ScrollRevealItem>
+              </ScrollRevealGroup>
             )}
-          </Box>
+          </ScrollRevealGroup>
         </Box>
 
         {!errorMessage && fundDetail && isAdmin ? (
-          <Box sx={{ px: { xs: 2, sm: 3 }, py: 6, backgroundColor: "background.default" }}>
+          <ScrollReveal sx={{ px: { xs: 2, sm: 3 }, py: 6, backgroundColor: "background.default" }}>
             <Box sx={{ width: "100%", maxWidth: 1200, mx: "auto" }}>
               <DonationListSection fundId={id} />
             </Box>
-          </Box>
+          </ScrollReveal>
         ) : null}
       </Container>
     </Page>

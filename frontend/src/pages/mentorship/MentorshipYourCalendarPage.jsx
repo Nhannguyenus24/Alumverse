@@ -42,6 +42,11 @@ import { useUpdateMentorProfile } from '../../hooks/mentorship/useUpdateMentorPr
 import { formatFixed } from '../../utils/numberFormatter';
 import { getMentorProfileTabs } from '../../constants/mentorshipNav';
 import { useTranslation } from 'react-i18next';
+import {
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from '../../components/animations/ScrollReveal';
 
 const DEFAULT_COVER =
   'https://info.cognician.com/hubfs/220201%20mentorship-%20desktop.png';
@@ -298,20 +303,20 @@ const MentorshipYourCalendarPage = () => {
   return (
     <Page title={t('page_title_calendar')}>
       <MentorshipProfileLayout user={calendarUser} cover={calendarUser.cover} tabs={TOP_TABS} onNavigate={navigate} mode="mentor">
-        <Stack spacing={4}>
-          <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={2}>
+        <ScrollRevealGroup stagger={0.08} sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <ScrollRevealItem sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
             <Typography variant="h2" fontWeight={800} color="primary.main">
               {t('cal_heading')}
             </Typography>
-          </Box>
+          </ScrollRevealItem>
 
           {deleteMutation.errorMessage && (
             <Alert severity="error">{deleteMutation.errorMessage}</Alert>
           )}
 
-          <Box sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', lg: 'row' } }}>
+          <ScrollRevealItem sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', lg: 'row' } }}>
             {/* LEFT: CALENDAR VIEW */}
-            <Box sx={{ flex: 1, py: 2 }}>
+            <ScrollReveal direction="right" sx={{ flex: 1, py: 2 }}>
               <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                 <IconButton onClick={() => setAnchorMonth((d) => d.subtract(1, 'month'))}>
                   <ChevronLeftIcon />
@@ -423,13 +428,13 @@ const MentorshipYourCalendarPage = () => {
                   })}
                 </Box>
               )}
-            </Box>
+            </ScrollReveal>
 
             {/* RIGHT: PANEL CONTROLS */}
-            <Box sx={{ width: { xs: '100%', lg: 400 } }}>
-              <Stack spacing={3}>
+            <ScrollReveal direction="left" sx={{ width: { xs: '100%', lg: 400 } }}>
+              <ScrollRevealGroup stagger={0.08} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 {/* 1. UPCOMING APPOINTMENTS */}
-                <Card sx={{ p: 3, border: '1px solid', borderColor: 'divider' }} elevation={0}>
+                <ScrollRevealItem><Card sx={{ p: 3, border: '1px solid', borderColor: 'divider' }} elevation={0}>
                   <Typography fontWeight={700} mb={2} variant="subtitle1">
                     {t('cal_upcoming_title')}
                   </Typography>
@@ -450,17 +455,17 @@ const MentorshipYourCalendarPage = () => {
                       </Stack>
                     </Box>
                   )}
-                </Card>
+                </Card></ScrollRevealItem>
 
                 {/* 2. BOOKING WINDOW */}
-                <MentorshipBookingWindowCard
+                <ScrollRevealItem><MentorshipBookingWindowCard
                   initialSettings={profile?.bookingWindowSettings ?? null}
                   onSave={handleSaveBookingWindow}
                   saving={updateProfileMutation.isPending}
-                />
+                /></ScrollRevealItem>
 
                 {/* 3. ADD TIME CARD */}
-                <Card sx={{ border: '1px solid', borderColor: 'divider' }} elevation={0}>
+                <ScrollRevealItem><Card sx={{ border: '1px solid', borderColor: 'divider' }} elevation={0}>
                   <Box
                     sx={{
                       p: 2,
@@ -578,10 +583,10 @@ const MentorshipYourCalendarPage = () => {
                       </LocalizationProvider>
                     </Box>
                   )}
-                </Card>
+                </Card></ScrollRevealItem>
 
                 {/* 4. SUMMARY CARD */}
-                <Card sx={{ p: 3, border: '1px solid', borderColor: 'divider' }} elevation={0}>
+                <ScrollRevealItem><Card sx={{ p: 3, border: '1px solid', borderColor: 'divider' }} elevation={0}>
                   <Typography fontWeight={700} mb={2} variant="subtitle1">
                     {t('cal_summary_title')}
                   </Typography>
@@ -605,11 +610,11 @@ const MentorshipYourCalendarPage = () => {
                       </Box>
                     </Typography>
                   </Stack>
-                </Card>
-              </Stack>
-            </Box>
-          </Box>
-        </Stack>
+                </Card></ScrollRevealItem>
+              </ScrollRevealGroup>
+            </ScrollReveal>
+          </ScrollRevealItem>
+        </ScrollRevealGroup>
 
         <Dialog open={Boolean(editingSlot)} onClose={closeEditSlot} fullWidth maxWidth="xs">
           <DialogTitle>{t('cal_edit_slot_title')}</DialogTitle>

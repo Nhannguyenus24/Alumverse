@@ -64,6 +64,29 @@ class _MyBookingsPageState extends ConsumerState<MyBookingsPage>
 
   @override
   Widget build(BuildContext context) {
+    final mentorProfileAsync = ref.watch(myMentorProfileProvider);
+    final menteeProfileAsync = ref.watch(myMenteeProfileProvider);
+    final mentorStatus =
+        (mentorProfileAsync.valueOrNull?.status ?? '').toUpperCase();
+    final isMentorPending = mentorStatus == 'PENDING';
+    final hasJoinedMentorship =
+        !isMentorPending &&
+        (mentorStatus == 'APPROVED' || menteeProfileAsync.valueOrNull != null);
+
+    if (mentorProfileAsync.isLoading || menteeProfileAsync.isLoading) {
+      return Scaffold(
+        appBar: AppBar(title: Text('mentorship.my_bookings'.tr())),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (!hasJoinedMentorship) {
+      return Scaffold(
+        appBar: AppBar(title: Text('mentorship.my_bookings'.tr())),
+        body: _MentorshipAccessNotice(isMentorPending: isMentorPending),
+      );
+    }
+
     final async = ref.watch(mySessionsProvider);
 
     return Scaffold(
@@ -107,6 +130,56 @@ class _MyBookingsPageState extends ConsumerState<MyBookingsPage>
                       )
                       .toList(),
             ),
+      ),
+    );
+  }
+}
+
+class _MentorshipAccessNotice extends StatelessWidget {
+  const _MentorshipAccessNotice({required this.isMentorPending});
+
+  final bool isMentorPending;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isMentorPending
+                  ? Icons.hourglass_top_outlined
+                  : Icons.person_search_outlined,
+              size: 44,
+              color: AppColors.textSecondary,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              isMentorPending
+                  ? 'mentorship.mentor_signup_pending_title'.tr()
+                  : 'mentorship.mentee_signup_create_heading'.tr(),
+              textAlign: TextAlign.center,
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              isMentorPending
+                  ? 'mentorship.mentor_signup_pending_desc'.tr()
+                  : 'mentorship.booking_requires_profile'.tr(),
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 16),
+            FilledButton(
+              onPressed: () => context.go(RouteNames.mentorship),
+              child: Text('mentorship.find_mentor'.tr()),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -335,9 +408,10 @@ class _StatusChip extends StatelessWidget {
       'PENDING' => ('mentorship.status_pending'.tr(), AppColors.warning),
       'CONFIRMED' => ('mentorship.status_confirmed'.tr(), AppColors.info),
       'COMPLETED' => ('mentorship.status_completed'.tr(), AppColors.success),
-      'CANCELLED' ||
-      'CANCELLED_BY_MENTEE' ||
-      'CANCELLED_BY_MENTOR' => ('mentorship.status_cancelled'.tr(), AppColors.error),
+      'CANCELLED' || 'CANCELLED_BY_MENTEE' || 'CANCELLED_BY_MENTOR' => (
+        'mentorship.status_cancelled'.tr(),
+        AppColors.error,
+      ),
       'REJECTED' => ('mentorship.status_rejected'.tr(), AppColors.error),
       _ => (status ?? '—', AppColors.textSecondary),
     };

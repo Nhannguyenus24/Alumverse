@@ -12,6 +12,7 @@ import { fileToCroppedCoverBase64 } from '../../utils/imageUtils';
 import { useNotification } from '../../hooks/useNotification';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { eventApi } from '../../utils/api';
+import useOrganizationStore from '../../stores/organizationStore';
 import { mapQuestionToApi } from '../../hooks/events/useEventQuestions';
 import { extractMainImageCaption, withMainImageCaption } from '../../utils/articleContentCaption';
 
@@ -62,6 +63,7 @@ const PostEventPage = () => {
   const { t } = useTranslation(['event', 'article']);
   const { showSuccess, showError } = useNotification();
   const { createEvent, isPending: isCreating } = useCreateEvent();
+  const organizationId = useOrganizationStore((state) => state.organization?.id ?? null);
   const {
     coverFile,
     coverPreview,
@@ -124,6 +126,7 @@ const PostEventPage = () => {
       registrationStartAt: toIsoDateTime(eventData.registrationStartAt),
       registrationEndAt: toIsoDateTime(eventData.deadline),
       maxCapacity: eventData.maxParticipants ? Number(eventData.maxParticipants) : null,
+      organizationId: organizationId != null ? Number(organizationId) : null,
     };
   };
 

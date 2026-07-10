@@ -21,6 +21,11 @@ import {
   paginateArticles,
 } from '../../utils/articleListFilters';
 import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
+import {
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from '../../components/animations/ScrollReveal';
 
 const ActivitiesPage = () => {
   const { t } = useTranslation(['nav', 'event']);
@@ -128,24 +133,27 @@ const ActivitiesPage = () => {
     >
               {/* FEATURED ARTICLE */}
               {featuredCard && (
-                <Box sx={{ cursor: 'pointer' }} onClick={() => openArticle(featured)}>
+                <ScrollReveal sx={{ cursor: 'pointer' }} onClick={() => openArticle(featured)}>
                   <FeaturedArticleEventCard
                     article={featuredCard}
                     isAdmin={isAdmin}
                     onEdit={() => handleEdit(featured)}
                     onDelete={() => handleDelete(featured)}
                   />
-                </Box>
+                </ScrollReveal>
               )}
 
               {/* UPCOMING */}
               {upcomingCards.length > 0 && (
-                <Box>
-                  <Typography variant="h4" fontWeight={700} mb={3}>
-                    {t('event:upcoming')}
-                  </Typography>
+                <ScrollRevealGroup stagger={0.08}>
+                  <ScrollRevealItem>
+                    <Typography variant="h4" fontWeight={700} mb={3}>
+                      {t('event:upcoming')}
+                    </Typography>
+                  </ScrollRevealItem>
 
-                  <Box
+                  <ScrollRevealGroup
+                    stagger={0.08}
                     sx={{
                       display: 'grid',
                       gridTemplateColumns: {
@@ -157,37 +165,40 @@ const ActivitiesPage = () => {
                     }}
                   >
                     {upcomingCards.map((card, i) => (
-                      <Box key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(upcomingRest[i])}>
+                      <ScrollRevealItem key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(upcomingRest[i])}>
                         <ArticleEventCard
                           article={card}
                           isAdmin={isAdmin}
                           onEdit={() => handleEdit(upcomingRest[i])}
                           onDelete={() => handleDelete(upcomingRest[i])}
                         />
-                      </Box>
+                      </ScrollRevealItem>
                     ))}
-                  </Box>
+                  </ScrollRevealGroup>
                   {(upcomingPageInfo?.totalPage ?? 0) > 1 && (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+                    <ScrollRevealItem sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
                       <Pagination
                         color="primary"
                         count={upcomingPageInfo.totalPage}
                         page={upcomingPage + 1}
                         onChange={(_, value) => setUpcomingPage(value - 1)}
                       />
-                    </Box>
+                    </ScrollRevealItem>
                   )}
-                </Box>
+                </ScrollRevealGroup>
               )}
 
               {/* PAST */}
               {pastCards.length > 0 && (
-                <Box>
-                  <Typography variant="h4" fontWeight={700} mb={3}>
-                    {t('event:ended')}
-                  </Typography>
+                <ScrollRevealGroup stagger={0.08}>
+                  <ScrollRevealItem>
+                    <Typography variant="h4" fontWeight={700} mb={3}>
+                      {t('event:ended')}
+                    </Typography>
+                  </ScrollRevealItem>
 
-                  <Box
+                  <ScrollRevealGroup
+                    stagger={0.08}
                     sx={{
                       display: 'grid',
                       gridTemplateColumns: {
@@ -199,27 +210,27 @@ const ActivitiesPage = () => {
                     }}
                   >
                     {pastCards.map((card, i) => (
-                      <Box key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(pagedPastEvents[i])}>
+                      <ScrollRevealItem key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(pagedPastEvents[i])}>
                         <ArticleEventCard
                           article={card}
                           isAdmin={isAdmin}
                           onEdit={() => handleEdit(pagedPastEvents[i])}
                           onDelete={() => handleDelete(pagedPastEvents[i])}
                         />
-                      </Box>
+                      </ScrollRevealItem>
                     ))}
-                  </Box>
+                  </ScrollRevealGroup>
                   {(pastPageInfo?.totalPage ?? 0) > 1 && (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+                    <ScrollRevealItem sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
                       <Pagination
                         color="primary"
                         count={pastPageInfo.totalPage}
                         page={pastPage + 1}
                         onChange={(_, value) => setPastPage(value - 1)}
                       />
-                    </Box>
+                    </ScrollRevealItem>
                   )}
-                </Box>
+                </ScrollRevealGroup>
               )}
 
       <AdminConfirmDeleteDialog

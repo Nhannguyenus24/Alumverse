@@ -647,7 +647,8 @@ const AdminMentorshipPage = () => {
         ) : null}
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button
-            variant="contained"
+            variant="outlined"
+            color="secondary"
             onClick={() => setDetailItem(null)}
             sx={{ textTransform: "none", fontWeight: 700 }}
           >

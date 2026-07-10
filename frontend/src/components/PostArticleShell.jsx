@@ -2,6 +2,11 @@ import { Box, Button, Container, Typography } from '@mui/material';
 import Page from './Page';
 import CoverUpload from './CoverUpload';
 import { useTranslation } from 'react-i18next';
+import {
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from './animations/ScrollReveal';
 
 /**
  * Shared layout shell for all PostArticle pages.
@@ -32,15 +37,18 @@ const PostArticleShell = ({
       meta={<meta name="description" content={pageDescription ?? `${pageTitle} - AlumVerse`} />}
     >
       <Box sx={{ minHeight: '100vh' }}>
-        <CoverUpload
-          value={coverPreview}
-          onChange={onCoverChange}
-          positionY={coverPositionY}
-          onPositionYChange={onCoverPositionYChange}
-        />
+        <ScrollReveal direction="none" duration={0.78} amount={0.05}>
+          <CoverUpload
+            value={coverPreview}
+            onChange={onCoverChange}
+            positionY={coverPositionY}
+            onPositionYChange={onCoverPositionYChange}
+          />
+        </ScrollReveal>
 
         <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 10 }}>
-          <Box
+          <ScrollRevealGroup
+            stagger={0.1}
             sx={{
               width: { xs: '100%', md: '85%', lg: '75%' },
               mx: 'auto',
@@ -54,32 +62,36 @@ const PostArticleShell = ({
               borderColor: 'divider',
             }}
           >
-            <Typography
-              variant="h1"
-              fontWeight={800}
-              color="primary.main"
-              sx={{ fontSize: { xs: '1.8rem', md: '2.3rem' }, textAlign: 'center', mb: 3 }}
-            >
-              {t('article:post_article_heading')}
-            </Typography>
-
-            {children}
-
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, pt: 2, mt: 3 }}>
-              <Button variant="outlined" color="inherit" onClick={onCancel} sx={{ px: 4 }}>
-                {t('common:cancel')}
-              </Button>
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={onSubmit}
-                disabled={isPending}
-                sx={{ px: 4 }}
+            <ScrollRevealItem>
+              <Typography
+                variant="h1"
+                fontWeight={800}
+                color="primary.main"
+                sx={{ fontSize: { xs: '1.8rem', md: '2.3rem' }, textAlign: 'center', mb: 3 }}
               >
-                {isPending ? resolvedPendingLabel : resolvedSubmitLabel}
-              </Button>
-            </Box>
-          </Box>
+                {t('article:post_article_heading')}
+              </Typography>
+            </ScrollRevealItem>
+
+            <ScrollRevealItem>{children}</ScrollRevealItem>
+
+            <ScrollRevealItem>
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, pt: 2, mt: 3 }}>
+                <Button variant="outlined" color="inherit" onClick={onCancel} sx={{ px: 4 }}>
+                  {t('common:cancel')}
+                </Button>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={onSubmit}
+                  disabled={isPending}
+                  sx={{ px: 4 }}
+                >
+                  {isPending ? resolvedPendingLabel : resolvedSubmitLabel}
+                </Button>
+              </Box>
+            </ScrollRevealItem>
+          </ScrollRevealGroup>
         </Container>
       </Box>
     </Page>

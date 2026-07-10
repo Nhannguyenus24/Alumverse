@@ -8,6 +8,7 @@ import { useSnackbar } from 'notistack';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import Page from '../../components/Page';
+import { ScrollRevealFields } from '../../components/animations/ScrollReveal';
 import Input from '../../components/Input';
 import Dropdown from '../../components/Dropdown';
 import { getRegisterSchema } from '../../utils/regexUtils';
@@ -67,6 +68,7 @@ const RegisterPage = () => {
     resolver: zodResolver(registerSchema),
     defaultValues: {
       fullName: '',
+      studentId: '',
       enrollmentYear: '',
       email: '',
       password: '',
@@ -83,6 +85,7 @@ const RegisterPage = () => {
     const result = await registerUser({
       email: data.email,
       fullName: data.fullName,
+      studentId: data.studentId,
       enrollmentYear: data.enrollmentYear,
       password: data.password,
       confirmPassword: data.confirmPassword,
@@ -114,6 +117,7 @@ const RegisterPage = () => {
           gap: { xs: 1.5, sm: 2 },
         }}
       >
+        <ScrollRevealFields>
         <Typography
           variant="h5"
           fontWeight={700}
@@ -131,6 +135,19 @@ const RegisterPage = () => {
           error={!!errors.fullName}
           helperText={errors.fullName?.message}
           {...register('fullName')}
+        />
+        <Input
+          label={t('auth:student_id_label')}
+          placeholder={t('auth:student_id_placeholder')}
+          type="text"
+          inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 50 }}
+          error={!!errors.studentId}
+          helperText={errors.studentId?.message}
+          {...register('studentId')}
+          onInput={(e) => {
+            // MSSV chỉ gồm chữ số.
+            e.target.value = e.target.value.replace(/\D/g, '');
+          }}
         />
         <Controller
           name="enrollmentYear"
@@ -253,6 +270,7 @@ const RegisterPage = () => {
             {t('auth:login_now')}
           </Typography>
         </Typography>
+        </ScrollRevealFields>
       </Box>
     </Page>
   );

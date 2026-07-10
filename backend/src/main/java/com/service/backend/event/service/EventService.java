@@ -49,7 +49,13 @@ public class EventService {
     // ─── Event CRUD ───────────────────────────────────────────────────────────
 
     public Mono<Event> createEvent(CreateEventRequest request) {
-        return Mono.zip(SecurityUtils.getCurrentUserId(), SecurityUtils.getCurrentOrganizationId())
+        Mono<Integer> organizationIdMono = SecurityUtils.resolveOrganizationId(request.getOrganizationId())
+                .switchIfEmpty(Mono.error(new ApplicationException(
+                        ErrorCode.BAD_REQUEST,
+                        "Organization ID is required to create an event"
+                )));
+
+        return Mono.zip(SecurityUtils.getCurrentUserId(), organizationIdMono)
                 .flatMap(ctx -> {
                     Long userId = ctx.getT1();
                     Long orgId = ctx.getT2().longValue();
@@ -588,44 +594,61 @@ public class EventService {
     public Mono<PaginatedResponse<EventTicketDetailResponse>> getMyTickets(int page, int limit) {
         return SecurityUtils.getCurrentUserId()
                 .flatMap(memberId -> eventRepository.findTicketsByMember(memberId, page, limit))
-                .map(this::mapDetailPage);
+                .flatMap(this::mapDetailPage);
     }
 
     // ─── Ticket response mapping (qrToken + attendee enrichment) ──────────────
 
     /** Map a ticket to a response carrying the encrypted QR token (no attendee lookup). */
-    private EventTicketDetailResponse toDetail(EventTicket ticket) {
-        return EventTicketDetailResponse.fromTicket(ticket)
-                .qrToken(eventQrService.encodeWithPrefix(ticket.getTicketCode(), ticket.getEventId()))
-                .build();
+    private Mono<EventTicketDetailResponse> toDetail(EventTicket ticket) {
+        EventTicketDetailResponse.EventTicketDetailResponseBuilder builder = EventTicketDetailResponse.fromTicket(ticket)
+                .qrToken(eventQrService.encodeWithPrefix(ticket.getTicketCode(), ticket.getEventId()));
+        return enrichTicketEventTitle(ticket, builder)
+                .map(EventTicketDetailResponse.EventTicketDetailResponseBuilder::build);
     }
 
     /** Map a ticket to a response, additionally resolving the holder's profile for verification. */
     private Mono<EventTicketDetailResponse> toDetailWithAttendee(EventTicket ticket) {
         EventTicketDetailResponse.EventTicketDetailResponseBuilder builder = EventTicketDetailResponse.fromTicket(ticket)
                 .qrToken(eventQrService.encodeWithPrefix(ticket.getTicketCode(), ticket.getEventId()));
+        Mono<EventTicketDetailResponse.EventTicketDetailResponseBuilder> eventBuilder = enrichTicketEventTitle(ticket, builder);
         if (ticket.getMemberId() == null) {
-            return Mono.just(builder.build());
+            return eventBuilder.map(EventTicketDetailResponse.EventTicketDetailResponseBuilder::build);
         }
-        return userProfileRepository.findAttendeeProfileByUserId(ticket.getMemberId().intValue())
-                .map(profile -> builder
+        return eventBuilder.flatMap(enrichedBuilder -> userProfileRepository.findAttendeeProfileByUserId(ticket.getMemberId().intValue())
+                .map(profile -> enrichedBuilder
                         .attendeeName(profile.fullName())
                         .attendeeEmail(profile.email())
                         .attendeeAvatarUrl(profile.avatarUrl())
                         .build())
-                .defaultIfEmpty(builder.build());
+                .defaultIfEmpty(enrichedBuilder.build()));
     }
 
-    private PaginatedResponse<EventTicketDetailResponse> mapDetailPage(PaginatedResponse<EventTicket> page) {
-        return PaginatedResponse.<EventTicketDetailResponse>builder()
-                .items(page.getItems().stream().map(this::toDetail).toList())
-                .currentPage(page.getCurrentPage())
-                .pageSize(page.getPageSize())
-                .totalPage(page.getTotalPage())
-                .totalItem(page.getTotalItem())
-                .hasNext(page.getHasNext())
-                .hasPrevious(page.getHasPrevious())
-                .build();
+    private Mono<EventTicketDetailResponse.EventTicketDetailResponseBuilder> enrichTicketEventTitle(
+            EventTicket ticket,
+            EventTicketDetailResponse.EventTicketDetailResponseBuilder builder
+    ) {
+        if (ticket.getEventId() == null) {
+            return Mono.just(builder);
+        }
+        return eventRepository.findEventById(ticket.getEventId())
+                .map(event -> builder.eventTitle(event.getTitle()))
+                .defaultIfEmpty(builder);
+    }
+
+    private Mono<PaginatedResponse<EventTicketDetailResponse>> mapDetailPage(PaginatedResponse<EventTicket> page) {
+        return Flux.fromIterable(page.getItems())
+                .concatMap(this::toDetail)
+                .collectList()
+                .map(items -> PaginatedResponse.<EventTicketDetailResponse>builder()
+                        .items(items)
+                        .currentPage(page.getCurrentPage())
+                        .pageSize(page.getPageSize())
+                        .totalPage(page.getTotalPage())
+                        .totalItem(page.getTotalItem())
+                        .hasNext(page.getHasNext())
+                        .hasPrevious(page.getHasPrevious())
+                        .build());
     }
 
     private Mono<PaginatedResponse<EventTicketDetailResponse>> mapDetailPageWithAttendees(PaginatedResponse<EventTicket> page) {

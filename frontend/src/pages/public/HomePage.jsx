@@ -282,13 +282,18 @@ const HomePage = () => {
             zIndex: 2,
             py: { xs: 4, sm: 5, md: 6 },
             px: { xs: 2, sm: 3 },
+            "@media (max-height: 680px) and (min-width: 900px)": {
+              py: 3,
+            },
           }}
         >
           <Stack
             direction={{ xs: "column", md: "row" }}
             spacing={{ xs: 3, md: 4 }}
             alignItems="center"
-            sx={{ width: "100%" }}
+            sx={{
+              width: "100%",
+            }}
           >
             <Box sx={{ textAlign: { xs: "center", md: "left" }, flex: { md: "1 1 50%" } }}>
               <RevealBox>
@@ -301,7 +306,15 @@ const HomePage = () => {
                     lineHeight: 1.04,
                     letterSpacing: { xs: 1, md: 2 },
                     mb: 2,
-                    textTransform: 'uppercase'
+                    textTransform: 'uppercase',
+                    "@media (max-height: 680px) and (min-width: 900px)": {
+                      fontSize: { md: "3rem", lg: "3.35rem" },
+                      mb: 1.5,
+                    },
+                    "@media (max-height: 600px) and (min-width: 900px)": {
+                      fontSize: { md: "2.5rem", lg: "2.85rem" },
+                      mb: 1,
+                    },
                   }}
                 >
                   {organization?.name || "ALUMVERSE"}
@@ -317,6 +330,16 @@ const HomePage = () => {
                     maxWidth: 520,
                     mx: { xs: "auto", md: 0 },
                     color: "rgba(255,255,255,0.95)",
+                    "@media (max-height: 680px) and (min-width: 900px)": {
+                      fontSize: "1rem",
+                      lineHeight: 1.55,
+                      mb: 2,
+                    },
+                    "@media (max-height: 600px) and (min-width: 900px)": {
+                      fontSize: "0.95rem",
+                      lineHeight: 1.45,
+                      mb: 1.5,
+                    },
                   }}
                 >
                   {t("home:hero_body")}
@@ -356,6 +379,15 @@ const HomePage = () => {
                     cursor: "default",
                     filter: "drop-shadow(0 24px 48px rgba(0,0,0,0.35))",
                     animation: `${floatIconAnimation} 5s ease-in-out infinite`,
+                    "@media (max-height: 680px)": {
+                      maxWidth: 520,
+                      maxHeight: "48svh",
+                      objectFit: "contain",
+                    },
+                    "@media (max-height: 600px)": {
+                      maxWidth: 440,
+                      maxHeight: "42svh",
+                    },
                   }}
                 />
               </RevealBox>

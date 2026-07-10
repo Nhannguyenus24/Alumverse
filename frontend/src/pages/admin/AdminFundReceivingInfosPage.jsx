@@ -331,7 +331,12 @@ const AdminFundReceivingInfosPage = () => {
             </Stack>
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 2.5 }}>
-            <Button onClick={handleCloseCreateDialog} disabled={isSubmitting}>
+            <Button
+              onClick={handleCloseCreateDialog}
+              variant="outlined"
+              color="secondary"
+              disabled={isSubmitting}
+            >
               {t('fund_btn_cancel')}
             </Button>
             <Button type="submit" variant="contained" disabled={isSubmitting}>

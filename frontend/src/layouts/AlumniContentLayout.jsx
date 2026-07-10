@@ -6,6 +6,11 @@ import Sidebar from '../components/Sidebar';
 import DynamicFilterBar from '../components/DynamicFilterBar';
 import SearchBar from '../components/SearchBar';
 import ForumSponsoredCard from '../components/forum/ForumSponsoredCard';
+import {
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from '../components/animations/ScrollReveal';
 
 const DEFAULT_SPONSORED_MEDIA = {
   imageSrc: '/forum/metro_station.png',
@@ -25,9 +30,12 @@ const HeaderBlock = ({
   if (!hasHeader) return null;
 
   return (
-    <Stack spacing={2}>
+    <ScrollRevealGroup
+      stagger={0.09}
+      sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
+    >
       {(title || actions) && (
-        <Box
+        <ScrollRevealItem
           sx={{
             display: 'flex',
             alignItems: { xs: 'flex-start', sm: 'center' },
@@ -47,33 +55,39 @@ const HeaderBlock = ({
             </Typography>
           )}
           {actions}
-        </Box>
+        </ScrollRevealItem>
       )}
 
       {description && (
-        <Typography color="text.secondary">
-          {description}
-        </Typography>
+        <ScrollRevealItem>
+          <Typography color="text.secondary">
+            {description}
+          </Typography>
+        </ScrollRevealItem>
       )}
 
-      {stats}
+      {stats ? <ScrollRevealItem>{stats}</ScrollRevealItem> : null}
 
       {filters?.config?.length ? (
-        <DynamicFilterBar
-          config={filters.config}
-          value={filters.value}
-          onChange={filters.onChange}
-        />
+        <ScrollRevealItem>
+          <DynamicFilterBar
+            config={filters.config}
+            value={filters.value}
+            onChange={filters.onChange}
+          />
+        </ScrollRevealItem>
       ) : null}
 
       {search ? (
-        <SearchBar
-          value={search.value}
-          onChange={search.onChange}
-          placeholder={search.placeholder}
-        />
+        <ScrollRevealItem>
+          <SearchBar
+            value={search.value}
+            onChange={search.onChange}
+            placeholder={search.placeholder}
+          />
+        </ScrollRevealItem>
       ) : null}
-    </Stack>
+    </ScrollRevealGroup>
   );
 };
 
@@ -131,8 +145,16 @@ const AlumniContentLayout = ({
           >
             {!isOneColumn && (
               <Stack spacing={2} sx={{ width: { xs: '100%', md: sidebarWidth }, flexShrink: 0 }}>
-                {sidebarContent}
-                {showSponsored && resolvedSponsored ? <ForumSponsoredCard {...resolvedSponsored} /> : null}
+                {sidebarContent ? (
+                  <ScrollReveal direction="right" delay={0.04}>
+                    {sidebarContent}
+                  </ScrollReveal>
+                ) : null}
+                {showSponsored && resolvedSponsored ? (
+                  <ScrollReveal direction="right" delay={0.12}>
+                    <ForumSponsoredCard {...resolvedSponsored} />
+                  </ScrollReveal>
+                ) : null}
               </Stack>
             )}
 
@@ -146,7 +168,7 @@ const AlumniContentLayout = ({
                 ...mainSx,
               }}
             >
-              {header ?? (
+              {header ? <ScrollReveal>{header}</ScrollReveal> : (
                 <HeaderBlock
                   title={title}
                   description={description}

@@ -12,6 +12,7 @@ import GroupAddIcon from '@mui/icons-material/GroupAdd';
 import { useTranslation } from 'react-i18next';
 import Scrollbar from '../Scrollbar';
 import SearchBar from '../SearchBar';
+import { ScrollReveal } from '../animations/ScrollReveal';
 import ChatAvatar from '../ChatAvatar';
 import { useCanContribute } from '../../hooks/useCanContribute';
 
@@ -49,7 +50,9 @@ const NetworkChatSidebar = ({
   };
 
   return (
-    <Box
+    <ScrollReveal
+      direction="right"
+      distance={18}
       sx={{
         display: 'flex',
         flexDirection: 'column',
@@ -209,7 +212,7 @@ const NetworkChatSidebar = ({
           />
         </Box>
       ) : null}
-    </Box>
+    </ScrollReveal>
   );
 };
 

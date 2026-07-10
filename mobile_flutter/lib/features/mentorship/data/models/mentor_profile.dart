@@ -10,6 +10,9 @@ class MentorProfile {
   final double? ratingAvg;
   final int totalSessions;
   final String? status;
+  final String? reviewNote;
+  final String? defaultMeetingLink;
+  final String? extendedProfile;
   final String? coverUrl;
   final List<String> expertiseTopics;
 
@@ -27,6 +30,9 @@ class MentorProfile {
     this.ratingAvg,
     this.totalSessions = 0,
     this.status,
+    this.reviewNote,
+    this.defaultMeetingLink,
+    this.extendedProfile,
     this.coverUrl,
     this.expertiseTopics = const [],
     this.expertiseTags = const [],
@@ -54,6 +60,9 @@ class MentorProfile {
       ratingAvg: (json['ratingAvg'] as num?)?.toDouble(),
       totalSessions: (json['totalSessions'] as num?)?.toInt() ?? 0,
       status: json['status'] as String?,
+      reviewNote: json['reviewNote'] as String?,
+      defaultMeetingLink: json['defaultMeetingLink'] as String?,
+      extendedProfile: json['extendedProfile'] as String?,
       coverUrl: json['coverUrl'] as String?,
       expertiseTopics:
           (json['expertiseTopics'] as List?)

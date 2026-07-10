@@ -444,9 +444,10 @@ const AdminVerificationsPage = () => {
         </DialogContent>
         <DialogActions sx={{ p: 2.5, gap: 1 }}>
           <Button 
+            variant="outlined"
             disabled={submitting} 
             onClick={() => setReviewDialogOpen(false)} 
-            color="inherit"
+            color="secondary"
           >
             {t('verif_btn_close')}
           </Button>
@@ -602,7 +603,7 @@ const AdminVerificationsPage = () => {
               {t('verif_open_new_tab', { defaultValue: 'Mở tab mới' })}
             </Button>
           )}
-          <Button color="inherit" onClick={() => setDocumentViewerRequest(null)}>
+          <Button variant="outlined" color="secondary" onClick={() => setDocumentViewerRequest(null)}>
             {t('verif_btn_close')}
           </Button>
         </DialogActions>

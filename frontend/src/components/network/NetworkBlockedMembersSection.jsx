@@ -15,6 +15,11 @@ import usePaginationScrollToTop from '../../hooks/usePaginationScrollToTop';
 import { useBlockedMembers } from '../../hooks/network/useBlockedMembers';
 import { useBlockUser } from '../../hooks/network/useBlockUser';
 import NetworkBlockedMemberCard from './NetworkBlockedMemberCard';
+import {
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from '../animations/ScrollReveal';
 
 const PAGE_SIZE = 5;
 
@@ -83,7 +88,8 @@ const NetworkBlockedMembersSection = () => {
     }
 
     return (
-      <Box
+      <ScrollRevealGroup
+        stagger={0.07}
         sx={{
           display: 'grid',
           gridTemplateColumns: '1fr',
@@ -93,33 +99,32 @@ const NetworkBlockedMembersSection = () => {
         }}
       >
         {items.map((member) => (
-          <NetworkBlockedMemberCard
-            key={member.blockedMemberId}
+          <ScrollRevealItem key={member.blockedMemberId}><NetworkBlockedMemberCard
             member={member}
             onUnblock={() => setUnblockTarget(member)}
             isUnblockLoading={
               isUnblocking && unblockTarget?.blockedMemberId === member.blockedMemberId
             }
-          />
+          /></ScrollRevealItem>
         ))}
-      </Box>
+      </ScrollRevealGroup>
     );
   };
 
   return (
     <Stack spacing={2}>
 
-      <SearchBar
+      <ScrollReveal><SearchBar
         value={searchInput}
         onChange={setSearchInput}
         onKeyDown={handleSearchKeyDown}
         placeholder={t('search_blocked_placeholder')}
-      />
+      /></ScrollReveal>
 
       {renderContent()}
 
       {pageCount > 0 ? (
-        <Stack direction="row" justifyContent="center" alignItems="center">
+        <ScrollReveal><Stack direction="row" justifyContent="center" alignItems="center">
           <Pagination
             count={pageCount}
             page={safePage}
@@ -136,7 +141,7 @@ const NetworkBlockedMembersSection = () => {
               },
             }}
           />
-        </Stack>
+        </Stack></ScrollReveal>
       ) : null}
 
       <ConfirmDialog

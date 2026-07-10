@@ -2,15 +2,15 @@ import { Box, Button, Container, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import Page from '../../components/Page';
-import { useOrgNavigate } from '../../hooks/useOrgNavigate';
+import { useErrorPageActions } from '../../hooks/useErrorPageActions';
+import {
+	ScrollRevealGroup,
+	ScrollRevealItem,
+} from '../../components/animations/ScrollReveal';
 
 export default function ServerErrorPage() {
-	const navigate = useOrgNavigate();
+	const { goHome, retry } = useErrorPageActions();
 	const { t } = useTranslation('common');
-
-	const handleRefresh = () => {
-		window.location.reload();
-	};
 
 	return (
 		<Page
@@ -24,7 +24,8 @@ export default function ServerErrorPage() {
 		>
 			<Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
 				<Container maxWidth="md">
-					<Box
+					<ScrollRevealGroup
+						stagger={0.09}
 						sx={{
 							display: 'flex',
 							flexDirection: 'column',
@@ -35,15 +36,15 @@ export default function ServerErrorPage() {
 							py: 5,
 						}}
 					>
-					<ErrorOutlineIcon
+					<ScrollRevealItem><ErrorOutlineIcon
 						sx={{
 							fontSize: 120,
 							color: 'error.main',
 							mb: 2,
 						}}
-					/>
+					/></ScrollRevealItem>
 
-					<Typography
+					<ScrollRevealItem><Typography
 						variant="h1"
 						sx={{
 							fontSize: { xs: '4rem', sm: '6rem', md: '8rem' },
@@ -53,9 +54,9 @@ export default function ServerErrorPage() {
 						}}
 					>
 						500
-					</Typography>
+					</Typography></ScrollRevealItem>
 
-					<Typography
+					<ScrollRevealItem><Typography
 						variant="h4"
 						sx={{
 							fontWeight: 600,
@@ -64,9 +65,9 @@ export default function ServerErrorPage() {
 						}}
 					>
 						{t('server_error_heading')}
-					</Typography>
+					</Typography></ScrollRevealItem>
 
-					<Typography
+					<ScrollRevealItem><Typography
 						variant="body1"
 						sx={{
 							color: 'text.secondary',
@@ -75,9 +76,9 @@ export default function ServerErrorPage() {
 						}}
 					>
 						{t('server_error_desc')}
-					</Typography>
+					</Typography></ScrollRevealItem>
 
-					<Box
+					<ScrollRevealItem><Box
 						sx={{
 							display: 'flex',
 							gap: 2,
@@ -88,7 +89,7 @@ export default function ServerErrorPage() {
 						<Button
 							variant="contained"
 							size="large"
-							onClick={handleRefresh}
+							onClick={retry}
 							sx={{
 								px: 4,
 								py: 1.5,
@@ -101,7 +102,7 @@ export default function ServerErrorPage() {
 						<Button
 							variant="outlined"
 							size="large"
-							onClick={() => navigate('/')}
+							onClick={goHome}
 							sx={{
 								px: 4,
 								py: 1.5,
@@ -111,8 +112,8 @@ export default function ServerErrorPage() {
 						>
 							{t('not_found_go_home')}
 						</Button>
-					</Box>
-					</Box>
+					</Box></ScrollRevealItem>
+					</ScrollRevealGroup>
 				</Container>
 			</Box>
 		</Page>

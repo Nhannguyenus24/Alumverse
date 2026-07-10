@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ScrollReveal } from '../animations/ScrollReveal';
 import {
   alpha,
   Alert,
@@ -291,7 +292,9 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
   }, [activeChat?.id, activeChat?.type, showError, t, wsSendMessage]);
 
   return (
-    <Box
+    <ScrollReveal
+      direction="left"
+      distance={18}
       sx={{
         display: 'flex',
         flexDirection: 'column',
@@ -758,7 +761,7 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
         onConfirm={() => { if (canContribute) blockUser(); }}
         onCancel={() => setBlockConfirmOpen(false)}
       />
-    </Box>
+    </ScrollReveal>
   );
 };
 

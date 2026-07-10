@@ -17,6 +17,11 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useTranslation } from 'react-i18next';
 
 import Page from '../../components/Page';
+import {
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from '../../components/animations/ScrollReveal';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useMyOrganizationMember } from '../../hooks/useMyOrganizationMember';
 import { useMyMenteeProfile, useSaveMenteeProfile } from '../../hooks/mentorship/useMyMenteeProfile';
@@ -151,21 +156,21 @@ const MenteeSignupPage = () => {
   return (
     <Page title={t('mentee_signup_page_title')}>
       <Container maxWidth="md" sx={{ py: { xs: 3, md: 5 } }}>
-        <Button
+        <ScrollReveal><Button
           startIcon={<ArrowBackIcon />}
           onClick={() => navigate('/mentorship')}
           sx={{ mb: 2, textTransform: 'none' }}
           color="inherit"
         >
           {t('mentee_signup_go_back')}
-        </Button>
+        </Button></ScrollReveal>
 
-        <Typography variant="h2" fontWeight={800} color="primary.main" mb={1}>
+        <ScrollReveal><Typography variant="h2" fontWeight={800} color="primary.main" mb={1}>
           {hasExisting ? t('mentee_signup_update_heading') : t('mentee_signup_create_heading')}
-        </Typography>
-        <Typography color="text.secondary" mb={3}>
+        </Typography></ScrollReveal>
+        <ScrollReveal delay={0.06}><Typography color="text.secondary" mb={3}>
           {t('mentee_signup_subtitle')}
-        </Typography>
+        </Typography></ScrollReveal>
 
         {success && (
           <Alert severity="success" sx={{ mb: 2 }}>
@@ -179,9 +184,9 @@ const MenteeSignupPage = () => {
           </Alert>
         )}
 
-        <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, borderRadius: 2 }}>
-          <Stack spacing={2.5}>
-            <TextField
+        <ScrollReveal><Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, borderRadius: 2 }}>
+          <ScrollRevealGroup stagger={0.08} sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+            <ScrollRevealItem><TextField
               label={t('mentee_signup_goal_label')}
               placeholder={t('mentee_signup_goal_placeholder')}
               value={values.mentoringGoal}
@@ -190,9 +195,9 @@ const MenteeSignupPage = () => {
               minRows={3}
               required
               fullWidth
-            />
+            /></ScrollRevealItem>
 
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+            <ScrollRevealItem><Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
               <TextField
                 label={t('mentee_signup_major_label')}
                 value={values.major}
@@ -214,9 +219,9 @@ const MenteeSignupPage = () => {
                   </MenuItem>
                 ))}
               </TextField>
-            </Stack>
+            </Stack></ScrollRevealItem>
 
-            <TextField
+            <ScrollRevealItem><TextField
               label={t('mentee_signup_interests_label')}
               placeholder={t('mentee_signup_interests_placeholder')}
               value={values.interests}
@@ -225,9 +230,9 @@ const MenteeSignupPage = () => {
               minRows={2}
               fullWidth
               helperText={t('mentee_signup_interests_helper')}
-            />
+            /></ScrollRevealItem>
 
-            <Box>
+            <ScrollRevealItem>
               <Typography fontWeight={700} mb={1}>
                 {t('mentee_signup_terms_title')}
               </Typography>
@@ -258,11 +263,11 @@ const MenteeSignupPage = () => {
                 }
                 label={t('mentee_signup_terms_accept_label')}
               />
-            </Box>
-          </Stack>
-        </Paper>
+            </ScrollRevealItem>
+          </ScrollRevealGroup>
+        </Paper></ScrollReveal>
 
-        <Stack
+        <ScrollReveal><Stack
           direction={{ xs: 'column', sm: 'row' }}
           justifyContent="flex-end"
           spacing={1.5}
@@ -286,7 +291,7 @@ const MenteeSignupPage = () => {
                 ? t('mentee_signup_update_btn')
                 : t('mentee_signup_complete_btn')}
           </Button>
-        </Stack>
+        </Stack></ScrollReveal>
       </Container>
     </Page>
   );

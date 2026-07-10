@@ -17,6 +17,7 @@ import { useUserAlumniPosts } from '../../hooks/articles/useUserAlumniPosts';
 import { useUserDonations } from '../../hooks/fundraising/useUserDonations';
 import { formatDate } from '../../utils/dateFormatter';
 import { formatCurrency } from '../../utils/numberFormatter';
+import { ScrollReveal, getStaggerDelay } from '../animations/ScrollReveal';
 
 const UserHighlights = ({ userId, navigate }) => {
   const { t } = useTranslation(['profile']);
@@ -32,9 +33,9 @@ const UserHighlights = ({ userId, navigate }) => {
 
   return (
     <Box sx={{ mt: 4, pt: 4, borderTop: '1px solid', borderColor: 'divider' }}>
-      <Typography variant="h4" fontWeight={800} color="primary.main" mb={4} textAlign="center" textTransform="uppercase">
+      <ScrollReveal><Typography variant="h4" fontWeight={800} color="primary.main" mb={4} textAlign="center" textTransform="uppercase">
         {t('profile:highlights_title')}
-      </Typography>
+      </Typography></ScrollReveal>
 
       <Grid container spacing={4}>
         {articles.length > 0 && (
@@ -43,8 +44,8 @@ const UserHighlights = ({ userId, navigate }) => {
               <ArticleIcon color="primary" /> {t('profile:posted_articles')}
             </Typography>
             <Stack spacing={2}>
-              {articles.map((article) => (
-                <Card key={article.id} sx={{ borderRadius: 2, boxShadow: '0 2px 10px 0 rgba(0,0,0,0.04)', transition: 'all 0.2s', '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 6px 16px 0 rgba(0,0,0,0.08)' } }}>
+              {articles.map((article, index) => (
+                <ScrollReveal key={article.id} delay={getStaggerDelay(index, 0.06)}><Card sx={{ borderRadius: 2, boxShadow: '0 2px 10px 0 rgba(0,0,0,0.04)', transition: 'all 0.2s', '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 6px 16px 0 rgba(0,0,0,0.08)' } }}>
                   <CardActionArea onClick={() => navigate(`/article/alumni/${article.slug || article.id}`)} sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
                     {article.thumbnailUrl && (
                       <Box
@@ -62,7 +63,7 @@ const UserHighlights = ({ userId, navigate }) => {
                       </Typography>
                     </Box>
                   </CardActionArea>
-                </Card>
+                </Card></ScrollReveal>
               ))}
             </Stack>
           </Grid>
@@ -74,8 +75,8 @@ const UserHighlights = ({ userId, navigate }) => {
               <VolunteerActivismIcon color="error" /> {t('profile:donation_history')}
             </Typography>
             <Stack spacing={2}>
-              {donations.map((donation) => (
-                <Card key={donation.id} sx={{ borderRadius: 2, boxShadow: '0 2px 10px 0 rgba(0,0,0,0.04)', bgcolor: 'background.paper', borderLeft: '4px solid', borderLeftColor: 'error.main' }}>
+              {donations.map((donation, index) => (
+                <ScrollReveal key={donation.id} delay={getStaggerDelay(index, 0.06)}><Card sx={{ borderRadius: 2, boxShadow: '0 2px 10px 0 rgba(0,0,0,0.04)', bgcolor: 'background.paper', borderLeft: '4px solid', borderLeftColor: 'error.main' }}>
                   <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                       <Box>
@@ -96,7 +97,7 @@ const UserHighlights = ({ userId, navigate }) => {
                       </Typography>
                     )}
                   </CardContent>
-                </Card>
+                </Card></ScrollReveal>
               ))}
             </Stack>
           </Grid>

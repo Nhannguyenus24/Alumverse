@@ -42,9 +42,7 @@ class MentorshipRepository {
         },
         // Repeat array keys without brackets (skillIds=1&skillIds=2) so Spring
         // binds them to List<Integer>; dio defaults to skillIds[]=1.
-        options: Options(
-          listFormat: ListFormat.multiCompatible,
-        ),
+        options: Options(listFormat: ListFormat.multiCompatible),
       );
     } else if (kw.isNotEmpty) {
       res = await _dio.get(
@@ -213,7 +211,6 @@ class MentorshipRepository {
   Future<MentorProfile> createMentorProfile({
     required String currentJobTitle,
     required String currentCompany,
-    required String bio,
     String? defaultMeetingLink,
     String? extendedProfile,
     List<String> expertiseTags = const [],
@@ -223,7 +220,31 @@ class MentorshipRepository {
       data: {
         'currentJobTitle': currentJobTitle,
         'currentCompany': currentCompany,
-        'bio': bio,
+        if (defaultMeetingLink != null && defaultMeetingLink.isNotEmpty)
+          'defaultMeetingLink': defaultMeetingLink,
+        if (extendedProfile != null) 'extendedProfile': extendedProfile,
+        'expertiseTags': expertiseTags,
+      },
+    );
+    return MentorProfile.fromJson(_dataMap(res.data));
+  }
+
+  /// Save an incomplete mentor profile as DRAFT. Mirrors the web save-draft
+  /// flow so a draft created on web can be continued on mobile and vice versa.
+  Future<MentorProfile> saveMentorProfileDraft({
+    String? currentJobTitle,
+    String? currentCompany,
+    String? defaultMeetingLink,
+    String? extendedProfile,
+    List<String> expertiseTags = const [],
+  }) async {
+    final res = await _dio.post(
+      ApiEndpoints.mentorProfileDraft,
+      data: {
+        if (currentJobTitle != null && currentJobTitle.isNotEmpty)
+          'currentJobTitle': currentJobTitle,
+        if (currentCompany != null && currentCompany.isNotEmpty)
+          'currentCompany': currentCompany,
         if (defaultMeetingLink != null && defaultMeetingLink.isNotEmpty)
           'defaultMeetingLink': defaultMeetingLink,
         if (extendedProfile != null) 'extendedProfile': extendedProfile,

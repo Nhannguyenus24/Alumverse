@@ -15,6 +15,11 @@ import Page from '../../components/Page';
 import WYSIWYG from '../../components/WYSIWYG';
 import { useAuth } from '../../hooks/useAuth';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
+import {
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from '../../components/animations/ScrollReveal';
 
 const RequestAchievementsPage = () => {
   const navigate = useOrgNavigate();
@@ -53,7 +58,9 @@ const RequestAchievementsPage = () => {
       <Box sx={{ minHeight: '100vh' }}>
 
         {/* COVER SECTION */}
-        <Box
+        <ScrollReveal
+          direction="none"
+          duration={0.75}
           sx={{
             height: 220,
             backgroundColor: 'primary.main',
@@ -64,7 +71,8 @@ const RequestAchievementsPage = () => {
         <Container maxWidth="lg">
 
           {/* FLOATING CARD */}
-          <Box
+          <ScrollRevealGroup
+            stagger={0.08}
             sx={{
               width: { xs: '100%', md: '70%' },
               mx: 'auto',
@@ -78,31 +86,29 @@ const RequestAchievementsPage = () => {
           >
 
             {/* TITLE */}
-            <Typography
+            <ScrollRevealItem>
+              <Typography
                 variant="h1"
                 fontWeight={800}
                 color="primary.main"
                 sx={{ fontSize: { xs: '1.8rem', md: '2.3rem' }, textAlign: 'center', mb: 3 }}
             >
                 {t('request_heading')}
-            </Typography>
+              </Typography>
+            </ScrollRevealItem>
 
             {/* DESCRIPTION */}
-            <Typography color="text.secondary" sx={{ mb: 3 }}>
-              {t('request_description')}
-            </Typography>
+            <ScrollRevealItem><Typography color="text.secondary" sx={{ mb: 3 }}>{t('request_description')}</Typography></ScrollRevealItem>
 
             {!canRequest && (
-              <Alert severity="warning" sx={{ mb: 3 }}>
-                {t('warn_alumni_verification_required')}
-              </Alert>
+              <ScrollRevealItem><Alert severity="warning" sx={{ mb: 3 }}>{t('warn_alumni_verification_required')}</Alert></ScrollRevealItem>
             )}
 
             {/* POST SECTION */}
-            <Stack spacing={2}>
+            <ScrollRevealGroup stagger={0.07} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
 
               {/* TITLE INPUT */}
-              <TextField
+              <ScrollRevealItem><TextField
                 fullWidth
                 variant="standard"
                 value={title}
@@ -118,30 +124,30 @@ const RequestAchievementsPage = () => {
                     borderColor: 'divider',
                   },
                 }}
-              />
+              /></ScrollRevealItem>
 
             {/* CONTENT INPUT */}
-              <Box sx={{ pb: { xs: 8, md: 4 } }}>
+              <ScrollRevealItem sx={{ pb: { xs: 8, md: 4 } }}>
                 <WYSIWYG
                   value={content}
                   onChange={setContent}
                   placeholder={t('request_content_placeholder')}
                   height={400}
                 />
-              </Box>
+              </ScrollRevealItem>
 
               {/* PROOF LINK INPUT */}
-              <TextField
+              <ScrollRevealItem><TextField
                 fullWidth
                 variant="outlined"
                 value={proofLink}
                 onChange={(e) => setProofLink(e.target.value)}
                 placeholder={t('request_proof_link_placeholder')}
 
-              />
+              /></ScrollRevealItem>
 
               {/* IMAGE UPLOAD */}
-              <Box>
+              <ScrollRevealItem>
                 <Button variant="outlined" component="label">
                   {t('request_upload_image')}
                   <input type="file" hidden accept="image/*" onChange={handleImageChange} />
@@ -151,10 +157,10 @@ const RequestAchievementsPage = () => {
                     <img src={image} alt="Preview" style={{ maxWidth: '100%', maxHeight: 200, borderRadius: 8 }} />
                   </Box>
                 )}
-              </Box>
+              </ScrollRevealItem>
 
               {/* ACTION BUTTONS */}
-              <Box
+              <ScrollRevealItem
                 sx={{
                   display: 'flex',
                   justifyContent: 'flex-end',
@@ -178,10 +184,10 @@ const RequestAchievementsPage = () => {
                 >
                   {t('request_submit')}
                 </Button>
-              </Box>
+              </ScrollRevealItem>
 
-            </Stack>
-          </Box>
+            </ScrollRevealGroup>
+          </ScrollRevealGroup>
         </Container>
       </Box>
     </Page>

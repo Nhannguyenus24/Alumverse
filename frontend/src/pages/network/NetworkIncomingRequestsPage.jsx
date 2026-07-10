@@ -22,6 +22,11 @@ import {
   DEFAULT_NETWORK_INCOMING_REQUEST_FILTERS,
   getNetworkIncomingRequestFilterConfig,
 } from '../../constants/networkConfig';
+import {
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from '../../components/animations/ScrollReveal';
 
 const PAGE_SIZE = 5;
 
@@ -163,58 +168,57 @@ const NetworkIncomingRequestsPage = () => {
     }
 
     return (
-      <Stack spacing={2}>
+      <ScrollRevealGroup stagger={0.07} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         {items.map((request) => (
-          <NetworkIncomingRequestCard
-            key={request.id}
+          <ScrollRevealItem key={request.id}><NetworkIncomingRequestCard
             request={request}
             onViewDetail={handleViewDetail}
             onAccept={handleAccept}
             onReject={handleReject}
             isResponding={respondingId === request.id}
-          />
+          /></ScrollRevealItem>
         ))}
-      </Stack>
+      </ScrollRevealGroup>
     );
   };
 
   return (
     <NetworkSectionLayout title={t('incoming_layout_title')}>
-      <Stack spacing={2}>
-        <Typography
+      <ScrollRevealGroup stagger={0.08} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <ScrollRevealItem><Typography
           variant="h1"
           fontWeight={800}
           color="primary.main"
           sx={{ fontSize: { xs: '1.8rem', md: '2.3rem' } }}
         >
           {t('incoming_heading')}
-        </Typography>
+        </Typography></ScrollRevealItem>
 
-        <Typography color="text.secondary">
+        <ScrollRevealItem><Typography color="text.secondary">
           {t('incoming_subheading')}
-        </Typography>
+        </Typography></ScrollRevealItem>
 
-        <DynamicFilterBar
+        <ScrollRevealItem><DynamicFilterBar
           config={statusFilters}
           value={filters}
           onChange={(next) => {
             setFilters(next);
             setPage(1);
           }}
-        />
+        /></ScrollRevealItem>
 
-        <SearchBar
+        <ScrollRevealItem><SearchBar
           value={searchInput}
           onChange={setSearchInput}
           onKeyDown={handleSearchKeyDown}
           placeholder={t('search_by_name_placeholder')}
-        />
-      </Stack>
+        /></ScrollRevealItem>
+      </ScrollRevealGroup>
 
       {renderContent()}
 
       {pageCount > 0 ? (
-        <Stack
+        <ScrollReveal><Stack
           direction="row"
           justifyContent="center"
           alignItems="center"
@@ -235,7 +239,7 @@ const NetworkIncomingRequestsPage = () => {
               },
             }}
           />
-        </Stack>
+        </Stack></ScrollReveal>
       ) : null}
 
       <NetworkIncomingRequestDetailDrawer
