@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Mono;
 
 /**
  * API Controller for handling Base64 image uploads.
@@ -49,32 +50,20 @@ public class ImageController {
             summary = "Upload Base64 Image",
             description = "Upload an image in Base64 format and convert to WebP format"
     )
-    public ResponseEntity<ApiResponse<String>> uploadImage(@RequestBody ImageUploadRequest request) {
-        try {
-            // Validate request
-            if (request.getBase64String() == null || request.getBase64String().isEmpty()) {
-                return ResponseEntity.badRequest().body(
-                        new ApiResponse<>("Base64 string cannot be empty", null)
-                );
-            }
-
-            // Upload image
-            String imageUrl = imageService.uploadBase64Image(request.getBase64String());
-
-            // Return response
-            return ResponseEntity.ok(
-                    new ApiResponse<>("Image uploaded successfully", imageUrl)
-            );
-
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(
-                    new ApiResponse<>("Invalid Base64 string: " + e.getMessage(), null)
-            );
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                    new ApiResponse<>("Error processing image: " + e.getMessage(), null)
-            );
+    public Mono<ResponseEntity<ApiResponse<String>>> uploadImage(@RequestBody ImageUploadRequest request) {
+        if (request.getBase64String() == null || request.getBase64String().isEmpty()) {
+            return Mono.just(ResponseEntity.badRequest().body(
+                    new ApiResponse<>("Base64 string cannot be empty", null)));
         }
+
+        return imageService.uploadBase64ImageReactive(request.getBase64String())
+                .map(imageUrl -> ResponseEntity.ok(new ApiResponse<>("Image uploaded successfully", imageUrl)))
+                .onErrorResume(IllegalArgumentException.class, e ->
+                        Mono.just(ResponseEntity.badRequest()
+                                .body(new ApiResponse<>("Invalid Base64 string: " + e.getMessage(), null))))
+                .onErrorResume(e ->
+                        Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                .body(new ApiResponse<>("Error processing image: " + e.getMessage(), null))));
     }
 
     @lombok.Data
