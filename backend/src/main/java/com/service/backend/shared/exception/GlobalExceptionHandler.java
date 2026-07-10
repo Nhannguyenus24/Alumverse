@@ -63,6 +63,17 @@ public class GlobalExceptionHandler {
         return Mono.just(ResponseEntity.status(errorCode.getStatus()).body(response));
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public Mono<ResponseEntity<?>> handleIllegalArgumentException(IllegalArgumentException ex) {
+        meterRegistry.counter("api.errors.count", "error_code", "BAD_REQUEST").increment();
+
+        return Mono.just(
+                ResponseEntity
+                        .status(400)
+                        .body(new ApiResponse<>(ex.getMessage(), null))
+        );
+    }
+
     @ExceptionHandler(NoResourceFoundException.class)
     public Mono<ResponseEntity<?>> handleNoResourceFoundException(NoResourceFoundException ex) {
         log.warn("Resource not found: {}", ex.getMessage());
