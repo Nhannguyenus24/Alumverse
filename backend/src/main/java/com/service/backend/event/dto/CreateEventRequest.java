@@ -61,4 +61,7 @@ public class CreateEventRequest {
 
     @Schema(example = "true", description = "Whether this event requires QR code check-in scanning")
     private Boolean requiresCheckIn;
+
+    @Schema(example = "1", description = "Organization that owns the event. Admins may provide this explicitly; staff use their token organization.")
+    private Integer organizationId;
 }

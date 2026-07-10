@@ -15,6 +15,11 @@ import usePaginationScrollToTop from '../../hooks/usePaginationScrollToTop';
 import { useNetworkConnections } from '../../hooks/network/useNetworkConnections';
 import { useBlockUser } from '../../hooks/network/useBlockUser';
 import NetworkConnectionCard from './NetworkConnectionCard';
+import {
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from '../animations/ScrollReveal';
 
 const PAGE_SIZE = 5;
 
@@ -83,7 +88,8 @@ const NetworkConnectionsSection = ({ enableBlock = true }) => {
     }
 
     return (
-      <Box
+      <ScrollRevealGroup
+        stagger={0.07}
         sx={{
           display: 'grid',
           gridTemplateColumns: '1fr',
@@ -93,35 +99,32 @@ const NetworkConnectionsSection = ({ enableBlock = true }) => {
         }}
       >
         {items.map((connection) => (
-          <NetworkConnectionCard
-            key={connection.connectionId}
+          <ScrollRevealItem key={connection.connectionId}><NetworkConnectionCard
             connection={connection}
             enableBlock={enableBlock}
             onBlock={() => setBlockTarget(connection)}
             isBlockLoading={isBlocking && blockTarget?.peerMemberId === connection.peerMemberId}
-          />
+          /></ScrollRevealItem>
         ))}
-      </Box>
+      </ScrollRevealGroup>
     );
   };
 
   return (
     <Stack spacing={2}>
-      <Typography variant="h4" fontWeight={700}>
-        {t('network:current_connections')}
-      </Typography>
+      <ScrollReveal><Typography variant="h4" fontWeight={700}>{t('network:current_connections')}</Typography></ScrollReveal>
 
-      <SearchBar
+      <ScrollReveal><SearchBar
         value={searchInput}
         onChange={setSearchInput}
         onKeyDown={handleSearchKeyDown}
         placeholder={t('network:search_by_name_placeholder')}
-      />
+      /></ScrollReveal>
 
       {renderContent()}
 
       {pageCount > 0 ? (
-        <Stack direction="row" justifyContent="center" alignItems="center">
+        <ScrollReveal><Stack direction="row" justifyContent="center" alignItems="center">
           <Pagination
             count={pageCount}
             page={safePage}
@@ -138,7 +141,7 @@ const NetworkConnectionsSection = ({ enableBlock = true }) => {
               },
             }}
           />
-        </Stack>
+        </Stack></ScrollReveal>
       ) : null}
 
       <ConfirmDialog

@@ -7,6 +7,10 @@ import Input from './Input';
 import Dropdown from './Dropdown';
 import { useFundReceivingInfos } from '../hooks/news/useFundReceivingInfos';
 import { getTopicsByChannel } from '../utils/articleTopics';
+import {
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from './animations/ScrollReveal';
 
 const CAPTION_REQUIRED_CHANNELS = new Set(['news', 'alumni', 'achievement', 'job', 'learning', 'event']);
 
@@ -82,8 +86,11 @@ const PostArticleForm = ({
   }, [setRegistrationQuestions]);
 
   return (
-    <Stack spacing={3}>
-      <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+    <ScrollRevealGroup
+      stagger={0.08}
+      sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}
+    >
+      <ScrollRevealItem sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
         <TextField
           fullWidth
           label={t('article:channel')}
@@ -102,11 +109,11 @@ const PostArticleForm = ({
             <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
           ))}
         </TextField>
-      </Box>
+      </ScrollRevealItem>
 
       {/* 1. LAYOUT QUYÊN GÓP (Giữ nguyên cấu trúc Huy đã tweak) */}
       {channel === 'donation' && (
-        <Box
+        <ScrollRevealItem
           sx={(theme) => ({
             backgroundColor: alpha(theme.palette.info.main, theme.palette.mode === 'dark' ? 0.12 : 0.08),
             border: '1px solid',
@@ -116,37 +123,41 @@ const PostArticleForm = ({
             my: 2,
           })}
         >
-          <Typography variant="h6" fontWeight={700} sx={{ mb: 3, color: 'primary.main' }}>
-            {t('donation:section_title')}
-          </Typography>
-          <Box sx={{ mb: 3 }}>
-            <Input label={t('donation:fund_name')} name="donationFundName" value={donationData.donationFundName} onChange={handleDonationInputChange} />
-          </Box>
-          <Box sx={{ mb: 3 }}>
-            <Input label={t('donation:manager')} name="organizer" value={donationData.organizer} onChange={handleDonationInputChange} />
-          </Box>
-          <Box sx={{ mb: 3 }}>
-            <Dropdown
-              label={t('donation:receiving_account')}
-              options={fundReceivingOptions}
-              value={donationData.fundReceivingInfoId ?? ''}
-              onChange={(e) => handleDonationInputChange({ target: { name: 'fundReceivingInfoId', value: e.target.value } })}
-            />
-          </Box>
-          <Box sx={{ mb: 3 }}>
-            <Input label={t('donation:goal_vnd')} name="donationGoal" type="number" value={donationData.donationGoal} onChange={handleDonationInputChange} />
-          </Box>
-          <Box sx={{ mb: 3 }}><TextField fullWidth label={t('donation:reason')} name="reasonForDonation" multiline rows={3} value={donationData.reasonForDonation} onChange={handleDonationInputChange} /></Box>
-          <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
-            <Box sx={{ flex: 1 }}><TextField fullWidth label={t('event:start_date')} type="date" name="startDate" InputLabelProps={{ shrink: true }} value={donationData.startDate} onChange={handleDonationInputChange} /></Box>
-            <Box sx={{ flex: 1 }}><TextField fullWidth label={t('event:end_date')} type="date" name="endDate" InputLabelProps={{ shrink: true }} value={donationData.endDate} onChange={handleDonationInputChange} /></Box>
-          </Box>
-        </Box>
+          <ScrollRevealGroup stagger={0.07} sx={{ display: 'flex', flexDirection: 'column' }}>
+            <ScrollRevealItem>
+              <Typography variant="h6" fontWeight={700} sx={{ mb: 3, color: 'primary.main' }}>
+                {t('donation:section_title')}
+              </Typography>
+            </ScrollRevealItem>
+            <ScrollRevealItem sx={{ mb: 3 }}>
+              <Input label={t('donation:fund_name')} name="donationFundName" value={donationData.donationFundName} onChange={handleDonationInputChange} />
+            </ScrollRevealItem>
+            <ScrollRevealItem sx={{ mb: 3 }}>
+              <Input label={t('donation:manager')} name="organizer" value={donationData.organizer} onChange={handleDonationInputChange} />
+            </ScrollRevealItem>
+            <ScrollRevealItem sx={{ mb: 3 }}>
+              <Dropdown
+                label={t('donation:receiving_account')}
+                options={fundReceivingOptions}
+                value={donationData.fundReceivingInfoId ?? ''}
+                onChange={(e) => handleDonationInputChange({ target: { name: 'fundReceivingInfoId', value: e.target.value } })}
+              />
+            </ScrollRevealItem>
+            <ScrollRevealItem sx={{ mb: 3 }}>
+              <Input label={t('donation:goal_vnd')} name="donationGoal" type="number" value={donationData.donationGoal} onChange={handleDonationInputChange} />
+            </ScrollRevealItem>
+            <ScrollRevealItem sx={{ mb: 3 }}><TextField fullWidth label={t('donation:reason')} name="reasonForDonation" multiline rows={3} value={donationData.reasonForDonation} onChange={handleDonationInputChange} /></ScrollRevealItem>
+            <ScrollRevealItem sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+              <Box sx={{ flex: 1 }}><TextField fullWidth label={t('event:start_date')} type="date" name="startDate" InputLabelProps={{ shrink: true }} value={donationData.startDate} onChange={handleDonationInputChange} /></Box>
+              <Box sx={{ flex: 1 }}><TextField fullWidth label={t('event:end_date')} type="date" name="endDate" InputLabelProps={{ shrink: true }} value={donationData.endDate} onChange={handleDonationInputChange} /></Box>
+            </ScrollRevealItem>
+          </ScrollRevealGroup>
+        </ScrollRevealItem>
       )}
 
       {/* 2. LAYOUT SỰ KIỆN */}
       {channel === 'event' && (
-      <Box>
+      <ScrollRevealItem>
         <Box
           sx={(theme) => ({
             backgroundColor: alpha(theme.palette.info.main, theme.palette.mode === 'dark' ? 0.12 : 0.08),
@@ -224,7 +235,7 @@ const PostArticleForm = ({
 
           <Stack spacing={3}>
             {registrationQuestions.map((q, index) => (
-              <Box key={q.id} sx={{ p: 2, border: "1px solid", borderColor: "divider", borderRadius: 2 }}>
+              <ScrollRevealItem key={q.id} sx={{ p: 2, border: "1px solid", borderColor: "divider", borderRadius: 2 }}>
                 <Stack spacing={2}>
                   <TextField
                     fullWidth
@@ -276,7 +287,7 @@ const PostArticleForm = ({
                     {t('event:delete_question')}
                   </Button>
                 </Stack>
-              </Box>
+              </ScrollRevealItem>
             ))}
 
             <Button variant="contained" onClick={addQuestion}>
@@ -285,26 +296,28 @@ const PostArticleForm = ({
           </Stack>
         </Box>
         )}
-      </Box>
+      </ScrollRevealItem>
       )}
 
       {/* 3. LAYOUT CỰU SINH VIÊN (Tinh giản như News) */}
       {/* Không hiển thị Box xanh, để người dùng tập trung vào Title và WYSIWYG bên dưới */}
 
-      <TextField
-        fullWidth
-        variant="standard"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        placeholder={t('article:title_placeholder')}
-        InputProps={{
-          disableUnderline: true,
-          sx: { fontSize: '1.15rem', fontWeight: 600, pb: 1, borderBottom: '1px solid', borderColor: 'divider' },
-        }}
-      />
+      <ScrollRevealItem>
+        <TextField
+          fullWidth
+          variant="standard"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder={t('article:title_placeholder')}
+          InputProps={{
+            disableUnderline: true,
+            sx: { fontSize: '1.15rem', fontWeight: 600, pb: 1, borderBottom: '1px solid', borderColor: 'divider' },
+          }}
+        />
+      </ScrollRevealItem>
 
       {mainImagePreview && (
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 1, mb: 1 }}>
+        <ScrollRevealItem sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 1, mb: 1 }}>
           <Box
             component="img"
             src={mainImagePreview}
@@ -330,10 +343,10 @@ const PostArticleForm = ({
               sx={{ mt: 1.5, maxWidth: { xs: '100%', md: '72%' } }}
             />
           )}
-        </Box>
+        </ScrollRevealItem>
       )}
 
-      <Box sx={{ mt: 2 }}>
+      <ScrollRevealItem sx={{ mt: 2 }}>
         <WYSIWYG
           value={content}
           onChange={setContent}
@@ -341,18 +354,22 @@ const PostArticleForm = ({
           height={400}
           requireImageCaptions={requiresImageCaptions}
         />
-      </Box>
+      </ScrollRevealItem>
 
-      <TextField
-        fullWidth
-        type="url"
-        label={t('article:source_url_label')}
-        placeholder="https://example.com/nguon-bai-viet"
-        helperText={t('article:source_url_helper')}
-        value={url ?? ''}
-        onChange={(e) => setUrl?.(e.target.value)}
-      />
-    </Stack>
+      {showSourceUrl && (
+        <ScrollRevealItem>
+          <TextField
+            fullWidth
+            type="url"
+            label={t('article:source_url_label')}
+            placeholder="https://example.com/nguon-bai-viet"
+            helperText={t('article:source_url_helper')}
+            value={url ?? ''}
+            onChange={(e) => setUrl?.(e.target.value)}
+          />
+        </ScrollRevealItem>
+      )}
+    </ScrollRevealGroup>
   );
 };
 

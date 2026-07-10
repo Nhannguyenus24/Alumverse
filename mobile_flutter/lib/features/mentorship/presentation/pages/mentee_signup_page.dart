@@ -105,11 +105,54 @@ class _MenteeSignupPageState extends ConsumerState<MenteeSignupPage> {
   @override
   Widget build(BuildContext context) {
     final verificationAsync = ref.watch(myVerificationLevelProvider);
+    final mentorProfileAsync = ref.watch(myMentorProfileProvider);
 
-    if (verificationAsync.isLoading) {
+    if (verificationAsync.isLoading || mentorProfileAsync.isLoading) {
       return Scaffold(
         appBar: AppBar(title: Text('mentorship.become_mentee'.tr())),
         body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final mentorStatus =
+        (mentorProfileAsync.valueOrNull?.status ?? '').toUpperCase();
+    if (mentorStatus == 'PENDING') {
+      return Scaffold(
+        appBar: AppBar(title: Text('mentorship.become_mentee'.tr())),
+        body: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextButton.icon(
+                onPressed: () => Navigator.of(context).pop(),
+                icon: const Icon(Icons.arrow_back),
+                label: Text('mentorship.mentee_signup_go_back'.tr()),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.info.withValues(alpha: 0.12),
+                  border: Border.all(color: AppColors.info),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'mentorship.mentor_signup_pending_title'.tr(),
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 6),
+                    Text('mentorship.mentor_signup_pending_desc'.tr()),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       );
     }
 

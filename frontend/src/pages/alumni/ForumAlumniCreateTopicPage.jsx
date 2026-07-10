@@ -12,6 +12,10 @@ import {
 import ForumFilterPanel from '../../components/forum/ForumFilterPanel';
 import WYSIWYG from '../../components/WYSIWYG';
 import AlumniContentLayout from '../../layouts/AlumniContentLayout';
+import {
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from '../../components/animations/ScrollReveal';
 import { useAuth } from '../../hooks/useAuth';
 import { useOrganization } from '../../hooks/useOrganization';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
@@ -224,8 +228,8 @@ const ForumAlumniCreateTopicPage = () => {
       header={null}
       contentSpacing={0}
     >
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography
+            <ScrollRevealGroup stagger={0.08} sx={{ flex: 1, minWidth: 0 }}>
+              <ScrollRevealItem><Typography
                 variant="h4"
                 component="h1"
                 fontWeight={800}
@@ -233,16 +237,14 @@ const ForumAlumniCreateTopicPage = () => {
                 sx={{ mb: 2.5, fontSize: { xs: '1.6rem', md: '1.9rem' }, letterSpacing: 1 }}
               >
                 {t('forum:create_topic_title')}
-              </Typography>
+              </Typography></ScrollRevealItem>
 
               {!canPost && (
-                <Alert severity="warning" sx={{ mb: 2.5 }}>
-                  {t('forum:warn_alumni_verification_required')}
-                </Alert>
+                <ScrollRevealItem><Alert severity="warning" sx={{ mb: 2.5 }}>{t('forum:warn_alumni_verification_required')}</Alert></ScrollRevealItem>
               )}
 
               {/* Subject selectors */}
-              <Box
+              <ScrollRevealItem
                 sx={{
                   display: 'flex',
                   flexDirection: { xs: 'column', sm: 'row' },
@@ -295,10 +297,10 @@ const ForumAlumniCreateTopicPage = () => {
                     ))
                   )}
                 </TextField>
-              </Box>
+              </ScrollRevealItem>
 
               {/* Editor card */}
-              <Box sx={{ border: 1, borderColor: 'divider', backgroundColor: 'background.paper' }}>
+              <ScrollRevealItem sx={{ border: 1, borderColor: 'divider', backgroundColor: 'background.paper' }}>
                 <Box
                   sx={{
                     display: 'flex',
@@ -385,8 +387,8 @@ const ForumAlumniCreateTopicPage = () => {
                     {isSubmitting || createTopicPending ? t('forum:creating_topic') : t('forum:create_topic_btn')}
                   </Button>
                 </Box>
-              </Box>
-            </Box>
+              </ScrollRevealItem>
+            </ScrollRevealGroup>
     </AlumniContentLayout>
   );
 };

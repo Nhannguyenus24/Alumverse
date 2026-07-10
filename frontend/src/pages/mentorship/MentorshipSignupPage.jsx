@@ -19,6 +19,11 @@ import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined';
 import { useTranslation } from 'react-i18next';
 
 import Page from '../../components/Page';
+import {
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from '../../components/animations/ScrollReveal';
 import MentorSignupTabProfile from '../../components/mentorship/signup/MentorSignupTabProfile';
 import MentorSignupTabContent from '../../components/mentorship/signup/MentorSignupTabContent';
 import MentorSignupTabTerms from '../../components/mentorship/signup/MentorSignupTabTerms';
@@ -393,21 +398,21 @@ const MentorshipSignupPage = () => {
   return (
     <Page title={t('mentor_signup_page_title')}>
       <Container maxWidth="md" sx={{ py: { xs: 3, md: 5 } }}>
-        <Button
+        <ScrollReveal><Button
           startIcon={<ArrowBackIcon />}
           onClick={() => navigate('/mentorship')}
           sx={{ mb: 2, textTransform: 'none' }}
           color="inherit"
         >
           {t('mentor_signup_go_back')}
-        </Button>
+        </Button></ScrollReveal>
 
-        <Typography variant="h2" fontWeight={800} color="primary.main" mb={1}>
+        <ScrollReveal><Typography variant="h2" fontWeight={800} color="primary.main" mb={1}>
           {t('mentor_signup_heading')}
-        </Typography>
-        <Typography color="text.secondary" mb={3}>
+        </Typography></ScrollReveal>
+        <ScrollReveal delay={0.06}><Typography color="text.secondary" mb={3}>
           {t('mentor_signup_subtitle')}
-        </Typography>
+        </Typography></ScrollReveal>
 
         {existingStatus === STATUS_DRAFT && (
           <Alert severity="info" sx={{ mb: 2 }}>
@@ -460,8 +465,8 @@ const MentorshipSignupPage = () => {
           </Alert>
         )}
 
-        <Paper variant="outlined" sx={{ borderRadius: 2 }}>
-          <Stepper activeStep={currentStep} alternativeLabel sx={{ px: { xs: 1, md: 3 }, pt: 3, pb: 2 }}>
+        <ScrollReveal><Paper variant="outlined" sx={{ borderRadius: 2 }}>
+          <ScrollReveal><Stepper activeStep={currentStep} alternativeLabel sx={{ px: { xs: 1, md: 3 }, pt: 3, pb: 2 }}>
             {tabs.map((tab) => (
               <Step
                 key={tab.key}
@@ -470,9 +475,9 @@ const MentorshipSignupPage = () => {
                 <StepLabel StepIconComponent={MentorSignupStepIcon}>{tab.label}</StepLabel>
               </Step>
             ))}
-          </Stepper>
+          </Stepper></ScrollReveal>
 
-          <Box sx={{ p: { xs: 2, md: 3 } }}>
+          <ScrollReveal key={tabKey} sx={{ p: { xs: 2, md: 3 } }}>
             {tabKey === 'profile' && (
               <MentorSignupTabProfile values={values} onChange={handleChange} />
             )}
@@ -482,10 +487,10 @@ const MentorshipSignupPage = () => {
             {tabKey === 'terms' && (
               <MentorSignupTabTerms values={values} onChange={handleChange} />
             )}
-          </Box>
-        </Paper>
+          </ScrollReveal>
+        </Paper></ScrollReveal>
 
-        <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="flex-end" spacing={1.5} mt={3}>
+        <ScrollReveal><Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="flex-end" spacing={1.5} mt={3}>
           <Button variant="outlined" color="inherit" onClick={() => navigate('/mentorship')}>
             {t('mentor_signup_cancel')}
           </Button>
@@ -525,7 +530,7 @@ const MentorshipSignupPage = () => {
               {t('mentor_signup_next')}
             </Button>
           )}
-        </Stack>
+        </Stack></ScrollReveal>
       </Container>
     </Page>
   );

@@ -36,6 +36,12 @@ import { formatDate } from '../../utils/dateFormatter';
 import { resolveMediaUrl } from '../../utils/imageUtils';
 import { formatRating } from '../../utils/numberFormatter';
 import {
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
+  getStaggerDelay,
+} from '../../components/animations/ScrollReveal';
+import {
   cancelMentorSession,
   postponeMentorSession,
   reportSession,
@@ -296,13 +302,13 @@ const MentorshipDashboardPage = () => {
         onNavigate={navigate}
         mode="mentor"
       >
-        <Stack spacing={4}>
-          <Typography variant="h2" fontWeight={800} color="primary.main">
+        <ScrollRevealGroup stagger={0.08} sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <ScrollRevealItem><Typography variant="h2" fontWeight={800} color="primary.main">
             {t('dash_heading')}
-          </Typography>
+          </Typography></ScrollRevealItem>
 
           {/* STATS */}
-          <StatsBanner items={stats} />
+          <ScrollRevealItem><StatsBanner items={stats} /></ScrollRevealItem>
 
           {updateMutation.errorMessage && (
             <Alert severity="error">{updateMutation.errorMessage}</Alert>
@@ -340,8 +346,8 @@ const MentorshipDashboardPage = () => {
                   <EmptyState message={t('dash_no_upcoming')} />
                 ) : (
                   <Stack spacing={2}>
-                    {previewUpcoming.map((session) => (
-                      <Box key={session.id}>
+                    {previewUpcoming.map((session, index) => (
+                      <ScrollReveal key={session.id} delay={getStaggerDelay(index, 0.06)}>
                         <MentorshipBookingItem
                           session={session}
                           view="mentor"
@@ -364,7 +370,7 @@ const MentorshipDashboardPage = () => {
                             </Button>
                           </Stack>
                         )}
-                      </Box>
+                      </ScrollReveal>
                     ))}
                     {upcomingItems.length > previewUpcoming.length && (
                       <Button
@@ -399,20 +405,19 @@ const MentorshipDashboardPage = () => {
               <EmptyState message={t('dash_no_reviews')} />
             ) : (
               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
-                {feedbacks.map((review) => (
-                  <MentorshipReviewCard
-                    key={review.id}
+                {feedbacks.map((review, index) => (
+                  <ScrollReveal key={review.id} delay={getStaggerDelay(index, 0.06)}><MentorshipReviewCard
                     name={review.menteeName ?? `Mentee #${review.menteeMemberId}`}
                     date={formatDate(review.createdAt, '')}
                     avatar={review.menteeAvatarUrl ?? ''}
                     rating={review.rating}
                     content={review.comment ?? ''}
-                  />
+                  /></ScrollReveal>
                 ))}
               </Box>
             )}
           </Section>
-        </Stack>
+        </ScrollRevealGroup>
       </MentorshipProfileLayout>
 
       <Dialog open={Boolean(postponeTarget)} onClose={closePostponeDialog} maxWidth="xs" fullWidth>
@@ -581,15 +586,15 @@ const MentorshipDashboardPage = () => {
 };
 
 const Section = ({ title, children, right }) => (
-  <Box>
-    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+  <ScrollRevealGroup stagger={0.08}>
+    <ScrollRevealItem sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
       <Typography variant="h4" fontWeight={700} color="primary.main">
         {title}
       </Typography>
       {right}
-    </Box>
-    {children}
-  </Box>
+    </ScrollRevealItem>
+    <ScrollRevealItem>{children}</ScrollRevealItem>
+  </ScrollRevealGroup>
 );
 
 const EmptyState = ({ message }) => (

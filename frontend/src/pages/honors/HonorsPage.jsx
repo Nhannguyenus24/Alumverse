@@ -27,6 +27,11 @@ import {
   getArticleFilterConfig,
 } from '../../utils/articleListFilters';
 import { getHonorsSidebarItems } from '../../constants/honorsNav';
+import {
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from '../../components/animations/ScrollReveal';
 
 const HonorsPage = () => {
   const { t } = useTranslation(['honors', 'common']);
@@ -136,24 +141,22 @@ const HonorsPage = () => {
 
               {/* FEATURED ARTICLE */}
               {featuredCard && (
-                <Box sx={{ cursor: 'pointer' }} onClick={() => openArticle(featured)}>
+                <ScrollReveal sx={{ cursor: 'pointer' }} onClick={() => openArticle(featured)}>
                   <FeaturedArticleCard
                     article={featuredCard}
                     isAdmin={isAdmin}
                     onEdit={() => handleEdit(featured)}
                     onDelete={() => handleDelete(featured)}
                   />
-                </Box>
+                </ScrollReveal>
               )}
 
               {/* ALUMNI SECTION */}
               {alumniCards.length > 0 && (
-                <Box>
-                  <Typography variant="h4" fontWeight={700} mb={3}>
-                    {t('honors:section_alumni')}
-                  </Typography>
+                <ScrollRevealGroup stagger={0.08}>
+                  <ScrollRevealItem><Typography variant="h4" fontWeight={700} mb={3}>{t('honors:section_alumni')}</Typography></ScrollRevealItem>
 
-                  <Box
+                  <ScrollRevealGroup stagger={0.08}
                     sx={{
                       display: 'grid',
                       gridTemplateColumns: {
@@ -165,27 +168,25 @@ const HonorsPage = () => {
                     }}
                   >
                     {alumniCards.map((card, i) => (
-                      <Box key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(visibleAlumniArticles[i])}>
+                      <ScrollRevealItem key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(visibleAlumniArticles[i])}>
                         <ArticleCard
                           article={card}
                           isAdmin={isAdmin}
                           onEdit={() => handleEdit(visibleAlumniArticles[i])}
                           onDelete={() => handleDelete(visibleAlumniArticles[i])}
                         />
-                      </Box>
+                      </ScrollRevealItem>
                     ))}
-                  </Box>
-                </Box>
+                  </ScrollRevealGroup>
+                </ScrollRevealGroup>
               )}
 
               {/* ACHIEVEMENTS SECTION */}
               {achievementCards.length > 0 && (
-                <Box>
-                  <Typography variant="h4" fontWeight={700} mb={3}>
-                    {t('honors:section_achievements')}
-                  </Typography>
+                <ScrollRevealGroup stagger={0.08}>
+                  <ScrollRevealItem><Typography variant="h4" fontWeight={700} mb={3}>{t('honors:section_achievements')}</Typography></ScrollRevealItem>
 
-                  <Box
+                  <ScrollRevealGroup stagger={0.08}
                     sx={{
                       display: 'grid',
                       gridTemplateColumns: {
@@ -197,17 +198,17 @@ const HonorsPage = () => {
                     }}
                   >
                     {achievementCards.map((card, i) => (
-                      <Box key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(visibleAchievementArticles[i])}>
+                      <ScrollRevealItem key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(visibleAchievementArticles[i])}>
                         <ArticleCard
                           article={card}
                           isAdmin={isAdmin}
                           onEdit={() => handleEdit(visibleAchievementArticles[i])}
                           onDelete={() => handleDelete(visibleAchievementArticles[i])}
                         />
-                      </Box>
+                      </ScrollRevealItem>
                     ))}
-                  </Box>
-                </Box>
+                  </ScrollRevealGroup>
+                </ScrollRevealGroup>
               )}
 
       <AdminConfirmDeleteDialog

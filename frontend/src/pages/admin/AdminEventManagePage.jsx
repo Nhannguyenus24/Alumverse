@@ -30,6 +30,7 @@ import DoDisturbAltIcon from '@mui/icons-material/DoDisturbAlt';
 import { useOrgNavigate, useOrgPath } from '../../hooks/useOrgNavigate';
 import { eventApi } from '../../utils/api';
 import { formatDateTime } from '../../utils/dateFormatter';
+import { useEventQuestions } from '../../hooks/events/useEventQuestions';
 import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetricTile';
 import AdminStatusChip from '../../components/admin/AdminStatusChip';
 import AdminDataTable from '../../components/admin/AdminDataTable';
@@ -50,6 +51,13 @@ const getTicketStatusChip = (t, status) => {
   if (key === 'CHECKED_IN') return { color: 'success', label: t('event:ticket_status_checked_in') };
   if (key === 'CANCELLED') return { color: 'error', label: t('event:ticket_status_cancelled') };
   return { color: 'default', label: status || '-' };
+};
+
+const formatAnswerValue = (value) => {
+  if (Array.isArray(value)) return value.length ? value.join(', ') : '—';
+  if (value == null || value === '') return '—';
+  if (typeof value === 'object') return JSON.stringify(value);
+  return String(value);
 };
 
 const AdminEventManagePage = () => {
@@ -95,8 +103,10 @@ const AdminEventManagePage = () => {
       keyword: ticketKeyword || undefined,
       status: ticketStatus || undefined,
     }),
-    enabled: Boolean(eventId) && tab === 'participants',
+    enabled: Boolean(eventId) && (tab === 'participants' || tab === 'answers'),
   });
+
+  const { data: eventQuestions = [] } = useEventQuestions(eventId, Boolean(eventId));
 
   const { data: interests = fallbackPage, isLoading: interestsLoading } = useQuery({
     queryKey: ['event', eventId, 'interests', interestsPage, interestsSize],
@@ -216,6 +226,60 @@ const AdminEventManagePage = () => {
   const memberFallback = (memberId) => (memberId ? t('admin:event_member_fallback', { id: memberId }) : '—');
   const displayMemberName = (row) => row.attendeeName || row.memberName || row.guestName || memberFallback(row.memberId);
   const displayMemberEmail = (row) => row.attendeeEmail || row.memberEmail || row.guestEmail || row.email || '—';
+  const questionById = useMemo(
+    () => new Map(eventQuestions.map((question) => [String(question.id), question])),
+    [eventQuestions],
+  );
+  const hasRegistrationQuestions = eventQuestions.length > 0;
+
+  const getAnswerQuestionLabel = (answer, index) => {
+    const questionId = answer?.questionId;
+    const matchedQuestion = questionId != null ? questionById.get(String(questionId)) : null;
+    return answer?.label
+      || answer?.question
+      || matchedQuestion?.label
+      || (questionId != null
+        ? t('admin:event_answer_unknown_question', { id: questionId })
+        : t('admin:event_answer_unknown_question_order', { number: index + 1 }));
+  };
+
+  const renderAnswerPairs = (ticket) => {
+    const answers = Array.isArray(ticket?.registrationAnswers) ? ticket.registrationAnswers : [];
+    if (!answers.length) {
+      return (
+        <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+          {t('admin:event_answers_empty')}
+        </Typography>
+      );
+    }
+
+    return (
+      <Stack spacing={1}>
+        {answers.map((answer, index) => (
+          <Box
+            key={`${ticket?.id ?? 'ticket'}-${answer?.questionId ?? index}`}
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', md: 'minmax(180px, 0.42fr) minmax(220px, 0.58fr)' },
+              gap: { xs: 0.5, md: 1.5 },
+              p: 1.25,
+              borderRadius: 1,
+              border: '1px solid',
+              borderColor: 'divider',
+              bgcolor: 'background.default',
+            }}
+          >
+            <Typography variant="body2" fontWeight={800} sx={{ overflowWrap: 'anywhere' }}>
+              {getAnswerQuestionLabel(answer, index)}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
+              {formatAnswerValue(answer?.value)}
+            </Typography>
+          </Box>
+        ))}
+      </Stack>
+    );
+  };
 
   if (eventLoading) {
     return (
@@ -237,6 +301,9 @@ const AdminEventManagePage = () => {
   const interestsData = extractPage(interests);
   const invitationsData = extractPage(invitations);
   const emailLogsData = extractPage(emailLogs);
+  const answerCount = (ticketsData.items ?? []).filter(
+    (ticket) => Array.isArray(ticket.registrationAnswers) && ticket.registrationAnswers.length > 0,
+  ).length;
 
   return (
     <Box>
@@ -303,6 +370,9 @@ const AdminEventManagePage = () => {
 
       <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }}>
         <Tab value="participants" label={t('event:tab_participants', { count: ticketsData.totalItem ?? 0 })} />
+        {hasRegistrationQuestions && (
+          <Tab value="answers" label={t('admin:event_answers_tab', { count: answerCount })} />
+        )}
         <Tab value="interests" label={t('event:tab_interests', { count: interestsData.totalItem ?? 0 })} />
         <Tab value="invitations" label={t('event:tab_invitations', { count: invitationsData.totalItem ?? 0 })} />
         <Tab value="emails" label={t('event:tab_emails')} />
@@ -322,16 +392,20 @@ const AdminEventManagePage = () => {
               id: 'actions',
               label: t('admin:actions'),
               align: 'right',
-              width: 96,
+              width: 80,
               render: (_, ticket) => {
                 const cancellable = !['CANCELLED', 'USED', 'EXPIRED', 'CHECKED_IN'].includes(String(ticket.status).toUpperCase());
-                return cancellable ? (
-                  <Tooltip title={t('event:tooltip_cancel_ticket')}>
-                    <IconButton size="small" color="warning" onClick={() => handleCancelTicket(ticket)}>
-                      <DoDisturbAltIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                ) : null;
+                return (
+                  <Stack direction="row" spacing={0.75} justifyContent="flex-end" alignItems="center">
+                    {cancellable && (
+                      <Tooltip title={t('event:tooltip_cancel_ticket')}>
+                        <IconButton size="small" color="warning" onClick={() => handleCancelTicket(ticket)}>
+                          <DoDisturbAltIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                  </Stack>
+                );
               },
             },
           ]}
@@ -346,6 +420,55 @@ const AdminEventManagePage = () => {
           searchPlaceholder={t('common:search')}
           loading={ticketsLoading}
           emptyMessage={t('event:tickets_empty')}
+          filters={(
+            <TextField
+              select
+              size="small"
+              label={t('admin:col_status')}
+              value={ticketStatus}
+              onChange={(e) => { setTicketStatus(e.target.value); setTicketsPage(0); }}
+              sx={{ minWidth: 180 }}
+            >
+              <MenuItem value="">{t('common:all')}</MenuItem>
+              {['PENDING', 'ISSUED', 'REGISTERED', 'CHECKED_IN', 'CANCELLED'].map((status) => (
+                <MenuItem key={status} value={status}>
+                  {getTicketStatusChip(t, status).label}
+                </MenuItem>
+              ))}
+            </TextField>
+          )}
+        />
+      )}
+
+      {tab === 'answers' && hasRegistrationQuestions && (
+        <AdminDataTable
+          columns={[
+            {
+              id: 'memberId',
+              label: t('admin:event_col_user_id'),
+              width: 120,
+              render: (value, row) => value || row.userId || row.id || '—',
+            },
+            { id: 'member', label: t('admin:event_col_guest'), minWidth: 180, render: (_, row) => displayMemberName(row) },
+            { id: 'email', label: 'Email', minWidth: 220, render: (_, row) => displayMemberEmail(row) },
+            {
+              id: 'registrationAnswers',
+              label: t('admin:event_answers_col_responses'),
+              minWidth: 420,
+              render: (_, row) => renderAnswerPairs(row),
+            },
+          ]}
+          rows={ticketsData.items ?? []}
+          totalCount={ticketsData.totalItem ?? 0}
+          page={ticketsPage}
+          rowsPerPage={ticketsSize}
+          onPageChange={(_, p) => setTicketsPage(p)}
+          onRowsPerPageChange={(e) => { setTicketsSize(Number(e.target.value)); setTicketsPage(0); }}
+          onSearchChange={(value) => { setTicketKeyword(value); setTicketsPage(0); }}
+          searchValue={ticketKeyword}
+          searchPlaceholder={t('common:search')}
+          loading={ticketsLoading}
+          emptyMessage={t('admin:event_answers_table_empty')}
           filters={(
             <TextField
               select
@@ -459,6 +582,7 @@ const AdminEventManagePage = () => {
           />
         </Box>
       )}
+
     </Box>
   );
 };

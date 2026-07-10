@@ -83,7 +83,7 @@ const Header = () => {
   const [expandedNav, setExpandedNav] = useState({});
   const [showVerificationBanner, setShowVerificationBanner] = useState(true);
 
-  const HEADER_DESKTOP_BREAKPOINT = 1280;
+  const HEADER_DESKTOP_BREAKPOINT = 1440;
   const isDesktop = useMediaQuery(theme.breakpoints.up(HEADER_DESKTOP_BREAKPOINT));
   const normalizedPath = useMemo(
     () => getNormalizedPathname(location.pathname, routeSlug),

@@ -1,10 +1,15 @@
-import { Link } from 'react-router';
 import { Box, Typography, Button, Container } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import Page from '../../components/Page';
+import { useErrorPageActions } from '../../hooks/useErrorPageActions';
+import {
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from '../../components/animations/ScrollReveal';
 
 const UnauthorizedPage = () => {
   const { t } = useTranslation('common');
+  const { goHome } = useErrorPageActions();
 
   return (
     <Page
@@ -18,7 +23,8 @@ const UnauthorizedPage = () => {
     >
       <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
         <Container maxWidth="md">
-          <Box
+          <ScrollRevealGroup
+            stagger={0.09}
             sx={{
               display: 'flex',
               flexDirection: 'column',
@@ -29,17 +35,25 @@ const UnauthorizedPage = () => {
               textAlign: 'center',
             }}
           >
-          <Typography variant="h1" sx={{ fontSize: '8rem', fontWeight: 700 }}>
-            403
-          </Typography>
-          <Typography variant="h5">{t('unauthorized_heading')}</Typography>
-          <Typography variant="body1" color="text.secondary">
-            {t('unauthorized_desc')}
-          </Typography>
-          <Button component={Link} to="/" variant="contained" sx={{ mt: 2 }}>
-            {t('not_found_go_home')}
-          </Button>
-          </Box>
+            <ScrollRevealItem>
+              <Typography variant="h1" sx={{ fontSize: { xs: '5rem', sm: '8rem' }, fontWeight: 700 }}>
+                403
+              </Typography>
+            </ScrollRevealItem>
+            <ScrollRevealItem>
+              <Typography variant="h5">{t('unauthorized_heading')}</Typography>
+            </ScrollRevealItem>
+            <ScrollRevealItem>
+              <Typography variant="body1" color="text.secondary">
+                {t('unauthorized_desc')}
+              </Typography>
+            </ScrollRevealItem>
+            <ScrollRevealItem>
+              <Button onClick={goHome} variant="contained" sx={{ mt: 2 }}>
+                {t('not_found_go_home')}
+              </Button>
+            </ScrollRevealItem>
+          </ScrollRevealGroup>
         </Container>
       </Box>
     </Page>

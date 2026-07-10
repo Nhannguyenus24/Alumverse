@@ -53,6 +53,12 @@ export const getRegisterSchema = (t) => z
       .min(1, t ? t('auth:fullname_required') : 'Họ và tên là bắt buộc')
       .min(2, t ? t('auth:fullname_length') : 'Họ và tên từ 2–100 ký tự')
       .max(100, t ? t('auth:fullname_length') : 'Họ và tên từ 2–100 ký tự'),
+    studentId: z
+      .string()
+      .min(1, t ? t('auth:student_id_required') : 'Mã số sinh viên là bắt buộc')
+      .min(3, t ? t('auth:student_id_length') : 'Mã số sinh viên từ 3–50 ký tự')
+      .max(50, t ? t('auth:student_id_length') : 'Mã số sinh viên từ 3–50 ký tự')
+      .regex(STUDENT_ID_REGEX, t ? t('auth:student_id_digits_only') : 'Mã số sinh viên chỉ được chứa chữ số'),
     enrollmentYear: z.string().min(1, t ? t('auth:enrollment_year_required') : 'Vui lòng chọn năm nhập học'),
     email: z.email(t ? t('auth:email_required') : "Email là bắt buộc"),
     password: z

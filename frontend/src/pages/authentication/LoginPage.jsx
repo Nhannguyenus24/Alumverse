@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { GoogleReCaptchaCheckbox, useGoogleReCaptcha } from '@google-recaptcha/react';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -9,6 +9,7 @@ import { Alert, Box, Typography, Button, FormControlLabel, Checkbox, Divider, us
 import GoogleIcon from '@mui/icons-material/Google';
 import { useTranslation } from 'react-i18next';
 import Page from '../../components/Page';
+import { ScrollRevealFields } from '../../components/animations/ScrollReveal';
 import Input from '../../components/Input';
 import { getLoginSchema } from '../../utils/regexUtils';
 import { useAuth } from '../../hooks/useAuth';
@@ -27,6 +28,8 @@ const LoginPage = () => {
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
   const organizationId = useOrganizationStore((state) => state.organization?.id);
   const { reset } = useGoogleReCaptcha();
+  const googleButtonContainerRef = useRef(null);
+  const [googleButtonWidth, setGoogleButtonWidth] = useState(400);
 
   const searchParams = new URLSearchParams(location.search);
   const reason = searchParams.get('reason');
@@ -41,6 +44,25 @@ const LoginPage = () => {
     : undefined;
 
   const loginSchema = useMemo(() => getLoginSchema(t), [t]);
+
+  useEffect(() => {
+    const container = googleButtonContainerRef.current;
+    if (!container) return undefined;
+
+    const updateGoogleButtonWidth = () => {
+      const nextWidth = Math.floor(container.getBoundingClientRect().width);
+      if (nextWidth > 0) {
+        setGoogleButtonWidth(Math.max(200, Math.min(400, nextWidth)));
+      }
+    };
+
+    updateGoogleButtonWidth();
+
+    const resizeObserver = new ResizeObserver(updateGoogleButtonWidth);
+    resizeObserver.observe(container);
+
+    return () => resizeObserver.disconnect();
+  }, []);
 
   const {
     register,
@@ -170,6 +192,7 @@ const LoginPage = () => {
           gap: { xs: 1.5, sm: 2 },
         }}
       >
+        <ScrollRevealFields>
         <Typography
           variant="h5"
           fontWeight={700}
@@ -255,23 +278,31 @@ const LoginPage = () => {
         </Box>
 
         {googleClientId ? (
-          <Box sx={{
-            display: 'flex',
-            justifyContent: 'center',
-            width: '100%',
-            ...thirdPartyControlSx,
-            '& > div': { width: '100% !important' },
-            '& iframe': { width: '100% !important' },
-          }}>
-            <GoogleLogin
-              onSuccess={handleGoogleSuccess}
-              onError={handleGoogleError}
-              useOneTap={false}
-              size="large"
-              text="signin_with"
-              locale="vi"
-              width="100%"
-            />
+          <Box ref={googleButtonContainerRef} sx={{ width: '100%' }}>
+            <Box sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              width: '100%',
+              ...thirdPartyControlSx,
+              '& > div': {
+                width: `${googleButtonWidth}px !important`,
+                maxWidth: '100%',
+              },
+              '& iframe': {
+                width: `${googleButtonWidth}px !important`,
+                maxWidth: '100%',
+              },
+            }}>
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                useOneTap={false}
+                size="large"
+                text="signin_with"
+                locale="vi"
+                width={`${googleButtonWidth}`}
+              />
+            </Box>
           </Box>
         ) : (
           <Button
@@ -300,6 +331,7 @@ const LoginPage = () => {
             {t('auth:register_now')}
           </Typography>
         </Typography>
+        </ScrollRevealFields>
       </Box>
     </Page>
   );

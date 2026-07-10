@@ -14,6 +14,10 @@ import { useTranslation } from 'react-i18next';
 import { validateMeetingLink, meetingLinkPasswordWarning } from '../../../utils/meetingLink';
 import { extractMentorshipSkills } from '../../../utils/api';
 import TagPriorityList from './TagPriorityList';
+import {
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from '../../animations/ScrollReveal';
 
 /**
  * Tab 2 of mentor signup. The mentor pastes a free-text description of their
@@ -86,8 +90,8 @@ const MentorSignupTabContent = ({ values, onChange }) => {
   };
 
   return (
-    <Stack spacing={3}>
-      <Box>
+    <ScrollRevealGroup stagger={0.09} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <ScrollRevealItem>
         <Typography fontWeight={700}>
           {t('signup_tab_content_title')}
           <Typography component="span" color="error.main">{' *'}</Typography>
@@ -159,9 +163,9 @@ const MentorSignupTabContent = ({ values, onChange }) => {
             </Stack>
           </Box>
         )}
-      </Box>
+      </ScrollRevealItem>
 
-      <Box>
+      <ScrollRevealItem>
         <Typography fontWeight={700} mb={1}>
           {t('signup_tab_meeting_link_title')}
         </Typography>
@@ -182,8 +186,8 @@ const MentorSignupTabContent = ({ values, onChange }) => {
         <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
           {t('signup_tab_meeting_link_hint')}
         </Typography>
-      </Box>
-    </Stack>
+      </ScrollRevealItem>
+    </ScrollRevealGroup>
   );
 };
 

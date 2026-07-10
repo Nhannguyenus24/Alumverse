@@ -40,6 +40,7 @@ import WYSIWYG from '../../components/WYSIWYG';
 import { formatDateTime } from '../../utils/dateFormatter';
 import { toPlainText } from '../../utils/stringUtils';
 import ReportPostDialog from '../../components/forum/ReportPostDialog';
+import { ScrollReveal, getStaggerDelay } from '../../components/animations/ScrollReveal';
 
 const getAvatarInitial = (name) => {
   const trimmed = typeof name === 'string' ? name.trim() : '';
@@ -926,7 +927,7 @@ const ForumAlumniThreadPage = () => {
                 px: { xs: 1.5, sm: 2, md: 2.75 },
               }}
             >
-              <Breadcrumb items={breadcrumbItems} uppercase color="primary" />
+              <ScrollReveal><Breadcrumb items={breadcrumbItems} uppercase color="primary" /></ScrollReveal>
               <Box
                 sx={{
                   backgroundColor: 'background.paper',
@@ -935,7 +936,7 @@ const ForumAlumniThreadPage = () => {
                 }}
               >
                 {/* Header + main thread */}
-                <Box
+                <ScrollReveal
                   sx={{
                     px: { xs: 1.5, sm: 2, md: 3 },
                     py: { xs: 1.5, md: 2 },
@@ -1126,7 +1127,7 @@ const ForumAlumniThreadPage = () => {
                     )}
                   </Box>
                 </Box>
-              </Box>
+              </ScrollReveal>
 
               {/* Replies */}
               <Box>
@@ -1139,26 +1140,27 @@ const ForumAlumniThreadPage = () => {
                     <Typography color="text.secondary">{t('forum:error_loading_posts')}</Typography>
                   </Box>
                 ) : (
-                  replies.map((reply) => (
-                    <ForumReply
-                      key={reply.id}
-                      reply={reply}
-                      isAdmin={isAdmin}
-                      memberId={memberId}
-                      isGuest={isGuest}
-                      onReply={handleReply}
-                      onDelete={handleDeletePost}
-                      onEdit={handleEditPost}
-                      onReport={handleReportPost}
-                      isDeleting={deletePending}
-                      parentPost={reply.answerToPostId ? replyMap.get(reply.answerToPostId) : null}
-                    />
+                  replies.map((reply, index) => (
+                    <ScrollReveal key={reply.id} delay={getStaggerDelay(index, 0.06)}>
+                      <ForumReply
+                        reply={reply}
+                        isAdmin={isAdmin}
+                        memberId={memberId}
+                        isGuest={isGuest}
+                        onReply={handleReply}
+                        onDelete={handleDeletePost}
+                        onEdit={handleEditPost}
+                        onReport={handleReportPost}
+                        isDeleting={deletePending}
+                        parentPost={reply.answerToPostId ? replyMap.get(reply.answerToPostId) : null}
+                      />
+                    </ScrollReveal>
                   ))
                 )}
               </Box>
 
               {!!pageInfo?.totalPage && pageInfo.totalPage > 1 && (
-                <Box
+                <ScrollReveal
                   sx={{
                     px: { xs: 1.5, sm: 2, md: 3 },
                     py: { xs: 1.5, md: 2 },
@@ -1177,11 +1179,11 @@ const ForumAlumniThreadPage = () => {
                     siblingCount={0}
                     boundaryCount={1}
                   />
-                </Box>
+                </ScrollReveal>
               )}
 
               {/* Reply editor */}
-              <Box
+              <ScrollReveal
                 sx={{
                   px: { xs: 1.5, sm: 2, md: 3 },
                   py: { xs: 2, md: 2.5 },
@@ -1311,7 +1313,7 @@ const ForumAlumniThreadPage = () => {
                     </Box>
                   </Box>
                 </Box>
-              </Box>
+              </ScrollReveal>
               </Box>
             </Stack>
     </AlumniContentLayout>

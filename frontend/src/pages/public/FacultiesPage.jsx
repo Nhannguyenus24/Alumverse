@@ -2,6 +2,11 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import { Box, Container, Typography } from "@mui/material";
 import Page from "../../components/Page";
+import {
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from "../../components/animations/ScrollReveal";
 
 const BANNER_BLUE = "#012B59";
 
@@ -118,7 +123,9 @@ const FacultiesPage = () => {
           flexDirection: "column",
         }}
       >
-        <Box
+        <ScrollReveal
+          direction="down"
+          distance={18}
           sx={{
             backgroundColor: BANNER_BLUE,
             py: { xs: 3, md: 4 },
@@ -138,7 +145,7 @@ const FacultiesPage = () => {
           >
             {t("faculties_heading")}
           </Typography>
-        </Box>
+        </ScrollReveal>
 
         <Container
           maxWidth="lg"
@@ -147,7 +154,8 @@ const FacultiesPage = () => {
             px: { xs: 2, sm: 3 },
           }}
         >
-        <Box
+        <ScrollRevealGroup
+          stagger={0.07}
           sx={{
             display: "flex",
             flexWrap: "wrap",
@@ -166,24 +174,24 @@ const FacultiesPage = () => {
           }}
         >
           {FACULTIES.map((faculty) => (
-            <Box
-              key={faculty.name}
-              component={Link}
-              to={faculty.to}
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                borderRadius: "12px",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-                overflow: "hidden",
-                height: 280,
-                flexShrink: 0,
-                textDecoration: "none",
-                color: "inherit",
-                cursor: "pointer",
-                "&:hover": { boxShadow: "0 4px 16px rgba(0,0,0,0.15)" },
-              }}
-            >
+            <ScrollRevealItem key={faculty.name}>
+              <Box
+                component={Link}
+                to={faculty.to}
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  borderRadius: "12px",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                  overflow: "hidden",
+                  height: 280,
+                  flexShrink: 0,
+                  textDecoration: "none",
+                  color: "inherit",
+                  cursor: "pointer",
+                  "&:hover": { boxShadow: "0 4px 16px rgba(0,0,0,0.15)" },
+                }}
+              >
                 <Box
                   component="img"
                   src={faculty.logo}
@@ -229,9 +237,10 @@ const FacultiesPage = () => {
                   </>
                 )}
               </Box>
-            </Box>
+              </Box>
+            </ScrollRevealItem>
           ))}
-        </Box>
+        </ScrollRevealGroup>
         </Container>
       </Container>
     </Page>

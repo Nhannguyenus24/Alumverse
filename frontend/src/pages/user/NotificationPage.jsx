@@ -13,6 +13,7 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import { formatTimeAgoVi } from "../../utils/dateFormatter";
 import { notificationApi } from "../../utils/api";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
+import { ScrollReveal, getStaggerDelay } from "../../components/animations/ScrollReveal";
 
 const NotificationPage = () => {
   const navigate = useOrgNavigate();
@@ -95,7 +96,7 @@ const NotificationPage = () => {
     <Page title={t("heading")}>
       <Box sx={{ maxWidth: 800, mx: "auto", py: 3 }}>
         {/* Header */}
-        <Box
+        <ScrollReveal
           sx={{
             display: "flex",
             justifyContent: "space-between",
@@ -113,10 +114,10 @@ const NotificationPage = () => {
               <SettingsIcon />
             </IconButton>
           </Tooltip>
-        </Box>
+        </ScrollReveal>
 
         {/* Filter Buttons */}
-        <Box
+        <ScrollReveal
           sx={{
             display: "flex",
             gap: 1,
@@ -169,7 +170,7 @@ const NotificationPage = () => {
               {t("mark_all_read")}
             </Button>
           )}
-        </Box>
+        </ScrollReveal>
 
         {/* Notifications List */}
         <Box sx={{ display: "flex", flexDirection: "column", gap: 0 }}>
@@ -178,9 +179,10 @@ const NotificationPage = () => {
               <CircularProgress />
             </Box>
           ) : filteredNotifications.length > 0 ? (
-            filteredNotifications.map((notification) => (
-              <Box
+            filteredNotifications.map((notification, index) => (
+              <ScrollReveal
                 key={notification.id}
+                delay={getStaggerDelay(index, 0.06)}
                 onClick={() => handleNotificationClick(notification)}
                 sx={{
                   p: 2.5,
@@ -248,7 +250,7 @@ const NotificationPage = () => {
                     }}
                   />
                 )}
-              </Box>
+              </ScrollReveal>
             ))
           ) : (
             <Box

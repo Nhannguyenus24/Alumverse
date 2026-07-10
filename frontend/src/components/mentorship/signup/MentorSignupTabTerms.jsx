@@ -7,6 +7,10 @@ import {
   Typography,
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
+import {
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from '../../animations/ScrollReveal';
 
 const MentorSignupTabTerms = ({ values, onChange }) => {
   const { t } = useTranslation('mentorship');
@@ -22,10 +26,10 @@ const MentorSignupTabTerms = ({ values, onChange }) => {
   ];
 
   return (
-    <Stack spacing={2}>
-      <Typography fontWeight={700}>{t('signup_terms_title')}</Typography>
+    <ScrollRevealGroup stagger={0.09} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <ScrollRevealItem><Typography fontWeight={700}>{t('signup_terms_title')}</Typography></ScrollRevealItem>
 
-      <Paper
+      <ScrollRevealItem><Paper
         variant="outlined"
         sx={{ p: 2.5, maxHeight: 360, overflowY: 'auto', bgcolor: 'background.default' }}
       >
@@ -50,9 +54,9 @@ const MentorSignupTabTerms = ({ values, onChange }) => {
             {t('signup_terms_penalty')}
           </Typography>
         </Stack>
-      </Paper>
+      </Paper></ScrollRevealItem>
 
-      <FormControlLabel
+      <ScrollRevealItem><FormControlLabel
         control={
           <Checkbox
             checked={accepted}
@@ -60,8 +64,8 @@ const MentorSignupTabTerms = ({ values, onChange }) => {
           />
         }
         label={t('signup_terms_accept_label')}
-      />
-    </Stack>
+      /></ScrollRevealItem>
+    </ScrollRevealGroup>
   );
 };
 

@@ -133,7 +133,7 @@ const AdminForumPostDetailDialog = ({
             </Button>
           )
         )}
-        <Button onClick={onClose} variant="contained" color="secondary" sx={{ textTransform: 'none', fontWeight: 700 }}>
+        <Button onClick={onClose} variant="outlined" color="secondary" sx={{ textTransform: 'none', fontWeight: 700 }}>
           {t('common:close')}
         </Button>
       </DialogActions>

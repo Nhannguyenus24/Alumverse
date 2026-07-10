@@ -11,6 +11,7 @@ import { useForumPageLogic } from '../../hooks/forum/useForumPageLogic';
 import { useForumManageMode } from '../../hooks/forum/useForumManageMode';
 import ForumManageView from '../../components/forum/ForumManageView';
 import TuneOutlinedIcon from '@mui/icons-material/TuneOutlined';
+import { ScrollReveal } from '../../components/animations/ScrollReveal';
 
 const ForumPage = () => {
   const { t } = useTranslation(['forum', 'common']);
@@ -54,7 +55,7 @@ const ForumPage = () => {
       sidebar={<ForumFilterPanel filters={filters} selectedId={selectedFilterId} onChange={handleFilterChange} />}
       contentSpacing={3}
     >
-              <Box
+              <ScrollReveal
                 sx={{
                   display: 'flex',
                   flexDirection: { xs: 'column', sm: 'row' },
@@ -96,19 +97,21 @@ const ForumPage = () => {
                       {t('forum:manage_topics')}
                     </Button>
                   ))}
-              </Box>
+              </ScrollReveal>
               {isManageMode ? (
-                <ForumManageView
-                  manageTopics={manageTopics}
-                  newMainTopic={newMainTopic}
-                  setNewMainTopic={setNewMainTopic}
-                  handleAddMainTopic={handleAddMainTopic}
-                  newSubTopics={newSubTopics}
-                  setNewSubTopics={setNewSubTopics}
-                  handleAddSubTopic={handleAddSubTopic}
-                  handleDeleteTopic={handleDeleteTopic}
-                  handleDeleteBoard={handleDeleteBoard}
-                />
+                <ScrollReveal>
+                  <ForumManageView
+                    manageTopics={manageTopics}
+                    newMainTopic={newMainTopic}
+                    setNewMainTopic={setNewMainTopic}
+                    handleAddMainTopic={handleAddMainTopic}
+                    newSubTopics={newSubTopics}
+                    setNewSubTopics={setNewSubTopics}
+                    handleAddSubTopic={handleAddSubTopic}
+                    handleDeleteTopic={handleDeleteTopic}
+                    handleDeleteBoard={handleDeleteBoard}
+                  />
+                </ScrollReveal>
               ) : (
                 visibleSections.map((section) => (
                   <ForumSection

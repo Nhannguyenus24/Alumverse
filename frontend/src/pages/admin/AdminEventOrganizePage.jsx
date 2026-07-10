@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Avatar,
@@ -22,11 +22,19 @@ import SearchBar from '../../components/SearchBar';
 import { useDebounce } from '../../hooks/useDebounce';
 import { useEventParticipants } from '../../hooks/events/useEventParticipants';
 import { useCheckInTicket } from '../../hooks/events/useCheckInTicket';
+import { useEventQuestions } from '../../hooks/events/useEventQuestions';
 import { eventApi } from '../../utils/api';
 import { formatDateTime } from '../../utils/dateFormatter';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import AdminDataTable from '../../components/admin/AdminDataTable';
 import AdminStatusChip from '../../components/admin/AdminStatusChip';
+
+const formatAnswerValue = (value) => {
+  if (Array.isArray(value)) return value.length ? value.join(', ') : '—';
+  if (value == null || value === '') return '—';
+  if (typeof value === 'object') return JSON.stringify(value);
+  return String(value);
+};
 
 const AdminEventOrganizePage = () => {
   const { t } = useTranslation(['admin', 'event', 'common']);
@@ -49,6 +57,7 @@ const AdminEventOrganizePage = () => {
     page,
     size,
   });
+  const { data: eventQuestions = [] } = useEventQuestions(numericEventId, Boolean(numericEventId));
 
   const checkInMutation = useCheckInTicket(numericEventId);
 
@@ -58,6 +67,20 @@ const AdminEventOrganizePage = () => {
     ticket.attendeeName || ticket.guestName || (ticket.memberId ? t('admin:event_member_fallback', { id: ticket.memberId }) : '—');
   const displayMemberEmail = (ticket) =>
     ticket.attendeeEmail || ticket.guestEmail || '—';
+  const questionById = useMemo(
+    () => new Map(eventQuestions.map((question) => [String(question.id), question])),
+    [eventQuestions],
+  );
+  const getAnswerQuestionLabel = (answer, index) => {
+    const questionId = answer?.questionId;
+    const matchedQuestion = questionId != null ? questionById.get(String(questionId)) : null;
+    return answer?.label
+      || answer?.question
+      || matchedQuestion?.label
+      || (questionId != null
+        ? t('admin:event_answer_unknown_question', { id: questionId })
+        : t('admin:event_answer_unknown_question_order', { number: index + 1 }));
+  };
 
   useEffect(() => {
     if (!eventId) return;
@@ -217,10 +240,27 @@ const AdminEventOrganizePage = () => {
                     {t('admin:ticket_answers', { code: ticket.ticketCode })}
                   </Typography>
                   {answers.map((a, idx) => (
-                    <Typography key={idx} variant="body2" sx={{ mb: 0.5 }}>
-                      <strong>#{a.questionId}:</strong>{' '}
-                      {Array.isArray(a.value) ? a.value.join(', ') : String(a.value)}
-                    </Typography>
+                    <Box
+                      key={`${a?.questionId ?? idx}-${idx}`}
+                      sx={{
+                        p: 1.5,
+                        mb: 1,
+                        borderRadius: 2,
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        bgcolor: 'background.default',
+                      }}
+                    >
+                      <Typography variant="subtitle2" fontWeight={800} sx={{ mb: 0.5 }}>
+                        {getAnswerQuestionLabel(a, idx)}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.25 }}>
+                        {t('admin:event_answer_response_label')}
+                      </Typography>
+                      <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
+                        {formatAnswerValue(a.value)}
+                      </Typography>
+                    </Box>
                   ))}
                 </Box>
               );

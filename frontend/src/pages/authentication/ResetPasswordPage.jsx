@@ -10,6 +10,7 @@ import Page from '../../components/Page';
 import Input from '../../components/Input';
 import { useAuth } from '../../hooks/useAuth';
 import { useOrgNavigate, useOrgPath } from '../../hooks/useOrgNavigate';
+import { ScrollRevealFields } from '../../components/animations/ScrollReveal';
 
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/;
 
@@ -79,6 +80,7 @@ const ResetPasswordPage = () => {
           gap: { xs: 1.5, sm: 2 },
         }}
       >
+        <ScrollRevealFields>
         <Typography
           variant="h5"
           fontWeight={700}
@@ -130,6 +132,7 @@ const ResetPasswordPage = () => {
             {t('auth:back_to_login')}
           </Typography>
         </Typography>
+        </ScrollRevealFields>
       </Box>
     </Page>
   );

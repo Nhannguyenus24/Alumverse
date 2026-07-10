@@ -27,6 +27,12 @@ import dayjs from 'dayjs';
 import Page from '../../components/Page';
 import ProfileLayout from '../../layouts/ProfileLayout';
 import MentorshipBookingItem from '../../components/mentorship/MentorshipBookingItem';
+import {
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
+  getStaggerDelay,
+} from '../../components/animations/ScrollReveal';
 import { useMyMenteeSessions } from '../../hooks/mentorship/useMyMenteeSessions';
 import { useMyMentorSessions } from '../../hooks/mentorship/useMyMentorSessions';
 import { useMyMentorProfile } from '../../hooks/mentorship/useMyMentorProfile';
@@ -438,8 +444,8 @@ const MentorshipMyBookingsPage = () => {
         onNavigate={navigate}
         mode={isMentorProfile ? 'mentor' : 'menteeOwn'}
       >
-        <Stack spacing={3}>
-          <Box>
+        <ScrollRevealGroup stagger={0.08} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <ScrollRevealItem>
             <Typography variant="h2" fontWeight={800} color="primary.main" mb={1}>
               {t('bookings_heading')}
             </Typography>
@@ -448,7 +454,7 @@ const MentorshipMyBookingsPage = () => {
                 ? t('bookings_desc_mentor')
                 : t('bookings_desc_mentee')}
             </Typography>
-          </Box>
+          </ScrollRevealItem>
 
           {cancelMutation.errorMessage && (
             <Alert severity="error">{cancelMutation.errorMessage}</Alert>
@@ -472,7 +478,7 @@ const MentorshipMyBookingsPage = () => {
             </Alert>
           )}
 
-          <Tabs
+          <ScrollRevealItem><Tabs
             value={statusKey}
             onChange={(_, v) => setStatusKey(v)}
             sx={{ borderBottom: 1, borderColor: 'divider' }}
@@ -482,7 +488,7 @@ const MentorshipMyBookingsPage = () => {
             {statusFilters.map((item) => (
               <Tab key={item.key} value={item.key} label={item.label} />
             ))}
-          </Tabs>
+          </Tabs></ScrollRevealItem>
 
           {isLoading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
@@ -504,9 +510,11 @@ const MentorshipMyBookingsPage = () => {
               )}
             </Box>
           ) : (
-            <Stack spacing={2}>{visibleItems.map(renderItem)}</Stack>
+            <Stack spacing={2}>{visibleItems.map((item, index) => (
+              <ScrollReveal key={item.id} delay={getStaggerDelay(index, 0.06)}>{renderItem(item)}</ScrollReveal>
+            ))}</Stack>
           )}
-        </Stack>
+        </ScrollRevealGroup>
       </ProfileLayout>
 
       <Dialog open={Boolean(reportTarget)} onClose={closeReportDialog} maxWidth="xs" fullWidth>

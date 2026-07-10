@@ -9,6 +9,7 @@ import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/empty_view.dart';
 import '../../../../shared/widgets/skeleton.dart';
+import '../../../user/presentation/providers/user_providers.dart';
 import '../../data/models/skill.dart';
 import '../providers/mentorship_providers.dart';
 import '../widgets/mentor_card.dart';
@@ -44,23 +45,30 @@ class _MentorshipPageState extends ConsumerState<MentorshipPage> {
     final query = ref.watch(mentorQueryProvider);
     final mentorProfileAsync = ref.watch(myMentorProfileProvider);
     final menteeProfileAsync = ref.watch(myMenteeProfileProvider);
+    final verificationAsync = ref.watch(myVerificationLevelProvider);
     final myMentor = mentorProfileAsync.valueOrNull;
     final mentorStatus = mentorProfileAsync.maybeWhen(
       data: (profile) => (profile?.status ?? '').toUpperCase(),
       orElse: () => '',
     );
+    final verificationLevel = verificationAsync.valueOrNull ?? 0;
+    final canUseMentorship = verificationLevel >= 2;
     final isMentorPending = mentorStatus == 'PENDING';
-    final isMentorStatusLoading = mentorProfileAsync.isLoading;
+    final isAccessLoading =
+        verificationAsync.isLoading || mentorProfileAsync.isLoading;
     final hasActiveMentorship =
-        mentorProfileAsync.maybeWhen(
-          data:
-              (profile) => (profile?.status ?? '').toUpperCase() == 'APPROVED',
-          orElse: () => false,
-        ) ||
-        menteeProfileAsync.maybeWhen(
-          data: (profile) => profile != null,
-          orElse: () => false,
-        );
+        canUseMentorship &&
+        !isMentorPending &&
+        (mentorProfileAsync.maybeWhen(
+              data:
+                  (profile) =>
+                      (profile?.status ?? '').toUpperCase() == 'APPROVED',
+              orElse: () => false,
+            ) ||
+            menteeProfileAsync.maybeWhen(
+              data: (profile) => profile != null,
+              orElse: () => false,
+            ));
 
     return Scaffold(
       appBar: AppBar(
@@ -100,8 +108,14 @@ class _MentorshipPageState extends ConsumerState<MentorshipPage> {
               ),
             ),
             const SizedBox(height: 12),
-            const _BecomeMentorBanner(),
-            if (!isMentorPending && !isMentorStatusLoading) ...[
+            if (isAccessLoading)
+              const SizedBox.shrink()
+            else if (!canUseMentorship)
+              _VerifyAcademicBanner(verificationLevel: verificationLevel)
+            else ...[
+              const _BecomeMentorBanner(),
+            ],
+            if (canUseMentorship && !isMentorPending && !isAccessLoading) ...[
               const SizedBox(height: 12),
               const _BecomeMenteeBanner(),
             ],
@@ -221,18 +235,26 @@ class _BecomeMentorBanner extends ConsumerWidget {
           );
         }
 
-        // Other statuses (PENDING, REJECTED, DRAFT) — show status chip.
+        if (st == 'DRAFT' || st == 'REJECTED' || st == 'NEED_UPDATE') {
+          return SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: () => context.push(RouteNames.mentorshipSignup),
+              icon: const Icon(Icons.edit_note_outlined),
+              label: Text('mentorship.continue_mentor_signup'.tr()),
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+            ),
+          );
+        }
+
+        // Pending is read-only while the faculty admin reviews the profile.
         final (label, color) = switch (st) {
           'PENDING' => ('mentorship.banner_pending'.tr(), AppColors.warning),
-          'REJECTED' => ('mentorship.banner_rejected'.tr(), AppColors.error),
-          'DRAFT' => ('mentorship.banner_draft'.tr(), AppColors.textSecondary),
           _ => ('mentorship.banner_registered'.tr(), AppColors.info),
         };
         return GestureDetector(
-          onTap:
-              st == 'REJECTED'
-                  ? () => context.push(RouteNames.mentorshipSignup)
-                  : null,
           child: Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -260,13 +282,55 @@ class _BecomeMentorBanner extends ConsumerWidget {
   Widget _cta(BuildContext context) {
     return SizedBox(
       width: double.infinity,
-      child: OutlinedButton.icon(
+      child: FilledButton.icon(
         onPressed: () => context.push(RouteNames.mentorshipSignup),
         icon: const Icon(Icons.school_outlined),
         label: Text('mentorship.become_mentor'.tr()),
-        style: OutlinedButton.styleFrom(
+        style: FilledButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 12),
         ),
+      ),
+    );
+  }
+}
+
+class _VerifyAcademicBanner extends StatelessWidget {
+  const _VerifyAcademicBanner({required this.verificationLevel});
+
+  final int verificationLevel;
+
+  @override
+  Widget build(BuildContext context) {
+    final needsEmail = verificationLevel < 1;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.warning.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.warning.withValues(alpha: 0.4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'mentorship.mentee_signup_not_eligible_title'.tr(),
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            needsEmail
+                ? 'mentorship.mentee_signup_not_eligible_email'.tr()
+                : 'mentorship.mentee_signup_not_eligible_academic'.tr(),
+            style: const TextStyle(color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: 10),
+          FilledButton.icon(
+            onPressed: () => context.push(RouteNames.organizationRegistration),
+            icon: const Icon(Icons.verified_user_outlined, size: 18),
+            label: Text('mentorship.verify_account'.tr()),
+          ),
+        ],
       ),
     );
   }

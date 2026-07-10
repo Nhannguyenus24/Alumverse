@@ -8,6 +8,7 @@ import Input from '../../components/Input';
 import { sendOtpSchema } from '../../utils/regexUtils';
 import { useAuth } from '../../hooks/useAuth';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
+import { ScrollRevealFields } from '../../components/animations/ScrollReveal';
 
 const ForgotPasswordPage = () => {
   const { t } = useTranslation(['auth', 'common']);
@@ -51,6 +52,7 @@ const ForgotPasswordPage = () => {
           gap: { xs: 1.5, sm: 2 },
         }}
       >
+        <ScrollRevealFields>
         <Typography
           variant="h5"
           fontWeight={700}
@@ -86,6 +88,7 @@ const ForgotPasswordPage = () => {
         >
           {loading ? t('auth:sending') : t('auth:send_code')}
         </Button>
+        </ScrollRevealFields>
       </Box>
     </Page>
   );

@@ -28,6 +28,11 @@ import {
   paginateArticles,
 } from '../../utils/articleListFilters';
 import { getHonorsSidebarItems } from '../../constants/honorsNav';
+import {
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from '../../components/animations/ScrollReveal';
 
 const HonorsAlumniPage = () => {
   const { t } = useTranslation(['honors', 'common']);
@@ -126,24 +131,22 @@ const HonorsAlumniPage = () => {
 
               {/* FEATURED ARTICLE */}
               {featuredCard && (
-                <Box sx={{ cursor: 'pointer' }} onClick={() => openArticle(featured)}>
+                <ScrollReveal sx={{ cursor: 'pointer' }} onClick={() => openArticle(featured)}>
                   <FeaturedArticleCard
                     article={featuredCard}
                     isAdmin={isAdmin}
                     onEdit={() => handleEdit(featured)}
                     onDelete={() => handleDelete(featured)}
                   />
-                </Box>
+                </ScrollReveal>
               )}
 
               {/* ALUMNI SECTION */}
               {cards.length > 0 && (
-                <Box>
-                  <Typography variant="h4" fontWeight={700} mb={3}>
-                    {t('honors:section_alumni')}
-                  </Typography>
+                <ScrollRevealGroup stagger={0.08}>
+                  <ScrollRevealItem><Typography variant="h4" fontWeight={700} mb={3}>{t('honors:section_alumni')}</Typography></ScrollRevealItem>
 
-                  <Box
+                  <ScrollRevealGroup stagger={0.08}
                     sx={{
                       display: 'grid',
                       gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' },
@@ -151,28 +154,28 @@ const HonorsAlumniPage = () => {
                     }}
                   >
                     {cards.map((card, i) => (
-                      <Box key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(rest[i])}>
+                      <ScrollRevealItem key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(rest[i])}>
                         <ArticleCard
                           article={card}
                           isAdmin={isAdmin}
                           onEdit={() => handleEdit(rest[i])}
                           onDelete={() => handleDelete(rest[i])}
                         />
-                      </Box>
+                      </ScrollRevealItem>
                     ))}
-                  </Box>
-                </Box>
+                  </ScrollRevealGroup>
+                </ScrollRevealGroup>
               )}
 
               {(pageInfo?.totalPage ?? 0) > 1 && (
-                <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                <ScrollReveal sx={{ display: 'flex', justifyContent: 'center' }}>
                   <Pagination
                     color="primary"
                     count={pageInfo.totalPage}
                     page={page + 1}
                     onChange={(_, value) => setPage(value - 1)}
                   />
-                </Box>
+                </ScrollReveal>
               )}
 
       <AdminConfirmDeleteDialog

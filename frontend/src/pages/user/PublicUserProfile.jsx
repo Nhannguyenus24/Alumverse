@@ -27,6 +27,7 @@ import { useNotification } from '../../hooks/useNotification';
 import { usePublicProfile } from '../../hooks/profile/usePublicProfile';
 import { resolveProfileRoleLabel } from '../../utils/profileRoleUtils';
 import { resolveMediaUrl } from '../../utils/imageUtils';
+import { ScrollReveal } from '../../components/animations/ScrollReveal';
 
 const DEFAULT_COVER =
   'https://ethnasia.com/cdn/shop/articles/sean-o-KMn4VEeEPR8-unsplash_edited.jpg?v=1621585619';
@@ -130,7 +131,7 @@ const PublicUserProfile = ({ userId, navigate }) => {
       >
         <Stack spacing={6}>
           <Grid container spacing={4}>
-            <Grid size={{ xs: 12 }} sx={{ pb: 2 }}>
+            <Grid size={{ xs: 12 }} sx={{ pb: 2 }}><ScrollReveal>
               <ProfileSectionTitle icon={PersonIcon}>{t('intro_section')}</ProfileSectionTitle>
               <Typography
                 color={hasBio ? 'text.secondary' : 'text.disabled'}
@@ -143,9 +144,9 @@ const PublicUserProfile = ({ userId, navigate }) => {
               >
                 {profile.bio?.trim() || t('pub_no_bio')}
               </Typography>
-            </Grid>
+            </ScrollReveal></Grid>
 
-            <Grid size={{ xs: 12, lg: 4 }}>
+            <Grid size={{ xs: 12, lg: 4 }}><ScrollReveal direction="right">
               <Box sx={{ height: '100%' }}>
                 <ProfileSectionTitle icon={BusinessIcon}>{t('basic_info')}</ProfileSectionTitle>
                 <Box>
@@ -160,11 +161,11 @@ const PublicUserProfile = ({ userId, navigate }) => {
                   <SocialLinksRenderer linksRaw={profile.links} />
                 </Box>
               </Box>
-            </Grid>
+            </ScrollReveal></Grid>
 
-            <Grid size={{ xs: 12, lg: 8 }}>
+            <Grid size={{ xs: 12, lg: 8 }}><ScrollReveal direction="left">
               <AcademicInfoSection academicProfile={academicProfile} />
-            </Grid>
+            </ScrollReveal></Grid>
           </Grid>
 
           <UserHighlights userId={userId} navigate={navigate} />

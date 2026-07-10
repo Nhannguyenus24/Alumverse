@@ -23,6 +23,11 @@ import {
   paginateArticles,
 } from '../../utils/articleListFilters';
 import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
+import {
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from '../../components/animations/ScrollReveal';
 
 const ActivitiesPage = () => {
   const { t } = useTranslation(['nav', 'article']);
@@ -117,24 +122,27 @@ const ActivitiesPage = () => {
     >
               {/* FEATURED ARTICLE */}
               {featuredCard && (
-                <Box sx={{ cursor: 'pointer' }} onClick={() => openArticle(featured)}>
+                <ScrollReveal sx={{ cursor: 'pointer' }} onClick={() => openArticle(featured)}>
                   <FeaturedArticleCard
                     article={featuredCard}
                     isAdmin={isAdmin}
                     onEdit={() => handleEdit(featured)}
                     onDelete={() => handleDelete(featured)}
                   />
-                </Box>
+                </ScrollReveal>
               )}
 
               {/* NEWS SECTION */}
               {suggestionCards.length > 0 && (
-                <Box>
-                  <Typography variant="h4" fontWeight={700} mb={3}>
-                    {t('article:suggestions')}
-                  </Typography>
+                <ScrollRevealGroup stagger={0.08}>
+                  <ScrollRevealItem>
+                    <Typography variant="h4" fontWeight={700} mb={3}>
+                      {t('article:suggestions')}
+                    </Typography>
+                  </ScrollRevealItem>
 
-                  <Box
+                  <ScrollRevealGroup
+                    stagger={0.08}
                     sx={{
                       display: 'grid',
                       gridTemplateColumns: {
@@ -146,26 +154,29 @@ const ActivitiesPage = () => {
                     }}
                   >
                     {suggestionCards.map((card, i) => (
-                      <Box key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(rest[i])}>
+                      <ScrollRevealItem key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(rest[i])}>
                         <ArticleCard
                           article={card}
                           isAdmin={isAdmin}
                           onEdit={() => handleEdit(rest[i])}
                           onDelete={() => handleDelete(rest[i])}
                         />
-                      </Box>
+                      </ScrollRevealItem>
                     ))}
-                  </Box>
-                </Box>
+                  </ScrollRevealGroup>
+                </ScrollRevealGroup>
               )}
 
               {/* NEWS SECTION */}
               {dailyCards.length > 0 && (
-                <Box>
-                  <Typography variant="h4" fontWeight={700} mb={3}>
-                    {t('article:daily')}
-                  </Typography>
-                  <Box
+                <ScrollRevealGroup stagger={0.08}>
+                  <ScrollRevealItem>
+                    <Typography variant="h4" fontWeight={700} mb={3}>
+                      {t('article:daily')}
+                    </Typography>
+                  </ScrollRevealItem>
+                  <ScrollRevealGroup
+                    stagger={0.08}
                     sx={{
                       display: 'grid',
                       gridTemplateColumns: {
@@ -177,7 +188,7 @@ const ActivitiesPage = () => {
                     }}
                   >
                     {dailyCards.map((card, i) => (
-                      <Box
+                      <ScrollRevealItem
                         key={card.id ?? i}
                         sx={{ cursor: 'pointer' }}
                         onClick={() => openArticle(rest[i + 3])}
@@ -188,21 +199,21 @@ const ActivitiesPage = () => {
                           onEdit={() => handleEdit(rest[i + 3])}
                           onDelete={() => handleDelete(rest[i + 3])}
                         />
-                      </Box>
+                      </ScrollRevealItem>
                     ))}
-                  </Box>
-                </Box>
+                  </ScrollRevealGroup>
+                </ScrollRevealGroup>
               )}
 
               {(pageInfo?.totalPage ?? 0) > 1 && (
-                <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                <ScrollReveal sx={{ display: 'flex', justifyContent: 'center' }}>
                   <Pagination
                     color="primary"
                     count={pageInfo.totalPage}
                     page={page + 1}
                     onChange={(_, value) => setPage(value - 1)}
                   />
-                </Box>
+                </ScrollReveal>
               )}
 
       <AdminConfirmDeleteDialog

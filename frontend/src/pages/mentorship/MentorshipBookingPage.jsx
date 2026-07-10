@@ -27,6 +27,11 @@ import { useMentorPublicProfile } from '../../hooks/mentorship/useMentorPublicPr
 import { useMentorAvailability } from '../../hooks/mentorship/useMentorAvailability';
 import { useBookSession } from '../../hooks/mentorship/useBookSession';
 import { formatRating } from '../../utils/numberFormatter';
+import {
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from '../../components/animations/ScrollReveal';
 
 const MentorshipBookingPage = () => {
   const { t } = useTranslation(['mentorship', 'common']);
@@ -79,21 +84,11 @@ const MentorshipBookingPage = () => {
   return (
     <Page title={t('mentorship:booking_page_title')}>
       <Container maxWidth="lg" sx={{ py: { xs: 3, md: 5 } }}>
-        <Button
-          startIcon={<ArrowBackIcon />}
-          onClick={() => navigate(-1)}
-          sx={{ mb: 2, textTransform: 'none' }}
-          color="inherit"
-        >
-          {t('common:back')}
-        </Button>
-
-        <Typography variant="h2" fontWeight={800} color="primary.main" mb={1}>
-          {t('mentorship:booking_heading')}
-        </Typography>
-        <Typography color="text.secondary" mb={4}>
-          {t('mentorship:booking_desc')}
-        </Typography>
+        <ScrollRevealGroup stagger={0.08}>
+          <ScrollRevealItem><Button startIcon={<ArrowBackIcon />} onClick={() => navigate(-1)} sx={{ mb: 2, textTransform: 'none' }} color="inherit">{t('common:back')}</Button></ScrollRevealItem>
+          <ScrollRevealItem><Typography variant="h2" fontWeight={800} color="primary.main" mb={1}>{t('mentorship:booking_heading')}</Typography></ScrollRevealItem>
+          <ScrollRevealItem><Typography color="text.secondary" mb={4}>{t('mentorship:booking_desc')}</Typography></ScrollRevealItem>
+        </ScrollRevealGroup>
 
         {profileQuery.isError && (
           <Alert severity="error" sx={{ mb: 3 }}>
@@ -122,17 +117,17 @@ const MentorshipBookingPage = () => {
           }}
         >
           {/* MAIN COLUMN */}
-          <Stack spacing={3}>
-            <Stepper activeStep={activeStep} alternativeLabel>
+          <ScrollRevealGroup stagger={0.09} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <ScrollRevealItem><Stepper activeStep={activeStep} alternativeLabel>
               {STEPS.map((label) => (
                 <Step key={label}>
                   <StepLabel>{label}</StepLabel>
                 </Step>
               ))}
-            </Stepper>
+            </Stepper></ScrollRevealItem>
 
             {activeStep === 0 && (
-              <Stack spacing={2}>
+              <ScrollRevealItem><Stack spacing={2}>
                 {availabilityQuery.isLoading ? (
                   <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
                     <CircularProgress />
@@ -162,11 +157,11 @@ const MentorshipBookingPage = () => {
                     {t('mentorship:booking_continue')}
                   </Button>
                 </Stack>
-              </Stack>
+              </Stack></ScrollRevealItem>
             )}
 
             {activeStep === 1 && selectedSlot && (
-              <Paper
+              <ScrollRevealItem><Paper
                 elevation={0}
                 sx={{ p: { xs: 2, md: 3 }, border: '1px solid', borderColor: 'divider', borderRadius: 2 }}
               >
@@ -178,22 +173,23 @@ const MentorshipBookingPage = () => {
                   onSubmit={handleSubmit}
                   submitting={submitting}
                 />
-              </Paper>
+              </Paper></ScrollRevealItem>
             )}
-          </Stack>
+          </ScrollRevealGroup>
 
           {/* MENTOR SIDEBAR */}
-          <Paper
-            elevation={0}
-            sx={{
-              p: 3,
-              border: '1px solid',
-              borderColor: 'divider',
-              borderRadius: 2,
-              position: { md: 'sticky' },
-              top: { md: 24 },
-            }}
-          >
+          <ScrollReveal direction="left">
+            <Paper
+              elevation={0}
+              sx={{
+                p: 3,
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: 2,
+                position: { md: 'sticky' },
+                top: { md: 24 },
+              }}
+            >
             {isLoading || !mentor ? (
               <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
                 <CircularProgress size={24} />
@@ -253,7 +249,8 @@ const MentorshipBookingPage = () => {
                 </Box>
               </>
             )}
-          </Paper>
+            </Paper>
+          </ScrollReveal>
         </Box>
       </Container>
     </Page>

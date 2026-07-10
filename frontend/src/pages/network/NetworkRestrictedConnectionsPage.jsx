@@ -3,28 +3,32 @@ import { Stack, Typography } from '@mui/material';
 
 import NetworkSectionLayout from '../../components/network/NetworkSectionLayout';
 import NetworkBlockedMembersSection from '../../components/network/NetworkBlockedMembersSection';
+import {
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from '../../components/animations/ScrollReveal';
 
 const NetworkRestrictedConnectionsPage = () => {
   const { t } = useTranslation('network');
 
   return (
     <NetworkSectionLayout title={t('restricted_layout_title')}>
-      <Stack spacing={2}>
-        <Typography
+      <ScrollRevealGroup stagger={0.08} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <ScrollRevealItem><Typography
           variant="h1"
           fontWeight={800}
           color="primary.main"
           sx={{ fontSize: { xs: '1.8rem', md: '2.3rem' } }}
         >
           {t('restricted_heading')}
-        </Typography>
+        </Typography></ScrollRevealItem>
 
-        <Typography color="text.secondary">
+        <ScrollRevealItem><Typography color="text.secondary">
           {t('restricted_subheading')}
-        </Typography>
+        </Typography></ScrollRevealItem>
 
         <NetworkBlockedMembersSection />
-      </Stack>
+      </ScrollRevealGroup>
     </NetworkSectionLayout>
   );
 };

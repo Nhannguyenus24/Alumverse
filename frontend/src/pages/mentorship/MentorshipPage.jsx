@@ -20,6 +20,10 @@ import { useMentorshipAccessState } from '../../hooks/mentorship/useMentorshipAc
 import { getMentorshipStats } from '../../constants/mentorshipNav';
 import { useTranslation } from 'react-i18next';
 import StatsBanner from '../../components/StatsBanner'
+import {
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from '../../components/animations/ScrollReveal';
 
 const getBenefits = (t) => [
   {
@@ -54,8 +58,8 @@ const GuestLandingContent = () => {
   const isAdmin = isAuthenticated && user?.role === 'ADMIN';
 
   return (
-    <Stack spacing={4}>
-      <Stack spacing={2}>
+    <ScrollRevealGroup stagger={0.09} sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <ScrollRevealItem><Stack spacing={2}>
         <Typography
           variant="h1"
           fontWeight={800}
@@ -67,9 +71,9 @@ const GuestLandingContent = () => {
         <Typography color="text.secondary">
           {t('mentorship:landing_desc')}
         </Typography>
-      </Stack>
+      </Stack></ScrollRevealItem>
 
-      <Box
+      <ScrollRevealItem
         sx={{
           borderRadius: 3,
           px: { xs: 3, md: 5 },
@@ -102,15 +106,15 @@ const GuestLandingContent = () => {
           {t('mentorship:cta_guest_desc')}
         </Typography>
         <MentorshipHubActions tone="onPrimary" />
-      </Box>
+      </ScrollRevealItem>
 
-      <StatsBanner items={getMentorshipStats(t)} />
+      <ScrollRevealItem><StatsBanner items={getMentorshipStats(t)} /></ScrollRevealItem>
 
-      <Box>
+      <ScrollRevealItem>
         <Typography variant="h4" fontWeight={700} mb={3}>
           {t('mentorship:benefits_heading')}
         </Typography>
-        <Box
+        <ScrollRevealGroup stagger={0.08}
           sx={{
             display: 'grid',
             gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' },
@@ -118,7 +122,7 @@ const GuestLandingContent = () => {
           }}
         >
           {getBenefits(t).map((item) => (
-            <Card key={item.title} sx={{ p: 3, border: '1px solid', borderColor: 'divider' }} elevation={0}>
+            <ScrollRevealItem key={item.title}><Card sx={{ p: 3, border: '1px solid', borderColor: 'divider' }} elevation={0}>
               <Box mb={1.5}>{item.icon}</Box>
               <Typography fontWeight={700} mb={1}>
                 {item.title}
@@ -126,19 +130,18 @@ const GuestLandingContent = () => {
               <Typography variant="body2" color="text.secondary">
                 {item.description}
               </Typography>
-            </Card>
+            </Card></ScrollRevealItem>
           ))}
-        </Box>
-      </Box>
+        </ScrollRevealGroup>
+      </ScrollRevealItem>
 
-      <Box>
+      <ScrollRevealItem>
         <Typography variant="h4" fontWeight={700} mb={3}>
           {t('mentorship:steps_heading')}
         </Typography>
-        <Stack spacing={2}>
+        <ScrollRevealGroup stagger={0.08} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           {getSteps(t).map((item) => (
-            <Card
-              key={item.step}
+            <ScrollRevealItem key={item.step}><Card
               sx={{
                 p: 2.5,
                 border: '1px solid',
@@ -171,12 +174,12 @@ const GuestLandingContent = () => {
                   {item.text}
                 </Typography>
               </Box>
-            </Card>
+            </Card></ScrollRevealItem>
           ))}
-        </Stack>
-      </Box>
+        </ScrollRevealGroup>
+      </ScrollRevealItem>
 
-      <Card
+      <ScrollRevealItem><Card
         sx={{
           p: { xs: 3, md: 4 },
           textAlign: 'center',
@@ -205,8 +208,8 @@ const GuestLandingContent = () => {
             </Button>
           )}
         </Stack>
-      </Card>
-    </Stack>
+      </Card></ScrollRevealItem>
+    </ScrollRevealGroup>
   );
 };
 
@@ -219,8 +222,8 @@ const HubContent = () => {
   const isAdmin = isAuthenticated && user?.role === 'ADMIN';
 
   return (
-    <Stack spacing={4}>
-      <Stack spacing={2}>
+    <ScrollRevealGroup stagger={0.09} sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <ScrollRevealItem><Stack spacing={2}>
         {access.isMentorPending && (
           <Alert severity="info" sx={{ borderRadius: 2 }}>
             <Typography fontWeight={800} mb={0.5}>
@@ -260,11 +263,11 @@ const HubContent = () => {
         <Typography color="text.secondary">
           {t('mentorship:hub_desc')}
         </Typography>
-      </Stack>
+      </Stack></ScrollRevealItem>
 
-      <StatsBanner items={getMentorshipStats(t)} />
+      <ScrollRevealItem><StatsBanner items={getMentorshipStats(t)} /></ScrollRevealItem>
       <MentorshipMentorListSection />
-    </Stack>
+    </ScrollRevealGroup>
   );
 };
 

@@ -8,6 +8,7 @@ import Page from "../../components/Page";
 import { savedItemApi } from "../../utils/api";
 import apiClient from "../../utils/axios";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
+import { ScrollReveal, getStaggerDelay } from "../../components/animations/ScrollReveal";
 
 /** Resolve a saved NEWS item's title/thumbnail from its id. */
 const fetchNews = async (id) => {
@@ -65,14 +66,14 @@ const SavedArticlesPage = () => {
   return (
     <Page title={t('saved_articles')}>
       <Container maxWidth="md" sx={{ py: 4 }}>
-        <Typography
+        <ScrollReveal><Typography
           variant="h1"
           fontWeight={800}
           color="primary.main"
           sx={{ fontSize: { xs: "1.8rem", md: "2.3rem" }, mb: 3 }}
         >
           {t('saved_articles').toUpperCase()}
-        </Typography>
+        </Typography></ScrollReveal>
 
         {loading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
@@ -88,11 +89,11 @@ const SavedArticlesPage = () => {
           </Box>
         ) : (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-            {items.map((s) => {
+            {items.map((s, index) => {
               const title = s.article?.title ?? t('saved_article_fallback_title', { id: s.itemId });
               const thumb = s.article?.thumbnailUrl;
               return (
-                <Card key={s.id ?? s.itemId} variant="outlined" sx={{ borderRadius: 2 }}>
+                <ScrollReveal key={s.id ?? s.itemId} delay={getStaggerDelay(index, 0.07)}><Card variant="outlined" sx={{ borderRadius: 2 }}>
                   <Box sx={{ display: "flex", alignItems: "stretch" }}>
                     <CardActionArea
                       onClick={() => navigate(`/article/news/${s.itemId}`)}
@@ -127,7 +128,7 @@ const SavedArticlesPage = () => {
                       </Tooltip>
                     </Box>
                   </Box>
-                </Card>
+                </Card></ScrollReveal>
               );
             })}
           </Box>
