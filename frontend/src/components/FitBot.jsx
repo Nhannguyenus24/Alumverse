@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next';
 
 const CHAT_HISTORY_STORAGE_KEY = 'fitbot_chat_history';
 const CHAT_HISTORY_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
-const CHAT_HISTORY_MAX_MESSAGES = 30;
+const CHAT_HISTORY_MAX_MESSAGES = 10;
 
 const buildDefaultMessage = (greeting) => ({
   id: 1,
@@ -475,9 +475,11 @@ export default function FitBot({ isOpen = false, isBlocked = false, onOpen, onCl
       scheduleNextSuggestion();
 
       return () => {
-      clearTimeout(suggestionTimeoutRef.current);
-      clearTimeout(suggestionHideTimeoutRef.current);
-    };
+        clearTimeout(suggestionTimeoutRef.current);
+        clearTimeout(suggestionHideTimeoutRef.current);
+      };
+    } else {
+      setShowSuggestion(false);
     }
   }, [isBlocked, isChatOpen, t]);
 
@@ -580,7 +582,9 @@ export default function FitBot({ isOpen = false, isBlocked = false, onOpen, onCl
   }, [onClose]);
 
   const renderedMessages = React.useMemo(() => {
-    return messages.map((message) => (
+    return messages
+      .filter((message) => message.text !== '')
+      .map((message) => (
       <Message key={message.id} isBot={message.isBot}>
         <MessageBubble isBot={message.isBot}>
           {message.isBot ? (
@@ -663,7 +667,7 @@ export default function FitBot({ isOpen = false, isBlocked = false, onOpen, onCl
             {renderedMessages}
 
             {/* Typing Indicator */}
-            {isTyping && (
+            {isTyping && messages.length > 0 && messages[messages.length - 1].isBot && messages[messages.length - 1].text === '' && (
               <Message isBot={true}>
                 <TypingIndicator>
                   <span></span>
