@@ -17,7 +17,11 @@ bool _matchTab(String key, MentorshipSession s) {
   return switch (key) {
     'upcoming' => st == 'PENDING' || st == 'CONFIRMED',
     'completed' => st == 'COMPLETED',
-    'cancelled' => st == 'CANCELLED' || st == 'REJECTED',
+    'cancelled' =>
+      st == 'CANCELLED' ||
+          st == 'CANCELLED_BY_MENTEE' ||
+          st == 'CANCELLED_BY_MENTOR' ||
+          st == 'REJECTED',
     _ => true,
   };
 }
@@ -331,7 +335,9 @@ class _StatusChip extends StatelessWidget {
       'PENDING' => ('mentorship.status_pending'.tr(), AppColors.warning),
       'CONFIRMED' => ('mentorship.status_confirmed'.tr(), AppColors.info),
       'COMPLETED' => ('mentorship.status_completed'.tr(), AppColors.success),
-      'CANCELLED' => ('mentorship.status_cancelled'.tr(), AppColors.error),
+      'CANCELLED' ||
+      'CANCELLED_BY_MENTEE' ||
+      'CANCELLED_BY_MENTOR' => ('mentorship.status_cancelled'.tr(), AppColors.error),
       'REJECTED' => ('mentorship.status_rejected'.tr(), AppColors.error),
       _ => (status ?? '—', AppColors.textSecondary),
     };

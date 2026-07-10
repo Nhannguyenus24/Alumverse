@@ -8,6 +8,10 @@
       "source": "/api/:path*",
       "destination": "https://alumni-api-hcmus.duckdns.org/api/:path*"
     },
+    {
+      "source": "/fitbot-api/:path*",
+      "destination": "http://167.99.79.46/:path*"
+    },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

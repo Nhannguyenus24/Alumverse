@@ -296,10 +296,10 @@ const adminMentorshipApi = {
 		return apiClient.get(`${BASE_ADMIN_MENTORSHIP}/mentors`, { params });
 	},
 
-	getMentorProfilesByApproval(isApproved, page = 0, size = 10, organizationId = null) {
-		const params = { isApproved, page, size };
+	getMentorProfilesByStatus(status, page = 0, size = 10, organizationId = null) {
+		const params = { status, page, size };
 		if (organizationId) params.organizationId = organizationId;
-		return apiClient.get(`${BASE_ADMIN_MENTORSHIP}/mentors/by-approval`, { params });
+		return apiClient.get(`${BASE_ADMIN_MENTORSHIP}/mentors/by-status`, { params });
 	},
 
 	approveMentor(memberId) {
@@ -317,7 +317,7 @@ export const {
 	updateSessionStatus,
 	deleteSession,
 	getAllMentorProfiles,
-	getMentorProfilesByApproval,
+	getMentorProfilesByStatus,
 	approveMentor,
 	getMentorshipStatistics,
 } = adminMentorshipApi;

@@ -8,10 +8,7 @@ import {
   Grid,
   Stack,
   Typography,
-  Card,
-  CardContent,
 } from '@mui/material';
-import { alpha } from '@mui/material/styles';
 import StarIcon from '@mui/icons-material/Star';
 import PersonIcon from '@mui/icons-material/Person';
 import EmailIcon from '@mui/icons-material/Email';
@@ -34,6 +31,7 @@ import MentorshipReviewCard from '../../components/mentorship/MentorshipReviewCa
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useMyProfile } from '../../hooks/profile/useMyProfile';
 import { useMyOrganizationMember } from '../../hooks/useMyOrganizationMember';
+import { useOrganization } from '../../hooks/useOrganization';
 import useAuthStore from '../../stores/authStore';
 import { useMyMentorProfile } from '../../hooks/mentorship/useMyMentorProfile';
 import { useMyMenteeProfile } from '../../hooks/mentorship/useMyMenteeProfile';
@@ -50,14 +48,17 @@ import StatsBanner from '../../components/StatsBanner';
 import AcademicInfoSection from '../../components/profile/AcademicInfoSection';
 import PersonalInfoRow from '../../components/profile/PersonalInfoRow';
 import ProfileSectionTitle from '../../components/profile/ProfileSectionTitle';
-import ExtendedProfileInfoCard from '../../components/profile/ExtendedProfileInfoCard'
 import SocialLinksRenderer from '../../components/profile/SocialLinksRenderer';
 
-import { getMentorProfileTabs, getMenteeProfileTabs } from '../../constants/mentorshipNav';
+import {
+  getMenteeProfileTabs,
+  getMentorProfileTabs,
+  getMentorshipProfileOnlyTabs,
+} from '../../constants/mentorshipNav';
 import { useTranslation } from 'react-i18next';
 import { formatDate } from '../../utils/dateFormatter';
 import { formatRating } from '../../utils/numberFormatter';
-import { formatMentorHeadline, resolveProfileRoleLabel } from '../../utils/profileRoleUtils';
+import { resolveProfileRoleLabel } from '../../utils/profileRoleUtils';
 import { resolveMediaUrl } from '../../utils/imageUtils';
 
 const DEFAULT_COVER =
@@ -78,13 +79,6 @@ const normalizeTags = (value) => {
     .filter(Boolean);
 };
 
-const getCategoryLabel = (t) => ({
-  CAREER: t('profile:category_career'),
-  ACADEMIC: t('profile:category_academic'),
-  SOFT_SKILLS: t('profile:category_soft_skills'),
-  GENERAL: t('profile:category_general'),
-});
-
 const getSectionLabels = (t) => ({
   educations: t('profile:section_label_educations'),
   experiences: t('profile:section_label_experiences'),
@@ -92,51 +86,6 @@ const getSectionLabels = (t) => ({
   awards: t('profile:section_label_awards'),
   skills: t('profile:section_label_skills'),
 });
-
-const ProfileItem = ({ label, value, icon: Icon, notUpdatedLabel = 'Not updated' }) => (
-  <Box
-    sx={{
-      display: 'flex',
-      alignItems: 'flex-start',
-      p: 2.5,
-      bgcolor: 'background.paper',
-      borderRadius: 3,
-      boxShadow: '0 2px 12px 0 rgba(0,0,0,0.03)',
-      border: '1px solid',
-      borderColor: 'divider',
-      transition: 'all 0.2s ease-in-out',
-      '&:hover': {
-        transform: 'translateY(-2px)',
-        boxShadow: '0 6px 20px 0 rgba(0,0,0,0.08)',
-        borderColor: 'primary.light',
-      },
-      height: '100%',
-    }}
-  >
-    {Icon && (
-      <Box
-        sx={{
-          display: 'flex',
-          p: 1.5,
-          borderRadius: 2,
-          bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
-          color: 'primary.main',
-          mr: 2,
-        }}
-      >
-        <Icon fontSize="small" />
-      </Box>
-    )}
-    <Box sx={{ flex: 1 }}>
-      <Typography variant="caption" color="text.secondary" fontWeight={600} textTransform="uppercase" letterSpacing={0.5}>
-        {label}
-      </Typography>
-      <Typography variant="body1" fontWeight={600} color="text.primary" sx={{ mt: 0.5, wordBreak: 'break-word' }}>
-        {value?.trim?.() || value || notUpdatedLabel}
-      </Typography>
-    </Box>
-  </Box>
-);
 
 const SECTION_ICONS = {
   educations: SchoolIcon,
@@ -146,14 +95,105 @@ const SECTION_ICONS = {
   skills: PsychologyIcon,
 };
 
-const ExtendedProfileSections = ({ raw, t }) => {
-  if (!raw) return null;
-  let parsed;
+const parseExtendedProfile = (raw) => {
+  if (!raw) return {};
   try {
-    parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    return typeof raw === 'string' ? JSON.parse(raw) : raw;
   } catch {
-    return null;
+    return {};
   }
+};
+
+const getItemTitle = (item, key) =>
+  item.title || item.name || item.school || item.company || item.degree || item.topic || item.role ||
+  (key === 'skills' ? item.name : '');
+
+const getItemSubtitle = (item) =>
+  [item.company, item.degree, item.issuer, item.category].filter(Boolean).join(' · ');
+
+const getItemPeriod = (item) =>
+  item.period || [item.from || item.startedYear, item.to || item.graduatedYear].filter(Boolean).join(' - ');
+
+const ProfileTimelineSection = ({ title, icon: Icon, items = [], t }) => {
+  const rows = items.filter((item) => item && typeof item === 'object');
+  if (rows.length === 0) return null;
+
+  return (
+    <Box>
+      <Typography variant="h5" fontWeight={800} color="primary.main" mb={3} display="flex" alignItems="center" gap={1}>
+        <Icon /> {title}
+      </Typography>
+      <Stack spacing={0}>
+        {rows.map((item, index) => {
+          const titleText = getItemTitle(item);
+          const subtitle = getItemSubtitle(item);
+          const period = getItemPeriod(item);
+          const description = item.description || item.link || '';
+          return (
+            <Box key={`${titleText}-${index}`} sx={{ display: 'grid', gridTemplateColumns: '28px 1fr', columnGap: 1.5 }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: '100%' }}>
+                <Box sx={{ width: 9, height: 9, borderRadius: '50%', bgcolor: 'text.disabled', mt: 0.75 }} />
+                <Box sx={{ width: 3, flex: 1, bgcolor: 'divider', my: 0.5, minHeight: description ? 56 : 32 }} />
+              </Box>
+              <Box sx={{ pb: index < rows.length - 1 ? 3 : 0 }}>
+                <Typography fontWeight={800} color="text.primary">
+                  {titleText || t('profile:not_updated')}
+                </Typography>
+                {subtitle && (
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+                    {subtitle}
+                  </Typography>
+                )}
+                {period && (
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25 }}>
+                    {period}
+                  </Typography>
+                )}
+                {description && (
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1, whiteSpace: 'pre-line', lineHeight: 1.7 }}>
+                    {description}
+                  </Typography>
+                )}
+              </Box>
+            </Box>
+          );
+        })}
+      </Stack>
+    </Box>
+  );
+};
+
+const ShareableContentSection = ({ summary, tags = [], t }) => {
+  const hasSummary = !!summary?.trim();
+  if (!hasSummary && tags.length === 0) return null;
+  return (
+    <Box>
+      <Typography variant="h5" fontWeight={800} color="primary.main" mb={2} display="flex" alignItems="center" gap={1}>
+        <WorkspacePremiumIcon /> {t('profile:shareable_content_section', { defaultValue: 'Nội dung có thể chia sẻ' })}
+      </Typography>
+      {hasSummary && (
+        <Typography color="text.secondary" sx={{ whiteSpace: 'pre-line', fontSize: '1.05rem', lineHeight: 1.7, mb: tags.length ? 2 : 0 }}>
+          {summary.trim()}
+        </Typography>
+      )}
+      {tags.length > 0 && (
+        <Box sx={{ mt: hasSummary ? 2 : 0 }}>
+          <Typography variant="h6" fontWeight={800} color="primary.main" mb={1.5} display="flex" alignItems="center" gap={1}>
+            <VerifiedIcon fontSize="small" /> {t('profile:skills_section', { defaultValue: 'Kỹ năng' })}
+          </Typography>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+            {tags.map((tag, idx) => (
+              <MentorshipTag key={`${tag}-${idx}`} label={tag} />
+            ))}
+          </Box>
+        </Box>
+      )}
+    </Box>
+  );
+};
+
+const ExtendedProfileSections = ({ raw, t }) => {
+  const parsed = parseExtendedProfile(raw);
   if (!parsed || typeof parsed !== 'object') return null;
 
   const sectionLabels = getSectionLabels(t);
@@ -165,92 +205,16 @@ const ExtendedProfileSections = ({ raw, t }) => {
 
   return (
     <Stack spacing={5}>
-      {sections.map(({ key, items }) => {
-        const Icon = SECTION_ICONS[key] || ArticleIcon;
-        const GRID_SIZE = { educations: 4, awards: 4, skills: 4, experiences: 12, projects: 12, };
-        return (
-          <Box key={key}>
-            <Typography variant="h5" fontWeight={800} color="primary.main" mb={3} display="flex" alignItems="center" gap={1}>
-              <Icon /> {sectionLabels[key]}
-            </Typography>
-            <Grid container spacing={3}>
-              {items.map((item, idx) => (
-                <Grid item xs={12} md={GRID_SIZE[key] ?? 6} key={idx}>
-                  <ExtendedProfileInfoCard item={item} icon={Icon} />
-                </Grid>
-              ))}
-            </Grid>
-          </Box>
-        );
-      })}
+      {sections.map(({ key, items }) => (
+        <ProfileTimelineSection
+          key={key}
+          title={sectionLabels[key]}
+          icon={SECTION_ICONS[key] || ArticleIcon}
+          items={items}
+          t={t}
+        />
+      ))}
     </Stack>
-  );
-};
-
-const ExpertiseSection = ({ expertise, t }) => {
-  const categoryLabel = getCategoryLabel(t);
-  return (
-    <Box>
-      <Typography variant="h5" fontWeight={800} color="primary.main" mb={3} display="flex" alignItems="center" gap={1}>
-        <WorkspacePremiumIcon /> {t('profile:expertise_shareable')}
-      </Typography>
-      {expertise.length === 0 ? (
-        <Typography color="text.secondary" sx={{ fontStyle: 'italic' }}>{t('profile:no_expertise')}</Typography>
-      ) : (
-        <Grid container spacing={2.5}>
-          {expertise.map((item) => (
-            <Grid item xs={12} md={6} key={item.id ?? item.topic}>
-              <Box
-                sx={{
-                  p: 3,
-                  bgcolor: 'background.paper',
-                  borderRadius: 3,
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  boxShadow: '0 2px 12px 0 rgba(0,0,0,0.03)',
-                  height: '100%',
-                  transition: 'all 0.2s',
-                  '&:hover': {
-                    transform: 'translateY(-2px)',
-                    boxShadow: '0 6px 20px 0 rgba(0,0,0,0.08)',
-                    borderColor: 'primary.light',
-                  }
-                }}
-              >
-                <Stack spacing={1.5}>
-                  <Typography variant="h6" fontWeight={700} color="text.primary">
-                    {item.topic}
-                  </Typography>
-
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                    {item.category && (
-                      <Box sx={{ px: 1.5, py: 0.5, bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1), color: 'primary.main', borderRadius: 1.5, fontSize: '0.75rem', fontWeight: 700 }}>
-                        {categoryLabel[item.category] ?? item.category}
-                      </Box>
-                    )}
-                    {item.tag && (
-                      <Box sx={{ px: 1.5, py: 0.5, bgcolor: 'action.hover', color: 'text.secondary', borderRadius: 1.5, fontSize: '0.75rem', fontWeight: 700 }}>
-                        #{item.tag}
-                      </Box>
-                    )}
-                  </Box>
-
-                  {item.description && (
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ whiteSpace: 'pre-line', mt: 1, lineHeight: 1.6 }}
-                    >
-                      {item.description}
-                    </Typography>
-                  )}
-                </Stack>
-              </Box>
-            </Grid>
-          ))}
-        </Grid>
-      )}
-    </Box>
   );
 };
 
@@ -331,12 +295,13 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
   
   const profileQuery = useMyProfile();
   const orgMemberQuery = useMyOrganizationMember();
+  const { organization } = useOrganization();
 
   const mentorQuery = useMyMentorProfile();
   const access = useMentorshipAccessState();
   const menteeQuery = useMyMenteeProfile({ enabled: access.canUseMentorship });
   const expertiseQuery = useMyExpertise({ enabled: access.hasMentorProfile });
-  const feedbacksQuery = useMyMentorFeedbacks(0, 50, { enabled: access.hasMentorProfile });
+  const feedbacksQuery = useMyMentorFeedbacks(0, 50, { enabled: access.isMentorApproved });
 
   const [feedbackPage, setFeedbackPage] = useState(1);
 
@@ -347,7 +312,7 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
   const expertise = useMemo(() => expertiseQuery.data ?? [], [expertiseQuery.data]);
   const feedbacks = useMemo(() => feedbacksQuery.data?.items ?? [], [feedbacksQuery.data]);
 
-  const shouldUseMentorDisplayData = isMentorshipPath;
+  const shouldUseMentorDisplayData = isMentorshipPath && access.hasMentorProfile;
   // Derived user details
   const coverUrl = resolveMediaUrl(profile?.coverUrl) || (shouldUseMentorDisplayData ? MENTORSHIP_COVER : DEFAULT_COVER);
   const currentJobTitle = profile?.currentJobTitle || mentor?.currentJobTitle;
@@ -357,15 +322,25 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
 
   const user = {
     name: profile?.fullName ?? t('profile:my_account'),
-    role: shouldUseMentorDisplayData
-      ? formatMentorHeadline({ jobTitle: currentJobTitle, company: currentCompany, t })
+    role: isMentorshipPath
+      ? (access.hasMentorProfile
+        ? 'Mentor'
+        : access.hasMenteeProfile
+          ? 'Mentee'
+          : resolveProfileRoleLabel({ profile, academicProfile: orgMember, t }))
       : resolveProfileRoleLabel({ profile, academicProfile: orgMember, t }),
     avatar: resolveMediaUrl(profile?.avatarUrl ?? ''),
     cover: coverUrl,
   };
 
   const tabs = isMentorshipPath
-    ? (access.hasMentorProfile ? getMentorProfileTabs(t) : (access.hasMenteeProfile ? getMenteeProfileTabs(t) : []))
+    ? (access.isMentorApproved
+      ? getMentorProfileTabs(t)
+      : access.hasMenteeProfile
+        ? getMenteeProfileTabs(t)
+        : access.hasMentorProfile
+          ? getMentorshipProfileOnlyTabs(t)
+          : [])
     : [];
 
   if (profileQuery.isLoading || orgMemberQuery.isLoading || (isMentorshipPath && access.isLoading)) {
@@ -426,7 +401,12 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
           </Grid>
 
           <Grid size={{ xs: 12, lg: 8 }}>
-            <AcademicInfoSection academicProfile={orgMember} />
+            <AcademicInfoSection
+              academicProfile={{
+                ...orgMember,
+                organizationName: orgMember?.organizationName || organization?.name,
+              }}
+            />
           </Grid>
         </Grid>
       </Box>
@@ -461,6 +441,8 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
     }
 
     if (access.hasMentorProfile) {
+      const mentorExtended = parseExtendedProfile(mentor?.extendedProfile);
+      const summary = mentorExtended.experienceSummary ?? '';
       const mentorTopicFallback = normalizeTags(mentor?.expertiseTopics);
       const expertiseTags = expertise.map((e) => e.tag || e.topic).flatMap(normalizeTags);
       const stats = [
@@ -469,8 +451,12 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
         { value: formatRating(mentor?.ratingAvg), label: t('profile:stats_rating') },
         { value: feedbacks.length, label: t('profile:stats_feedbacks') },
       ];
-      const tags = Array.from(new Set([...expertiseTags, ...mentorTopicFallback]));
-      const hasMentorBio = !!personalBio?.trim();
+      const tags = Array.from(new Set([
+        ...normalizeTags(mentor?.expertiseTags),
+        ...normalizeTags(mentorExtended.expertiseTags),
+        ...expertiseTags,
+        ...mentorTopicFallback,
+      ]));
 
       const totalPages = Math.max(1, Math.ceil(feedbacks.length / ITEMS_PER_PAGE));
       const paginatedReviews = feedbacks.slice((feedbackPage - 1) * ITEMS_PER_PAGE, feedbackPage * ITEMS_PER_PAGE);
@@ -489,34 +475,10 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
           )}
           <StatsBanner items={stats} />
 
-          {isMentorshipPath && (
-            <Box>
-              <Typography variant="h5" fontWeight={800} color="primary.main" mb={3} display="flex" alignItems="center" gap={1}>
-                <PersonIcon /> {t('profile:intro_section')}
-              </Typography>
-              <Typography
-                color={hasMentorBio ? 'text.secondary' : 'text.disabled'}
-                sx={{ whiteSpace: 'pre-line', fontSize: '1.05rem', lineHeight: 1.7, fontStyle: hasMentorBio ? 'normal' : 'italic' }}
-              >
-                {personalBio?.trim() || t('profile:no_intro')}
-              </Typography>
-            </Box>
-          )}
+          <ShareableContentSection summary={summary} tags={tags} t={t} />
 
-          <ExpertiseSection expertise={expertise} t={t} />
+          <ExtendedProfileSections raw={mentor?.extendedProfile} t={t} />
 
-          {tags.length > 0 && (
-            <Box>
-              <Typography variant="h5" fontWeight={800} color="primary.main" mb={3} display="flex" alignItems="center" gap={1}>
-                <VerifiedIcon /> {t('profile:skills_section')}
-              </Typography>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                {tags.map((tag, idx) => (
-                  <MentorshipTag key={idx} label={tag} />
-                ))}
-              </Box>
-            </Box>
-          )}
           <ReviewsSection
             feedbacks={paginatedReviews}
             ratingAvg={mentor.ratingAvg}
@@ -542,13 +504,9 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
             <Typography variant="h5" fontWeight={800} color="primary.main" mb={2} display="flex" alignItems="center" gap={1}>
               <PersonIcon /> {t('profile:mentee_goal_section')}
             </Typography>
-            <Card sx={{ borderRadius: 3, boxShadow: '0 4px 20px 0 rgba(0,0,0,0.05)', border: '1px solid', borderColor: 'divider' }}>
-              <CardContent sx={{ p: { xs: 3, md: 4 } }}>
-                <Typography color={mentee?.mentoringGoal?.trim() ? 'text.secondary' : 'text.disabled'} sx={{ whiteSpace: 'pre-line', fontSize: '1.05rem', lineHeight: 1.7, fontStyle: mentee?.mentoringGoal?.trim() ? 'normal' : 'italic' }}>
-                  {mentee?.mentoringGoal?.trim() || t('profile:no_mentee_goal')}
-                </Typography>
-              </CardContent>
-            </Card>
+            <Typography color={mentee?.mentoringGoal?.trim() ? 'text.secondary' : 'text.disabled'} sx={{ whiteSpace: 'pre-line', fontSize: '1.05rem', lineHeight: 1.7, fontStyle: mentee?.mentoringGoal?.trim() ? 'normal' : 'italic' }}>
+              {mentee?.mentoringGoal?.trim() || t('profile:no_mentee_goal')}
+            </Typography>
           </Box>
           {interestTags.length > 0 && (
             <Box>
@@ -574,23 +532,14 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
         cover={user.cover}
         tabs={tabs}
         onNavigate={navigate}
-        mode={isMentorshipPath ? 'mentor' : 'user'}
+        mode={isMentorshipPath
+          ? (access.hasMentorProfile ? 'mentor' : access.hasMenteeProfile ? 'menteeOwn' : 'user')
+          : 'user'}
         contentSx={isMentorshipPath ? { pb: { xs: 4, md: 8 } } : undefined}
       >
         <Stack spacing={6}>
           {isMentorshipPath ? (
-            <>
-              {renderMentorshipSection()}
-              <Box sx={{ pt: 6, borderTop: '1px solid', borderColor: 'divider' }}>
-                <Typography variant="h4" fontWeight={800} color="primary.main" mb={5} textAlign="center" textTransform="uppercase">
-                  {t('profile:general_info')}
-                </Typography>
-                {renderPersonalSection()}
-                <Box mt={6}>
-                  <ExtendedProfileSections raw={extendedProfile} t={t} />
-                </Box>
-              </Box>
-            </>
+            renderMentorshipSection()
           ) : (
             <>
               {renderPersonalSection()}
@@ -660,11 +609,7 @@ const PublicMentorProfile = ({ mentorMemberId, navigate }) => {
 
   const user = {
     name: mentor.fullName ?? `Mentor #${mentor.memberId}`,
-    role: formatMentorHeadline({
-      jobTitle: mentor.currentJobTitle,
-      company: mentor.currentCompany,
-      t,
-    }),
+    role: 'Mentor',
     avatar: resolveMediaUrl(mentor.avatarUrl ?? ''),
     cover: resolveMediaUrl(mentor.coverUrl) || MENTORSHIP_COVER,
   };
@@ -675,8 +620,10 @@ const PublicMentorProfile = ({ mentorMemberId, navigate }) => {
     { value: formatRating(mentor.ratingAvg), label: t('profile:stats_rating') },
   ];
 
+  const mentorExtended = parseExtendedProfile(mentor.extendedProfile);
   const tags = Array.from(new Set([
     ...normalizeTags(mentor.expertiseTags),
+    ...normalizeTags(mentorExtended.expertiseTags),
     ...expertise.map((e) => e.tag || e.topic).flatMap(normalizeTags),
     ...normalizeTags(mentor.expertiseTopics),
   ]));
@@ -707,21 +654,16 @@ const PublicMentorProfile = ({ mentorMemberId, navigate }) => {
       </Stack>
 
       <Box sx={{ mt: 5 }}>
-        <ExpertiseSection expertise={expertise} t={t} />
+        <ShareableContentSection
+          summary={mentorExtended.experienceSummary ?? ''}
+          tags={tags}
+          t={t}
+        />
       </Box>
 
-      {tags.length > 0 && (
-        <Box sx={{ mt: 5 }}>
-          <Typography variant="h5" fontWeight={800} color="primary.main" mb={3} display="flex" alignItems="center" gap={1}>
-            <VerifiedIcon /> {t('profile:skills_section')}
-          </Typography>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-            {tags.map((tag, idx) => (
-              <MentorshipTag key={idx} label={tag} />
-            ))}
-          </Box>
-        </Box>
-      )}
+      <Box sx={{ mt: 5 }}>
+        <ExtendedProfileSections raw={mentor.extendedProfile} t={t} />
+      </Box>
 
       {access.canUseMentorship && (
         <Box sx={{ mt: 5 }}>

@@ -20,6 +20,7 @@ import com.service.backend.shared.service.EmailService;
 import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.shared.utils.SecurityUtils;
+import com.service.backend.user.service.NotificationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -44,19 +45,22 @@ public class AdminMentorshipService {
     private final MentorAvailabilityR2dbcRepository availabilityRepo;
     private final AdminUserRepository adminUserRepository;
     private final EmailService emailService;
+    private final NotificationService notificationService;
 
     public AdminMentorshipService(AdminMentorshipRepository adminMentorshipRepository,
                                   MentorshipSessionR2dbcRepository sessionRepo,
                                   MentorProfileR2dbcRepository mentorProfileRepo,
                                   MentorAvailabilityR2dbcRepository availabilityRepo,
                                   AdminUserRepository adminUserRepository,
-                                  EmailService emailService) {
+                                  EmailService emailService,
+                                  NotificationService notificationService) {
         this.adminMentorshipRepository = adminMentorshipRepository;
         this.sessionRepo = sessionRepo;
         this.mentorProfileRepo = mentorProfileRepo;
         this.availabilityRepo = availabilityRepo;
         this.adminUserRepository = adminUserRepository;
         this.emailService = emailService;
+        this.notificationService = notificationService;
     }
 
     public Mono<PaginatedResponse<AdminMentorshipSessionDTO>> getAllSessions(Integer organizationId, int page, int size) {
@@ -176,7 +180,9 @@ public class AdminMentorshipService {
                                     }
                                     return writeMono
                                             .then(adminMentorshipRepository.findMentorProfileById(memberId))
-                                            .flatMap(updated -> sendReviewEmail(updated, targetStatus, reason).thenReturn(updated));
+                                            .flatMap(updated -> sendReviewEmail(updated, targetStatus, reason)
+                                                    .then(Mono.fromRunnable(() -> sendReviewNotification(updated, targetStatus, reason)))
+                                                    .thenReturn(updated));
                                 })
                                 .flatMap(this::enrichMentor)
                                 .doOnSuccess(r -> log.info("applyReview {} result: {}", targetStatus, JsonUtils.toJson(r))));
@@ -199,6 +205,37 @@ public class AdminMentorshipService {
                                 return Mono.empty();
                             });
                 });
+    }
+
+    private void sendReviewNotification(MentorProfile profile, Status status, String reason) {
+        if (profile.getMemberId() == null || status == null) return;
+        String title;
+        String message;
+        String link = "/mentorship/profile";
+        switch (status) {
+            case APPROVED -> {
+                title = "Hồ sơ cố vấn đã được duyệt";
+                message = "Bạn đã trở thành mentor. Hãy kiểm tra hồ sơ và quản lý khung giờ tư vấn của mình.";
+            }
+            case REJECTED -> {
+                title = "Hồ sơ cố vấn chưa được duyệt";
+                message = reason != null && !reason.isBlank()
+                        ? "Admin đã từ chối hồ sơ cố vấn của bạn: " + reason
+                        : "Admin đã từ chối hồ sơ cố vấn của bạn. Bạn có thể gửi lại khi đã sẵn sàng.";
+                link = "/mentorship/signup";
+            }
+            case NEED_UPDATE -> {
+                title = "Hồ sơ cố vấn cần cập nhật";
+                message = reason != null && !reason.isBlank()
+                        ? "Admin yêu cầu cập nhật hồ sơ cố vấn: " + reason
+                        : "Admin yêu cầu bạn cập nhật hồ sơ cố vấn trước khi duyệt.";
+                link = "/mentorship/signup";
+            }
+            default -> {
+                return;
+            }
+        }
+        notificationService.createNotificationAsync(profile.getMemberId(), title, message, link);
     }
 
     private String statusLabel(Status status) {

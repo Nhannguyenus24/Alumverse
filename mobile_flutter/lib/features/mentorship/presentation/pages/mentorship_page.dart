@@ -81,6 +81,8 @@ class _MentorshipPageState extends ConsumerState<MentorshipPage> {
             ),
             const SizedBox(height: 12),
             const _BecomeMentorBanner(),
+            const SizedBox(height: 12),
+            const _BecomeMenteeBanner(),
             const SizedBox(height: 16),
             const _StatsBanner(),
             const SizedBox(height: 20),
@@ -236,6 +238,65 @@ class _BecomeMentorBanner extends ConsumerWidget {
         onPressed: () => context.push(RouteNames.mentorshipSignup),
         icon: const Icon(Icons.school_outlined),
         label: Text('mentorship.become_mentor'.tr()),
+        style: OutlinedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+        ),
+      ),
+    );
+  }
+}
+
+class _BecomeMenteeBanner extends ConsumerWidget {
+  const _BecomeMenteeBanner();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final async = ref.watch(myMenteeProfileProvider);
+    return async.when(
+      loading: () => _cta(context),
+      error: (_, __) => _cta(context),
+      data: (profile) {
+        if (profile == null) return _cta(context);
+        return GestureDetector(
+          onTap: () => context.push(RouteNames.menteeSignup),
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.info.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.person_search_outlined,
+                  color: AppColors.info,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'mentorship.mentee_banner_registered'.tr(),
+                    style: const TextStyle(
+                      color: AppColors.info,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _cta(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: () => context.push(RouteNames.menteeSignup),
+        icon: const Icon(Icons.person_search_outlined),
+        label: Text('mentorship.become_mentee'.tr()),
         style: OutlinedButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 12),
         ),

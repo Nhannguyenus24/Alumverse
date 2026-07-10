@@ -15,6 +15,7 @@ import lombok.NoArgsConstructor;
 public class UserOrganizationMemberResponse {
     private Integer id;
     private Integer organizationId;
+    private String organizationName;
     private Integer userId;
     private List<String> startedYear;
     private List<Integer> graduatedYear;

@@ -31,6 +31,7 @@ import { useMyMenteeSessions } from '../../hooks/mentorship/useMyMenteeSessions'
 import { useMyMentorSessions } from '../../hooks/mentorship/useMyMentorSessions';
 import { useMyMentorProfile } from '../../hooks/mentorship/useMyMentorProfile';
 import { useMyMenteeProfile } from '../../hooks/mentorship/useMyMenteeProfile';
+import { useMyProfile } from '../../hooks/profile/useMyProfile';
 import { useCancelMenteeSession } from '../../hooks/mentorship/useCancelMenteeSession';
 import { useSubmitSessionFeedback } from '../../hooks/mentorship/useSubmitSessionFeedback';
 import { resolveMediaUrl } from '../../utils/imageUtils';
@@ -51,7 +52,6 @@ import {
   getMentorshipBookingStatusFilters,
 } from '../../constants/mentorshipNav';
 import { validateMeetingLink, meetingLinkPasswordWarning } from '../../utils/meetingLink';
-import { formatMentorHeadline } from '../../utils/profileRoleUtils';
 import { useTranslation } from 'react-i18next';
 
 const DEFAULT_COVER =
@@ -65,11 +65,12 @@ const MentorshipMyBookingsPage = () => {
   const navigate = useOrgNavigate();
   const access = useMentorshipAccessState();
 
-  const isMentorProfile = access.hasMentorProfile;
+  const isMentorProfile = access.isMentorApproved;
   const canUseMentorSessions = access.isMentorApproved;
 
   const mentorProfileQuery = useMyMentorProfile();
   const menteeProfileQuery = useMyMenteeProfile();
+  const baseProfileQuery = useMyProfile();
 
   const [statusKey, setStatusKey] = useState('all');
 
@@ -134,6 +135,7 @@ const MentorshipMyBookingsPage = () => {
 
   const isLoading =
     access.isLoading ||
+    baseProfileQuery.isLoading ||
     (isMentorProfile ? mentorProfileQuery.isLoading : menteeProfileQuery.isLoading) ||
     menteeSessionsQuery.isLoading ||
     (canUseMentorSessions && mentorSessionsQuery.isLoading);
@@ -381,13 +383,12 @@ const MentorshipMyBookingsPage = () => {
   };
 
   const profile = isMentorProfile ? mentorProfileQuery.data : menteeProfileQuery.data;
+  const baseProfile = baseProfileQuery.data;
   const user = {
-    name: profile?.fullName ?? t('my_account_fallback'),
-    role: isMentorProfile
-      ? formatMentorHeadline({ jobTitle: profile?.currentJobTitle, company: profile?.currentCompany, t })
-      : t('mentee'),
-    avatar: resolveMediaUrl(profile?.avatarUrl ?? ''),
-    cover: resolveMediaUrl(profile?.coverUrl) || DEFAULT_COVER,
+    name: baseProfile?.fullName ?? profile?.fullName ?? t('my_account_fallback'),
+    role: isMentorProfile ? 'Mentor' : 'Mentee',
+    avatar: resolveMediaUrl(baseProfile?.avatarUrl ?? profile?.avatarUrl ?? ''),
+    cover: resolveMediaUrl(baseProfile?.coverUrl ?? profile?.coverUrl) || DEFAULT_COVER,
   };
 
   const tabs = isMentorProfile ? getMentorProfileTabs(t) : getMenteeProfileTabs(t);

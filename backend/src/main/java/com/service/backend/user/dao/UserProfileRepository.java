@@ -70,6 +70,7 @@ public interface UserProfileRepository extends R2dbcRepository<User, Integer> {
             SELECT u.id AS user_id,
                    u.email,
                    om.student_id as student_id,
+                   o.name AS organization_name,
                    u.role,
                    u.status,
                    u.avatar_url,
@@ -93,6 +94,7 @@ public interface UserProfileRepository extends R2dbcRepository<User, Integer> {
                    CAST(om.department AS text) AS department
             FROM users u
             LEFT JOIN organization_members om ON om.user_id = u.id AND (:organizationId IS NULL OR om.organization_id = :organizationId)
+            LEFT JOIN organizations o ON o.id = om.organization_id
             WHERE u.id = :userId
             LIMIT 1
             """)

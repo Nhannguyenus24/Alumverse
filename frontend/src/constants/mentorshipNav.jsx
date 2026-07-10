@@ -1,4 +1,9 @@
 
+import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
+import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined';
+import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
+import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined';
+
 export const getMentorshipStats = (t) => [
   { value: '500+', label: t('mentorship:stats_mentors') },
   { value: '2,000+', label: t('mentorship:stats_sessions') },
@@ -8,19 +13,23 @@ export const getMentorshipStats = (t) => [
 export const MENTORSHIP_LANDING = '/mentorship';
 
 export const getMentorProfileTabs = (t) => [
-  { label: t('mentorship:profile'), path: '/mentorship/profile' },
-  { label: t('mentorship:dashboard'), path: '/mentorship/dashboard' },
-  { label: t('mentorship:calendar'), path: '/mentorship/calendar' },
-  { label: t('mentorship:my_bookings'), path: '/mentorship/my-bookings' },
+  { label: t('mentorship:profile'), path: '/mentorship/profile', icon: <PersonOutlineOutlinedIcon fontSize="small" /> },
+  { label: t('mentorship:dashboard'), path: '/mentorship/dashboard', icon: <DashboardOutlinedIcon fontSize="small" /> },
+  { label: t('mentorship:calendar'), path: '/mentorship/calendar', icon: <CalendarMonthOutlinedIcon fontSize="small" /> },
+  { label: t('mentorship:my_bookings'), path: '/mentorship/my-bookings', icon: <EventNoteOutlinedIcon fontSize="small" /> },
 ];
 
 export const getMenteeProfileTabs = (t) => [
-  { label: t('mentorship:profile'), path: '/mentorship/profile' },
-  { label: t('mentorship:my_bookings'), path: '/mentorship/my-bookings' },
+  { label: t('mentorship:profile'), path: '/mentorship/profile', icon: <PersonOutlineOutlinedIcon fontSize="small" /> },
+  { label: t('mentorship:my_bookings'), path: '/mentorship/my-bookings', icon: <EventNoteOutlinedIcon fontSize="small" /> },
+];
+
+export const getMentorshipProfileOnlyTabs = (t) => [
+  { label: t('mentorship:profile'), path: '/mentorship/profile', icon: <PersonOutlineOutlinedIcon fontSize="small" /> },
 ];
 
 export const getBaseProfileTabs = (t) => [
-  { label: t('mentorship:profile'), path: '/profile' },
+  { label: t('mentorship:profile'), path: '/profile', icon: <PersonOutlineOutlinedIcon fontSize="small" /> },
 ];
 
 export const getMentorSignupTabs = (t) => [

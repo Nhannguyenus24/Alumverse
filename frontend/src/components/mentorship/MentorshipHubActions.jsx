@@ -2,6 +2,8 @@ import { useTranslation } from 'react-i18next';
 import { Button, Stack } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import SchoolIcon from '@mui/icons-material/School';
+import EventNoteIcon from '@mui/icons-material/EventNote';
+import PersonIcon from '@mui/icons-material/Person';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useMentorshipAccessState } from '../../hooks/mentorship/useMentorshipAccessState';
 
@@ -75,8 +77,22 @@ const MentorshipHubActions = ({ tone = 'default' }) => {
     return null;
   }
 
-  // Fully eligible but hasn't joined mentorship yet → invite to join.
+  // Fully eligible but hasn't joined active mentorship yet.
   if (!access.hasJoinedMentorship) {
+    if (access.isMentorPending) {
+      return (
+        <Button
+          variant="outlined"
+          color={onPrimary ? undefined : 'warning'}
+          startIcon={<SchoolIcon />}
+          onClick={() => navigate('/mentorship/profile')}
+          sx={onPrimary ? outlinedOnPrimarySx : undefined}
+        >
+          {t('mentorship:mentor_pending_cta')}
+        </Button>
+      );
+    }
+
     return (
       <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
         <Button
@@ -94,7 +110,9 @@ const MentorshipHubActions = ({ tone = 'default' }) => {
           onClick={() => navigate('/mentorship/signup')}
           sx={onPrimary ? outlinedOnPrimarySx : undefined}
         >
-          {t('mentorship:become_advisor')}
+          {access.hasMentorProfile
+            ? t('mentorship:continue_mentor_signup')
+            : t('mentorship:become_advisor')}
         </Button>
       </Stack>
     );
@@ -103,9 +121,20 @@ const MentorshipHubActions = ({ tone = 'default' }) => {
   // Joined: quick access to personal profile + schedule.
   return (
     <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
+      {access.isMentorPending && (
+        <Button
+          variant="outlined"
+          color={onPrimary ? undefined : 'warning'}
+          onClick={() => navigate('/mentorship/profile')}
+          sx={outlinedOnPrimarySx}
+        >
+          {t('mentorship:mentor_pending_cta')}
+        </Button>
+      )}
       <Button
         variant="outlined"
         color={onPrimary ? undefined : 'primary'}
+        startIcon={<EventNoteIcon />}
         onClick={() => navigate('/mentorship/my-bookings')}
         sx={outlinedOnPrimarySx}
       >
@@ -113,6 +142,7 @@ const MentorshipHubActions = ({ tone = 'default' }) => {
       </Button>
       <Button
         variant="contained"
+        startIcon={<PersonIcon />}
         onClick={() => navigate('/mentorship/profile')}
       >
         {t('mentorship:personal_page')}

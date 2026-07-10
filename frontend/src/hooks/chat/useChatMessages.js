@@ -88,5 +88,26 @@ export function useChatMessages(groupId) {
     });
   }, []);
 
-  return { messages, isLoading, isLoadingMore, hasMore, loadMore, appendMessage };
+  // Re-fetches the newest messages and merges them in, deduped by id.
+  // Used after a WebSocket reconnect to pick up messages sent by others
+  // while this client was fully offline (a gap re-JOIN alone can't close,
+  // since there was no live connection to push to during that window).
+  const resyncMessages = useCallback(() => {
+    if (groupId == null) return;
+    const targetGroupId = groupId;
+    chatApi
+      .getMessages(targetGroupId, 0, PAGE_SIZE)
+      .then((items) => {
+        if (activeGroupId.current !== targetGroupId) return;
+        const fetched = [...items].reverse();
+        setMessages((prev) => {
+          const byId = new Map(prev.map((m) => [m.id, m]));
+          fetched.forEach((m) => byId.set(m.id, m));
+          return Array.from(byId.values()).sort((a, b) => a.id - b.id);
+        });
+      })
+      .catch(() => {});
+  }, [groupId]);
+
+  return { messages, isLoading, isLoadingMore, hasMore, loadMore, appendMessage, resyncMessages };
 }

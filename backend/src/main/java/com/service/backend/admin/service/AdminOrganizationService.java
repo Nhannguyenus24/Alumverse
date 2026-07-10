@@ -594,6 +594,9 @@ public class AdminOrganizationService {
      * returns the existing value unchanged if it is already an HTTP URL,
      * or falls back to {@code fallback} if the value is null/blank.
      * Emits empty if both value and fallback are null/blank.
+     * If the upload fails (e.g. too large, corrupt), falls back to {@code fallback} instead
+     * of persisting the raw Base64 string as a URL; propagates the error if there is no
+     * fallback to fall back to.
      */
     private Mono<String> resolveImageUrl(String value, String fallback) {
         if (value == null || value.isBlank()) {
@@ -604,7 +607,9 @@ public class AdminOrganizationService {
         }
         return imageService.uploadBase64IfPresent(value)
                 .defaultIfEmpty(value)
-                .onErrorReturn(value);
+                .onErrorResume(e -> (fallback != null && !fallback.isBlank())
+                        ? Mono.just(fallback)
+                        : Mono.error(e));
     }
 
     public Mono<FeedbackStatisticsDTO> getFeedbackStatistics() {
@@ -627,7 +632,11 @@ public class AdminOrganizationService {
                 .doOnError(e -> logger.error("Error fetching feedback statistics,  error: {}", e.getMessage()));
     }
 
-    /** Uploads each member's image field through ImageService (if it is Base64). */
+    /**
+     * Uploads each member's image field through ImageService (if it is Base64).
+     * No previous URL is tracked per member here, so a failed upload (e.g. too large,
+     * corrupt) propagates the error rather than persisting the raw Base64 string as a URL.
+     */
     private Mono<List<OrgIntroductionMemberResponse>> uploadMemberImages(List<OrgIntroductionMemberResponse> members) {
         if (members == null || members.isEmpty()) return Mono.just(List.of());
         return Flux.fromIterable(members)
@@ -638,8 +647,7 @@ public class AdminOrganizationService {
                     }
                     return imageService.uploadBase64IfPresent(img)
                             .map(url -> { member.setImage(url); return member; })
-                            .defaultIfEmpty(member)
-                            .onErrorReturn(member);
+                            .defaultIfEmpty(member);
                 })
                 .collectList();
     }

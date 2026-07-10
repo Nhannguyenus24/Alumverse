@@ -5,26 +5,25 @@ import {
   Alert,
   Box,
   Button,
-  Chip,
   CircularProgress,
-  Grid,
   IconButton,
-  MenuItem,
   Stack,
   TextField,
   Typography,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
-import CheckIcon from '@mui/icons-material/Check';
-import CloseIcon from '@mui/icons-material/Close';
 import PersonIcon from '@mui/icons-material/Person';
 import EmailIcon from '@mui/icons-material/Email'
 import PhoneIcon from '@mui/icons-material/Phone';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import WorkIcon from '@mui/icons-material/Work';
 import LinkIcon from '@mui/icons-material/Link';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import SchoolIcon from '@mui/icons-material/School';
+import ArticleIcon from '@mui/icons-material/Article';
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+import PsychologyIcon from '@mui/icons-material/Psychology';
 import Avatar from '@mui/material/Avatar';
 
 import Page from '../../components/Page';
@@ -41,13 +40,7 @@ import useAvatarCrop from '../../hooks/profile/useAvatarCrop';
 import AvatarUploadDialog from '../../components/profile/AvatarUploadDialog';
 
 import { useMyMentorProfile } from '../../hooks/mentorship/useMyMentorProfile';
-import { useMyExpertise } from '../../hooks/mentorship/useMyExpertise';
 import { useUpdateMentorProfile } from '../../hooks/mentorship/useUpdateMentorProfile';
-import {
-  useAddExpertise,
-  useUpdateExpertise,
-  useDeleteExpertise,
-} from '../../hooks/mentorship/useExpertiseMutations';
 import { useMentorshipAccessState } from '../../hooks/mentorship/useMentorshipAccessState';
 
 import {
@@ -58,12 +51,18 @@ import {
   useUploadImage,
   validateImageFile,
 } from '../../utils/imageUtils';
-import { userSettingsApi } from '../../utils/api';
+import { extractMentorshipSkills, userSettingsApi } from '../../utils/api';
 import { validateVietnamPhone } from '../../utils/regexUtils';
-import { getBaseProfileTabs, getMentorProfileTabs, getMenteeProfileTabs } from '../../constants/mentorshipNav';
+import TagPriorityList from '../../components/mentorship/signup/TagPriorityList';
+import {
+  getBaseProfileTabs,
+  getMenteeProfileTabs,
+  getMentorProfileTabs,
+  getMentorshipProfileOnlyTabs,
+} from '../../constants/mentorshipNav';
 import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
-import { formatMentorHeadline, resolveProfileRoleLabel } from '../../utils/profileRoleUtils';
+import { resolveProfileRoleLabel } from '../../utils/profileRoleUtils';
 import { buildAcademicRecords } from '../../utils/academicUtils';
 
 const DEFAULT_COVER =
@@ -72,13 +71,6 @@ const MENTORSHIP_COVER =
   'https://info.cognician.com/hubfs/220201%20mentorship-%20desktop.png';
 
 const STATUS_APPROVED = 'APPROVED';
-
-const getExpertiseCategories = (t) => [
-  { value: 'CAREER', label: t('profile:expertise_cat_career') },
-  { value: 'ACADEMIC', label: t('profile:expertise_cat_academic') },
-  { value: 'SOFT_SKILLS', label: t('profile:expertise_cat_soft_skills') },
-  { value: 'GENERAL', label: t('profile:expertise_cat_general') },
-];
 
 const SectionTitle = ({ children, hint }) => (
   <Box>
@@ -93,6 +85,66 @@ const SectionTitle = ({ children, hint }) => (
   </Box>
 );
 
+const EditableTimelineList = ({
+  title,
+  icon: Icon,
+  items,
+  emptyMessage,
+  addLabel,
+  onAdd,
+  onUpdate,
+  onRemove,
+  fields,
+}) => (
+  <Box>
+    <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1.5}>
+      <Typography fontWeight={800} color="primary.main" display="flex" alignItems="center" gap={1}>
+        {Icon ? <Icon fontSize="small" /> : null}
+        {title}
+      </Typography>
+      <Button size="small" startIcon={<AddIcon />} onClick={onAdd}>
+        {addLabel}
+      </Button>
+    </Stack>
+    {items.length === 0 ? (
+      <Typography variant="body2" color="text.secondary">
+        {emptyMessage}
+      </Typography>
+    ) : (
+      <Stack spacing={1.5}>
+        {items.map((item, idx) => (
+          <Box key={idx} sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+            <Stack spacing={1.2}>
+              {fields.map((row, rowIndex) => (
+                <Stack key={rowIndex} direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+                  {row.map((field) => (
+                    <TextField
+                      key={field.key}
+                      label={field.label}
+                      value={item[field.key] ?? ''}
+                      onChange={(e) => onUpdate(idx, field.key, e.target.value)}
+                      size="small"
+                      fullWidth
+                      multiline={field.multiline}
+                      minRows={field.multiline ? 2 : 1}
+                      placeholder={field.placeholder}
+                    />
+                  ))}
+                </Stack>
+              ))}
+              <Stack direction="row" justifyContent="flex-end">
+                <IconButton color="error" onClick={() => onRemove(idx)} aria-label="remove item">
+                  <DeleteOutlineIcon />
+                </IconButton>
+              </Stack>
+            </Stack>
+          </Box>
+        ))}
+      </Stack>
+    )}
+  </Box>
+);
+
 const parseExtended = (raw) => {
   if (!raw) return {};
   try {
@@ -102,8 +154,11 @@ const parseExtended = (raw) => {
   }
 };
 
-const emptyExperience = () => ({ company: '', title: '', from: '', to: '', description: '' });
-const emptyEducation = () => ({ school: '', degree: '', from: '', to: '' });
+const emptyExperience = () => ({ company: '', title: '', period: '', description: '' });
+const emptyEducation = () => ({ school: '', degree: '', period: '' });
+const emptyProject = () => ({ name: '', description: '', link: '' });
+const emptyAward = () => ({ name: '', year: '', description: '' });
+const emptySkill = () => ({ name: '', issuer: '' });
 
 const getCoverUploadErrorMessage = (error, t) => {
   const status = error?.response?.status;
@@ -206,14 +261,10 @@ const UnifiedProfileEditPage = () => {
   
   const mentorQuery = useMyMentorProfile();
   const access = useMentorshipAccessState();
-  const expertiseQuery = useMyExpertise({ enabled: access.hasMentorProfile });
 
   const { updateProfile: updateBaseProfile, isPending: savingBase, errorMessage: baseError } = useUpdateProfile();
   const { updateProfile: updateMentorProfile, isPending: savingMentor, errorMessage: mentorError } = useUpdateMentorProfile();
 
-  const addExpertise = useAddExpertise();
-  const updateExpertise = useUpdateExpertise();
-  const deleteExpertise = useDeleteExpertise();
   const { uploadBase64, isPending: uploadingImage } = useUploadImage();
 
   const [coverPreview, setCoverPreview] = useState(DEFAULT_COVER);
@@ -223,20 +274,20 @@ const UnifiedProfileEditPage = () => {
   const [currentCompany, setCurrentCompany] = useState('');
   const [bio, setBio] = useState('');
   const [defaultMeetingLink, setDefaultMeetingLink] = useState('');
+  const [experienceSummary, setExperienceSummary] = useState('');
+  const [expertiseTags, setExpertiseTags] = useState([]);
+  const [manualTag, setManualTag] = useState('');
+  const [extractingTags, setExtractingTags] = useState(false);
+  const [tagExtractError, setTagExtractError] = useState('');
   const [experiences, setExperiences] = useState([]);
   const [educations, setEducations] = useState([]);
+  const [projects, setProjects] = useState([]);
+  const [awards, setAwards] = useState([]);
+  const [skills, setSkills] = useState([]);
   const [success, setSuccess] = useState(false);
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [linksText, setLinksText] = useState('');
-
-  const [editingExpertiseId, setEditingExpertiseId] = useState(null);
-  const [draftExpertise, setDraftExpertise] = useState({
-    topic: '',
-    category: 'GENERAL',
-    description: '',
-    tag: '',
-  });
 
   const avatarCrop = useAvatarCrop();
   const organizationId = useOrganizationStore((state) => state.organization?.id ?? null);
@@ -266,8 +317,13 @@ const UnifiedProfileEditPage = () => {
       
       const extStr = m?.extendedProfile ?? p?.extendedProfile;
       const ext = parseExtended(extStr);
+      setExperienceSummary(ext.experienceSummary ?? '');
+      setExpertiseTags(Array.isArray(ext.expertiseTags) ? ext.expertiseTags : (Array.isArray(m?.expertiseTags) ? m.expertiseTags : []));
       setExperiences(Array.isArray(ext.experiences) ? ext.experiences : []);
       setEducations(Array.isArray(ext.educations) ? ext.educations : []);
+      setProjects(Array.isArray(ext.projects) ? ext.projects : []);
+      setAwards(Array.isArray(ext.awards) ? ext.awards : []);
+      setSkills(Array.isArray(ext.skills) ? ext.skills : []);
     }
   }, [isMentorshipEdit, profileQuery.data, mentorQuery.data]);
 
@@ -315,7 +371,16 @@ const UnifiedProfileEditPage = () => {
       }
       
       const previousExt = parseExtended(mentorQuery.data?.extendedProfile ?? profileQuery.data?.extendedProfile);
-      const nextExt = { ...previousExt, experiences, educations };
+      const nextExt = {
+        ...previousExt,
+        experienceSummary: experienceSummary.trim(),
+        expertiseTags,
+        experiences,
+        educations,
+        projects,
+        awards,
+        skills,
+      };
 
       if (coverFile) {
         try {
@@ -349,18 +414,19 @@ const UnifiedProfileEditPage = () => {
           extendedProfile: isMentorshipEdit
             ? JSON.stringify(nextExt)
             : mentorQuery.data?.extendedProfile,
+          expertiseTags,
         });
       }
       
-      // Also update base profile (even if it ignores some fields, we send what we can)
       const linksArray = linksText.split('\n').map(l => l.trim()).filter(Boolean);
       const existingLinks = parseLinks(profileQuery.data?.links);
-      const hasBaseProfileChanges =
+      const hasBaseProfileChanges = !isMentorshipEdit && (
         bio.trim() !== (profileQuery.data?.bio ?? '').trim() ||
         phone.trim() !== (profileQuery.data?.phone ?? '').trim() ||
         currentJobTitle.trim() !== (profileQuery.data?.currentJobTitle ?? '').trim() ||
         currentCompany.trim() !== (profileQuery.data?.currentCompany ?? '').trim() ||
-        !areArraysEqual(linksArray, existingLinks);
+        !areArraysEqual(linksArray, existingLinks)
+      );
 
       if (hasBaseProfileChanges) {
         await updateBaseProfile({
@@ -405,46 +471,61 @@ const UnifiedProfileEditPage = () => {
     setEducations((list) => list.map((row, i) => (i === idx ? { ...row, [field]: value } : row))), []);
   const removeEducationRow = useCallback((idx) => setEducations((list) => list.filter((_, i) => i !== idx)), []);
 
-  const startEditExpertise = (item) => {
-    setEditingExpertiseId(item.id);
-    setDraftExpertise({
-      topic: item.topic ?? '',
-      category: item.category ?? 'GENERAL',
-      description: item.description ?? '',
-      tag: item.tag ?? '',
-    });
-  };
+  const addProjectRow = useCallback(() => setProjects((list) => [...list, emptyProject()]), []);
+  const updateProjectRow = useCallback((idx, field, value) =>
+    setProjects((list) => list.map((row, i) => (i === idx ? { ...row, [field]: value } : row))), []);
+  const removeProjectRow = useCallback((idx) => setProjects((list) => list.filter((_, i) => i !== idx)), []);
 
-  const cancelEditExpertise = () => {
-    setEditingExpertiseId(null);
-    setDraftExpertise({ topic: '', category: 'GENERAL', description: '', tag: '' });
-  };
+  const addAwardRow = useCallback(() => setAwards((list) => [...list, emptyAward()]), []);
+  const updateAwardRow = useCallback((idx, field, value) =>
+    setAwards((list) => list.map((row, i) => (i === idx ? { ...row, [field]: value } : row))), []);
+  const removeAwardRow = useCallback((idx) => setAwards((list) => list.filter((_, i) => i !== idx)), []);
 
-  const saveExpertiseEdit = async () => {
-    if (!editingExpertiseId || !draftExpertise.topic.trim()) return;
-    await updateExpertise.submit({
-      id: editingExpertiseId,
-      payload: {
-        topic: draftExpertise.topic.trim(),
-        category: draftExpertise.category,
-        description: draftExpertise.description.trim() || undefined,
-        tag: draftExpertise.tag.trim() || undefined,
-      },
-    });
-    cancelEditExpertise();
-  };
+  const addSkillRow = useCallback(() => setSkills((list) => [...list, emptySkill()]), []);
+  const updateSkillRow = useCallback((idx, field, value) =>
+    setSkills((list) => list.map((row, i) => (i === idx ? { ...row, [field]: value } : row))), []);
+  const removeSkillRow = useCallback((idx) => setSkills((list) => list.filter((_, i) => i !== idx)), []);
 
-  const addExpertiseNew = async () => {
-    if (!draftExpertise.topic.trim()) return;
-    await addExpertise.submit({
-      topic: draftExpertise.topic.trim(),
-      category: draftExpertise.category,
-      description: draftExpertise.description.trim() || undefined,
-      tag: draftExpertise.tag.trim() || undefined,
-      yearsExperience: 0,
+  const addTags = useCallback((incoming) => {
+    setExpertiseTags((current) => {
+      const seen = new Set(current.map((tag) => tag.toLowerCase()));
+      const next = [...current];
+      incoming.forEach((raw) => {
+        const value = String(raw ?? '').trim().replace(/^#+/, '').replace(/\s+/g, '_');
+        if (value && !seen.has(value.toLowerCase())) {
+          seen.add(value.toLowerCase());
+          next.push(value);
+        }
+      });
+      return next;
     });
-    setDraftExpertise({ topic: '', category: 'GENERAL', description: '', tag: '' });
-  };
+  }, []);
+
+  const handleExtractTags = useCallback(async () => {
+    const text = experienceSummary.trim();
+    if (!text) return;
+    setExtractingTags(true);
+    setTagExtractError('');
+    try {
+      const res = await extractMentorshipSkills(text);
+      const tags = res?.data?.data?.tags ?? [];
+      if (tags.length === 0) {
+        setTagExtractError(t('mentorship:signup_tab_extract_empty'));
+      } else {
+        addTags(tags);
+      }
+    } catch (err) {
+      setTagExtractError(err?.response?.data?.message ?? t('mentorship:signup_tab_extract_error'));
+    } finally {
+      setExtractingTags(false);
+    }
+  }, [addTags, experienceSummary, t]);
+
+  const handleManualTagAdd = useCallback(() => {
+    if (!manualTag.trim()) return;
+    addTags([manualTag]);
+    setManualTag('');
+  }, [addTags, manualTag]);
 
   if (profileQuery.isLoading || orgMemberQuery.isLoading) {
     return (
@@ -459,17 +540,14 @@ const UnifiedProfileEditPage = () => {
   const profile = profileQuery.data;
   
   const mentor = mentorQuery.data;
-  const expertise = expertiseQuery.data ?? [];
 
   const saving = savingBase || savingMentor;
   const errorMessage = mentorError || baseError;
 
-  const EXPERTISE_CATEGORIES = getExpertiseCategories(t);
-
   const user = {
     name: profile?.fullName ?? t('profile:my_account'),
     role: isMentorshipEdit
-      ? formatMentorHeadline({ jobTitle: currentJobTitle, company: currentCompany, t })
+      ? (access.hasMentorProfile ? 'Mentor' : access.hasMenteeProfile ? 'Mentee' : resolveProfileRoleLabel({ profile, academicProfile: orgMemberQuery.data, t }))
       : resolveProfileRoleLabel({ profile, academicProfile: orgMemberQuery.data, t }),
     avatar: resolveMediaUrl(profile?.avatarUrl ?? ''),
     cover: coverPreview,
@@ -517,7 +595,13 @@ const UnifiedProfileEditPage = () => {
   );
 
   const tabs = isMentorshipEdit
-    ? (access.hasMentorProfile ? getMentorProfileTabs(t) : (access.hasMenteeProfile ? getMenteeProfileTabs(t) : topTabs))
+    ? (access.isMentorApproved
+      ? getMentorProfileTabs(t)
+      : access.hasMenteeProfile
+        ? getMenteeProfileTabs(t)
+        : access.hasMentorProfile
+          ? getMentorshipProfileOnlyTabs(t)
+          : topTabs)
     : topTabs;
 
   const renderPersonalSection = () => (
@@ -639,280 +723,149 @@ const UnifiedProfileEditPage = () => {
           </Alert>
         )}
 
+        <SectionTitle hint={t('profile:section_expertise_hint')}>
+          {t('profile:shareable_content_section', { defaultValue: 'Nội dung có thể chia sẻ' })}
+        </SectionTitle>
+        <Stack spacing={2}>
+          <TextField
+            value={experienceSummary}
+            onChange={(e) => setExperienceSummary(e.target.value)}
+            fullWidth
+            multiline
+            minRows={4}
+            placeholder={t('mentorship:signup_tab_content_placeholder')}
+          />
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ xs: 'stretch', sm: 'center' }} justifyContent="space-between">
+            <Typography variant="body2" color="text.secondary">
+              {t('mentorship:signup_tab_tags_hint')}
+            </Typography>
+            <Button
+              variant="contained"
+              startIcon={extractingTags ? <CircularProgress size={16} color="inherit" /> : <AutoAwesomeIcon />}
+              onClick={handleExtractTags}
+              disabled={extractingTags || !experienceSummary.trim()}
+            >
+              {extractingTags ? t('mentorship:signup_tab_extract_analyzing') : t('mentorship:signup_tab_extract_btn')}
+            </Button>
+          </Stack>
+          {tagExtractError && <Alert severity="info">{tagExtractError}</Alert>}
+          {expertiseTags.length > 0 ? (
+            <TagPriorityList
+              tags={expertiseTags}
+              onReorder={setExpertiseTags}
+              onRemove={(tag) => setExpertiseTags((list) => list.filter((item) => item !== tag))}
+            />
+          ) : (
+            <Typography variant="body2" color="text.disabled">
+              {t('mentorship:signup_tab_no_tags')}
+            </Typography>
+          )}
+          <Stack direction="row" spacing={1}>
+            <TextField
+              size="small"
+              placeholder={t('mentorship:signup_tab_manual_tag_placeholder')}
+              value={manualTag}
+              onChange={(e) => setManualTag(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleManualTagAdd();
+                }
+              }}
+            />
+            <Button onClick={handleManualTagAdd} startIcon={<AddIcon />} disabled={!manualTag.trim()}>
+              {t('mentorship:signup_tab_add_btn')}
+            </Button>
+          </Stack>
+        </Stack>
+
         <SectionTitle hint={t('profile:section_exp_edu_hint')}>
           {t('profile:section_exp_edu')}
         </SectionTitle>
-        <Stack spacing={2}>
-          <Box>
-            <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
-              <Typography fontWeight={700}>{t('profile:exp_section')}</Typography>
-              <Button size="small" startIcon={<AddIcon />} onClick={addExperienceRow}>
-                {t('profile:add_btn')}
-              </Button>
-            </Stack>
-            {experiences.length === 0 ? (
-              <Typography variant="body2" color="text.secondary">
-                {t('profile:no_experiences')}
-              </Typography>
-            ) : (
-              <Stack spacing={1.5}>
-                {experiences.map((exp, idx) => (
-                  <Box
-                    key={idx}
-                    sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}
-                  >
-                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} mb={1}>
-                      <TextField
-                        label={t('profile:label_title')}
-                        value={exp.title ?? ''}
-                        onChange={(e) => updateExperienceRow(idx, 'title', e.target.value)}
-                        size="small"
-                        fullWidth
-                      />
-                      <TextField
-                        label={t('profile:label_company')}
-                        value={exp.company ?? ''}
-                        onChange={(e) => updateExperienceRow(idx, 'company', e.target.value)}
-                        size="small"
-                        fullWidth
-                      />
-                    </Stack>
-                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} mb={1}>
-                      <TextField
-                        label={t('profile:label_from')}
-                        value={exp.from ?? ''}
-                        onChange={(e) => updateExperienceRow(idx, 'from', e.target.value)}
-                        size="small"
-                        fullWidth
-                        placeholder="2022"
-                      />
-                      <TextField
-                        label={t('profile:label_to')}
-                        value={exp.to ?? ''}
-                        onChange={(e) => updateExperienceRow(idx, 'to', e.target.value)}
-                        size="small"
-                        fullWidth
-                        placeholder={t('profile:placeholder_current')}
-                      />
-                      <IconButton color="error" onClick={() => removeExperienceRow(idx)} aria-label="remove experience">
-                        <DeleteOutlineIcon />
-                      </IconButton>
-                    </Stack>
-                    <TextField
-                      label={t('profile:label_description')}
-                      value={exp.description ?? ''}
-                      onChange={(e) => updateExperienceRow(idx, 'description', e.target.value)}
-                      size="small"
-                      fullWidth
-                      multiline
-                      minRows={2}
-                    />
-                  </Box>
-                ))}
-              </Stack>
-            )}
-          </Box>
-
-          <Box>
-            <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
-              <Typography fontWeight={700}>{t('profile:edu_section')}</Typography>
-              <Button size="small" startIcon={<AddIcon />} onClick={addEducationRow}>
-                {t('profile:add_btn')}
-              </Button>
-            </Stack>
-            {educations.length === 0 ? (
-              <Typography variant="body2" color="text.secondary">
-                {t('profile:no_educations')}
-              </Typography>
-            ) : (
-              <Stack spacing={1.5}>
-                {educations.map((edu, idx) => (
-                  <Box
-                    key={idx}
-                    sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}
-                  >
-                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} mb={1}>
-                      <TextField
-                        label={t('profile:label_school')}
-                        value={edu.school ?? ''}
-                        onChange={(e) => updateEducationRow(idx, 'school', e.target.value)}
-                        size="small"
-                        fullWidth
-                      />
-                      <TextField
-                        label={t('profile:label_degree')}
-                        value={edu.degree ?? ''}
-                        onChange={(e) => updateEducationRow(idx, 'degree', e.target.value)}
-                        size="small"
-                        fullWidth
-                      />
-                    </Stack>
-                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems="center">
-                      <TextField
-                        label={t('profile:label_from')}
-                        value={edu.from ?? ''}
-                        onChange={(e) => updateEducationRow(idx, 'from', e.target.value)}
-                        size="small"
-                        fullWidth
-                        placeholder="2018"
-                      />
-                      <TextField
-                        label={t('profile:label_to')}
-                        value={edu.to ?? ''}
-                        onChange={(e) => updateEducationRow(idx, 'to', e.target.value)}
-                        size="small"
-                        fullWidth
-                        placeholder="2022"
-                      />
-                      <IconButton color="error" onClick={() => removeEducationRow(idx)} aria-label="remove education">
-                        <DeleteOutlineIcon />
-                      </IconButton>
-                    </Stack>
-                  </Box>
-                ))}
-              </Stack>
-            )}
-          </Box>
-        </Stack>
-
-        <SectionTitle hint={t('profile:section_expertise_hint')}>
-          {t('profile:section_skills_expertise', { defaultValue: 'Kỹ năng / Nội dung chia sẻ' })}
-        </SectionTitle>
-        {(addExpertise.errorMessage || updateExpertise.errorMessage || deleteExpertise.errorMessage) && (
-          <Alert severity="error">
-            {addExpertise.errorMessage || updateExpertise.errorMessage || deleteExpertise.errorMessage}
-          </Alert>
-        )}
-        <Stack spacing={1.5}>
-          {expertise.map((item) => {
-            const isEditing = editingExpertiseId === item.id;
-            if (isEditing) {
-              return (
-                <Box key={item.id} sx={{ p: 2, border: '1px solid', borderColor: 'primary.main', borderRadius: 1 }}>
-                  <Stack spacing={1.2}>
-                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-                      <TextField
-                        label={t('profile:expertise_topic')}
-                        value={draftExpertise.topic}
-                        onChange={(e) => setDraftExpertise((d) => ({ ...d, topic: e.target.value }))}
-                        size="small"
-                        fullWidth
-                      />
-                      <TextField
-                        label={t('profile:expertise_category')}
-                        value={draftExpertise.category}
-                        onChange={(e) => setDraftExpertise((d) => ({ ...d, category: e.target.value }))}
-                        select
-                        size="small"
-                        fullWidth
-                      >
-                        {EXPERTISE_CATEGORIES.map((c) => (
-                          <MenuItem key={c.value} value={c.value}>{c.label}</MenuItem>
-                        ))}
-                      </TextField>
-                    </Stack>
-                    <TextField
-                      label={t('profile:label_description')}
-                      value={draftExpertise.description}
-                      onChange={(e) => setDraftExpertise((d) => ({ ...d, description: e.target.value }))}
-                      size="small"
-                      fullWidth
-                      multiline
-                      minRows={2}
-                    />
-                    <TextField
-                      label={t('profile:expertise_tag')}
-                      value={draftExpertise.tag}
-                      onChange={(e) => setDraftExpertise((d) => ({ ...d, tag: e.target.value }))}
-                      size="small"
-                      fullWidth
-                    />
-                    <Stack direction="row" spacing={1} justifyContent="flex-end">
-                      <Button size="small" startIcon={<CloseIcon />} onClick={cancelEditExpertise}>
-                        {t('profile:cancel_btn')}
-                      </Button>
-                      <Button size="small" variant="contained" startIcon={<CheckIcon />} disabled={updateExpertise.isPending || !draftExpertise.topic.trim()} onClick={saveExpertiseEdit}>
-                        {t('profile:save_expertise_btn')}
-                      </Button>
-                    </Stack>
-                  </Stack>
-                </Box>
-              );
-            }
-            return (
-              <Box key={item.id} sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
-                <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Stack direction="row" alignItems="center" spacing={1} mb={0.5}>
-                      <Typography fontWeight={700}>{item.topic}</Typography>
-                      <Chip
-                        label={EXPERTISE_CATEGORIES.find((c) => c.value === item.category)?.label ?? item.category ?? t('profile:expertise_cat_general')}
-                        size="small"
-                        color="primary"
-                        variant="outlined"
-                      />
-                    </Stack>
-                    {item.description && (
-                      <Typography variant="body2" color="text.secondary">{item.description}</Typography>
-                    )}
-                  </Box>
-                  <Stack direction="row" spacing={0.5}>
-                    <IconButton size="small" onClick={() => startEditExpertise(item)} aria-label="edit expertise">
-                      <EditOutlinedIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton size="small" color="error" disabled={deleteExpertise.isPending} onClick={() => deleteExpertise.submit(item.id)} aria-label="delete expertise">
-                      <DeleteOutlineIcon fontSize="small" />
-                    </IconButton>
-                  </Stack>
-                </Stack>
-              </Box>
-            );
-          })}
-
-          {editingExpertiseId === null && (
-            <Box sx={{ p: 2, border: '1px dashed', borderColor: 'divider', borderRadius: 1, bgcolor: 'background.default' }}>
-              <Typography fontWeight={700} mb={1}>
-                {t('profile:add_expertise_heading')}
-              </Typography>
-              <Stack spacing={1.2}>
-                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-                  <TextField
-                    label={t('profile:expertise_topic')}
-                    value={draftExpertise.topic}
-                    onChange={(e) => setDraftExpertise((d) => ({ ...d, topic: e.target.value }))}
-                    size="small"
-                    fullWidth
-                  />
-                  <TextField
-                    label={t('profile:expertise_category')}
-                    value={draftExpertise.category}
-                    onChange={(e) => setDraftExpertise((d) => ({ ...d, category: e.target.value }))}
-                    select
-                    size="small"
-                    fullWidth
-                  >
-                    {EXPERTISE_CATEGORIES.map((c) => (
-                      <MenuItem key={c.value} value={c.value}>{c.label}</MenuItem>
-                    ))}
-                  </TextField>
-                </Stack>
-                <TextField
-                  label={t('profile:label_description')}
-                  value={draftExpertise.description}
-                  onChange={(e) => setDraftExpertise((d) => ({ ...d, description: e.target.value }))}
-                  size="small"
-                  fullWidth
-                  multiline
-                  minRows={2}
-                />
-                <Stack direction="row" spacing={1} justifyContent="flex-end">
-                  <Button size="small" variant="contained" startIcon={<AddIcon />} disabled={addExpertise.isPending || !draftExpertise.topic.trim()} onClick={addExpertiseNew}>
-                    {t('profile:add_btn')}
-                  </Button>
-                </Stack>
-              </Stack>
-            </Box>
-          )}
+        <Stack spacing={3}>
+          <EditableTimelineList
+            title={t('profile:edu_section')}
+            icon={SchoolIcon}
+            items={educations}
+            emptyMessage={t('profile:no_educations')}
+            addLabel={t('profile:add_btn')}
+            onAdd={addEducationRow}
+            onUpdate={updateEducationRow}
+            onRemove={removeEducationRow}
+            fields={[
+              [
+                { key: 'school', label: t('profile:label_school') },
+                { key: 'degree', label: t('profile:label_degree') },
+              ],
+              [{ key: 'period', label: t('profile:label_period', { defaultValue: 'Thời gian' }), placeholder: '2022 - 2026' }],
+            ]}
+          />
+          <EditableTimelineList
+            title={t('profile:exp_section')}
+            icon={WorkIcon}
+            items={experiences}
+            emptyMessage={t('profile:no_experiences')}
+            addLabel={t('profile:add_btn')}
+            onAdd={addExperienceRow}
+            onUpdate={updateExperienceRow}
+            onRemove={removeExperienceRow}
+            fields={[
+              [
+                { key: 'title', label: t('profile:label_title') },
+                { key: 'company', label: t('profile:label_company') },
+              ],
+              [{ key: 'period', label: t('profile:label_period', { defaultValue: 'Thời gian' }), placeholder: '2024 - Nay' }],
+              [{ key: 'description', label: t('profile:label_description'), multiline: true }],
+            ]}
+          />
+          <EditableTimelineList
+            title={t('profile:projects_section', { defaultValue: 'Dự án' })}
+            icon={ArticleIcon}
+            items={projects}
+            emptyMessage={t('profile:no_projects', { defaultValue: 'Chưa có dự án.' })}
+            addLabel={t('profile:add_btn')}
+            onAdd={addProjectRow}
+            onUpdate={updateProjectRow}
+            onRemove={removeProjectRow}
+            fields={[
+              [{ key: 'name', label: t('profile:project_name', { defaultValue: 'Tên dự án' }) }],
+              [{ key: 'description', label: t('profile:label_description'), multiline: true }],
+              [{ key: 'link', label: t('profile:project_link', { defaultValue: 'Liên kết' }) }],
+            ]}
+          />
+          <EditableTimelineList
+            title={t('profile:awards_section', { defaultValue: 'Thành tựu' })}
+            icon={EmojiEventsIcon}
+            items={awards}
+            emptyMessage={t('profile:no_awards', { defaultValue: 'Chưa có thành tựu.' })}
+            addLabel={t('profile:add_btn')}
+            onAdd={addAwardRow}
+            onUpdate={updateAwardRow}
+            onRemove={removeAwardRow}
+            fields={[
+              [
+                { key: 'name', label: t('profile:award_name', { defaultValue: 'Tên thành tựu' }) },
+                { key: 'year', label: t('profile:award_year', { defaultValue: 'Năm' }) },
+              ],
+              [{ key: 'description', label: t('profile:label_description'), multiline: true }],
+            ]}
+          />
+          <EditableTimelineList
+            title={t('profile:skills_section')}
+            icon={PsychologyIcon}
+            items={skills}
+            emptyMessage={t('profile:no_skills', { defaultValue: 'Chưa có kỹ năng/chứng chỉ.' })}
+            addLabel={t('profile:add_btn')}
+            onAdd={addSkillRow}
+            onUpdate={updateSkillRow}
+            onRemove={removeSkillRow}
+            fields={[
+              [
+                { key: 'name', label: t('profile:skill_name', { defaultValue: 'Tên kỹ năng/chứng chỉ' }) },
+                { key: 'issuer', label: t('profile:skill_issuer', { defaultValue: 'Đơn vị cấp' }) },
+              ],
+            ]}
+          />
         </Stack>
 
         <SectionTitle hint={t('profile:section_private_hint')}>
@@ -981,15 +934,7 @@ const UnifiedProfileEditPage = () => {
           )}
 
           {isMentorshipEdit ? (
-            <>
-              {renderMentorshipSection()}
-              <Box sx={{ pt: 4, borderTop: '1px solid', borderColor: 'divider' }}>
-                <Typography variant="h3" fontWeight={800} color="primary.main" mb={4}>
-                  {t('profile:edit_general_heading')}
-                </Typography>
-                {renderPersonalSection()}
-              </Box>
-            </>
+            renderMentorshipSection()
           ) : (
             <>
               {renderPersonalSection()}
