@@ -110,7 +110,43 @@ class _MentorBookingPageState extends ConsumerState<MentorBookingPage> {
   @override
   Widget build(BuildContext context) {
     final slotsAsync = ref.watch(mentorAvailabilityProvider(widget.memberId));
+    final myMentorAsync = ref.watch(myMentorProfileProvider);
+    final myMenteeAsync = ref.watch(myMenteeProfileProvider);
+    final myMentor = myMentorAsync.valueOrNull;
+    final isMentorPending = (myMentor?.status ?? '').toUpperCase() == 'PENDING';
+    final isOwnMentorProfile = myMentor?.memberId == widget.memberId;
+    final canBook =
+        !isMentorPending &&
+        !isOwnMentorProfile &&
+        ((myMentor?.status ?? '').toUpperCase() == 'APPROVED' ||
+            myMenteeAsync.valueOrNull != null);
+    final isAccessLoading = myMentorAsync.isLoading || myMenteeAsync.isLoading;
     final sessionTypes = _sessionTypes(context);
+
+    if (isAccessLoading) {
+      return Scaffold(
+        appBar: AppBar(title: Text('mentorship.book_appointment'.tr())),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (!canBook) {
+      return Scaffold(
+        appBar: AppBar(title: Text('mentorship.book_appointment'.tr())),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text(
+              isOwnMentorProfile
+                  ? 'mentorship.booking_self_blocked'.tr()
+                  : 'mentorship.booking_requires_profile'.tr(),
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppColors.textSecondary),
+            ),
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(title: Text('mentorship.book_appointment'.tr())),

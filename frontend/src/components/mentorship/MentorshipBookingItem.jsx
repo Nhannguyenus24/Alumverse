@@ -16,7 +16,7 @@ import VideocamOutlinedIcon from '@mui/icons-material/VideocamOutlined';
 import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
 import dayjs from 'dayjs';
 
-const JOIN_EARLY_MINUTES = 15;
+// const JOIN_EARLY_MINUTES = 15;
 
 const STATUS_COLOR = {
   PENDING: 'warning',
@@ -117,7 +117,8 @@ const MentorshipBookingItem = ({
   const inJoinWindow =
     start?.isValid() &&
     end?.isValid() &&
-    !now.isBefore(start.subtract(JOIN_EARLY_MINUTES, 'minute')) &&
+    // Demo-only: temporarily allow joining earlier than 15 minutes before the session starts.
+    // !now.isBefore(start.subtract(JOIN_EARLY_MINUTES, 'minute')) &&
     !now.isAfter(end);
   const canJoin =
     onJoin && ['CONFIRMED', 'IN_PROGRESS'].includes(session.status) && inJoinWindow;

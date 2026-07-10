@@ -522,7 +522,7 @@ public class MenteeService {
                                                                 .flatMap(avail ->
                                                                         feedbackRepository.calculateAverageRating(avail.getMentorMemberId())
                                                                                 .defaultIfEmpty(BigDecimal.ZERO)
-                                                                                .flatMap(avg -> profileRepository.updateRatingAndIncrementSessions(
+                                                                                .flatMap(avg -> profileRepository.updateRating(
                                                                                         avail.getMentorMemberId(), avg))
                                                                                 .doOnSuccess(ignored -> notificationService.createNotificationAsync(
                                                                                         avail.getMentorMemberId(),

@@ -114,14 +114,15 @@ const getItemSubtitle = (item) =>
 const getItemPeriod = (item) =>
   item.period || [item.from || item.startedYear, item.to || item.graduatedYear].filter(Boolean).join(' - ');
 
-const ProfileTimelineSection = ({ title, icon: Icon, items = [], t }) => {
+const ProfileTimelineSection = ({ title, icon, items = [], t }) => {
   const rows = items.filter((item) => item && typeof item === 'object');
   if (rows.length === 0) return null;
+  const TimelineIcon = icon;
 
   return (
     <Box>
       <Typography variant="h5" fontWeight={800} color="primary.main" mb={3} display="flex" alignItems="center" gap={1}>
-        <Icon /> {title}
+        <TimelineIcon /> {title}
       </Typography>
       <Stack spacing={0}>
         {rows.map((item, index) => {
@@ -343,6 +344,12 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
           : [])
     : [];
 
+  useEffect(() => {
+    if (isMentorshipPath && access.isMentorPending) {
+      navigate('/mentorship', { replace: true });
+    }
+  }, [access.isMentorPending, isMentorshipPath, navigate]);
+
   if (profileQuery.isLoading || orgMemberQuery.isLoading || (isMentorshipPath && access.isLoading)) {
     return (
       <Page title={t('profile:page_title_profile')}>
@@ -363,6 +370,10 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
         </Box>
       </Page>
     );
+  }
+
+  if (isMentorshipPath && access.isMentorPending) {
+    return null;
   }
 
   const renderPersonalSection = () => {

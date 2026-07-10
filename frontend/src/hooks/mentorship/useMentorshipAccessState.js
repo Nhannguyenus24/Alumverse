@@ -75,7 +75,7 @@ export const useMentorshipAccessState = () => {
 
   // "Joined mentorship" = can participate in booking flows now.
   // A submitted-but-pending mentor profile still needs admin approval first.
-  const hasJoinedMentorship = canUseMentorship && (hasMenteeProfile || isMentorApproved);
+  const hasJoinedMentorship = canUseMentorship && !isMentorPending && (hasMenteeProfile || isMentorApproved);
 
   const canPreviewMentors = isLoggedIn && level >= 1;
 

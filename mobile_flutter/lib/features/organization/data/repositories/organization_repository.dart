@@ -34,6 +34,7 @@ class OrganizationRepository {
     List<String>? program,
     List<String>? major,
     List<int>? graduatedYear,
+    List<String>? graduationStatus,
   }) => api.joinOrganization(
     organizationId: organizationId,
     studentId: studentId,
@@ -41,6 +42,7 @@ class OrganizationRepository {
     program: program,
     major: major,
     graduatedYear: graduatedYear,
+    graduationStatus: graduationStatus,
   );
 
   Future<void> requestPeerVerification({

@@ -281,7 +281,7 @@ const MentorshipSignupPage = () => {
         },
       });
       setSuccess(true);
-      setTimeout(() => navigate('/mentorship/profile'), 1200);
+      setTimeout(() => navigate('/mentorship'), 1200);
     } catch {
       /* surfaced via submitMutation.errorMessage */
     }

@@ -27,6 +27,7 @@ const ProfileLayout = ({
   children,
   avatarSlot,
   contentSx,
+  disableMediaEditing = false,
 }) => {
   const { t } = useTranslation('profile');
 
@@ -73,7 +74,7 @@ const ProfileLayout = ({
       <Button key={i} {...props}>{label}</Button>
     ));
   
-  const isEditMode = mode === 'mentorEdit' || mode === 'userEdit';
+  const isEditMode = (mode === 'mentorEdit' || mode === 'userEdit') && !disableMediaEditing;
 
   return (
     <Box sx={{ pb: 6, backgroundColor: 'background.default' }}>

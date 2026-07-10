@@ -21,12 +21,16 @@ import {
   Link,
   Chip,
   Divider,
+  Slider,
 } from '@mui/material';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import RestartAltOutlinedIcon from '@mui/icons-material/RestartAltOutlined';
+import OpenInNewOutlinedIcon from '@mui/icons-material/OpenInNewOutlined';
+import ZoomInOutlinedIcon from '@mui/icons-material/ZoomInOutlined';
+import ZoomOutOutlinedIcon from '@mui/icons-material/ZoomOutOutlined';
 import Page from "../../components/Page";
 import AdminStatusChip from '../../components/admin/AdminStatusChip';
 import AdminDataTable from '../../components/admin/AdminDataTable';
@@ -41,6 +45,14 @@ const getRequestType = (request) => String(request?.requestType || 'PROOF').toUp
 const isPeerRequest = (request) => getRequestType(request) === 'PEER';
 const isProofRequest = (request) => getRequestType(request) === 'PROOF';
 const isPendingRequest = (request) => String(request?.status || '').toUpperCase() === 'PENDING';
+const isImageDocument = (request) => {
+  const documentType = String(request?.documentType || '').toLowerCase();
+  const documentUrl = String(request?.documentUrl || '');
+
+  return documentType === 'image'
+    || /^data:image\//i.test(documentUrl)
+    || /\.(?:avif|bmp|gif|jpe?g|png|svg|webp)(?:[?#]|$)/i.test(documentUrl);
+};
 
 const parseVerifierList = (value) => String(value || '')
   .split(',')
@@ -74,6 +86,8 @@ const AdminVerificationsPage = () => {
   // Review Dialog State
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState(null);
+  const [documentViewerRequest, setDocumentViewerRequest] = useState(null);
+  const [documentZoom, setDocumentZoom] = useState(1);
   const [adminNote, setAdminNote] = useState('');
   const [submitting, setSubLoading] = useState(false);
 
@@ -103,6 +117,14 @@ const AdminVerificationsPage = () => {
     setSelectedRequest(request);
     setAdminNote(request.adminNote || '');
     setReviewDialogOpen(true);
+  };
+
+  const handleOpenDocument = (request, event) => {
+    event?.stopPropagation();
+    if (request?.documentUrl) {
+      setDocumentZoom(1);
+      setDocumentViewerRequest(request);
+    }
   };
 
   const submitReview = async (request, status, note = '') => {
@@ -204,11 +226,17 @@ const AdminVerificationsPage = () => {
 
     return (
       <Link
-        href={request.documentUrl}
-        target="_blank"
-        rel="noopener"
-        sx={{ fontSize: 13, fontWeight: 600 }}
-        onClick={(e) => e.stopPropagation()}
+        component="button"
+        type="button"
+        sx={{
+          p: 0,
+          border: 0,
+          bgcolor: 'transparent',
+          cursor: 'pointer',
+          fontSize: 13,
+          fontWeight: 600,
+        }}
+        onClick={(event) => handleOpenDocument(request, event)}
       >
         {t('verif_view_document')}
       </Link>
@@ -377,9 +405,9 @@ const AdminVerificationsPage = () => {
                 ) : (
                   <Button
                     variant="contained"
-                    href={selectedRequest.documentUrl}
-                    target="_blank"
+                    disabled={!selectedRequest.documentUrl}
                     startIcon={<DescriptionOutlinedIcon />}
+                    onClick={() => handleOpenDocument(selectedRequest)}
                   >
                     {t('verif_open_document')}
                   </Button>
@@ -457,6 +485,126 @@ const AdminVerificationsPage = () => {
               )}
             </>
           )}
+        </DialogActions>
+      </Dialog>
+
+      {/* Supporting document viewer */}
+      <Dialog
+        open={Boolean(documentViewerRequest)}
+        onClose={() => setDocumentViewerRequest(null)}
+        maxWidth="lg"
+        fullWidth
+      >
+        <DialogTitle
+          sx={{
+            fontWeight: 800,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 2,
+            flexWrap: 'wrap',
+          }}
+        >
+          <span>{t('verif_dialog_document')}</span>
+          <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: { xs: '100%', sm: 280 } }}>
+            <Tooltip title={t('verif_zoom_out', { defaultValue: 'Thu nhỏ' })}>
+              <span>
+                <IconButton
+                  size="small"
+                  onClick={() => setDocumentZoom((value) => Math.max(0.5, Number((value - 0.25).toFixed(2))))}
+                  disabled={documentZoom <= 0.5}
+                >
+                  <ZoomOutOutlinedIcon fontSize="small" />
+                </IconButton>
+              </span>
+            </Tooltip>
+            <Slider
+              size="small"
+              min={0.5}
+              max={2.5}
+              step={0.25}
+              value={documentZoom}
+              onChange={(_, value) => setDocumentZoom(value)}
+              aria-label={t('verif_zoom_level', { defaultValue: 'Zoom' })}
+              sx={{ flex: 1 }}
+            />
+            <Tooltip title={t('verif_zoom_in', { defaultValue: 'Phóng to' })}>
+              <span>
+                <IconButton
+                  size="small"
+                  onClick={() => setDocumentZoom((value) => Math.min(2.5, Number((value + 0.25).toFixed(2))))}
+                  disabled={documentZoom >= 2.5}
+                >
+                  <ZoomInOutlinedIcon fontSize="small" />
+                </IconButton>
+              </span>
+            </Tooltip>
+          </Stack>
+        </DialogTitle>
+        <DialogContent
+          dividers
+          sx={{
+            height: { xs: '70vh', md: '78vh' },
+            p: 0,
+            overflow: 'auto',
+            bgcolor: alpha(theme.palette.text.primary, theme.palette.mode === 'dark' ? 0.08 : 0.04),
+          }}
+        >
+          {documentViewerRequest && (
+            isImageDocument(documentViewerRequest) ? (
+              <Box sx={{ minWidth: `${documentZoom * 100}%`, minHeight: `${documentZoom * 100}%`, p: 2 }}>
+                <Box
+                  component="img"
+                  src={documentViewerRequest.documentUrl}
+                  alt={t('verif_dialog_document')}
+                  sx={{
+                    width: '100%',
+                    height: 'auto',
+                    maxHeight: documentZoom === 1 ? 'calc(78vh - 32px)' : 'none',
+                    objectFit: 'contain',
+                    display: 'block',
+                    mx: 'auto',
+                  }}
+                />
+              </Box>
+            ) : (
+              <Box
+                sx={{
+                  width: `${100 / documentZoom}%`,
+                  height: `${100 / documentZoom}%`,
+                  minHeight: `${78 / documentZoom}vh`,
+                  transform: `scale(${documentZoom})`,
+                  transformOrigin: 'top left',
+                }}
+              >
+                <Box
+                  component="iframe"
+                  src={documentViewerRequest.documentUrl}
+                  title={t('verif_dialog_document')}
+                  sx={{ width: '100%', height: '100%', minHeight: '78vh', border: 0, display: 'block', bgcolor: 'background.paper' }}
+                />
+              </Box>
+            )
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2, gap: 1 }}>
+          <Button onClick={() => setDocumentZoom(1)}>
+            {t('verif_zoom_reset', { defaultValue: 'Về 100%' })}
+          </Button>
+          {documentViewerRequest?.documentUrl && (
+            <Button
+              component="a"
+              href={documentViewerRequest.documentUrl}
+              target="_blank"
+              rel="noreferrer"
+              startIcon={<OpenInNewOutlinedIcon />}
+            >
+              {t('verif_open_new_tab', { defaultValue: 'Mở tab mới' })}
+            </Button>
+          )}
+          <Button color="inherit" onClick={() => setDocumentViewerRequest(null)}>
+            {t('verif_btn_close')}
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>

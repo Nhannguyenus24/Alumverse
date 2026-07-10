@@ -170,8 +170,8 @@ public interface MentorProfileR2dbcRepository extends ReactiveCrudRepository<Men
     Mono<Integer> revokeMentor(Integer memberId);
 
     @Modifying
-    @Query("UPDATE mentor_profiles SET rating_avg = :ratingAvg, total_sessions = total_sessions + 1 WHERE member_id = :memberId")
-    Mono<Integer> updateRatingAndIncrementSessions(Integer memberId, BigDecimal ratingAvg);
+    @Query("UPDATE mentor_profiles SET rating_avg = :ratingAvg WHERE member_id = :memberId")
+    Mono<Integer> updateRating(Integer memberId, BigDecimal ratingAvg);
 
     @Modifying
     @Query("UPDATE mentor_profiles SET total_sessions = total_sessions + 1 WHERE member_id = :memberId")
