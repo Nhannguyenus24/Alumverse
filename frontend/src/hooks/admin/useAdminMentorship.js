@@ -48,9 +48,9 @@ const useAdminMentorship = (organizationId = null) => {
     const orgId = organizationId || null;
     let data;
     if (approvalFilter === 'APPROVED') {
-      data = await safeFetch(() => api.getMentorProfilesByApproval(true, mentorPage, mentorRowsPerPage, orgId), fallbackPage);
+      data = await safeFetch(() => api.getMentorProfilesByStatus('APPROVED', mentorPage, mentorRowsPerPage, orgId), fallbackPage);
     } else if (approvalFilter === 'PENDING') {
-      data = await safeFetch(() => api.getMentorProfilesByApproval(false, mentorPage, mentorRowsPerPage, orgId), fallbackPage);
+      data = await safeFetch(() => api.getMentorProfilesByStatus('PENDING', mentorPage, mentorRowsPerPage, orgId), fallbackPage);
     } else {
       data = await safeFetch(() => api.getAllMentorProfiles(mentorPage, mentorRowsPerPage, orgId), fallbackPage);
     }

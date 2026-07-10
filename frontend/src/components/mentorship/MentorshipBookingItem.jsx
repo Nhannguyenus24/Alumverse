@@ -106,7 +106,7 @@ const MentorshipBookingItem = ({
   const canCancel = onCancel && !terminalStatuses.includes(session.status) && !isRescheduleProposed;
   // Report only for sessions that happened (COMPLETED) or no-showed (EXPIRED), and not already reported.
   const canReport = onReport && ['COMPLETED', 'EXPIRED'].includes(session.status) && !session.reported;
-  const canFeedback = onFeedback && session.status === 'COMPLETED';
+  const canFeedback = onFeedback && session.status === 'COMPLETED' && !session.hasFeedback;
   const canReschedule = onReschedule && session.status === 'CONFIRMED';
   const canPostpone = onPostpone && session.status === 'CONFIRMED';
   const canRespondReschedule = onRescheduleResponse && view === 'mentee' && isRescheduleProposed;

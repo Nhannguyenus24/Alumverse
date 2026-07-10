@@ -17,6 +17,7 @@ const TopTabFilter = ({ tabs, onNavigate }) => {
           <Button
             key={tab.label}
             variant={isActive ? 'contained' : 'outlined'}
+            startIcon={tab.icon}
             onClick={() => onNavigate(tab.path)}
             sx={{ 
                 textTransform: 'none', 

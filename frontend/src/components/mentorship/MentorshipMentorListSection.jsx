@@ -13,10 +13,10 @@ import { useSnackbar } from 'notistack';
 import SearchBar from '../SearchBar';
 import MentorshipCard from './MentorshipCard';
 import DynamicFilterBar from '../DynamicFilterBar';
-import MentorSkillFilter from './MentorSkillFilter';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useBrowseMentors } from '../../hooks/mentorship/useBrowseMentors';
 import { useMentorshipAccessState } from '../../hooks/mentorship/useMentorshipAccessState';
+import { useSkillSearch } from '../../hooks/mentorship/useSkillSearch';
 import { formatRating } from '../../utils/numberFormatter';
 
 const PAGE_SIZE = 9;
@@ -32,17 +32,32 @@ const MentorshipMentorListSection = () => {
   const [page, setPage] = useState(0);
   const [filters, setFilters] = useState({
     all: true,
+    skills: [],
     status: [],
     availableOn: '',
   });
-  const [skillFilter, setSkillFilter] = useState([]);
 
   const access = useMentorshipAccessState();
   const ownMentorMemberId = access.mentorMemberId;
   const browseEnabled = access.canPreviewMentors;
+  const skillsQuery = useSkillSearch('', { enabled: browseEnabled });
+  const skillOptions = useMemo(
+    () => (skillsQuery.data ?? []).map((skill) => ({
+      value: skill.id,
+      label: skill.name,
+    })),
+    [skillsQuery.data],
+  );
 
   const filterConfig = useMemo(
     () => [
+      {
+        type: 'dropdown',
+        key: 'skills',
+        label: t('mentorship:filter_field'),
+        multiple: true,
+        options: skillOptions,
+      },
       {
         type: 'date',
         key: 'availableOn',
@@ -54,10 +69,10 @@ const MentorshipMentorListSection = () => {
         options: [t('mentorship:filter_trending')],
       },
     ],
-    [t],
+    [skillOptions, t],
   );
 
-  const skillIds = useMemo(() => skillFilter.map((s) => s.id), [skillFilter]);
+  const skillIds = filters.skills ?? [];
   const hasAvailability = (filters.status ?? []).includes(t('mentorship:filter_trending'));
   const availableFrom = startOfDayIso(filters.availableOn);
   const availableTo = endOfDayIso(filters.availableOn);
@@ -125,23 +140,14 @@ const MentorshipMentorListSection = () => {
         />
       </Box>
 
-      <Stack direction="row" gap={1.5} flexWrap="wrap" alignItems="center">
-        <MentorSkillFilter
-          value={skillFilter}
-          onChange={(next) => {
-            setSkillFilter(next);
-            setPage(0);
-          }}
-        />
-        <DynamicFilterBar
-          config={filterConfig}
-          value={filters}
-          onChange={(next) => {
-            setFilters(next);
-            setPage(0);
-          }}
-        />
-      </Stack>
+      <DynamicFilterBar
+        config={filterConfig}
+        value={filters}
+        onChange={(next) => {
+          setFilters(next);
+          setPage(0);
+        }}
+      />
 
       {browseQuery.isLoading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>

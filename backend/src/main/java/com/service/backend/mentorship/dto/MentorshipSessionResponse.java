@@ -45,6 +45,10 @@ public class MentorshipSessionResponse {
     private String menteeName;
     private String menteeAvatarUrl;
 
+    // ===== Feedback state (mentee booking view) =====
+    private Boolean hasFeedback;
+    private Integer feedbackId;
+
     public static MentorshipSessionResponse from(MentorshipSession session) {
         return MentorshipSessionResponse.builder()
                 .id(session.getId())

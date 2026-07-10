@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import com.service.backend.auth.dao.AuthRepository;
+import com.service.backend.organization.dao.OrganizationRepository;
 import com.service.backend.shared.entity.OrganizationMember;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.enums.Status;
@@ -44,6 +45,7 @@ public class UserService {
     private final UserLoginHistoryRepository userLoginHistoryRepository;
     private final UserNotificationSettingsRepository userNotificationSettingsRepository;
     private final UserOrganizationMemberRepository userOrganizationMemberRepository;
+    private final OrganizationRepository organizationRepository;
     private final PeerVerificationRepository peerVerificationRepository;
     private final FileUploadService fileUploadService;
     private final NotificationService notificationService;
@@ -382,7 +384,9 @@ public class UserService {
         return userOrganizationMemberRepository
                 .findByOrganizationIdAndUserId(organizationId, currentUserId.intValue())
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.ORGANIZATION_MEMBER_NOT_FOUND))))
-                .map(this::toOrganizationMemberResponse)
+                .flatMap(member -> organizationRepository.findById(member.getOrganizationId())
+                        .map(org -> toOrganizationMemberResponse(member, org.getName()))
+                        .defaultIfEmpty(toOrganizationMemberResponse(member, null)))
                 .doOnSuccess(r -> logger.info("getMyOrganizationMember result: {}", JsonUtils.toJson(r)));
     }
 
@@ -411,9 +415,14 @@ public class UserService {
     }
 
     private UserOrganizationMemberResponse toOrganizationMemberResponse(OrganizationMember member) {
+        return toOrganizationMemberResponse(member, null);
+    }
+
+    private UserOrganizationMemberResponse toOrganizationMemberResponse(OrganizationMember member, String organizationName) {
         return UserOrganizationMemberResponse.builder()
                 .id(member.getId())
                 .organizationId(member.getOrganizationId())
+                .organizationName(organizationName)
                 .userId(member.getUserId())
                 .startedYear(parseStringList(member.getStartedYear()))
                 .graduatedYear(parseIntegerList(member.getGraduatedYear()))
