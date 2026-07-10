@@ -162,6 +162,53 @@ class _ProfileView extends StatelessWidget {
             label: 'profile.dob'.tr(),
             value: profile.dob!,
           ),
+        if (profile.hasAcademicInfo) ...[
+          const SizedBox(height: 20),
+          _SectionTitle('profile.academic_info'.tr()),
+          _InfoRow(
+            icon: Icons.account_balance_outlined,
+            label: 'profile.faculty'.tr(),
+            value: _join(profile.faculty, fallback: profile.organizationName),
+          ),
+          if (profile.department.isNotEmpty)
+            _InfoRow(
+              icon: Icons.account_tree_outlined,
+              label: 'profile.department'.tr(),
+              value: _join(profile.department),
+            ),
+          if (profile.program.isNotEmpty)
+            _InfoRow(
+              icon: Icons.menu_book_outlined,
+              label: 'profile.program'.tr(),
+              value: _join(profile.program),
+            ),
+          if (profile.major.isNotEmpty)
+            _InfoRow(
+              icon: Icons.school_outlined,
+              label: 'profile.major'.tr(),
+              value: _join(profile.major),
+            ),
+          if (profile.startedYear.isNotEmpty)
+            _InfoRow(
+              icon: Icons.calendar_month_outlined,
+              label: 'organization.start_year'.tr(),
+              value: _join(profile.startedYear),
+            ),
+          if (profile.graduatedYear.isNotEmpty)
+            _InfoRow(
+              icon: Icons.event_available_outlined,
+              label: 'profile.graduation_year'.tr(),
+              value: _join(profile.graduatedYear),
+            ),
+          if (profile.graduationStatus.isNotEmpty)
+            _InfoRow(
+              icon: Icons.verified_outlined,
+              label: 'profile.graduation_status'.tr(),
+              value: profile.graduationStatus
+                  .map(_graduationStatusLabel)
+                  .join('\n'),
+            ),
+        ],
         const SizedBox(height: 20),
         _SectionTitle('profile.activities'.tr()),
         _ActivityTile(
@@ -195,6 +242,25 @@ class _ProfileView extends StatelessWidget {
         return 'profile.gender_female'.tr();
       default:
         return 'profile.gender_other'.tr();
+    }
+  }
+
+  String _join(List<String> values, {String? fallback}) {
+    final cleaned = values.where((v) => v.trim().isNotEmpty).toList();
+    if (cleaned.isEmpty) return fallback ?? 'profile.not_updated'.tr();
+    return cleaned.join('\n');
+  }
+
+  String _graduationStatusLabel(String value) {
+    switch (value.trim().toUpperCase()) {
+      case 'STUDYING':
+        return 'organization.graduation_status_studying'.tr();
+      case 'GRADUATED':
+        return 'organization.graduation_status_graduated'.tr();
+      case 'DROPPED':
+        return 'organization.graduation_status_dropped'.tr();
+      default:
+        return value;
     }
   }
 }

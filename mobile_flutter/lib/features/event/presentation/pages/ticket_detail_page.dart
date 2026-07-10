@@ -10,6 +10,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/app_toast.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../data/models/event_ticket.dart';
+import '../../data/repositories/event_repository.dart';
 import '../providers/event_provider.dart';
 import 'my_tickets_page.dart';
 
@@ -100,6 +101,18 @@ class _Body extends ConsumerWidget {
 
         _SectionTitle('event.status_label'.tr()),
         TicketStatusBadge(ticket: ticket),
+        if (ticket.canCancel) ...[
+          const SizedBox(height: 10),
+          OutlinedButton.icon(
+            onPressed: () => _cancelTicket(context, ref),
+            icon: const Icon(Icons.cancel_outlined),
+            label: Text('event.cancel_join'.tr()),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.error,
+              side: const BorderSide(color: AppColors.error),
+            ),
+          ),
+        ],
         const SizedBox(height: 16),
 
         if (reg != null) ...[
@@ -138,6 +151,27 @@ class _Body extends ConsumerWidget {
         ],
       ],
     );
+  }
+
+  Future<void> _cancelTicket(BuildContext context, WidgetRef ref) async {
+    final reason = await askEventCancelReason(context);
+    if (reason == null) return;
+    try {
+      await ref
+          .read(eventRepositoryProvider)
+          .cancelTicketByCode(ticket.ticketCode, reason);
+      ref.invalidate(myTicketsProvider);
+      ref.invalidate(ticketByCodeProvider(ticket.ticketCode));
+      ref.invalidate(eventInteractionProvider(ticket.eventId));
+      if (context.mounted) {
+        AppToast.success(context, 'event.ticket_cancel_success'.tr());
+        context.pop();
+      }
+    } catch (e) {
+      if (context.mounted) {
+        AppToast.error(context, 'event.ticket_cancel_error'.tr());
+      }
+    }
   }
 
   Widget _answerTile(Map<String, dynamic> a) {

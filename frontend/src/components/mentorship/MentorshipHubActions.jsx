@@ -80,17 +80,7 @@ const MentorshipHubActions = ({ tone = 'default' }) => {
   // Fully eligible but hasn't joined active mentorship yet.
   if (!access.hasJoinedMentorship) {
     if (access.isMentorPending) {
-      return (
-        <Button
-          variant="outlined"
-          color={onPrimary ? undefined : 'warning'}
-          startIcon={<SchoolIcon />}
-          onClick={() => navigate('/mentorship/profile')}
-          sx={onPrimary ? outlinedOnPrimarySx : undefined}
-        >
-          {t('mentorship:mentor_pending_cta')}
-        </Button>
-      );
+      return null;
     }
 
     return (
@@ -121,16 +111,6 @@ const MentorshipHubActions = ({ tone = 'default' }) => {
   // Joined: quick access to personal profile + schedule.
   return (
     <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
-      {access.isMentorPending && (
-        <Button
-          variant="outlined"
-          color={onPrimary ? undefined : 'warning'}
-          onClick={() => navigate('/mentorship/profile')}
-          sx={outlinedOnPrimarySx}
-        >
-          {t('mentorship:mentor_pending_cta')}
-        </Button>
-      )}
       <Button
         variant="outlined"
         color={onPrimary ? undefined : 'primary'}

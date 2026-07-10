@@ -12,6 +12,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
@@ -158,6 +159,7 @@ public class EventController {
 
     // ─── Step 1: Invite users ─────────────────────────────────────────────────
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     @PostMapping("/{eventId}/invitations")
     public Mono<ResponseEntity<ApiResponse<Integer>>> inviteUsers(
             @Parameter(example = "1") @PathVariable @Min(1) Long eventId,
@@ -167,6 +169,7 @@ public class EventController {
                         .body(new ApiResponse<>("Invitations sent: " + count, count)));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     @GetMapping("/{eventId}/invitations")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<EventInvitationDetailResponse>>>> getInvitations(
             @Parameter(example = "1") @PathVariable @Min(1) Long eventId,

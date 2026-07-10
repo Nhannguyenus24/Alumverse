@@ -5,10 +5,12 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../shared/widgets/app_toast.dart';
 import '../../../../shared/widgets/empty_view.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/skeleton.dart';
 import '../../data/models/event_ticket.dart';
+import '../../data/repositories/event_repository.dart';
 import '../providers/event_provider.dart';
 
 /// "Vé của tôi" — lists the current user's event registration tickets. Tapping
@@ -61,6 +63,26 @@ class MyTicketsPage extends ConsumerWidget {
 class _TicketCard extends ConsumerWidget {
   const _TicketCard({required this.ticket});
   final EventTicket ticket;
+
+  Future<void> _cancelTicket(BuildContext context, WidgetRef ref) async {
+    final reason = await askEventCancelReason(context);
+    if (reason == null) return;
+    try {
+      await ref
+          .read(eventRepositoryProvider)
+          .cancelTicketByCode(ticket.ticketCode, reason);
+      ref.invalidate(myTicketsProvider);
+      ref.invalidate(ticketByCodeProvider(ticket.ticketCode));
+      ref.invalidate(eventInteractionProvider(ticket.eventId));
+      if (context.mounted) {
+        AppToast.success(context, 'event.ticket_cancel_success'.tr());
+      }
+    } catch (e) {
+      if (context.mounted) {
+        AppToast.error(context, 'event.ticket_cancel_error'.tr());
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -154,7 +176,28 @@ class _TicketCard extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  TicketStatusBadge(ticket: ticket),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      TicketStatusBadge(ticket: ticket),
+                      if (ticket.canCancel)
+                        TextButton.icon(
+                          onPressed: () => _cancelTicket(context, ref),
+                          icon: const Icon(Icons.cancel_outlined, size: 18),
+                          label: Text('event.cancel_join'.tr()),
+                          style: TextButton.styleFrom(
+                            foregroundColor: AppColors.error,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                        ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -164,6 +207,60 @@ class _TicketCard extends ConsumerWidget {
       ),
     );
   }
+}
+
+Future<String?> askEventCancelReason(BuildContext context) {
+  final controller = TextEditingController();
+  final formKey = GlobalKey<FormState>();
+  return showDialog<String>(
+    context: context,
+    builder:
+        (ctx) => AlertDialog(
+          title: Text('event.cancel_join'.tr()),
+          content: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('event.cancel_reason_prompt'.tr()),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: controller,
+                  autofocus: true,
+                  minLines: 2,
+                  maxLines: 4,
+                  validator:
+                      (v) =>
+                          (v == null || v.trim().isEmpty)
+                              ? 'event.cancel_reason_required'.tr()
+                              : null,
+                  decoration: InputDecoration(
+                    hintText: 'event.cancel_reason_hint'.tr(),
+                    border: const OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text('common.close'.tr()),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (formKey.currentState?.validate() ?? false) {
+                  Navigator.pop(ctx, controller.text.trim());
+                }
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+              child: Text('event.confirm_cancel'.tr()),
+            ),
+          ],
+        ),
+  );
 }
 
 /// Coloured status chip for a ticket.

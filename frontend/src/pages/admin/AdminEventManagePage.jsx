@@ -182,10 +182,10 @@ const AdminEventManagePage = () => {
   };
 
   const handleInvite = async () => {
-    const emails = inviteEmails
+    const emails = [...new Set(inviteEmails
       .split(/[,;\s]+/)
-      .map((e) => e.trim())
-      .filter(Boolean);
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean))];
     if (!emails.length) {
       enqueueSnackbar(t('event:invite_email_required'), { variant: 'warning' });
       return;

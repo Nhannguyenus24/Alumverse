@@ -161,8 +161,8 @@ const OrganizationRegistrationPage = () => {
   const [trustedVerifiersLoading, setTrustedVerifiersLoading] = useState(false);
   const [selectedVerifierUserIds, setSelectedVerifierUserIds] = useState([]);
 
-  // Which verification option is expanded: null | "proof" | "verifier"
-  const [verificationOption, setVerificationOption] = useState(null);
+  const [showProofPanel, setShowProofPanel] = useState(false);
+  const [showVerifierPanel, setShowVerifierPanel] = useState(false);
 
   // Org ID resolution
   const queryOrgId = searchParams.get("orgId");
@@ -234,6 +234,7 @@ const OrganizationRegistrationPage = () => {
     if (!allowedTypes.includes(file.type)) { setError(t("auth:proof_invalid_type")); return; }
     if (file.size > maxSizeBytes) { setError(t("auth:proof_too_large")); return; }
     setError(null);
+    setShowProofPanel(true);
     setProofFile(file);
   };
 
@@ -244,18 +245,12 @@ const OrganizationRegistrationPage = () => {
     );
   };
 
-  const handleOptionSelect = (option) => {
-    setVerificationOption(option);
-    if (option === "proof") setSelectedVerifierUserIds([]);
-    if (option === "verifier") setProofFile(null);
-  };
-
   const onSubmit = async (data) => {
     setError(null);
-    if (!verificationOption) { setError(t("auth:select_verification_method")); return; }
-    if (verificationOption === "proof" && !proofFile) { setError(t("auth:upload_proof_required")); return; }
-    if ( verificationOption === "verifier" && selectedVerifierUserIds.length === 0) {
-      setError(t("auth:select_verifier_required")); return; }
+    if (!proofFile && selectedVerifierUserIds.length === 0) {
+      setError(t("auth:select_verification_method"));
+      return;
+    }
     setLoading(true);
     try {
       const payload = {
@@ -272,7 +267,7 @@ const OrganizationRegistrationPage = () => {
 
       if (response?.data) {
         // Send peer verification requests for all selected verifiers
-        if (verificationOption === "verifier" && selectedVerifierUserIds.length > 0) {
+        if (selectedVerifierUserIds.length > 0) {
           await Promise.allSettled(
             selectedVerifierUserIds.map((verifierId) =>
               requestPeerVerification({ organizationId: data.organizationId, verifierUserId: Number(verifierId) }),
@@ -282,7 +277,7 @@ const OrganizationRegistrationPage = () => {
         }
 
         // Upload proof document
-        if (verificationOption === "proof" && proofFile) {
+        if (proofFile) {
           try {
             const base64File = await fileToBase64(proofFile);
             await createVerificationRequest({
@@ -478,20 +473,20 @@ const OrganizationRegistrationPage = () => {
                 icon="eva:cloud-upload-fill"
                 title={t("auth:verification_opt_proof_title")}
                 description={t("auth:verification_opt_proof_desc")}
-                selected={verificationOption === "proof"}
-                onClick={() => handleOptionSelect("proof")}
+                selected={showProofPanel || Boolean(proofFile)}
+                onClick={() => setShowProofPanel((value) => !value)}
               />
               <VerificationOptionCard
                 icon="eva:people-fill"
                 title={t("auth:verification_opt_verifier_title")}
                 description={t("auth:verification_opt_verifier_desc")}
-                selected={verificationOption === "verifier"}
-                onClick={() => handleOptionSelect("verifier")}
+                selected={showVerifierPanel || selectedVerifierUserIds.length > 0}
+                onClick={() => setShowVerifierPanel((value) => !value)}
               />
             </Stack>
 
             {/* Option A: Proof upload panel */}
-            {verificationOption === "proof" && (
+            {showProofPanel && (
               <Box
                 sx={{
                   p: 2.5, borderRadius: 2,
@@ -519,7 +514,7 @@ const OrganizationRegistrationPage = () => {
             )}
 
             {/* Option B: Verifier selection panel */}
-            {verificationOption === "verifier" && (
+            {showVerifierPanel && (
               <Box
                 sx={{
                   borderRadius: 2,

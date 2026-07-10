@@ -17,6 +17,12 @@ import '../../data/models/trusted_verifier.dart';
 import '../../data/repositories/organization_repository.dart';
 import '../providers/organization_provider.dart';
 
+const _graduationStatusOptions = <MapEntry<String, String>>[
+  MapEntry('STUDYING', 'organization.graduation_status_studying'),
+  MapEntry('GRADUATED', 'organization.graduation_status_graduated'),
+  MapEntry('DROPPED', 'organization.graduation_status_dropped'),
+];
+
 /// Join an organization with academic info — native port of the web
 /// `OrganizationRegistrationPage.jsx`. Picking a trusted verifier makes every
 /// field optional; attaching a proof file makes the academic fields optional.
@@ -37,6 +43,7 @@ class _OrganizationRegistrationPageState
 
   String? _selectedProgram; // when org provides program options
   String? _selectedMajor; // when org provides major options
+  String? _selectedGraduationStatus;
   final _programCtl = TextEditingController(); // free text fallback
   final _majorCtl = TextEditingController();
 
@@ -44,10 +51,6 @@ class _OrganizationRegistrationPageState
   final Set<int> _selectedVerifierIds = {};
   XFile? _proofFile;
   bool _submitting = false;
-
-  bool get _hasVerifier => _selectedVerifierIds.isNotEmpty;
-  bool get _isAllOptional => _hasVerifier;
-  bool get _isAcademicOptional => _proofFile != null || _hasVerifier;
 
   @override
   void initState() {
@@ -104,9 +107,7 @@ class _OrganizationRegistrationPageState
   }
 
   Future<void> _submit() async {
-    // When a verifier is chosen the academic fields are optional, so skip
-    // validation; otherwise require the form to pass.
-    if (!_isAllOptional && !_formKey.currentState!.validate()) {
+    if (!_formKey.currentState!.validate()) {
       return;
     }
 
@@ -115,17 +116,26 @@ class _OrganizationRegistrationPageState
     final programOptions = org?.programs ?? const <String>[];
     final majorOptions = org?.majors ?? const <String>[];
 
-    // The program/major DropdownMenus aren't form fields, so enforce their
-    // "required" rule here when the academic info isn't optional.
-    if (!_isAcademicOptional) {
-      if (programOptions.isNotEmpty && _selectedProgram == null) {
-        AppToast.info(context, 'organization.select_program_required'.tr());
-        return;
-      }
-      if (majorOptions.isNotEmpty && _selectedMajor == null) {
-        AppToast.info(context, 'organization.select_major_required'.tr());
-        return;
-      }
+    // The program/major/status DropdownMenus aren't form fields, so enforce
+    // the same required academic payload the web registration form sends.
+    if (programOptions.isNotEmpty && _selectedProgram == null) {
+      AppToast.info(context, 'organization.select_program_required'.tr());
+      return;
+    }
+    if (majorOptions.isNotEmpty && _selectedMajor == null) {
+      AppToast.info(context, 'organization.select_major_required'.tr());
+      return;
+    }
+    if (_selectedGraduationStatus == null) {
+      AppToast.info(
+        context,
+        'organization.select_graduation_status_required'.tr(),
+      );
+      return;
+    }
+    if (_proofFile == null && _selectedVerifierIds.isEmpty) {
+      AppToast.info(context, 'organization.select_verification_method'.tr());
+      return;
     }
     final userId = ref.read(authStateProvider).valueOrNull?.user?.id;
     if (orgId == null || userId == null) {
@@ -150,9 +160,13 @@ class _OrganizationRegistrationPageState
             program: (program != null && program.isNotEmpty) ? [program] : null,
             major: (major != null && major.isNotEmpty) ? [major] : null,
             graduatedYear: gradYear != null ? [gradYear] : null,
+            graduationStatus:
+                _selectedGraduationStatus != null
+                    ? [_selectedGraduationStatus!]
+                    : null,
           );
 
-      // Optional: ask each chosen verifier to vouch (one request per verifier).
+      // Ask each chosen verifier to vouch (one request per verifier).
       if (_selectedVerifierIds.isNotEmpty) {
         final repo = ref.read(organizationRepositoryProvider);
         var failed = 0;
@@ -180,7 +194,7 @@ class _OrganizationRegistrationPageState
         }
       }
 
-      // Optional: upload proof document.
+      // Upload proof document if the user chose that verification channel.
       if (_proofFile != null) {
         try {
           final bytes = await _proofFile!.readAsBytes();
@@ -256,23 +270,15 @@ class _OrganizationRegistrationPageState
                 ),
                 const SizedBox(height: 16),
 
-                if (_isAllOptional)
-                  _InfoBanner('organization.verifier_selected_banner'.tr()),
-
                 // --- Student info ---
-                _SectionLabel(
-                  'organization.student_info'.tr(),
-                  required: !_isAllOptional,
-                ),
+                _SectionLabel('organization.student_info'.tr()),
                 TextFormField(
                   controller: _studentCodeCtl,
                   validator:
-                      _isAllOptional
-                          ? null
-                          : (v) =>
-                              (v == null || v.trim().isEmpty)
-                                  ? 'organization.student_code_required'.tr()
-                                  : null,
+                      (v) =>
+                          (v == null || v.trim().isEmpty)
+                              ? 'organization.student_code_required'.tr()
+                              : null,
                   decoration: InputDecoration(
                     labelText: 'organization.student_code'.tr(),
                     hintText: 'organization.student_code_hint'.tr(),
@@ -282,10 +288,7 @@ class _OrganizationRegistrationPageState
                 const SizedBox(height: 16),
 
                 // --- Academic info ---
-                _SectionLabel(
-                  'organization.academic_info'.tr(),
-                  required: !_isAcademicOptional,
-                ),
+                _SectionLabel('organization.academic_info'.tr()),
                 if (programOptions.isNotEmpty)
                   // Material 3 dropdown: opens BELOW the field, sized to it,
                   // rounded, capped to ~5 rows (matches the register page).
@@ -326,12 +329,10 @@ class _OrganizationRegistrationPageState
                   TextFormField(
                     controller: _programCtl,
                     validator:
-                        _isAcademicOptional
-                            ? null
-                            : (v) =>
-                                (v == null || v.trim().isEmpty)
-                                    ? 'organization.program_required'.tr()
-                                    : null,
+                        (v) =>
+                            (v == null || v.trim().isEmpty)
+                                ? 'organization.program_required'.tr()
+                                : null,
                     decoration: InputDecoration(
                       labelText: 'organization.program'.tr(),
                       hintText: 'organization.program_hint'.tr(),
@@ -346,12 +347,10 @@ class _OrganizationRegistrationPageState
                         controller: _startYearCtl,
                         keyboardType: TextInputType.number,
                         validator:
-                            _isAcademicOptional
-                                ? null
-                                : (v) =>
-                                    (v == null || v.trim().isEmpty)
-                                        ? 'common.required_field'.tr()
-                                        : null,
+                            (v) =>
+                                (v == null || v.trim().isEmpty)
+                                    ? 'common.required_field'.tr()
+                                    : null,
                         decoration: InputDecoration(
                           labelText: 'organization.start_year'.tr(),
                           hintText: '2015',
@@ -364,12 +363,10 @@ class _OrganizationRegistrationPageState
                         controller: _graduatedYearCtl,
                         keyboardType: TextInputType.number,
                         validator:
-                            _isAcademicOptional
-                                ? null
-                                : (v) =>
-                                    (v == null || v.trim().isEmpty)
-                                        ? 'common.required_field'.tr()
-                                        : null,
+                            (v) =>
+                                (v == null || v.trim().isEmpty)
+                                    ? 'common.required_field'.tr()
+                                    : null,
                         decoration: InputDecoration(
                           labelText: 'profile.graduation_year'.tr(),
                           hintText: '2019',
@@ -377,6 +374,39 @@ class _OrganizationRegistrationPageState
                       ),
                     ),
                   ],
+                ),
+                const SizedBox(height: 16),
+                DropdownMenu<String>(
+                  initialSelection: _selectedGraduationStatus,
+                  expandedInsets: EdgeInsets.zero,
+                  requestFocusOnTap: false,
+                  hintText: 'organization.graduation_status'.tr(),
+                  leadingIcon: const Icon(Icons.verified_outlined),
+                  menuHeight: 220,
+                  textStyle: const TextStyle(fontSize: 16),
+                  menuStyle: MenuStyle(
+                    shape: WidgetStatePropertyAll(
+                      RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    backgroundColor: const WidgetStatePropertyAll(Colors.white),
+                  ),
+                  inputDecorationTheme: const InputDecorationTheme(
+                    border: OutlineInputBorder(),
+                  ),
+                  dropdownMenuEntries: [
+                    for (final option in _graduationStatusOptions)
+                      DropdownMenuEntry(
+                        value: option.key,
+                        label: option.value.tr(),
+                        style: MenuItemButton.styleFrom(
+                          textStyle: const TextStyle(fontSize: 16),
+                        ),
+                      ),
+                  ],
+                  onSelected:
+                      (v) => setState(() => _selectedGraduationStatus = v),
                 ),
                 const SizedBox(height: 16),
                 if (majorOptions.isNotEmpty)
@@ -417,12 +447,10 @@ class _OrganizationRegistrationPageState
                   TextFormField(
                     controller: _majorCtl,
                     validator:
-                        _isAcademicOptional
-                            ? null
-                            : (v) =>
-                                (v == null || v.trim().isEmpty)
-                                    ? 'organization.major_required'.tr()
-                                    : null,
+                        (v) =>
+                            (v == null || v.trim().isEmpty)
+                                ? 'organization.major_required'.tr()
+                                : null,
                     decoration: InputDecoration(
                       labelText: 'profile.major'.tr(),
                       hintText: 'organization.major_hint'.tr(),
@@ -534,7 +562,7 @@ class _OrganizationRegistrationPageState
 }
 
 class _SectionLabel extends StatelessWidget {
-  const _SectionLabel(this.text, {required this.required});
+  const _SectionLabel(this.text, {this.required = true});
 
   final String text;
   final bool required;
@@ -549,32 +577,6 @@ class _SectionLabel extends StatelessWidget {
           fontWeight: FontWeight.w600,
           color: required ? AppColors.primary : AppColors.textSecondary,
         ),
-      ),
-    );
-  }
-}
-
-class _InfoBanner extends StatelessWidget {
-  const _InfoBanner(this.text);
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.info.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.info.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.info_outline, size: 20, color: AppColors.info),
-          const SizedBox(width: 8),
-          Expanded(child: Text(text, style: const TextStyle(fontSize: 13))),
-        ],
       ),
     );
   }

@@ -2,7 +2,22 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useParams } from "react-router";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
-import { Box, Container, Typography, CircularProgress, Button, Stack, IconButton, Tooltip, useTheme } from "@mui/material";
+import {
+  Box,
+  Container,
+  Typography,
+  CircularProgress,
+  Button,
+  Stack,
+  IconButton,
+  Tooltip,
+  useTheme,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  TextField,
+} from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import NavigateBeforeIcon from "@mui/icons-material/NavigateBefore";
 import FavoriteIcon from "@mui/icons-material/Favorite";
@@ -137,6 +152,8 @@ const ArticleHighlightCard = ({ data, channel, eventId, isAdmin = false }) => {
   const [loadingJoin, setLoadingJoin] = useState(false);
   const [checkingRegistration, setCheckingRegistration] = useState(false);
   const [openJoinDialog, setOpenJoinDialog] = useState(false);
+  const [openCancelDialog, setOpenCancelDialog] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
   const { data: questions = [] } = useEventQuestions(eventId, !isAdmin && canContribute && channel === "event" && Boolean(eventId));
 
   useEffect(() => {
@@ -191,7 +208,11 @@ const ArticleHighlightCard = ({ data, channel, eventId, isAdmin = false }) => {
   };
 
   const handleJoinClick = () => {
-    if (loadingJoin || checkingRegistration || isJoined || !canContribute) return;
+    if (loadingJoin || checkingRegistration || !canContribute) return;
+    if (isJoined) {
+      setOpenCancelDialog(true);
+      return;
+    }
     setOpenJoinDialog(true);
   };
 
@@ -214,6 +235,39 @@ const ArticleHighlightCard = ({ data, channel, eventId, isAdmin = false }) => {
       } else {
         enqueueSnackbar(err?.response?.data?.message || t('event:register_failed'), { variant: "error" });
       }
+    } finally {
+      setLoadingJoin(false);
+    }
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!cancelReason.trim() || loadingJoin || checkingRegistration || !canContribute) return;
+    setLoadingJoin(true);
+    try {
+      const ticketsPage = await eventApi.getMyTickets({ page: 0, limit: 100 });
+      const tickets = ticketsPage?.items ?? ticketsPage?.content ?? ticketsPage?.data ?? [];
+      const ticket = tickets.find((item) => {
+        const status = String(item?.status ?? "").toUpperCase();
+        return Number(item?.eventId) === Number(eventId)
+          && item?.ticketCode
+          && status !== "CANCELLED"
+          && status !== "EXPIRED"
+          && status !== "REJECTED"
+          && status !== "USED"
+          && status !== "CHECKED_IN";
+      });
+      if (!ticket) {
+        enqueueSnackbar(t('event:ticket_not_found'), { variant: "error" });
+        return;
+      }
+      await eventApi.cancelTicketByCode(ticket.ticketCode, cancelReason.trim());
+      setIsJoined(false);
+      setJoinedCount((c) => Math.max(0, c - 1));
+      setCancelReason("");
+      setOpenCancelDialog(false);
+      enqueueSnackbar(t('event:cancel_ticket_success'), { variant: "info" });
+    } catch (err) {
+      enqueueSnackbar(err?.response?.data?.message || t('event:cancel_ticket_error'), { variant: "error" });
     } finally {
       setLoadingJoin(false);
     }
@@ -282,11 +336,11 @@ const ArticleHighlightCard = ({ data, channel, eventId, isAdmin = false }) => {
               <Button
                 fullWidth
                 variant={isJoined ? "outlined" : "contained"}
-                color="accent"
-                disabled={loadingJoin || checkingRegistration || isJoined || !canContribute}
+                color={isJoined ? "error" : "accent"}
+                disabled={loadingJoin || checkingRegistration || !canContribute}
                 onClick={handleJoinClick}
               >
-                {isJoined ? t('event:joined') : t('event:register_action')}
+                {isJoined ? t('event:cancel_ticket') : t('event:register_action')}
               </Button>
             </ContributeGuardTooltip>
           </Stack>
@@ -302,6 +356,33 @@ const ArticleHighlightCard = ({ data, channel, eventId, isAdmin = false }) => {
         loading={loadingJoin}
         onConfirm={handleConfirmJoin}
       />
+      <Dialog open={openCancelDialog} onClose={() => setOpenCancelDialog(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>{t('event:cancel_ticket')}</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            {t('event:cancel_ticket_reason_prompt')}
+          </Typography>
+          <TextField
+            fullWidth
+            multiline
+            minRows={3}
+            label={t('event:cancel_reason_label')}
+            value={cancelReason}
+            onChange={(e) => setCancelReason(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenCancelDialog(false)}>{t('common:cancel')}</Button>
+          <Button
+            variant="contained"
+            color="error"
+            disabled={!cancelReason.trim() || loadingJoin}
+            onClick={handleConfirmCancel}
+          >
+            {t('event:confirm_cancel_ticket')}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
     
   );

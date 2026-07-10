@@ -352,6 +352,10 @@ const UnifiedProfileEditPage = () => {
 
   const handleSave = async () => {
     setSuccess(false);
+    if (isMentorshipEdit && access.isMentorPending) {
+      enqueueSnackbar(t('profile:mentor_pending_edit_warning'), { variant: 'warning' });
+      return;
+    }
     if (phoneError) return; // invalid phone — error already shown under field
     try {
       let didUpdateMedia = false;
@@ -539,10 +543,9 @@ const UnifiedProfileEditPage = () => {
 
   const profile = profileQuery.data;
   
-  const mentor = mentorQuery.data;
-
   const saving = savingBase || savingMentor;
   const errorMessage = mentorError || baseError;
+  const isPendingMentorEdit = isMentorshipEdit && access.isMentorPending;
 
   const user = {
     name: profile?.fullName ?? t('profile:my_account'),
@@ -717,11 +720,25 @@ const UnifiedProfileEditPage = () => {
           </Typography>
         )}
 
-        {mentor.status !== STATUS_APPROVED && isMentorshipEdit && (
-          <Alert severity="warning">
-            {t('profile:mentor_pending_edit_warning')}
+        {isPendingMentorEdit && (
+          <Alert severity="info" sx={{ borderRadius: 2 }}>
+            <Typography fontWeight={800} mb={0.5}>
+              {t('mentorship:mentor_pending_hub_title')}
+            </Typography>
+            <Typography variant="body2">
+              {t('mentorship:mentor_pending_hub_desc')}
+            </Typography>
           </Alert>
         )}
+
+        {isPendingMentorEdit ? (
+          <Stack direction="row" spacing={1.5} flexWrap="wrap">
+            <Button variant="contained" onClick={() => navigate('/mentorship')}>
+              {t('mentorship:mentor_signup_go_back')}
+            </Button>
+          </Stack>
+        ) : (
+          <>
 
         <SectionTitle hint={t('profile:section_expertise_hint')}>
           {t('profile:shareable_content_section', { defaultValue: 'Nội dung có thể chia sẻ' })}
@@ -882,6 +899,8 @@ const UnifiedProfileEditPage = () => {
             helperText={t('profile:meeting_link_hint')}
           />
         </Stack>
+          </>
+        )}
       </Stack>
     );
   };
@@ -897,7 +916,8 @@ const UnifiedProfileEditPage = () => {
         tabs={tabs}
         onNavigate={navigate}
         mode={isMentorshipEdit ? 'mentorEdit' : 'userEdit'}
-        avatarSlot={avatarEditor}
+        avatarSlot={isPendingMentorEdit ? undefined : avatarEditor}
+        disableMediaEditing={isPendingMentorEdit}
       >
         <Stack spacing={4}>
           <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={2}>
@@ -911,15 +931,17 @@ const UnifiedProfileEditPage = () => {
               <Button
                 variant="outlined"
                 color="inherit"
-                onClick={() => navigate(isMentorshipEdit ? '/mentorship/profile' : '/profile')}
+                onClick={() => navigate(isPendingMentorEdit ? '/mentorship' : (isMentorshipEdit ? '/mentorship/profile' : '/profile'))}
                 disabled={saving}
               >
                 {t('profile:cancel_btn')}
               </Button>
 
-              <Button variant="contained" onClick={handleSave} disabled={saving || uploadingImage}>
-                {saving || uploadingImage ? t('profile:saving_btn') : t('profile:save_btn')}
-              </Button>
+              {!isPendingMentorEdit && (
+                <Button variant="contained" onClick={handleSave} disabled={saving || uploadingImage}>
+                  {saving || uploadingImage ? t('profile:saving_btn') : t('profile:save_btn')}
+                </Button>
+              )}
             </Stack>
           </Box>
 

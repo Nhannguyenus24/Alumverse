@@ -1,6 +1,7 @@
 package com.service.backend.shared.cronjob;
 
 import com.service.backend.mentorship.dao.MentorAvailabilityR2dbcRepository;
+import com.service.backend.mentorship.dao.MentorProfileR2dbcRepository;
 import com.service.backend.mentorship.dao.MentorshipSessionR2dbcRepository;
 import com.service.backend.shared.entity.MentorshipSession;
 import com.service.backend.shared.enums.Status;
@@ -23,6 +24,7 @@ public class MentorshipSessionStatusTask {
 
     private final MentorshipSessionR2dbcRepository sessionRepository;
     private final MentorAvailabilityR2dbcRepository availabilityRepository;
+    private final MentorProfileR2dbcRepository profileRepository;
     private final NotificationService notificationService;
 
     @Value("${mentorship.meeting-link.reminder-minutes:180}")
@@ -36,7 +38,12 @@ public class MentorshipSessionStatusTask {
                 .flatMap(session -> {
                     boolean attended = session.getStartedAt() != null;
                     String newStatus = attended ? Status.COMPLETED.getValue() : Status.EXPIRED.getValue();
+                    Mono<?> totalSessionsUpdate = attended
+                            ? sessionRepository.findWindowBySessionId(session.getId())
+                                    .flatMap(window -> profileRepository.incrementTotalSessions(window.getMentorMemberId()))
+                            : Mono.empty();
                     return sessionRepository.closeSession(session.getId(), newStatus, now)
+                            .then(totalSessionsUpdate)
                             .doOnSuccess(ignored -> notifySessionClosed(session, attended))
                             .onErrorResume(e -> {
                                 log.error("Failed to auto-close mentorship session {}", session.getId(), e);
