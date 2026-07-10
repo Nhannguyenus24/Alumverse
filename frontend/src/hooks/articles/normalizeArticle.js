@@ -103,7 +103,7 @@ export const normalizeLearning = (data) => {
     channel: "learning",
     title: data.title,
     content: data.description,
-    thumbnailUrl: null,
+    thumbnailUrl: resolveMediaUrl(data.thumbnailUrl),
     publishedAt,
     linkUrl: data.linkUrl,
     type: data.type,

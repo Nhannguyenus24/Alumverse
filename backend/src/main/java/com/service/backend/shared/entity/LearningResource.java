@@ -42,6 +42,9 @@ public class LearningResource {
     @Column("description")
     private String description;
 
+    @Column("thumbnail_url")
+    private String thumbnailUrl;
+
     @CreatedDate
     @Column("created_at")
     private LocalDateTime createdAt;

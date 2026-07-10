@@ -37,6 +37,7 @@ public class LearningResourceService {
                             .type(LearningResourceType.valueOf(request.getType().toUpperCase()))
                             .linkUrl(request.getLinkUrl())
                             .description(request.getDescription())
+                            .thumbnailUrl(request.getThumbnailUrl())
                             .createdAt(LocalDateTime.now())
                             .build();
 
@@ -54,6 +55,9 @@ public class LearningResourceService {
                     existing.setType(LearningResourceType.valueOf(request.getType().toUpperCase()));
                     existing.setLinkUrl(request.getLinkUrl());
                     existing.setDescription(request.getDescription());
+                    if (request.getThumbnailUrl() != null) {
+                        existing.setThumbnailUrl(request.getThumbnailUrl());
+                    }
                     return learningResourceRepository.save(existing);
                 })
                 .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))

@@ -22,6 +22,7 @@ public class LearningResourceResponse {
     private LearningResourceType type;
     private String linkUrl;
     private String description;
+    private String thumbnailUrl;
     private LocalDateTime createdAt;
 
     public static LearningResourceResponse from(LearningResource resource) {
@@ -33,6 +34,7 @@ public class LearningResourceResponse {
                 .type(resource.getType())
                 .linkUrl(resource.getLinkUrl())
                 .description(resource.getDescription())
+                .thumbnailUrl(resource.getThumbnailUrl())
                 .createdAt(resource.getCreatedAt())
                 .build();
     }

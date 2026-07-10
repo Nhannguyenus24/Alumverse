@@ -25,4 +25,8 @@ public class UpdateLearningResourceRequest {
     private String linkUrl;
 
     private String description;
+
+    /** URL of an already-uploaded thumbnail (upload via /images/upload first). */
+    @URL
+    private String thumbnailUrl;
 }
