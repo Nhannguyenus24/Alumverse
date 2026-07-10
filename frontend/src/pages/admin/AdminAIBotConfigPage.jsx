@@ -7,9 +7,10 @@ import {
   Box, Typography, Button, TextField,
   Stack, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Paper, IconButton, CircularProgress,
-  Chip, Alert,
+  Chip, Alert, Dialog, DialogTitle, DialogContent, DialogActions,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
 
@@ -27,6 +28,11 @@ const AdminAIBotConfigPage = () => {
   const [question, setQuestion] = useState('');
   const [botResponse, setBotResponse] = useState(null);
   const [asking, setAsking] = useState(false);
+
+  const [viewFilename, setViewFilename] = useState(null);
+  const [viewContent, setViewContent] = useState('');
+  const [viewLoading, setViewLoading] = useState(false);
+  const [viewError, setViewError] = useState(null);
 
   useEffect(() => {
     if (setBreadcrumbs) {
@@ -95,6 +101,37 @@ const AdminAIBotConfigPage = () => {
     } catch (error) {
       console.error(error);
     }
+  };
+
+  const handleViewFile = async (filename) => {
+    setViewFilename(filename);
+    setViewContent('');
+    setViewError(null);
+    setViewLoading(true);
+    try {
+      const res = await fetch(`${FITBOT_API_URL}/api/files/${filename}`, {
+        headers: { 'ngrok-skip-browser-warning': 'true' },
+      });
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+      const contentType = res.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        const data = await res.json();
+        setViewContent(data.content ?? data.text ?? JSON.stringify(data, null, 2));
+      } else {
+        setViewContent(await res.text());
+      }
+    } catch (error) {
+      console.error(error);
+      setViewError(t('bot_view_error'));
+    } finally {
+      setViewLoading(false);
+    }
+  };
+
+  const handleCloseView = () => {
+    setViewFilename(null);
+    setViewContent('');
+    setViewError(null);
   };
 
   const handleAskBot = async () => {
@@ -179,6 +216,9 @@ const AdminAIBotConfigPage = () => {
                       <TableRow key={file.filename}>
                         <TableCell>{file.filename}</TableCell>
                         <TableCell align="right">
+                          <IconButton color="primary" onClick={() => handleViewFile(file.filename)} title={t('bot_view_file')}>
+                            <VisibilityIcon />
+                          </IconButton>
                           <IconButton color="error" onClick={() => handleDeleteFile(file.filename)}>
                             <DeleteIcon />
                           </IconButton>
@@ -243,6 +283,36 @@ const AdminAIBotConfigPage = () => {
             )}
         </AdminSectionPanel>
       </Stack>
+
+      <Dialog open={Boolean(viewFilename)} onClose={handleCloseView} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ fontWeight: 800, wordBreak: 'break-all' }}>{viewFilename}</DialogTitle>
+        <DialogContent dividers>
+          {viewLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress size={28} />
+            </Box>
+          ) : viewError ? (
+            <Alert severity="error">{viewError}</Alert>
+          ) : (
+            <Box
+              component="pre"
+              sx={{
+                m: 0,
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+                fontFamily: 'monospace',
+                fontSize: '0.85rem',
+                lineHeight: 1.5,
+              }}
+            >
+              {viewContent}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseView}>{t('bot_view_close')}</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

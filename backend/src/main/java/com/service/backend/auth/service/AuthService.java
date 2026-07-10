@@ -125,16 +125,18 @@ public class AuthService {
                                 return Mono.error(new ApplicationException(ErrorCode.ACCOUNT_NOT_VERIFIED));
                             }
 
+                            // Membership is not required to log in. Non-members are allowed in as
+                            // guests and simply receive verificationLevel 0 for the organization
+                            // (resolved by the caller via getVerificationLevel + defaultIfEmpty(0)).
                             if (organizationId != null) {
                                 return authRepository.existsOrganizationMemberByUserIdAndOrgId(user.getId(), organizationId)
-                                        .flatMap(isMember -> {
+                                        .doOnNext(isMember -> {
                                             if (Boolean.FALSE.equals(isMember)) {
-                                                logger.warn("Login failed - user {} is not a member of organization {}", email, organizationId);
-                                                return Mono.error(new ApplicationException(ErrorCode.USER_NOT_MEMBER_OF_ORGANIZATION));
+                                                logger.info("Login as GUEST - user {} is not a member of organization {} (verificationLevel=0)", email, organizationId);
                                             }
-                                            recordLoginSuccessAsync(user.getId(), "EMAIL", userAgent, loginIp);
-                                            return Mono.just(user);
-                                        });
+                                        })
+                                        .thenReturn(user)
+                                        .doOnSuccess(u -> recordLoginSuccessAsync(u.getId(), "EMAIL", userAgent, loginIp));
                             } else {
                                 recordLoginSuccessAsync(user.getId(), "EMAIL", userAgent, loginIp);
                                 return Mono.just(user);
