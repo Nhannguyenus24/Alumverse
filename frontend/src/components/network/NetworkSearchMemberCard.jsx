@@ -9,6 +9,48 @@ import { buildProgramMajorRows } from '../../utils/academicUtils';
 import { useCanContribute } from '../../hooks/useCanContribute';
 import { ContributeGuardTooltip } from '../ContributeGuard';
 
+const ACADEMIC_TAG_KEYS = {
+  regular: 'regular',
+  'chinh quy': 'regular',
+  master: 'master',
+  'thac si': 'master',
+  'advanced program': 'advanced_program',
+  'chuong trinh tien tien': 'advanced_program',
+  'tien tien apcs': 'advanced_program',
+  apcs: 'advanced_program',
+  'high quality program': 'high_quality_program',
+  'chuong trinh chat luong cao': 'high_quality_program',
+  'enhanced english program': 'enhanced_english_program',
+  'tang cuong tieng anh': 'enhanced_english_program',
+  'khoa hoc may tinh': 'computer_science',
+  'information systems': 'information_systems',
+  'he thong thong tin': 'information_systems',
+  'information technology': 'information_technology',
+  'cong nghe thong tin': 'information_technology',
+  'software engineering': 'software_engineering',
+  'ky thuat phan mem': 'software_engineering',
+  'artificial intelligence': 'artificial_intelligence',
+  'tri tue nhan tao': 'artificial_intelligence',
+  'data science': 'data_science',
+  'khoa hoc du lieu': 'data_science',
+};
+
+const normalizeAcademicTag = (value) => (
+  String(value ?? '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+);
+
+const formatAcademicTag = (label, t) => {
+  const key = ACADEMIC_TAG_KEYS[normalizeAcademicTag(label)];
+  return key ? t(`academic_tags.${key}`, { defaultValue: label }) : label;
+};
+
 /**
  * Card hiển thị một thành viên trong tab Tìm kiếm Network.
  * Dữ liệu: global_profiles (fullName), users (avatar), organization_members (program, major).
@@ -42,6 +84,9 @@ const NetworkSearchMemberCard = ({
       onKeyDown={handleCardKeyDown}
       sx={{
         p: 3,
+        width: '100%',
+        minWidth: 0,
+        boxSizing: 'border-box',
         borderRadius: 2,
         border: '1px solid',
         borderColor: isDemo ? 'primary.light' : 'divider',
@@ -49,7 +94,8 @@ const NetworkSearchMemberCard = ({
         textAlign: 'center',
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'space-between',
+        justifyContent: 'flex-start',
+        height: '100%',
         transition: 'transform 0.2s',
         position: 'relative',
         ...networkCardClickableSx,
@@ -82,7 +128,7 @@ const NetworkSearchMemberCard = ({
         </Box>
       ) : null}
 
-      <Stack spacing={1.5} alignItems="center">
+      <Stack spacing={1.5} alignItems="center" sx={{ width: '100%', minWidth: 0 }}>
         <Avatar src={avatar} sx={{ width: 80, height: 80 }} />
 
         <Box sx={{ width: '100%' }}>
@@ -97,6 +143,7 @@ const NetworkSearchMemberCard = ({
               flexDirection: 'column',
               alignItems: 'center',
               gap: 0.75,
+              minHeight: 32,
             }}
           >
             {academicRows.map((row, index) => (
@@ -109,15 +156,15 @@ const NetworkSearchMemberCard = ({
                 useFlexGap
                 sx={{ width: '100%' }}
               >
-                {row.program ? <AcademicChip label={row.program} /> : null}
-                {row.major ? <AcademicChip label={row.major} /> : null}
+                {row.program ? <AcademicChip label={formatAcademicTag(row.program, t)} /> : null}
+                {row.major ? <AcademicChip label={formatAcademicTag(row.major, t)} /> : null}
               </Stack>
             ))}
           </Box>
         </Box>
       </Stack>
 
-      <ContributeGuardTooltip sx={{ width: '100%', mt: 3 }}>
+      <ContributeGuardTooltip sx={{ width: '100%', mt: 'auto', pt: 3, display: 'flex' }}>
         <Button
           variant={messageButtonVariant}
           fullWidth

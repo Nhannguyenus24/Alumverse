@@ -1,12 +1,18 @@
-import { Box, Container, Typography, Chip, Stack, Card } from '@mui/material';
+import { Box, Button, Container, Typography, Chip, Stack, Card } from '@mui/material';
 import BuildIcon from '@mui/icons-material/Build';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import UpdateIcon from '@mui/icons-material/Update';
 import { useTranslation } from 'react-i18next';
 import Page from '../../components/Page';
+import { useErrorPageActions } from '../../hooks/useErrorPageActions';
+import {
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from '../../components/animations/ScrollReveal';
 
 export default function MaintenancePage() {
   const { t } = useTranslation('common');
+  const { goHome, retry } = useErrorPageActions();
 
   const maintenanceUpdates = [
     {
@@ -61,7 +67,8 @@ export default function MaintenancePage() {
         />
 
         <Container maxWidth="md" sx={{ position: 'relative', zIndex: 1 }}>
-          <Box
+          <ScrollRevealGroup
+            stagger={0.09}
             sx={{
               display: 'flex',
               flexDirection: 'column',
@@ -70,7 +77,7 @@ export default function MaintenancePage() {
               py: 5,
             }}
           >
-            <Box
+            <ScrollRevealItem><Box
               sx={{
                 bgcolor: 'primary.main',
                 borderRadius: '50%',
@@ -81,9 +88,9 @@ export default function MaintenancePage() {
               }}
             >
               <BuildIcon sx={{ fontSize: 80, color: 'primary.contrastText' }} />
-            </Box>
+            </Box></ScrollRevealItem>
 
-            <Typography
+            <ScrollRevealItem><Typography
               variant="h2"
               sx={{
                 fontWeight: 700,
@@ -93,17 +100,17 @@ export default function MaintenancePage() {
               }}
             >
               {t('maintenance_subtitle')}
-            </Typography>
+            </Typography></ScrollRevealItem>
 
-            <Typography
+            <ScrollRevealItem><Typography
               variant="h6"
               color="text.secondary"
               sx={{ mb: 2, maxWidth: 600, mx: 'auto', lineHeight: 1.8 }}
             >
               {t('maintenance_desc')}
-            </Typography>
+            </Typography></ScrollRevealItem>
 
-            <Stack
+            <ScrollRevealItem><Stack
               direction="row"
               spacing={1}
               justifyContent="center"
@@ -118,16 +125,16 @@ export default function MaintenancePage() {
               >
                 {t('maintenance_estimated_downtime')}
               </Typography>
-            </Stack>
+            </Stack></ScrollRevealItem>
 
-            <Typography variant="h5" sx={{ fontWeight: 600, mb: 3 }}>
+            <ScrollRevealItem><Typography variant="h5" sx={{ fontWeight: 600, mb: 3 }}>
               {t('maintenance_working_on')}
-            </Typography>
+            </Typography></ScrollRevealItem>
 
-            <Stack spacing={2} sx={{ width: '100%', maxWidth: 700 }}>
+            <ScrollRevealItem sx={{ width: '100%', maxWidth: 700 }}>
+            <ScrollRevealGroup stagger={0.08} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {maintenanceUpdates.map((update, index) => (
-                <Card
-                  key={index}
+                <ScrollRevealItem key={index}><Card
                   sx={{
                     p: 2.5,
                     display: 'flex',
@@ -154,10 +161,22 @@ export default function MaintenancePage() {
                     color="primary"
                     variant="outlined"
                   />
-                </Card>
+                </Card></ScrollRevealItem>
               ))}
-            </Stack>
-          </Box>
+            </ScrollRevealGroup>
+            </ScrollRevealItem>
+
+            <ScrollRevealItem>
+              <Stack direction="row" spacing={2} justifyContent="center" flexWrap="wrap" useFlexGap sx={{ mt: 2 }}>
+                <Button variant="contained" onClick={retry}>
+                  {t('server_error_refresh')}
+                </Button>
+                <Button variant="outlined" onClick={goHome}>
+                  {t('not_found_go_home')}
+                </Button>
+              </Stack>
+            </ScrollRevealItem>
+          </ScrollRevealGroup>
         </Container>
       </Box>
     </Page>

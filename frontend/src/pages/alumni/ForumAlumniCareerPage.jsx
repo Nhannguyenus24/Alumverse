@@ -15,6 +15,7 @@ import { useForumTopics } from '../../hooks/forum/useForumTopics';
 import { useNotification } from '../../hooks/useNotification';
 import { formatRelativeTimeVi } from '../../utils/dateFormatter';
 import { useDebounce } from '../../hooks/useDebounce';
+import { ScrollReveal, getStaggerDelay } from '../../components/animations/ScrollReveal';
 
 const CAREER_CATEGORY_ID = 1;
 
@@ -104,7 +105,7 @@ const ForumAlumniCareerPage = () => {
                 borderColor: 'divider',
               }}
             >
-              <Box
+              <ScrollReveal
                 sx={{
                   px: { xs: 1.5, sm: 2, md: 3 },
                   py: { xs: 1.5, md: 2 },
@@ -182,7 +183,7 @@ const ForumAlumniCareerPage = () => {
                     </Tooltip>
                   </Box>
                 </Box>
-              </Box>
+              </ScrollReveal>
 
               <Box>
                 {isPending && !topics.length && (
@@ -229,9 +230,10 @@ const ForumAlumniCareerPage = () => {
                     </Typography>
                   </Box>
                 )}
-                {topics.map((topic) => (
-                  <Box
+                {topics.map((topic, index) => (
+                  <ScrollReveal
                     key={topic.id}
+                    delay={getStaggerDelay(index, 0.07)}
                     onClick={() =>
                       navigate(`/forum/alumni/career/${topic.id}`, {
                         state: {
@@ -367,7 +369,7 @@ const ForumAlumniCareerPage = () => {
                         </Box>
                       </Box>
                     </Box>
-                  </Box>
+                  </ScrollReveal>
                 ))}
               </Box>
             </Box>

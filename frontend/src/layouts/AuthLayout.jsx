@@ -3,6 +3,7 @@ import { Box, useTheme } from '@mui/material';
 import Logo from '../components/Logo';
 import { useOrgNavigate } from '../hooks/useOrgNavigate';
 import useOrganizationStore from '../stores/organizationStore';
+import { ScrollReveal } from '../components/animations/ScrollReveal';
 
 const AuthLayout = () => {
   const navigate = useOrgNavigate();
@@ -36,7 +37,10 @@ const AuthLayout = () => {
           overflow: 'hidden',
         }}
       >
-        <Box
+        <ScrollReveal
+          direction="down"
+          distance={16}
+          delay={0.08}
           onClick={() => navigate('/')}
           sx={{
             position: 'absolute',
@@ -47,6 +51,11 @@ const AuthLayout = () => {
             pr: 2,
             zIndex: 1,
             cursor: 'pointer',
+            maxWidth: { xs: 'calc(100% - 32px)', md: 'calc(50vw - 48px)' },
+            '@media (max-height: 720px)': {
+              pt: { xs: 1.25, md: 1.5 },
+              pl: { xs: 1.5, md: 2 },
+            },
           }}
         >
           <Logo
@@ -55,13 +64,16 @@ const AuthLayout = () => {
             alt="ALUMVERSE HCMUS"
             size="medium"
             sx={{
+              height: { xs: 34, sm: 38, md: 'clamp(28px, 6svh, 40px)' },
+              maxWidth: '100%',
+              objectFit: 'contain',
               filter: shouldGlowLogo
                 ? 'drop-shadow(0 0 2px rgba(255,255,255,0.95)) drop-shadow(0 0 8px rgba(255,255,255,0.72)) drop-shadow(0 0 14px rgba(255,255,255,0.42))'
                 : 'none',
               transition: 'filter 0.25s ease',
             }}
           />
-        </Box>
+        </ScrollReveal>
 
         <Box
           sx={{
@@ -75,9 +87,15 @@ const AuthLayout = () => {
             pb: { xs: 'env(safe-area-inset-bottom, 24px)', md: 4 },
             overflowY: 'auto',
             WebkitOverflowScrolling: 'touch',
+            '@media (max-height: 720px)': {
+              justifyContent: 'flex-start',
+              pt: { xs: 7, md: 6 },
+              pb: { xs: 2, md: 2 },
+            },
           }}
         >
-          <Box
+          <ScrollReveal
+            delay={0.12}
             sx={{
               width: '100%',
               maxWidth: 400,
@@ -88,11 +106,14 @@ const AuthLayout = () => {
             }}
           >
             <Outlet />
-          </Box>
+          </ScrollReveal>
         </Box>
       </Box>
 
-      <Box
+      <ScrollReveal
+        direction="left"
+        distance={34}
+        duration={0.8}
         sx={{
           display: { xs: 'none', md: 'block' },
           flex: '0 0 50%',

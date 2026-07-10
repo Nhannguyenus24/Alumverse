@@ -15,12 +15,12 @@ const RequireSlugRoute = ({ children }) => {
 
   // If slug is missing in URL, it's not a valid organization-prefixed route
   if (!slug) {
-    return <Navigate to="/404" replace />;
+    return <Navigate to="/404" replace state={{ from: pathname }} />;
   }
 
   // Handle server errors (500+)
   if (isServerError) {
-    return <Navigate to="/500" replace />;
+    return <Navigate to="/500" replace state={{ from: pathname }} />;
   }
 
   /**
@@ -45,7 +45,7 @@ const RequireSlugRoute = ({ children }) => {
   const isInvalidOrganization = !organization || !organization.id;
 
   if (isOrganizationNotFound || (isInvalidOrganization && !loading)) {
-    return <Navigate to="/404" replace />;
+    return <Navigate to="/404" replace state={{ from: pathname }} />;
   }
 
   return children;

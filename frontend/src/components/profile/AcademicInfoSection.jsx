@@ -14,6 +14,7 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import AcademicInfoRowCard from './AcademicInfoRowCard';
 import ProfileSectionTitle from './ProfileSectionTitle';
 import { buildAcademicRecords } from '../../utils/academicUtils';
+import { ScrollReveal, getStaggerDelay } from '../animations/ScrollReveal';
 
 const ACADEMIC_FIELD_CONFIG = [
   { key: 'faculty', labelKey: 'field_faculty', icon: AccountBalanceIcon },
@@ -48,7 +49,7 @@ const AcademicInfoSection = ({ academicProfile }) => {
 
   return (
     <Box>
-      <Stack
+      <ScrollReveal><Stack
         direction={{ xs: 'column', sm: 'row' }}
         spacing={1.5}
         alignItems={{ xs: 'flex-start', sm: 'center' }}
@@ -102,18 +103,20 @@ const AcademicInfoSection = ({ academicProfile }) => {
             </IconButton>
           </Stack>
         ) : null}
-      </Stack>
+      </Stack></ScrollReveal>
 
       <Grid container spacing={3} sx={{ py: 1.75 }}>
         {ACADEMIC_FIELD_CONFIG.map((field) => (
           <Grid key={field.key} size={{ xs: 12, sm: 6, md: 4 }}>
-            <AcademicInfoRowCard
-              icon={field.icon}
-              label={t(`profile:${field.labelKey}`)}
-              value={(field.key === 'faculty'
-                ? activeRecord.faculty || activeRecord.organizationName
-                : activeRecord[field.key]) || t('profile:not_updated')}
-            />
+            <ScrollReveal delay={getStaggerDelay(ACADEMIC_FIELD_CONFIG.indexOf(field), 0.07)}>
+              <AcademicInfoRowCard
+                icon={field.icon}
+                label={t(`profile:${field.labelKey}`)}
+                value={(field.key === 'faculty'
+                  ? activeRecord.faculty || activeRecord.organizationName
+                  : activeRecord[field.key]) || t('profile:not_updated')}
+              />
+            </ScrollReveal>
           </Grid>
         ))}
       </Grid>

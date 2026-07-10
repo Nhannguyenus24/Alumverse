@@ -1,9 +1,11 @@
 import { Box, Paper, Typography } from '@mui/material';
 import ChatBubbleOutlineOutlinedIcon from '@mui/icons-material/ChatBubbleOutlineOutlined';
 import ForumBoardRow from './ForumBoardRow';
+import { ScrollReveal, getStaggerDelay } from '../animations/ScrollReveal';
 
 const ForumSection = ({ title, boards = [], onBoardClick }) => {
   return (
+    <ScrollReveal>
     <Paper
       elevation={0}
       sx={{
@@ -44,21 +46,23 @@ const ForumSection = ({ title, boards = [], onBoardClick }) => {
 
       <Box>
         {boards.map((b, idx) => (
-          <Box
-            key={b.id ?? idx}
-            sx={{
-              borderBottom: idx === boards.length - 1 ? 0 : 1,
-              borderColor: 'divider',
-            }}
-          >
-            <ForumBoardRow
-              board={b}
-              onClick={onBoardClick ? () => onBoardClick(b) : undefined}
-            />
-          </Box>
+          <ScrollReveal key={b.id ?? idx} delay={getStaggerDelay(idx, 0.07)}>
+            <Box
+              sx={{
+                borderBottom: idx === boards.length - 1 ? 0 : 1,
+                borderColor: 'divider',
+              }}
+            >
+              <ForumBoardRow
+                board={b}
+                onClick={onBoardClick ? () => onBoardClick(b) : undefined}
+              />
+            </Box>
+          </ScrollReveal>
         ))}
       </Box>
     </Paper>
+    </ScrollReveal>
   );
 };
 

@@ -76,8 +76,14 @@ public class UserService {
     @Transactional
     public Mono<Void> requestPeerVerification(Long currentUserId, Integer organizationId, Integer verifierUserId) {
         return Mono.zip(
-                userOrganizationMemberRepository.findByOrganizationIdAndUserId(organizationId, currentUserId.intValue()),
-                userOrganizationMemberRepository.findByOrganizationIdAndUserId(organizationId, verifierUserId))
+                userOrganizationMemberRepository.findByOrganizationIdAndUserId(organizationId, currentUserId.intValue())
+                        .switchIfEmpty(Mono.error(new ApplicationException(
+                                ErrorCode.ORGANIZATION_MEMBER_NOT_FOUND,
+                                "Requester is not a member of this organization"))),
+                userOrganizationMemberRepository.findByOrganizationIdAndUserId(organizationId, verifierUserId)
+                        .switchIfEmpty(Mono.error(new ApplicationException(
+                                ErrorCode.ORGANIZATION_MEMBER_NOT_FOUND,
+                                "Verifier is not a member of this organization"))))
                 .flatMap(tuple -> {
                     OrganizationMember targetMember = tuple.getT1();
                     OrganizationMember verifierMember = tuple.getT2();

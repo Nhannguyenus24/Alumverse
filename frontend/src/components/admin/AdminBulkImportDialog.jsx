@@ -434,7 +434,7 @@ const AdminBulkImportDialog = ({ open, onClose, organizationOptions = [], onBulk
         {step === 'result' ? (
           <>
             <Button onClick={reset} variant="outlined" sx={{ textTransform: 'none' }}>Nhập thêm</Button>
-            <Button onClick={handleClose} variant="contained" sx={{ textTransform: 'none', fontWeight: 700 }}>Đóng</Button>
+            <Button onClick={handleClose} variant="outlined" color="secondary" sx={{ textTransform: 'none', fontWeight: 700 }}>Đóng</Button>
           </>
         ) : step === 'preview' ? (
           <>

@@ -26,6 +26,7 @@ import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
 import EventOutlinedIcon from "@mui/icons-material/EventOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import LinkIcon from "@mui/icons-material/Link";
+import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
 import Page from "../../components/Page";
 import { useArticleById } from "../../hooks/articles/useArticleById";
 import DOMPurify from "dompurify";
@@ -40,6 +41,11 @@ import { ContributeGuardTooltip, VerificationRequiredAlert } from "../../compone
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
 import { getEventRegisteredState } from "../../utils/eventRegistration";
 import { extractMainImageCaption } from "../../utils/articleContentCaption";
+import {
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from "../../components/animations/ScrollReveal";
 
 const normalizeArticleHtml = (html) => {
   if (!html || typeof document === "undefined") return html;
@@ -339,6 +345,7 @@ const ArticleHighlightCard = ({ data, channel, eventId, isAdmin = false }) => {
                 color={isJoined ? "error" : "accent"}
                 disabled={loadingJoin || checkingRegistration || !canContribute}
                 onClick={handleJoinClick}
+                startIcon={isJoined ? <CancelOutlinedIcon /> : undefined}
               >
                 {isJoined ? t('event:cancel_ticket') : t('event:register_action')}
               </Button>
@@ -376,6 +383,7 @@ const ArticleHighlightCard = ({ data, channel, eventId, isAdmin = false }) => {
           <Button
             variant="contained"
             color="error"
+            startIcon={<CancelOutlinedIcon />}
             disabled={!cancelReason.trim() || loadingJoin}
             onClick={handleConfirmCancel}
           >
@@ -489,12 +497,12 @@ const ArticlePage = () => {
         {/* Hero + absolute content frame wrapper */}
         <Box ref={heroRef} sx={{ position: "relative", top: "-1px", pt: "1px", height: { xs: "42vh", sm: "50vh", md: "62vh" }, minHeight: { xs: 300, sm: 380, md: 480 } }}>
           {/* Hero banner */}
-          <Box sx={{ position: "absolute", inset: 0, top: "-1px", backgroundColor: "primary.dark", backgroundImage: article.thumbnailUrl ? `url(${article.thumbnailUrl})` : "none", backgroundSize: "cover", backgroundPosition: "center", backgroundRepeat: "no-repeat" }} />
+          <ScrollReveal direction="none" duration={0.82} amount={0.05} sx={{ position: "absolute", inset: 0, top: "-1px", backgroundColor: "primary.dark", backgroundImage: article.thumbnailUrl ? `url(${article.thumbnailUrl})` : "none", backgroundSize: "cover", backgroundPosition: "center", backgroundRepeat: "no-repeat" }} />
           {/* Main content frame */}
           <Box ref={contentRef} sx={{ position: "absolute", top: { xs: "54%", sm: "56%", md: "54%" }, left: 0, right: 0, display: "flex", justifyContent: "center", px: { xs: 2, sm: 3 } }}>
-            <Box sx={{ width: "100%", maxWidth: 1200, backgroundColor: contentFrameBg, borderRadius: 2, boxShadow: contentFrameShadow, overflow: "hidden", py: { xs: 5, md: 6 }, px: { xs: 3, sm: 4, md: 6 } }}>
+            <ScrollRevealGroup stagger={0.09} sx={{ width: "100%", maxWidth: 1200, backgroundColor: contentFrameBg, borderRadius: 2, boxShadow: contentFrameShadow, overflow: "hidden", py: { xs: 5, md: 6 }, px: { xs: 3, sm: 4, md: 6 } }}>
               {/* Breadcrumb */}
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: { xs: 4, md: 5 } }}>
+              <ScrollRevealItem sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: { xs: 4, md: 5 } }}>
                 <Button startIcon={<NavigateBeforeIcon />} onClick={() => navigate(-1)} size="small" sx={{ color: "text.secondary", textTransform: "none", pl: 0 }}>
                   {t('back')}
                 </Button>
@@ -523,10 +531,10 @@ const ArticlePage = () => {
                   </>
                 )}
                 <SaveArticleButton itemId={Number(id)} />
-              </Box>
+              </ScrollRevealItem>
 
               {/* Title */}
-              <Typography
+              <ScrollRevealItem><Typography
                 variant="h1"
                 component="h1"
                 fontWeight={700}
@@ -542,18 +550,18 @@ const ArticlePage = () => {
                 }}
               >
                 {article.title}
-              </Typography>
+              </Typography></ScrollRevealItem>
 
               {/* Date */}
               {article.publishedAt && (
-                <Typography variant="body2" sx={{ textAlign: "center", color: "text.secondary", mb: (article.url || article.linkUrl) ? 2 : { xs: 5, md: 6 } }}>
+                <ScrollRevealItem><Typography variant="body2" sx={{ textAlign: "center", color: "text.secondary", mb: (article.url || article.linkUrl) ? 2 : { xs: 5, md: 6 } }}>
                   {formatDate(article.publishedAt)}
-                </Typography>
+                </Typography></ScrollRevealItem>
               )}
 
               {/* URL / External Link */}
               {(article.url || article.linkUrl) && (
-                <Box sx={{ display: "flex", justifyContent: "center", mb: { xs: 5, md: 6 } }}>
+                <ScrollRevealItem sx={{ display: "flex", justifyContent: "center", mb: { xs: 5, md: 6 } }}>
                   <Button
                     variant="contained"
                     color="primary"
@@ -562,17 +570,17 @@ const ArticlePage = () => {
                   >
                     {t('article:visit_link')}
                   </Button>
-                </Box>
+                </ScrollRevealItem>
               )}
 
               {/* HIGHLIGHT */}
               {highlightData && (
-                <ArticleHighlightCard data={highlightData} channel={resolvedChannel} eventId={id} isAdmin={isAdmin} />
+                <ScrollRevealItem><ArticleHighlightCard data={highlightData} channel={resolvedChannel} eventId={id} isAdmin={isAdmin} /></ScrollRevealItem>
               )}
 
               {/* Thumbnail */}
               {article.thumbnailUrl && (
-                <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", mt: { xs: 2, md: 3 }, mb: { xs: 5, md: 6 } }}>
+                <ScrollRevealItem sx={{ display: "flex", flexDirection: "column", alignItems: "center", mt: { xs: 2, md: 3 }, mb: { xs: 5, md: 6 } }}>
                   <Box component="img" src={article.thumbnailUrl} alt={article.title} sx={{ width: { xs: "100%", md: "72%" }, aspectRatio: "16 / 10", objectFit: "cover", borderRadius: 2, boxShadow: "0 2px 10px rgba(0,0,0,0.1)" }} />
                   {mainImageCaption && (
                     <Typography
@@ -582,11 +590,11 @@ const ArticlePage = () => {
                       {mainImageCaption}
                     </Typography>
                   )}
-                </Box>
+                </ScrollRevealItem>
               )}
 
               {/* Article Content */}
-              <Box
+              <ScrollRevealItem
                 sx={(theme) => ({
                   ...theme.typography.body1,
                   color: "text.primary",
@@ -675,7 +683,7 @@ const ArticlePage = () => {
                 })}
                 dangerouslySetInnerHTML={{ __html: cleanContent }}
               />
-            </Box>
+            </ScrollRevealGroup>
           </Box>
         </Box>
 

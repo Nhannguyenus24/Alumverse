@@ -18,6 +18,11 @@ import { useBrowseMentors } from '../../hooks/mentorship/useBrowseMentors';
 import { useMentorshipAccessState } from '../../hooks/mentorship/useMentorshipAccessState';
 import { useSkillSearch } from '../../hooks/mentorship/useSkillSearch';
 import { formatRating } from '../../utils/numberFormatter';
+import {
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from '../animations/ScrollReveal';
 
 const PAGE_SIZE = 9;
 
@@ -119,14 +124,12 @@ const MentorshipMentorListSection = () => {
       : undefined;
 
   return (
-    <Stack spacing={3}>
+    <ScrollRevealGroup stagger={0.08} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
       {access.needsOrgVerification && (
-        <Alert severity="info">
-          {t('mentorship:preview_mode_alert')}
-        </Alert>
+        <ScrollRevealItem><Alert severity="info">{t('mentorship:preview_mode_alert')}</Alert></ScrollRevealItem>
       )}
 
-      <Box>
+      <ScrollRevealItem>
         <Typography variant="h4" fontWeight={700} mb={2}>
           {t('mentorship:find_mentor_title')}
         </Typography>
@@ -138,16 +141,16 @@ const MentorshipMentorListSection = () => {
           }}
           placeholder={t('mentorship:search_mentor_placeholder')}
         />
-      </Box>
+      </ScrollRevealItem>
 
-      <DynamicFilterBar
+      <ScrollRevealItem><DynamicFilterBar
         config={filterConfig}
         value={filters}
         onChange={(next) => {
           setFilters(next);
           setPage(0);
         }}
-      />
+      /></ScrollRevealItem>
 
       {browseQuery.isLoading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
@@ -162,7 +165,8 @@ const MentorshipMentorListSection = () => {
             : t('mentorship:no_mentor_in_system')}
         </Alert>
       ) : (
-        <Box
+        <ScrollRevealGroup
+          stagger={0.07}
           sx={{
             display: 'grid',
             gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' },
@@ -172,8 +176,7 @@ const MentorshipMentorListSection = () => {
           {mentors.map((mentor) => {
             const isOwnCard = ownMentorMemberId === mentor.memberId;
             return (
-              <MentorshipCard
-                key={mentor.memberId}
+              <ScrollRevealItem key={mentor.memberId}><MentorshipCard
                 avatar={mentor.avatarUrl}
                 name={mentor.fullName ?? `Mentor #${mentor.memberId}`}
                 role={
@@ -188,14 +191,14 @@ const MentorshipMentorListSection = () => {
                 onBook={() => handleBook(mentor.memberId)}
                 canBook={access.canUseMentorship && access.hasJoinedMentorship && !isOwnCard}
                 bookDisabledReason={isOwnCard ? t('mentorship:this_is_your_profile') : bookDisabledReason}
-              />
+              /></ScrollRevealItem>
             );
           })}
-        </Box>
+        </ScrollRevealGroup>
       )}
 
       {paginated && paginated.totalPage > 1 && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
+        <ScrollRevealItem sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
           <Button
             variant="outlined"
             disabled={!paginated.hasPrevious}
@@ -213,9 +216,9 @@ const MentorshipMentorListSection = () => {
           >
             {t('mentorship:pagination_next')}
           </Button>
-        </Box>
+        </ScrollRevealItem>
       )}
-    </Stack>
+    </ScrollRevealGroup>
   );
 };
 

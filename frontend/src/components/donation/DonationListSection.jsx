@@ -4,6 +4,10 @@ import { useTranslation } from "react-i18next";
 import { fundApi } from "../../utils/api";
 import DonationListItemCard from "./DonationListItemCard";
 import DonationListFilters from "./DonationListFilters";
+import {
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from "../animations/ScrollReveal";
 
 export default function FundraisingListSection({ fundId }) {
   const { t } = useTranslation('donation');
@@ -60,21 +64,19 @@ export default function FundraisingListSection({ fundId }) {
   }, [fundId, page, pageSize, searchKeyword, searchBy]);
 
   return (
-    <Card
-      sx={{
-        px: { xs: 2.5, md: 4 },
-        py: { xs: 3, md: 3.6 },
-        mb: 3,
-      }}
-      variant="outlined"
+    <ScrollRevealGroup
+      stagger={0.08}
+      sx={{ px: { xs: 2.5, md: 4 }, py: { xs: 3, md: 3.6 }, mb: 3, bgcolor: 'background.paper', color: 'text.primary', overflow: 'hidden', border: "1px solid", borderColor: "divider", borderRadius: 1 }}
     >
+      <ScrollRevealItem>
       <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2} sx={{ mb: 2.5 }}>
         <Typography variant="h5" sx={{ fontWeight: 800, color: "primary.main", fontSize: { xs: "1.35rem", md: "1.6rem" } }}>
           {t('donation:list_title')}
         </Typography>
       </Stack>
+      </ScrollRevealItem>
 
-      <DonationListFilters
+      <ScrollRevealItem><DonationListFilters
         searchBy={searchBy}
         searchInput={searchInput}
         onSearchByChange={(nextSearchBy) => {
@@ -87,23 +89,23 @@ export default function FundraisingListSection({ fundId }) {
           setPage(1);
           setSearchKeyword(searchInput.trim());
         }}
-      />
+      /></ScrollRevealItem>
 
       {errorMessage ? (
-        <Typography sx={{ color: "error.main", fontWeight: 700, mb: 2 }}>{errorMessage}</Typography>
+        <ScrollRevealItem><Typography sx={{ color: "error.main", fontWeight: 700, mb: 2 }}>{errorMessage}</Typography></ScrollRevealItem>
       ) : null}
 
-      <Stack spacing={1.5} sx={{ minHeight: { xs: 430, md: 470 } }}>
+      <ScrollRevealGroup stagger={0.07} sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, minHeight: { xs: 430, md: 470 } }}>
         {isLoading ? <LinearProgress sx={{ height: 8, borderRadius: 999 }} /> : null}
 
         {!isLoading && items.length === 0 ? <Typography sx={{ color: "text.secondary", fontWeight: 600 }}>{t('donation:no_donations_found')}</Typography> : null}
 
         {items.map((item) => (
-          <DonationListItemCard key={item.id} item={item} />
+          <ScrollRevealItem key={item.id}><DonationListItemCard item={item} /></ScrollRevealItem>
         ))}
-      </Stack>
+      </ScrollRevealGroup>
 
-      <Stack direction="row" justifyContent="center" sx={{ mt: 2.3 }}>
+      <ScrollRevealItem><Stack direction="row" justifyContent="center" sx={{ mt: 2.3 }}>
         <Pagination
           count={totalPage}
           page={Math.min(page, totalPage)}
@@ -113,7 +115,7 @@ export default function FundraisingListSection({ fundId }) {
           size="medium"
           sx={{ "& .MuiPaginationItem-root": { fontWeight: 700 } }}
         />
-      </Stack>
-    </Card>
+      </Stack></ScrollRevealItem>
+    </ScrollRevealGroup>
   );
 }

@@ -60,6 +60,11 @@ import { formatDate } from '../../utils/dateFormatter';
 import { formatRating } from '../../utils/numberFormatter';
 import { resolveProfileRoleLabel } from '../../utils/profileRoleUtils';
 import { resolveMediaUrl } from '../../utils/imageUtils';
+import {
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from '../../components/animations/ScrollReveal';
 
 const DEFAULT_COVER =
   'https://ethnasia.com/cdn/shop/articles/sean-o-KMn4VEeEPR8-unsplash_edited.jpg?v=1621585619';
@@ -120,10 +125,10 @@ const ProfileTimelineSection = ({ title, icon, items = [], t }) => {
   const TimelineIcon = icon;
 
   return (
-    <Box>
-      <Typography variant="h5" fontWeight={800} color="primary.main" mb={3} display="flex" alignItems="center" gap={1}>
+    <ScrollRevealGroup stagger={0.07}>
+      <ScrollRevealItem><Typography variant="h5" fontWeight={800} color="primary.main" mb={3} display="flex" alignItems="center" gap={1}>
         <TimelineIcon /> {title}
-      </Typography>
+      </Typography></ScrollRevealItem>
       <Stack spacing={0}>
         {rows.map((item, index) => {
           const titleText = getItemTitle(item);
@@ -131,7 +136,7 @@ const ProfileTimelineSection = ({ title, icon, items = [], t }) => {
           const period = getItemPeriod(item);
           const description = item.description || item.link || '';
           return (
-            <Box key={`${titleText}-${index}`} sx={{ display: 'grid', gridTemplateColumns: '28px 1fr', columnGap: 1.5 }}>
+            <ScrollRevealItem key={`${titleText}-${index}`} sx={{ display: 'grid', gridTemplateColumns: '28px 1fr', columnGap: 1.5 }}>
               <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: '100%' }}>
                 <Box sx={{ width: 9, height: 9, borderRadius: '50%', bgcolor: 'text.disabled', mt: 0.75 }} />
                 <Box sx={{ width: 3, flex: 1, bgcolor: 'divider', my: 0.5, minHeight: description ? 56 : 32 }} />
@@ -156,11 +161,11 @@ const ProfileTimelineSection = ({ title, icon, items = [], t }) => {
                   </Typography>
                 )}
               </Box>
-            </Box>
+            </ScrollRevealItem>
           );
         })}
       </Stack>
-    </Box>
+    </ScrollRevealGroup>
   );
 };
 
@@ -168,17 +173,19 @@ const ShareableContentSection = ({ summary, tags = [], t }) => {
   const hasSummary = !!summary?.trim();
   if (!hasSummary && tags.length === 0) return null;
   return (
-    <Box>
+    <ScrollRevealGroup stagger={0.08}>
+      <ScrollRevealItem>
       <Typography variant="h5" fontWeight={800} color="primary.main" mb={2} display="flex" alignItems="center" gap={1}>
         <WorkspacePremiumIcon /> {t('profile:shareable_content_section', { defaultValue: 'Nội dung có thể chia sẻ' })}
       </Typography>
+      </ScrollRevealItem>
       {hasSummary && (
-        <Typography color="text.secondary" sx={{ whiteSpace: 'pre-line', fontSize: '1.05rem', lineHeight: 1.7, mb: tags.length ? 2 : 0 }}>
+        <ScrollRevealItem><Typography color="text.secondary" sx={{ whiteSpace: 'pre-line', fontSize: '1.05rem', lineHeight: 1.7, mb: tags.length ? 2 : 0 }}>
           {summary.trim()}
-        </Typography>
+        </Typography></ScrollRevealItem>
       )}
       {tags.length > 0 && (
-        <Box sx={{ mt: hasSummary ? 2 : 0 }}>
+        <ScrollRevealItem sx={{ mt: hasSummary ? 2 : 0 }}>
           <Typography variant="h6" fontWeight={800} color="primary.main" mb={1.5} display="flex" alignItems="center" gap={1}>
             <VerifiedIcon fontSize="small" /> {t('profile:skills_section', { defaultValue: 'Kỹ năng' })}
           </Typography>
@@ -187,9 +194,9 @@ const ShareableContentSection = ({ summary, tags = [], t }) => {
               <MentorshipTag key={`${tag}-${idx}`} label={tag} />
             ))}
           </Box>
-        </Box>
+        </ScrollRevealItem>
       )}
-    </Box>
+    </ScrollRevealGroup>
   );
 };
 
@@ -227,8 +234,8 @@ const ReviewsSection = ({
   onPageChange,
   t,
 }) => (
-  <Box>
-    <Box
+  <ScrollRevealGroup stagger={0.08}>
+    <ScrollRevealItem
       sx={{
         display: 'flex',
         flexDirection: { xs: 'column', sm: 'row' },
@@ -248,27 +255,26 @@ const ReviewsSection = ({
         </Typography>
         <Typography color="text.secondary" fontWeight={500}>{t('profile:reviews_count', { count: feedbacks.length })}</Typography>
       </Box>
-    </Box>
+    </ScrollRevealItem>
 
     {feedbacks.length === 0 ? (
-      <Typography color="text.secondary" sx={{ fontStyle: 'italic' }}>{t('profile:no_reviews')}</Typography>
+      <ScrollRevealItem><Typography color="text.secondary" sx={{ fontStyle: 'italic' }}>{t('profile:no_reviews')}</Typography></ScrollRevealItem>
     ) : (
       <>
         <Stack spacing={3}>
           {feedbacks.map((review) => (
-            <MentorshipReviewCard
-              key={review.id}
+            <ScrollReveal key={review.id}><MentorshipReviewCard
               name={review.menteeName ?? 'Mentee'}
               date={formatDate(review.createdAt, '')}
               avatar={review.menteeAvatarUrl ?? ''}
               rating={review.rating}
               content={review.comment ?? ''}
-            />
+            /></ScrollReveal>
           ))}
         </Stack>
 
         {totalPages > 1 && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mt: 4 }}>
+          <ScrollRevealItem sx={{ display: 'flex', justifyContent: 'center', gap: 1, mt: 4 }}>
             <Button variant="outlined" disabled={page <= 1} onClick={() => onPageChange(page - 1)} sx={{ borderRadius: 2 }}>
               {t('profile:prev_page')}
             </Button>
@@ -283,11 +289,11 @@ const ReviewsSection = ({
             >
               {t('profile:next_page')}
             </Button>
-          </Box>
+          </ScrollRevealItem>
         )}
       </>
     )}
-  </Box>
+  </ScrollRevealGroup>
 );
 
 const OwnProfile = ({ navigate, isMentorshipPath }) => {
@@ -389,7 +395,7 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
     return (
       <Box>
         <Grid container spacing={4}>
-          <Grid size={{ xs: 12 }} sx={{ pb: 2 }}>
+          <Grid size={{ xs: 12 }} sx={{ pb: 2 }}><ScrollReveal>
             <ProfileSectionTitle icon={PersonIcon}>{t('profile:intro_section')}</ProfileSectionTitle>
             <Typography
               color={hasBio ? 'text.secondary' : 'text.disabled'}
@@ -397,9 +403,9 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
             >
               {personalBio?.trim() || t('profile:no_bio')}
             </Typography>
-          </Grid>
+          </ScrollReveal></Grid>
 
-          <Grid size={{ xs: 12, lg: 4 }}>
+          <Grid size={{ xs: 12, lg: 4 }}><ScrollReveal direction="right">
             <Box sx={{ height: '100%' }}>
               <ProfileSectionTitle icon={BusinessIcon}>{t('profile:basic_info')}</ProfileSectionTitle>
               <Box>
@@ -409,16 +415,16 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
                 <SocialLinksRenderer linksRaw={profile?.links} />
               </Box>
             </Box>
-          </Grid>
+          </ScrollReveal></Grid>
 
-          <Grid size={{ xs: 12, lg: 8 }}>
+          <Grid size={{ xs: 12, lg: 8 }}><ScrollReveal direction="left">
             <AcademicInfoSection
               academicProfile={{
                 ...orgMember,
                 organizationName: orgMember?.organizationName || organization?.name,
               }}
             />
-          </Grid>
+          </ScrollReveal></Grid>
         </Grid>
       </Box>
     );
@@ -650,7 +656,7 @@ const PublicMentorProfile = ({ mentorMemberId, navigate }) => {
       canBook={canBook}
       contentSx={{ pb: { xs: 4, md: 8 } }}
     >
-      <Stack spacing={5}>
+        <ScrollRevealGroup stagger={0.09} sx={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
         {access.needsOrgVerification && (
           <Alert severity="info" sx={{ borderRadius: 2 }}>
             {t('profile:preview_mode_warning')}
@@ -662,7 +668,7 @@ const PublicMentorProfile = ({ mentorMemberId, navigate }) => {
         </Typography>
 
         <StatsBanner items={stats} />
-      </Stack>
+        </ScrollRevealGroup>
 
       <Box sx={{ mt: 5 }}>
         <ShareableContentSection

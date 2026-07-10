@@ -9,6 +9,7 @@ import AlumniContentLayout from '../../layouts/AlumniContentLayout';
 import { useOrganization } from '../../hooks/useOrganization';
 import { useForumCategoryLogic } from '../../hooks/forum/useForumCategoryLogic';
 import { useCanContribute } from '../../hooks/useCanContribute';
+import { ScrollReveal, getStaggerDelay } from '../../components/animations/ScrollReveal';
 
 const ForumCategoryPage = () => {
   const { t } = useTranslation(['forum', 'common']);
@@ -81,7 +82,7 @@ const ForumCategoryPage = () => {
                 px: { xs: 1.5, sm: 2, md: 2.75 },
               }}
             >
-              <Breadcrumb items={breadcrumbItems} uppercase color="primary" />
+              <ScrollReveal><Breadcrumb items={breadcrumbItems} uppercase color="primary" /></ScrollReveal>
               <Box
                 sx={{
                   flex: 1,
@@ -91,7 +92,7 @@ const ForumCategoryPage = () => {
                   borderColor: 'divider',
                 }}
               >
-                <Box
+                <ScrollReveal
                   sx={{
                     px: { xs: 1.5, sm: 2, md: 3 },
                     py: { xs: 1.5, md: 2 },
@@ -148,7 +149,7 @@ const ForumCategoryPage = () => {
                       </Tooltip>
                     </Box>
                   </Box>
-                </Box>
+                </ScrollReveal>
 
                 <Box>
                   {topicsPending && !topics?.length ? (
@@ -160,14 +161,15 @@ const ForumCategoryPage = () => {
                       <Typography color="text.secondary">{t('no_topics_in_category')}</Typography>
                     </Box>
                   ) : (
-                    topics.map((topic) => (
-                      <ForumTopicListItem
-                        key={topic.id}
-                        topic={topic}
-                        activeCategory={activeCategory}
-                        categoryId={categoryId}
-                        onClick={handleTopicClick}
-                      />
+                    topics.map((topic, index) => (
+                      <ScrollReveal key={topic.id} delay={getStaggerDelay(index, 0.07)}>
+                        <ForumTopicListItem
+                          topic={topic}
+                          activeCategory={activeCategory}
+                          categoryId={categoryId}
+                          onClick={handleTopicClick}
+                        />
+                      </ScrollReveal>
                     ))
                   )}
                 </Box>

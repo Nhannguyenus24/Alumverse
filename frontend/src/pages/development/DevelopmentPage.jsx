@@ -26,6 +26,10 @@ import {
   getArticleFilterConfig,
 } from '../../utils/articleListFilters';
 import { getDevelopmentSidebarItems } from '../../constants/developmentNav';
+import {
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from '../../components/animations/ScrollReveal';
 
 const PreviewSection = ({
   title,
@@ -41,8 +45,8 @@ const PreviewSection = ({
   onEdit,
   onDelete,
 }) => (
-  <Box>
-    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+  <ScrollRevealGroup stagger={0.08}>
+    <ScrollRevealItem sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
       <Typography variant="h4" fontWeight={700}>
         {title}
       </Typography>
@@ -50,28 +54,31 @@ const PreviewSection = ({
       <Button variant="text" onClick={onSeeMore}>
         {seeMoreLabel}
       </Button>
-    </Box>
+    </ScrollRevealItem>
 
-    <Typography color="text.secondary" mb={3}>
-      {description}
-    </Typography>
+    <ScrollRevealItem>
+      <Typography color="text.secondary" mb={3}>
+        {description}
+      </Typography>
+    </ScrollRevealItem>
 
     {isPending && (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+      <ScrollRevealItem sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
         <CircularProgress size={28} />
-      </Box>
+      </ScrollRevealItem>
     )}
 
     {!isPending && errorMessage && (
-      <Typography color="error">{errorMessage}</Typography>
+      <ScrollRevealItem><Typography color="error">{errorMessage}</Typography></ScrollRevealItem>
     )}
 
     {!isPending && !errorMessage && articles.length === 0 && (
-      <Typography color="text.secondary">{emptyLabel}</Typography>
+      <ScrollRevealItem><Typography color="text.secondary">{emptyLabel}</Typography></ScrollRevealItem>
     )}
 
     {!isPending && !errorMessage && articles.length > 0 && (
-      <Box
+      <ScrollRevealGroup
+        stagger={0.08}
         sx={{
           display: 'grid',
           gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' },
@@ -81,7 +88,7 @@ const PreviewSection = ({
         {articles.map((article, i) => {
           const card = toCardShape(article);
           return (
-            <Box
+            <ScrollRevealItem
               key={article.id ?? i}
               sx={{ cursor: 'pointer' }}
               onClick={() => onOpenArticle(article)}
@@ -92,12 +99,12 @@ const PreviewSection = ({
                 onEdit={() => onEdit?.(article)}
                 onDelete={() => onDelete?.(article)}
               />
-            </Box>
+            </ScrollRevealItem>
           );
         })}
-      </Box>
+      </ScrollRevealGroup>
     )}
-  </Box>
+  </ScrollRevealGroup>
 );
 
 const DevelopmentPage = () => {
@@ -215,45 +222,49 @@ const DevelopmentPage = () => {
     >
 
               {/* MENTORSHIP SECTION */}
-              <Box>
-                <Typography variant="h4" fontWeight={700} color="primary.main" mb={1}>
-                  {t('mentorship:title')}
-                </Typography>
-                <Paper
-                  elevation={0}
-                  sx={{
-                    p: 4,
-                    bgcolor: (theme) => theme.palette.mode === 'dark'
-                      ? alpha(theme.palette.primary.main, 0.18)
-                      : 'primary.lighter',
-                    color: (theme) => theme.palette.mode === 'dark' ? 'common.white' : 'text.primary',
-                    border: '1px solid',
-                    borderColor: (theme) => theme.palette.mode === 'dark'
-                      ? alpha(theme.palette.primary.main, 0.32)
-                      : alpha(theme.palette.primary.main, 0.2),
-                    boxShadow: (theme) => theme.palette.mode === 'dark'
-                      ? `0 0 34px ${alpha(theme.palette.primary.main, 0.16)}`
-                      : 'none',
-                    borderRadius: 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 5,
-                  }}
-                >
-                  <Box sx={{ flex: 1 }}>
-                    <Typography variant="h3" color="primary.main" mb={1}>
-                      {t('dev:mentorship_program_title')}
-                    </Typography>
-                    <Typography variant="body1">
-                      {t('dev:mentorship_program_desc')}
-                    </Typography>
-                  </Box>
+              <ScrollRevealGroup stagger={0.1}>
+                <ScrollRevealItem>
+                  <Typography variant="h4" fontWeight={700} color="primary.main" mb={1}>
+                    {t('mentorship:title')}
+                  </Typography>
+                </ScrollRevealItem>
+                <ScrollRevealItem>
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: 4,
+                      bgcolor: (theme) => theme.palette.mode === 'dark'
+                        ? alpha(theme.palette.primary.main, 0.18)
+                        : 'primary.lighter',
+                      color: (theme) => theme.palette.mode === 'dark' ? 'common.white' : 'text.primary',
+                      border: '1px solid',
+                      borderColor: (theme) => theme.palette.mode === 'dark'
+                        ? alpha(theme.palette.primary.main, 0.32)
+                        : alpha(theme.palette.primary.main, 0.2),
+                      boxShadow: (theme) => theme.palette.mode === 'dark'
+                        ? `0 0 34px ${alpha(theme.palette.primary.main, 0.16)}`
+                        : 'none',
+                      borderRadius: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 5,
+                    }}
+                  >
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="h3" color="primary.main" mb={1}>
+                        {t('dev:mentorship_program_title')}
+                      </Typography>
+                      <Typography variant="body1">
+                        {t('dev:mentorship_program_desc')}
+                      </Typography>
+                    </Box>
 
-                  <Button variant="contained" onClick={() => navigate('/mentorship')}>
-                    {t('dev:find_mentor_now')}
-                  </Button>
-                </Paper>
-              </Box>
+                    <Button variant="contained" onClick={() => navigate('/mentorship')}>
+                      {t('dev:find_mentor_now')}
+                    </Button>
+                  </Paper>
+                </ScrollRevealItem>
+              </ScrollRevealGroup>
 
               {/* ACADEMICS SECTION */}
               <PreviewSection

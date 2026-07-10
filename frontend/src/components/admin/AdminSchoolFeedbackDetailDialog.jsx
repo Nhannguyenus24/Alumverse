@@ -84,7 +84,8 @@ const AdminSchoolFeedbackDetailDialog = ({
         )}
         <Button
           onClick={onClose}
-          variant="contained"
+          variant="outlined"
+          color="secondary"
           sx={{ textTransform: 'none', fontWeight: 700 }}
         >
           {t('common:close')}

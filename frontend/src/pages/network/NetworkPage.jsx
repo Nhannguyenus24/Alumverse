@@ -42,6 +42,11 @@ import {
   getNetworkSearchFilterConfig,
 } from '../../constants/networkConfig';
 import StatsBanner from '../../components/StatsBanner';
+import {
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from '../../components/animations/ScrollReveal';
 
 const PAGE_SIZE = 9;
 const guestBenefitIcons = [
@@ -63,8 +68,8 @@ const NetworkGuestLanding = () => {
       header={null}
       contentSpacing={0}
     >
-      <Stack spacing={4}>
-        <Stack spacing={2}>
+      <ScrollRevealGroup stagger={0.09} sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <ScrollRevealItem><Stack spacing={2}>
           <Typography
             variant="h1"
             fontWeight={800}
@@ -76,9 +81,9 @@ const NetworkGuestLanding = () => {
           <Typography color="text.secondary">
             {t('network:page_subtitle')}
           </Typography>
-        </Stack>
+        </Stack></ScrollRevealItem>
 
-        <Box
+        <ScrollRevealItem
           sx={{
             borderRadius: 3,
             px: { xs: 3, md: 5 },
@@ -122,15 +127,15 @@ const NetworkGuestLanding = () => {
               {t('network:guest_register')}
             </Button>
           </Stack>
-        </Box>
+        </ScrollRevealItem>
 
-        <StatsBanner items={getNetworkGuestStats(t)} />
+        <ScrollRevealItem><StatsBanner items={getNetworkGuestStats(t)} /></ScrollRevealItem>
 
-        <Box>
+        <ScrollRevealItem>
           <Typography variant="h4" fontWeight={700} mb={3}>
             {t('network:guest_benefits_heading')}
           </Typography>
-          <Box
+          <ScrollRevealGroup stagger={0.08}
             sx={{
               display: 'grid',
               gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' },
@@ -140,7 +145,7 @@ const NetworkGuestLanding = () => {
             {benefits.map((item, index) => {
               const Icon = guestBenefitIcons[index] ?? GroupsOutlinedIcon;
               return (
-                <Card key={item.title} sx={{ p: 3, border: '1px solid', borderColor: 'divider' }} elevation={0}>
+                <ScrollRevealItem key={item.title}><Card sx={{ p: 3, border: '1px solid', borderColor: 'divider' }} elevation={0}>
                   <Icon sx={{ fontSize: 40, color: 'primary.main', mb: 1.5 }} />
                   <Typography fontWeight={700} mb={1}>
                     {item.title}
@@ -148,20 +153,19 @@ const NetworkGuestLanding = () => {
                   <Typography variant="body2" color="text.secondary">
                     {item.description}
                   </Typography>
-                </Card>
+                </Card></ScrollRevealItem>
               );
             })}
-          </Box>
-        </Box>
+          </ScrollRevealGroup>
+        </ScrollRevealItem>
 
-        <Box>
+        <ScrollRevealItem>
           <Typography variant="h4" fontWeight={700} mb={3}>
             {t('network:guest_steps_heading')}
           </Typography>
-          <Stack spacing={2}>
+          <ScrollRevealGroup stagger={0.08} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             {getNetworkGuestSteps(t).map((item) => (
-              <Card
-                key={item.step}
+              <ScrollRevealItem key={item.step}><Card
                 sx={{
                   p: 2.5,
                   border: '1px solid',
@@ -194,12 +198,12 @@ const NetworkGuestLanding = () => {
                     {item.text}
                   </Typography>
                 </Box>
-              </Card>
+              </Card></ScrollRevealItem>
             ))}
-          </Stack>
-        </Box>
+          </ScrollRevealGroup>
+        </ScrollRevealItem>
 
-        <Card
+        <ScrollRevealItem><Card
           sx={{
             p: { xs: 3, md: 4 },
             textAlign: 'center',
@@ -223,8 +227,8 @@ const NetworkGuestLanding = () => {
               {t('network:guest_register')}
             </Button>
           </Stack>
-        </Card>
-      </Stack>
+        </Card></ScrollRevealItem>
+      </ScrollRevealGroup>
     </AlumniContentLayout>
   );
 };
@@ -343,33 +347,33 @@ const NetworkMemberDirectory = () => {
 
   return (
     <NetworkSectionLayout title={t('network:title')}>
-      <Stack spacing={2}>
-        <Typography
+      <ScrollRevealGroup stagger={0.08} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <ScrollRevealItem><Typography
           variant="h1"
           fontWeight={800}
           color="primary.main"
           sx={{ fontSize: { xs: '1.8rem', md: '2.3rem' } }}
         >
           {t('network:page_heading')}
-        </Typography>
+        </Typography></ScrollRevealItem>
 
-        <Typography color="text.secondary">
+        <ScrollRevealItem><Typography color="text.secondary">
           {t('network:page_subtitle')}
-        </Typography>
+        </Typography></ScrollRevealItem>
 
-        <DynamicFilterBar
+        <ScrollRevealItem><DynamicFilterBar
           config={filterConfig}
           value={filters}
           onChange={handleFilterChange}
-        />
+        /></ScrollRevealItem>
 
-        <SearchBar
+        <ScrollRevealItem><SearchBar
           value={searchInput}
           onChange={setSearchInput}
           onKeyDown={handleSearchKeyDown}
           placeholder={t('network:search_by_name_placeholder')}
-        />
-      </Stack>
+        /></ScrollRevealItem>
+      </ScrollRevealGroup>
 
       {isError ? <Alert severity="error">{errorMessage}</Alert> : null}
 
@@ -384,7 +388,8 @@ const NetworkMemberDirectory = () => {
             : t('network:no_members_to_show')}
         </Alert>
       ) : items.length > 0 ? (
-        <Box
+        <ScrollRevealGroup
+          stagger={0.07}
           sx={{
             display: 'grid',
             gridTemplateColumns: {
@@ -393,8 +398,12 @@ const NetworkMemberDirectory = () => {
               md: '1fr 1fr 1fr',
             },
             gap: 3,
+            alignItems: 'stretch',
             opacity: isFetching ? 0.6 : 1,
             transition: 'opacity 0.2s',
+            '& > *': {
+              minWidth: 0,
+            },
           }}
         >
           {items.map((member) => {
@@ -413,27 +422,28 @@ const NetworkMemberDirectory = () => {
                   : t('network:connect');
 
             return (
-              <NetworkSearchMemberCard
-                key={member.userId}
-                userId={member.userId}
-                avatar={member.avatarUrl}
-                fullName={member.fullName}
-                program={member.program}
-                major={member.major}
-                onMessage={isSelf ? null : () => handleOpenMessage(member)}
-                onBlock={isSelf ? null : () => setBlockTarget(member)}
-                isMessageLoading={checkingUserId === member.userId}
-                isBlockLoading={isBlocking && blockTarget?.userId === member.userId}
-                messageButtonLabel={messageButtonLabel}
-                messageButtonVariant={isConnected ? 'outlined' : 'contained'}
-              />
+              <ScrollRevealItem key={member.userId} sx={{ display: 'flex', width: '100%', minWidth: 0, height: '100%' }}>
+                <NetworkSearchMemberCard
+                  userId={member.userId}
+                  avatar={member.avatarUrl}
+                  fullName={member.fullName}
+                  program={member.program}
+                  major={member.major}
+                  onMessage={isSelf ? null : () => handleOpenMessage(member)}
+                  onBlock={isSelf ? null : () => setBlockTarget(member)}
+                  isMessageLoading={checkingUserId === member.userId}
+                  isBlockLoading={isBlocking && blockTarget?.userId === member.userId}
+                  messageButtonLabel={messageButtonLabel}
+                  messageButtonVariant={isConnected ? 'outlined' : 'contained'}
+                />
+              </ScrollRevealItem>
             );
           })}
-        </Box>
+        </ScrollRevealGroup>
       ) : null}
 
       {pageCount > 0 ? (
-        <Stack direction="row" justifyContent="center" alignItems="center">
+        <ScrollReveal><Stack direction="row" justifyContent="center" alignItems="center">
           <Pagination
             count={pageCount}
             page={safePage}
@@ -450,7 +460,7 @@ const NetworkMemberDirectory = () => {
               },
             }}
           />
-        </Stack>
+        </Stack></ScrollReveal>
       ) : null}
 
       <NetworkMessageDrawer

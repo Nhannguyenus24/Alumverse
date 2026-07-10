@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button, Box, Pagination, Stack, Typography } from "@mui/material";
 import { alpha } from "@mui/material/styles";
+import {
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from "../../components/animations/ScrollReveal";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
 import dayjs from "dayjs";
@@ -198,7 +203,7 @@ export default function DonationPage() {
     >
 
             {errorMessage && (
-              <Box
+              <ScrollReveal
                 sx={(theme) => ({
                   mb: 3,
                   p: 2,
@@ -209,11 +214,11 @@ export default function DonationPage() {
                 })}
               >
                 <Typography sx={{ color: "error.main", fontWeight: 600 }}>{errorMessage}</Typography>
-              </Box>
+              </ScrollReveal>
             )}
 
             {!isLoading && !errorMessage && !featuredCampaign && campaigns.length === 0 && (
-              <Box
+              <ScrollReveal
                 sx={(theme) => ({
                   mb: 3,
                   p: 2.2,
@@ -224,46 +229,44 @@ export default function DonationPage() {
                 })}
               >
                 <Typography sx={{ color: "info.main", fontWeight: 600 }}>{t("donation:no_funds_filtered")}</Typography>
-              </Box>
+              </ScrollReveal>
             )}
 
             {/* FEATURED DONATION */}
             {featuredCampaign && (
-              <Box sx={{ cursor: "pointer" }} onClick={() => navigate(`/donations/${featuredCampaign.id}`)}>
+              <ScrollReveal sx={{ cursor: "pointer" }} onClick={() => navigate(`/donations/${featuredCampaign.id}`)}>
                 <FeaturedArticleDonationCard
                   campaign={featuredCampaign} isAdmin={isAdmin}
                   onNavigate={() => navigate(`/donations/${featuredCampaign.id}`)}
                   onEdit={() => navigate(`/donations/${featuredCampaign.id}/edit`)}
                   onClose={() => setCloseDialogCampaign(featuredCampaign)}
                 />
-              </Box>
+              </ScrollReveal>
             )}
 
             {campaigns.length > 0 && (
-              <Box>
-                <Typography variant="h4" fontWeight={700} mb={3}>
-                  {t("donation:open_funds")}
-                </Typography>
+              <ScrollRevealGroup stagger={0.08}>
+                <ScrollRevealItem><Typography variant="h4" fontWeight={700} mb={3}>{t("donation:open_funds")}</Typography></ScrollRevealItem>
 
-                <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", md: "1fr 1fr 1fr" }, gap: 4 }}>
+                <ScrollRevealGroup stagger={0.08} sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", md: "1fr 1fr 1fr" }, gap: 4 }}>
                   {campaigns.map((campaign) => (
-                    <Box key={campaign.id} sx={{ cursor: "pointer", display: "flex", minWidth: 0 }}>
+                    <ScrollRevealItem key={campaign.id} sx={{ cursor: "pointer", display: "flex", minWidth: 0 }}>
                       <ArticleDonationCard
                         campaign={campaign} isAdmin={isAdmin}
                         onNavigate={() => navigate(`/donations/${campaign.id}`)}
                         onEdit={() => navigate(`/donations/${campaign.id}/edit`)}
                         onClose={() => setCloseDialogCampaign(campaign)}
                       />
-                    </Box>
+                    </ScrollRevealItem>
                   ))}
-                </Box>
-              </Box>
+                </ScrollRevealGroup>
+              </ScrollRevealGroup>
             )}
 
             {(featuredCampaign || campaigns.length > 0) && (
-              <Stack direction="row" justifyContent="center" alignItems="center" sx={{ mt: 3.5 }}>
-                <Pagination count={pageCount || 1} page={page} onChange={handlePageChange} color="primary" shape="rounded" size="large" sx={{ "& .MuiPaginationItem-root": { fontWeight: 700, minWidth: 38, height: 38 } }} />
-              </Stack>
+              <ScrollReveal><Stack direction="row" justifyContent="center" alignItems="center" sx={{ mt: 3.5 }}>
+                  <Pagination count={pageCount || 1} page={page} onChange={handlePageChange} color="primary" shape="rounded" size="large" sx={{ "& .MuiPaginationItem-root": { fontWeight: 700, minWidth: 38, height: 38 } }} />
+              </Stack></ScrollReveal>
             )}
     </AlumniContentLayout>
   );

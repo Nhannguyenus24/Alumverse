@@ -6,6 +6,11 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import SchoolIcon from '@mui/icons-material/School';
 import TopTabFilter from '../components/mentorship/TopTabFilter';
 import CoverUpload from '../components/CoverUpload';
+import {
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from '../components/animations/ScrollReveal';
 
 const profileSurfaceColor = (theme) => (
   theme.palette.mode === 'dark' ? theme.palette.background.default : theme.palette.background.paper
@@ -80,27 +85,29 @@ const ProfileLayout = ({
     <Box sx={{ pb: 6, backgroundColor: 'background.default' }}>
       {/* ================= COVER ================= */}
       <Box>
-        {isEditMode ? (
-          <CoverUpload
-            value={cover}
-            onChange={onCoverChange}
-            heightSx={{ xs: 130, md: 180 }}
-            minHeightSx={{ xs: 130, md: 180 }}
-            positionY={coverPositionY}
-            onPositionYChange={onCoverPositionYChange}
-            editLabel={t('edit_cover', { defaultValue: 'Sửa ảnh bìa' })}
-            addLabel={t('add_cover', { defaultValue: 'Thêm ảnh bìa' })}
-          />
-        ) : (
-          <Box
-            sx={{
-              height: { xs: 130, md: 180 },
-              backgroundImage: `url(${cover})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-            }}
-          />
-        )}
+        <ScrollReveal direction="none" duration={0.78} amount={0.05}>
+          {isEditMode ? (
+            <CoverUpload
+              value={cover}
+              onChange={onCoverChange}
+              heightSx={{ xs: 130, md: 180 }}
+              minHeightSx={{ xs: 130, md: 180 }}
+              positionY={coverPositionY}
+              onPositionYChange={onCoverPositionYChange}
+              editLabel={t('edit_cover', { defaultValue: 'Sửa ảnh bìa' })}
+              addLabel={t('add_cover', { defaultValue: 'Thêm ảnh bìa' })}
+            />
+          ) : (
+            <Box
+              sx={{
+                height: { xs: 130, md: 180 },
+                backgroundImage: `url(${cover})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+              }}
+            />
+          )}
+        </ScrollReveal>
 
         <Box sx={{ backgroundColor: profileSurfaceColor, pb: { xs: 3, md: 0 } }}>
           <Container maxWidth="lg">
@@ -115,7 +122,8 @@ const ProfileLayout = ({
               }}
             >
               {/* AVATAR + NAME */}
-              <Box
+              <ScrollRevealGroup
+                stagger={0.1}
                 sx={{
                   display: 'flex',
                   flexDirection: { xs: 'column', md: 'row' },
@@ -123,7 +131,7 @@ const ProfileLayout = ({
                   gap: 2,
                 }}
               >
-                <Box
+                <ScrollRevealItem
                   sx={{
                     position: 'relative',
                     width: 140,
@@ -143,22 +151,24 @@ const ProfileLayout = ({
                       }}
                     />
                   )}
-                </Box>
+                </ScrollRevealItem>
 
-                <Box sx={{ pb: { md: 1 } }}>
+                <ScrollRevealItem sx={{ pb: { md: 1 } }}>
                   <Typography variant="h2" fontWeight={800}>
                     {user.name}
                   </Typography>
                   <Typography color="primary.main" fontWeight={600}>
                     {user.role}
                   </Typography>
-                </Box>
-              </Box>
+                </ScrollRevealItem>
+              </ScrollRevealGroup>
 
               {/* BUTTONS */}
-              <Stack direction={{ xs: 'column', sm: 'row' }} gap={1.5} sx={{ pb: { md: 1 }, width: { xs: '100%', sm: 'auto' } }}>
-                {renderButtons()}
-              </Stack>
+              <ScrollReveal direction="left" delay={0.12} sx={{ width: { xs: '100%', sm: 'auto' } }}>
+                <Stack direction={{ xs: 'column', sm: 'row' }} gap={1.5} sx={{ pb: { md: 1 }, width: '100%' }}>
+                  {renderButtons()}
+                </Stack>
+              </ScrollReveal>
             </Box>
           </Container>
         </Box>
@@ -169,8 +179,9 @@ const ProfileLayout = ({
         <Stack spacing={6}>
           {/* TAB FILTER */}
           {(tabs?.length ?? 0) > 1 && (
-            <TopTabFilter tabs={tabs} onNavigate={onNavigate}
-            />
+            <ScrollReveal>
+              <TopTabFilter tabs={tabs} onNavigate={onNavigate} />
+            </ScrollReveal>
           )}
 
           {/* PAGE CONTENT */}

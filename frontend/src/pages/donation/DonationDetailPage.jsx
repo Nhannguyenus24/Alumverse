@@ -12,6 +12,7 @@ import { fundApi } from "../../utils/api";
 import { useAuth } from "../../hooks/useAuth";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
 import Breadcrumb from "../../components/Breadcrumb";
+import { ScrollReveal } from "../../components/animations/ScrollReveal";
 
 const getDonationSchema = (t) => z.object({
   amountOption: z.string().min(1, t('donation:amount_required')),
@@ -165,7 +166,7 @@ function DonationContributionForm({ fundDetail }) {
       <Box component="form" onSubmit={handleSubmit(onSubmit)}>
         <Grid container spacing={2}>
           <Grid size={12}>
-            <Controller
+            <ScrollReveal><Controller
               name="amountOption"
               control={control}
               render={({ field }) => (
@@ -182,11 +183,11 @@ function DonationContributionForm({ fundDetail }) {
                   ))}
                 </TextField>
               )}
-            />
+            /></ScrollReveal>
           </Grid>
           {selectedAmountOption === "custom" && (
             <Grid size={12}>
-              <Controller
+              <ScrollReveal delay={0.05}><Controller
                 name="customAmount"
                 control={control}
                 render={({ field }) => (
@@ -197,14 +198,14 @@ function DonationContributionForm({ fundDetail }) {
                     sx={fieldSx}
                   />
                 )}
-              />
+              /></ScrollReveal>
             </Grid>
           )}
 
           {!isAnonymous && (
             <>
               <Grid size={12}>
-                <Controller
+                <ScrollReveal delay={0.08}><Controller
                   name="donorName"
                   control={control}
                   render={({ field }) => (
@@ -214,11 +215,11 @@ function DonationContributionForm({ fundDetail }) {
                       sx={fieldSx}
                     />
                   )}
-                />
+                /></ScrollReveal>
               </Grid>
 
               <Grid size={12}>
-                <Controller
+                <ScrollReveal delay={0.12}><Controller
                   name="email"
                   control={control}
                   render={({ field }) => (
@@ -228,11 +229,11 @@ function DonationContributionForm({ fundDetail }) {
                       sx={fieldSx}
                     />
                   )}
-                />
+                /></ScrollReveal>
               </Grid>
 
               <Grid size={12}>
-                <Controller
+                <ScrollReveal delay={0.16}><Controller
                   name="phone"
                   control={control}
                   render={({ field }) => (
@@ -242,11 +243,11 @@ function DonationContributionForm({ fundDetail }) {
                       sx={fieldSx}
                     />
                   )}
-                />
+                /></ScrollReveal>
               </Grid>
 
               <Grid size={12}>
-                <Controller
+                <ScrollReveal delay={0.2}><Controller
                   name="address"
                   control={control}
                   render={({ field }) => (
@@ -256,13 +257,13 @@ function DonationContributionForm({ fundDetail }) {
                       sx={fieldSx}
                     />
                   )}
-                />
+                /></ScrollReveal>
               </Grid>
             </>
           )}
 
           <Grid size={12}>
-            <Controller
+            <ScrollReveal delay={0.24}><Controller
               name="message"
               control={control}
               render={({ field }) => (
@@ -273,11 +274,11 @@ function DonationContributionForm({ fundDetail }) {
                   inputProps={{ maxLength: 100 }} sx={fieldSx}
                 />
               )}
-            />
+            /></ScrollReveal>
           </Grid>
         </Grid>
 
-        <Controller
+        <ScrollReveal delay={0.28}><Controller
           name="isAnonymous"
           control={control}
           render={({ field }) => (
@@ -325,19 +326,21 @@ function DonationContributionForm({ fundDetail }) {
               />
             </Box>
           )}
-        />
+        /></ScrollReveal>
 
-        <Button
-          type="submit" fullWidth variant="contained" disabled={isSubmitting}
-          sx={{ mt: 2.2, height: 46, textTransform: "none", fontWeight: 700 }}
-        >
-          {isSubmitting ? t('submit_processing') : t('submit_donate')}
-        </Button>
+        <ScrollReveal delay={0.32}>
+          <Button
+            type="submit" fullWidth variant="contained" disabled={isSubmitting}
+            sx={{ mt: 2.2, height: 46, textTransform: "none", fontWeight: 700 }}
+          >
+            {isSubmitting ? t('submit_processing') : t('submit_donate')}
+          </Button>
+        </ScrollReveal>
         {submitError ? (
           <Typography sx={{ mt: 1, color: "error.main", fontWeight: 600, fontSize: "0.9rem" }}>{submitError}</Typography>
         ) : null}
 
-        <Box sx={{ mt: 2.6 }}>
+        <ScrollReveal delay={0.36} sx={{ mt: 2.6 }}>
           <Typography sx={{ color: "warning.main", fontWeight: 800, mb: 1 }}>{t('note_heading')}</Typography>
           <Typography component="div" sx={{ color: "text.secondary", fontSize: "0.92rem", lineHeight: 1.7 }}>
             <Box component="ul" sx={{ m: 0, pl: 2.5 }}>
@@ -348,7 +351,7 @@ function DonationContributionForm({ fundDetail }) {
           <Typography sx={{ mt: 1.5, color: "text.secondary", fontSize: "0.92rem", lineHeight: 1.7 }}>
             {t('note_hotline')}
           </Typography>
-        </Box>
+        </ScrollReveal>
       </Box>
       <Dialog open={isCheckoutPopupOpen} onClose={() => setIsCheckoutPopupOpen(false)} fullWidth maxWidth="xs">
         <DialogTitle sx={{ color: "primary.main", fontWeight: 800 }}>{t('checkout_dialog_title')}</DialogTitle>
@@ -416,9 +419,9 @@ export default function DetailDonationPage() {
     <Page title={fundDetail?.name || t('fund_detail')} meta={<meta name="description" content={t('meta_description')} />}>
       <Box sx={{ bgcolor: "background.default", minHeight: "100vh", py: { xs: 4, md: 5 }, pb: { xs: 6, md: 9 } }}>
         <Container maxWidth={false} sx={{ maxWidth: 1140 }}>
-          <Box sx={{ mb: 3 }}>
+          <ScrollReveal sx={{ mb: 3 }}>
             <Breadcrumb items={[{ label: t('title').toUpperCase(), path: "/donations" }, { label: fundDetail?.name || t('fund_detail'), path: `/donations/${id}` }, { label: t('donate_btn') }]} fontSize="0.8rem" />
-          </Box>
+          </ScrollReveal>
 
           {!isLoading && errorMessage ? (
             <Card variant="outlined" sx={{ px: { xs: 2.5, md: 4 }, py: 4, mb: 3 }}>
@@ -428,8 +431,8 @@ export default function DetailDonationPage() {
 
           {!isLoading && !errorMessage && fundDetail ? (
             <>
-              <DonationHeaderCard fundDetail={fundDetail} />
-              <DonationContributionForm fundDetail={fundDetail} />
+              <ScrollReveal><DonationHeaderCard fundDetail={fundDetail} /></ScrollReveal>
+              <ScrollReveal delay={0.1}><DonationContributionForm fundDetail={fundDetail} /></ScrollReveal>
             </>
           ) : null}
         </Container>

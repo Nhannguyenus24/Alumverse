@@ -15,6 +15,10 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EventAvailableOutlinedIcon from '@mui/icons-material/EventAvailableOutlined';
 import AccessTimeOutlinedIcon from '@mui/icons-material/AccessTimeOutlined';
 import dayjs from 'dayjs';
+import {
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from '../animations/ScrollReveal';
 
 const getSessionOptions = (t) => [
   { value: 'CAREER', label: t('mentorship:session_type_career') },
@@ -50,9 +54,9 @@ const MentorshipBookingForm = ({
   const isValid = values.sessionType && values.introduction.trim();
 
   return (
-    <Stack spacing={3}>
+    <ScrollRevealGroup stagger={0.08} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
       {/* SLOT SUMMARY */}
-      <Box
+      <ScrollRevealItem
         sx={(theme) => ({
           p: 2,
           border: '1px solid',
@@ -76,10 +80,10 @@ const MentorshipBookingForm = ({
             </Typography>
           </Stack>
         </Stack>
-      </Box>
+      </ScrollRevealItem>
 
       {/* SESSION TYPE */}
-      <TextField
+      <ScrollRevealItem><TextField
         select
         label={t('mentorship:session_type')}
         value={values.sessionType}
@@ -92,10 +96,10 @@ const MentorshipBookingForm = ({
             {opt.label}
           </MenuItem>
         ))}
-      </TextField>
+      </TextField></ScrollRevealItem>
 
       {/* INTRODUCTION */}
-      <TextField
+      <ScrollRevealItem><TextField
         label={t('mentorship:self_introduction')}
         placeholder={t('mentorship:self_introduction_placeholder')}
         value={values.introduction}
@@ -104,10 +108,10 @@ const MentorshipBookingForm = ({
         multiline
         minRows={3}
         fullWidth
-      />
+      /></ScrollRevealItem>
 
       {/* DESCRIPTION */}
-      <TextField
+      <ScrollRevealItem><TextField
         label={t('mentorship:meeting_purpose')}
         placeholder={t('mentorship:meeting_purpose_placeholder')}
         value={values.description}
@@ -115,10 +119,10 @@ const MentorshipBookingForm = ({
         multiline
         minRows={4}
         fullWidth
-      />
+      /></ScrollRevealItem>
 
       {/* CV UPLOAD */}
-      <Box>
+      <ScrollRevealItem>
         <Typography fontWeight={600} mb={1}>
           {t('mentorship:cv_optional')}
         </Typography>
@@ -152,10 +156,10 @@ const MentorshipBookingForm = ({
             {t('mentorship:pick_cv_file')}
           </Button>
         )}
-      </Box>
+      </ScrollRevealItem>
 
       {/* ACTIONS */}
-      <Stack
+      <ScrollRevealItem><Stack
         direction={{ xs: 'column', sm: 'row' }}
         justifyContent="flex-end"
         spacing={1.5}
@@ -171,8 +175,8 @@ const MentorshipBookingForm = ({
         >
           {submitting ? t('mentorship:submitting') : t('mentorship:confirm_booking')}
         </Button>
-      </Stack>
-    </Stack>
+      </Stack></ScrollRevealItem>
+    </ScrollRevealGroup>
   );
 };
 

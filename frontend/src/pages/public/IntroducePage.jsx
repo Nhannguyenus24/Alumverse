@@ -15,6 +15,12 @@ import { alpha } from "@mui/material/styles";
 import Page from "../../components/Page";
 import { useOrganization } from "../../hooks/useOrganization";
 import { getIntroduction } from "../../utils/api";
+import {
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
+  getStaggerDelay,
+} from "../../components/animations/ScrollReveal";
 
 const BANNER_IMG = "/home_page/home_page.png";
 
@@ -94,7 +100,7 @@ const IntroducePage = () => {
   const renderHTML = (html) => {
     if (!html) return null;
     return (
-      <Box
+      <ScrollReveal
         sx={{
           "& img": { maxWidth: "100%", height: "auto", borderRadius: 1, my: 2 },
           "& p": { mb: 2, textAlign: "justify", lineHeight: 1.8 },
@@ -120,22 +126,24 @@ const IntroducePage = () => {
           <Grid container spacing={2}>
             {introduction.imageUrls.map((url, index) => (
               <Grid item xs={12} sm={6} md={4} key={index}>
-                <Box
-                  component="img"
-                  src={url}
-                  alt={`Introduction ${index}`}
-                  sx={{
-                    width: "100%",
-                    height: 240,
-                    objectFit: "cover",
-                    borderRadius: 2,
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                    transition: "transform 0.3s ease",
-                    "&:hover": {
-                      transform: "scale(1.02)",
-                    },
-                  }}
-                />
+                <ScrollReveal delay={getStaggerDelay(index)}>
+                  <Box
+                    component="img"
+                    src={url}
+                    alt={`Introduction ${index}`}
+                    sx={{
+                      width: "100%",
+                      height: 240,
+                      objectFit: "cover",
+                      borderRadius: 2,
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                      transition: "transform 0.3s ease",
+                      "&:hover": {
+                        transform: "scale(1.02)",
+                      },
+                    }}
+                  />
+                </ScrollReveal>
               </Grid>
             ))}
           </Grid>
@@ -144,12 +152,12 @@ const IntroducePage = () => {
 
       {(introduction?.vision || introduction?.mission || introduction?.coreValues) && (
         <Box sx={{ mt: 6 }}>
-<Stack
-  direction={{ xs: "column", md: "column" }}                                            
-  spacing={3}
+<ScrollRevealGroup
+  stagger={0.09}
+  sx={{ display: "flex", flexDirection: "column", gap: 3 }}
 >
   {introduction?.vision && (
-    <Box flex={1}>
+    <ScrollRevealItem sx={{ flex: 1 }}>
       <Typography
         variant="h6"
         color="primary"
@@ -165,11 +173,11 @@ const IntroducePage = () => {
       >
         {introduction.vision}
       </Typography>
-    </Box>
+    </ScrollRevealItem>
   )}
 
   {introduction?.mission && (
-    <Box flex={1}>
+    <ScrollRevealItem sx={{ flex: 1 }}>
       <Typography
         variant="h6"
         color="primary"
@@ -185,11 +193,11 @@ const IntroducePage = () => {
       >
         {introduction.mission}
       </Typography>
-    </Box>
+    </ScrollRevealItem>
   )}
 
   {introduction?.coreValues && (
-    <Box flex={1}>
+    <ScrollRevealItem sx={{ flex: 1 }}>
       <Typography
         variant="h6"
         color="primary"
@@ -205,9 +213,9 @@ const IntroducePage = () => {
       >
         {introduction.coreValues}
       </Typography>
-    </Box>
+    </ScrollRevealItem>
   )}
-</Stack>
+</ScrollRevealGroup>
         </Box>
       )}
     </Box>
@@ -223,18 +231,18 @@ const IntroducePage = () => {
           </Typography>
           <Stack spacing={2}>
             {introduction.leaders.map((leader, index) => (
-              <Paper
-                key={index}
-                sx={{
-                  p: 2,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 3,
-                  width: '100%',
-                  borderRadius: 2,
-                  transition: 'all 0.3s',
-                }}
-              >
+              <ScrollReveal key={index} delay={getStaggerDelay(index)}>
+                <Paper
+                  sx={{
+                    p: 2,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 3,
+                    width: '100%',
+                    borderRadius: 2,
+                    transition: 'all 0.3s',
+                  }}
+                >
                 <Box sx={{ width: 100, height: 100, flexShrink: 0 }}>
                   <Box
                     component="img"
@@ -270,7 +278,8 @@ const IntroducePage = () => {
                     </Typography>
                   )}
                 </Box>
-              </Paper>
+                </Paper>
+              </ScrollReveal>
             ))}
           </Stack>
         </Box>
@@ -288,19 +297,19 @@ const IntroducePage = () => {
           </Typography>
           <Stack spacing={2}>
             {introduction.teamMembers.map((member, index) => (
-              <Paper
-                key={index}
-                sx={{
-                  p: 2,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 3,
-                  width: '100%',
-                  borderRadius: 2,
-                  transition: 'all 0.3s',
-                  '&:hover': { boxShadow: 4 }
-                }}
-              >
+              <ScrollReveal key={index} delay={getStaggerDelay(index)}>
+                <Paper
+                  sx={{
+                    p: 2,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 3,
+                    width: '100%',
+                    borderRadius: 2,
+                    transition: 'all 0.3s',
+                    '&:hover': { boxShadow: 4 }
+                  }}
+                >
                 <Box sx={{ width: 100, height: 100, flexShrink: 0 }}>
                   <Box
                     component="img"
@@ -336,7 +345,8 @@ const IntroducePage = () => {
                     </Typography>
                   )}
                 </Box>
-              </Paper>
+                </Paper>
+              </ScrollReveal>
             ))}
           </Stack>
         </Box>
@@ -378,7 +388,9 @@ const IntroducePage = () => {
           }}
         >
           {/* Hero banner */}
-          <Box
+          <ScrollReveal
+            direction="none"
+            duration={0.8}
             sx={{
               position: "absolute",
               inset: 0,
@@ -410,7 +422,8 @@ const IntroducePage = () => {
               px: { xs: 2, sm: 3 },
             }}
           >
-            <Box
+            <ScrollRevealGroup
+              stagger={0.1}
               sx={{
                 width: "100%",
                 maxWidth: 1200,
@@ -423,6 +436,7 @@ const IntroducePage = () => {
               }}
             >
 
+            <ScrollRevealItem>
             <Typography
               variant="h1"
               component="h1"
@@ -439,7 +453,9 @@ const IntroducePage = () => {
             >
               {config.title}
             </Typography>
+            </ScrollRevealItem>
 
+            <ScrollRevealItem>
             {loading ? (
               <Box sx={{ display: "flex", justifyContent: "center", py: 15 }}>
                 <CircularProgress size={60} thickness={4} />
@@ -460,7 +476,8 @@ const IntroducePage = () => {
                 )}
               </Box>
             )}
-            </Box>
+            </ScrollRevealItem>
+            </ScrollRevealGroup>
           </Box>
         </Box>
 

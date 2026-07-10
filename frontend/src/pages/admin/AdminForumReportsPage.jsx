@@ -381,7 +381,11 @@ const AdminForumReportsPage = () => {
           />
         </DialogContent>
         <DialogActions sx={{ p: 2.5 }}>
-          <Button onClick={() => setReviewDialog({ open: false, report: null })} color="secondary">
+          <Button
+            onClick={() => setReviewDialog({ open: false, report: null })}
+            variant="outlined"
+            color="secondary"
+          >
             {t('forum_btn_cancel')}
           </Button>
           <Button onClick={handleReviewSubmit} variant="contained" disabled={submitting}>

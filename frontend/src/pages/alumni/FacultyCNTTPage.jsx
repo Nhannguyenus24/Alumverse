@@ -1,6 +1,11 @@
 import { Box, Container, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import Page from "../../components/Page";
+import {
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from "../../components/animations/ScrollReveal";
 
 const BANNER_IMG = "/faculty_img/cntt.png";
 const BANNER_BLUE = "#012B59";
@@ -44,7 +49,9 @@ const FacultyCNTTPage = () => {
           flexDirection: "column",
         }}
       >
-        <Box
+        <ScrollReveal
+          direction="none"
+          duration={0.78}
           sx={{
             width: "100%",
             maxHeight: { xs: 280, md: 360 },
@@ -63,24 +70,28 @@ const FacultyCNTTPage = () => {
               display: "block",
             }}
           />
-        </Box>
+        </ScrollReveal>
 
         <Container maxWidth="lg" sx={{ py: 4, px: { xs: 2, sm: 3 } }}>
-        <Typography
-          variant="h1"
-          component="h1"
-          sx={{
-            color: BANNER_BLUE,
-            fontWeight: 700,
-            textAlign: "center",
-            fontSize: { xs: "1.5rem", sm: "1.75rem", md: "2rem" },
-            textTransform: "uppercase",
-            mb: 4,
-          }}
-        >
-          {t('cntt_page_title')}
-        </Typography>
+        <ScrollRevealGroup stagger={0.09}>
+          <ScrollRevealItem>
+            <Typography
+              variant="h1"
+              component="h1"
+              sx={{
+                color: BANNER_BLUE,
+                fontWeight: 700,
+                textAlign: "center",
+                fontSize: { xs: "1.5rem", sm: "1.75rem", md: "2rem" },
+                textTransform: "uppercase",
+                mb: 4,
+              }}
+            >
+              {t('cntt_page_title')}
+            </Typography>
+          </ScrollRevealItem>
 
+        <ScrollRevealItem>
         <Typography variant="h6" sx={{ fontWeight: 700, color: "text.primary", mb: 1.5 }}>
           {t('cntt_section_intro')}
         </Typography>
@@ -103,7 +114,9 @@ const FacultyCNTTPage = () => {
         <Typography variant="body1" sx={{ mb: 3, textAlign: "justify", lineHeight: 1.8 }}>
           {t('cntt_intro_partnerships')}
         </Typography>
+        </ScrollRevealItem>
 
+        <ScrollRevealItem>
         <Typography variant="h6" sx={{ fontWeight: 700, color: "text.primary", mb: 1.5 }}>
           {t('cntt_section_mission')}
         </Typography>
@@ -113,14 +126,18 @@ const FacultyCNTTPage = () => {
         <Typography variant="body1" sx={{ mb: 3, textAlign: "justify", lineHeight: 1.8 }}>
           {t('cntt_mission_p2')}
         </Typography>
+        </ScrollRevealItem>
 
+        <ScrollRevealItem>
         <Typography variant="h6" sx={{ fontWeight: 700, color: "text.primary", mb: 1.5 }}>
           {t('cntt_section_vision')}
         </Typography>
         <Typography variant="body1" sx={{ mb: 4, textAlign: "justify", lineHeight: 1.8 }}>
           {t('cntt_vision_p1')}
         </Typography>
+        </ScrollRevealItem>
 
+        <ScrollRevealItem>
         <Typography
           variant="h2"
           component="h2"
@@ -135,9 +152,10 @@ const FacultyCNTTPage = () => {
         >
           {t('cntt_section_training_areas')}
         </Typography>
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+        </ScrollRevealItem>
+        <ScrollRevealGroup stagger={0.07} sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
           {TRAINING_AREA_KEYS.map((area) => (
-            <Box key={area.titleKey}>
+            <ScrollRevealItem key={area.titleKey}>
               <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "text.primary", mb: 0.5 }}>
                 {t(area.titleKey)}
               </Typography>
@@ -150,9 +168,10 @@ const FacultyCNTTPage = () => {
                   {t(key)}
                 </Typography>
               ))}
-            </Box>
+            </ScrollRevealItem>
           ))}
-        </Box>
+        </ScrollRevealGroup>
+        </ScrollRevealGroup>
         </Container>
       </Container>
     </Page>

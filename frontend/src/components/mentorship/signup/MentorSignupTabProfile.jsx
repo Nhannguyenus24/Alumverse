@@ -23,6 +23,12 @@ import AvatarUploadDialog from '../../profile/AvatarUploadDialog';
 import useAvatarCrop from '../../../hooks/profile/useAvatarCrop';
 import { fileToBase64 } from '../../../utils/imageUtils';
 import { extractMentorshipCv } from '../../../utils/api';
+import {
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
+  getStaggerDelay,
+} from '../../animations/ScrollReveal';
 
 const SectionList = ({ title, subtitle, items, onChange, fields, required = false, addLabel }) => {
   const { t } = useTranslation('mentorship');
@@ -42,7 +48,7 @@ const SectionList = ({ title, subtitle, items, onChange, fields, required = fals
   };
 
   return (
-    <Box>
+    <ScrollReveal>
       <Stack direction="row" alignItems="center" justifyContent="space-between" mb={1.5}>
         <Box>
           <Typography fontWeight={700}>
@@ -69,7 +75,7 @@ const SectionList = ({ title, subtitle, items, onChange, fields, required = fals
       ) : (
         <Stack spacing={1.5}>
           {items.map((item, idx) => (
-            <Card key={idx} sx={{ p: 2, border: '1px solid', borderColor: 'divider' }} elevation={0}>
+            <ScrollReveal key={idx} delay={getStaggerDelay(idx, 0.06)}><Card sx={{ p: 2, border: '1px solid', borderColor: 'divider' }} elevation={0}>
               <Stack spacing={1.5}>
                 {fields.map((f) => (
                   <TextField
@@ -90,11 +96,11 @@ const SectionList = ({ title, subtitle, items, onChange, fields, required = fals
                   </IconButton>
                 </Stack>
               </Stack>
-            </Card>
+            </Card></ScrollReveal>
           ))}
         </Stack>
       )}
-    </Box>
+    </ScrollReveal>
   );
 };
 
@@ -171,9 +177,9 @@ const MentorSignupTabProfile = ({ values, onChange }) => {
   };
 
   return (
-    <Stack spacing={4}>
+    <ScrollRevealGroup stagger={0.08} sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
       {/* Quick fill via CV */}
-      <Card
+      <ScrollRevealItem><Card
         sx={(theme) => ({
           p: 2.5,
           border: '1px solid',
@@ -215,10 +221,10 @@ const MentorSignupTabProfile = ({ values, onChange }) => {
             {cvExtractError}
           </Alert>
         )}
-      </Card>
+      </Card></ScrollRevealItem>
 
       {/* Avatar */}
-      <Box>
+      <ScrollRevealItem>
         <Typography fontWeight={700} mb={1}>
           {t('signup_profile_avatar_title')}
           <Typography component="span" color="error.main">{' *'}</Typography>
@@ -240,10 +246,10 @@ const MentorSignupTabProfile = ({ values, onChange }) => {
             {values.avatarFile || values.avatarPreview ? t('signup_profile_change_avatar') : t('signup_profile_pick_avatar')}
           </Button>
         </Stack>
-      </Box>
+      </ScrollRevealItem>
 
       {/* Core profile (BE-supported) */}
-      <Box>
+      <ScrollRevealItem>
         <Typography fontWeight={700} mb={1.5}>
           {t('signup_profile_current_position')}
         </Typography>
@@ -265,9 +271,9 @@ const MentorSignupTabProfile = ({ values, onChange }) => {
             size="small"
           />
         </Stack>
-      </Box>
+      </ScrollRevealItem>
 
-      <Divider />
+      <ScrollRevealItem><Divider /></ScrollRevealItem>
 
       <SectionList
         title={t('signup_profile_education_title')}
@@ -347,7 +353,7 @@ const MentorSignupTabProfile = ({ values, onChange }) => {
         onFileChange={avatarCrop.handleFileChange}
         onSave={avatarCrop.handleSave}
       />
-    </Stack>
+    </ScrollRevealGroup>
   );
 };
 

@@ -6,6 +6,7 @@ import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import { Box, Typography, Button, TextField } from '@mui/material';
 import Page from '../../components/Page';
+import { ScrollRevealFields } from '../../components/animations/ScrollReveal';
 import { verifyOtpSchema } from '../../utils/regexUtils';
 import { useAuth } from '../../hooks/useAuth';
 import { useOrgNavigate, useOrgPath } from '../../hooks/useOrgNavigate';
@@ -166,6 +167,7 @@ const SignupCodePage = () => {
           gap: { xs: 1.5, sm: 2 },
         }}
       >
+        <ScrollRevealFields>
         <Typography
           variant="h5"
           fontWeight={700}
@@ -251,6 +253,7 @@ const SignupCodePage = () => {
             {t('auth:back_to_login')}
           </Typography>
         </Typography>
+        </ScrollRevealFields>
       </Box>
     </Page>
   );

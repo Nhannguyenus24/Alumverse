@@ -64,6 +64,12 @@ import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
 import { resolveProfileRoleLabel } from '../../utils/profileRoleUtils';
 import { buildAcademicRecords } from '../../utils/academicUtils';
+import {
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
+  getStaggerDelay,
+} from '../../components/animations/ScrollReveal';
 
 const DEFAULT_COVER =
   'https://ethnasia.com/cdn/shop/articles/sean-o-KMn4VEeEPR8-unsplash_edited.jpg?v=1621585619';
@@ -73,7 +79,7 @@ const MENTORSHIP_COVER =
 const STATUS_APPROVED = 'APPROVED';
 
 const SectionTitle = ({ children, hint }) => (
-  <Box>
+  <ScrollReveal>
     <Typography variant="h4" fontWeight={700} color="primary.main">
       {children}
     </Typography>
@@ -82,7 +88,7 @@ const SectionTitle = ({ children, hint }) => (
         {hint}
       </Typography>
     )}
-  </Box>
+  </ScrollReveal>
 );
 
 const EditableTimelineList = ({
@@ -96,7 +102,7 @@ const EditableTimelineList = ({
   onRemove,
   fields,
 }) => (
-  <Box>
+  <ScrollReveal>
     <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1.5}>
       <Typography fontWeight={800} color="primary.main" display="flex" alignItems="center" gap={1}>
         {Icon ? <Icon fontSize="small" /> : null}
@@ -113,7 +119,7 @@ const EditableTimelineList = ({
     ) : (
       <Stack spacing={1.5}>
         {items.map((item, idx) => (
-          <Box key={idx} sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+          <ScrollReveal key={idx} delay={getStaggerDelay(idx, 0.06)} sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
             <Stack spacing={1.2}>
               {fields.map((row, rowIndex) => (
                 <Stack key={rowIndex} direction={{ xs: 'column', sm: 'row' }} spacing={1}>
@@ -138,11 +144,11 @@ const EditableTimelineList = ({
                 </IconButton>
               </Stack>
             </Stack>
-          </Box>
+          </ScrollReveal>
         ))}
       </Stack>
     )}
-  </Box>
+  </ScrollReveal>
 );
 
 const parseExtended = (raw) => {
@@ -608,13 +614,13 @@ const UnifiedProfileEditPage = () => {
     : topTabs;
 
   const renderPersonalSection = () => (
-    <Stack spacing={3}>
-      <Typography variant="h5" fontWeight={800} color="primary.main" mb={2} display="flex" alignItems="center" gap={1}>
+    <ScrollRevealGroup stagger={0.07} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <ScrollRevealItem><Typography variant="h5" fontWeight={800} color="primary.main" mb={2} display="flex" alignItems="center" gap={1}>
         <PersonIcon />
         {t('profile:intro_section')}
-      </Typography>
+      </Typography></ScrollRevealItem>
 
-      <TextField
+      <ScrollRevealItem><TextField
         fullWidth
         multiline
         minRows={6}
@@ -624,14 +630,14 @@ const UnifiedProfileEditPage = () => {
         inputProps={{ maxLength: 500 }}
         helperText={`${bio.length}/500`}
         FormHelperTextProps={{ sx: { textAlign: 'right', mr: 0 } }}
-      />
+      /></ScrollRevealItem>
       
-      <Typography variant="h5" fontWeight={800} color="primary.main" mb={2} mt={4} display="flex" alignItems="center" gap={1}>
+      <ScrollRevealItem><Typography variant="h5" fontWeight={800} color="primary.main" mb={2} mt={4} display="flex" alignItems="center" gap={1}>
         <WorkIcon />
         {t('profile:job_info', { defaultValue: 'Thông tin công việc' })}
-      </Typography>
+      </Typography></ScrollRevealItem>
       
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+      <ScrollRevealItem><Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
         <TextField
           label={t('profile:label_title')}
           value={currentJobTitle}
@@ -644,39 +650,39 @@ const UnifiedProfileEditPage = () => {
           onChange={(e) => setCurrentCompany(e.target.value)}
           fullWidth
         />
-      </Stack>
+      </Stack></ScrollRevealItem>
 
-      <Typography variant="h5" fontWeight={800} color="primary.main" mb={2} mt={4} display="flex" alignItems="center" gap={1}>
+      <ScrollRevealItem><Typography variant="h5" fontWeight={800} color="primary.main" mb={2} mt={4} display="flex" alignItems="center" gap={1}>
         <LinkIcon />
         {t('profile:social_links', { defaultValue: 'Liên kết mạng xã hội' })}
-      </Typography>
-      <TextField
+      </Typography></ScrollRevealItem>
+      <ScrollRevealItem><TextField
         fullWidth
         multiline
         minRows={3}
         value={linksText}
         onChange={(e) => setLinksText(e.target.value)}
         placeholder={t('profile:links_placeholder', { defaultValue: 'Mỗi link một dòng (VD: https://facebook.com/...)' })}
-      />
+      /></ScrollRevealItem>
 
-      <Typography variant="h5" fontWeight={800} color="primary.main" mb={2} mt={4} display="flex" alignItems="center" gap={1}>
+      <ScrollRevealItem><Typography variant="h5" fontWeight={800} color="primary.main" mb={2} mt={4} display="flex" alignItems="center" gap={1}>
         <EmailIcon />
         {t('profile:email')}
-      </Typography>
+      </Typography></ScrollRevealItem>
 
-      <TextField
+      <ScrollRevealItem><TextField
         fullWidth
         value={email}
         disabled
         helperText={t('profile:email_change_hint', { defaultValue: 'Email được quản lý ở phần cài đặt tài khoản.' })}
-      />
+      /></ScrollRevealItem>
 
-      <Typography variant="h5" fontWeight={800} color="primary.main" mb={2} mt={4} display="flex" alignItems="center" gap={1}>
+      <ScrollRevealItem><Typography variant="h5" fontWeight={800} color="primary.main" mb={2} mt={4} display="flex" alignItems="center" gap={1}>
         <PhoneIcon />
         {t('profile:phone')}
-      </Typography>
+      </Typography></ScrollRevealItem>
 
-      <TextField
+      <ScrollRevealItem><TextField
         fullWidth
         value={phone}
         onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
@@ -684,8 +690,8 @@ const UnifiedProfileEditPage = () => {
         inputProps={{ inputMode: 'numeric', maxLength: 10 }}
         error={Boolean(phoneError)}
         helperText={phoneError || ''}
-      />
-    </Stack>
+      /></ScrollRevealItem>
+    </ScrollRevealGroup>
   );
 
   const renderMentorshipSection = () => {
@@ -919,8 +925,8 @@ const UnifiedProfileEditPage = () => {
         avatarSlot={isPendingMentorEdit ? undefined : avatarEditor}
         disableMediaEditing={isPendingMentorEdit}
       >
-        <Stack spacing={4}>
-          <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={2}>
+        <ScrollRevealGroup stagger={0.08} sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <ScrollRevealItem sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
             <Typography variant="h2" fontWeight={800} color="primary.main">
               {isMentorshipEdit
                 ? (access.hasMentorProfile ? t('profile:edit_mentor_heading') : t('profile:edit_page_heading'))
@@ -943,7 +949,7 @@ const UnifiedProfileEditPage = () => {
                 </Button>
               )}
             </Stack>
-          </Box>
+          </ScrollRevealItem>
 
           {success && (
             <Alert severity="success">
@@ -962,7 +968,7 @@ const UnifiedProfileEditPage = () => {
               {renderPersonalSection()}
             </>
           )}
-        </Stack>
+        </ScrollRevealGroup>
       </ProfileLayout>
 
       <AvatarUploadDialog

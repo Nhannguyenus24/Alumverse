@@ -26,6 +26,7 @@ public class EventTicketDetailResponse {
 
     private Long id;
     private Long eventId;
+    private String eventTitle;
     private String ticketCode;
     private Status status;
     private LocalDateTime registeredAt;

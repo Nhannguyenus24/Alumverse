@@ -760,7 +760,8 @@ const AdminFundraisingsPage = () => {
         </DialogContent>
         <DialogActions sx={{ px: 0, pt: 3, pb: 0, justifyContent: "flex-end" }}>
           <Button
-            variant="contained"
+            variant="outlined"
+            color="secondary"
             onClick={() => setDonationsDialogOpen(false)}
             sx={{ px: 4, py: 1, borderRadius: 2, textTransform: "none", fontWeight: 700 }}
           >

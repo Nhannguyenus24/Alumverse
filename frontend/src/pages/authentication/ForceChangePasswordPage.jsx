@@ -6,6 +6,7 @@ import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import { Alert, Box, Typography, Button } from '@mui/material';
 import Page from '../../components/Page';
+import { ScrollRevealFields } from '../../components/animations/ScrollReveal';
 import Input from '../../components/Input';
 import { useAuth } from '../../hooks/useAuth';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
@@ -64,6 +65,7 @@ const ForceChangePasswordPage = () => {
           gap: { xs: 1.5, sm: 2 },
         }}
       >
+        <ScrollRevealFields>
         <Typography
           variant="h5"
           fontWeight={700}
@@ -114,6 +116,7 @@ const ForceChangePasswordPage = () => {
         >
           {loading ? t('auth:processing') : t('auth:force_change_password_heading')}
         </Button>
+        </ScrollRevealFields>
       </Box>
     </Page>
   );

@@ -9,6 +9,11 @@ import { useOrganization } from '../../hooks/useOrganization';
 import { organizationApi } from '../../utils/api';
 import { useNotification } from '../../hooks/useNotification';
 import { validateVietnamPhone } from '../../utils/regexUtils';
+import {
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from '../../components/animations/ScrollReveal';
 
 const BACKGROUND_IMG = '/home_page/home_page_contact.png';
 
@@ -145,15 +150,17 @@ const ContactPage = () => {
                 px: { xs: 5, md: 6 },
               }}
             >
-              <Typography
-                variant="h1"
-                fontWeight={800}
-                color="primary.main"
-                textAlign="center"
-                sx={{ mb: 5, fontSize: { xs: '1.8rem', md: '2.3rem' } }}
-              >
-                {t('heading')}
-              </Typography>
+              <ScrollReveal>
+                <Typography
+                  variant="h1"
+                  fontWeight={800}
+                  color="primary.main"
+                  textAlign="center"
+                  sx={{ mb: 5, fontSize: { xs: '1.8rem', md: '2.3rem' } }}
+                >
+                  {t('heading')}
+                </Typography>
+              </ScrollReveal>
 
               <Stack
                 direction={{ xs: 'column', md: 'row' }}
@@ -162,7 +169,8 @@ const ContactPage = () => {
                 sx={{ flexWrap: 'wrap' }}
               >
                 {/* Left: Contact information */}
-                <Box
+                <ScrollReveal
+                  direction="right"
                   sx={{
                     flex: { xs: 'none', md: '1 1 0' },
                     minWidth: 0,
@@ -189,10 +197,11 @@ const ContactPage = () => {
                   <Typography variant="body2" color="text.secondary">
                     {t('label_admissions')}: {CONTACT_INFO.admissions}
                   </Typography>
-                </Box>
+                </ScrollReveal>
 
                 {/* Right: Form */}
-                <Box
+                <ScrollRevealGroup
+                  stagger={0.07}
                   sx={{
                     flex: { xs: 'none', md: '1 1 0' },
                     minWidth: 0,
@@ -202,13 +211,15 @@ const ContactPage = () => {
                     gap: 2,
                   }}
                 >
-                  <Typography variant="subtitle1" fontWeight={700} color="primary.main">
-                    {t('sender_info_title')}
-                  </Typography>
-                  <Box sx={{ width: '100%' }}>
+                  <ScrollRevealItem>
+                    <Typography variant="subtitle1" fontWeight={700} color="primary.main">
+                      {t('sender_info_title')}
+                    </Typography>
+                  </ScrollRevealItem>
+                  <ScrollRevealItem sx={{ width: '100%' }}>
                     <Input label="" placeholder={t('placeholder_fullname')} value={form.fullName} onChange={handleChange('fullName')} />
-                  </Box>
-                  <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1.5, width: '100%', flexWrap: 'wrap' }}>
+                  </ScrollRevealItem>
+                  <ScrollRevealItem sx={{ display: 'flex', flexDirection: 'row', gap: 1.5, width: '100%', flexWrap: 'wrap' }}>
                     <Box sx={{ flex: '1 1 200px', minWidth: 0 }}>
                       <Input
                         label=""
@@ -230,12 +241,14 @@ const ContactPage = () => {
                         helperText={phoneError || ''}
                       />
                     </Box>
-                  </Box>
+                  </ScrollRevealItem>
 
-                  <Typography variant="subtitle1" fontWeight={700} color="primary.main" sx={{ mt: 0.5 }}>
-                    {t('content_title')}
-                  </Typography>
-                  <Box sx={{ width: '100%' }}>
+                  <ScrollRevealItem>
+                    <Typography variant="subtitle1" fontWeight={700} color="primary.main" sx={{ mt: 0.5 }}>
+                      {t('content_title')}
+                    </Typography>
+                  </ScrollRevealItem>
+                  <ScrollRevealItem sx={{ width: '100%' }}>
                     <Dropdown
                       label={t('subject_label')}
                       placeholder={t('subject_label')}
@@ -250,8 +263,8 @@ const ContactPage = () => {
                         },
                       }}
                     />
-                  </Box>
-                  <Box sx={{ width: '100%' }}>
+                  </ScrollRevealItem>
+                  <ScrollRevealItem sx={{ width: '100%' }}>
                     <TextField
                       placeholder={t('placeholder_content')}
                       multiline
@@ -271,8 +284,8 @@ const ContactPage = () => {
                         },
                       }}
                     />
-                  </Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'center', pt: 0.5 }}>
+                  </ScrollRevealItem>
+                  <ScrollRevealItem sx={{ display: 'flex', justifyContent: 'center', pt: 0.5 }}>
                     <Button
                       type="submit"
                       variant="contained"
@@ -284,8 +297,8 @@ const ContactPage = () => {
                     >
                       {loading ? t('sending') : t('submit')}
                     </Button>
-                  </Box>
-                </Box>
+                  </ScrollRevealItem>
+                </ScrollRevealGroup>
               </Stack>
             </Box>
           </Box>

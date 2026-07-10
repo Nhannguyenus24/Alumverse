@@ -5,26 +5,19 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/app_toast.dart';
+import '../../../user/data/models/user_profile.dart';
+import '../../../user/presentation/providers/user_providers.dart';
+import '../../data/models/mentee_profile.dart';
+import '../../data/models/mentor_profile.dart';
 import '../../data/repositories/mentorship_repository.dart';
 import '../providers/mentorship_providers.dart';
 
-List<(String, String)> _categories(BuildContext context) => [
-  ('CAREER', 'mentorship.type_career'.tr()),
-  ('ACADEMIC', 'mentorship.type_academic'.tr()),
-  ('SOFT_SKILLS', 'mentorship.type_soft_skills'.tr()),
-  ('GENERAL', 'mentorship.type_general'.tr()),
-];
-
-/// Draft of one expertise row in the signup form.
-class _ExpertiseDraft {
-  String topic = '';
-  String category = 'CAREER';
-  int? years;
-  String description = '';
-}
+const int _kMinVerificationLevel = 2;
 
 /// A generic key/value draft row used by the education/experience/projects/
 /// awards/skills section lists — mirrors the web `SectionList` component,
@@ -37,8 +30,8 @@ class _EntryDraft {
 }
 
 /// Become a mentor — native take on the web `MentorshipSignupPage`. Collects
-/// the core profile fields + at least one expertise, then POSTs the profile
-/// and each expertise. Mentor profiles start as PENDING (admin approval).
+/// profile fields, shareable content, extracted skill tags and extended
+/// profile sections. Mentor profiles start as PENDING (admin approval).
 /// A CV (PDF) can be uploaded to auto-fill most of the fields below via OCR +
 /// Gemini (see MentorshipCvController on the backend).
 class MentorSignupPage extends ConsumerStatefulWidget {
@@ -52,12 +45,10 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
   final _formKey = GlobalKey<FormState>();
   final _jobCtl = TextEditingController();
   final _companyCtl = TextEditingController();
-  final _bioCtl = TextEditingController();
   final _meetingCtl = TextEditingController();
   final _summaryCtl = TextEditingController();
   final _manualTagCtl = TextEditingController();
 
-  final List<_ExpertiseDraft> _expertises = [_ExpertiseDraft()];
   final List<_EntryDraft> _educations = [];
   final List<_EntryDraft> _experiences = [];
   final List<_EntryDraft> _projects = [];
@@ -67,18 +58,20 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
 
   bool _termsAccepted = false;
   bool _submitting = false;
+  bool _savingDraft = false;
   bool _cvExtracting = false;
   String? _cvFileName;
   String? _cvExtractError;
   bool _tagsExtracting = false;
   bool _tagsExtractAttempted = false;
   String? _tagsExtractError;
+  String? _hydratedProfileKey;
+  String? _hydratedAccountKey;
 
   @override
   void dispose() {
     _jobCtl.dispose();
     _companyCtl.dispose();
-    _bioCtl.dispose();
     _meetingCtl.dispose();
     _summaryCtl.dispose();
     _manualTagCtl.dispose();
@@ -195,7 +188,7 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
       }
       final bio = profile['bio'] as String?;
       if (bio != null && bio.trim().isNotEmpty) {
-        _bioCtl.text = bio;
+        _summaryCtl.text = bio;
       }
 
       _mergeEntries(_educations, profile['educations'], [
@@ -231,6 +224,128 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
     });
   }
 
+  void _hydrateFromExistingProfile(MentorProfile? profile) {
+    if (profile == null) return;
+    final status = (profile.status ?? '').toUpperCase();
+    if (status != 'DRAFT' && status != 'REJECTED' && status != 'NEED_UPDATE') {
+      return;
+    }
+
+    final hydrateKey = [
+      profile.memberId,
+      status,
+      profile.currentJobTitle ?? '',
+      profile.currentCompany ?? '',
+      profile.defaultMeetingLink ?? '',
+      profile.extendedProfile ?? '',
+      profile.expertiseTags.join('|'),
+    ].join('::');
+    if (_hydratedProfileKey == hydrateKey) return;
+    _hydratedProfileKey = hydrateKey;
+
+    Map<String, dynamic> extended = {};
+    final rawExtended = profile.extendedProfile;
+    if (rawExtended != null && rawExtended.trim().isNotEmpty) {
+      try {
+        final decoded = jsonDecode(rawExtended);
+        if (decoded is Map<String, dynamic>) {
+          extended = decoded;
+        } else if (decoded is Map) {
+          extended = decoded.map((key, value) => MapEntry('$key', value));
+        }
+      } catch (_) {
+        extended = {};
+      }
+    }
+
+    _jobCtl.text = profile.currentJobTitle ?? '';
+    _companyCtl.text = profile.currentCompany ?? '';
+    _meetingCtl.text = profile.defaultMeetingLink ?? '';
+    _summaryCtl.text =
+        (extended['experienceSummary'] as String?) ?? profile.bio ?? '';
+
+    _replaceEntries(_educations, extended['educations'], [
+      'school',
+      'degree',
+      'period',
+    ]);
+    _replaceEntries(_experiences, extended['experiences'], [
+      'title',
+      'company',
+      'period',
+      'description',
+    ]);
+    _replaceEntries(_projects, extended['projects'], [
+      'name',
+      'description',
+      'link',
+    ]);
+    _replaceEntries(_awards, extended['awards'], [
+      'name',
+      'year',
+      'description',
+    ]);
+    _replaceEntries(_skills, extended['skills'], ['name', 'issuer']);
+
+    final tags = <String>[
+      ...profile.expertiseTags,
+      if (extended['expertiseTags'] is List)
+        ...(extended['expertiseTags'] as List).map((e) => '$e'),
+    ];
+    _expertiseTags
+      ..clear()
+      ..addAll(_dedupeTags(tags));
+
+    _tagsExtractAttempted = _expertiseTags.isNotEmpty;
+  }
+
+  void _hydrateFromAccount({
+    required UserProfile? profile,
+    required MenteeProfile? mentee,
+  }) {
+    if (_hydratedProfileKey != null || (profile == null && mentee == null)) {
+      return;
+    }
+
+    final hydrateKey = [
+      'account',
+      profile?.userId ?? '',
+      profile?.bio ?? '',
+      profile?.organizationName ?? '',
+      profile?.startedYear.join('|') ?? '',
+      profile?.graduatedYear.join('|') ?? '',
+      profile?.program.join('|') ?? '',
+      profile?.major.join('|') ?? '',
+      profile?.faculty.join('|') ?? '',
+      profile?.department.join('|') ?? '',
+      mentee?.memberId ?? '',
+      mentee?.mentoringGoal ?? '',
+      mentee?.interests ?? '',
+    ].join('::');
+    if (_hydratedAccountKey == hydrateKey) return;
+    _hydratedAccountKey = hydrateKey;
+
+    if (_summaryCtl.text.trim().isEmpty) {
+      _summaryCtl.text = _firstNonEmpty([profile?.bio, mentee?.mentoringGoal]);
+    }
+
+    if (_educations.isEmpty && profile != null) {
+      _educations.addAll(_buildAcademicRows(profile));
+    }
+
+    final interests = _splitCsv(mentee?.interests);
+    if (_expertiseTags.isEmpty && interests.isNotEmpty) {
+      _expertiseTags.addAll(interests);
+      _tagsExtractAttempted = true;
+    }
+
+    if (_skills.isEmpty && interests.isNotEmpty) {
+      _skills.addAll(
+        interests.map((name) => _EntryDraft({'name': name, 'issuer': ''})),
+      );
+    }
+  }
+
   /// Replaces [target] with entries from the AI response when it returned
   /// any — otherwise leaves what the user already typed untouched.
   void _mergeEntries(
@@ -249,6 +364,94 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
     }
   }
 
+  void _replaceEntries(
+    List<_EntryDraft> target,
+    dynamic rawList,
+    List<String> keys,
+  ) {
+    target.clear();
+    if (rawList is! List) return;
+    for (final raw in rawList) {
+      if (raw is! Map) continue;
+      final values = <String, String>{
+        for (final key in keys) key: (raw[key]?.toString()) ?? '',
+      };
+      if (values.values.any((v) => v.trim().isNotEmpty)) {
+        target.add(_EntryDraft(values));
+      }
+    }
+  }
+
+  List<String> _dedupeTags(Iterable<String> tags) {
+    final seen = <String>{};
+    final result = <String>[];
+    for (final raw in tags) {
+      final tag = raw.trim();
+      final key = tag.toLowerCase();
+      if (tag.isNotEmpty && seen.add(key)) {
+        result.add(tag);
+      }
+    }
+    return result;
+  }
+
+  List<String> _splitCsv(String? raw) {
+    if (raw == null || raw.trim().isEmpty) return const [];
+    return _dedupeTags(
+      raw
+          .split(',')
+          .map((item) => item.trim())
+          .where((item) => item.isNotEmpty),
+    );
+  }
+
+  String _firstNonEmpty(Iterable<String?> values) {
+    for (final value in values) {
+      final trimmed = value?.trim();
+      if (trimmed != null && trimmed.isNotEmpty) return trimmed;
+    }
+    return '';
+  }
+
+  List<_EntryDraft> _buildAcademicRows(UserProfile profile) {
+    final maxLength = [
+      profile.faculty.length,
+      profile.department.length,
+      profile.program.length,
+      profile.major.length,
+      profile.startedYear.length,
+      profile.graduatedYear.length,
+    ].fold<int>(0, (max, length) => length > max ? length : max);
+    if (maxLength == 0 && profile.organizationName == null) return const [];
+
+    return List.generate(maxLength == 0 ? 1 : maxLength, (index) {
+          String at(List<String> values) =>
+              index < values.length ? values[index].trim() : '';
+          final school = _firstNonEmpty([
+            at(profile.faculty),
+            at(profile.department),
+            profile.organizationName,
+          ]);
+          final major = at(profile.major);
+          final program = at(profile.program);
+          final degree = [
+            if (major.isNotEmpty) 'Cử nhân $major',
+            if (program.isNotEmpty) 'Chương trình $program',
+          ].join(' - ');
+          final period = [
+            at(profile.startedYear),
+            at(profile.graduatedYear),
+          ].where((value) => value.isNotEmpty).join(' - ');
+          return _EntryDraft({
+            'school': school,
+            'degree': degree,
+            'period': period,
+          });
+        })
+        .where((row) => row.values.values.any((v) => v.trim().isNotEmpty))
+        .toList();
+  }
+
   String _buildExtendedProfile() {
     return jsonEncode({
       'experienceSummary': _summaryCtl.text.trim(),
@@ -263,10 +466,8 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    final validExpertises =
-        _expertises.where((e) => e.topic.trim().isNotEmpty).toList();
-    if (validExpertises.isEmpty) {
-      AppToast.info(context, 'mentorship.signup_expertise_required'.tr());
+    if (_expertiseTags.isEmpty) {
+      AppToast.info(context, 'mentorship.signup_tab_extract_empty'.tr());
       return;
     }
     if (_educations.isEmpty) {
@@ -288,19 +489,10 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
       await repo.createMentorProfile(
         currentJobTitle: _jobCtl.text.trim(),
         currentCompany: _companyCtl.text.trim(),
-        bio: _bioCtl.text.trim(),
         defaultMeetingLink: _meetingCtl.text.trim(),
         extendedProfile: _buildExtendedProfile(),
         expertiseTags: _expertiseTags,
       );
-      for (final e in validExpertises) {
-        await repo.addExpertise(
-          topic: e.topic.trim(),
-          category: e.category,
-          yearsExperience: e.years,
-          description: e.description.trim(),
-        );
-      }
       ref.invalidate(myMentorProfileProvider);
       if (!mounted) return;
       AppToast.success(context, 'mentorship.signup_success'.tr());
@@ -313,9 +505,88 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
     }
   }
 
+  Future<void> _saveDraft() async {
+    setState(() => _savingDraft = true);
+    try {
+      final repo = ref.read(mentorshipRepositoryProvider);
+      await repo.saveMentorProfileDraft(
+        currentJobTitle: _jobCtl.text.trim(),
+        currentCompany: _companyCtl.text.trim(),
+        defaultMeetingLink: _meetingCtl.text.trim(),
+        extendedProfile: _buildExtendedProfile(),
+        expertiseTags: _expertiseTags,
+      );
+      ref.invalidate(myMentorProfileProvider);
+      if (!mounted) return;
+      AppToast.success(context, 'mentorship.signup_draft_saved'.tr());
+    } catch (e) {
+      if (!mounted) return;
+      AppToast.fromError(
+        context,
+        e,
+        fallback: 'mentorship.signup_draft_failed'.tr(),
+      );
+    } finally {
+      if (mounted) setState(() => _savingDraft = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final categories = _categories(context);
+    final verificationAsync = ref.watch(myVerificationLevelProvider);
+    final existingProfileAsync = ref.watch(myMentorProfileProvider);
+    final accountProfileAsync = ref.watch(myProfileProvider);
+    final menteeProfileAsync = ref.watch(myMenteeProfileProvider);
+
+    if (verificationAsync.isLoading || existingProfileAsync.isLoading) {
+      return Scaffold(
+        appBar: AppBar(title: Text('mentorship.become_mentor'.tr())),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final verificationLevel = verificationAsync.valueOrNull ?? 0;
+    if (verificationLevel < _kMinVerificationLevel) {
+      final needsEmail = verificationLevel < 1;
+      return _MentorSignupStatusScaffold(
+        severityColor: AppColors.warning,
+        icon: Icons.verified_user_outlined,
+        title: 'mentorship.mentor_signup_not_eligible_title'.tr(),
+        message:
+            needsEmail
+                ? 'mentorship.mentee_signup_not_eligible_email'.tr()
+                : 'mentorship.mentee_signup_not_eligible_academic'.tr(),
+        actionLabel: 'mentorship.verify_account'.tr(),
+        onAction: () => context.push(RouteNames.organizationRegistration),
+      );
+    }
+
+    final existingStatus =
+        (existingProfileAsync.valueOrNull?.status ?? '').toUpperCase();
+    if (existingStatus == 'PENDING' || existingStatus == 'APPROVED') {
+      final isApproved = existingStatus == 'APPROVED';
+      return _MentorSignupStatusScaffold(
+        severityColor: isApproved ? AppColors.success : AppColors.info,
+        icon:
+            isApproved
+                ? Icons.verified_user_outlined
+                : Icons.hourglass_top_outlined,
+        title:
+            isApproved
+                ? 'mentorship.mentor_signup_approved_title'.tr()
+                : 'mentorship.mentor_signup_pending_title'.tr(),
+        message:
+            isApproved
+                ? 'mentorship.mentor_signup_approved_desc'.tr()
+                : 'mentorship.mentor_signup_pending_desc'.tr(),
+      );
+    }
+
+    _hydrateFromExistingProfile(existingProfileAsync.valueOrNull);
+    _hydrateFromAccount(
+      profile: accountProfileAsync.valueOrNull,
+      mentee: menteeProfileAsync.valueOrNull,
+    );
 
     return Scaffold(
       appBar: AppBar(title: Text('mentorship.become_mentor'.tr())),
@@ -358,21 +629,6 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
                 labelText: 'mentorship.signup_company_label'.tr(),
                 hintText: 'VD: FPT Software',
                 prefixIcon: const Icon(Icons.apartment_outlined),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _bioCtl,
-              maxLines: 4,
-              validator:
-                  (v) =>
-                      (v == null || v.trim().isEmpty)
-                          ? 'mentorship.signup_bio_required'.tr()
-                          : null,
-              decoration: InputDecoration(
-                labelText: 'mentorship.signup_bio_label'.tr(),
-                hintText: 'mentorship.signup_bio_hint'.tr(),
-                alignLabelWithHint: true,
               ),
             ),
             const SizedBox(height: 12),
@@ -609,28 +865,6 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
                 'mentorship.signup_skill_issuer'.tr(),
               ],
             ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(child: _Label('mentorship.expertise'.tr())),
-                TextButton.icon(
-                  onPressed:
-                      () => setState(() => _expertises.add(_ExpertiseDraft())),
-                  icon: const Icon(Icons.add, size: 18),
-                  label: Text('common.add'.tr()),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            ..._expertises.asMap().entries.map(
-              (e) => _ExpertiseCard(
-                draft: e.value,
-                index: e.key,
-                categories: categories,
-                canRemove: _expertises.length > 1,
-                onRemove: () => setState(() => _expertises.removeAt(e.key)),
-              ),
-            ),
             const SizedBox(height: 16),
             CheckboxListTile(
               value: _termsAccepted,
@@ -645,8 +879,28 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: (_submitting || _savingDraft) ? null : _saveDraft,
+                icon:
+                    _savingDraft
+                        ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                        : const Icon(Icons.save_outlined),
+                label: Text(
+                  _savingDraft
+                      ? 'mentorship.signup_saving'.tr()
+                      : 'mentorship.signup_save_draft'.tr(),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
               child: ElevatedButton(
-                onPressed: _submitting ? null : _submit,
+                onPressed: (_submitting || _savingDraft) ? null : _submit,
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
@@ -677,6 +931,83 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _MentorSignupStatusScaffold extends StatelessWidget {
+  const _MentorSignupStatusScaffold({
+    required this.severityColor,
+    required this.icon,
+    required this.title,
+    required this.message,
+    this.actionLabel,
+    this.onAction,
+  });
+
+  final Color severityColor;
+  final IconData icon;
+  final String title;
+  final String message;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('mentorship.become_mentor'.tr())),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          TextButton.icon(
+            onPressed: () => Navigator.of(context).pop(),
+            icon: const Icon(Icons.arrow_back),
+            label: Text('mentorship.mentee_signup_go_back'.tr()),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: severityColor.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: severityColor.withValues(alpha: 0.35)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(icon, color: severityColor),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          color: severityColor,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        message,
+                        style: const TextStyle(color: AppColors.textSecondary),
+                      ),
+                      if (actionLabel != null && onAction != null) ...[
+                        const SizedBox(height: 12),
+                        FilledButton(
+                          onPressed: onAction,
+                          child: Text(actionLabel!),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -879,103 +1210,6 @@ class _SectionList extends StatelessWidget {
             ),
           ),
       ],
-    );
-  }
-}
-
-class _ExpertiseCard extends StatelessWidget {
-  const _ExpertiseCard({
-    required this.draft,
-    required this.index,
-    required this.categories,
-    required this.canRemove,
-    required this.onRemove,
-  });
-
-  final _ExpertiseDraft draft;
-  final int index;
-  final List<(String, String)> categories;
-  final bool canRemove;
-  final VoidCallback onRemove;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
-        side: const BorderSide(color: AppColors.divider),
-      ),
-      elevation: 0,
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    initialValue: draft.topic,
-                    onChanged: (v) => draft.topic = v,
-                    decoration: InputDecoration(
-                      labelText: 'mentorship.expertise_topic_label'.tr(),
-                      hintText: 'mentorship.expertise_topic_hint'.tr(),
-                      isDense: true,
-                    ),
-                  ),
-                ),
-                if (canRemove)
-                  IconButton(
-                    onPressed: onRemove,
-                    icon: const Icon(
-                      Icons.delete_outline,
-                      color: AppColors.error,
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  flex: 3,
-                  child: DropdownButtonFormField<String>(
-                    initialValue: draft.category,
-                    isExpanded: true,
-                    decoration: InputDecoration(
-                      labelText: 'mentorship.category'.tr(),
-                      isDense: true,
-                    ),
-                    items:
-                        categories
-                            .map(
-                              (c) => DropdownMenuItem(
-                                value: c.$1,
-                                child: Text(c.$2),
-                              ),
-                            )
-                            .toList(),
-                    onChanged: (v) => draft.category = v ?? 'CAREER',
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  flex: 2,
-                  child: TextFormField(
-                    initialValue: draft.years?.toString() ?? '',
-                    keyboardType: TextInputType.number,
-                    onChanged: (v) => draft.years = int.tryParse(v),
-                    decoration: InputDecoration(
-                      labelText: 'mentorship.expertise_years_label'.tr(),
-                      isDense: true,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

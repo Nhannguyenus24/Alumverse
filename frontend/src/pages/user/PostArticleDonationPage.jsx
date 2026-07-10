@@ -42,6 +42,13 @@ import {
   FUND_CONTENT_EDITOR_HEIGHT,
 } from "../../utils/imageUtils";
 import useOrganizationStore from "../../stores/organizationStore";
+import { ScrollReveal, getStaggerDelay } from "../../components/animations/ScrollReveal";
+
+const AnimatedGridItem = ({ index, children, ...props }) => (
+  <Grid {...props}>
+    <ScrollReveal delay={getStaggerDelay(index, 0.06)}>{children}</ScrollReveal>
+  </Grid>
+);
 
 const isEmptyHtml = (html) => {
   if (!html || typeof html !== "string") return true;
@@ -266,24 +273,24 @@ export default function PostArticleDonationPage() {
               mx: "auto",
             }}
           >
-            <Breadcrumb
+            <ScrollReveal><Breadcrumb
               items={[
                 { label: t("breadcrumb_list"), path: "/donations" },
                 { label: t("breadcrumb_create") },
               ]}
               fontSize="0.9rem"
-            />
+            /></ScrollReveal>
 
-            <Typography
+            <ScrollReveal delay={0.06}><Typography
               variant="h1"
               fontWeight={800}
               color="primary.main"
               sx={{ fontSize: { xs: "1.8rem", md: "2.3rem" }, mb: 2.5 }}
             >
               {t("create_heading")}
-            </Typography>
+            </Typography></ScrollReveal>
 
-            <Paper
+            <ScrollReveal delay={0.1}><Paper
               elevation={0}
               sx={{
                 p: { xs: 3, md: 5 },
@@ -298,7 +305,7 @@ export default function PostArticleDonationPage() {
                   <Grid container spacing={2.5}>
 
                     {/* Tên quỹ */}
-                    <Grid size={12}>
+                    <AnimatedGridItem index={0} size={12}>
                       <TextField
                         fullWidth
                         label={t("field_fund_name_label")}
@@ -307,10 +314,10 @@ export default function PostArticleDonationPage() {
                         error={!!errors.fundName}
                         helperText={errors.fundName?.message}
                       />
-                    </Grid>
+                    </AnimatedGridItem>
 
                     {/* Người tổ chức */}
-                    <Grid size={12}>
+                    <AnimatedGridItem index={1} size={12}>
                       <TextField
                         fullWidth
                         label={t("field_organizer_label")}
@@ -319,10 +326,10 @@ export default function PostArticleDonationPage() {
                         error={!!errors.organizer}
                         helperText={errors.organizer?.message}
                       />
-                    </Grid>
+                    </AnimatedGridItem>
 
                     {/* Email người phụ trách */}
-                    <Grid size={12}>
+                    <AnimatedGridItem index={2} size={12}>
                       <TextField
                         fullWidth
                         required
@@ -333,10 +340,10 @@ export default function PostArticleDonationPage() {
                         error={!!errors.managerEmail}
                         helperText={errors.managerEmail?.message}
                       />
-                    </Grid>
+                    </AnimatedGridItem>
 
                     {/* Logo quỹ — upload ảnh riêng */}
-                    <Grid size={12}>
+                    <AnimatedGridItem index={3} size={12}>
                       <Typography
                         variant="body2"
                         sx={{ mb: 1.2, fontWeight: 600, color: "text.secondary" }}
@@ -377,10 +384,10 @@ export default function PostArticleDonationPage() {
                           )}
                         </Stack>
                       </Box>
-                    </Grid>
+                    </AnimatedGridItem>
 
                     {/* Tài liệu quỹ — upload PDF/DOC/DOCX (tuỳ chọn) */}
-                    <Grid size={12}>
+                    <AnimatedGridItem index={4} size={12}>
                       <Typography
                         variant="body2"
                         sx={{ mb: 1.2, fontWeight: 600, color: "text.secondary" }}
@@ -423,10 +430,10 @@ export default function PostArticleDonationPage() {
                           </>
                         )}
                       </Stack>
-                    </Grid>
+                    </AnimatedGridItem>
 
                     {/* Tài khoản nhận */}
-                    <Grid size={12}>
+                    <AnimatedGridItem index={5} size={12}>
                       <Controller
                         name="fundReceivingInfoId"
                         control={control}
@@ -441,10 +448,10 @@ export default function PostArticleDonationPage() {
                           />
                         )}
                       />
-                    </Grid>
+                    </AnimatedGridItem>
 
                     {/* Số tiền mục tiêu */}
-                    <Grid size={12}>
+                    <AnimatedGridItem index={6} size={12}>
                       <Controller
                         name="targetAmount"
                         control={control}
@@ -461,10 +468,10 @@ export default function PostArticleDonationPage() {
                           />
                         )}
                       />
-                    </Grid>
+                    </AnimatedGridItem>
 
                     {/* Thời gian bắt đầu + kết thúc */}
-                    <Grid size={{ xs: 12, md: 6 }}>
+                    <AnimatedGridItem index={7} size={{ xs: 12, md: 6 }}>
                       <Controller
                         name="startDate"
                         control={control}
@@ -484,9 +491,9 @@ export default function PostArticleDonationPage() {
                           />
                         )}
                       />
-                    </Grid>
+                    </AnimatedGridItem>
 
-                    <Grid size={{ xs: 12, md: 6 }}>
+                    <AnimatedGridItem index={8} size={{ xs: 12, md: 6 }}>
                       <Controller
                         name="endDate"
                         control={control}
@@ -506,10 +513,10 @@ export default function PostArticleDonationPage() {
                           />
                         )}
                       />
-                    </Grid>
+                    </AnimatedGridItem>
 
                     {/* Mô tả ngắn */}
-                    <Grid size={12}>
+                    <AnimatedGridItem index={9} size={12}>
                       <TextField
                         fullWidth
                         label={t("field_desc_short_label")}
@@ -519,10 +526,10 @@ export default function PostArticleDonationPage() {
                         error={!!errors.descriptionShort}
                         helperText={errors.descriptionShort?.message}
                       />
-                    </Grid>
+                    </AnimatedGridItem>
 
                     {/* Mô tả đầy đủ — WYSIWYG */}
-                    <Grid size={12}>
+                    <AnimatedGridItem index={10} size={12}>
                       <Typography
                         variant="body2"
                         sx={{ mb: 1, fontWeight: 600, color: "text.secondary" }}
@@ -550,11 +557,11 @@ export default function PostArticleDonationPage() {
                           {errors.descriptionFull.message}
                         </Typography>
                       )}
-                    </Grid>
+                    </AnimatedGridItem>
 
                   </Grid>
 
-                  <Stack direction="row" justifyContent="flex-end" spacing={1.5} sx={{ mt: 4 }}>
+                  <ScrollReveal><Stack direction="row" justifyContent="flex-end" spacing={1.5} sx={{ mt: 4 }}>
                     <Button
                       variant="outlined"
                       startIcon={<CloseOutlinedIcon />}
@@ -577,10 +584,10 @@ export default function PostArticleDonationPage() {
                         ? t("btn_submitting")
                         : t("btn_submit")}
                     </Button>
-                  </Stack>
+                  </Stack></ScrollReveal>
                 </Box>
               </LocalizationProvider>
-            </Paper>
+            </Paper></ScrollReveal>
           </Box>
         </Container>
       </Box>

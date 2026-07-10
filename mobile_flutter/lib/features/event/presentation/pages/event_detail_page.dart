@@ -337,7 +337,7 @@ class _ActionsState extends ConsumerState<_Actions> {
                 onPressed: () => Navigator.pop(ctx),
                 child: Text('common.close'.tr()),
               ),
-              ElevatedButton(
+              ElevatedButton.icon(
                 onPressed: () {
                   if (formKey.currentState?.validate() ?? false) {
                     Navigator.pop(ctx, controller.text.trim());
@@ -346,7 +346,8 @@ class _ActionsState extends ConsumerState<_Actions> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.error,
                 ),
-                child: Text('event.confirm_cancel'.tr()),
+                icon: const Icon(Icons.cancel_outlined),
+                label: Text('event.confirm_cancel'.tr()),
               ),
             ],
           ),

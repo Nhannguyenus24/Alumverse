@@ -7,6 +7,7 @@ import ConfirmationNumberOutlinedIcon from "@mui/icons-material/ConfirmationNumb
 import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
 import { QRCodeSVG } from "qrcode.react";
 import { eventApi } from "../utils/api";
+import useOrganizationStore from "../stores/organizationStore";
 
 const formatDate = (iso) => {
   if (!iso) return "";
@@ -15,6 +16,7 @@ const formatDate = (iso) => {
 
 const MyTicketCard = ({ ticket, onCancelled, highlighted = false }) => {
   const { t } = useTranslation(["event", "common"]);
+  const organization = useOrganizationStore((state) => state.organization);
 
   const STATUS_CONFIG = useMemo(() => ({
     PENDING:   { label: t("event:status_pending"),   color: "default",   canCancel: true  },
@@ -27,6 +29,18 @@ const MyTicketCard = ({ ticket, onCancelled, highlighted = false }) => {
   }), [t]);
 
   const statusCfg = STATUS_CONFIG[ticket.status] ?? STATUS_CONFIG.PENDING;
+  const eventTitle = ticket.eventTitle
+    ?? ticket.eventName
+    ?? ticket.event?.title
+    ?? ticket.title
+    ?? t('event:event_id_fallback', { id: ticket.eventId });
+  const organizerName = ticket.organizer
+    ?? ticket.organizationName
+    ?? ticket.event?.organizer
+    ?? ticket.event?.organizationName
+    ?? organization?.name
+    ?? organization?.departmentName
+    ?? t("event:default_organizer");
   const [openTicket, setOpenTicket] = useState(false);
   const [openCancelDialog, setOpenCancelDialog] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
@@ -83,11 +97,11 @@ const MyTicketCard = ({ ticket, onCancelled, highlighted = false }) => {
           </Typography>
 
           <Typography variant="h4" fontWeight={700}>
-            {ticket.eventTitle ?? t('event:event_id_fallback', { id: ticket.eventId })}
+            {eventTitle}
           </Typography>
 
           <Typography variant="body2" color="text.secondary">
-            {ticket.organizer ?? t("event:default_organizer")}
+            {organizerName}
           </Typography>
 
           <Typography variant="caption" color="text.secondary">
@@ -145,7 +159,7 @@ const MyTicketCard = ({ ticket, onCancelled, highlighted = false }) => {
         <DialogContent>
           <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", py: 1 }}>
             <Typography variant="h5" fontWeight={700} color="primary.main" textAlign="center" sx={{ mb: 3 }}>
-              {ticket.eventTitle ?? t('event:event_id_fallback', { id: ticket.eventId })}
+              {eventTitle}
             </Typography>
 
             {/* QR generated client-side (self-hosted) — the code never leaves

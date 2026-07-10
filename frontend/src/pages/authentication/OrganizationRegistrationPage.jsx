@@ -15,6 +15,10 @@ import {
 import Page from "../../components/Page";
 import Input from "../../components/Input";
 import Iconify from "../../components/Iconify";
+import {
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from "../../components/animations/ScrollReveal";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
 import { useAuth } from "../../hooks/useAuth";
 import { useOrganization } from "../../hooks/useOrganization";
@@ -389,10 +393,10 @@ const OrganizationRegistrationPage = () => {
         <Box
           component="form"
           onSubmit={handleSubmit(onSubmit)}
-          sx={{ display: "flex", flexDirection: "column", gap: 4 }}
         >
+          <ScrollRevealGroup stagger={0.08} sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
           {/* ── Header ── */}
-          <Box>
+          <ScrollRevealItem>
             <Typography variant="h1" fontWeight={700} color="primary.main" sx={{ mb: 1.5 }}>
               {t("auth:org_registration_heading")}
             </Typography>
@@ -400,10 +404,10 @@ const OrganizationRegistrationPage = () => {
               {t("auth:org_registration_description")} <br />
               {t("auth:org_registration_submit_hint")} <strong>{t("auth:org_registration_submit_hint_bold")}</strong>.
             </Typography>
-          </Box>
+          </ScrollRevealItem>
 
           {/* ── Section 1: Student Information ── */}
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          <ScrollRevealItem sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <Typography variant="h6" color="primary.main">
               {t("auth:section_student_info")}
             </Typography>
@@ -415,10 +419,10 @@ const OrganizationRegistrationPage = () => {
               helperText={errors.studentCode?.message}
               {...register("studentCode")}
             />
-          </Box>
+          </ScrollRevealItem>
 
           {/* ── Section 2: Academic Information ── */}
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          <ScrollRevealItem sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <Typography variant="h6" color="primary.main">
               {t("auth:section_academic_info")}
             </Typography>
@@ -454,10 +458,10 @@ const OrganizationRegistrationPage = () => {
             ) : (
               <Input label={t("auth:major_label")} placeholder={t("auth:major_placeholder")} error={!!errors.degreeType} helperText={errors.degreeType?.message} {...register("degreeType")} />
             )}
-          </Box>
+          </ScrollRevealItem>
 
           {/* ── Section 3: Verification Method ── */}
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          <ScrollRevealItem sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <Box>
               <Typography variant="h6" color="primary.main">
                 {t("auth:section_verification_method")} <Typography component="span" variant="caption" color="textSecondary">{t("auth:section_verification_optional")}</Typography>
@@ -585,13 +589,13 @@ const OrganizationRegistrationPage = () => {
                 )}
               </Box>
             )}
-          </Box>
+          </ScrollRevealItem>
 
           {/* ── Errors ── */} 
-          {error && <Alert severity="error" onClose={() => setError(null)}>{error}</Alert>}
+          {error && <ScrollRevealItem><Alert severity="error" onClose={() => setError(null)}>{error}</Alert></ScrollRevealItem>}
 
           {/* ── Actions ── */}
-          <Stack direction="row" spacing={2} sx={{ pt: 1 }}>
+          <ScrollRevealItem><Stack direction="row" spacing={2} sx={{ pt: 1 }}>
             <Button
               variant="outlined"
               color="secondary"
@@ -607,7 +611,8 @@ const OrganizationRegistrationPage = () => {
                 ? <><CircularProgress size={20} sx={{ mr: 1 }} />{t("auth:processing")}</>
                 : t("auth:register_join")}
             </Button>
-          </Stack>
+          </Stack></ScrollRevealItem>
+          </ScrollRevealGroup>
         </Box>
       </Container>
     </Page>
