@@ -35,12 +35,6 @@ public class RegisterRequest {
     @Schema(example = "Nguyễn Văn A")
     private String fullName;
     
-    @NotBlank(message = "Student ID is required")
-    @Size(min = 3, max = 50, message = "Student ID must be between 3 and 50 characters")
-    @Pattern(regexp = "^[a-zA-Z0-9._-]+$", message = "Student ID can only contain letters, numbers, dots, underscores, and hyphens")
-    @Schema(example = "20120123")
-    private String studentId;
-    
     @NotBlank(message = "Password is required")
     @Size(min = 8, max = 100, message = "Password must be between 8 and 100 characters")
     @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]+$", 

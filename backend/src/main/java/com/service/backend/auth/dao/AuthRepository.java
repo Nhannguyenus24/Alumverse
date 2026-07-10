@@ -87,9 +87,9 @@ public interface AuthRepository extends R2dbcRepository<User, Integer> {
      * Create a default organization_members record when a user registers under an organization
      */
     @Modifying
-    @Query("INSERT INTO organization_members (organization_id, user_id, student_id, verification_level, is_trusted_verifier, \"status\", created_at, updated_at) " +
-           "VALUES (:organizationId, :userId, :studentId, 0, false, 'ACTIVE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
-    Mono<Void> createOrganizationMember(@Param("organizationId") Integer organizationId, @Param("userId") Integer userId, @Param("studentId") String studentId);
+    @Query("INSERT INTO organization_members (organization_id, user_id, verification_level, is_trusted_verifier, \"status\", created_at, updated_at) " +
+           "VALUES (:organizationId, :userId, 0, false, 'ACTIVE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
+    Mono<Void> createOrganizationMember(@Param("organizationId") Integer organizationId, @Param("userId") Integer userId);
 
     /**
      * Check if an organization_members record exists for the given user and organization
