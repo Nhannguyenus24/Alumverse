@@ -2,6 +2,9 @@ package com.service.backend.auth.controller;
 
 import java.time.Duration;
 
+import com.service.backend.shared.enums.UserRole;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
@@ -49,7 +52,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 @RequestMapping("/api/auth")
 @Validated
 public class AuthController {
-    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(AuthController.class);
+    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
     private final AuthService authService;
     private final JwtUtils jwtUtils;
@@ -70,10 +73,6 @@ public class AuthController {
                 .secure(cookieSecure)
                 .path("/")
                 .maxAge(Duration.ofMillis(maxAgeMs))
-                // Frontend and API live on different sites (separate *.duckdns.org subdomains,
-                // and duckdns.org is a public suffix), so /auth/refresh is a cross-site XHR.
-                // Cross-site requests only carry the cookie with SameSite=None (which requires
-                // Secure). Fall back to Lax for local dev where everything is same-origin over http.
                 .sameSite(cookieSecure ? "None" : "Lax")
                 .build();
     }
@@ -84,7 +83,7 @@ public class AuthController {
     @PostMapping("/register")
     public Mono<ResponseEntity<ApiResponse<Boolean>>> register(
             @Valid @RequestBody RegisterRequest request) {
-        return authService.register(request.getEmail(), request.getStudentId(), request.getPassword(), request.getFullName(), request.getOrganizationId())
+        return authService.register(request.getEmail(), request.getPassword(), request.getFullName(), request.getOrganizationId())
                 .then(authService.sendOtpVerification(request.getEmail()))
                 .thenReturn(ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("User registered successfully", true)));
     }
@@ -328,7 +327,7 @@ public class AuthController {
     private Mono<ResponseEntity<ApiResponse<LoginResponse>>> buildLoginResponse(User user, Integer organizationId, boolean rememberMe) {
         long refreshTokenExpirationMs = rememberMe ? 2592000000L : 604800000L; // 30 days vs 7 days
 
-        if (organizationId == null) {
+        if (organizationId == null || user.getRole() == UserRole.ADMIN || user.getRole() == UserRole.STAFF) {
             // For admin login without organization, generate token with null orgId
             String accessToken = jwtUtils.generateAccessToken(user, null);
             String refreshToken = jwtUtils.generateRefreshToken(user.getId(), refreshTokenExpirationMs);

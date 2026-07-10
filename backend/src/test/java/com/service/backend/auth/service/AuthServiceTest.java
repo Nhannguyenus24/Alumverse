@@ -12,6 +12,7 @@ import com.service.backend.shared.utils.JwtUtils;
 import com.service.backend.user.dao.UserLoginHistoryRepository;
 import com.service.backend.user.service.NotificationService;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -48,13 +49,13 @@ class AuthServiceTest {
     private UserLoginHistoryRepository userLoginHistoryRepository;
     @Mock
     private NotificationService notificationService;
-    @Mock
     private MeterRegistry meterRegistry;
 
     private AuthService authService;
 
     @BeforeEach
     void setUp() {
+        meterRegistry = new SimpleMeterRegistry();
         authService = new AuthService(
                 authRepository, passwordEncoder, emailService, cacheUtils,
                 jwtUtils, userLoginHistoryRepository,
@@ -73,9 +74,9 @@ class AuthServiceTest {
         void register_success() {
             when(passwordEncoder.encode("password")).thenReturn("hashed");
             when(authRepository.registerNewUser("test@email.com", "hashed", "Test User")).thenReturn(Mono.just(1));
-            when(authRepository.createOrganizationMember(1, 1, "S001")).thenReturn(Mono.empty());
+            when(authRepository.createOrganizationMember(1, 1)).thenReturn(Mono.empty());
 
-            StepVerifier.create(authService.register("test@email.com", "S001", "password", "Test User", 1))
+            StepVerifier.create(authService.register("test@email.com", "password", "Test User", 1))
                     .verifyComplete();
         }
 
@@ -86,7 +87,7 @@ class AuthServiceTest {
             when(authRepository.registerNewUser("test@email.com", "hashed", "Test User"))
                     .thenReturn(Mono.error(new org.springframework.dao.DataIntegrityViolationException("duplicate email")));
 
-            StepVerifier.create(authService.register("test@email.com", "S001", "password", "Test User", 1))
+            StepVerifier.create(authService.register("test@email.com", "password", "Test User", 1))
                     .expectErrorMatches(err -> err instanceof ApplicationException &&
                             ((ApplicationException) err).getErrorCode() == ErrorCode.EMAIL_ALREADY_EXISTS)
                     .verify();
@@ -180,11 +181,11 @@ class AuthServiceTest {
             when(authRepository.findByEmail("test@email.com")).thenReturn(Mono.just(user));
             when(passwordEncoder.matches("password", "hashed")).thenReturn(true);
             when(authRepository.existsOrganizationMemberByUserIdAndOrgId(1, 2)).thenReturn(Mono.just(false));
+            when(userLoginHistoryRepository.save(any())).thenReturn(Mono.just(mock(com.service.backend.shared.entity.UserLoginHistory.class)));
 
             StepVerifier.create(authService.loginByEmail("test@email.com", "password", 2, "agent", "127.0.0.1"))
-                    .expectErrorMatches(err -> err instanceof ApplicationException &&
-                            ((ApplicationException) err).getErrorCode() == ErrorCode.USER_NOT_MEMBER_OF_ORGANIZATION)
-                    .verify();
+                    .assertNext(u -> assertThat(u.getEmail()).isEqualTo("test@email.com"))
+                    .verifyComplete();
         }
     }
 

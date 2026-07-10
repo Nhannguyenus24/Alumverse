@@ -91,19 +91,14 @@ public class AuthService {
     }
 
     @Transactional
-    public Mono<Void> register(String email, String studentId, String password, String fullName, Integer organizationId) {
+    public Mono<Void> register(String email, String password, String fullName, Integer organizationId) {
         return Mono.fromCallable(() -> passwordEncoder.encode(password))
                 .subscribeOn(Schedulers.boundedElastic())
                 .flatMap(hashedPassword ->
                         authRepository.registerNewUser(email, hashedPassword, fullName)
-                                .flatMap(userId -> authRepository.createOrganizationMember(organizationId, userId, studentId))
+                                .flatMap(userId -> authRepository.createOrganizationMember(organizationId, userId))
                 )
                 .onErrorResume(DataIntegrityViolationException.class, e -> {
-                    String errorMsg = e.getMessage() != null ? e.getMessage().toLowerCase() : "";
-                    if (errorMsg.contains("uk_organization_members_student_id") || errorMsg.contains("student_id")) {
-                        logger.warn("Registration failed - student ID already exists: {}", studentId);
-                        return Mono.error(new ApplicationException(ErrorCode.STUDENT_ID_ALREADY_EXISTS));
-                    }
                     logger.warn("Registration failed - email already exists: {}", email);
                     return Mono.error(new ApplicationException(ErrorCode.EMAIL_ALREADY_EXISTS));
                 })
@@ -550,7 +545,7 @@ public class AuthService {
                         null,
                         tokenInfo.picture(), 
                         fullName)
-                .flatMap(user -> authRepository.createOrganizationMember(organizationId, user.getId(), null)
+                .flatMap(user -> authRepository.createOrganizationMember(organizationId, user.getId())
                         .thenReturn(user))
                 .doOnNext(user -> recordLoginSuccessAsync(user.getId(), GOOGLE_LOGIN_METHOD, userAgent, loginIp));
     }
@@ -563,7 +558,7 @@ public class AuthService {
                     if (Boolean.TRUE.equals(isMember)) {
                         return Mono.empty();
                     }
-                    return authRepository.createOrganizationMember(organizationId, userId, null)
+                    return authRepository.createOrganizationMember(organizationId, userId)
                             .doOnError(error -> logger.error("Failed to create organization membership for user id: {} in organization: {}: {}", userId, organizationId, error.getMessage()));
                 });
     }
