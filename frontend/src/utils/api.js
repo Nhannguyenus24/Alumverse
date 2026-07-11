@@ -1298,12 +1298,11 @@ export const {
 	saveMentorProfileDraft,
 	updateMentorProfile,
 	getMyMentorProfile,
-	addMyExpertise,
+
 	extractMentorshipSkills,
 	extractMentorshipCv,
 	getMyExpertise,
-	deleteMyExpertise,
-	updateMyExpertise,
+
 	addMyAvailability,
 	getMyAvailabilities,
 	deleteMyAvailability,

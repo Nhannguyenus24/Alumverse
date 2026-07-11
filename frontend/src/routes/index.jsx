@@ -13,6 +13,7 @@ import MentorshipFullAccessGate from "../components/mentorship/MentorshipFullAcc
 import MentorshipBookingGate from "../components/mentorship/MentorshipBookingGate";
 import MentorshipApprovedMentorGate from "../components/mentorship/MentorshipApprovedMentorGate";
 import ChatAccessGate from "../components/network/ChatAccessGate";
+import MentorshipLegacyRedirect from "../components/MentorshipLegacyRedirect";
 
 if (typeof window !== "undefined") {
   queueMicrotask(() => {
@@ -255,12 +256,6 @@ const MenteeSignupPage = Loadable(
   lazy(() => import("../pages/mentorship/MenteeSignupPage")),
 );
 
-const MentorshipLegacyRedirect = () => {
-  const location = useLocation();
-  const nextPath = location.pathname.replace(/\/development\/mentorship(?=\/|$)/, "/mentorship");
-
-  return <Navigate to={`${nextPath}${location.search}${location.hash}`} replace />;
-};
 
 const mentorshipRouteChildren = [
   {

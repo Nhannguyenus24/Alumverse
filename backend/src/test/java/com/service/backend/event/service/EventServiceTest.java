@@ -405,8 +405,11 @@ class EventServiceTest {
                     .status(Status.CHECKED_IN)
                     .build();
 
+            Event event = Event.builder().id(1L).title("Test Event").build();
+
             when(eventRepository.findTicketByCode("TICKET-001")).thenReturn(Mono.just(ticket));
             when(eventRepository.checkInTicket(1L)).thenReturn(Mono.just(checkedInTicket));
+            when(eventRepository.findEventById(1L)).thenReturn(Mono.just(event));
 
             StepVerifier.create(eventService.checkIn(1L, codeRequest("TICKET-001"))
                             .contextWrite(staffContext()))

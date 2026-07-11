@@ -9,7 +9,7 @@
  */
 
 // Canonical feature keys shared by the admin toggle UI and the consumer gates.
-export const FEATURE_KEYS = ['mentorship', 'job', 'fund', 'events', 'forum', 'fitbot'];
+const FEATURE_KEYS = ['mentorship', 'job', 'fund', 'events', 'forum', 'fitbot'];
 
 /** Parse `featuresConfig`, which may be a JSON string, an object, or empty. */
 export const parseFeaturesConfig = (raw) => {
@@ -32,7 +32,7 @@ export const isFeatureEnabled = (featuresConfig, featureName) => {
  * Maps a nav item's `href` to the feature key that controls it. Entries not
  * listed here are always shown.
  */
-export const NAV_FEATURE_MAP = {
+const NAV_FEATURE_MAP = {
   '/mentorship': 'mentorship',
   '/development/jobs': 'job',
   '/donations': 'fund',
