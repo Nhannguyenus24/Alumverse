@@ -1366,8 +1366,8 @@ export const surveyApi = {
 		return unwrap(response);
 	},
 
-	async getAdminSurvey(id) {
-		const response = await apiClient.get(`${BASE_ADMIN_SURVEYS}/${id}`);
+	async getAdminSurvey(id, params = {}) {
+		const response = await apiClient.get(`${BASE_ADMIN_SURVEYS}/${id}`, { params });
 		return unwrap(response);
 	},
 
@@ -1401,13 +1401,13 @@ export const surveyApi = {
 		return unwrap(response);
 	},
 
-	async getSummary(id) {
-		const response = await apiClient.get(`${BASE_ADMIN_SURVEYS}/${id}/summary`);
+	async getSummary(id, params = {}) {
+		const response = await apiClient.get(`${BASE_ADMIN_SURVEYS}/${id}/summary`, { params });
 		return unwrap(response);
 	},
 
-	async getInsight(id) {
-		const response = await apiClient.get(`${BASE_ADMIN_SURVEYS}/${id}/insight`);
+	async getInsight(id, params = {}) {
+		const response = await apiClient.get(`${BASE_ADMIN_SURVEYS}/${id}/insight`, { params });
 		return unwrap(response);
 	},
 

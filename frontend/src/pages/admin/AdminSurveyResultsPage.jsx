@@ -17,6 +17,7 @@ import { surveyApi } from '../../utils/api';
 import { useNotification } from '../../hooks/useNotification';
 import { formatDateTime } from '../../utils/dateFormatter';
 import { isChoiceType } from '../../constants/surveyQuestionTypes';
+import { useOrganization } from '../../hooks/useOrganization';
 
 const CHART_COLOR = '#4f8df9';
 
@@ -74,6 +75,7 @@ const AdminSurveyResultsPage = () => {
   const navigate = useNavigate();
   const { t } = useTranslation(['survey', 'common']);
   const { showError, showSuccess } = useNotification();
+  const { organization } = useOrganization();
 
   const [tab, setTab] = useState(0);
   const [survey, setSurvey] = useState(null);
@@ -94,8 +96,8 @@ const AdminSurveyResultsPage = () => {
       setLoading(true);
       try {
         const [s, sum] = await Promise.all([
-          surveyApi.getAdminSurvey(surveyId),
-          surveyApi.getSummary(surveyId),
+          surveyApi.getAdminSurvey(surveyId, { organizationId: organization?.id }),
+          surveyApi.getSummary(surveyId, { organizationId: organization?.id }),
         ]);
         setSurvey(s);
         setSummary(sum);
@@ -105,17 +107,17 @@ const AdminSurveyResultsPage = () => {
         setLoading(false);
       }
     })();
-  }, [surveyId, showError, t]);
+  }, [surveyId, showError, t, organization?.id]);
 
   const fetchSubs = useCallback(async () => {
     try {
-      const data = await surveyApi.getSubmissions(surveyId, { page, size: pageSize });
+      const data = await surveyApi.getSubmissions(surveyId, { page, size: pageSize, organizationId: organization?.id });
       setSubs(data?.items || []);
       setSubTotal(data?.totalItem ?? 0);
     } catch (e) {
       showError(e?.response?.data?.message || t('common:error_occurred'));
     }
-  }, [surveyId, page, pageSize, showError, t]);
+  }, [surveyId, page, pageSize, showError, t, organization?.id]);
 
   useEffect(() => { if (tab === 1) fetchSubs(); }, [tab, fetchSubs]);
 
@@ -136,7 +138,7 @@ const AdminSurveyResultsPage = () => {
     try {
       const XLSX = await import('xlsx');
       // Fetch all submissions (not just current page)
-      const first = await surveyApi.getSubmissions(surveyId, { page: 0, size: 1000 });
+      const first = await surveyApi.getSubmissions(surveyId, { page: 0, size: 1000, organizationId: organization?.id });
       const all = first?.items || [];
       const questions = survey?.questions || [];
       const header = ['#', t('survey:respondent'), 'Email', t('survey:submitted_at'),
@@ -161,7 +163,7 @@ const AdminSurveyResultsPage = () => {
   const handleInsight = async () => {
     setInsightLoading(true);
     try {
-      const data = await surveyApi.getInsight(surveyId);
+      const data = await surveyApi.getInsight(surveyId, { organizationId: organization?.id });
       setInsight(data);
     } catch (e) {
       showError(e?.response?.data?.message || t('common:error_occurred'));

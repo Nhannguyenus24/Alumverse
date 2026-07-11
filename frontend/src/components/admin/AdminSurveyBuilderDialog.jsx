@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { SURVEY_QUESTION_TYPES, isChoiceType } from '../../constants/surveyQuestionTypes';
 import { surveyApi } from '../../utils/api';
 import { useNotification } from '../../hooks/useNotification';
+import { useOrganization } from '../../hooks/useOrganization';
 
 let counter = 0;
 const uid = (prefix) => `${prefix}_${Date.now()}_${counter++}`;
@@ -34,6 +35,7 @@ const fromInputValue = (v) => (v ? `${v}:00` : null);
 const AdminSurveyBuilderDialog = ({ open, onClose, survey, onSaved }) => {
   const { t } = useTranslation(['survey', 'common', 'admin']);
   const { showSuccess, showError } = useNotification();
+  const { organization } = useOrganization();
   const isEdit = Boolean(survey?.id);
   const readOnly = isEdit && survey?.status && survey.status !== 'DRAFT';
 
@@ -103,7 +105,7 @@ const AdminSurveyBuilderDialog = ({ open, onClose, survey, onSaved }) => {
   const buildPayload = () => ({
     title: title.trim(),
     description: description.trim() || null,
-    organizationId: survey?.organizationId ?? undefined,
+    organizationId: survey?.organizationId ?? organization?.id,
     startAt: fromInputValue(startAt),
     durationMinutes: Number(durationMinutes),
     allowMultiple,
