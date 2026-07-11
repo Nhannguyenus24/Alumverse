@@ -184,6 +184,28 @@ public class AdminEventService {
                 .doOnSuccess(t -> log.info("cancelTicket result: {}", JsonUtils.toJson(t)));
     }
 
+    public Mono<EventTicket> undoTicket(String ticketCode) {
+        return ticketRepo.findByTicketCode(ticketCode)
+                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.TICKET_NOT_FOUND,
+                        "Ticket not found with code: " + ticketCode)))
+                .flatMap(ticket -> ticketRepo.undoTicket(ticket.getId()).then(ticketRepo.findById(ticket.getId())))
+                .doOnSuccess(t -> log.info("undoTicket result: {}", JsonUtils.toJson(t)));
+    }
+
+    public Mono<EventTicket> banTicket(String ticketCode) {
+        return ticketRepo.findByTicketCode(ticketCode)
+                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.TICKET_NOT_FOUND,
+                        "Ticket not found with code: " + ticketCode)))
+                .flatMap(ticket -> {
+                    if ("BANNED".equals(ticket.getStatus().toString())) {
+                        return Mono.error(new ApplicationException(ErrorCode.TICKET_ALREADY_CANCELLED,
+                                "Ticket already banned"));
+                    }
+                    return ticketRepo.banTicket(ticket.getId(), "Banned due to signs of fraud").then(ticketRepo.findById(ticket.getId()));
+                })
+                .doOnSuccess(t -> log.info("banTicket result: {}", JsonUtils.toJson(t)));
+    }
+
     public Mono<PaginatedResponse<EventInterest>> getInterestsByEvent(Long eventId, int page, int size) {
         return eventRepo.findById(eventId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND,

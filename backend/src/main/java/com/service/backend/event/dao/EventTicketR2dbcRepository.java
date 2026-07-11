@@ -32,6 +32,15 @@ public interface EventTicketR2dbcRepository extends R2dbcRepository<EventTicket,
     Mono<Integer> cancelTicket(Long ticketId, String reason);
 
     @Modifying
+    @Query("UPDATE event_tickets SET status = 'REGISTERED', cancel_reason = null WHERE id = :ticketId")
+    Mono<Integer> undoTicket(Long ticketId);
+
+    @Modifying
+    @Query("UPDATE event_tickets SET status = 'BANNED', cancel_reason = :reason WHERE id = :ticketId")
+    Mono<Integer> banTicket(Long ticketId, String reason);
+
+
+    @Modifying
     @Query("UPDATE event_tickets SET status = 'USED', checked_in_at = :checkedInAt WHERE id = :ticketId")
     Mono<Integer> checkInTicket(Long ticketId, LocalDateTime checkedInAt);
 
