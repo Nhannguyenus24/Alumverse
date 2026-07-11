@@ -20,6 +20,8 @@ import reactor.core.publisher.Mono;
 @Repository
 public interface UserProfileRepository extends R2dbcRepository<User, Integer> {
 
+    Mono<User> findByEmail(String email);
+
     @Query("""
             SELECT id AS user_id,
                    avatar_url,

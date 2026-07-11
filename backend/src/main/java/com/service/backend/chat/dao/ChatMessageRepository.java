@@ -4,13 +4,13 @@ import com.service.backend.chat.dto.ChatMessageResponse;
 import com.service.backend.shared.entity.ChatMessage;
 import org.springframework.data.r2dbc.repository.Modifying;
 import org.springframework.data.r2dbc.repository.Query;
-import org.springframework.data.repository.reactive.ReactiveCrudRepository;
+import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Repository
-public interface ChatMessageRepository extends ReactiveCrudRepository<ChatMessage, Long> {
+public interface ChatMessageRepository extends R2dbcRepository<ChatMessage, Long> {
     @Query("""
             SELECT cm.id,
                    cm.group_id,

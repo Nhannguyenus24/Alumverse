@@ -5,13 +5,13 @@ import com.service.backend.chat.dto.RecentChatPreviewResponse;
 import com.service.backend.shared.entity.ChatGroupMember;
 import org.springframework.data.r2dbc.repository.Modifying;
 import org.springframework.data.r2dbc.repository.Query;
-import org.springframework.data.repository.reactive.ReactiveCrudRepository;
+import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Repository
-public interface ChatGroupMemberRepository extends ReactiveCrudRepository<ChatGroupMember, Long> {
+public interface ChatGroupMemberRepository extends R2dbcRepository<ChatGroupMember, Long> {
 
     @Query("SELECT * FROM chat_group_members WHERE group_id = :groupId")
     Flux<ChatGroupMember> findByGroupId(Long groupId);

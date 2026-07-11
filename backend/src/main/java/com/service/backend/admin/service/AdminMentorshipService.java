@@ -252,32 +252,27 @@ public class AdminMentorshipService {
 
     public Mono<MentorshipStatisticsDTO> getStatistics() {
         return Mono.zip(
-                        adminMentorshipRepository.countAllSessions().defaultIfEmpty(0L),
-                        adminMentorshipRepository.countSessionsByStatus(Status.PENDING.getValue()).defaultIfEmpty(0L),
-                        adminMentorshipRepository.countSessionsByStatus(Status.CONFIRMED.getValue()).defaultIfEmpty(0L),
-                        adminMentorshipRepository.countSessionsByStatus(Status.COMPLETED.getValue()).defaultIfEmpty(0L),
-                        adminMentorshipRepository.countSessionsByStatus(Status.CANCELLED.getValue()).defaultIfEmpty(0L),
-                        adminMentorshipRepository.countSessionsByStatus(Status.REJECTED.getValue()).defaultIfEmpty(0L),
-                        adminMentorshipRepository.countAllMentorProfiles().defaultIfEmpty(0L),
-                        adminMentorshipRepository.countApprovedMentors().defaultIfEmpty(0L))
-                .flatMap(t -> Mono.zip(
-                                adminMentorshipRepository.countPendingMentors().defaultIfEmpty(0L),
-                                adminMentorshipRepository.countAllAvailabilities().defaultIfEmpty(0L),
-                                adminMentorshipRepository.countAllFeedbacks().defaultIfEmpty(0L))
-                        .map(t2 -> MentorshipStatisticsDTO.builder()
-                                .totalSessions(t.getT1())
-                                .pendingSessions(t.getT2())
-                                .confirmedSessions(t.getT3())
-                                .completedSessions(t.getT4())
-                                .cancelledSessions(t.getT5())
-                                .rejectedSessions(t.getT6())
-                                .totalMentors(t.getT7())
-                                .approvedMentors(t.getT8())
-                                .pendingMentors(t2.getT1())
-                                .totalAvailabilities(t2.getT2())
-                                .totalFeedbacks(t2.getT3())
-                                .build()))
-                .doOnSuccess(r -> log.info("getStatistics result: {}", JsonUtils.toJson(r)));
+                adminMentorshipRepository.getAggregatedMentorshipStats(),
+                adminMentorshipRepository.getAggregatedMentorProfileStats(),
+                adminMentorshipRepository.countAllAvailabilities().defaultIfEmpty(0L),
+                adminMentorshipRepository.countAllFeedbacks().defaultIfEmpty(0L)
+        ).map(tuple -> {
+            var sessionStats = tuple.getT1();
+            var profileStats = tuple.getT2();
+            return MentorshipStatisticsDTO.builder()
+                    .totalSessions(sessionStats.getTotalSessions() != null ? sessionStats.getTotalSessions() : 0L)
+                    .pendingSessions(sessionStats.getPendingSessions() != null ? sessionStats.getPendingSessions() : 0L)
+                    .confirmedSessions(sessionStats.getConfirmedSessions() != null ? sessionStats.getConfirmedSessions() : 0L)
+                    .completedSessions(sessionStats.getCompletedSessions() != null ? sessionStats.getCompletedSessions() : 0L)
+                    .cancelledSessions(sessionStats.getCancelledSessions() != null ? sessionStats.getCancelledSessions() : 0L)
+                    .rejectedSessions(sessionStats.getRejectedSessions() != null ? sessionStats.getRejectedSessions() : 0L)
+                    .totalMentors(profileStats.getTotalProfiles() != null ? profileStats.getTotalProfiles() : 0L)
+                    .approvedMentors(profileStats.getApprovedProfiles() != null ? profileStats.getApprovedProfiles() : 0L)
+                    .pendingMentors(profileStats.getPendingProfiles() != null ? profileStats.getPendingProfiles() : 0L)
+                    .totalAvailabilities(tuple.getT3())
+                    .totalFeedbacks(tuple.getT4())
+                    .build();
+        });
     }
 
     private Mono<AdminMentorshipSessionDTO> enrichSession(MentorshipSession s) {

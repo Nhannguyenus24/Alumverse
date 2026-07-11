@@ -1,5 +1,6 @@
 package com.service.backend.auth.service;
 
+import com.nimbusds.jwt.JWTClaimsSet;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.dao.DataIntegrityViolationException;
 import java.security.SecureRandom;
@@ -378,7 +379,7 @@ public class AuthService {
         }
 
         return Mono.fromCallable(() -> {
-            com.nimbusds.jwt.JWTClaimsSet claims = jwtUtils.validateToken(refreshToken);
+            JWTClaimsSet claims = jwtUtils.validateToken(refreshToken);
             return Integer.valueOf(claims.getSubject());
         })
                 .onErrorMap(e -> new ApplicationException(ErrorCode.INVALID_REFRESH_TOKEN, e))
@@ -442,13 +443,6 @@ public class AuthService {
         .flatMap(userId -> authRepository.findById(userId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND)))
                 .flatMap(user -> {
-                    // Allow switching to any organization. Membership is not required:
-                    // non-members simply receive verificationLevel 0 (guest) for that org.
-                    //
-                    // Only the access token is re-issued. The refresh token is left untouched —
-                    // it carries just the user identity, so switching org never rotates it. This
-                    // also avoids racing with the client's auto-refresh machinery (StrictMode /
-                    // double calls) that may still present the current refresh token.
                     String newAccessToken = jwtUtils.generateAccessToken(user, newOrganizationId);
 
                     return getVerificationLevel(user.getId(), newOrganizationId)

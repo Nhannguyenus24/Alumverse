@@ -1,5 +1,6 @@
 package com.service.backend.auth.service;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
@@ -24,9 +25,6 @@ public class RecaptchaService {
     }
 
     public Mono<Boolean> verifyRecaptcha(String recaptchaResponse) {
-        // No token provided (e.g. the Flutter mobile client, which has no
-        // reCAPTCHA widget) → skip verification. The web client still sends a
-        // token and is verified as before.
         if (recaptchaResponse == null || recaptchaResponse.isEmpty()) {
             return Mono.just(true);
         }
@@ -54,7 +52,7 @@ public class RecaptchaService {
     @Getter
     private static class RecaptchaResponse {
         private boolean success;
-        @com.fasterxml.jackson.annotation.JsonProperty("error-codes")
+        @JsonProperty("error-codes")
         private java.util.List<String> errorCodes;
 
     }

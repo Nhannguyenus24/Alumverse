@@ -3,7 +3,7 @@ package com.service.backend.mentorship.dao;
 import com.service.backend.shared.entity.MentorshipSession;
 import org.springframework.data.r2dbc.repository.Modifying;
 import org.springframework.data.r2dbc.repository.Query;
-import org.springframework.data.repository.reactive.ReactiveCrudRepository;
+import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -11,7 +11,7 @@ import reactor.core.publisher.Mono;
 import java.time.LocalDate;
 
 @Repository
-public interface MentorshipSessionR2dbcRepository extends ReactiveCrudRepository<MentorshipSession, Integer> {
+public interface MentorshipSessionR2dbcRepository extends R2dbcRepository<MentorshipSession, Integer> {
 
     // ===================== Mentor view: basic =====================
 
@@ -73,12 +73,6 @@ public interface MentorshipSessionR2dbcRepository extends ReactiveCrudRepository
 
     // ===================== Status queries =====================
 
-    @Query("SELECT ms.* FROM mentorship_sessions ms JOIN mentor_availabilities ma ON ms.availability_id = ma.id WHERE ma.mentor_member_id = :mentorMemberId AND ms.status = :status ORDER BY ms.created_at DESC")
-    Flux<MentorshipSession> findByMentorMemberIdAndStatus(Integer mentorMemberId, String status);
-
-    @Query("SELECT * FROM mentorship_sessions WHERE mentee_member_id = :menteeMemberId AND status = :status ORDER BY created_at DESC")
-    Flux<MentorshipSession> findByMenteeMemberIdAndStatus(Integer menteeMemberId, String status);
-
     // ===================== Modifying =====================
 
     @Modifying
@@ -103,9 +97,6 @@ public interface MentorshipSessionR2dbcRepository extends ReactiveCrudRepository
     @Query("UPDATE mentorship_sessions SET status = :status, " +
             "proposed_start_time = NULL, proposed_end_time = NULL WHERE id = :id")
     Mono<Integer> clearProposalWithStatus(Integer id, String status);
-
-    @Query("SELECT * FROM mentorship_sessions WHERE availability_id = :availabilityId AND status NOT IN ('REJECTED','CANCELLED','CANCELLED_BY_MENTEE','CANCELLED_BY_MENTOR')")
-    Flux<MentorshipSession> findActiveByAvailabilityId(Integer availabilityId);
 
     @Modifying
     @Query("UPDATE mentorship_sessions SET status = :status, started_at = COALESCE(started_at, :now), " +

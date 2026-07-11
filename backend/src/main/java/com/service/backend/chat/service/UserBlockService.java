@@ -136,11 +136,9 @@ public class UserBlockService {
     }
 
     public Mono<Void> assertSenderCanSendMessage(Long senderMemberId, Long groupId) {
-        return Mono.zip(
-                        userBlockRepository.countSenderBlockedMembersInGroup(senderMemberId, groupId),
-                        userBlockRepository.countSenderBlockedByMembersInGroup(senderMemberId, groupId))
-                .flatMap(tuple -> {
-                    if (tuple.getT1() > 0 || tuple.getT2() > 0) {
+        return userBlockRepository.countBlockStatusInGroup(senderMemberId, groupId)
+                .flatMap(count -> {
+                    if (count > 0) {
                         return Mono.error(new ApplicationException(
                                 ErrorCode.USER_COMMUNICATION_BLOCKED,
                                 "You cannot send messages while a block is active"));

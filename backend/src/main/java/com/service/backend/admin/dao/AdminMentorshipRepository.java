@@ -43,12 +43,6 @@ public interface AdminMentorshipRepository extends R2dbcRepository<MentorshipSes
     @Query("SELECT * FROM mentor_profiles WHERE member_id = :memberId")
     Mono<MentorProfile> findMentorProfileById(@Param("memberId") Integer memberId);
 
-    @Query("SELECT COUNT(*) FROM mentor_profiles WHERE status = 'APPROVED'")
-    Mono<Long> countApprovedMentors();
-
-    @Query("SELECT COUNT(*) FROM mentor_profiles WHERE status = 'PENDING'")
-    Mono<Long> countPendingMentors();
-
     @Query("SELECT COUNT(*) FROM mentor_availabilities")
     Mono<Long> countAllAvailabilities();
 
@@ -114,4 +108,25 @@ public interface AdminMentorshipRepository extends R2dbcRepository<MentorshipSes
            "WHERE om.organization_id = :organizationId AND mp.status = :status")
     Mono<Long> countMentorProfilesByOrganizationAndStatus(@Param("organizationId") Integer organizationId,
                                                            @Param("status") String status);
+
+    @Query("""
+        SELECT
+            COUNT(*) AS total_sessions,
+            SUM(CASE WHEN status = 'PENDING' THEN 1 ELSE 0 END) AS pending_sessions,
+            SUM(CASE WHEN status = 'CONFIRMED' THEN 1 ELSE 0 END) AS confirmed_sessions,
+            SUM(CASE WHEN status = 'COMPLETED' THEN 1 ELSE 0 END) AS completed_sessions,
+            SUM(CASE WHEN status = 'CANCELLED' THEN 1 ELSE 0 END) AS cancelled_sessions,
+            SUM(CASE WHEN status = 'REJECTED' THEN 1 ELSE 0 END) AS rejected_sessions
+        FROM mentorship_sessions
+    """)
+    Mono<com.service.backend.admin.dto.AdminMentorshipAggregatedStatsProjection> getAggregatedMentorshipStats();
+
+    @Query("""
+        SELECT
+            COUNT(*) AS total_profiles,
+            SUM(CASE WHEN status = 'APPROVED' THEN 1 ELSE 0 END) AS approved_profiles,
+            SUM(CASE WHEN status = 'PENDING' THEN 1 ELSE 0 END) AS pending_profiles
+        FROM mentor_profiles
+    """)
+    Mono<com.service.backend.admin.dto.AdminMentorProfileAggregatedStatsProjection> getAggregatedMentorProfileStats();
 }
