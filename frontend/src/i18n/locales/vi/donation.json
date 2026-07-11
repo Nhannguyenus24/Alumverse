@@ -175,7 +175,7 @@
   "validation_manager_email_required": "Vui lòng nhập email người phụ trách",
   "validation_manager_email_invalid": "Email người phụ trách không đúng định dạng",
   "manager_email_label": "Email liên hệ",
-  "connect_btn": "Kết nối",
+  "connect_btn": "Liên hệ ngay",
   "connect_drawer_title": "Người phụ trách quỹ",
   "connect_drawer_note": "Đây là yêu cầu kết nối — người phụ trách sẽ nhận và phản hồi, không phải tin nhắn tức thời.",
   "manager_is_you": "Bạn là người phụ trách quỹ này"

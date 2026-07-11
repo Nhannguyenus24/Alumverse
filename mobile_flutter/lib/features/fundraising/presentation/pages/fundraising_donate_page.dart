@@ -245,6 +245,14 @@ class _FundraisingDonatePageState extends ConsumerState<FundraisingDonatePage> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text('donation.anonymous'.tr()),
+              subtitle: Text('donation.anonymous_desc'.tr()),
+              value: _anonymous,
+              onChanged: (v) => setState(() => _anonymous = v),
+            ),
+            const SizedBox(height: 12),
             _Label('donation.select_amount'.tr()),
             const SizedBox(height: 8),
             Wrap(
@@ -290,13 +298,6 @@ class _FundraisingDonatePageState extends ConsumerState<FundraisingDonatePage> {
               ),
             ],
             const SizedBox(height: 20),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text('donation.anonymous'.tr()),
-              subtitle: Text('donation.anonymous_desc'.tr()),
-              value: _anonymous,
-              onChanged: (v) => setState(() => _anonymous = v),
-            ),
             if (!_anonymous) ...[
               const SizedBox(height: 8),
               TextFormField(

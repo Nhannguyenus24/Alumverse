@@ -175,7 +175,7 @@
   "validation_manager_email_required": "Please enter the fund manager email",
   "validation_manager_email_invalid": "Invalid fund manager email format",
   "manager_email_label": "Contact email",
-  "connect_btn": "Connect",
+  "connect_btn": "Contact now",
   "connect_drawer_title": "Fund manager",
   "connect_drawer_note": "This is a connection request — the manager will receive and respond, not an instant message.",
   "manager_is_you": "You are the manager of this fund"

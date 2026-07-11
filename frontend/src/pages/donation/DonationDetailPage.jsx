@@ -164,6 +164,56 @@ function DonationContributionForm({ fundDetail }) {
   return (
     <Card variant="outlined" sx={{ px: { xs: 2.5, md: 3.2 }, py: { xs: 2.5, md: 3.2 }, mb: 3, maxWidth: 720, mx: "auto" }}>
       <Box component="form" onSubmit={handleSubmit(onSubmit)}>
+        <ScrollReveal><Controller
+          name="isAnonymous"
+          control={control}
+          render={({ field }) => (
+            <Box
+              component="label"
+              sx={{
+                mb: 2.2,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                px: 2,
+                py: 1.2,
+                borderRadius: 2,
+                border: "1px solid",
+                borderColor: field.value ? "primary.main" : "divider",
+                backgroundColor: "background.default",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+                userSelect: "none",
+              }}
+            >
+              <Box>
+                <Typography sx={{ fontWeight: 700, color: "text.primary", fontSize: "0.94rem" }}>
+                  {t('anonymous_label')}
+                </Typography>
+                <Typography sx={{ color: "text.secondary", fontSize: "0.8rem", mt: 0.2 }}>
+                  {t('anonymous_desc')}
+                </Typography>
+              </Box>
+              <Switch
+                checked={field.value}
+                onChange={(e) => {
+                  field.onChange(e.target.checked);
+                  if (e.target.checked) {
+                    setValue("donorName", "");
+                    setValue("email", "");
+                    setValue("phone", "");
+                    setValue("address", "");
+                  }
+                }}
+                sx={{
+                  "& .MuiSwitch-switchBase.Mui-checked": { color: "primary.main" },
+                  "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { backgroundColor: "primary.main" },
+                }}
+              />
+            </Box>
+          )}
+        /></ScrollReveal>
+
         <Grid container spacing={2}>
           <Grid size={12}>
             <ScrollReveal><Controller
@@ -277,56 +327,6 @@ function DonationContributionForm({ fundDetail }) {
             /></ScrollReveal>
           </Grid>
         </Grid>
-
-        <ScrollReveal delay={0.28}><Controller
-          name="isAnonymous"
-          control={control}
-          render={({ field }) => (
-            <Box
-              component="label"
-              sx={{
-                mt: 2.2,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                px: 2,
-                py: 1.2,
-                borderRadius: 2,
-                border: "1px solid",
-                borderColor: field.value ? "primary.main" : "divider",
-                backgroundColor: "background.default",
-                cursor: "pointer",
-                transition: "all 0.2s ease",
-                userSelect: "none",
-              }}
-            >
-              <Box>
-                <Typography sx={{ fontWeight: 700, color: "text.primary", fontSize: "0.94rem" }}>
-                  {t('anonymous_label')}
-                </Typography>
-                <Typography sx={{ color: "text.secondary", fontSize: "0.8rem", mt: 0.2 }}>
-                  {t('anonymous_desc')}
-                </Typography>
-              </Box>
-              <Switch
-                checked={field.value}
-                onChange={(e) => {
-                  field.onChange(e.target.checked);
-                  if (e.target.checked) {
-                    setValue("donorName", "");
-                    setValue("email", "");
-                    setValue("phone", "");
-                    setValue("address", "");
-                  }
-                }}
-                sx={{
-                  "& .MuiSwitch-switchBase.Mui-checked": { color: "primary.main" },
-                  "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { backgroundColor: "primary.main" },
-                }}
-              />
-            </Box>
-          )}
-        /></ScrollReveal>
 
         <ScrollReveal delay={0.32}>
           <Button
