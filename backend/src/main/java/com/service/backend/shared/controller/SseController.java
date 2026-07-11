@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerSentEvent;
+import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -42,7 +43,13 @@ public class SseController {
 
     @PublicEndpoint
     @GetMapping(value = "/connect", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<ServerSentEvent<Object>> connect(@RequestParam("token") String token) {
+    public Flux<ServerSentEvent<Object>> connect(@RequestParam("token") String token,
+            ServerHttpResponse response) {
+        // Disable proxy/browser buffering so events are flushed immediately. nginx honours
+        // `X-Accel-Buffering: no` per-response, avoiding a server-wide `proxy_buffering off`.
+        response.getHeaders().set("X-Accel-Buffering", "no");
+        response.getHeaders().set("Cache-Control", "no-cache");
+
         Long userId;
         Integer organizationId;
         try {
