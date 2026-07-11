@@ -174,15 +174,6 @@ public class EventRepository implements IEventRepository {
         // a cancelled registration correctly reads as not-registered.
         return ticketRepo.existsActiveByEventIdAndMemberId(eventId, memberId);
     }
-
-    @Override
-    public Mono<Event> updateInterestedCount(Long eventId, Boolean increment) {
-        Mono<Integer> updateMono = increment
-                ? eventRepo.incrementInterestedCount(eventId)
-                : eventRepo.decrementInterestedCount(eventId);
-        return updateMono.then(eventRepo.findById(eventId));
-    }
-
     // ─── Ticket — register ────────────────────────────────────────────────────
 
     @Override
@@ -227,10 +218,6 @@ public class EventRepository implements IEventRepository {
         return ticketRepo.findByTicketCode(ticketCode);
     }
 
-    @Override
-    public Mono<EventTicket> findTicketById(Long ticketId) {
-        return ticketRepo.findById(ticketId);
-    }
 
     @Override
     public Flux<EventTicket> findTicketsByIds(Iterable<Long> ticketIds) {
@@ -305,17 +292,6 @@ public class EventRepository implements IEventRepository {
     public Mono<EventInvitation> confirmInvitation(Long invitationId) {
         return invitationRepo.confirmInvitation(invitationId, LocalDateTime.now())
                 .then(invitationRepo.findById(invitationId));
-    }
-
-    @Override
-    public Mono<EventInvitation> declineInvitation(Long invitationId) {
-        return invitationRepo.declineInvitation(invitationId)
-                .then(invitationRepo.findById(invitationId));
-    }
-
-    @Override
-    public Mono<Boolean> hasInvitation(Long eventId, Long memberId) {
-        return invitationRepo.existsByEventIdAndMemberId(eventId, memberId);
     }
 
     @Override

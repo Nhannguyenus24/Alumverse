@@ -36,7 +36,6 @@ public interface IEventRepository {
     Mono<PaginatedResponse<EventInterest>> findEventInterests(Long eventId, int page, int limit);
     Mono<Boolean> checkUserInterest(Long eventId, Long memberId);
     Mono<Boolean> checkUserRegistered(Long eventId, Long memberId);
-    Mono<Event> updateInterestedCount(Long eventId, Boolean increment);
 
     Mono<EventTicket> registerTicket(EventTicket ticketData);
     Mono<Boolean> hasRegistered(Long eventId, Long memberId);
@@ -47,7 +46,6 @@ public interface IEventRepository {
     Mono<EventTicket> checkInTicket(Long ticketId);
 
     Mono<EventTicket> findTicketByCode(String ticketCode);
-    Mono<EventTicket> findTicketById(Long ticketId);
     Flux<EventTicket> findTicketsByIds(Iterable<Long> ticketIds);
     Mono<PaginatedResponse<EventTicket>> findTicketsByEvent(Long eventId, int page, int limit);
     Mono<PaginatedResponse<EventTicket>> findTicketsByEventAndStatus(Long eventId, String status, int page, int limit);
@@ -59,8 +57,6 @@ public interface IEventRepository {
     Mono<EventInvitation> createInvitation(EventInvitation invitation);
     Mono<EventInvitation> findInvitationByToken(String token);
     Mono<EventInvitation> confirmInvitation(Long invitationId);
-    Mono<EventInvitation> declineInvitation(Long invitationId);
-    Mono<Boolean> hasInvitation(Long eventId, Long memberId);
     Mono<PaginatedResponse<EventInvitation>> findInvitationsByEvent(Long eventId, int page, int limit);
 
     // Email logs

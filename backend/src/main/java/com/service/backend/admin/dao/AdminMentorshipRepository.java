@@ -43,12 +43,6 @@ public interface AdminMentorshipRepository extends R2dbcRepository<MentorshipSes
     @Query("SELECT * FROM mentor_profiles WHERE member_id = :memberId")
     Mono<MentorProfile> findMentorProfileById(@Param("memberId") Integer memberId);
 
-    @Query("SELECT COUNT(*) FROM mentor_profiles WHERE status = 'APPROVED'")
-    Mono<Long> countApprovedMentors();
-
-    @Query("SELECT COUNT(*) FROM mentor_profiles WHERE status = 'PENDING'")
-    Mono<Long> countPendingMentors();
-
     @Query("SELECT COUNT(*) FROM mentor_availabilities")
     Mono<Long> countAllAvailabilities();
 
@@ -116,7 +110,7 @@ public interface AdminMentorshipRepository extends R2dbcRepository<MentorshipSes
                                                            @Param("status") String status);
 
     @Query("""
-        SELECT 
+        SELECT
             COUNT(*) AS total_sessions,
             SUM(CASE WHEN status = 'PENDING' THEN 1 ELSE 0 END) AS pending_sessions,
             SUM(CASE WHEN status = 'CONFIRMED' THEN 1 ELSE 0 END) AS confirmed_sessions,
@@ -128,7 +122,7 @@ public interface AdminMentorshipRepository extends R2dbcRepository<MentorshipSes
     Mono<com.service.backend.admin.dto.AdminMentorshipAggregatedStatsProjection> getAggregatedMentorshipStats();
 
     @Query("""
-        SELECT 
+        SELECT
             COUNT(*) AS total_profiles,
             SUM(CASE WHEN status = 'APPROVED' THEN 1 ELSE 0 END) AS approved_profiles,
             SUM(CASE WHEN status = 'PENDING' THEN 1 ELSE 0 END) AS pending_profiles

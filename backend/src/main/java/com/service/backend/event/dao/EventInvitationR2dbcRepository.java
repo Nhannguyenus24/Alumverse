@@ -15,8 +15,6 @@ public interface EventInvitationR2dbcRepository extends ReactiveCrudRepository<E
 
     Mono<EventInvitation> findByToken(String token);
 
-    Mono<Boolean> existsByEventIdAndMemberId(Long eventId, Long memberId);
-
     @Query("SELECT * FROM event_invitations WHERE event_id = :eventId ORDER BY invited_at DESC LIMIT :limit OFFSET :offset")
     Flux<EventInvitation> findByEventIdWithPagination(Long eventId, int limit, int offset);
 
@@ -25,8 +23,4 @@ public interface EventInvitationR2dbcRepository extends ReactiveCrudRepository<E
     @Modifying
     @Query("UPDATE event_invitations SET status = 'CONFIRMED', confirmed_at = :confirmedAt WHERE id = :id")
     Mono<Integer> confirmInvitation(Long id, LocalDateTime confirmedAt);
-
-    @Modifying
-    @Query("UPDATE event_invitations SET status = 'DECLINED' WHERE id = :id")
-    Mono<Integer> declineInvitation(Long id);
 }

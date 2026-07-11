@@ -2,10 +2,9 @@ package com.service.backend.fundraising.service;
 
 import com.service.backend.shared.entity.*;
 import org.springframework.transaction.annotation.Transactional;
-import com.service.backend.fundraising.dao.UserR2dbcRepository;
 import com.service.backend.fundraising.dao.FundR2dbcRepository;
 import com.service.backend.fundraising.dao.FundReceivingInfosR2dbcRepository;
-import com.service.backend.fundraising.dao.OrganizationR2dbcRepository;
+import com.service.backend.organization.dao.OrganizationRepository;
 import com.service.backend.fundraising.dao.FundDonationsR2dbcRepository;
 import com.service.backend.fundraising.dto.CreateFundRequest;
 import com.service.backend.fundraising.dto.CreateFundReceivingInfosRequest;
@@ -33,6 +32,7 @@ import com.service.backend.shared.utils.CacheUtils;
 import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.utils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
+import com.service.backend.user.dao.UserProfileRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -55,10 +55,10 @@ import java.time.Duration;
 public class FundService {
 
     private final FundR2dbcRepository fundR2dbcRepository;
-    private final OrganizationR2dbcRepository organizationRepository;
+    private final OrganizationRepository organizationRepository;
     private final FundReceivingInfosR2dbcRepository fundReceivingInfosRepository;
     private final FundDonationsR2dbcRepository fundDonationsRepository;
-    private final UserR2dbcRepository userRepository;
+    private final UserProfileRepository userRepository;
     private final CacheUtils cacheUtils;
     private final ImageService imageService;
 

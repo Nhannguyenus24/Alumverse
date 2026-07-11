@@ -129,12 +129,6 @@ public interface ForumTopicRepository extends R2dbcRepository<ForumTopic, Intege
     // ========== STATISTICS QUERIES ==========
 
     /**
-     * Count topics created today
-     */
-    @Query("SELECT COUNT(*) FROM forum_topics WHERE DATE(created_at) = CURRENT_DATE")
-    Mono<Long> countTopicsCreatedToday();
-
-    /**
      * Find ghost topics: created more than 7 days ago with 0 posts.
      * Returns up to 20 ghost topics ordered by oldest first.
      */
@@ -178,7 +172,7 @@ public interface ForumTopicRepository extends R2dbcRepository<ForumTopic, Intege
            "WHERE (:keyword IS NULL OR LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     Mono<Long> countAll(@Param("keyword") String keyword);
     @Query("""
-        SELECT 
+        SELECT
             COUNT(*) AS total_topics,
             SUM(CASE WHEN DATE(created_at) = CURRENT_DATE THEN 1 ELSE 0 END) AS new_topics_today
         FROM forum_topics

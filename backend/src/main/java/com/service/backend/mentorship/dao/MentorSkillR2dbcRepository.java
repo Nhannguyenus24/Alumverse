@@ -16,13 +16,7 @@ public interface MentorSkillR2dbcRepository extends ReactiveCrudRepository<Mento
     @Query("SELECT * FROM mentor_skills WHERE mentor_member_id = :mentorMemberId ORDER BY display_order ASC")
     Flux<MentorSkill> findByMentorMemberIdOrderByDisplayOrder(Integer mentorMemberId);
 
-    @Query("SELECT * FROM mentor_skills WHERE mentor_member_id IN (:mentorMemberIds) ORDER BY display_order ASC")
-    Flux<MentorSkill> findByMentorMemberIds(Collection<Integer> mentorMemberIds);
-
     @Modifying
     @Query("DELETE FROM mentor_skills WHERE mentor_member_id = :mentorMemberId")
     Mono<Void> deleteByMentorMemberId(Integer mentorMemberId);
-
-    @Query("SELECT DISTINCT mentor_member_id FROM mentor_skills WHERE skill_id IN (:skillIds)")
-    Flux<Integer> findMentorMemberIdsBySkillIds(Collection<Integer> skillIds);
 }

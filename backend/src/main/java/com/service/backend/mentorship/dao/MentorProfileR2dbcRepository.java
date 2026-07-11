@@ -31,29 +31,6 @@ public interface MentorProfileR2dbcRepository extends ReactiveCrudRepository<Men
 
     // ===================== Search by keyword =====================
 
-    @Query("SELECT * FROM mentor_profiles mp WHERE mp.status = 'APPROVED' AND " +
-            "(LOWER(mp.current_job_title) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
-            "OR LOWER(mp.current_company) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
-            "OR EXISTS (SELECT 1 FROM mentor_expertise me WHERE me.mentor_member_id = mp.member_id " +
-            "    AND (LOWER(me.topic) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
-            "      OR LOWER(me.category) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
-            "      OR LOWER(me.tag) LIKE LOWER(CONCAT('%', :keyword, '%')))) " +
-            "OR EXISTS (SELECT 1 FROM mentor_skills ms JOIN skills s ON s.id = ms.skill_id " +
-            "    WHERE ms.mentor_member_id = mp.member_id AND LOWER(s.name) LIKE LOWER(CONCAT('%', :keyword, '%')))) " +
-            "ORDER BY mp.rating_avg DESC LIMIT :limit OFFSET :offset")
-    Flux<MentorProfile> searchMentors(String keyword, int limit, int offset);
-
-    @Query("SELECT COUNT(*) FROM mentor_profiles mp WHERE mp.status = 'APPROVED' AND " +
-            "(LOWER(mp.current_job_title) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
-            "OR LOWER(mp.current_company) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
-            "OR EXISTS (SELECT 1 FROM mentor_expertise me WHERE me.mentor_member_id = mp.member_id " +
-            "    AND (LOWER(me.topic) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
-            "      OR LOWER(me.category) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
-            "      OR LOWER(me.tag) LIKE LOWER(CONCAT('%', :keyword, '%')))) " +
-            "OR EXISTS (SELECT 1 FROM mentor_skills ms JOIN skills s ON s.id = ms.skill_id " +
-            "    WHERE ms.mentor_member_id = mp.member_id AND LOWER(s.name) LIKE LOWER(CONCAT('%', :keyword, '%'))))")
-    Mono<Long> countSearchMentors(String keyword);
-
     // ===================== Combined filter =====================
 
     @Query("SELECT DISTINCT mp.member_id, mp.current_job_title, mp.current_company, " +
@@ -160,14 +137,6 @@ public interface MentorProfileR2dbcRepository extends ReactiveCrudRepository<Men
     @Query("UPDATE mentor_profiles SET status = 'APPROVED', review_note = NULL, reviewed_by = :reviewedBy, " +
             "reviewed_at = NOW(), updated_at = NOW() WHERE member_id = :memberId")
     Mono<Integer> approveMentorByReviewer(Integer memberId, Integer reviewedBy);
-
-    @Modifying
-    @Query("UPDATE mentor_profiles SET status = 'APPROVED', updated_at = NOW() WHERE member_id = :memberId")
-    Mono<Integer> approveMentor(Integer memberId);
-
-    @Modifying
-    @Query("UPDATE mentor_profiles SET status = 'REJECTED', updated_at = NOW() WHERE member_id = :memberId")
-    Mono<Integer> revokeMentor(Integer memberId);
 
     @Modifying
     @Query("UPDATE mentor_profiles SET rating_avg = :ratingAvg WHERE member_id = :memberId")

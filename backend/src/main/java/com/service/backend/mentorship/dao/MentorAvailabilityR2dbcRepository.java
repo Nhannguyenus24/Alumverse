@@ -31,9 +31,6 @@ public interface MentorAvailabilityR2dbcRepository extends ReactiveCrudRepositor
     @Query("UPDATE mentor_availabilities SET status = 'EXPIRED' WHERE status = 'AVAILABLE' AND end_time < :now")
     Mono<Integer> expireStaleAvailabilities(LocalDateTime now);
 
-    @Query("DELETE FROM mentor_availabilities WHERE mentor_member_id = :mentorMemberId AND id = :id")
-    Mono<Void> deleteByMentorMemberIdAndId(Integer mentorMemberId, Integer id);
-
     // Two intervals [a,b) and [c,d) overlap iff a < d AND c < b.
     @Query("SELECT COUNT(*) FROM mentor_availabilities " +
             "WHERE mentor_member_id = :mentorMemberId " +

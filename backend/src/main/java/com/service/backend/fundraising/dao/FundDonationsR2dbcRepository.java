@@ -1,5 +1,6 @@
 package com.service.backend.fundraising.dao;
 
+import com.service.backend.admin.dto.AdminFundDonationAggregatedStatsProjection;
 import com.service.backend.shared.entity.FundDonations;
 import com.service.backend.fundraising.projection.FundDonationListProjection;
 import org.springframework.data.r2dbc.repository.Query;
@@ -90,15 +91,6 @@ public interface FundDonationsR2dbcRepository extends ReactiveCrudRepository<Fun
 
     @Query("SELECT COALESCE(SUM(amount), 0) FROM fund_donations WHERE status = 'SUCCESS' AND created_at >= :start AND created_at < :end")
     Mono<BigDecimal> sumAmountBetween(LocalDateTime start, LocalDateTime end);
-
-    @Query("SELECT COUNT(*) FROM fund_donations")
-    Mono<Long> countAllDonations();
-
-    @Query("SELECT COUNT(*) FROM fund_donations WHERE status = :status")
-    Mono<Long> countByStatus(String status);
-
-    @Query("SELECT COALESCE(SUM(amount), 0) FROM fund_donations WHERE status = 'SUCCESS'")
-    Mono<BigDecimal> sumSuccessfulAmount();
 
     @Query("SELECT CAST(created_at AS DATE) AS date, COUNT(*) AS count, COALESCE(SUM(amount), 0) AS amount " +
            "FROM fund_donations " +
@@ -238,7 +230,7 @@ public interface FundDonationsR2dbcRepository extends ReactiveCrudRepository<Fun
     Mono<Long> countSearchByEmail(Long fundId, String keyword);
 
     @Query("""
-        SELECT 
+        SELECT
             SUM(CASE WHEN status = 'SUCCESS' THEN 1 ELSE 0 END) AS total_donations,
             COALESCE(SUM(CASE WHEN status = 'SUCCESS' AND created_at >= :start AND created_at < :end THEN amount ELSE 0 END), 0) AS total_donations_amount_this_month
         FROM fund_donations
@@ -249,7 +241,7 @@ public interface FundDonationsR2dbcRepository extends ReactiveCrudRepository<Fun
     );
 
     @Query("""
-        SELECT 
+        SELECT
             COUNT(*) AS total_donations,
             SUM(CASE WHEN status = 'SUCCESS' THEN 1 ELSE 0 END) AS successful_donations,
             SUM(CASE WHEN status = 'PENDING' THEN 1 ELSE 0 END) AS pending_donations,
@@ -257,5 +249,5 @@ public interface FundDonationsR2dbcRepository extends ReactiveCrudRepository<Fun
             COALESCE(SUM(CASE WHEN status = 'SUCCESS' THEN amount ELSE 0 END), 0) AS successful_amount
         FROM fund_donations
     """)
-    Mono<com.service.backend.admin.dto.AdminFundDonationAggregatedStatsProjection> getAdminAggregatedDonationStats();
+    Mono<AdminFundDonationAggregatedStatsProjection> getAdminAggregatedDonationStats();
 }

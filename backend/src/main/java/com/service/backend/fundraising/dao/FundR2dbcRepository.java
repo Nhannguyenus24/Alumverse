@@ -19,24 +19,6 @@ public interface FundR2dbcRepository extends ReactiveCrudRepository<Funds, Long>
     @Query("SELECT COUNT(*) FROM funds")
     Mono<Long> countAll();
 
-    @Query("SELECT COUNT(*) FROM funds WHERE time_started < :now AND time_ended > :now")
-    Mono<Long> countOpenFunds(LocalDateTime now);
-
-    @Query("SELECT * FROM funds WHERE (LOWER(name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(description_short) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(description_full) LIKE LOWER(CONCAT('%', :keyword, '%'))) ORDER BY id DESC LIMIT :limit OFFSET :offset")
-    Flux<Funds> searchFunds(String keyword, int limit, int offset);
-
-    @Query("SELECT COUNT(*) FROM funds WHERE (LOWER(name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(description_short) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(description_full) LIKE LOWER(CONCAT('%', :keyword, '%')))")
-    Mono<Long> countSearchFunds(String keyword);
-
-    @Query("SELECT COALESCE(SUM(current_amount), 0) FROM funds")
-    Mono<BigDecimal> sumCurrentAmount();
-
-    @Query("SELECT COUNT(*) FROM funds WHERE time_ended IS NOT NULL AND time_ended <= CURRENT_TIMESTAMP")
-    Mono<Long> countCompletedFunds();
-
-    @Query("SELECT COALESCE(SUM(target_amount), 0) FROM funds")
-    Mono<BigDecimal> sumTargetAmount();
-
     @Query("SELECT * FROM funds ORDER BY current_amount DESC LIMIT :limit")
     Flux<Funds> findTopByCurrentAmount(int limit);
 
@@ -117,15 +99,15 @@ public interface FundR2dbcRepository extends ReactiveCrudRepository<Funds, Long>
     );
 
     @Query("""
-        SELECT 
+        SELECT
             SUM(CASE WHEN time_started < :now AND time_ended > :now THEN 1 ELSE 0 END) AS total_funds,
-            COALESCE(SUM(current_amount), 0) AS total_current_amount 
+            COALESCE(SUM(current_amount), 0) AS total_current_amount
         FROM funds
     """)
     Mono<com.service.backend.fundraising.dto.FundAggregatedStatsProjection> getAggregatedFundStats(@org.springframework.data.repository.query.Param("now") LocalDateTime now);
 
     @Query("""
-        SELECT 
+        SELECT
             COUNT(*) AS total_funds,
             SUM(CASE WHEN time_started < :now AND time_ended > :now THEN 1 ELSE 0 END) AS active_funds,
             SUM(CASE WHEN time_ended IS NOT NULL AND time_ended <= CURRENT_TIMESTAMP THEN 1 ELSE 0 END) AS completed_funds,
