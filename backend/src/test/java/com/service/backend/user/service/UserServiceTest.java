@@ -9,6 +9,7 @@ import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.enums.Status;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.service.FileUploadService;
+import com.service.backend.shared.service.ImageService;
 import com.service.backend.shared.service.OCRService;
 import com.service.backend.user.dao.PeerVerificationRepository;
 import com.service.backend.user.dao.UserLoginHistoryRepository;
@@ -16,6 +17,7 @@ import com.service.backend.user.dao.UserNotificationSettingsRepository;
 import com.service.backend.user.dao.UserOrganizationMemberRepository;
 import com.service.backend.user.dao.UserProfileRepository;
 import com.service.backend.user.dto.NotificationSettingsResponse;
+import com.service.backend.user.dto.UpdateAvatarRequest;
 import com.service.backend.user.dto.UpdateNotificationSettingsRequest;
 import com.service.backend.user.dto.UserProfileResponse;
 import org.junit.jupiter.api.BeforeEach;
@@ -49,6 +51,7 @@ class UserServiceTest {
     @Mock private UserOrganizationMemberRepository userOrganizationMemberRepository;
     @Mock private PeerVerificationRepository peerVerificationRepository;
     @Mock private FileUploadService fileUploadService;
+    @Mock private ImageService imageService;
     @Mock private NotificationService notificationService;
     @Mock private OCRService ocrService;
 
@@ -294,27 +297,27 @@ class UserServiceTest {
     class UpdateMyAvatar {
 
         @Test
-        @DisplayName("should update avatar successfully")
+        @DisplayName("should convert the base64 avatar, store it, and return the resulting URL")
         void updateMyAvatar_success() {
-            when(authRepository.updateAvatarById(1, "http://example.com/avatar.jpg")).thenReturn(Mono.empty());
+            UpdateAvatarRequest request = new UpdateAvatarRequest();
+            request.setAvatarBase64("data:image/png;base64,AAA");
+            when(imageService.uploadBase64IfPresent("data:image/png;base64,AAA"))
+                    .thenReturn(Mono.just("http://example.com/avatar.webp"));
+            when(authRepository.updateAvatarById(1, "http://example.com/avatar.webp"))
+                    .thenReturn(Mono.empty());
 
-            StepVerifier.create(userService.updateMyAvatar(1L, "http://example.com/avatar.jpg"))
+            StepVerifier.create(userService.updateMyAvatar(1L, request))
+                    .expectNext("http://example.com/avatar.webp")
                     .verifyComplete();
         }
 
         @Test
-        @DisplayName("should fail when avatar URL is blank")
-        void updateMyAvatar_blankUrl() {
-            StepVerifier.create(userService.updateMyAvatar(1L, ""))
-                    .expectErrorMatches(err -> err instanceof ApplicationException &&
-                            ((ApplicationException) err).getErrorCode() == ErrorCode.BAD_REQUEST)
-                    .verify();
-        }
+        @DisplayName("should fail when no avatar image is provided")
+        void updateMyAvatar_missingImage() {
+            UpdateAvatarRequest request = new UpdateAvatarRequest();
+            when(imageService.uploadBase64IfPresent(null)).thenReturn(Mono.empty());
 
-        @Test
-        @DisplayName("should fail when avatar URL is null")
-        void updateMyAvatar_nullUrl() {
-            StepVerifier.create(userService.updateMyAvatar(1L, null))
+            StepVerifier.create(userService.updateMyAvatar(1L, request))
                     .expectErrorMatches(err -> err instanceof ApplicationException &&
                             ((ApplicationException) err).getErrorCode() == ErrorCode.BAD_REQUEST)
                     .verify();

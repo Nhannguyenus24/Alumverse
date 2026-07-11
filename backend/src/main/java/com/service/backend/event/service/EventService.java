@@ -71,7 +71,7 @@ public class EventService {
                     Long userId = ctx.getT1();
                     Long orgId = ctx.getT2().longValue();
                     return imageService.uploadBase64IfPresent(request.getBannerBase64())
-                            .defaultIfEmpty(request.getBannerUrl() == null ? "" : request.getBannerUrl())
+                            .defaultIfEmpty("")
                             .flatMap(bannerUrl -> {
                                 Event event = Event.builder()
                                         .title(request.getTitle())
@@ -105,7 +105,7 @@ public class EventService {
                                     return Mono.error(new ApplicationException(ErrorCode.FORBIDDEN));
                                 }
                                 return imageService.uploadBase64IfPresent(request.getBannerBase64())
-                                        .defaultIfEmpty(request.getBannerUrl() == null ? "" : request.getBannerUrl())
+                                        .defaultIfEmpty("")
                                         .flatMap(bannerUrl -> {
                                             Event updatedEvent = Event.builder()
                                                     .title(request.getTitle())

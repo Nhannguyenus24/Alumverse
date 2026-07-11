@@ -42,7 +42,6 @@ import { formatDateTime } from '../../utils/dateFormatter';
 import AvatarUploadDialog from "../../components/profile/AvatarUploadDialog";
 import useAvatarCrop from "../../hooks/profile/useAvatarCrop";
 import ChangeEmailModal from '../../components/profile/ChangeEmailModal';
-import { useUploadImage } from '../../utils/imageUtils';
 import { GENDER_OPTIONS, GENDER_LABEL_KEYS } from '../../constants/gender';
 import { resolveProfileRoleLabel } from '../../utils/profileRoleUtils';
 import {
@@ -169,7 +168,6 @@ export default function SettingPage() {
   const verificationLevel = useAuthStore((state) => state.verificationLevel);
   const setAuthUser = useAuthStore((state) => state.setUser);
   const queryClient = useQueryClient();
-  const { uploadBase64 } = useUploadImage();
   const avatarCrop = useAvatarCrop();
   const [isEditMode, setIsEditMode] = useState(false);
   const [originalFormData, setOriginalFormData] = useState(null);
@@ -320,9 +318,8 @@ export default function SettingPage() {
       await userSettingsApi.updateProfile(payload);
 
       if (avatarCrop.avatarUrl && avatarCrop.avatarUrl.startsWith('data:')) {
-        const avatarImageUrl = await uploadBase64(avatarCrop.avatarUrl);
+        const avatarImageUrl = await userSettingsApi.updateAvatar({ avatarBase64: avatarCrop.avatarUrl });
         if (avatarImageUrl) {
-          await userSettingsApi.updateAvatar(avatarImageUrl);
           setAuthUser({
             ...useAuthStore.getState().user,
             avatarUrl: avatarImageUrl,

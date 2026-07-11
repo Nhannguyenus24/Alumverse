@@ -1014,13 +1014,17 @@ export const userSettingsApi = {
 		return unwrap(response);
 	},
 
-	async updateAvatar(avatarUrl) {
-		const response = await apiClient.put('/users/me/avatar', { avatarUrl });
+	// Accepts either a raw base64/data-URL string (sent as avatarBase64 so the backend
+	// converts to WebP and stores it) or an explicit payload object ({ avatarBase64 } / { avatarUrl }).
+	async updateAvatar(input) {
+		const body = typeof input === 'string' ? { avatarBase64: input } : input;
+		const response = await apiClient.put('/users/me/avatar', body);
 		return unwrap(response);
 	},
 
-	async updateCover(coverUrl) {
-		const response = await apiClient.put('/users/me/cover', { coverUrl });
+	async updateCover(input) {
+		const body = typeof input === 'string' ? { coverBase64: input } : input;
+		const response = await apiClient.put('/users/me/cover', body);
 		return unwrap(response);
 	},
 

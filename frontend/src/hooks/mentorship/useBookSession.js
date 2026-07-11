@@ -1,11 +1,10 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { bookSession, uploadCvFile } from '../../utils/api';
+import { bookSession } from '../../utils/api';
 import { fileToBase64 } from '../../utils/imageUtils';
 
 /**
- * Single mutation that handles:
- *   1. (optional) Upload CV file → returns URL
- *   2. POST /mentee/sessions/book with the resolved cvUrl
+ * Single mutation that books a session in one request: the CV file (if any) is sent inline as
+ * base64, and the backend stores it and persists the resulting URL.
  *
  * Input: { availabilityId, sessionType, introduction, description, bookingNote, cvFile }
  */
@@ -17,11 +16,11 @@ const submitBooking = async ({
   bookingNote,
   cvFile,
 }) => {
-  let cvUrl = null;
+  let cvBase64;
+  let cvFileName;
   if (cvFile) {
-    const base64String = await fileToBase64(cvFile);
-    const uploadRes = await uploadCvFile({ base64String, fileName: cvFile.name });
-    cvUrl = uploadRes?.data?.data ?? null;
+    cvBase64 = await fileToBase64(cvFile);
+    cvFileName = cvFile.name;
   }
 
   const res = await bookSession({
@@ -30,7 +29,8 @@ const submitBooking = async ({
     introduction,
     description,
     bookingNote,
-    cvUrl,
+    cvBase64,
+    cvFileName,
   });
 
   return res?.data?.data ?? null;

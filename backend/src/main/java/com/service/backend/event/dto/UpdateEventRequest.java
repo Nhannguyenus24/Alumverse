@@ -30,10 +30,6 @@ public class UpdateEventRequest {
     @Schema(example = "Cập nhật thông tin sự kiện AI 2026.")
     private String description;
 
-    @URL()
-    @Schema(example = "https://example.com/banner-update.jpg")
-    private String bannerUrl;
-
     @Size(max = 500)
     @Schema(example = "Hội trường B, Đại học Khoa học Tự nhiên")
     private String location;
@@ -56,7 +52,7 @@ public class UpdateEventRequest {
     @Schema(example = "350")
     private Integer maxCapacity;
 
-    /** Optional base64-encoded banner. When present, backend uploads and replaces bannerUrl. */
+    /** Base64-encoded banner. When present it replaces the current banner; when absent the existing banner is kept. */
     private String bannerBase64;
 
     @Schema(example = "Workshop")

@@ -9,6 +9,7 @@ import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.enums.Status;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.service.ImageService;
+import com.service.backend.shared.service.FileUploadService;
 import com.service.backend.shared.utils.CacheUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -44,6 +45,7 @@ class FundServiceTest {
     @Mock private UserProfileRepository userRepository;
     @Mock private CacheUtils cacheUtils;
     @Mock private ImageService imageService;
+    @Mock private FileUploadService fileUploadService;
 
     private FundService fundService;
 
@@ -51,7 +53,7 @@ class FundServiceTest {
     void setUp() {
         fundService = new FundService(
                 fundR2dbcRepository, organizationRepository, fundReceivingInfosRepository,
-                fundDonationsRepository, userRepository, cacheUtils, imageService
+                fundDonationsRepository, userRepository, cacheUtils, imageService, fileUploadService
         );
         // Set @Value fields
         ReflectionTestUtils.setField(fundService, "sepayQrImgUrl", "https://img.vietqr.io/image/");
@@ -431,11 +433,14 @@ class FundServiceTest {
         }
 
         @Test
-        @DisplayName("stores fundDocumentUrl when provided")
+        @DisplayName("stores the uploaded document when base64 is provided")
         void createFund_withDocument_stored() {
             stubDependencies();
+            when(fileUploadService.uploadBase64File(any(), any()))
+                    .thenReturn(Mono.just("https://example.com/funds/decision.pdf"));
             CreateFundRequest request = baseRequest();
-            request.setFundDocumentUrl("https://example.com/funds/decision.pdf");
+            request.setFundDocumentBase64("ZG9jdW1lbnQ=");
+            request.setFundDocumentFileName("decision.pdf");
 
             StepVerifier.create(fundService.createFund(request))
                     .assertNext(saved -> assertThat(saved.getFundDocumentUrl())
@@ -444,7 +449,7 @@ class FundServiceTest {
         }
 
         @Test
-        @DisplayName("leaves fundDocumentUrl null when not provided (optional)")
+        @DisplayName("leaves fundDocumentUrl null when no document is provided (optional)")
         void createFund_withoutDocument_null() {
             stubDependencies();
 
@@ -454,11 +459,11 @@ class FundServiceTest {
         }
 
         @Test
-        @DisplayName("normalizes blank fundDocumentUrl to null")
+        @DisplayName("normalizes blank document base64 to null")
         void createFund_blankDocument_null() {
             stubDependencies();
             CreateFundRequest request = baseRequest();
-            request.setFundDocumentUrl("   ");
+            request.setFundDocumentBase64("   ");
 
             StepVerifier.create(fundService.createFund(request))
                     .assertNext(saved -> assertThat(saved.getFundDocumentUrl()).isNull())
@@ -507,15 +512,20 @@ class FundServiceTest {
             when(fundReceivingInfosRepository.findById(1))
                     .thenReturn(Mono.just(FundReceivingInfos.builder().id(1).build()));
             when(fundR2dbcRepository.save(any())).thenAnswer(inv -> Mono.just(inv.getArgument(0)));
+            // No logo base64 in these document-focused tests → keep existing logo.
+            when(imageService.uploadBase64IfPresent(any())).thenReturn(Mono.empty());
         }
 
         @Test
-        @DisplayName("changes fundDocumentUrl when a new URL is provided")
+        @DisplayName("replaces the document when a new base64 file is provided")
         void updateFund_changesDocument() {
             Funds existing = editableFund();
             stubForUpdate(existing);
+            when(fileUploadService.uploadBase64File(any(), any()))
+                    .thenReturn(Mono.just("https://example.com/funds/new-doc.pdf"));
             UpdateFundRequest request = baseRequestBuilder(existing)
-                    .fundDocumentUrl("https://example.com/funds/new-doc.pdf")
+                    .fundDocumentBase64("ZG9jdW1lbnQ=")
+                    .fundDocumentFileName("new-doc.pdf")
                     .build();
 
             StepVerifier.create(fundService.updateFund(1L, request))
@@ -525,12 +535,12 @@ class FundServiceTest {
         }
 
         @Test
-        @DisplayName("empty string removes the document")
-        void updateFund_emptyStringRemovesDocument() {
+        @DisplayName("removeFundDocument removes the current document")
+        void updateFund_removeDocument() {
             Funds existing = editableFund();
             stubForUpdate(existing);
             UpdateFundRequest request = baseRequestBuilder(existing)
-                    .fundDocumentUrl("")
+                    .removeFundDocument(true)
                     .build();
 
             StepVerifier.create(fundService.updateFund(1L, request))
@@ -539,13 +549,11 @@ class FundServiceTest {
         }
 
         @Test
-        @DisplayName("null keeps the existing document (no accidental wipe)")
+        @DisplayName("keeps the existing document when nothing is provided (no accidental wipe)")
         void updateFund_nullKeepsDocument() {
             Funds existing = editableFund();
             stubForUpdate(existing);
-            UpdateFundRequest request = baseRequestBuilder(existing)
-                    .fundDocumentUrl(null)
-                    .build();
+            UpdateFundRequest request = baseRequestBuilder(existing).build();
 
             StepVerifier.create(fundService.updateFund(1L, request))
                     .assertNext(saved -> assertThat(saved.getFundDocumentUrl())

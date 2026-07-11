@@ -24,10 +24,7 @@ public class CreateAlumniPostRequest {
     @NotBlank
     private String content;
 
-    @URL
-    private String thumbnailUrl;
-
-    /** Optional base64-encoded image. When present, backend uploads and stores the resulting URL. */
+    /** Base64-encoded thumbnail. When present, the backend converts it to WebP and stores it. */
     private String thumbnailBase64;
 
     private String topic;

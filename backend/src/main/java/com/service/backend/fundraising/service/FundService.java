@@ -28,6 +28,7 @@ import com.service.backend.shared.enums.Status;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.service.ImageService;
+import com.service.backend.shared.service.FileUploadService;
 import com.service.backend.shared.utils.CacheUtils;
 import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.utils.SecurityUtils;
@@ -61,6 +62,18 @@ public class FundService {
     private final UserProfileRepository userRepository;
     private final CacheUtils cacheUtils;
     private final ImageService imageService;
+    private final FileUploadService fileUploadService;
+
+    /**
+     * Store the fund document from base64 if present; otherwise emit empty so callers can fall
+     * back to an existing URL. The file extension of {@code fileName} drives type/size validation.
+     */
+    private Mono<String> uploadDocumentIfPresent(String base64, String fileName) {
+        if (base64 == null || base64.isBlank()) {
+            return Mono.empty();
+        }
+        return fileUploadService.uploadBase64File(base64, fileName);
+    }
 
     @Value("${sepay.img.qr.url}")
     private String sepayQrImgUrl;
@@ -82,9 +95,11 @@ public class FundService {
                                 ErrorCode.FUND_RECEIVING_INFO_NOT_FOUND,
                                 "Fund receiving info not found with id: " + fundReceivingInfoId)))
         ).flatMap(tuple -> imageService.uploadBase64IfPresent(request.getLogoBase64())
-                .defaultIfEmpty(request.getLogoUrl() == null ? "" : request.getLogoUrl())
-                .flatMap(logoUrl -> {
-                    String documentUrl = request.getFundDocumentUrl();
+                .defaultIfEmpty("")
+                .flatMap(logoUrl -> uploadDocumentIfPresent(
+                        request.getFundDocumentBase64(), request.getFundDocumentFileName())
+                        .defaultIfEmpty("")
+                        .flatMap(documentUrl -> {
                     Funds fund = Funds.builder()
                             .organizationId(organizationId)
                                             .fundReceivingInfoId(fundReceivingInfoId)
@@ -104,7 +119,7 @@ public class FundService {
                                             .build();
 
                                     return fundR2dbcRepository.save(fund);
-                                }));
+                                })));
     }
 
     public Mono<FundReceivingInfos> createFundReceivingInfos(CreateFundReceivingInfosRequest request) {
@@ -406,9 +421,20 @@ public class FundService {
                                     ErrorCode.FUND_RECEIVING_INFO_NOT_FOUND,
                                     "Fund receiving info not found with id: " + newFundReceivingInfoId
                             )))
-                            .flatMap(existingReceivingInfo -> {
-                                String newLogoUrl = request.getLogoUrl();
-                                String newDocUrl = request.getFundDocumentUrl();
+                            .flatMap(existingReceivingInfo ->
+                                    // Resolve uploads first: a base64 logo/document takes precedence and
+                                    // yields a fresh URL; otherwise we keep the request's URL semantics
+                                    // (null = keep current, "" = remove).
+                                    imageService.uploadBase64IfPresent(request.getLogoBase64())
+                                            .map(Optional::of).defaultIfEmpty(Optional.empty())
+                                            .flatMap(uploadedLogo -> uploadDocumentIfPresent(
+                                                    request.getFundDocumentBase64(), request.getFundDocumentFileName())
+                                                    .map(Optional::of).defaultIfEmpty(Optional.empty())
+                                                    .flatMap(uploadedDoc -> {
+                                // null = keep current image; "" = remove (document only).
+                                String newLogoUrl = uploadedLogo.orElse(null);
+                                String newDocUrl = uploadedDoc.orElse(
+                                        Boolean.TRUE.equals(request.getRemoveFundDocument()) ? "" : null);
                                 existing.setName(request.getName());
                                 existing.setDescriptionShort(request.getDescriptionShort());
                                 existing.setDescriptionFull(request.getDescriptionFull());
@@ -427,7 +453,7 @@ public class FundService {
                                 existing.setTimeEnded(newEnd);
                                 if (request.getTopic() != null) existing.setTopic(request.getTopic());
                                 return fundR2dbcRepository.save(existing);
-                            });
+                            })));
                 });
     }
 

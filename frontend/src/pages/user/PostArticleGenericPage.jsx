@@ -13,7 +13,6 @@ import {
   getJsonPayloadByteSize,
   MAX_JSON_PAYLOAD_BYTES,
   validateImageFile,
-  useUploadImage,
 } from '../../utils/imageUtils';
 import { useNotification } from '../../hooks/useNotification';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
@@ -126,16 +125,15 @@ const CHANNEL_CONFIG = {
     successMsgKey: 'success_learning',
     redirect: (id) => `/article/learning/${id}`,
     useHook: useCreateLearningResource,
-    payloadKey: 'thumbnailUrl',
+    payloadKey: 'thumbnailBase64',
     useBase64: true,
-    uploadThumbnailFirst: true,
     contentKey: 'description',
-    buildPayload: ({ title, content, topic, url, thumbnailUrl }) => ({
+    buildPayload: ({ title, content, topic, url, imageBase64 }) => ({
       title,
       description: content,
       type: LEARNING_TYPE_BY_TOPIC[topic],
       linkUrl: url || null,
-      ...(thumbnailUrl ? { thumbnailUrl } : {}),
+      ...(imageBase64 ? { thumbnailBase64: imageBase64 } : {}),
     }),
   },
 };
@@ -164,7 +162,6 @@ const PostArticleGenericPage = () => {
     handleCoverUpload,
     setCoverPositionY,
   } = useCoverUpload();
-  const { uploadBase64 } = useUploadImage();
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -210,22 +207,18 @@ const PostArticleGenericPage = () => {
         ? await fileToCroppedCoverBase64(coverFile, coverPositionY)
         : undefined;
 
-      let thumbnailUrl;
-      if (config.uploadThumbnailFirst && imageBase64) {
-        if (getJsonPayloadByteSize({ base64String: imageBase64 }) > MAX_JSON_PAYLOAD_BYTES) {
-          showError('Ảnh chính quá lớn để tải lên. Vui lòng chọn ảnh nhỏ hơn.');
-          return;
-        }
-        thumbnailUrl = await uploadBase64(imageBase64);
+      if (imageBase64 && getJsonPayloadByteSize({ base64String: imageBase64 }) > MAX_JSON_PAYLOAD_BYTES) {
+        showError('Ảnh chính quá lớn để tải lên. Vui lòng chọn ảnh nhỏ hơn.');
+        return;
       }
 
+      // Send the raw image inline; the backend converts it to WebP and stores it in one request.
       const payload = config.buildPayload({
         title: title.trim(),
         content: withMainImageCaption(content.trim(), mainImageCaption),
         topic,
         url: url.trim(),
-        imageBase64: config.uploadThumbnailFirst ? undefined : imageBase64,
-        thumbnailUrl,
+        imageBase64,
         isAdminLike,
       });
       if ((channel === 'job' || channel === 'learning') && !payload.type) {

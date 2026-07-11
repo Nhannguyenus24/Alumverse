@@ -17,6 +17,7 @@ import com.service.backend.shared.entity.MentorExpertise;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.SecurityUtils;
+import com.service.backend.shared.service.FileUploadService;
 import com.service.backend.user.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -46,9 +47,22 @@ public class MenteeService {
     private final NotificationService notificationService;
     private final MentorshipReportR2dbcRepository reportRepository;
     private final SkillService skillService;
+    private final FileUploadService fileUploadService;
 
     private Mono<Integer> currentMemberId() {
         return SecurityUtils.getCurrentUserId().map(Long::intValue);
+    }
+
+    /**
+     * Resolve the CV URL for a booking: upload the base64 file if present (its URL then takes
+     * precedence); otherwise fall back to the request's cvUrl. Emits an empty string when neither
+     * is provided.
+     */
+    private Mono<String> resolveCvUrl(BookSessionRequest request) {
+        if (request.getCvBase64() != null && !request.getCvBase64().isBlank()) {
+            return fileUploadService.uploadBase64File(request.getCvBase64(), request.getCvFileName());
+        }
+        return Mono.just(request.getCvUrl() == null ? "" : request.getCvUrl());
     }
 
     private Mono<Void> requireJoinedMentorship() {
@@ -337,7 +351,7 @@ public class MenteeService {
                                     }
                                     return accessService
                                             .requireApprovedMentorProfile(availability.getMentorMemberId())
-                                            .flatMap(mentorProfile -> {
+                                            .flatMap(mentorProfile -> resolveCvUrl(request).flatMap(resolvedCvUrl -> {
                                                 MentorshipSession session = MentorshipSession.builder()
                                                         .availabilityId(request.getAvailabilityId())
                                                         .menteeMemberId(memberId)
@@ -347,7 +361,7 @@ public class MenteeService {
                                                                 request.getSessionType().toUpperCase()))
                                                         .introduction(request.getIntroduction())
                                                         .description(request.getDescription())
-                                                        .cvUrl(request.getCvUrl())
+                                                        .cvUrl(resolvedCvUrl.isBlank() ? null : resolvedCvUrl)
                                                         .createdAt(LocalDateTime.now())
                                                         .build();
                                                 String defaultLink = mentorProfile.getDefaultMeetingLink();
@@ -363,7 +377,7 @@ public class MenteeService {
                                                                 "Lịch hẹn mới",
                                                                 message,
                                                                 "/mentorship/my-bookings"));
-                                            });
+                                            }));
                                 })
                                 .flatMap(this::enrich)));
     }

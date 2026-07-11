@@ -24,11 +24,9 @@ public class UpdateAchievementRequest {
     private String description;
 
     @URL
-    private String imageUrl;
-
-    @URL
     private String url;
 
+    /** Base64-encoded image. When present it replaces the current image; when absent the existing image is kept. */
     private String imageBase64;
 
     private LocalDate awardedDate;

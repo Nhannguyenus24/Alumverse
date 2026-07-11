@@ -24,12 +24,9 @@ public class CreateAchievementRequest {
     private String description;
 
     @URL
-    private String imageUrl;
-
-    @URL
     private String url;
 
-    /** Optional base64-encoded image. When present, backend uploads and stores the resulting URL. */
+    /** Base64-encoded image. When present, the backend converts it to WebP and stores it. */
     private String imageBase64;
 
     private LocalDate awardedDate;
