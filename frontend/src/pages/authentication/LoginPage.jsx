@@ -29,7 +29,9 @@ const LoginPage = () => {
   const organizationId = useOrganizationStore((state) => state.organization?.id);
   const { reset } = useGoogleReCaptcha();
   const googleButtonContainerRef = useRef(null);
-  const [googleButtonWidth, setGoogleButtonWidth] = useState(400);
+  // null = chưa đo được bề rộng khả dụng. Không đặt mặc định lớn (vd 400) để
+  // tránh GIS vẽ nút rộng hơn cột rồi bị layout cắt mất bên phải.
+  const [googleButtonWidth, setGoogleButtonWidth] = useState(null);
 
   const searchParams = new URLSearchParams(location.search);
   const reason = searchParams.get('reason');
@@ -286,24 +288,20 @@ const LoginPage = () => {
               justifyContent: 'center',
               width: '100%',
               ...thirdPartyControlSx,
-              '& > div': {
-                width: `${googleButtonWidth}px !important`,
-                maxWidth: '100%',
-              },
-              '& iframe': {
-                width: `${googleButtonWidth}px !important`,
-                maxWidth: '100%',
-              },
             }}>
-              <GoogleLogin
-                onSuccess={handleGoogleSuccess}
-                onError={handleGoogleError}
-                useOneTap={false}
-                size="large"
-                text="signin_with"
-                locale="vi"
-                width={`${googleButtonWidth}`}
-              />
+              {/* Chỉ render khi đã đo được bề rộng thật. GIS tự vẽ nút đúng
+                  bằng prop `width` (nguồn width duy nhất) nên không cần ép CSS. */}
+              {googleButtonWidth != null && (
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={handleGoogleError}
+                  useOneTap={false}
+                  size="large"
+                  text="signin_with"
+                  locale="vi"
+                  width={`${googleButtonWidth}`}
+                />
+              )}
             </Box>
           </Box>
         ) : (
