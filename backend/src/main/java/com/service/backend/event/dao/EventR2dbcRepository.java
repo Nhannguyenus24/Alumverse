@@ -163,4 +163,31 @@ public interface EventR2dbcRepository extends ReactiveCrudRepository<Event, Long
     @Query("SELECT COUNT(*) FROM events WHERE organization_id = :organizationId AND is_published = :isPublished")
     Mono<Long> countEventsByOrganizationAndPublishStatus(@Param("organizationId") Long organizationId,
                                                           @Param("isPublished") Boolean isPublished);
+
+    @Query("""
+        SELECT 
+            COUNT(*) AS total_events,
+            SUM(CASE WHEN is_published = true THEN 1 ELSE 0 END) AS published_events,
+            SUM(CASE WHEN is_published = false THEN 1 ELSE 0 END) AS unpublished_events,
+            SUM(CASE WHEN start_time > :now THEN 1 ELSE 0 END) AS upcoming_events,
+            SUM(CASE WHEN start_time <= :now AND end_time >= :now THEN 1 ELSE 0 END) AS ongoing_events,
+            SUM(CASE WHEN end_time < :now THEN 1 ELSE 0 END) AS past_events,
+            SUM(CASE WHEN created_at >= :startOfDay AND created_at < :endOfDay THEN 1 ELSE 0 END) AS new_events_today
+        FROM events
+    """)
+    Mono<com.service.backend.admin.dto.EventAggregatedStatsProjection> getAggregatedEventStats(
+            @Param("now") LocalDateTime now,
+            @Param("startOfDay") LocalDateTime startOfDay,
+            @Param("endOfDay") LocalDateTime endOfDay
+    );
+
+    @Query("""
+        SELECT 
+            COUNT(*) AS total_tickets,
+            SUM(CASE WHEN status = 'REGISTERED' THEN 1 ELSE 0 END) AS registered_tickets,
+            SUM(CASE WHEN status = 'CHECKED_IN' THEN 1 ELSE 0 END) AS checked_in_tickets,
+            SUM(CASE WHEN status = 'CANCELLED' THEN 1 ELSE 0 END) AS cancelled_tickets
+        FROM event_tickets
+    """)
+    Mono<com.service.backend.admin.dto.EventTicketAggregatedStatsProjection> getAggregatedTicketStats();
 }

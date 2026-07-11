@@ -90,9 +90,6 @@ const SavedArticlesPage = Loadable(
 
 // Admin pages
 const AdminLayout = Loadable(lazy(() => import("../layouts/AdminLayout")));
-const AdminLoginPage = Loadable(
-  lazy(() => import("../pages/admin/AdminLoginPage")),
-);
 const AdminDashboardPage = Loadable(
   lazy(() => import("../pages/admin/AdminDashboardPage")),
 );
@@ -1041,7 +1038,17 @@ export const router = createBrowserRouter([
   },
   {
     path: "/admin/login",
-    element: <AdminLoginPage />,
+    element: (
+      <PublicRoute>
+        <AuthLayout />
+      </PublicRoute>
+    ),
+    children: [
+      {
+        index: true,
+        element: <LoginPage />,
+      },
+    ],
   },
   {
     path: "/admin/change-password",

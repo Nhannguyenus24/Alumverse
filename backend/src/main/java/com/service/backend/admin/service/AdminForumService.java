@@ -501,24 +501,25 @@ public class AdminForumService {
     // ========== FORUM STATISTICS ==========
 
     public Mono<ForumStatisticsDTO> getForumStatistics() {
-        Mono<Long> totalPostsMono = forumPostRepository.count();
-        Mono<Long> bannedPostsMono = forumPostRepository.countByIsBannedTrue();
-        Mono<Long> totalTopicsMono = forumTopicRepository.count();
         Mono<Long> totalCategoriesMono = forumCategoryRepository.count();
-        Mono<Long> newTopicsTodayMono = forumTopicRepository.countTopicsCreatedToday();
-        Mono<Long> newPostsTodayMono = forumPostRepository.countPostsCreatedToday();
 
         Mono<ForumStatisticsDTO> baseMono = Mono.zip(
-                totalPostsMono, bannedPostsMono, totalTopicsMono,
-                totalCategoriesMono, newTopicsTodayMono, newPostsTodayMono
-        ).map(tuple -> ForumStatisticsDTO.builder()
-                .totalPosts(tuple.getT1())
-                .bannedPosts(tuple.getT2())
-                .totalTopics(tuple.getT3())
-                .totalCategories(tuple.getT4())
-                .newTopicsToday(tuple.getT5())
-                .newPostsToday(tuple.getT6())
-                .build());
+                forumPostRepository.getAggregatedPostStats(),
+                forumTopicRepository.getAggregatedTopicStats(),
+                totalCategoriesMono
+        ).map(tuple -> {
+            var postStats = tuple.getT1();
+            var topicStats = tuple.getT2();
+            var totalCategories = tuple.getT3();
+            return ForumStatisticsDTO.builder()
+                .totalPosts(postStats.getTotalPosts() != null ? postStats.getTotalPosts() : 0L)
+                .bannedPosts(postStats.getBannedPosts() != null ? postStats.getBannedPosts() : 0L)
+                .newPostsToday(postStats.getNewPostsToday() != null ? postStats.getNewPostsToday() : 0L)
+                .totalTopics(topicStats.getTotalTopics() != null ? topicStats.getTotalTopics() : 0L)
+                .newTopicsToday(topicStats.getNewTopicsToday() != null ? topicStats.getNewTopicsToday() : 0L)
+                .totalCategories(totalCategories)
+                .build();
+        });
 
         Mono<ForumStatisticsDTO.TopicSummary> popularTopicMono = forumPostRepository.findTopicIdWithMostPosts()
                 .flatMap(topicId -> forumTopicRepository.findById(topicId)

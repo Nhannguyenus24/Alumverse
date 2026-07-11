@@ -695,20 +695,22 @@ public class FundService {
     public Mono<FundStatisticsResponse> getFundStatistics() {
         return cacheUtils.getOrCompute("fund_statistics", "all", Duration.ofMinutes(5), () -> {
             LocalDateTime now = LocalDateTime.now();
-            Mono<BigDecimal> totalCurrentAmountMono = fundR2dbcRepository.sumCurrentAmount();
-            Mono<Long> totalFundsMono = fundR2dbcRepository.countOpenFunds(now);
-            Mono<Long> totalDonationsMono = fundDonationsRepository.countAll();
             LocalDateTime startOfMonth = LocalDate.now().withDayOfMonth(1).atStartOfDay();
             LocalDateTime endOfMonth = startOfMonth.plusMonths(1);
-            Mono<BigDecimal> totalDonationsAmountThisMonthMono = fundDonationsRepository.sumAmountBetween(startOfMonth, endOfMonth);
 
-            return Mono.zip(totalCurrentAmountMono, totalFundsMono, totalDonationsMono, totalDonationsAmountThisMonthMono)
-                    .map(tuple -> FundStatisticsResponse.builder()
-                            .totalCurrentAmount(tuple.getT1())
-                            .totalFunds(tuple.getT2())
-                            .totalDonations(tuple.getT3())
-                            .totalDonationsAmountThisMonth(tuple.getT4())
-                            .build());
+            return Mono.zip(
+                    fundR2dbcRepository.getAggregatedFundStats(now),
+                    fundDonationsRepository.getAggregatedDonationStats(startOfMonth, endOfMonth)
+            ).map(tuple -> {
+                var fundStats = tuple.getT1();
+                var donStats = tuple.getT2();
+                return FundStatisticsResponse.builder()
+                        .totalCurrentAmount(fundStats.getTotalCurrentAmount() != null ? fundStats.getTotalCurrentAmount() : BigDecimal.ZERO)
+                        .totalFunds(fundStats.getTotalFunds() != null ? fundStats.getTotalFunds() : 0L)
+                        .totalDonations(donStats.getTotalDonations() != null ? donStats.getTotalDonations() : 0L)
+                        .totalDonationsAmountThisMonth(donStats.getTotalDonationsAmountThisMonth() != null ? donStats.getTotalDonationsAmountThisMonth() : BigDecimal.ZERO)
+                        .build();
+            });
         });
     }
 }

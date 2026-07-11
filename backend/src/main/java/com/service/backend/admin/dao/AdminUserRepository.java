@@ -603,4 +603,40 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
     Mono<Long> countPendingVerificationRequestsByOrganization(
             @Param("organizationId") Integer organizationId,
             @Param("keyword") String keyword);
+    @Query("""
+        SELECT 
+            SUM(CASE WHEN created_at >= :sevenDaysAgo THEN 1 ELSE 0 END) AS new_users7_days,
+            SUM(CASE WHEN created_at >= :thirtyDaysAgo THEN 1 ELSE 0 END) AS new_users30_days,
+            SUM(CASE WHEN "status" = 'ACTIVE' THEN 1 ELSE 0 END) AS active_users,
+            SUM(CASE WHEN "status" = 'BANNED' THEN 1 ELSE 0 END) AS banned_users,
+            SUM(CASE WHEN "status" = 'DELETED' THEN 1 ELSE 0 END) AS deleted_users
+        FROM users
+    """)
+    Mono<com.service.backend.admin.dto.UserGrowthStatsProjection> getAggregatedUserGrowthStats(
+        @Param("sevenDaysAgo") LocalDateTime sevenDaysAgo,
+        @Param("thirtyDaysAgo") LocalDateTime thirtyDaysAgo
+    );
+
+    @Query("""
+        SELECT 
+            COUNT(*) AS total_requests,
+            SUM(CASE WHEN "status" = 'PENDING' THEN 1 ELSE 0 END) AS pending_requests,
+            SUM(CASE WHEN "status" = 'APPROVED' THEN 1 ELSE 0 END) AS approved_requests,
+            SUM(CASE WHEN "status" = 'REJECTED' THEN 1 ELSE 0 END) AS rejected_requests,
+            SUM(CASE WHEN "status" = 'NEEDS_REVISION' THEN 1 ELSE 0 END) AS needs_revision_requests
+        FROM verification_requests
+    """)
+    Mono<com.service.backend.admin.dto.VerificationStatsProjection> getAggregatedVerificationStats();
+
+    @Query("""
+        SELECT 
+            COUNT(*) AS total_verifications,
+            SUM(CASE WHEN "status" = 'PENDING' THEN 1 ELSE 0 END) AS pending_verifications,
+            SUM(CASE WHEN "status" = 'APPROVED' THEN 1 ELSE 0 END) AS approved_verifications
+        FROM peer_verifications
+    """)
+    Mono<com.service.backend.admin.dto.PeerVerificationStatsProjection> getAggregatedPeerVerificationStats();
+
+    @Query("SELECT member_id, organization_id FROM verification_requests WHERE id = :requestId")
+    Mono<com.service.backend.admin.dto.VerificationRequestInfo> findVerificationRequestInfoById(@Param("requestId") Integer requestId);
 }

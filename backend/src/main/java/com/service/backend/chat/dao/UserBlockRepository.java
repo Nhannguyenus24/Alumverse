@@ -47,6 +47,16 @@ public interface UserBlockRepository extends ReactiveCrudRepository<UserBlock, L
     Mono<Long> countSenderBlockedByMembersInGroup(Long senderMemberId, Long groupId);
 
     @Query("""
+            SELECT COUNT(ub.id)
+            FROM user_blocks ub
+            INNER JOIN chat_group_members cgm 
+                ON (cgm.member_id = ub.blocked_member_id AND ub.blocker_member_id = :senderMemberId)
+                OR (cgm.member_id = ub.blocker_member_id AND ub.blocked_member_id = :senderMemberId)
+            WHERE cgm.group_id = :groupId
+            """)
+    Mono<Long> countBlockStatusInGroup(Long senderMemberId, Long groupId);
+
+    @Query("""
             SELECT ub.blocked_member_id AS member_id,
                    gp.full_name AS full_name
             FROM user_blocks ub

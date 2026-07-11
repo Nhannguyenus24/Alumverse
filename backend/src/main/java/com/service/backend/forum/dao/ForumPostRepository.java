@@ -240,5 +240,12 @@ public interface ForumPostRepository extends R2dbcRepository<ForumPost, Integer>
            "WHERE ft.organization_id = :organizationId AND fp.is_hidden = true")
     Mono<Long> countHiddenPostsByOrganization(@Param("organizationId") Integer organizationId);
 
+    @Query("""
+        SELECT 
+            COUNT(*) AS total_posts,
+            SUM(CASE WHEN is_banned = true THEN 1 ELSE 0 END) AS banned_posts,
+            SUM(CASE WHEN DATE(created_at) = CURRENT_DATE THEN 1 ELSE 0 END) AS new_posts_today
+        FROM forum_posts
+    """)
+    Mono<com.service.backend.forum.dto.ForumPostStatsProjection> getAggregatedPostStats();
 }
-

@@ -236,4 +236,26 @@ public interface FundDonationsR2dbcRepository extends ReactiveCrudRepository<Fun
 
     @Query("SELECT COUNT(*) FROM fund_donations WHERE fund_id = :fundId AND email ILIKE CONCAT('%', :keyword, '%')")
     Mono<Long> countSearchByEmail(Long fundId, String keyword);
+
+    @Query("""
+        SELECT 
+            SUM(CASE WHEN status = 'SUCCESS' THEN 1 ELSE 0 END) AS total_donations,
+            COALESCE(SUM(CASE WHEN status = 'SUCCESS' AND created_at >= :start AND created_at < :end THEN amount ELSE 0 END), 0) AS total_donations_amount_this_month
+        FROM fund_donations
+    """)
+    Mono<com.service.backend.fundraising.dto.FundDonationAggregatedStatsProjection> getAggregatedDonationStats(
+            @org.springframework.data.repository.query.Param("start") LocalDateTime start,
+            @org.springframework.data.repository.query.Param("end") LocalDateTime end
+    );
+
+    @Query("""
+        SELECT 
+            COUNT(*) AS total_donations,
+            SUM(CASE WHEN status = 'SUCCESS' THEN 1 ELSE 0 END) AS successful_donations,
+            SUM(CASE WHEN status = 'PENDING' THEN 1 ELSE 0 END) AS pending_donations,
+            SUM(CASE WHEN status = 'FAILED' THEN 1 ELSE 0 END) AS failed_donations,
+            COALESCE(SUM(CASE WHEN status = 'SUCCESS' THEN amount ELSE 0 END), 0) AS successful_amount
+        FROM fund_donations
+    """)
+    Mono<com.service.backend.admin.dto.AdminFundDonationAggregatedStatsProjection> getAdminAggregatedDonationStats();
 }

@@ -231,15 +231,17 @@ const LoginPage = () => {
             control={<Checkbox size="small" color="primary" {...register('rememberMe')} />}
             label={<Typography variant="body2">{t('auth:remember_me')}</Typography>}
           />
-          <Typography
-            component={Link}
-            to={toOrgPath('/auth/forgot-password')}
-            variant="body2"
-            color="primary.main"
-            sx={{ textDecoration: 'none', fontWeight: 600, '&:hover': { textDecoration: 'underline' } }}
-          >
-            {t('auth:forgot_password_link')}
-          </Typography>
+          {slug && (
+            <Typography
+              component={Link}
+              to={toOrgPath('/auth/forgot-password')}
+              variant="body2"
+              color="primary.main"
+              sx={{ textDecoration: 'none', fontWeight: 600, '&:hover': { textDecoration: 'underline' } }}
+            >
+              {t('auth:forgot_password_link')}
+            </Typography>
+          )}
         </Box>
 
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5, width: '100%' }}>
@@ -318,19 +320,21 @@ const LoginPage = () => {
           </Button>
         )}
 
-        <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ mt: 1 }}>
-          {t('auth:no_account_prompt')}{' '}
-          <Typography
-            component={Link}
-            to={toOrgPath('/auth/register')}
-            variant="body2"
-            color="primary.main"
-            fontWeight={600}
-            sx={{ textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
-          >
-            {t('auth:register_now')}
+        {slug && (
+          <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ mt: 1 }}>
+            {t('auth:no_account_prompt')}{' '}
+            <Typography
+              component={Link}
+              to={toOrgPath('/auth/register')}
+              variant="body2"
+              color="primary.main"
+              fontWeight={600}
+              sx={{ textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+            >
+              {t('auth:register_now')}
+            </Typography>
           </Typography>
-        </Typography>
+        )}
         </ScrollRevealFields>
       </Box>
     </Page>

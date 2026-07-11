@@ -115,4 +115,23 @@ public interface FundR2dbcRepository extends ReactiveCrudRepository<Funds, Long>
             BigDecimal targetAmountMin,
             BigDecimal targetAmountMax
     );
+
+    @Query("""
+        SELECT 
+            SUM(CASE WHEN time_started < :now AND time_ended > :now THEN 1 ELSE 0 END) AS total_funds,
+            COALESCE(SUM(current_amount), 0) AS total_current_amount 
+        FROM funds
+    """)
+    Mono<com.service.backend.fundraising.dto.FundAggregatedStatsProjection> getAggregatedFundStats(@org.springframework.data.repository.query.Param("now") LocalDateTime now);
+
+    @Query("""
+        SELECT 
+            COUNT(*) AS total_funds,
+            SUM(CASE WHEN time_started < :now AND time_ended > :now THEN 1 ELSE 0 END) AS active_funds,
+            SUM(CASE WHEN time_ended IS NOT NULL AND time_ended <= CURRENT_TIMESTAMP THEN 1 ELSE 0 END) AS completed_funds,
+            COALESCE(SUM(target_amount), 0) AS total_target_amount,
+            COALESCE(SUM(current_amount), 0) AS total_current_amount
+        FROM funds
+    """)
+    Mono<com.service.backend.admin.dto.AdminFundAggregatedStatsProjection> getAdminAggregatedFundStats(@org.springframework.data.repository.query.Param("now") LocalDateTime now);
 }

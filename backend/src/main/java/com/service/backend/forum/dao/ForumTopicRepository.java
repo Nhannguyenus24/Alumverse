@@ -177,5 +177,11 @@ public interface ForumTopicRepository extends R2dbcRepository<ForumTopic, Intege
     @Query("SELECT COUNT(*) FROM forum_topics " +
            "WHERE (:keyword IS NULL OR LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     Mono<Long> countAll(@Param("keyword") String keyword);
+    @Query("""
+        SELECT 
+            COUNT(*) AS total_topics,
+            SUM(CASE WHEN DATE(created_at) = CURRENT_DATE THEN 1 ELSE 0 END) AS new_topics_today
+        FROM forum_topics
+    """)
+    Mono<com.service.backend.forum.dto.ForumTopicStatsProjection> getAggregatedTopicStats();
 }
-
