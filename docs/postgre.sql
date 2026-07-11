@@ -1022,3 +1022,20 @@ create index idx_education_change_requests_member
 
 create index idx_education_change_requests_org_status
     on education_change_requests (organization_id, status);
+
+create table email_templates
+(
+    id            bigserial
+        primary key,
+    template_code varchar(100)                        not null
+        unique,
+    subject       text,
+    content       text,
+    description   text,
+    variables     text                     default '[]'::text,
+    updated_by    bigint,
+    updated_at    timestamp with time zone default CURRENT_TIMESTAMP
+);
+
+alter table email_templates
+    owner to postgres;

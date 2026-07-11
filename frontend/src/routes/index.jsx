@@ -156,6 +156,9 @@ const AdminAuditLogsPage = Loadable(
 const AdminAIBotConfigPage = Loadable(
   lazy(() => import("../pages/admin/AdminAIBotConfigPage")),
 );
+const AdminEmailTemplatesPage = Loadable(
+  lazy(() => import("../pages/admin/AdminEmailTemplatesPage")),
+);
 
 const EditDonationPage = Loadable(
   lazy(() => import("../pages/admin/EditDonationPage")),
@@ -944,6 +947,14 @@ export const router = createBrowserRouter([
               </ProtectedRoute>
             ),
           },
+          {
+            path: "email-templates",
+            element: (
+              <ProtectedRoute allowedRoles={["ADMIN"]}>
+                <AdminEmailTemplatesPage />
+              </ProtectedRoute>
+            ),
+          },
         ],
       },
       {
@@ -1271,6 +1282,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute allowedRoles={["ADMIN"]}>
             <AdminAIBotConfigPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "email-templates",
+        element: (
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminEmailTemplatesPage />
           </ProtectedRoute>
         ),
       },

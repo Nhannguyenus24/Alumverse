@@ -34,6 +34,7 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
 import SmartToyOutlinedIcon from '@mui/icons-material/SmartToyOutlined';
+import MarkEmailReadOutlinedIcon from '@mui/icons-material/MarkEmailReadOutlined';
 import HistoryEduOutlinedIcon from '@mui/icons-material/HistoryEduOutlined';
 import TimelineOutlinedIcon from '@mui/icons-material/TimelineOutlined';
 
@@ -85,6 +86,7 @@ const NAV_GROUPS = (adminBase, t) => [
       { to: `${adminBase}/education-requests`, icon: <HistoryEduOutlinedIcon />, label: t('admin:nav_education_requests') },
       { to: `${adminBase}/audit-logs`, icon: <GavelOutlinedIcon />, label: t('admin:nav_audit_logs') },
       { to: `${adminBase}/bot-config`, icon: <SmartToyOutlinedIcon />, label: t('admin:nav_bot_config'), roles: ['ADMIN'] },
+      { to: `${adminBase}/email-templates`, icon: <MarkEmailReadOutlinedIcon />, label: t('admin:nav_email_templates'), roles: ['ADMIN'] },
       { to: `${adminBase}/monitoring`, icon: <TimelineOutlinedIcon />, label: 'System Monitoring', roles: ['ADMIN'] },
     ],
   },
