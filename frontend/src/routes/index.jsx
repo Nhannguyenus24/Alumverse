@@ -165,6 +165,15 @@ const EditDonationPage = Loadable(
 const AdminEducationRequestsPage = Loadable(
   lazy(() => import("../pages/admin/AdminEducationRequestsPage")),
 );
+const AdminFormPage = Loadable(
+  lazy(() => import("../pages/admin/AdminFormPage")),
+);
+const AdminSurveyResultsPage = Loadable(
+  lazy(() => import("../pages/admin/AdminSurveyResultsPage")),
+);
+const SurveyFillPage = Loadable(
+  lazy(() => import("../pages/user/SurveyFillPage")),
+);
 
 // Donation pages
 const DonationPage = Loadable(
@@ -645,6 +654,22 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        path: "surveys/:surveyId",
+        element: (
+          <ProtectedRoute>
+            <SurveyFillPage mode="fill" />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "surveys/:surveyId/my-submission",
+        element: (
+          <ProtectedRoute>
+            <SurveyFillPage mode="review" />
+          </ProtectedRoute>
+        ),
+      },
+      {
         path: "settings",
         element: (
           <ProtectedRoute>
@@ -792,6 +817,22 @@ export const router = createBrowserRouter([
             element: (
               <ProtectedRoute allowedRoles={["ADMIN"]}>
                 <AdminEventManagePage />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: "surveys",
+            element: (
+              <ProtectedRoute allowedRoles={["ADMIN", "STAFF"]}>
+                <AdminFormPage />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: "surveys/:surveyId/results",
+            element: (
+              <ProtectedRoute allowedRoles={["ADMIN", "STAFF"]}>
+                <AdminSurveyResultsPage />
               </ProtectedRoute>
             ),
           },
@@ -1096,6 +1137,22 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute allowedRoles={["ADMIN"]}>
             <AdminEventManagePage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "surveys",
+        element: (
+          <ProtectedRoute allowedRoles={["ADMIN", "STAFF"]}>
+            <AdminFormPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "surveys/:surveyId/results",
+        element: (
+          <ProtectedRoute allowedRoles={["ADMIN", "STAFF"]}>
+            <AdminSurveyResultsPage />
           </ProtectedRoute>
         ),
       },

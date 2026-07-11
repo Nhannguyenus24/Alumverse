@@ -6,7 +6,10 @@ import lombok.Getter;
 public enum QuestionType {
     SHORT_TEXT("SHORT_TEXT"),
     SINGLE_CHOICE("SINGLE_CHOICE"),
-    MULTI_CHOICE("MULTI_CHOICE");
+    MULTI_CHOICE("MULTI_CHOICE"),
+    DATE("DATE"),
+    NUMBER("NUMBER"),
+    RATING("RATING");
 
     private final String value;
 

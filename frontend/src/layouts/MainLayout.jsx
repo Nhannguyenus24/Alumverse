@@ -4,6 +4,7 @@ import { Box } from "@mui/material";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import FloatingChatActions from "../components/FloatingChatActions";
+import SurveyPromptModal from "../components/survey/SurveyPromptModal";
 import { getNormalizedPathname } from "../utils/pathUtils";
 import { HEADER_HEIGHT } from "../constants/layout";
 
@@ -56,6 +57,8 @@ const MainLayout = () => {
       {!hideFooter && footerElement}
 
       {floatingChatActionsElement}
+
+      <SurveyPromptModal />
     </Box>
   );
 };
