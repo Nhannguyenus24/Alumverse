@@ -7,6 +7,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import { GoogleReCaptchaProvider } from '@google-recaptcha/react';
 import { router } from './routes';
 import NotistackProvider from './components/NotistackProvider';
+import RealtimeEventsProvider from './components/RealtimeEventsProvider';
 import ThemeProvider from './theme';
 import './i18n';
 
@@ -38,6 +39,7 @@ const App = () => {
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
         <NotistackProvider>
+          <RealtimeEventsProvider />
           <RouterProvider router={router} />
         </NotistackProvider>
       </QueryClientProvider>

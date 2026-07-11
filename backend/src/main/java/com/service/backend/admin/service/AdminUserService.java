@@ -12,6 +12,7 @@ import com.service.backend.shared.enums.UserRole;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.utils.CacheUtils;
+import com.service.backend.shared.service.SseService;
 import com.service.backend.user.dao.UserOrganizationMemberRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,6 +59,7 @@ public class AdminUserService {
     private final PasswordEncoder passwordEncoder;
     private final UserProfileRepository userProfileRepository;
     private final UserOrganizationMemberRepository userOrganizationMemberRepository;
+    private final SseService sseService;
     private final PeerVerificationRepository peerVerificationRepository;
     private final NotificationService notificationService;
     private final CacheUtils cacheUtils;
@@ -81,7 +83,13 @@ public class AdminUserService {
     public Mono<Boolean> banUser(Integer userId) {
         return adminUserRepository.banUserById(userId)
                 .map(count -> count > 0)
-                .doOnSuccess(success -> logger.info("banUser: userId={}, success={}", userId, success))
+                .doOnSuccess(success -> {
+                    logger.info("banUser: userId={}, success={}", userId, success);
+                    if (Boolean.TRUE.equals(success)) {
+                        sseService.sendToUser(userId.longValue(), "user-banned", Map.of(
+                                "message", "Tài khoản của bạn đã bị khóa bởi quản trị viên."));
+                    }
+                })
                 .doOnError(error -> logger.error("Error banning user: {}", error.getMessage()));
     }
 
@@ -538,6 +546,10 @@ public class AdminUserService {
                                         .subscribeOn(Schedulers.boundedElastic())
                                         .subscribe();
                                 return userOrganizationMemberRepository.incrementVerificationLevelByOrgAndUser(organizationId, memberId)
+                                        .doOnSuccess(ignored -> sseService.sendToUser(memberId.longValue(),
+                                                "verification-updated", Map.of(
+                                                        "verificationLevel", 2,
+                                                        "status", "APPROVED")))
                                         .thenReturn(true);
                             } else if ("REJECTED".equals(upperStatus)) {
                                 String msg = "Yêu cầu xác thực của bạn đã bị từ chối.";
@@ -550,6 +562,10 @@ public class AdminUserService {
                                         .subscribeOn(Schedulers.boundedElastic())
                                         .subscribe();
                                 return userOrganizationMemberRepository.updateVerificationLevelByOrgAndUser(organizationId, memberId, 0)
+                                        .doOnSuccess(ignored -> sseService.sendToUser(memberId.longValue(),
+                                                "verification-updated", Map.of(
+                                                        "verificationLevel", 0,
+                                                        "status", "REJECTED")))
                                         .thenReturn(true);
                             }
                             return Mono.just(true);

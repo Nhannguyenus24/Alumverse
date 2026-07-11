@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { IconButton, Menu, Tooltip } from '@mui/material';
+import { Badge, IconButton, Menu, Tooltip } from '@mui/material';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import { useTranslation } from 'react-i18next';
 
 import MessagesPreviewPanel from './MessagesPreviewPanel';
 import { useMessagesPreviewMenu } from '../hooks/chat/useMessagesPreviewMenu';
 import { useCanAccessChat } from '../hooks/chat/useCanAccessChat';
+import useChatUnreadStore from '../stores/chatUnreadStore';
 
 const MessagesNavDropdown = ({ headerTextColor }) => {
   const { t } = useTranslation(['network', 'common']);
@@ -13,9 +14,12 @@ const MessagesNavDropdown = ({ headerTextColor }) => {
   const open = Boolean(anchorEl);
   const { menuActionsRef, slotProps, updateMenuPosition } = useMessagesPreviewMenu({ mt: 4 });
   const { canAccessChat } = useCanAccessChat();
+  const unreadCount = useChatUnreadStore((state) => state.unreadCount);
+  const resetUnread = useChatUnreadStore((state) => state.reset);
 
   const handleOpen = (event) => {
     if (!canAccessChat) return;
+    resetUnread();
     setAnchorEl(event.currentTarget);
   };
 
@@ -47,7 +51,9 @@ const MessagesNavDropdown = ({ headerTextColor }) => {
             disabled={!canAccessChat}
             sx={{ color: headerTextColor }}
           >
-            <ChatBubbleOutlineIcon />
+            <Badge badgeContent={canAccessChat ? unreadCount : 0} color="error" max={99}>
+              <ChatBubbleOutlineIcon />
+            </Badge>
           </IconButton>
         </span>
       </Tooltip>

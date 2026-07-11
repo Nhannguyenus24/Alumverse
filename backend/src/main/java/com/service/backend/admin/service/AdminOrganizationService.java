@@ -28,6 +28,7 @@ import com.service.backend.shared.enums.Status;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.service.ImageService;
+import com.service.backend.shared.service.SseService;
 import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.shared.utils.CacheUtils;
@@ -47,6 +48,7 @@ public class AdminOrganizationService {
     private final OrganizationIntroductionRepository introductionRepository;
     private final ImageService imageService;
     private final CacheUtils cacheUtils;
+    private final SseService sseService;
 
     public Mono<PaginatedResponse<Organization>> getAllOrganizations(int page, int size, String search) {
         int offset = page * size;
@@ -379,7 +381,10 @@ public class AdminOrganizationService {
                     org.setFeaturesConfig(JsonUtils.toJson(config));
                     return saveOrganizationFields(org).thenReturn(config);
                 })
-                .doOnSuccess(r -> logger.info("updateFeatures result: {}", JsonUtils.toJson(r)));
+                .doOnSuccess(r -> {
+                    logger.info("updateFeatures result: {}", JsonUtils.toJson(r));
+                    notifyFeatureChanged(organizationId, r);
+                });
     }
 
     public Mono<FeatureConfig.Feature> getFeature(Integer organizationId, String featureName) {
@@ -399,7 +404,10 @@ public class AdminOrganizationService {
                     org.setFeaturesConfig(JsonUtils.toJson(config));
                     return saveOrganizationFields(org).thenReturn(config);
                 })
-                .doOnSuccess(r -> logger.info("updateFeature result: {}", JsonUtils.toJson(r)));
+                .doOnSuccess(r -> {
+                    logger.info("updateFeature result: {}", JsonUtils.toJson(r));
+                    notifyFeatureChanged(organizationId, r);
+                });
     }
 
     public Mono<FeatureConfig> toggleFeature(Integer organizationId, String featureName) {
@@ -419,7 +427,17 @@ public class AdminOrganizationService {
                     org.setFeaturesConfig(JsonUtils.toJson(config));
                     return saveOrganizationFields(org).thenReturn(config);
                 })
-                .doOnSuccess(r -> logger.info("toggleFeature result: {}", JsonUtils.toJson(r)));
+                .doOnSuccess(r -> {
+                    logger.info("toggleFeature result: {}", JsonUtils.toJson(r));
+                    notifyFeatureChanged(organizationId, r);
+                });
+    }
+
+    /** Push the updated feature config to every connected member of the organization via SSE. */
+    private void notifyFeatureChanged(Integer organizationId, FeatureConfig config) {
+        sseService.sendToOrganization(organizationId, "feature-toggled", Map.of(
+                "organizationId", organizationId,
+                "featuresConfig", config));
     }
 
     public Mono<FeatureConfig.PrivacySettings> getPrivacySettings(Integer organizationId) {
