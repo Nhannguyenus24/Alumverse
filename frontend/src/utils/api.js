@@ -639,6 +639,21 @@ export const eventApi = {
 		return unwrap(response);
 	},
 
+	async adminCancelTicketByCode(ticketCode, reason) {
+		const response = await apiClient.post(`/admin/events/tickets/${ticketCode}/cancel`, { reason });
+		return unwrap(response);
+	},
+
+	async adminUndoTicketByCode(ticketCode) {
+		const response = await apiClient.post(`/admin/events/tickets/${ticketCode}/undo`);
+		return unwrap(response);
+	},
+
+	async adminBanTicketByCode(ticketCode) {
+		const response = await apiClient.post(`/admin/events/tickets/${ticketCode}/ban`);
+		return unwrap(response);
+	},
+
 	async getTicketByCode(ticketCode) {
 		const response = await apiClient.get(`/events/tickets/code/${ticketCode}`);
 		return unwrap(response);
