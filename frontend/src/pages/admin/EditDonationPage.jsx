@@ -31,8 +31,7 @@ import Breadcrumb from "../../components/Breadcrumb";
 import MoneyField from "../../components/MoneyField";
 import FundLogoPreview from "../../components/FundLogoPreview";
 import {
-  useUploadImage,
-  useUploadFundDocument,
+  fileToBase64,
   validateImageFile,
   validateFundDocumentFile,
   IMAGE_ACCEPT,
@@ -150,8 +149,6 @@ export default function EditDonationPage() {
   const { id } = useParams();
   const { user } = useAuth();
   const isStaff = user?.role === "STAFF";
-  const { uploadFile: uploadLogo, isPending: isUploadingLogo } = useUploadImage();
-  const { uploadFile: uploadFundDocument, isPending: isUploadingDocument } = useUploadFundDocument();
   const [receivingOptions, setReceivingOptions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const logoInputRef = useRef(null);
@@ -349,22 +346,23 @@ export default function EditDonationPage() {
           description_full: values.descriptionFull,
         });
       } else {
-        const logoUrl = logoFile
-          ? await uploadLogo(logoFile)
-          : donationDetail.logoUrl?.trim() || null;
+        // A newly chosen logo is sent inline as base64 (backend converts to WebP + stores);
+        // otherwise the backend keeps the current logo.
+        const logoBase64 = logoFile ? await fileToBase64(logoFile) : undefined;
 
-        // A newly chosen file is uploaded; otherwise send the current URL, or ""
-        // to signal removal (backend: null = keep, "" = remove).
-        const fundDocumentUrl = documentFile
-          ? await uploadFundDocument(documentFile)
-          : documentUrl?.trim() || "";
+        // A newly chosen document is sent inline as base64; otherwise keep the current one, unless
+        // the user cleared it (documentUrl === "") in which case ask the backend to remove it.
+        const fundDocumentBase64 = documentFile ? await fileToBase64(documentFile) : undefined;
+        const removeFundDocument = !documentFile && !documentUrl?.trim();
 
         const payload = {
           name: values.name?.trim(),
           managerName: values.managerName?.trim(),
           managerEmail: values.managerEmail?.trim(),
-          logoUrl,
-          fundDocumentUrl,
+          logoBase64,
+          fundDocumentBase64,
+          fundDocumentFileName: documentFile?.name,
+          removeFundDocument,
           description_short: values.descriptionShort?.trim(),
           description_full: values.descriptionFull,
           targetAmount: Number(values.targetAmount),
@@ -384,7 +382,7 @@ export default function EditDonationPage() {
     }
   };
 
-  const isBusy = isSubmitting || isUploadingLogo || isUploadingDocument;
+  const isBusy = isSubmitting;
 
   return (
     <Page title={t('admin:edit_fund_page_title')} meta={<meta name="description" content={t('admin:edit_fund_page_title')} />}>
@@ -693,10 +691,10 @@ export default function EditDonationPage() {
                         type="submit"
                         variant="contained"
                         disabled={isBusy || disableAllFields}
-                        startIcon={isUploadingLogo ? <CircularProgress size={16} color="inherit" /> : null}
+                        startIcon={isBusy ? <CircularProgress size={16} color="inherit" /> : null}
                         sx={{ textTransform: "none", px: 2.6 }}
                       >
-                        {isUploadingLogo ? t('admin:edit_fund_btn_uploading') : isBusy ? t('admin:edit_fund_btn_saving') : t('admin:edit_fund_btn_save')}
+                        {isBusy ? t('admin:edit_fund_btn_saving') : t('admin:edit_fund_btn_save')}
                       </Button>
                     </Stack>
                   </Box>

@@ -44,10 +44,11 @@ public class UpdateFundRequest {
     @Schema(example = "Nguyễn Văn B")
     private String managerName;
 
-    @URL
-    @Size(max = 255)
-    @Schema(example = "https://example.com/fund-logo-updated.png")
-    private String logoUrl;
+    /**
+     * Optional base64-encoded fund logo. When present it is converted to WebP and stored; when
+     * absent the current logo is kept.
+     */
+    private String logoBase64;
 
     @NotNull
     @Positive
@@ -76,11 +77,17 @@ public class UpdateFundRequest {
     private String managerEmail;
 
     /**
-     * Optional URL of the fund's attached document (pdf/doc/docx). ADMIN-only (full edit).
-     * Semantics in the service: {@code null} keeps the current document; {@code ""} removes it.
-     * No {@code @URL} constraint so the empty-string "remove" signal is not rejected.
+     * Optional base64-encoded fund document (pdf/doc/docx). ADMIN-only (full edit). When present,
+     * the backend stores the file and replaces the current document; when absent the current
+     * document is kept (unless {@link #removeFundDocument} is set). Requires
+     * {@link #fundDocumentFileName}.
      */
-    @Size(max = 500)
-    @Schema(example = "https://example.com/funds/quyet-dinh-thanh-lap.pdf")
-    private String fundDocumentUrl;
+    private String fundDocumentBase64;
+
+    /** Original file name of {@link #fundDocumentBase64}; its extension drives type/size validation. */
+    @Size(max = 255)
+    private String fundDocumentFileName;
+
+    /** When {@code true} and no new document is provided, the current document is removed. */
+    private Boolean removeFundDocument;
 }

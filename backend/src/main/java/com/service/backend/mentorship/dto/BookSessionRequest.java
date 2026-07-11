@@ -37,4 +37,14 @@ public class BookSessionRequest {
 
     @Size(max = 500)
     private String cvUrl;
+
+    /**
+     * Optional base64-encoded CV file. When present, the backend stores the file and persists the
+     * resulting URL, taking precedence over {@link #cvUrl}. Requires {@link #cvFileName}.
+     */
+    private String cvBase64;
+
+    /** Original file name of {@link #cvBase64}; its extension drives type/size validation. */
+    @Size(max = 255)
+    private String cvFileName;
 }

@@ -26,7 +26,9 @@ public class UpdateLearningResourceRequest {
 
     private String description;
 
-    /** URL of an already-uploaded thumbnail (upload via /images/upload first). */
-    @URL
-    private String thumbnailUrl;
+    /**
+     * Base64-encoded thumbnail (optionally with a data URL header). When present it replaces the
+     * current thumbnail; when absent the existing thumbnail is kept.
+     */
+    private String thumbnailBase64;
 }

@@ -15,6 +15,7 @@ import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.SecurityUtils;
+import com.service.backend.shared.service.ImageService;
 import com.service.backend.user.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -43,16 +44,20 @@ public class MentorService {
     private final MentorshipAccessService accessService;
     private final NotificationService notificationService;
     private final SkillService skillService;
+    private final ImageService imageService;
 
     private Mono<Integer> currentMemberId() {
         return SecurityUtils.getCurrentUserId().map(Long::intValue);
     }
 
-    private Mono<Void> updateUserAvatarIfPresent(Integer memberId, String avatarUrl) {
-        if (avatarUrl == null || avatarUrl.isBlank()) {
-            return Mono.empty();
-        }
-        return userProfileRepository.updateUserAvatar(memberId, avatarUrl.trim());
+    /**
+     * When {@code avatarBase64} is present it is converted to WebP, stored, and set as the user's
+     * avatar; when absent the current avatar is left unchanged.
+     */
+    private Mono<Void> updateUserAvatarIfPresent(Integer memberId, String avatarBase64) {
+        return imageService.uploadBase64IfPresent(avatarBase64)
+                .flatMap(url -> userProfileRepository.updateUserAvatar(memberId, url.trim()))
+                .then();
     }
 
     private Mono<Void> updateUserWorkInfoIfPresent(Integer memberId, String currentJobTitle, String currentCompany) {
@@ -179,7 +184,7 @@ public class MentorService {
                             }
                             existing.setUpdatedAt(LocalDateTime.now());
                             existing.setNew(false);
-                            return updateUserAvatarIfPresent(memberId, request.getAvatarUrl())
+                            return updateUserAvatarIfPresent(memberId, request.getAvatarBase64())
                                     .then(updateUserWorkInfoIfPresent(
                                             memberId,
                                             request.getCurrentJobTitle(),
@@ -201,7 +206,7 @@ public class MentorService {
                                     .createdAt(LocalDateTime.now())
                                     .updatedAt(LocalDateTime.now())
                                     .build();
-                            return updateUserAvatarIfPresent(memberId, request.getAvatarUrl())
+                            return updateUserAvatarIfPresent(memberId, request.getAvatarBase64())
                                     .then(updateUserWorkInfoIfPresent(
                                             memberId,
                                             request.getCurrentJobTitle(),
@@ -233,7 +238,7 @@ public class MentorService {
                             if (request.getBookingWindowSettings() != null) existing.setBookingWindowSettings(request.getBookingWindowSettings());
                             if (request.getExtendedProfile() != null) existing.setExtendedProfile(request.getExtendedProfile());
                             existing.setNew(false);
-                            return updateUserAvatarIfPresent(memberId, request.getAvatarUrl())
+                            return updateUserAvatarIfPresent(memberId, request.getAvatarBase64())
                                     .then(updateUserWorkInfoIfPresent(
                                             memberId,
                                             request.getCurrentJobTitle(),

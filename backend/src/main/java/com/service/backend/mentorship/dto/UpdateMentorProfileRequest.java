@@ -21,8 +21,11 @@ public class UpdateMentorProfileRequest {
     @Size(max = 255)
     private String currentCompany;
 
-    @Size(max = 500)
-    private String avatarUrl;
+    /**
+     * Raw avatar image as base64 (optionally with a data URL header). When present it is
+     * converted to WebP and stored server-side; when absent the current avatar is kept.
+     */
+    private String avatarBase64;
 
 
     @Size(max = 500)

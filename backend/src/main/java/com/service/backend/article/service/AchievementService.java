@@ -33,7 +33,7 @@ public class AchievementService {
     public Mono<AchievementResponse> create(CreateAchievementRequest request) {
         return SecurityUtils.getCurrentUserId()
                 .flatMap(userId -> imageService.uploadBase64IfPresent(request.getImageBase64())
-                        .defaultIfEmpty(request.getImageUrl() == null ? "" : request.getImageUrl())
+                        .defaultIfEmpty("")
                         .flatMap(imageUrl -> {
                             Achievement achievement = Achievement.builder()
                                     .memberId(userId.intValue())
@@ -61,7 +61,7 @@ public class AchievementService {
                                 return Mono.error(new ApplicationException(ErrorCode.FORBIDDEN));
                             }
                             return imageService.uploadBase64IfPresent(request.getImageBase64())
-                                    .defaultIfEmpty(request.getImageUrl() == null ? "" : request.getImageUrl())
+                                    .defaultIfEmpty("")
                                     .flatMap(imageUrl -> {
                                         existing.setTitle(request.getTitle());
                                         existing.setDescription(request.getDescription());

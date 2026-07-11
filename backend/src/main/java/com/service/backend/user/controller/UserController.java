@@ -68,19 +68,19 @@ public class UserController {
     }
 
     @PutMapping("/avatar")
-    public Mono<ResponseEntity<ApiResponse<Boolean>>> updateMyAvatar(
+    public Mono<ResponseEntity<ApiResponse<String>>> updateMyAvatar(
             @Valid @RequestBody UpdateAvatarRequest request) {
         return SecurityUtils.getCurrentUserId()
-                .flatMap(userId -> userService.updateMyAvatar(userId, request.getAvatarUrl()))
-                .thenReturn(ResponseEntity.ok(new ApiResponse<>("Avatar updated successfully", true)));
+                .flatMap(userId -> userService.updateMyAvatar(userId, request))
+                .map(url -> ResponseEntity.ok(new ApiResponse<>("Avatar updated successfully", url)));
     }
 
     @PutMapping("/cover")
-    public Mono<ResponseEntity<ApiResponse<Boolean>>> updateMyCover(
+    public Mono<ResponseEntity<ApiResponse<String>>> updateMyCover(
             @Valid @RequestBody UpdateCoverRequest request) {
         return SecurityUtils.getCurrentUserId()
-                .flatMap(userId -> userService.updateMyCover(userId, request.getCoverUrl()))
-                .thenReturn(ResponseEntity.ok(new ApiResponse<>("Cover updated successfully", true)));
+                .flatMap(userId -> userService.updateMyCover(userId, request))
+                .map(url -> ResponseEntity.ok(new ApiResponse<>("Cover updated successfully", url)));
     }
 
     @GetMapping("/organization-member")

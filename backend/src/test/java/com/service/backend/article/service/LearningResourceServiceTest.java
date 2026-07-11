@@ -11,6 +11,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import com.service.backend.shared.service.ImageService;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -27,6 +28,7 @@ class LearningResourceServiceTest {
 
     @Mock private LearningResourceR2dbcRepository learningResourceRepository;
     @Mock private CacheUtils cacheUtils;
+    @Mock private ImageService imageService;
 
     @InjectMocks
     private LearningResourceService learningResourceService;
@@ -133,6 +135,7 @@ class LearningResourceServiceTest {
             request.setType(LearningResourceType.EBOOK.getValue());
 
             when(learningResourceRepository.findById(1)).thenReturn(Mono.just(existing));
+            when(imageService.uploadBase64IfPresent(any())).thenReturn(Mono.empty());
             when(learningResourceRepository.save(any())).thenReturn(Mono.just(updated));
             when(cacheUtils.clear(anyString())).thenReturn(Mono.empty());
 

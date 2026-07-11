@@ -17,10 +17,12 @@ const buildPayload = (channel, input) => {
     title,
     content,
     thumbnailBase64,
-    thumbnailUrl,
     topic,
     ...rest
   } = input;
+  // The image is sent inline as base64; the backend converts to WebP, stores it, and keeps the
+  // existing image when no base64 is provided. No image URL is sent anymore.
+  delete rest.thumbnailUrl;
   delete rest.publishedAt;
   delete rest.published_at;
   delete rest.createdAt;
@@ -34,7 +36,6 @@ const buildPayload = (channel, input) => {
         title,
         description: content,
         imageBase64: thumbnailBase64 ?? null,
-        imageUrl: thumbnailUrl ?? null,
         topic: topic ?? null,
         ...rest,
       };
@@ -43,7 +44,6 @@ const buildPayload = (channel, input) => {
         title,
         description: content,
         bannerBase64: thumbnailBase64 ?? null,
-        bannerUrl: thumbnailUrl ?? null,
         topic: topic ?? null,
         ...rest,
       };
@@ -52,7 +52,6 @@ const buildPayload = (channel, input) => {
         title,
         descriptionFull: content,
         logoBase64: thumbnailBase64 ?? null,
-        logoUrl: thumbnailUrl ?? null,
         topic: topic ?? null,
         ...rest,
       };
@@ -68,7 +67,7 @@ const buildPayload = (channel, input) => {
         title,
         description: content,
         type: topic ?? null,
-        thumbnailUrl: thumbnailUrl ?? null,
+        thumbnailBase64: thumbnailBase64 ?? null,
         ...rest,
       };
     default:
@@ -76,7 +75,6 @@ const buildPayload = (channel, input) => {
         title,
         content,
         thumbnailBase64: thumbnailBase64 ?? null,
-        thumbnailUrl: thumbnailUrl ?? null,
         topic: topic ?? null,
         ...rest,
       };

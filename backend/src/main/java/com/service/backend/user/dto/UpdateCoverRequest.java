@@ -1,7 +1,6 @@
 package com.service.backend.user.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,10 +10,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class UpdateCoverRequest {
 
-    @NotBlank(message = "Cover URL is required")
     @Schema(
-            description = "URL of the uploaded cover image (from POST /api/images/upload)",
-            example = "/images/cover123.webp"
+            description = "Base64 of the cover image (optionally with data:image/...;base64, header). "
+                    + "It is converted to WebP and stored server-side.",
+            example = "data:image/png;base64,iVBORw0KGgo..."
     )
-    private String coverUrl;
+    private String coverBase64;
 }

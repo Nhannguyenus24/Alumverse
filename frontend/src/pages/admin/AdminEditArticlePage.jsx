@@ -19,7 +19,6 @@ import {
   getJsonPayloadByteSize,
   MAX_JSON_PAYLOAD_BYTES,
   validateImageFile,
-  useUploadImage,
 } from '../../utils/imageUtils';
 import { extractMainImageCaption, withMainImageCaption } from '../../utils/articleContentCaption';
 import { useNotification } from '../../hooks/useNotification';
@@ -51,7 +50,6 @@ const AdminEditArticlePage = () => {
   const { showSuccess, showError } = useNotification();
   const { article, isPending: isLoading } = useArticleById(channel, id);
   const { updateArticle, isPending: isSaving } = useUpdateArticle(channel);
-  const { uploadBase64, isPending: isUploadingImage } = useUploadImage();
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -124,19 +122,16 @@ const AdminEditArticlePage = () => {
 
     try {
       const thumbnailBase64 = coverFile ? await fileToCroppedCoverBase64(coverFile, coverPositionY) : null;
-      let uploadedThumbnailUrl = null;
-      if (thumbnailBase64) {
-        if (getJsonPayloadByteSize({ base64String: thumbnailBase64 }) > MAX_JSON_PAYLOAD_BYTES) {
-          showError('Ảnh chính quá lớn để tải lên. Vui lòng chọn ảnh nhỏ hơn.');
-          return;
-        }
-        uploadedThumbnailUrl = await uploadBase64(thumbnailBase64);
+      if (thumbnailBase64 && getJsonPayloadByteSize({ base64String: thumbnailBase64 }) > MAX_JSON_PAYLOAD_BYTES) {
+        showError('Ảnh chính quá lớn để tải lên. Vui lòng chọn ảnh nhỏ hơn.');
+        return;
       }
       const payload = {
         title: title.trim(),
         content: withMainImageCaption(content.trim(), mainImageCaption),
-        thumbnailBase64: null,
-        thumbnailUrl: uploadedThumbnailUrl || articleThumbnail(article),
+        // Send the raw image inline; the backend converts it to WebP and stores it. When no new
+        // image is picked (thumbnailBase64 is null), the backend keeps the existing thumbnail.
+        thumbnailBase64,
         topic: topic || null,
         url: url.trim() || null,
       };
@@ -233,10 +228,10 @@ const AdminEditArticlePage = () => {
                 variant="contained"
                 color="primary"
                 onClick={handleSubmit}
-                disabled={isSaving || isUploadingImage}
+                disabled={isSaving}
                 sx={{ px: 4 }}
               >
-                {isSaving || isUploadingImage ? t('admin:saving') : t('admin:save_changes')}
+                {isSaving ? t('admin:saving') : t('admin:save_changes')}
               </Button>
             </Box>
           </Box>

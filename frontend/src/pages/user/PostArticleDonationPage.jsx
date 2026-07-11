@@ -33,8 +33,7 @@ import { useCreateFund } from "../../hooks/news/useCreateFund";
 import { useFundReceivingInfos } from "../../hooks/news/useFundReceivingInfos";
 import FundLogoPreview from "../../components/FundLogoPreview";
 import {
-  useUploadImage,
-  useUploadFundDocument,
+  fileToBase64,
   validateImageFile,
   validateFundDocumentFile,
   IMAGE_ACCEPT,
@@ -123,8 +122,6 @@ export default function PostArticleDonationPage() {
   const { enqueueSnackbar } = useSnackbar();
   const { t } = useTranslation("donation");
   const { createFund, isPending } = useCreateFund();
-  const { uploadFile: uploadLogo, isPending: isUploadingLogo } = useUploadImage();
-  const { uploadFile: uploadFundDocument, isPending: isUploadingDocument } = useUploadFundDocument();
 
   const organizationId = useOrganizationStore((s) => s.organization?.id ?? null);
   const { infos: receivingInfos } = useFundReceivingInfos();
@@ -139,7 +136,7 @@ export default function PostArticleDonationPage() {
     onValid(file);
   };
 
-  // Logo quỹ — upload riêng → POST /images/upload → logoUrl
+  // Logo quỹ — gửi thẳng base64 trong payload tạo quỹ (backend convert WebP + lưu)
   const logoInputRef = useRef(null);
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState(null);
@@ -161,7 +158,7 @@ export default function PostArticleDonationPage() {
     if (logoInputRef.current) logoInputRef.current.value = "";
   };
 
-  // Tài liệu quỹ (PDF/DOC/DOCX) — tuỳ chọn, upload riêng → /files/upload → fundDocumentUrl
+  // Tài liệu quỹ (PDF/DOC/DOCX) — tuỳ chọn, gửi thẳng base64 trong payload tạo quỹ
   const documentInputRef = useRef(null);
   const [documentFile, setDocumentFile] = useState(null);
   const handleDocumentChange = (e) => {
@@ -222,15 +219,16 @@ export default function PostArticleDonationPage() {
     }
 
     try {
-      const logoUrl = logoFile ? await uploadLogo(logoFile) : null;
-      const fundDocumentUrl = documentFile ? await uploadFundDocument(documentFile) : null;
+      const logoBase64 = logoFile ? await fileToBase64(logoFile) : null;
+      const fundDocumentBase64 = documentFile ? await fileToBase64(documentFile) : null;
 
       const payload = {
         name: values.fundName,
         managerName: values.organizer,
         managerEmail: values.managerEmail.trim(),
-        logoUrl: logoUrl ?? null,
-        fundDocumentUrl: fundDocumentUrl ?? null,
+        logoBase64: logoBase64 ?? undefined,
+        fundDocumentBase64: fundDocumentBase64 ?? undefined,
+        fundDocumentFileName: documentFile?.name,
         fundReceivingInfoId: Number(values.fundReceivingInfoId),
         targetAmount: Number(values.targetAmount),
         description_short: values.descriptionShort,
@@ -251,7 +249,7 @@ export default function PostArticleDonationPage() {
     }
   };
 
-  const isBusy = isSubmitting || isPending || isUploadingLogo || isUploadingDocument;
+  const isBusy = isSubmitting || isPending;
 
   return (
     <Page
@@ -574,15 +572,11 @@ export default function PostArticleDonationPage() {
                     <Button
                       type="submit"
                       variant="contained"
-                      startIcon={isUploadingLogo ? <CircularProgress size={16} color="inherit" /> : <PublishOutlinedIcon />}
+                      startIcon={isBusy ? <CircularProgress size={16} color="inherit" /> : <PublishOutlinedIcon />}
                       disabled={isBusy}
                       sx={{ textTransform: "none", px: 3 }}
                     >
-                      {isUploadingLogo
-                        ? t("btn_uploading")
-                        : isBusy
-                        ? t("btn_submitting")
-                        : t("btn_submit")}
+                      {isBusy ? t("btn_submitting") : t("btn_submit")}
                     </Button>
                   </Stack></ScrollReveal>
                 </Box>

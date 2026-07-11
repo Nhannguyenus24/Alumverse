@@ -29,10 +29,6 @@ public class CreateEventRequest {
     @Schema(example = "Sự kiện chia sẻ về trí tuệ nhân tạo và ứng dụng thực tiễn năm 2026.")
     private String description;
 
-    @URL()
-    @Schema(example = "https://example.com/banner.jpg")
-    private String bannerUrl;
-
     @Size(max = 500)
     @Schema(example = "Hội trường A, Đại học Khoa học Tự nhiên")
     private String location;
@@ -53,7 +49,7 @@ public class CreateEventRequest {
     @Schema(example = "300")
     private Integer maxCapacity;
 
-    /** Optional base64-encoded banner. When present, backend uploads and stores the resulting URL. */
+    /** Base64-encoded banner. When present, the backend converts it to WebP and stores it. */
     private String bannerBase64;
 
     @Schema(example = "Workshop")
