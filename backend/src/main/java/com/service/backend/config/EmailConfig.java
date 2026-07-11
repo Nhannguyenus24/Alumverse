@@ -1,9 +1,11 @@
 package com.service.backend.config;
 
+import java.util.Map;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
-import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.IExpressionContext;
+import org.thymeleaf.linkbuilder.StandardLinkBuilder;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 import org.thymeleaf.templatemode.TemplateMode;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
@@ -22,7 +24,23 @@ public class EmailConfig {
         // 2) StringTemplateResolver: coi chính chuỗi truyền vào là nội dung template (HTML từ DB).
         engine.addTemplateResolver(fileTemplateResolver());
         engine.addTemplateResolver(stringTemplateResolver());
+        // Email được render bằng Context thường (không phải web request), nên StandardLinkBuilder
+        // mặc định sẽ ném lỗi khi gặp link context-relative "@{/...}". Ta thay bằng LinkBuilder
+        // giữ nguyên link ở dạng tương đối để không còn báo lỗi.
+        engine.setLinkBuilder(new EmailLinkBuilder());
         return engine;
+    }
+
+    /**
+     * LinkBuilder cho email: vì email không có web context, ta ghi đè {@code computeContextPath}
+     * để trả về chuỗi rỗng (context path rỗng) thay vì ném lỗi. Nhờ đó link
+     * {@code @{/alumni/donation-history}} được giữ nguyên ở dạng tương đối "/alumni/donation-history".
+     */
+    private static class EmailLinkBuilder extends StandardLinkBuilder {
+        @Override
+        protected String computeContextPath(IExpressionContext context, String base, Map<String, Object> parameters) {
+            return "";
+        }
     }
 
     /** Resolver cho template file .html trên classpath (giữ nguyên hành vi cũ + làm fallback). */
