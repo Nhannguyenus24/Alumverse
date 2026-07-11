@@ -3,7 +3,7 @@ package com.service.backend.mentorship.dao;
 import com.service.backend.shared.entity.MentorProfile;
 import org.springframework.data.r2dbc.repository.Modifying;
 import org.springframework.data.r2dbc.repository.Query;
-import org.springframework.data.repository.reactive.ReactiveCrudRepository;
+import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
-public interface MentorProfileR2dbcRepository extends ReactiveCrudRepository<MentorProfile, Integer> {
+public interface MentorProfileR2dbcRepository extends R2dbcRepository<MentorProfile, Integer> {
 
     // ===================== Basic paginated =====================
 

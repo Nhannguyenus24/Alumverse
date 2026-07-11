@@ -2,13 +2,13 @@ package com.service.backend.event.dao;
 
 import com.service.backend.shared.entity.EventInterest;
 import org.springframework.data.r2dbc.repository.Query;
-import org.springframework.data.repository.reactive.ReactiveCrudRepository;
+import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Repository
-public interface EventInterestR2dbcRepository extends ReactiveCrudRepository<EventInterest, Long> {
+public interface EventInterestR2dbcRepository extends R2dbcRepository<EventInterest, Long> {
 
     Mono<Boolean> existsByEventIdAndMemberId(Long eventId, Long memberId);
 

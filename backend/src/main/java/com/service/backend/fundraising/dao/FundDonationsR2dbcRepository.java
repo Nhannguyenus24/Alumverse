@@ -4,7 +4,7 @@ import com.service.backend.admin.dto.AdminFundDonationAggregatedStatsProjection;
 import com.service.backend.shared.entity.FundDonations;
 import com.service.backend.fundraising.projection.FundDonationListProjection;
 import org.springframework.data.r2dbc.repository.Query;
-import org.springframework.data.repository.reactive.ReactiveCrudRepository;
+import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -13,7 +13,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Repository
-public interface FundDonationsR2dbcRepository extends ReactiveCrudRepository<FundDonations, Integer> {
+public interface FundDonationsR2dbcRepository extends R2dbcRepository<FundDonations, Integer> {
 
     @Query("""
             SELECT

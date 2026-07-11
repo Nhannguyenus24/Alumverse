@@ -3,13 +3,13 @@ package com.service.backend.chat.dao;
 import com.service.backend.chat.dto.ConversationRequestSearchItemResponse;
 import com.service.backend.shared.entity.ChatConversationRequest;
 import org.springframework.data.r2dbc.repository.Query;
-import org.springframework.data.repository.reactive.ReactiveCrudRepository;
+import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Repository
-public interface ChatConversationRequestRepository extends ReactiveCrudRepository<ChatConversationRequest, Long> {
+public interface ChatConversationRequestRepository extends R2dbcRepository<ChatConversationRequest, Long> {
 
     @Query("""
             SELECT id, member_low_id, member_high_id, requester_member_id, target_member_id, chat_group_id,

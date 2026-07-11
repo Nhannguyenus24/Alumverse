@@ -3,7 +3,7 @@ package com.service.backend.mentorship.dao;
 import com.service.backend.shared.entity.MentorshipSession;
 import org.springframework.data.r2dbc.repository.Modifying;
 import org.springframework.data.r2dbc.repository.Query;
-import org.springframework.data.repository.reactive.ReactiveCrudRepository;
+import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -11,7 +11,7 @@ import reactor.core.publisher.Mono;
 import java.time.LocalDate;
 
 @Repository
-public interface MentorshipSessionR2dbcRepository extends ReactiveCrudRepository<MentorshipSession, Integer> {
+public interface MentorshipSessionR2dbcRepository extends R2dbcRepository<MentorshipSession, Integer> {
 
     // ===================== Mentor view: basic =====================
 

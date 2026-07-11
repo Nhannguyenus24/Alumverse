@@ -3,7 +3,7 @@ package com.service.backend.event.dao;
 import com.service.backend.shared.entity.Event;
 import org.springframework.data.r2dbc.repository.Modifying;
 import org.springframework.data.r2dbc.repository.Query;
-import org.springframework.data.repository.reactive.ReactiveCrudRepository;
+import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import com.service.backend.admin.dto.EventStatisticsDTO;
@@ -13,7 +13,7 @@ import reactor.core.publisher.Mono;
 import java.time.LocalDateTime;
 
 @Repository
-public interface EventR2dbcRepository extends ReactiveCrudRepository<Event, Long> {
+public interface EventR2dbcRepository extends R2dbcRepository<Event, Long> {
 
     @Query("SELECT * FROM events WHERE organization_id = :organizationId ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
     Flux<Event> findByOrganizationIdWithPagination(Long organizationId, int limit, int offset);

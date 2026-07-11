@@ -4,13 +4,13 @@ import com.service.backend.shared.entity.Achievement;
 import com.service.backend.article.dto.AchievementDetailDTO;
 import com.service.backend.shared.enums.Status;
 import org.springframework.data.r2dbc.repository.Query;
-import org.springframework.data.repository.reactive.ReactiveCrudRepository;
+import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Repository
-public interface AchievementR2dbcRepository extends ReactiveCrudRepository<Achievement, Integer> {
+public interface AchievementR2dbcRepository extends R2dbcRepository<Achievement, Integer> {
 
     @Query("SELECT * FROM achievements ORDER BY awarded_date DESC LIMIT :limit OFFSET :offset")
     Flux<Achievement> findAllWithPagination(int limit, int offset);

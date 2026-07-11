@@ -4,7 +4,7 @@ import com.service.backend.shared.entity.SurveySubmission;
 import com.service.backend.survey.projection.SurveySubmissionProjection;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.data.repository.reactive.ReactiveCrudRepository;
+import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -14,7 +14,7 @@ import reactor.core.publisher.Mono;
  * writes cast with {@code CAST(:answersData AS jsonb)}.
  */
 @Repository
-public interface SurveySubmissionR2dbcRepository extends ReactiveCrudRepository<SurveySubmission, Long> {
+public interface SurveySubmissionR2dbcRepository extends R2dbcRepository<SurveySubmission, Long> {
 
     String COLUMNS = "id, form_id, member_id, answers_data::text AS answers_data, submitted_at";
 

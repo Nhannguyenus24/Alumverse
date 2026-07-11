@@ -5,13 +5,13 @@ import com.service.backend.chat.dto.BlockedMemberItemResponse;
 import com.service.backend.shared.entity.UserBlock;
 import org.springframework.data.r2dbc.repository.Modifying;
 import org.springframework.data.r2dbc.repository.Query;
-import org.springframework.data.repository.reactive.ReactiveCrudRepository;
+import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Repository
-public interface UserBlockRepository extends ReactiveCrudRepository<UserBlock, Long> {
+public interface UserBlockRepository extends R2dbcRepository<UserBlock, Long> {
     @Query("""
             SELECT COUNT(id)
             FROM user_blocks

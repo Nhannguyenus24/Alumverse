@@ -3,13 +3,13 @@ package com.service.backend.article.dao;
 import com.service.backend.shared.entity.LearningResource;
 import com.service.backend.shared.enums.LearningResourceType;
 import org.springframework.data.r2dbc.repository.Query;
-import org.springframework.data.repository.reactive.ReactiveCrudRepository;
+import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Repository
-public interface LearningResourceR2dbcRepository extends ReactiveCrudRepository<LearningResource, Integer> {
+public interface LearningResourceR2dbcRepository extends R2dbcRepository<LearningResource, Integer> {
 
     @Query("SELECT * FROM learning_resources WHERE organization_id = :organizationId ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
     Flux<LearningResource> findByOrganizationIdWithPagination(Integer organizationId, int limit, int offset);
