@@ -154,6 +154,24 @@ public class AdminEventController {
                 .map(ticket -> ResponseEntity.ok(new ApiResponse<>("Ticket cancelled successfully", ticket)));
     }
 
+    @Operation(summary = "Undo a ticket's cancellation or ban (admin override)")
+    @PostMapping("/tickets/{ticketCode}/undo")
+    public Mono<ResponseEntity<ApiResponse<EventTicket>>> undoTicket(
+            @Parameter(example = "EVT2026-001")
+            @PathVariable @NotBlank(message = "Ticket code is required") String ticketCode) {
+        return adminEventService.undoTicket(ticketCode)
+                .map(ticket -> ResponseEntity.ok(new ApiResponse<>("Ticket status undone successfully", ticket)));
+    }
+
+    @Operation(summary = "Ban a ticket due to signs of fraud (admin override)")
+    @PostMapping("/tickets/{ticketCode}/ban")
+    public Mono<ResponseEntity<ApiResponse<EventTicket>>> banTicket(
+            @Parameter(example = "EVT2026-001")
+            @PathVariable @NotBlank(message = "Ticket code is required") String ticketCode) {
+        return adminEventService.banTicket(ticketCode)
+                .map(ticket -> ResponseEntity.ok(new ApiResponse<>("Ticket banned successfully", ticket)));
+    }
+
     @Operation(summary = "List interests recorded for an event")
     @GetMapping("/{eventId}/interests")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<EventInterest>>>> getInterestsByEvent(

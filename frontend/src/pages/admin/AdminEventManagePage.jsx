@@ -27,6 +27,8 @@ import MarkEmailReadIcon from '@mui/icons-material/MarkEmailRead';
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import SendIcon from '@mui/icons-material/Send';
 import DoDisturbAltIcon from '@mui/icons-material/DoDisturbAlt';
+import UndoIcon from '@mui/icons-material/Undo';
+import BlockIcon from '@mui/icons-material/Block';
 import { useOrgNavigate, useOrgPath } from '../../hooks/useOrgNavigate';
 import { eventApi } from '../../utils/api';
 import { formatDateTime } from '../../utils/dateFormatter';
@@ -39,6 +41,7 @@ import ConfirmationNumberOutlinedIcon from '@mui/icons-material/ConfirmationNumb
 import EventAvailableOutlinedIcon from '@mui/icons-material/EventAvailableOutlined';
 import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
+import ConfirmDialog from '../../components/ConfirmDialog';
 import * as XLSX from 'xlsx';
 
 const fallbackPage = { items: [], totalItem: 0, totalPage: 0, currentPage: 0, pageSize: 10 };
@@ -85,6 +88,7 @@ const AdminEventManagePage = () => {
   const [inviteEmails, setInviteEmails] = useState('');
   const [inviting, setInviting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [banTarget, setBanTarget] = useState(null);
 
   const { data: event, isLoading: eventLoading, refetch: refetchEvent } = useQuery({
     queryKey: ['event', eventId],
@@ -185,12 +189,42 @@ const AdminEventManagePage = () => {
   const handleCancelTicket = async (ticket) => {
     if (!ticket?.ticketCode) return;
     try {
-      await eventApi.cancelTicketByCode(ticket.ticketCode);
+      await eventApi.adminCancelTicketByCode(ticket.ticketCode);
       enqueueSnackbar(t('event:ticket_cancel_success'), { variant: 'success' });
       refetchTickets();
       refetchStats();
     } catch (err) {
       enqueueSnackbar(err?.response?.data?.message || t('event:ticket_cancel_error'), { variant: 'error' });
+    }
+  };
+
+  const handleUndoTicket = async (ticket) => {
+    if (!ticket?.ticketCode) return;
+    try {
+      await eventApi.adminUndoTicketByCode(ticket.ticketCode);
+      enqueueSnackbar(t('event:ticket_undo_success', 'Phục hồi trạng thái vé thành công'), { variant: 'success' });
+      refetchTickets();
+      refetchStats();
+    } catch (err) {
+      enqueueSnackbar(err?.response?.data?.message || t('event:ticket_undo_error', 'Phục hồi trạng thái vé thất bại'), { variant: 'error' });
+    }
+  };
+
+  const handleBanTicket = (ticket) => {
+    setBanTarget(ticket);
+  };
+
+  const confirmBanTicket = async () => {
+    if (!banTarget?.ticketCode) return;
+    try {
+      await eventApi.adminBanTicketByCode(banTarget.ticketCode);
+      enqueueSnackbar(t('event:ticket_ban_success', 'Cấm vé thành công'), { variant: 'success' });
+      refetchTickets();
+      refetchStats();
+    } catch (err) {
+      enqueueSnackbar(err?.response?.data?.message || t('event:ticket_ban_error', 'Cấm vé thất bại'), { variant: 'error' });
+    } finally {
+      setBanTarget(null);
     }
   };
 
@@ -425,15 +459,33 @@ const AdminEventManagePage = () => {
               id: 'actions',
               label: t('admin:actions'),
               align: 'right',
-              width: 80,
+              width: 120,
               render: (_, ticket) => {
-                const cancellable = !['CANCELLED', 'USED', 'EXPIRED', 'CHECKED_IN'].includes(String(ticket.status).toUpperCase());
+                const status = String(ticket.status).toUpperCase();
+                const cancellable = !['CANCELLED', 'USED', 'EXPIRED', 'CHECKED_IN', 'BANNED'].includes(status);
+                const undoable = ['CANCELLED', 'BANNED'].includes(status);
+                const bannable = !['BANNED'].includes(status);
+                
                 return (
                   <Stack direction="row" spacing={0.75} justifyContent="flex-end" alignItems="center">
+                    {undoable && (
+                      <Tooltip title={t('event:tooltip_undo_ticket', 'Phục hồi vé')}>
+                        <IconButton size="small" color="info" onClick={() => handleUndoTicket(ticket)}>
+                          <UndoIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    )}
                     {cancellable && (
                       <Tooltip title={t('event:tooltip_cancel_ticket')}>
                         <IconButton size="small" color="warning" onClick={() => handleCancelTicket(ticket)}>
                           <DoDisturbAltIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                    {bannable && (
+                      <Tooltip title={t('event:tooltip_ban_ticket', 'Cấm tham gia (Gian lận)')}>
+                        <IconButton size="small" color="error" onClick={() => handleBanTicket(ticket)}>
+                          <BlockIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
                     )}
@@ -627,6 +679,16 @@ const AdminEventManagePage = () => {
         </Box>
       )}
 
+      <ConfirmDialog
+        open={Boolean(banTarget)}
+        title={t('event:ticket_ban_title', 'Xác nhận cấm vé')}
+        message={t('event:ticket_ban_confirm', 'Bạn có chắc chắn muốn cấm vé này tham gia sự kiện do gian lận không?')}
+        confirmText={t('common:confirm', 'Xác nhận')}
+        cancelText={t('common:cancel', 'Hủy')}
+        onConfirm={confirmBanTicket}
+        onCancel={() => setBanTarget(null)}
+        confirmColor="error"
+      />
     </Box>
   );
 };
