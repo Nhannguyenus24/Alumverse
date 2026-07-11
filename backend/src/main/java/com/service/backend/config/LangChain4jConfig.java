@@ -84,6 +84,25 @@ public class LangChain4jConfig {
     }
 
     @Bean
+    public com.service.backend.shared.service.SurveyInsightService surveyInsightService() {
+        if (geminiApiKey == null || geminiApiKey.isBlank()) {
+            // No Gemini key: return a neutral placeholder so the insight endpoint still works.
+            return summaryJson ->
+                    "Chưa cấu hình khóa AI (GEMINI_API_KEY). Vui lòng xem phần tổng hợp số liệu để tự phân tích.";
+        }
+
+        GoogleAiGeminiChatModel model = GoogleAiGeminiChatModel.builder()
+                .apiKey(geminiApiKey)
+                .modelName(geminiModelName)
+                .temperature(geminiModelTemperature)
+                .build();
+
+        return AiServices.builder(com.service.backend.shared.service.SurveyInsightService.class)
+                .chatLanguageModel(model)
+                .build();
+    }
+
+    @Bean
     public com.service.backend.shared.service.CvExtractionService cvExtractionService() {
         if (geminiApiKey == null || geminiApiKey.isBlank()) {
             // No Gemini key: return an empty result so the CV-upload step degrades

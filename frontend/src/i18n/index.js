@@ -22,11 +22,12 @@ import notificationVi from './locales/vi/notification.json';
 import contactVi from './locales/vi/contact.json';
 import devVi from './locales/vi/dev.json';
 import settingsVi from './locales/vi/settings.json';
+import surveyVi from './locales/vi/survey.json';
 
 const STORAGE_KEY = 'app_language';
 const DEFAULT_LANGUAGE = 'vi';
 
-const NAMESPACES = ['common', 'nav', 'auth', 'article', 'mentorship', 'event', 'profile', 'admin', 'forum', 'donation', 'network', 'home', 'honors', 'footer', 'notification', 'contact', 'dev', 'settings'];
+const NAMESPACES = ['common', 'nav', 'auth', 'article', 'mentorship', 'event', 'profile', 'admin', 'forum', 'donation', 'network', 'home', 'honors', 'footer', 'notification', 'contact', 'dev', 'settings', 'survey'];
 
 const savedLanguage = localStorage.getItem(STORAGE_KEY) || DEFAULT_LANGUAGE;
 
@@ -55,6 +56,7 @@ i18n.use(initReactI18next).init({
       contact: contactVi,
       dev: devVi,
       settings: settingsVi,
+      survey: surveyVi,
     },
   },
   interpolation: {

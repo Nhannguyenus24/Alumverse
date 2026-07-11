@@ -3,6 +3,8 @@
   "cancel": "Hủy",
   "confirm": "Xác nhận",
   "delete": "Xóa",
+  "actions": "Thao tác",
+  "error_occurred": "Đã xảy ra lỗi, vui lòng thử lại",
   "edit": "Chỉnh sửa",
   "close": "Đóng",
   "back": "Quay lại",

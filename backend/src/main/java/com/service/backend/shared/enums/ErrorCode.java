@@ -136,7 +136,15 @@ public enum ErrorCode {
     USER_ALREADY_BLOCKED("Bạn đã chặn thành viên này rồi", 409),
     USER_NOT_BLOCKED("Bạn chưa chặn thành viên này", 404),
     USER_COMMUNICATION_BLOCKED("Bạn không thể giao tiếp khi đang có chặn hoạt động", 403),
-    USER_BLOCK_RELATIONSHIP_EXISTS("Đã tồn tại block giữa hai thành viên này", 403);
+    USER_BLOCK_RELATIONSHIP_EXISTS("Đã tồn tại block giữa hai thành viên này", 403),
+
+    // Survey module
+    SURVEY_NOT_FOUND("Không tìm thấy khảo sát", 404),
+    SURVEY_NOT_EDITABLE("Không thể chỉnh sửa khảo sát khi đã mở hoặc đã đóng", 400),
+    SURVEY_NOT_OPEN("Khảo sát chưa mở hoặc đã đóng", 400),
+    SURVEY_ALREADY_SUBMITTED("Bạn đã hoàn thành khảo sát này rồi", 409),
+    SURVEY_ANSWER_INVALID("Câu trả lời khảo sát không hợp lệ", 400),
+    SURVEY_INVALID_TIME_RANGE("Khoảng thời gian khảo sát không hợp lệ", 400);
 
     private final String message;
     private final int status;

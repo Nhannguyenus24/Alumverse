@@ -1336,3 +1336,81 @@ export const notificationApi = {
 		return unwrap(response);
 	},
 };
+
+// ===================== Surveys / Forms =====================
+const BASE_ADMIN_SURVEYS = '/admin/surveys';
+const BASE_SURVEYS = '/surveys';
+
+export const surveyApi = {
+	// ---- Admin ----
+	async listAdminSurveys(params = {}, config = {}) {
+		const response = await apiClient.get(BASE_ADMIN_SURVEYS, { params, ...config });
+		return unwrap(response);
+	},
+
+	async getAdminSurvey(id) {
+		const response = await apiClient.get(`${BASE_ADMIN_SURVEYS}/${id}`);
+		return unwrap(response);
+	},
+
+	async createSurvey(payload) {
+		const response = await apiClient.post(BASE_ADMIN_SURVEYS, payload);
+		return unwrap(response);
+	},
+
+	async updateSurvey(id, payload) {
+		const response = await apiClient.put(`${BASE_ADMIN_SURVEYS}/${id}`, payload);
+		return unwrap(response);
+	},
+
+	async openSurvey(id) {
+		const response = await apiClient.post(`${BASE_ADMIN_SURVEYS}/${id}/open`);
+		return unwrap(response);
+	},
+
+	async closeSurvey(id) {
+		const response = await apiClient.post(`${BASE_ADMIN_SURVEYS}/${id}/close`);
+		return unwrap(response);
+	},
+
+	async deleteSurvey(id) {
+		const response = await apiClient.delete(`${BASE_ADMIN_SURVEYS}/${id}`);
+		return unwrap(response);
+	},
+
+	async getSubmissions(id, params = {}) {
+		const response = await apiClient.get(`${BASE_ADMIN_SURVEYS}/${id}/submissions`, { params });
+		return unwrap(response);
+	},
+
+	async getSummary(id) {
+		const response = await apiClient.get(`${BASE_ADMIN_SURVEYS}/${id}/summary`);
+		return unwrap(response);
+	},
+
+	async getInsight(id) {
+		const response = await apiClient.get(`${BASE_ADMIN_SURVEYS}/${id}/insight`);
+		return unwrap(response);
+	},
+
+	// ---- User ----
+	async getActiveSurveys() {
+		const response = await apiClient.get(`${BASE_SURVEYS}/active`);
+		return unwrap(response) ?? [];
+	},
+
+	async getSurvey(id) {
+		const response = await apiClient.get(`${BASE_SURVEYS}/${id}`);
+		return unwrap(response);
+	},
+
+	async submitSurvey(id, answers) {
+		const response = await apiClient.post(`${BASE_SURVEYS}/${id}/submit`, { answers });
+		return unwrap(response);
+	},
+
+	async getMySubmission(id) {
+		const response = await apiClient.get(`${BASE_SURVEYS}/${id}/my-submission`);
+		return unwrap(response);
+	},
+};
