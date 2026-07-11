@@ -4,13 +4,11 @@ import { saveMentorProfileDraft } from '../../utils/api';
 import { fileToBase64 } from '../../utils/imageUtils';
 import useAuthStore from '../../stores/authStore';
 
-const uploadImageIfPresent = async (image) => {
+const toBase64IfPresent = async (image) => {
   if (!image) return null;
-  const base64 = typeof image === 'string' && image.startsWith('data:')
+  return typeof image === 'string' && image.startsWith('data:')
     ? image
     : await fileToBase64(image);
-  const res = await apiClient.post('/images/upload', { base64String: base64 });
-  return res?.data?.data ?? null;
 };
 
 const submitDraft = async ({
@@ -21,22 +19,22 @@ const submitDraft = async ({
   defaultMeetingLink,
   extended,
 }) => {
-  const [avatarUrl, coverUrl] = await Promise.all([
-    uploadImageIfPresent(avatarFile),
-    uploadImageIfPresent(coverFile),
+  const [avatarBase64, coverBase64] = await Promise.all([
+    toBase64IfPresent(avatarFile),
+    toBase64IfPresent(coverFile),
   ]);
 
   const extendedProfile = extended ? JSON.stringify(extended) : undefined;
 
   const res = await saveMentorProfileDraft({
     ...(profile ?? {}),
-    avatarUrl: avatarUrl ?? undefined,
+    avatarBase64: avatarBase64 ?? undefined,
     defaultMeetingLink: defaultMeetingLink || undefined,
     extendedProfile,
     expertiseTags: (expertiseTags ?? []).map((tag) => (tag ?? '').trim()).filter(Boolean),
   });
-  if (coverUrl) {
-    await apiClient.put('/users/me/cover', { coverUrl });
+  if (coverBase64) {
+    await apiClient.put('/users/me/cover', { coverBase64 });
   }
   return res?.data?.data ?? null;
 };

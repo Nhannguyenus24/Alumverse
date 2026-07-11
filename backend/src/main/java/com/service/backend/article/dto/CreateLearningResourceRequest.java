@@ -26,7 +26,9 @@ public class CreateLearningResourceRequest {
 
     private String description;
 
-    /** URL of an already-uploaded thumbnail (upload via /images/upload first). */
-    @URL
-    private String thumbnailUrl;
+    /**
+     * Base64-encoded thumbnail (optionally with a data URL header). When present it is converted
+     * to WebP and stored server-side.
+     */
+    private String thumbnailBase64;
 }

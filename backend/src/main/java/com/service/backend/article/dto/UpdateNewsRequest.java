@@ -24,9 +24,7 @@ public class UpdateNewsRequest {
     @NotBlank
     private String content;
 
-    @URL
-    private String thumbnailUrl;
-
+    /** Base64-encoded thumbnail. When present it replaces the current image; when absent the existing image is kept. */
     private String thumbnailBase64;
 
     private String topic;

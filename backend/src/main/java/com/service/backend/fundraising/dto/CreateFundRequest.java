@@ -41,10 +41,6 @@ public class CreateFundRequest {
     @Schema(example = "Nguyễn Văn A")
     private String managerName;
 
-    @Size(max = 255)
-    @Schema(example = "https://example.com/fund-logo.png")
-    private String logoUrl;
-
     @NotNull
     @Min(1)
     @Schema(example = "1")
@@ -68,7 +64,7 @@ public class CreateFundRequest {
     @Schema(example = "2026-12-31T23:59:59")
     private LocalDateTime timeEnded;
 
-    /** Optional base64-encoded fund logo. When present, backend uploads and stores the resulting URL. */
+    /** Optional base64-encoded fund logo. When present, backend converts it to WebP and stores it. */
     private String logoBase64;
 
     @Schema(example = "Học bổng sinh viên")
@@ -80,10 +76,13 @@ public class CreateFundRequest {
     private String managerEmail;
 
     /**
-     * Optional URL of the fund's attached document (e.g. establishment decision as pdf/doc/docx).
-     * The frontend uploads the file via /files/upload and sends the resulting URL here.
+     * Optional base64-encoded fund document (e.g. establishment decision as pdf/doc/docx). When
+     * present, the backend stores the file and persists the resulting URL. Requires
+     * {@link #fundDocumentFileName} for extension/type validation.
      */
-    @Size(max = 500)
-    @Schema(example = "https://example.com/funds/quyet-dinh-thanh-lap.pdf")
-    private String fundDocumentUrl;
+    private String fundDocumentBase64;
+
+    /** Original file name of {@link #fundDocumentBase64}; its extension drives type/size validation. */
+    @Size(max = 255)
+    private String fundDocumentFileName;
 }

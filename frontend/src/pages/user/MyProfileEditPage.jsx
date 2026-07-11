@@ -48,7 +48,6 @@ import {
   getJsonPayloadByteSize,
   MAX_JSON_PAYLOAD_BYTES,
   resolveMediaUrl,
-  useUploadImage,
   validateImageFile,
 } from '../../utils/imageUtils';
 import { extractMentorshipSkills, userSettingsApi } from '../../utils/api';
@@ -271,7 +270,7 @@ const UnifiedProfileEditPage = () => {
   const { updateProfile: updateBaseProfile, isPending: savingBase, errorMessage: baseError } = useUpdateProfile();
   const { updateProfile: updateMentorProfile, isPending: savingMentor, errorMessage: mentorError } = useUpdateMentorProfile();
 
-  const { uploadBase64, isPending: uploadingImage } = useUploadImage();
+  const [savingMedia, setSavingMedia] = useState(false);
 
   const [coverPreview, setCoverPreview] = useState(DEFAULT_COVER);
   const [coverFile, setCoverFile] = useState(null);
@@ -364,14 +363,14 @@ const UnifiedProfileEditPage = () => {
     }
     if (phoneError) return; // invalid phone — error already shown under field
     try {
+      setSavingMedia(true);
       let didUpdateMedia = false;
 
-      // Persist a newly-cropped avatar: upload the base64 data URL, then point
-      // the user's profile at the returned image URL.
+      // Persist a newly-cropped avatar: send the base64 data URL straight to the backend,
+      // which converts it to WebP, stores it, and returns the final image URL.
       if (avatarCrop.avatarUrl && avatarCrop.avatarUrl.startsWith('data:')) {
-        const avatarImageUrl = await uploadBase64(avatarCrop.avatarUrl);
+        const avatarImageUrl = await userSettingsApi.updateAvatar({ avatarBase64: avatarCrop.avatarUrl });
         if (avatarImageUrl) {
-          await userSettingsApi.updateAvatar(avatarImageUrl);
           setAuthUser({
             ...useAuthStore.getState().user,
             avatarUrl: avatarImageUrl,
@@ -405,9 +404,7 @@ const UnifiedProfileEditPage = () => {
             return;
           }
 
-          const uploadedCoverUrl = await uploadBase64(coverBase64);
-          if (!uploadedCoverUrl) throw new Error('empty_upload_response');
-          await userSettingsApi.updateCover(uploadedCoverUrl);
+          await userSettingsApi.updateCover({ coverBase64 });
           setCoverFile(null);
           didUpdateMedia = true;
         } catch (error) {
@@ -467,6 +464,8 @@ const UnifiedProfileEditPage = () => {
           t('profile:save_error', { defaultValue: 'Không thể lưu hồ sơ. Vui lòng thử lại.' }),
         { variant: 'error' },
       );
+    } finally {
+      setSavingMedia(false);
     }
   };
 
@@ -944,8 +943,8 @@ const UnifiedProfileEditPage = () => {
               </Button>
 
               {!isPendingMentorEdit && (
-                <Button variant="contained" onClick={handleSave} disabled={saving || uploadingImage}>
-                  {saving || uploadingImage ? t('profile:saving_btn') : t('profile:save_btn')}
+                <Button variant="contained" onClick={handleSave} disabled={saving || savingMedia}>
+                  {saving || savingMedia ? t('profile:saving_btn') : t('profile:save_btn')}
                 </Button>
               )}
             </Stack>

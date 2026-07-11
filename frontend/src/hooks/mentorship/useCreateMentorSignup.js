@@ -4,22 +4,20 @@ import { createMentorProfile } from '../../utils/api';
 import { fileToBase64 } from '../../utils/imageUtils';
 import useAuthStore from '../../stores/authStore';
 
-const uploadImageIfPresent = async (image) => {
+const toBase64IfPresent = async (image) => {
   if (!image) return null;
-  const base64 = typeof image === 'string' && image.startsWith('data:')
+  return typeof image === 'string' && image.startsWith('data:')
     ? image
     : await fileToBase64(image);
-  const res = await apiClient.post('/images/upload', { base64String: base64 });
-  return res?.data?.data ?? null;
 };
 
 /**
- * Submits the full mentor signup form:
- *   1. (optional) Upload avatar + cover images
- *   2. POST /mentor/profile — core profile + image URLs + meeting link +
- *      expertiseTags (priority-ordered, from CV + description extraction,
- *      confirmed at the review step). The backend normalizes these into the
- *      skills catalog (mentor_skills) used by the mentee "filter by skill".
+ * Submits the full mentor signup form in a single round-trip per resource:
+ *   1. POST /mentor/profile — core profile + avatar (as base64; the backend converts to
+ *      WebP and stores it) + meeting link + expertiseTags (priority-ordered, from CV +
+ *      description extraction, confirmed at the review step). The backend normalizes these
+ *      into the skills catalog (mentor_skills) used by the mentee "filter by skill".
+ *   2. (optional) PUT /users/me/cover with the cover as base64.
  */
 const submitMentorSignup = async ({
   profile,
@@ -29,22 +27,22 @@ const submitMentorSignup = async ({
   defaultMeetingLink,
   extended,
 }) => {
-  const [avatarUrl, coverUrl] = await Promise.all([
-    uploadImageIfPresent(avatarFile),
-    uploadImageIfPresent(coverFile),
+  const [avatarBase64, coverBase64] = await Promise.all([
+    toBase64IfPresent(avatarFile),
+    toBase64IfPresent(coverFile),
   ]);
 
   const extendedProfile = extended ? JSON.stringify(extended) : undefined;
 
   const profileRes = await createMentorProfile({
     ...profile,
-    avatarUrl: avatarUrl ?? undefined,
+    avatarBase64: avatarBase64 ?? undefined,
     defaultMeetingLink: defaultMeetingLink || undefined,
     extendedProfile,
     expertiseTags: (expertiseTags ?? []).map((tag) => (tag ?? '').trim()).filter(Boolean),
   });
-  if (coverUrl) {
-    await apiClient.put('/users/me/cover', { coverUrl });
+  if (coverBase64) {
+    await apiClient.put('/users/me/cover', { coverBase64 });
   }
   return profileRes?.data?.data ?? null;
 };

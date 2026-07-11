@@ -114,7 +114,7 @@ public class AdminEventService {
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND,
                         "Event not found with id: " + eventId)))
                 .flatMap(existing -> imageService.uploadBase64IfPresent(request.getBannerBase64())
-                        .defaultIfEmpty(request.getBannerUrl() == null ? "" : request.getBannerUrl())
+                        .defaultIfEmpty("")
                         .flatMap(bannerUrl -> {
                             existing.setTitle(request.getTitle());
                             existing.setDescription(request.getDescription());

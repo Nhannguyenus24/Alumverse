@@ -26,6 +26,7 @@ import com.service.backend.user.dao.UserProfileRepository;
 import com.service.backend.user.dao.PeerVerificationRepository;
 import com.service.backend.shared.entity.PeerVerification;
 import com.service.backend.shared.service.FileUploadService;
+import com.service.backend.shared.service.ImageService;
 import com.service.backend.shared.service.OCRService;
 import com.service.backend.shared.entity.UserNotificationSettings;
 
@@ -48,6 +49,7 @@ public class UserService {
     private final OrganizationRepository organizationRepository;
     private final PeerVerificationRepository peerVerificationRepository;
     private final FileUploadService fileUploadService;
+    private final ImageService imageService;
     private final NotificationService notificationService;
     private final OCRService ocrService;
 
@@ -363,26 +365,36 @@ public class UserService {
     }
 
     /**
-     * Update the current user's avatar. The caller uploads the image via
-     * {@code POST /api/images/upload} and passes the returned URL here.
+     * Update the current user's avatar. Accepts the raw image as base64 (converted to WebP and
+     * stored server-side) or, as a fallback, an already-uploaded image URL. Returns the final
+     * stored image URL so the caller can refresh its UI without an extra round-trip.
      */
-    public Mono<Void> updateMyAvatar(Long currentUserId, String avatarUrl) {
-        if (avatarUrl == null || avatarUrl.isBlank()) {
-            return Mono.error(new ApplicationException(ErrorCode.BAD_REQUEST, "Avatar URL is required"));
-        }
-        return authRepository.updateAvatarById(currentUserId.intValue(), avatarUrl.trim())
+    public Mono<String> updateMyAvatar(Long currentUserId, UpdateAvatarRequest request) {
+        return imageService.uploadBase64IfPresent(request.getAvatarBase64())
+                .switchIfEmpty(Mono.error(new ApplicationException(
+                        ErrorCode.BAD_REQUEST, "Avatar image is required")))
+                .flatMap(avatarUrl -> {
+                    String finalUrl = avatarUrl.trim();
+                    return authRepository.updateAvatarById(currentUserId.intValue(), finalUrl)
+                            .thenReturn(finalUrl);
+                })
                 .doOnSuccess(v -> logger.info("updateMyAvatar: userId={} updated", currentUserId));
     }
 
     /**
-     * Update the current user's cover. The caller uploads the image via
-     * {@code POST /api/images/upload} and passes the returned URL here.
+     * Update the current user's cover. Accepts the raw image as base64 (converted to WebP and
+     * stored server-side) or, as a fallback, an already-uploaded image URL. Returns the final
+     * stored image URL.
      */
-    public Mono<Void> updateMyCover(Long currentUserId, String coverUrl) {
-        if (coverUrl == null || coverUrl.isBlank()) {
-            return Mono.error(new ApplicationException(ErrorCode.BAD_REQUEST, "Cover URL is required"));
-        }
-        return authRepository.updateCoverById(currentUserId.intValue(), coverUrl.trim())
+    public Mono<String> updateMyCover(Long currentUserId, UpdateCoverRequest request) {
+        return imageService.uploadBase64IfPresent(request.getCoverBase64())
+                .switchIfEmpty(Mono.error(new ApplicationException(
+                        ErrorCode.BAD_REQUEST, "Cover image is required")))
+                .flatMap(coverUrl -> {
+                    String finalUrl = coverUrl.trim();
+                    return authRepository.updateCoverById(currentUserId.intValue(), finalUrl)
+                            .thenReturn(finalUrl);
+                })
                 .doOnSuccess(v -> logger.info("updateMyCover: userId={} updated", currentUserId));
     }
 

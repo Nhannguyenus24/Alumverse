@@ -34,7 +34,7 @@ public class NewsService {
                     String role = ctx.getT3();
                     boolean publishImmediately = "ADMIN".equalsIgnoreCase(role) || "STAFF".equalsIgnoreCase(role);
                     return imageService.uploadBase64IfPresent(request.getThumbnailBase64())
-                            .defaultIfEmpty(request.getThumbnailUrl() == null ? "" : request.getThumbnailUrl())
+                            .defaultIfEmpty("")
                             .flatMap(thumbnailUrl -> {
                                 News news = News.builder()
                                         .organizationId(orgId)
@@ -60,7 +60,7 @@ public class NewsService {
         return newsRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.NEWS_NOT_FOUND, "News not found with id: " + id)))
                 .flatMap(existing -> imageService.uploadBase64IfPresent(request.getThumbnailBase64())
-                        .defaultIfEmpty(request.getThumbnailUrl() == null ? "" : request.getThumbnailUrl())
+                        .defaultIfEmpty("")
                         .flatMap(thumbnailUrl -> {
                             existing.setTitle(request.getTitle());
                             existing.setSlug(request.getSlug());
