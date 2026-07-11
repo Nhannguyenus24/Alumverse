@@ -4,6 +4,7 @@ import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -36,7 +37,7 @@ public class EmailService {
     @Value("${app.mail.from-name}")
     private String fromName;
 
-    public EmailService(JavaMailSender mailSender, TemplateEngine templateEngine, MeterRegistry meterRegistry,
+    public EmailService(JavaMailSender mailSender, @Qualifier("emailTemplateEngine") TemplateEngine templateEngine, MeterRegistry meterRegistry,
                         EmailTemplateR2dbcRepository emailTemplateRepository) {
         this.mailSender = mailSender;
         this.templateEngine = templateEngine;

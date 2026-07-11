@@ -6,6 +6,7 @@ import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.thymeleaf.TemplateEngine;
@@ -34,7 +35,7 @@ public class AdminEmailTemplateService {
     private final EmailTemplateR2dbcRepository repository;
     private final TemplateEngine templateEngine;
 
-    public AdminEmailTemplateService(EmailTemplateR2dbcRepository repository, TemplateEngine templateEngine) {
+    public AdminEmailTemplateService(EmailTemplateR2dbcRepository repository, @Qualifier("emailTemplateEngine") TemplateEngine templateEngine) {
         this.repository = repository;
         this.templateEngine = templateEngine;
     }
