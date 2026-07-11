@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   Avatar,
+  Badge,
   Box,
   Button,
   Fade,
@@ -24,6 +25,7 @@ import MessagesPreviewPanel from './MessagesPreviewPanel';
 import { useMessagesPreviewMenu } from '../hooks/chat/useMessagesPreviewMenu';
 import { useCanAccessChat } from '../hooks/chat/useCanAccessChat';
 import { useTranslation } from 'react-i18next';
+import useChatUnreadStore from '../stores/chatUnreadStore';
 
 const pulse = keyframes`
   0%, 100% {
@@ -95,6 +97,8 @@ export default function ChatFloatingButton({ isOpen = false, onOpen, onClose }) 
   const menuOpen = Boolean(anchorEl);
   const { menuActionsRef, slotProps, updateMenuPosition } = useMessagesPreviewMenu({ mb: 1.5 });
   const { canAccessChat } = useCanAccessChat();
+  const unreadCount = useChatUnreadStore((state) => state.unreadCount);
+  const resetUnread = useChatUnreadStore((state) => state.reset);
 
   useEffect(() => {
     if (!isOpen) {
@@ -107,6 +111,7 @@ export default function ChatFloatingButton({ isOpen = false, onOpen, onClose }) 
     onOpen?.();
     if (isAuthenticated) {
       if (!canAccessChat) return;
+      resetUnread();
       setAnchorEl(event.currentTarget);
       return;
     }
@@ -143,19 +148,27 @@ export default function ChatFloatingButton({ isOpen = false, onOpen, onClose }) 
         title={isBlocked ? t('verification_required_tooltip') : t('chat_tooltip')}
         placement="left"
       >
-        <AnimatedAvatar
-          onClick={handleClick}
-          isAnimating={!isBlocked && !showLoginPanel && !menuOpen}
-          sx={{
-            cursor: isBlocked ? 'not-allowed' : 'pointer',
-            opacity: isBlocked ? 0.6 : 1,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
+        <Badge
+          badgeContent={isBlocked ? 0 : unreadCount}
+          color="error"
+          max={99}
+          overlap="circular"
+          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
         >
-          <ChatBubbleOutlineIcon sx={{ fontSize: 28, color: 'common.white' }} />
-        </AnimatedAvatar>
+          <AnimatedAvatar
+            onClick={handleClick}
+            isAnimating={!isBlocked && !showLoginPanel && !menuOpen}
+            sx={{
+              cursor: isBlocked ? 'not-allowed' : 'pointer',
+              opacity: isBlocked ? 0.6 : 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <ChatBubbleOutlineIcon sx={{ fontSize: 28, color: 'common.white' }} />
+          </AnimatedAvatar>
+        </Badge>
       </Tooltip>
 
       {isAuthenticated && (

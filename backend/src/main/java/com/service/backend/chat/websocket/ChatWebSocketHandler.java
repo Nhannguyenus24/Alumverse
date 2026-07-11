@@ -6,6 +6,7 @@ import com.service.backend.chat.dao.ChatGroupMemberRepository;
 import com.service.backend.chat.service.ChatService;
 import com.service.backend.shared.dao.UserDisplayInfo;
 import com.service.backend.user.dao.UserProfileRepository;
+import com.service.backend.shared.service.SseService;
 import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.utils.JwtUtils;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -36,6 +37,7 @@ public class ChatWebSocketHandler implements WebSocketHandler {
     private final ChatGroupMemberRepository chatGroupMemberRepository;
     private final UserProfileRepository userProfileRepository;
     private final JwtUtils jwtUtils;
+    private final SseService sseService;
 
     // Map: sessionId -> memberId
     private final Map<String, Long> sessionToMember = new ConcurrentHashMap<>();
@@ -48,11 +50,13 @@ public class ChatWebSocketHandler implements WebSocketHandler {
             ChatGroupMemberRepository chatGroupMemberRepository,
             UserProfileRepository userProfileRepository,
             JwtUtils jwtUtils,
+            SseService sseService,
             MeterRegistry meterRegistry) {
         this.chatService = chatService;
         this.chatGroupMemberRepository = chatGroupMemberRepository;
         this.userProfileRepository = userProfileRepository;
         this.jwtUtils = jwtUtils;
+        this.sseService = sseService;
 
         // Real-time gauge of currently connected WebSocket sessions and active chat groups.
         Gauge.builder("chat.websocket.active_sessions", sessionToMember, Map::size)
@@ -187,11 +191,32 @@ public class ChatWebSocketHandler implements WebSocketHandler {
                         .defaultIfEmpty(UserDisplayInfo.builder()
                                 .userId(savedMessage.getSenderMemberId().intValue())
                                 .build())
-                        .flatMap(senderInfo -> broadcastMessage(groupId, savedMessage, senderInfo)))
+                        .flatMap(senderInfo -> broadcastMessage(groupId, savedMessage, senderInfo)
+                                .then(notifyNewMessageViaSse(groupId, memberId, savedMessage, senderInfo))))
                 .onErrorResume(error -> {
                     log.error("Error sending message", error);
                     return sendError(session, "Failed to send message: " + error.getMessage());
                 });
+    }
+
+    /**
+     * Notify every group member except the sender over their global SSE stream so the
+     * message button badge updates even when the recipient is not viewing this group.
+     */
+    private Mono<Void> notifyNewMessageViaSse(Long groupId, Long senderMemberId,
+            ChatMessage message, UserDisplayInfo senderInfo) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("groupId", groupId);
+        payload.put("messageId", message.getId());
+        payload.put("senderId", message.getSenderMemberId());
+        payload.put("senderName", senderInfo.getFullName());
+        payload.put("preview", message.getContent());
+        payload.put("createdAt", message.getCreatedAt());
+
+        return chatGroupMemberRepository.findByGroupId(groupId)
+                .filter(member -> !senderMemberId.equals(member.getMemberId()))
+                .doOnNext(member -> sseService.sendToUser(member.getMemberId(), "new-message", payload))
+                .then();
     }
 
     private Mono<Void> handleLeaveGroup(WebSocketSession session, JsonNode json) {
