@@ -71,6 +71,11 @@ class _FundraisingDonatePageState extends ConsumerState<FundraisingDonatePage> {
       return;
     }
 
+    // Xác nhận thông tin người liên hệ quỹ + tài khoản nhận trước khi tạo
+    // donation và hiển thị QR. Hủy thì giữ nguyên form.
+    final confirmed = await _confirmDonation();
+    if (!confirmed || !mounted) return;
+
     setState(() => _submitting = true);
     try {
       final rawId = ref.read(authStateProvider).valueOrNull?.user?.id;
@@ -110,6 +115,76 @@ class _FundraisingDonatePageState extends ConsumerState<FundraisingDonatePage> {
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
+  }
+
+  Future<bool> _confirmDonation() async {
+    final detail = ref.read(fundDetailProvider(widget.fundId)).valueOrNull;
+    final info = detail?.receivingInfo;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('donation.confirm_payment_title'.tr()),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('donation.confirm_payment_desc'.tr()),
+              const SizedBox(height: 16),
+              Text(
+                'donation.fund_contact'.tr(),
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 4),
+              _confirmRow('donation.manager'.tr(), detail?.managerName),
+              _confirmRow('donation.manager_email'.tr(), detail?.managerEmail),
+              const SizedBox(height: 16),
+              Text(
+                'donation.receiving_account'.tr(),
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 4),
+              _confirmRow('donation.receiving_bank'.tr(), info?.bankName),
+              _confirmRow('donation.account_name'.tr(), info?.accountName),
+              _confirmRow('donation.account_number'.tr(), info?.accountNumber),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('common.cancel'.tr()),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(
+              'common.confirm'.tr(),
+              style: const TextStyle(color: AppColors.primary),
+            ),
+          ),
+        ],
+      ),
+    );
+    return confirmed == true;
+  }
+
+  Widget _confirmRow(String label, String? value) {
+    final display = (value == null || value.isEmpty) ? '—' : value;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 2),
+      child: RichText(
+        text: TextSpan(
+          style: DefaultTextStyle.of(context).style,
+          children: [
+            TextSpan(text: '$label: '),
+            TextSpan(
+              text: display,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   String? _trimOrNull(TextEditingController c) {
