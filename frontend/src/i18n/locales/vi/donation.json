@@ -178,5 +178,13 @@
   "connect_btn": "Liên hệ ngay",
   "connect_drawer_title": "Người phụ trách quỹ",
   "connect_drawer_note": "Đây là yêu cầu kết nối — người phụ trách sẽ nhận và phản hồi, không phải tin nhắn tức thời.",
-  "manager_is_you": "Bạn là người phụ trách quỹ này"
+  "manager_is_you": "Bạn là người phụ trách quỹ này",
+  "confirm_donation_title": "Xác nhận thông tin quyên góp",
+  "confirm_donation_desc": "Vui lòng kiểm tra thông tin người liên hệ quỹ và tài khoản nhận trước khi tiếp tục thanh toán.",
+  "confirm_donation_contact_heading": "Người liên hệ quỹ",
+  "confirm_donation_account_heading": "Tài khoản ngân hàng nhận",
+  "confirm_donation_bank_label": "Ngân hàng",
+  "confirm_donation_account_name_label": "Tên tài khoản",
+  "confirm_donation_account_number_label": "Số tài khoản",
+  "confirm_donation_confirm": "Tiếp tục thanh toán"
 }

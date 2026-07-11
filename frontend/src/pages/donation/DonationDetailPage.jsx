@@ -13,6 +13,8 @@ import { useAuth } from "../../hooks/useAuth";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
 import Breadcrumb from "../../components/Breadcrumb";
 import { ScrollReveal } from "../../components/animations/ScrollReveal";
+import ConfirmDialog from "../../components/ConfirmDialog";
+import { useSupportedBanks } from "../../hooks/fundraising/useSupportedBanks";
 
 const getDonationSchema = (t) => z.object({
   amountOption: z.string().min(1, t('donation:amount_required')),
@@ -115,6 +117,11 @@ function DonationContributionForm({ fundDetail }) {
   const [checkoutUrl, setCheckoutUrl] = useState("");
   const [isCheckoutPopupOpen, setIsCheckoutPopupOpen] = useState(false);
   const [isQrFailed, setIsQrFailed] = useState(false);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [pendingData, setPendingData] = useState(null);
+
+  const { getBankLabel } = useSupportedBanks();
+  const receivingInfo = fundDetail?.fundReceivingInfo;
 
   const donationSchema = useMemo(() => getDonationSchema(t), [t]);
 
@@ -128,7 +135,21 @@ function DonationContributionForm({ fundDetail }) {
   const selectedAmountOption = watch("amountOption");
   const isAnonymous = watch("isAnonymous");
 
-  const onSubmit = async (data) => {
+  // Bước 1: form hợp lệ -> mở dialog xác nhận thông tin quỹ + tài khoản nhận,
+  // chưa gọi API. Người dùng bấm Confirm mới thực sự tạo donation + hiện QR.
+  const openConfirm = (data) => {
+    setSubmitError("");
+    setPendingData(data);
+    setIsConfirmOpen(true);
+  };
+
+  const handleConfirmDonation = () => {
+    if (pendingData) {
+      submitDonation(pendingData);
+    }
+  };
+
+  const submitDonation = async (data) => {
     setSubmitError("");
     setIsSubmitting(true);
     try {
@@ -158,12 +179,13 @@ function DonationContributionForm({ fundDetail }) {
       setSubmitError(error?.response?.data?.message ?? error?.message ?? t('error_create_donation'));
     } finally {
       setIsSubmitting(false);
+      setIsConfirmOpen(false);
     }
   };
 
   return (
     <Card variant="outlined" sx={{ px: { xs: 2.5, md: 3.2 }, py: { xs: 2.5, md: 3.2 }, mb: 3, maxWidth: 720, mx: "auto" }}>
-      <Box component="form" onSubmit={handleSubmit(onSubmit)}>
+      <Box component="form" onSubmit={handleSubmit(openConfirm)}>
         <ScrollReveal><Controller
           name="isAnonymous"
           control={control}
@@ -353,6 +375,45 @@ function DonationContributionForm({ fundDetail }) {
           </Typography>
         </ScrollReveal>
       </Box>
+      <ConfirmDialog
+        open={isConfirmOpen}
+        title={t('confirm_donation_title')}
+        confirmText={t('confirm_donation_confirm')}
+        cancelText={t('close_fund_cancel')}
+        loading={isSubmitting}
+        onConfirm={handleConfirmDonation}
+        onCancel={() => setIsConfirmOpen(false)}
+        message={(
+          <Box component="span" sx={{ display: 'block', color: 'text.primary' }}>
+            <Box component="span" sx={{ display: 'block', mb: 2 }}>
+              {t('confirm_donation_desc')}
+            </Box>
+
+            <Box component="span" sx={{ display: 'block', fontWeight: 700, mb: 0.5 }}>
+              {t('confirm_donation_contact_heading')}
+            </Box>
+            <Box component="span" sx={{ display: 'block' }}>
+              {t('manager_label')}: <strong>{fundDetail?.managerName || '—'}</strong>
+            </Box>
+            <Box component="span" sx={{ display: 'block', mb: 2 }}>
+              {t('manager_email_label')}: <strong>{fundDetail?.managerEmail || '—'}</strong>
+            </Box>
+
+            <Box component="span" sx={{ display: 'block', fontWeight: 700, mb: 0.5 }}>
+              {t('confirm_donation_account_heading')}
+            </Box>
+            <Box component="span" sx={{ display: 'block' }}>
+              {t('confirm_donation_bank_label')}: <strong>{getBankLabel(receivingInfo?.bankName)}</strong>
+            </Box>
+            <Box component="span" sx={{ display: 'block' }}>
+              {t('confirm_donation_account_name_label')}: <strong>{receivingInfo?.accountName || '—'}</strong>
+            </Box>
+            <Box component="span" sx={{ display: 'block' }}>
+              {t('confirm_donation_account_number_label')}: <strong>{receivingInfo?.accountNumber || '—'}</strong>
+            </Box>
+          </Box>
+        )}
+      />
       <Dialog open={isCheckoutPopupOpen} onClose={() => setIsCheckoutPopupOpen(false)} fullWidth maxWidth="xs">
         <DialogTitle sx={{ color: "primary.main", fontWeight: 800 }}>{t('checkout_dialog_title')}</DialogTitle>
         <DialogContent>
