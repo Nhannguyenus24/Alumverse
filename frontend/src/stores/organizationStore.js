@@ -67,6 +67,20 @@ const useOrganizationStore = create((set) => ({
   ...initialState,
 
   setOrganization: (organization) => set({ organization: normalizeOrganization(organization) }),
+
+  /**
+   * Replace the current organization's feature config in place. Driven by the
+   * `feature-toggled` SSE event so an admin toggling a feature is reflected live
+   * without a page reload. Ignored when no organization is loaded or the event
+   * targets a different organization.
+   */
+  updateFeaturesConfig: (organizationId, featuresConfig) => set((state) => {
+    const org = state.organization;
+    if (!org) return {};
+    if (organizationId != null && Number(org.id) !== Number(organizationId)) return {};
+    return { organization: { ...org, featuresConfig } };
+  }),
+
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),
   setStatusCode: (statusCode) => set({ statusCode }),
