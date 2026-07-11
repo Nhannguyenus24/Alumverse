@@ -21,6 +21,7 @@ import {
 } from "../../components/animations/ScrollReveal";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
 import { useAuth } from "../../hooks/useAuth";
+import useAuthStore from "../../stores/authStore";
 import { useOrganization } from "../../hooks/useOrganization";
 import { fileToBase64 } from "../../utils/imageUtils";
 import { refreshSessionAccessToken, syncAuthStoreFromAccessToken } from "../../utils/axios";
@@ -307,6 +308,12 @@ const OrganizationRegistrationPage = () => {
         } catch (refreshError) {
           console.warn("Could not refresh auth session after verification submit", refreshError);
         }
+
+        // Reflect the submitted request immediately (pending = level 1) so the whole app
+        // updates without waiting for the next token refresh to carry the new level.
+        // Set last (after the refresh above) so it wins, and never downgrade an existing level.
+        const currentLevel = Number(useAuthStore.getState().verificationLevel ?? 0);
+        useAuthStore.getState().setVerificationLevel(Math.max(1, currentLevel));
 
         navigate("/");
       }
