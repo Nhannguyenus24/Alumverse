@@ -2,6 +2,7 @@ package com.service.backend.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 import org.thymeleaf.templatemode.TemplateMode;
@@ -11,8 +12,9 @@ import org.thymeleaf.templateresolver.StringTemplateResolver;
 @Configuration
 public class EmailConfig {
 
-    @Bean
-    public TemplateEngine emailTemplateEngine() {
+    @Primary
+    @Bean(name = "templateEngine")
+    public SpringTemplateEngine emailTemplateEngine() {
         SpringTemplateEngine engine = new SpringTemplateEngine();
         // Thứ tự resolver quan trọng:
         // 1) ClassLoaderTemplateResolver: khi truyền vào tên template (vd "otpVerification"),
