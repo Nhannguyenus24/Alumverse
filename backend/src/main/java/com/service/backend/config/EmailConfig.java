@@ -12,8 +12,7 @@ import org.thymeleaf.templateresolver.StringTemplateResolver;
 @Configuration
 public class EmailConfig {
 
-    @Primary
-    @Bean(name = "templateEngine")
+    @Bean(name = "emailTemplateEngine")
     public SpringTemplateEngine emailTemplateEngine() {
         SpringTemplateEngine engine = new SpringTemplateEngine();
         // Thứ tự resolver quan trọng:
