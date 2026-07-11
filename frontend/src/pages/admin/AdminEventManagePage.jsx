@@ -282,36 +282,6 @@ const AdminEventManagePage = () => {
     }
   };
 
-  const handleExportExcel = async () => {
-    setIsExporting(true);
-    try {
-      const response = await eventApi.getTicketsByEvent(eventId, { limit: 100000 });
-      const data = response?.items || [];
-      
-      const exportData = data.map((row, index) => ({
-        'STT': index + 1,
-        'Mã Vé': row.ticketCode || '—',
-        'Tên Người Dùng': row.attendeeName || row.memberName || row.guestName || memberFallback(row.memberId),
-        'Email': row.attendeeEmail || row.memberEmail || row.guestEmail || row.email || '—',
-        'Trạng Thái': getTicketStatusChip(t, row.status).label,
-        'Ngày Đăng Ký': row.registeredAt ? formatDateTime(row.registeredAt) : '—',
-        'Ngày Check-in': row.checkedInAt ? formatDateTime(row.checkedInAt) : '—',
-      }));
-
-      const worksheet = XLSX.utils.json_to_sheet(exportData);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Participants');
-      
-      XLSX.writeFile(workbook, `Event_${eventId}_Participants.xlsx`);
-      enqueueSnackbar(t('admin:export_success', 'Xuất file thành công'), { variant: 'success' });
-    } catch (err) {
-      console.error(err);
-      enqueueSnackbar(t('admin:export_failed', 'Xuất file thất bại'), { variant: 'error' });
-    } finally {
-      setIsExporting(false);
-    }
-  };
-
   const statTiles = stats ? [
     { label: t('event:stat_registered'), value: stats.registeredCount ?? 0, icon: <ConfirmationNumberOutlinedIcon /> },
     { label: t('event:stat_checked_in'), value: stats.checkedInCount ?? 0, icon: <HowToRegOutlinedIcon /> },
@@ -536,32 +506,6 @@ const AdminEventManagePage = () => {
           loading={ticketsLoading}
           emptyMessage={t('event:tickets_empty')}
           filters={(
-            <Stack direction="row" spacing={1} alignItems="center">
-              <TextField
-                select
-                size="small"
-                label={t('admin:col_status')}
-                value={ticketStatus}
-                onChange={(e) => { setTicketStatus(e.target.value); setTicketsPage(0); }}
-                sx={{ minWidth: 180 }}
-              >
-                <MenuItem value="">{t('common:all')}</MenuItem>
-                {['PENDING', 'ISSUED', 'REGISTERED', 'CHECKED_IN', 'CANCELLED'].map((status) => (
-                  <MenuItem key={status} value={status}>
-                    {getTicketStatusChip(t, status).label}
-                  </MenuItem>
-                ))}
-              </TextField>
-              <Button
-                variant="outlined"
-                startIcon={isExporting ? <CircularProgress size={20} color="inherit" /> : <FileDownloadOutlinedIcon />}
-                onClick={handleExportExcel}
-                disabled={isExporting}
-                sx={{ height: 40 }}
-              >
-                {t('admin:export_excel', 'Export Excel')}
-              </Button>
-            </Stack>
             <Stack direction="row" spacing={1} alignItems="center">
               <TextField
                 select
