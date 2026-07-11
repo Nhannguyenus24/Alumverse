@@ -2,7 +2,12 @@ package com.service.backend.event.service;
 
 import com.service.backend.shared.entity.*;
 import com.service.backend.user.dao.UserProfileRepository;
-import com.service.backend.event.dao.IEventRepository;
+import com.service.backend.event.dao.EventR2dbcRepository;
+import com.service.backend.event.dao.EventInterestR2dbcRepository;
+import com.service.backend.event.dao.EventTicketR2dbcRepository;
+import com.service.backend.event.dao.EventInvitationR2dbcRepository;
+import com.service.backend.event.dao.EventEmailLogR2dbcRepository;
+import com.service.backend.event.dao.EventQuestionR2dbcRepository;
 import com.service.backend.event.dto.*;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.enums.ErrorCode;
@@ -16,6 +21,7 @@ import com.service.backend.shared.service.EmailService;
 import com.service.backend.shared.service.ImageService;
 import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.utils.SecurityUtils;
+import com.service.backend.shared.utils.PaginationHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -30,7 +36,12 @@ import java.util.*;
 @Slf4j
 public class EventService {
 
-    private final IEventRepository eventRepository;
+    private final EventR2dbcRepository eventRepo;
+    private final EventInterestR2dbcRepository interestRepo;
+    private final EventTicketR2dbcRepository ticketRepo;
+    private final EventInvitationR2dbcRepository invitationRepo;
+    private final EventEmailLogR2dbcRepository emailLogRepo;
+    private final EventQuestionR2dbcRepository questionRepo;
     private final ImageService imageService;
     private final EmailService emailService;
     private final NotificationService notificationService;
@@ -77,7 +88,7 @@ public class EventService {
                                         .creatorMemberId(userId)
                                         .organizationId(orgId)
                                         .build();
-                                return eventRepository.createEvent(event);
+                                return this.createEvent(event);
                             });
                 });
     }
@@ -87,7 +98,7 @@ public class EventService {
                 .flatMap(ctx -> {
                     Long currentUserId = ctx.getT1();
                     boolean isAdmin = ctx.getT2();
-                    return eventRepository.findEventById(eventId)
+                    return this.findEventById(eventId)
                             .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId)))
                             .flatMap(existingEvent -> {
                                 if (!isAdmin && !existingEvent.getCreatorMemberId().equals(currentUserId)) {
@@ -109,7 +120,7 @@ public class EventService {
                                                     .topic(request.getTopic() != null ? request.getTopic() : existingEvent.getTopic())
                                                     .requiresCheckIn(request.getRequiresCheckIn() != null ? request.getRequiresCheckIn() : existingEvent.getRequiresCheckIn())
                                                     .build();
-                                            return eventRepository.updateEvent(eventId, updatedEvent);
+                                            return this.updateEvent(eventId, updatedEvent);
                                         });
                             });
                 });
@@ -120,43 +131,43 @@ public class EventService {
                 .flatMap(ctx -> {
                     Long currentUserId = ctx.getT1();
                     boolean isAdmin = ctx.getT2();
-                    return eventRepository.findEventById(eventId)
+                    return this.findEventById(eventId)
                             .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId)))
                             .flatMap(existingEvent -> {
                                 if (!isAdmin && !existingEvent.getCreatorMemberId().equals(currentUserId)) {
                                     return Mono.error(new ApplicationException(ErrorCode.FORBIDDEN));
                                 }
-                                return eventRepository.deleteEvent(eventId);
+                                return this.daoDeleteEvent(eventId);
                             });
                 });
     }
 
     public Mono<Event> getEventById(Long eventId) {
-        return eventRepository.findEventById(eventId)
+        return this.findEventById(eventId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId)));
     }
 
     public Mono<PaginatedResponse<Event>> getEventsByOrganization(int page, int limit) {
         return SecurityUtils.getCurrentOrganizationId()
-                .flatMap(orgId -> eventRepository.findEventsByOrganization(orgId.longValue(), page, limit));
+                .flatMap(orgId -> this.findEventsByOrganization(orgId.longValue(), page, limit));
     }
 
     public Mono<Event> publishEvent(Long eventId) {
-        return eventRepository.findEventById(eventId)
+        return this.findEventById(eventId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId)))
-                .flatMap(e -> eventRepository.publishEvent(eventId));
+                .flatMap(e -> this.daoPublishEvent(eventId));
     }
 
     public Mono<Event> unpublishEvent(Long eventId) {
-        return eventRepository.findEventById(eventId)
+        return this.findEventById(eventId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId)))
-                .flatMap(e -> eventRepository.unpublishEvent(eventId));
+                .flatMap(e -> this.daoUnpublishEvent(eventId));
     }
 
     public Mono<PaginatedResponse<Event>> getUpcomingEvents(Long organizationId, int page, int limit) {
         String cacheKey = "upcoming_events_org_" + organizationId + "_page_" + page + "_limit_" + limit;
         return cacheUtils.getOrCompute("event_cache", cacheKey, java.time.Duration.ofMinutes(5), () ->
-                eventRepository.findUpcomingEvents(organizationId, page, limit)
+                this.findUpcomingEvents(organizationId, page, limit)
                         .doOnNext(res -> log.info("Fetched {} upcoming events for organization {}: {}", res.getItems().size(), organizationId, JsonUtils.toJson(res.getItems())))
         );
     }
@@ -164,17 +175,17 @@ public class EventService {
     public Mono<PaginatedResponse<Event>> getUpcomingEvents(int page, int limit) {
         String cacheKey = "upcoming_events_global_page_" + page + "_limit_" + limit;
         return cacheUtils.getOrCompute("event_cache", cacheKey, java.time.Duration.ofMinutes(5), () ->
-                eventRepository.findUpcomingEvents(page, limit)
+                this.findUpcomingEvents(page, limit)
                         .doOnNext(res -> log.info("Fetched {} upcoming events globally: {}", res.getItems().size(), JsonUtils.toJson(res.getItems())))
         );
     }
 
     public Mono<PaginatedResponse<Event>> getPastEvents(Long organizationId, int page, int limit) {
-        return eventRepository.findPastEvents(organizationId, page, limit);
+        return this.findPastEvents(organizationId, page, limit);
     }
 
     public Mono<PaginatedResponse<Event>> searchEvents(Long organizationId, String keyword, int page, int limit) {
-        return eventRepository.searchEvents(organizationId, keyword, page, limit);
+        return this.daoSearchEvents(organizationId, keyword, page, limit);
     }
 
     // ─── Interest ─────────────────────────────────────────────────────────────
@@ -182,35 +193,35 @@ public class EventService {
     public Mono<EventInterest> addInterest(Long eventId) {
         return SecurityUtils.getCurrentUserId().flatMap(memberId ->
                 Mono.zip(
-                        eventRepository.findEventById(eventId)
+                        this.findEventById(eventId)
                                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId))),
-                        eventRepository.checkUserInterest(eventId, memberId)
+                        this.checkUserInterest(eventId, memberId)
                 ).flatMap(tuple -> {
                     Boolean already = tuple.getT2();
                     if (already) return Mono.error(new ApplicationException(ErrorCode.ALREADY_INTERESTED, "Already interested"));
-                    return eventRepository.addEventInterest(eventId, memberId);
+                    return this.addEventInterest(eventId, memberId);
                 }));
     }
 
     public Mono<Boolean> removeInterest(Long eventId) {
         return SecurityUtils.getCurrentUserId().flatMap(memberId ->
-                eventRepository.findEventById(eventId)
+                this.findEventById(eventId)
                         .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId)))
-                        .flatMap(e -> eventRepository.removeEventInterest(eventId, memberId)));
+                        .flatMap(e -> this.removeEventInterest(eventId, memberId)));
     }
 
     public Mono<Boolean> checkInterest(Long eventId) {
         return SecurityUtils.getCurrentUserId()
-                .flatMap(memberId -> eventRepository.checkUserInterest(eventId, memberId));
+                .flatMap(memberId -> this.checkUserInterest(eventId, memberId));
     }
 
     public Mono<Boolean> checkRegistered(Long eventId) {
         return SecurityUtils.getCurrentUserId()
-                .flatMap(memberId -> eventRepository.checkUserRegistered(eventId, memberId));
+                .flatMap(memberId -> this.checkUserRegistered(eventId, memberId));
     }
 
     public Mono<PaginatedResponse<EventInterestDetailResponse>> getEventInterests(Long eventId, int page, int limit) {
-        return eventRepository.findEventInterests(eventId, page, limit)
+        return this.findEventInterests(eventId, page, limit)
                 .flatMap(this::mapInterestPageWithMembers);
     }
 
@@ -244,7 +255,7 @@ public class EventService {
                                                 .expiresAt(LocalDateTime.now().plusDays(7))
                                                 .build();
 
-                                        return eventRepository.createInvitation(invitation)
+                                        return this.createInvitation(invitation)
                                                 .flatMap(inv -> sendInvitationEmail(event, inv)
                                                         .then(notifyInvitation(event, inv)))
                                                 .thenReturn(1);
@@ -272,7 +283,7 @@ public class EventService {
     // ─── Step 2.1: Confirm invitation via website ─────────────────────────────
 
     public Mono<EventTicket> confirmInvitation(String token) {
-        return eventRepository.findInvitationByToken(token)
+        return this.findInvitationByToken(token)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.INVITATION_NOT_FOUND, "Invitation not found")))
                 .flatMap(invitation -> {
                     if (invitation.getStatus() == Status.CONFIRMED || invitation.getStatus() == Status.DECLINED) {
@@ -281,8 +292,8 @@ public class EventService {
                     if (invitation.getExpiresAt() != null && invitation.getExpiresAt().isBefore(LocalDateTime.now())) {
                         return Mono.error(new ApplicationException(ErrorCode.INVITATION_EXPIRED, "Invitation has expired"));
                     }
-                    return eventRepository.confirmInvitation(invitation.getId())
-                            .flatMap(confirmed -> eventRepository.findEventById(confirmed.getEventId())
+                    return this.confirmInvitation(invitation.getId())
+                            .flatMap(confirmed -> this.findEventById(confirmed.getEventId())
                                     .flatMap(event -> {
                                         EventTicket ticket = EventTicket.builder()
                                                 .eventId(confirmed.getEventId())
@@ -300,9 +311,9 @@ public class EventService {
     public Mono<EventTicket> registerForEvent(Long eventId, RegisterTicketRequest request) {
         return SecurityUtils.getCurrentUserId().flatMap(memberId ->
                 Mono.zip(
-                        eventRepository.findEventById(eventId)
+                        this.findEventById(eventId)
                                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId))),
-                        eventRepository.hasRegistered(eventId, memberId)
+                        this.hasRegistered(eventId, memberId)
                 ).flatMap(tuple -> {
                     Event event = tuple.getT1();
                     Boolean already = tuple.getT2();
@@ -324,7 +335,7 @@ public class EventService {
     }
 
     private Mono<List<Map<String, Object>>> validateRegistrationAnswers(Long eventId, List<AnswerItem> answers) {
-        return eventRepository.findQuestionsByEvent(eventId).collectList()
+        return this.findQuestionsByEvent(eventId).collectList()
                 .flatMap(questions -> {
                     if (questions.isEmpty()) {
                         return Mono.just(answers == null ? List.of() : toAnswerMaps(answers));
@@ -407,27 +418,27 @@ public class EventService {
             ticket.setRegistrationAnswersFromObject(answersJson);
         }
         if (event.getMaxCapacity() != null && event.getMaxCapacity() > 0) {
-            return eventRepository.countRegisteredTickets(event.getId())
+            return this.countRegisteredTickets(event.getId())
                     .flatMap(count -> {
                         if (count >= event.getMaxCapacity()) {
                             return Mono.error(new ApplicationException(ErrorCode.EVENT_FULLY_BOOKED, "Event is fully booked"));
                         }
-                        return eventRepository.registerTicket(ticket);
+                        return this.registerTicket(ticket);
                     });
         }
-        return eventRepository.registerTicket(ticket);
+        return this.registerTicket(ticket);
     }
 
     // ─── Step 3: Bulk reminder email ─────────────────────────────────────────
 
     public Mono<Integer> sendReminderEmails(Long eventId, ReminderEmailRequest request) {
         return SecurityUtils.getCurrentUserId().flatMap(adminId ->
-                eventRepository.findEventById(eventId)
+                this.findEventById(eventId)
                         .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId)))
                         .flatMap(event -> {
                             Flux<EventTicket> ticketFlux = request.getTicketIds() != null && !request.getTicketIds().isEmpty()
-                                    ? eventRepository.findTicketsByIds(request.getTicketIds())
-                                    : eventRepository.findIssuedTicketsByEvent(eventId);
+                                    ? this.findTicketsByIds(request.getTicketIds())
+                                    : this.findIssuedTicketsByEvent(eventId);
 
                             return ticketFlux
                                     .filter(t -> t.getGuestEmail() != null && !t.getGuestEmail().isBlank())
@@ -451,7 +462,7 @@ public class EventService {
                                                 .templateName("eventReminder")
                                                 .recipientCount(count)
                                                 .build();
-                                        return eventRepository.saveEmailLog(log).thenReturn(count);
+                                        return this.saveEmailLog(log).thenReturn(count);
                                     });
                         }));
     }
@@ -460,9 +471,9 @@ public class EventService {
 
     public Mono<Integer> sendIssuedTicketEmails(Long eventId) {
         return SecurityUtils.getCurrentUserId().flatMap(adminId ->
-                eventRepository.findEventById(eventId)
+                this.findEventById(eventId)
                         .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId)))
-                        .flatMap(event -> eventRepository.findIssuedTicketsByEvent(eventId)
+                        .flatMap(event -> this.findIssuedTicketsByEvent(eventId)
                                 .filter(t -> t.getGuestEmail() != null && !t.getGuestEmail().isBlank())
                                 .flatMap(ticket -> sendTicketEmail(event, ticket)
                                         .thenReturn(1)
@@ -476,7 +487,7 @@ public class EventService {
                                             .templateName("eventTicket")
                                             .recipientCount(count)
                                             .build();
-                                    return eventRepository.saveEmailLog(log).thenReturn(count);
+                                    return this.saveEmailLog(log).thenReturn(count);
                                 })));
     }
 
@@ -507,7 +518,7 @@ public class EventService {
     public Mono<EventTicketDetailResponse> checkIn(Long eventId, CheckInRequest request) {
         return requireStaff()
                 .then(resolveTicketCode(eventId, request))
-                .flatMap(ticketCode -> eventRepository.findTicketByCode(ticketCode)
+                .flatMap(ticketCode -> this.findTicketByCode(ticketCode)
                         .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.TICKET_NOT_FOUND, "Ticket not found")))
                         .flatMap(ticket -> {
                             if (!eventId.equals(ticket.getEventId())) {
@@ -522,7 +533,7 @@ public class EventService {
                             if (ticket.getStatus() != Status.ISSUED && ticket.getStatus() != Status.ACTIVE) {
                                 return Mono.error(new ApplicationException(ErrorCode.TICKET_NOT_ACTIVE, "Ticket is not valid for check-in"));
                             }
-                            return eventRepository.checkInTicket(ticket.getId());
+                            return this.checkInTicket(ticket.getId());
                         }))
                 .flatMap(this::toDetailWithAttendee);
     }
@@ -561,18 +572,18 @@ public class EventService {
         if (reason == null || reason.isBlank()) {
             return Mono.error(new ApplicationException(ErrorCode.CANCEL_REASON_REQUIRED, "Cancel reason is required"));
         }
-        return eventRepository.findTicketByCode(ticketCode)
+        return this.findTicketByCode(ticketCode)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.TICKET_NOT_FOUND, "Ticket not found")))
                 .flatMap(ticket -> {
                     if (ticket.getStatus() == Status.CANCELLED) {
                         return Mono.error(new ApplicationException(ErrorCode.TICKET_ALREADY_CANCELLED, "Ticket already cancelled"));
                     }
-                    return eventRepository.cancelTicket(ticket.getId(), reason.trim());
+                    return this.cancelTicket(ticket.getId(), reason.trim());
                 });
     }
 
     public Mono<EventTicketDetailResponse> getTicketByCode(String ticketCode) {
-        return eventRepository.findTicketByCode(ticketCode)
+        return this.findTicketByCode(ticketCode)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.TICKET_NOT_FOUND, "Ticket not found: " + ticketCode)))
                 .flatMap(this::toDetailWithAttendee);
     }
@@ -581,19 +592,19 @@ public class EventService {
         Mono<PaginatedResponse<EventTicket>> ticketsPage;
         if (keyword != null && !keyword.isBlank()) {
             ticketsPage = status != null
-                    ? eventRepository.searchTicketsByEventAndStatus(eventId, status, keyword.trim(), page, limit)
-                    : eventRepository.searchTicketsByEvent(eventId, keyword.trim(), page, limit);
+                    ? this.searchTicketsByEventAndStatus(eventId, status, keyword.trim(), page, limit)
+                    : this.searchTicketsByEvent(eventId, keyword.trim(), page, limit);
         } else {
             ticketsPage = status != null
-                    ? eventRepository.findTicketsByEventAndStatus(eventId, status, page, limit)
-                    : eventRepository.findTicketsByEvent(eventId, page, limit);
+                    ? this.findTicketsByEventAndStatus(eventId, status, page, limit)
+                    : this.findTicketsByEvent(eventId, page, limit);
         }
         return ticketsPage.flatMap(this::mapDetailPageWithAttendees);
     }
 
     public Mono<PaginatedResponse<EventTicketDetailResponse>> getMyTickets(int page, int limit) {
         return SecurityUtils.getCurrentUserId()
-                .flatMap(memberId -> eventRepository.findTicketsByMember(memberId, page, limit))
+                .flatMap(memberId -> this.findTicketsByMember(memberId, page, limit))
                 .flatMap(this::mapDetailPage);
     }
 
@@ -631,7 +642,7 @@ public class EventService {
         if (ticket.getEventId() == null) {
             return Mono.just(builder);
         }
-        return eventRepository.findEventById(ticket.getEventId())
+        return this.findEventById(ticket.getEventId())
                 .map(event -> builder.eventTitle(event.getTitle()))
                 .defaultIfEmpty(builder);
     }
@@ -670,14 +681,14 @@ public class EventService {
 
     public Mono<PaginatedResponse<EventInvitationDetailResponse>> getInvitationsByEvent(Long eventId, int page, int limit) {
         return assertEventInCurrentOrg(eventId)
-                .then(eventRepository.findInvitationsByEvent(eventId, page, limit))
+                .then(this.findInvitationsByEvent(eventId, page, limit))
                 .flatMap(this::mapInvitationPageWithMembers);
     }
 
     // ─── Email log queries ────────────────────────────────────────────────────
 
     public Mono<PaginatedResponse<EventEmailLog>> getEmailLogsByEvent(Long eventId, int page, int limit) {
-        return eventRepository.findEmailLogsByEvent(eventId, page, limit);
+        return this.findEmailLogsByEvent(eventId, page, limit);
     }
 
     private Mono<EventInterestDetailResponse> toInterestDetailWithMember(EventInterest interest) {
@@ -737,17 +748,17 @@ public class EventService {
     // ─── Statistics ───────────────────────────────────────────────────────────
 
     public Mono<EventStatisticsResponse> getEventStatistics(Long eventId) {
-        return eventRepository.findEventById(eventId)
+        return this.findEventById(eventId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId)))
-                .flatMap(e -> eventRepository.getEventStatistics(eventId));
+                .flatMap(e -> this.daoGetEventStatistics(eventId));
     }
 
     // ─── Event questions ──────────────────────────────────────────────────────
 
     public Flux<EventQuestionResponse> getEventQuestions(Long eventId) {
-        return eventRepository.findEventById(eventId)
+        return this.findEventById(eventId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId)))
-                .thenMany(eventRepository.findQuestionsByEvent(eventId).map(EventQuestionResponse::from));
+                .thenMany(this.findQuestionsByEvent(eventId).map(EventQuestionResponse::from));
     }
 
     public Mono<EventQuestionResponse> createEventQuestion(Long eventId, EventQuestionRequest request) {
@@ -762,13 +773,13 @@ public class EventService {
                             .orderIndex(request.getOrderIndex() != null ? request.getOrderIndex() : 0)
                             .build();
                     question.setOptions(request.getOptions());
-                    return eventRepository.createQuestion(question).map(EventQuestionResponse::from);
+                    return this.createQuestion(question).map(EventQuestionResponse::from);
                 });
     }
 
     public Mono<EventQuestionResponse> updateEventQuestion(Long eventId, Integer questionId, EventQuestionRequest request) {
         return assertEventInCurrentOrg(eventId)
-                .flatMap(event -> eventRepository.findQuestionById(questionId)
+                .flatMap(event -> this.findQuestionById(questionId)
                         .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.RESOURCES_NOT_FOUND, "Question not found")))
                         .flatMap(existing -> {
                             if (!eventId.equals(existing.getEventId())) {
@@ -782,22 +793,22 @@ public class EventService {
                                     .orderIndex(request.getOrderIndex())
                                     .build();
                             updated.setOptions(request.getOptions());
-                            return eventRepository.updateQuestion(questionId, updated).map(EventQuestionResponse::from);
+                            return this.updateQuestion(questionId, updated).map(EventQuestionResponse::from);
                         }));
     }
 
     public Mono<Boolean> deleteEventQuestion(Long eventId, Integer questionId) {
         return assertEventInCurrentOrg(eventId)
-                .flatMap(event -> eventRepository.deleteQuestion(eventId, questionId));
+                .flatMap(event -> this.deleteQuestion(eventId, questionId));
     }
 
     public Mono<Boolean> reorderEventQuestions(Long eventId, ReorderEventQuestionsRequest request) {
         return assertEventInCurrentOrg(eventId)
-                .flatMap(event -> eventRepository.reorderQuestions(eventId, request.getQuestionIds()));
+                .flatMap(event -> this.reorderQuestions(eventId, request.getQuestionIds()));
     }
 
     private Mono<Event> assertEventInCurrentOrg(Long eventId) {
-        return Mono.zip(SecurityUtils.getCurrentOrganizationId(), eventRepository.findEventById(eventId)
+        return Mono.zip(SecurityUtils.getCurrentOrganizationId(), this.findEventById(eventId)
                         .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId))))
                 .flatMap(tuple -> {
                     Integer orgId = tuple.getT1();
@@ -859,4 +870,341 @@ public class EventService {
                 })
                 .defaultIfEmpty(ticketCode != null ? "/my-tickets?ticket=" + ticketCode : "/my-tickets");
     }
+
+// ─── Event CRUD ───────────────────────────────────────────────────────────
+
+
+    private Mono<Event> createEvent(Event eventData) {
+        eventData.setCreatedAt(LocalDateTime.now());
+        eventData.setIsPublished(false);
+        eventData.setInterestedCount(0);
+        return eventRepo.save(eventData);
+    }
+
+    private Mono<Event> updateEvent(Long eventId, Event eventData) {
+        return eventRepo.findById(eventId)
+                .flatMap(existing -> {
+                    existing.setTitle(eventData.getTitle());
+                    existing.setDescription(eventData.getDescription());
+                    existing.setBannerUrl(eventData.getBannerUrl());
+                    existing.setLocation(eventData.getLocation());
+                    existing.setStartTime(eventData.getStartTime());
+                    existing.setEndTime(eventData.getEndTime());
+                    existing.setRegistrationStartAt(eventData.getRegistrationStartAt());
+                    existing.setRegistrationEndAt(eventData.getRegistrationEndAt());
+                    existing.setMaxCapacity(eventData.getMaxCapacity());
+                    if (eventData.getTopic() != null) existing.setTopic(eventData.getTopic());
+                    return eventRepo.save(existing);
+                });
+    }
+
+    private Mono<Boolean> daoDeleteEvent(Long eventId) {
+        return eventRepo.deleteById(eventId).thenReturn(true);
+    }
+
+    private Mono<Event> findEventById(Long eventId) {
+        return eventRepo.findById(eventId);
+    }
+
+    private Mono<PaginatedResponse<Event>> findEventsByOrganization(Long organizationId, int page, int limit) {
+        int offset = page * limit;
+        return PaginationHelper.paginate(
+                eventRepo.findByOrganizationIdWithPagination(organizationId, limit, offset).collectList(),
+                eventRepo.countByOrganizationId(organizationId),
+                page,
+                limit
+        );
+    }
+
+    // ─── Publishing ───────────────────────────────────────────────────────────
+
+    private Mono<Event> daoPublishEvent(Long eventId) {
+        return eventRepo.publishEvent(eventId).then(eventRepo.findById(eventId));
+    }
+
+    private Mono<Event> daoUnpublishEvent(Long eventId) {
+        return eventRepo.unpublishEvent(eventId).then(eventRepo.findById(eventId));
+    }
+
+    // ─── Search & Filter ──────────────────────────────────────────────────────
+
+    private Mono<PaginatedResponse<Event>> findUpcomingEvents(Long organizationId, int page, int limit) {
+        int offset = page * limit;
+        LocalDateTime now = LocalDateTime.now();
+        return PaginationHelper.paginate(
+                eventRepo.findUpcomingEvents(organizationId, now, limit, offset).collectList(),
+                eventRepo.countUpcomingEvents(organizationId, now),
+                page,
+                limit
+        );
+    }
+
+    private Mono<PaginatedResponse<Event>> findUpcomingEvents(int page, int limit) {
+        int offset = page * limit;
+        LocalDateTime now = LocalDateTime.now();
+        return PaginationHelper.paginate(
+                eventRepo.findAllUpcomingEvents(now, limit, offset).collectList(),
+                eventRepo.countAllUpcomingEvents(now),
+                page,
+                limit
+        );
+    }
+
+    private Mono<PaginatedResponse<Event>> findPastEvents(Long organizationId, int page, int limit) {
+        int offset = page * limit;
+        LocalDateTime now = LocalDateTime.now();
+        return PaginationHelper.paginate(
+                eventRepo.findPastEvents(organizationId, now, limit, offset).collectList(),
+                eventRepo.countPastEvents(organizationId, now),
+                page,
+                limit
+        );
+    }
+
+    private Mono<PaginatedResponse<Event>> daoSearchEvents(Long organizationId, String keyword, int page, int limit) {
+        int offset = page * limit;
+        return PaginationHelper.paginate(
+                eventRepo.searchEvents(organizationId, keyword, limit, offset).collectList(),
+                eventRepo.countSearchEvents(organizationId, keyword),
+                page,
+                limit
+        );
+    }
+
+    // ─── Interest ─────────────────────────────────────────────────────────────
+
+    private Mono<EventInterest> addEventInterest(Long eventId, Long memberId) {
+        EventInterest interest = EventInterest.builder()
+                .eventId(eventId)
+                .memberId(memberId)
+                .createdAt(LocalDateTime.now())
+                .build();
+        return interestRepo.save(interest)
+                .flatMap(saved -> eventRepo.incrementInterestedCount(eventId).thenReturn(saved));
+    }
+
+    private Mono<Boolean> removeEventInterest(Long eventId, Long memberId) {
+        return interestRepo.deleteByEventIdAndMemberId(eventId, memberId)
+                .then(eventRepo.decrementInterestedCount(eventId))
+                .thenReturn(true);
+    }
+
+    private Mono<PaginatedResponse<EventInterest>> findEventInterests(Long eventId, int page, int limit) {
+        int offset = page * limit;
+        return interestRepo.findByEventIdWithPagination(eventId, limit, offset)
+                .collectList()
+                .zipWith(interestRepo.countByEventId(eventId))
+                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
+    }
+
+    private Mono<Boolean> checkUserInterest(Long eventId, Long memberId) {
+        return interestRepo.existsByEventIdAndMemberId(eventId, memberId);
+    }
+
+    private Mono<Boolean> checkUserRegistered(Long eventId, Long memberId) {
+        // Only a non-cancelled/expired/rejected ticket counts as registered, so
+        // a cancelled registration correctly reads as not-registered.
+        return ticketRepo.existsActiveByEventIdAndMemberId(eventId, memberId);
+    }
+    // ─── Ticket — register ────────────────────────────────────────────────────
+
+    private Mono<EventTicket> registerTicket(EventTicket ticketData) {
+        ticketData.setTicketCode(UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+        ticketData.setStatus(Status.ISSUED);
+        ticketData.setRegisteredAt(LocalDateTime.now());
+        return ticketRepo.save(ticketData);
+    }
+
+    private Mono<Boolean> hasRegistered(Long eventId, Long memberId) {
+        // Allow re-registering after a cancellation: a cancelled ticket no
+        // longer blocks a new registration.
+        return ticketRepo.existsActiveByEventIdAndMemberId(eventId, memberId);
+    }
+
+    // ─── Ticket — issue ───────────────────────────────────────────────────────
+
+    private Flux<EventTicket> findIssuedTicketsByEvent(Long eventId) {
+        return ticketRepo.findIssuedTicketsByEventId(eventId);
+    }
+
+    // ─── Ticket — lifecycle ───────────────────────────────────────────────────
+
+    private Mono<EventTicket> cancelTicket(Long ticketId, String reason) {
+        return ticketRepo.cancelTicket(ticketId, reason).then(ticketRepo.findById(ticketId));
+    }
+
+    private Mono<EventTicket> checkInTicket(Long ticketId) {
+        return ticketRepo.checkInTicket(ticketId, LocalDateTime.now())
+                .then(ticketRepo.findById(ticketId));
+    }
+
+    // ─── Ticket — query ───────────────────────────────────────────────────────
+
+    private Mono<EventTicket> findTicketByCode(String ticketCode) {
+        return ticketRepo.findByTicketCode(ticketCode);
+    }
+
+
+    private Flux<EventTicket> findTicketsByIds(Iterable<Long> ticketIds) {
+        return ticketRepo.findAllById(ticketIds);
+    }
+
+    private Mono<PaginatedResponse<EventTicket>> findTicketsByEvent(Long eventId, int page, int limit) {
+        int offset = page * limit;
+        return ticketRepo.findByEventIdWithPagination(eventId, limit, offset)
+                .collectList()
+                .zipWith(ticketRepo.countByEventId(eventId))
+                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
+    }
+
+    private Mono<PaginatedResponse<EventTicket>> findTicketsByEventAndStatus(Long eventId, String status, int page, int limit) {
+        int offset = page * limit;
+        return ticketRepo.findByEventIdAndStatusWithPagination(eventId, status, limit, offset)
+                .collectList()
+                .zipWith(ticketRepo.countByEventIdAndStatus(eventId, status))
+                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
+    }
+
+    private Mono<PaginatedResponse<EventTicket>> searchTicketsByEvent(Long eventId, String keyword, int page, int limit) {
+        int offset = page * limit;
+        return ticketRepo.searchByEventId(eventId, keyword, limit, offset)
+                .collectList()
+                .zipWith(ticketRepo.countSearchByEventId(eventId, keyword))
+                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
+    }
+
+    private Mono<PaginatedResponse<EventTicket>> searchTicketsByEventAndStatus(Long eventId, String status, String keyword, int page, int limit) {
+        int offset = page * limit;
+        return ticketRepo.searchByEventIdAndStatus(eventId, status, keyword, limit, offset)
+                .collectList()
+                .zipWith(ticketRepo.countSearchByEventIdAndStatus(eventId, status, keyword))
+                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
+    }
+
+    private Mono<PaginatedResponse<EventTicket>> findTicketsByMember(Long memberId, int page, int limit) {
+        int offset = page * limit;
+        return ticketRepo.findByMemberIdWithPagination(memberId, limit, offset)
+                .collectList()
+                .zipWith(ticketRepo.countByMemberId(memberId))
+                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
+    }
+
+    private Mono<Long> countRegisteredTickets(Long eventId) {
+        return ticketRepo.countActiveRegistrations(eventId);
+    }
+
+    // ─── Invitations ──────────────────────────────────────────────────────────
+
+    private Mono<EventInvitation> createInvitation(EventInvitation invitation) {
+        invitation.setStatus(Status.PENDING);
+        invitation.setInvitedAt(LocalDateTime.now());
+        return invitationRepo.save(invitation);
+    }
+
+    private Mono<EventInvitation> findInvitationByToken(String token) {
+        return invitationRepo.findByToken(token);
+    }
+
+    private Mono<EventInvitation> confirmInvitation(Long invitationId) {
+        return invitationRepo.confirmInvitation(invitationId, LocalDateTime.now())
+                .then(invitationRepo.findById(invitationId));
+    }
+
+    private Mono<PaginatedResponse<EventInvitation>> findInvitationsByEvent(Long eventId, int page, int limit) {
+        int offset = page * limit;
+        return invitationRepo.findByEventIdWithPagination(eventId, limit, offset)
+                .collectList()
+                .zipWith(invitationRepo.countByEventId(eventId))
+                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
+    }
+
+    // ─── Email logs ───────────────────────────────────────────────────────────
+
+    private Mono<EventEmailLog> saveEmailLog(EventEmailLog log) {
+        log.setSentAt(LocalDateTime.now());
+        return emailLogRepo.save(log);
+    }
+
+    private Mono<PaginatedResponse<EventEmailLog>> findEmailLogsByEvent(Long eventId, int page, int limit) {
+        int offset = page * limit;
+        return emailLogRepo.findByEventIdWithPagination(eventId, limit, offset)
+                .collectList()
+                .zipWith(emailLogRepo.countByEventId(eventId))
+                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
+    }
+
+    // ─── Statistics ───────────────────────────────────────────────────────────
+
+    private Mono<EventStatisticsResponse> daoGetEventStatistics(Long eventId) {
+        return eventRepo.findById(eventId)
+                .zipWith(ticketRepo.countActiveRegistrations(eventId))
+                .zipWith(ticketRepo.countByEventIdAndStatus(eventId, Status.USED.getValue()))
+                .zipWith(ticketRepo.countByEventIdAndStatus(eventId, Status.CHECKED_IN.getValue()))
+                .map(tuple -> {
+                    Event event = tuple.getT1().getT1().getT1();
+                    Long registeredCount = tuple.getT1().getT1().getT2();
+                    Long usedCount = tuple.getT1().getT2();
+                    Long checkedInCount = tuple.getT2();
+
+                    return EventStatisticsResponse.builder()
+                            .eventId(eventId)
+                            .interestedCount(event.getInterestedCount())
+                            .registeredCount(registeredCount)
+                            .checkedInCount(usedCount + checkedInCount)
+                            .maxCapacity(event.getMaxCapacity())
+                            .availableSlots(event.getMaxCapacity() != null
+                                    ? event.getMaxCapacity() - registeredCount
+                                    : null)
+                            .build();
+                });
+    }
+
+    // ─── Event questions ──────────────────────────────────────────────────────
+
+    private Flux<EventQuestion> findQuestionsByEvent(Long eventId) {
+        return questionRepo.findByEventIdOrderByOrderIndex(eventId);
+    }
+
+    private Mono<EventQuestion> findQuestionById(Integer questionId) {
+        return questionRepo.findById(questionId);
+    }
+
+    private Mono<EventQuestion> createQuestion(EventQuestion question) {
+        if (question.getOrderIndex() == null) question.setOrderIndex(0);
+        if (question.getRequired() == null) question.setRequired(false);
+        question.setCreatedAt(LocalDateTime.now());
+        return questionRepo.save(question);
+    }
+
+    private Mono<EventQuestion> updateQuestion(Integer questionId, EventQuestion questionData) {
+        return questionRepo.findById(questionId)
+                .flatMap(existing -> {
+                    existing.setType(questionData.getType());
+                    existing.setLabel(questionData.getLabel());
+                    existing.setOptions(questionData.getOptions());
+                    existing.setRequired(questionData.getRequired());
+                    if (questionData.getOrderIndex() != null) {
+                        existing.setOrderIndex(questionData.getOrderIndex());
+                    }
+                    return questionRepo.save(existing);
+                });
+    }
+
+    private Mono<Boolean> deleteQuestion(Long eventId, Integer questionId) {
+        return questionRepo.deleteByIdAndEventId(questionId, eventId).map(rows -> rows > 0);
+    }
+
+    private Mono<Boolean> reorderQuestions(Long eventId, java.util.List<Integer> questionIds) {
+        if (questionIds == null || questionIds.isEmpty()) return Mono.just(true);
+        return Flux.fromIterable(questionIds)
+                .index()
+                .flatMap(tuple -> questionRepo.findById(tuple.getT2())
+                        .filter(q -> eventId.equals(q.getEventId()))
+                        .flatMap(q -> {
+                            q.setOrderIndex(tuple.getT1().intValue());
+                            return questionRepo.save(q);
+                        }))
+                .then(Mono.just(true));
+    }
+
 }

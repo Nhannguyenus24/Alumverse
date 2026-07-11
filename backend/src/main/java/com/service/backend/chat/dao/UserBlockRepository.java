@@ -5,13 +5,13 @@ import com.service.backend.chat.dto.BlockedMemberItemResponse;
 import com.service.backend.shared.entity.UserBlock;
 import org.springframework.data.r2dbc.repository.Modifying;
 import org.springframework.data.r2dbc.repository.Query;
-import org.springframework.data.repository.reactive.ReactiveCrudRepository;
+import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Repository
-public interface UserBlockRepository extends ReactiveCrudRepository<UserBlock, Long> {
+public interface UserBlockRepository extends R2dbcRepository<UserBlock, Long> {
     @Query("""
             SELECT COUNT(id)
             FROM user_blocks
@@ -45,6 +45,16 @@ public interface UserBlockRepository extends ReactiveCrudRepository<UserBlock, L
               AND cgm.group_id = :groupId
             """)
     Mono<Long> countSenderBlockedByMembersInGroup(Long senderMemberId, Long groupId);
+
+    @Query("""
+            SELECT COUNT(ub.id)
+            FROM user_blocks ub
+            INNER JOIN chat_group_members cgm 
+                ON (cgm.member_id = ub.blocked_member_id AND ub.blocker_member_id = :senderMemberId)
+                OR (cgm.member_id = ub.blocker_member_id AND ub.blocked_member_id = :senderMemberId)
+            WHERE cgm.group_id = :groupId
+            """)
+    Mono<Long> countBlockStatusInGroup(Long senderMemberId, Long groupId);
 
     @Query("""
             SELECT ub.blocked_member_id AS member_id,

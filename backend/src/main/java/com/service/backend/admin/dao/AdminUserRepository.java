@@ -91,43 +91,6 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
     @Query("UPDATE users SET \"status\" = :status, updated_at = CURRENT_TIMESTAMP WHERE id = :userId")
     Mono<Integer> updateUserStatusById(@Param("userId") Integer userId, @Param("status") String status);
 
-    /**
-     * Fetch all verification requests joined with user info, paginated
-     */
-    @Query("SELECT vr.id, vr.member_id, vr.document_url, " +
-           "vr.document_type, vr.ai_summary, vr.\"status\", " +
-           "vr.admin_note, vr.reviewed_by_member_id, " +
-           "vr.created_at, vr.updated_at, u.email, om.student_id as student_id " +
-           "FROM verification_requests vr " +
-           "JOIN users u ON vr.member_id = u.id " +
-           "JOIN organization_members om ON u.id = om.user_id AND vr.organization_id = om.organization_id " +
-           "WHERE (:keyword IS NULL OR u.email ILIKE :keyword OR om.student_id ILIKE :keyword OR u.full_name ILIKE :keyword) " +
-           "ORDER BY vr.created_at DESC " +
-           "LIMIT :limit OFFSET :offset")
-    Flux<VerificationRequestResponse> findAllVerificationRequests(@Param("keyword") String keyword, @Param("limit") int limit, @Param("offset") int offset);
-
-    @Query("SELECT COUNT(*) FROM verification_requests vr " +
-           "JOIN users u ON vr.member_id = u.id " +
-           "JOIN organization_members om ON u.id = om.user_id AND vr.organization_id = om.organization_id " +
-           "WHERE (:keyword IS NULL OR u.email ILIKE :keyword OR om.student_id ILIKE :keyword OR u.full_name ILIKE :keyword)")
-    Mono<Long> countAllVerificationRequests(@Param("keyword") String keyword);
-
-    /**
-     * Fetch only pending verification requests, paginated
-     */
-    @Query("SELECT vr.id, vr.member_id, vr.document_url, " +
-           "vr.document_type, vr.ai_summary, vr.\"status\", " +
-           "vr.admin_note, vr.reviewed_by_member_id, " +
-           "vr.created_at, vr.updated_at, u.email, om.student_id as student_id " +
-           "FROM verification_requests vr " +
-           "JOIN users u ON vr.member_id = u.id " +
-           "JOIN organization_members om ON u.id = om.user_id AND vr.organization_id = om.organization_id " +
-           "WHERE vr.\"status\" = 'PENDING' " +
-           "AND (:keyword IS NULL OR u.email ILIKE :keyword OR om.student_id ILIKE :keyword OR u.full_name ILIKE :keyword) " +
-           "ORDER BY vr.created_at DESC " +
-           "LIMIT :limit OFFSET :offset")
-    Flux<VerificationRequestResponse> findPendingVerificationRequests(@Param("keyword") String keyword, @Param("limit") int limit, @Param("offset") int offset);
-
     @Query("SELECT COUNT(*) FROM verification_requests vr " +
            "JOIN users u ON vr.member_id = u.id " +
            "JOIN organization_members om ON u.id = om.user_id AND vr.organization_id = om.organization_id " +
@@ -306,15 +269,6 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
     Mono<Integer> markVerificationRequestNeedsUpdate(
             @Param("requestId") Integer requestId,
             @Param("adminNote") String adminNote);
-
-    /**
-     * Get the member ID associated with a verification request
-     */
-    @Query("SELECT member_id FROM verification_requests WHERE id = :requestId")
-    Mono<Integer> findMemberIdByRequestId(@Param("requestId") Integer requestId);
-
-    @Query("SELECT organization_id FROM verification_requests WHERE id = :requestId")
-    Mono<Integer> findOrganizationIdByRequestId(@Param("requestId") Integer requestId);
 
     @Query("SELECT EXISTS(SELECT 1 FROM organization_members WHERE user_id = :userId)")
     Mono<Boolean> existsOrganizationMemberByUserId(@Param("userId") Integer userId);
@@ -528,12 +482,6 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
         @Param("organizationId") Integer organizationId
     );
 
-    @Query("SELECT COUNT(*) FROM users WHERE created_at >= :since")
-    Mono<Long> countUsersSince(@Param("since") LocalDateTime since);
-
-    @Query("SELECT COUNT(*) FROM users WHERE \"status\" = :status")
-    Mono<Long> countUsersByStatus(@Param("status") String status);
-
     @Query("SELECT CAST(created_at AS DATE) AS date, COUNT(*) AS count " +
            "FROM users " +
            "WHERE created_at >= CURRENT_DATE - INTERVAL '30 days' " +
@@ -541,66 +489,40 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
            "ORDER BY date")
     Flux<com.service.backend.shared.projection.DailyCountProjection> getDailyUserRegistrations();
 
-    @Query("SELECT COUNT(*) FROM verification_requests WHERE \"status\" = :status")
-    Mono<Long> countVerificationRequestsByStatus(@Param("status") String status);
+    @Query("""
+        SELECT
+            SUM(CASE WHEN created_at >= :sevenDaysAgo THEN 1 ELSE 0 END) AS new_users7_days,
+            SUM(CASE WHEN created_at >= :thirtyDaysAgo THEN 1 ELSE 0 END) AS new_users30_days,
+            SUM(CASE WHEN "status" = 'ACTIVE' THEN 1 ELSE 0 END) AS active_users,
+            SUM(CASE WHEN "status" = 'BANNED' THEN 1 ELSE 0 END) AS banned_users,
+            SUM(CASE WHEN "status" = 'DELETED' THEN 1 ELSE 0 END) AS deleted_users
+        FROM users
+    """)
+    Mono<com.service.backend.admin.dto.UserGrowthStatsProjection> getAggregatedUserGrowthStats(
+        @Param("sevenDaysAgo") LocalDateTime sevenDaysAgo,
+        @Param("thirtyDaysAgo") LocalDateTime thirtyDaysAgo
+    );
 
-    @Query("SELECT COUNT(*) FROM peer_verifications")
-    Mono<Long> countAllPeerVerifications();
+    @Query("""
+        SELECT
+            COUNT(*) AS total_requests,
+            SUM(CASE WHEN "status" = 'PENDING' THEN 1 ELSE 0 END) AS pending_requests,
+            SUM(CASE WHEN "status" = 'APPROVED' THEN 1 ELSE 0 END) AS approved_requests,
+            SUM(CASE WHEN "status" = 'REJECTED' THEN 1 ELSE 0 END) AS rejected_requests,
+            SUM(CASE WHEN "status" = 'NEEDS_REVISION' THEN 1 ELSE 0 END) AS needs_revision_requests
+        FROM verification_requests
+    """)
+    Mono<com.service.backend.admin.dto.VerificationStatsProjection> getAggregatedVerificationStats();
 
-    @Query("SELECT COUNT(*) FROM peer_verifications WHERE \"status\" = :status")
-    Mono<Long> countPeerVerificationsByStatus(@Param("status") String status);
+    @Query("""
+        SELECT
+            COUNT(*) AS total_verifications,
+            SUM(CASE WHEN "status" = 'PENDING' THEN 1 ELSE 0 END) AS pending_verifications,
+            SUM(CASE WHEN "status" = 'APPROVED' THEN 1 ELSE 0 END) AS approved_verifications
+        FROM peer_verifications
+    """)
+    Mono<com.service.backend.admin.dto.PeerVerificationStatsProjection> getAggregatedPeerVerificationStats();
 
-    @Query("SELECT vr.id, vr.member_id, vr.document_url, " +
-           "vr.document_type, vr.ai_summary, vr.\"status\", " +
-           "vr.admin_note, vr.reviewed_by_member_id, " +
-           "vr.created_at, vr.updated_at, u.email, om.student_id as student_id " +
-           "FROM verification_requests vr " +
-           "JOIN users u ON vr.member_id = u.id " +
-           "JOIN organization_members om ON vr.member_id = om.user_id AND vr.organization_id = om.organization_id " +
-           "WHERE vr.organization_id = :organizationId " +
-           "AND (:keyword IS NULL OR u.email ILIKE :keyword OR om.student_id ILIKE :keyword OR u.full_name ILIKE :keyword) " +
-           "ORDER BY vr.created_at DESC " +
-           "LIMIT :limit OFFSET :offset")
-    Flux<VerificationRequestResponse> findAllVerificationRequestsByOrganization(
-            @Param("organizationId") Integer organizationId,
-            @Param("keyword") String keyword,
-            @Param("limit") int limit,
-            @Param("offset") int offset);
-
-    @Query("SELECT COUNT(*) FROM verification_requests vr " +
-           "JOIN users u ON vr.member_id = u.id " +
-           "JOIN organization_members om ON vr.member_id = om.user_id AND vr.organization_id = om.organization_id " +
-           "WHERE vr.organization_id = :organizationId " +
-           "AND (:keyword IS NULL OR u.email ILIKE :keyword OR om.student_id ILIKE :keyword OR u.full_name ILIKE :keyword)")
-    Mono<Long> countAllVerificationRequestsByOrganization(
-            @Param("organizationId") Integer organizationId,
-            @Param("keyword") String keyword);
-
-    @Query("SELECT vr.id, vr.member_id, vr.document_url, " +
-           "vr.document_type, vr.ai_summary, vr.\"status\", " +
-           "vr.admin_note, vr.reviewed_by_member_id, " +
-           "vr.created_at, vr.updated_at, u.email, om.student_id as student_id " +
-           "FROM verification_requests vr " +
-           "JOIN users u ON vr.member_id = u.id " +
-           "JOIN organization_members om ON vr.member_id = om.user_id AND vr.organization_id = om.organization_id " +
-           "WHERE vr.organization_id = :organizationId " +
-           "AND vr.\"status\" = 'PENDING' " +
-           "AND (:keyword IS NULL OR u.email ILIKE :keyword OR om.student_id ILIKE :keyword OR u.full_name ILIKE :keyword) " +
-           "ORDER BY vr.created_at DESC " +
-           "LIMIT :limit OFFSET :offset")
-    Flux<VerificationRequestResponse> findPendingVerificationRequestsByOrganization(
-            @Param("organizationId") Integer organizationId,
-            @Param("keyword") String keyword,
-            @Param("limit") int limit,
-            @Param("offset") int offset);
-
-    @Query("SELECT COUNT(*) FROM verification_requests vr " +
-           "JOIN users u ON vr.member_id = u.id " +
-           "JOIN organization_members om ON vr.member_id = om.user_id AND vr.organization_id = om.organization_id " +
-           "WHERE vr.organization_id = :organizationId " +
-           "AND vr.\"status\" = 'PENDING' " +
-           "AND (:keyword IS NULL OR u.email ILIKE :keyword OR om.student_id ILIKE :keyword OR u.full_name ILIKE :keyword)")
-    Mono<Long> countPendingVerificationRequestsByOrganization(
-            @Param("organizationId") Integer organizationId,
-            @Param("keyword") String keyword);
+    @Query("SELECT member_id, organization_id FROM verification_requests WHERE id = :requestId")
+    Mono<com.service.backend.admin.dto.VerificationRequestInfo> findVerificationRequestInfoById(@Param("requestId") Integer requestId);
 }

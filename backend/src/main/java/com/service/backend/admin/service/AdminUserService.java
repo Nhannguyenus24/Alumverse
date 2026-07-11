@@ -525,12 +525,10 @@ public class AdminUserService {
 
     public Mono<Boolean> reviewVerificationRequest(Integer requestId, String status, String adminNote) {
         String upperStatus = status == null ? null : status.toUpperCase();
-        return Mono.zip(
-                        adminUserRepository.findMemberIdByRequestId(requestId),
-                        adminUserRepository.findOrganizationIdByRequestId(requestId))
-                .flatMap(tuple -> {
-                    Integer memberId = tuple.getT1();
-                    Integer organizationId = tuple.getT2();
+        return adminUserRepository.findVerificationRequestInfoById(requestId)
+                .flatMap(info -> {
+                    Integer memberId = info.getMemberId();
+                    Integer organizationId = info.getOrganizationId();
                     return adminUserRepository.reviewVerificationRequest(requestId, Status.valueOf(upperStatus).getValue(), adminNote)
                         .flatMap(count -> {
                             if (count <= 0) return Mono.just(false);
@@ -587,16 +585,14 @@ public class AdminUserService {
                     .defaultIfEmpty(false);
         }
 
-        return Mono.zip(
-                        adminUserRepository.findMemberIdByRequestId(requestId),
-                        adminUserRepository.findOrganizationIdByRequestId(requestId))
-                .flatMap(tuple -> adminUserRepository.markVerificationRequestNeedsUpdate(requestId, adminNote)
+        return adminUserRepository.findVerificationRequestInfoById(requestId)
+                .flatMap(info -> adminUserRepository.markVerificationRequestNeedsUpdate(requestId, adminNote)
                         .flatMap(count -> {
                             if (count == null || count <= 0) {
                                 return Mono.just(false);
                             }
-                            Integer memberId = tuple.getT1();
-                            Integer organizationId = tuple.getT2();
+                            Integer memberId = info.getMemberId();
+                            Integer organizationId = info.getOrganizationId();
                             return userOrganizationMemberRepository
                                     .updateVerificationLevelByOrgAndUser(organizationId, memberId, 0)
                                     .then(Mono.fromRunnable(() -> notificationService.createNotificationAsync(
@@ -740,49 +736,46 @@ public class AdminUserService {
         java.time.LocalDateTime thirtyDaysAgo = now.minusDays(30);
 
         return Mono.zip(
-                adminUserRepository.countUsersSince(sevenDaysAgo),
-                adminUserRepository.countUsersSince(thirtyDaysAgo),
-                adminUserRepository.countUsersByStatus("ACTIVE"),
-                adminUserRepository.countUsersByStatus("BANNED"),
-                adminUserRepository.countUsersByStatus("DELETED"),
+                adminUserRepository.getAggregatedUserGrowthStats(sevenDaysAgo, thirtyDaysAgo),
                 adminUserRepository.getDailyUserRegistrations()
                         .map(p -> UserGrowthStatisticsDTO.DayCount.builder()
                                 .date(p.getDate() != null ? p.getDate().toString() : "")
                                 .count(p.getCount() != null ? p.getCount() : 0L)
                                 .build())
                         .collectList()
-        ).map(t -> UserGrowthStatisticsDTO.builder()
-                .newUsersLast7Days(t.getT1())
-                .newUsersLast30Days(t.getT2())
-                .totalActiveUsers(t.getT3())
-                .totalBannedUsers(t.getT4())
-                .totalDeletedUsers(t.getT5())
-                .dailyRegistrations(t.getT6())
-                .build())
+        ).map(t -> {
+            var stats = t.getT1();
+            return UserGrowthStatisticsDTO.builder()
+                .newUsersLast7Days(stats.getNewUsers7Days() != null ? stats.getNewUsers7Days() : 0L)
+                .newUsersLast30Days(stats.getNewUsers30Days() != null ? stats.getNewUsers30Days() : 0L)
+                .totalActiveUsers(stats.getActiveUsers() != null ? stats.getActiveUsers() : 0L)
+                .totalBannedUsers(stats.getBannedUsers() != null ? stats.getBannedUsers() : 0L)
+                .totalDeletedUsers(stats.getDeletedUsers() != null ? stats.getDeletedUsers() : 0L)
+                .dailyRegistrations(t.getT2())
+                .build();
+        })
                 .doOnSuccess(r -> logger.info("getUserGrowthStatistics completed"))
                 .doOnError(e -> logger.error("Error fetching user growth statistics: {}", e.getMessage()));
     }
 
     public Mono<VerificationStatisticsDTO> getVerificationStatistics() {
         return Mono.zip(
-                adminUserRepository.countAllVerificationRequests(null),
-                adminUserRepository.countVerificationRequestsByStatus("PENDING"),
-                adminUserRepository.countVerificationRequestsByStatus("APPROVED"),
-                adminUserRepository.countVerificationRequestsByStatus("REJECTED"),
-                adminUserRepository.countVerificationRequestsByStatus("NEEDS_REVISION"),
-                adminUserRepository.countAllPeerVerifications(),
-                adminUserRepository.countPeerVerificationsByStatus("PENDING"),
-                adminUserRepository.countPeerVerificationsByStatus("APPROVED")
-        ).map(t -> VerificationStatisticsDTO.builder()
-                .totalAlumniVerificationRequests(t.getT1())
-                .pendingAlumniRequests(t.getT2())
-                .approvedAlumniRequests(t.getT3())
-                .rejectedAlumniRequests(t.getT4())
-                .needsRevisionRequests(t.getT5())
-                .totalPeerVerifications(t.getT6())
-                .pendingPeerVerifications(t.getT7())
-                .approvedPeerVerifications(t.getT8())
-                .build())
+                adminUserRepository.getAggregatedVerificationStats(),
+                adminUserRepository.getAggregatedPeerVerificationStats()
+        ).map(t -> {
+            var vrStats = t.getT1();
+            var pvStats = t.getT2();
+            return VerificationStatisticsDTO.builder()
+                .totalAlumniVerificationRequests(vrStats.getTotalRequests() != null ? vrStats.getTotalRequests() : 0L)
+                .pendingAlumniRequests(vrStats.getPendingRequests() != null ? vrStats.getPendingRequests() : 0L)
+                .approvedAlumniRequests(vrStats.getApprovedRequests() != null ? vrStats.getApprovedRequests() : 0L)
+                .rejectedAlumniRequests(vrStats.getRejectedRequests() != null ? vrStats.getRejectedRequests() : 0L)
+                .needsRevisionRequests(vrStats.getNeedsRevisionRequests() != null ? vrStats.getNeedsRevisionRequests() : 0L)
+                .totalPeerVerifications(pvStats.getTotalVerifications() != null ? pvStats.getTotalVerifications() : 0L)
+                .pendingPeerVerifications(pvStats.getPendingVerifications() != null ? pvStats.getPendingVerifications() : 0L)
+                .approvedPeerVerifications(pvStats.getApprovedVerifications() != null ? pvStats.getApprovedVerifications() : 0L)
+                .build();
+        })
                 .doOnSuccess(r -> logger.info("getVerificationStatistics completed"))
                 .doOnError(e -> logger.error("Error fetching verification statistics: {}", e.getMessage()));
     }

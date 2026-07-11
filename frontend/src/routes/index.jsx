@@ -13,6 +13,7 @@ import MentorshipFullAccessGate from "../components/mentorship/MentorshipFullAcc
 import MentorshipBookingGate from "../components/mentorship/MentorshipBookingGate";
 import MentorshipApprovedMentorGate from "../components/mentorship/MentorshipApprovedMentorGate";
 import ChatAccessGate from "../components/network/ChatAccessGate";
+import MentorshipLegacyRedirect from "../components/MentorshipLegacyRedirect";
 
 if (typeof window !== "undefined") {
   queueMicrotask(() => {
@@ -89,9 +90,6 @@ const SavedArticlesPage = Loadable(
 
 // Admin pages
 const AdminLayout = Loadable(lazy(() => import("../layouts/AdminLayout")));
-const AdminLoginPage = Loadable(
-  lazy(() => import("../pages/admin/AdminLoginPage")),
-);
 const AdminDashboardPage = Loadable(
   lazy(() => import("../pages/admin/AdminDashboardPage")),
 );
@@ -255,12 +253,6 @@ const MenteeSignupPage = Loadable(
   lazy(() => import("../pages/mentorship/MenteeSignupPage")),
 );
 
-const MentorshipLegacyRedirect = () => {
-  const location = useLocation();
-  const nextPath = location.pathname.replace(/\/development\/mentorship(?=\/|$)/, "/mentorship");
-
-  return <Navigate to={`${nextPath}${location.search}${location.hash}`} replace />;
-};
 
 const mentorshipRouteChildren = [
   {
@@ -1046,7 +1038,17 @@ export const router = createBrowserRouter([
   },
   {
     path: "/admin/login",
-    element: <AdminLoginPage />,
+    element: (
+      <PublicRoute>
+        <AuthLayout />
+      </PublicRoute>
+    ),
+    children: [
+      {
+        index: true,
+        element: <LoginPage />,
+      },
+    ],
   },
   {
     path: "/admin/change-password",

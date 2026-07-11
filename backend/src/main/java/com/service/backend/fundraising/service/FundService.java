@@ -2,10 +2,9 @@ package com.service.backend.fundraising.service;
 
 import com.service.backend.shared.entity.*;
 import org.springframework.transaction.annotation.Transactional;
-import com.service.backend.fundraising.dao.UserR2dbcRepository;
 import com.service.backend.fundraising.dao.FundR2dbcRepository;
 import com.service.backend.fundraising.dao.FundReceivingInfosR2dbcRepository;
-import com.service.backend.fundraising.dao.OrganizationR2dbcRepository;
+import com.service.backend.organization.dao.OrganizationRepository;
 import com.service.backend.fundraising.dao.FundDonationsR2dbcRepository;
 import com.service.backend.fundraising.dto.CreateFundRequest;
 import com.service.backend.fundraising.dto.CreateFundReceivingInfosRequest;
@@ -33,6 +32,7 @@ import com.service.backend.shared.utils.CacheUtils;
 import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.utils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
+import com.service.backend.user.dao.UserProfileRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -55,10 +55,10 @@ import java.time.Duration;
 public class FundService {
 
     private final FundR2dbcRepository fundR2dbcRepository;
-    private final OrganizationR2dbcRepository organizationRepository;
+    private final OrganizationRepository organizationRepository;
     private final FundReceivingInfosR2dbcRepository fundReceivingInfosRepository;
     private final FundDonationsR2dbcRepository fundDonationsRepository;
-    private final UserR2dbcRepository userRepository;
+    private final UserProfileRepository userRepository;
     private final CacheUtils cacheUtils;
     private final ImageService imageService;
 
@@ -695,20 +695,22 @@ public class FundService {
     public Mono<FundStatisticsResponse> getFundStatistics() {
         return cacheUtils.getOrCompute("fund_statistics", "all", Duration.ofMinutes(5), () -> {
             LocalDateTime now = LocalDateTime.now();
-            Mono<BigDecimal> totalCurrentAmountMono = fundR2dbcRepository.sumCurrentAmount();
-            Mono<Long> totalFundsMono = fundR2dbcRepository.countOpenFunds(now);
-            Mono<Long> totalDonationsMono = fundDonationsRepository.countAll();
             LocalDateTime startOfMonth = LocalDate.now().withDayOfMonth(1).atStartOfDay();
             LocalDateTime endOfMonth = startOfMonth.plusMonths(1);
-            Mono<BigDecimal> totalDonationsAmountThisMonthMono = fundDonationsRepository.sumAmountBetween(startOfMonth, endOfMonth);
 
-            return Mono.zip(totalCurrentAmountMono, totalFundsMono, totalDonationsMono, totalDonationsAmountThisMonthMono)
-                    .map(tuple -> FundStatisticsResponse.builder()
-                            .totalCurrentAmount(tuple.getT1())
-                            .totalFunds(tuple.getT2())
-                            .totalDonations(tuple.getT3())
-                            .totalDonationsAmountThisMonth(tuple.getT4())
-                            .build());
+            return Mono.zip(
+                    fundR2dbcRepository.getAggregatedFundStats(now),
+                    fundDonationsRepository.getAggregatedDonationStats(startOfMonth, endOfMonth)
+            ).map(tuple -> {
+                var fundStats = tuple.getT1();
+                var donStats = tuple.getT2();
+                return FundStatisticsResponse.builder()
+                        .totalCurrentAmount(fundStats.getTotalCurrentAmount() != null ? fundStats.getTotalCurrentAmount() : BigDecimal.ZERO)
+                        .totalFunds(fundStats.getTotalFunds() != null ? fundStats.getTotalFunds() : 0L)
+                        .totalDonations(donStats.getTotalDonations() != null ? donStats.getTotalDonations() : 0L)
+                        .totalDonationsAmountThisMonth(donStats.getTotalDonationsAmountThisMonth() != null ? donStats.getTotalDonationsAmountThisMonth() : BigDecimal.ZERO)
+                        .build();
+            });
         });
     }
 }

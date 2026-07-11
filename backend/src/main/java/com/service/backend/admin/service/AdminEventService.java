@@ -203,34 +203,30 @@ public class AdminEventService {
         LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
         LocalDateTime endOfDay = startOfDay.plusDays(1);
 
-        Mono<Long> totalEvents = eventRepo.countAllEvents().defaultIfEmpty(0L);
-        Mono<Long> publishedEvents = eventRepo.countPublishedEvents().defaultIfEmpty(0L);
-        Mono<Long> unpublishedEvents = eventRepo.countUnpublishedEvents().defaultIfEmpty(0L);
-        Mono<Long> upcomingEvents = eventRepo.countUpcomingEvents(now).defaultIfEmpty(0L);
-        Mono<Long> ongoingEvents = eventRepo.countOngoingEvents(now).defaultIfEmpty(0L);
-        Mono<Long> pastEvents = eventRepo.countPastEvents(now).defaultIfEmpty(0L);
-        Mono<Long> newEventsToday = eventRepo.countEventsCreatedToday(startOfDay, endOfDay).defaultIfEmpty(0L);
-
-        Mono<EventStatisticsDTO> overviewMono = Mono.zip(
-                List.of(totalEvents, publishedEvents, unpublishedEvents, upcomingEvents,
-                        ongoingEvents, pastEvents, newEventsToday),
-                arr -> EventStatisticsDTO.builder()
-                        .totalEvents((Long) arr[0])
-                        .publishedEvents((Long) arr[1])
-                        .unpublishedEvents((Long) arr[2])
-                        .upcomingEvents((Long) arr[3])
-                        .ongoingEvents((Long) arr[4])
-                        .pastEvents((Long) arr[5])
-                        .newEventsToday((Long) arr[6])
+        Mono<EventStatisticsDTO> overviewMono = eventRepo.getAggregatedEventStats(now, startOfDay, endOfDay)
+                .map(stats -> EventStatisticsDTO.builder()
+                        .totalEvents(stats.getTotalEvents() != null ? stats.getTotalEvents() : 0L)
+                        .publishedEvents(stats.getPublishedEvents() != null ? stats.getPublishedEvents() : 0L)
+                        .unpublishedEvents(stats.getUnpublishedEvents() != null ? stats.getUnpublishedEvents() : 0L)
+                        .upcomingEvents(stats.getUpcomingEvents() != null ? stats.getUpcomingEvents() : 0L)
+                        .ongoingEvents(stats.getOngoingEvents() != null ? stats.getOngoingEvents() : 0L)
+                        .pastEvents(stats.getPastEvents() != null ? stats.getPastEvents() : 0L)
+                        .newEventsToday(stats.getNewEventsToday() != null ? stats.getNewEventsToday() : 0L)
                         .build());
 
         Mono<long[]> ticketCountsMono = Mono.zip(
-                eventRepo.countAllTickets().defaultIfEmpty(0L),
-                eventRepo.countTicketsByStatus(STATUS_REGISTERED).defaultIfEmpty(0L),
-                eventRepo.countTicketsByStatus(STATUS_CHECKED_IN).defaultIfEmpty(0L),
-                eventRepo.countTicketsByStatus(STATUS_CANCELLED).defaultIfEmpty(0L),
+                eventRepo.getAggregatedTicketStats(),
                 eventRepo.countAllInterests().defaultIfEmpty(0L)
-        ).map(tuple -> new long[]{tuple.getT1(), tuple.getT2(), tuple.getT3(), tuple.getT4(), tuple.getT5()});
+        ).map(tuple -> {
+            var stats = tuple.getT1();
+            return new long[]{
+                stats.getTotalTickets() != null ? stats.getTotalTickets() : 0L,
+                stats.getRegisteredTickets() != null ? stats.getRegisteredTickets() : 0L,
+                stats.getCheckedInTickets() != null ? stats.getCheckedInTickets() : 0L,
+                stats.getCancelledTickets() != null ? stats.getCancelledTickets() : 0L,
+                tuple.getT2()
+            };
+        });
 
         Mono<List<EventStatisticsDTO.EventSummary>> topByRegistrationMono =
                 eventRepo.findTopEventsByRegistrationSummary(5)

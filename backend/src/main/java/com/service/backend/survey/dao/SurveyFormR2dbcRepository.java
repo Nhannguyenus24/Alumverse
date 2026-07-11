@@ -4,7 +4,7 @@ import com.service.backend.shared.entity.SurveyForm;
 import org.springframework.data.r2dbc.repository.Modifying;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.data.repository.reactive.ReactiveCrudRepository;
+import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
  * A bare {@code SELECT *} must NOT be used for this table.
  */
 @Repository
-public interface SurveyFormR2dbcRepository extends ReactiveCrudRepository<SurveyForm, Long> {
+public interface SurveyFormR2dbcRepository extends R2dbcRepository<SurveyForm, Long> {
 
     String COLUMNS = "id, organization_id, creator_member_id, title, description, "
             + "questions_data::text AS questions_data, start_at, duration_minutes, status, "

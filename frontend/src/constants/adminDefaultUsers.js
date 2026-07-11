@@ -1,17 +1,7 @@
 /** Must match backend com.service.backend.shared.enums.UserRole */
 export const USER_ROLES = ['ADMIN', 'USER', 'STAFF'];
 
-/** Must match backend com.service.backend.shared.enums.UserStatus (order + spelling) */
-export const USER_STATUSES = [
-  'ACTIVE',
-  'INACTIVE',
-  'BANNED',
-  'SUSPENDED',
-  'DELETED',
-  'DISABLED',
-  'PENDING',
-  'UNVERIFIED',
-];
+
 
 export const GRADUATION_STATUSES = ['STUDYING', 'GRADUATED', 'DROPPED'];
 

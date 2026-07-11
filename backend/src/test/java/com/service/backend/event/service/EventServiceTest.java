@@ -1,6 +1,11 @@
 package com.service.backend.event.service;
 
-import com.service.backend.event.dao.IEventRepository;
+import com.service.backend.event.dao.EventR2dbcRepository;
+import com.service.backend.event.dao.EventInterestR2dbcRepository;
+import com.service.backend.event.dao.EventTicketR2dbcRepository;
+import com.service.backend.event.dao.EventInvitationR2dbcRepository;
+import com.service.backend.event.dao.EventEmailLogR2dbcRepository;
+import com.service.backend.event.dao.EventQuestionR2dbcRepository;
 import com.service.backend.event.dto.*;
 import com.service.backend.organization.dao.OrganizationRepository;
 import com.service.backend.shared.entity.Event;
@@ -32,7 +37,12 @@ import static org.mockito.Mockito.*;
 @DisplayName("EventService Unit Tests")
 class EventServiceTest {
 
-    @Mock private IEventRepository eventRepository;
+        @Mock private EventR2dbcRepository eventRepo;
+    @Mock private EventInterestR2dbcRepository interestRepo;
+    @Mock private EventTicketR2dbcRepository ticketRepo;
+    @Mock private EventInvitationR2dbcRepository invitationRepo;
+    @Mock private EventEmailLogR2dbcRepository emailLogRepo;
+    @Mock private EventQuestionR2dbcRepository questionRepo;
     @Mock private ImageService imageService;
     @Mock private EmailService emailService;
     @Mock private NotificationService notificationService;
@@ -78,7 +88,7 @@ class EventServiceTest {
                     .description("A test event")
                     .build();
 
-            when(eventRepository.findEventById(1L)).thenReturn(Mono.just(event));
+            when(eventRepo.findById(1L)).thenReturn(Mono.just(event));
 
             StepVerifier.create(eventService.getEventById(1L))
                     .assertNext(e -> assertThat(e.getTitle()).isEqualTo("Test Event"))
@@ -88,7 +98,7 @@ class EventServiceTest {
         @Test
         @DisplayName("should fail when event not found")
         void getEventById_notFound() {
-            when(eventRepository.findEventById(99L)).thenReturn(Mono.empty());
+            when(eventRepo.findById(99L)).thenReturn(Mono.empty());
 
             StepVerifier.create(eventService.getEventById(99L))
                     .expectErrorMatches(err -> err instanceof ApplicationException &&
@@ -123,9 +133,9 @@ class EventServiceTest {
             request.setTitle("New Title");
             request.setDescription("New Desc");
 
-            when(eventRepository.findEventById(1L)).thenReturn(Mono.just(existing));
+            when(eventRepo.findById(1L)).thenReturn(Mono.just(existing));
             when(imageService.uploadBase64IfPresent(any())).thenReturn(Mono.empty());
-            when(eventRepository.updateEvent(eq(1L), any())).thenReturn(Mono.just(updated));
+            when(eventRepo.save(any())).thenReturn(Mono.just(updated));
 
             StepVerifier.create(eventService.updateEvent(1L, request)
                             .contextWrite(adminContext()))
@@ -139,7 +149,7 @@ class EventServiceTest {
             UpdateEventRequest request = new UpdateEventRequest();
             request.setTitle("New Title");
 
-            when(eventRepository.findEventById(99L)).thenReturn(Mono.empty());
+            when(eventRepo.findById(99L)).thenReturn(Mono.empty());
 
             StepVerifier.create(eventService.updateEvent(99L, request)
                             .contextWrite(adminContext()))
@@ -160,8 +170,8 @@ class EventServiceTest {
         void deleteEvent_success() {
             Event event = Event.builder().id(1L).title("Event to Delete").build();
 
-            when(eventRepository.findEventById(1L)).thenReturn(Mono.just(event));
-            when(eventRepository.deleteEvent(1L)).thenReturn(Mono.just(true));
+            when(eventRepo.findById(1L)).thenReturn(Mono.just(event));
+            when(eventRepo.deleteById(1L)).thenReturn(Mono.empty());
 
             StepVerifier.create(eventService.deleteEvent(1L)
                             .contextWrite(adminContext()))
@@ -172,7 +182,7 @@ class EventServiceTest {
         @Test
         @DisplayName("should fail when event not found")
         void deleteEvent_notFound() {
-            when(eventRepository.findEventById(99L)).thenReturn(Mono.empty());
+            when(eventRepo.findById(99L)).thenReturn(Mono.empty());
 
             StepVerifier.create(eventService.deleteEvent(99L)
                             .contextWrite(adminContext()))
@@ -194,8 +204,9 @@ class EventServiceTest {
             Event event = Event.builder().id(1L).title("Draft Event").build();
             Event publishedEvent = Event.builder().id(1L).title("Draft Event").build();
 
-            when(eventRepository.findEventById(1L)).thenReturn(Mono.just(event));
-            when(eventRepository.publishEvent(1L)).thenReturn(Mono.just(publishedEvent));
+            when(eventRepo.findById(1L)).thenReturn(Mono.just(event));
+            when(eventRepo.publishEvent(1L)).thenReturn(Mono.empty());
+            when(eventRepo.findById(1L)).thenReturn(Mono.just(publishedEvent));
 
             StepVerifier.create(eventService.publishEvent(1L))
                     .assertNext(e -> assertThat(e.getId()).isEqualTo(1L))
@@ -205,7 +216,7 @@ class EventServiceTest {
         @Test
         @DisplayName("should fail when event not found")
         void publishEvent_notFound() {
-            when(eventRepository.findEventById(99L)).thenReturn(Mono.empty());
+            when(eventRepo.findById(99L)).thenReturn(Mono.empty());
 
             StepVerifier.create(eventService.publishEvent(99L))
                     .expectErrorMatches(err -> err instanceof ApplicationException &&
@@ -232,7 +243,7 @@ class EventServiceTest {
         @Test
         @DisplayName("should fail when ticket not found")
         void cancelTicket_ticketNotFound() {
-            when(eventRepository.findTicketByCode("INVALID")).thenReturn(Mono.empty());
+            when(ticketRepo.findByTicketCode("INVALID")).thenReturn(Mono.empty());
 
             StepVerifier.create(eventService.cancelTicket("INVALID", "User requested"))
                     .expectErrorMatches(err -> err instanceof ApplicationException &&
@@ -249,7 +260,7 @@ class EventServiceTest {
                     .status(Status.CANCELLED)
                     .build();
 
-            when(eventRepository.findTicketByCode("TICKET-001")).thenReturn(Mono.just(cancelledTicket));
+            when(ticketRepo.findByTicketCode("TICKET-001")).thenReturn(Mono.just(cancelledTicket));
 
             StepVerifier.create(eventService.cancelTicket("TICKET-001", "User requested"))
                     .expectErrorMatches(err -> err instanceof ApplicationException &&
@@ -272,8 +283,9 @@ class EventServiceTest {
                     .status(Status.CANCELLED)
                     .build();
 
-            when(eventRepository.findTicketByCode("TICKET-001")).thenReturn(Mono.just(activeTicket));
-            when(eventRepository.cancelTicket(1L, "User requested")).thenReturn(Mono.just(cancelledTicket));
+            when(ticketRepo.findByTicketCode("TICKET-001")).thenReturn(Mono.just(activeTicket));
+            when(ticketRepo.cancelTicket(1L, "User requested")).thenReturn(Mono.empty());
+            when(ticketRepo.findById(1L)).thenReturn(Mono.just(cancelledTicket));
 
             StepVerifier.create(eventService.cancelTicket("TICKET-001", "User requested"))
                     .assertNext(t -> assertThat(t.getStatus()).isEqualTo(Status.CANCELLED))
@@ -296,7 +308,7 @@ class EventServiceTest {
                     .status(Status.ISSUED)
                     .build();
 
-            when(eventRepository.findTicketByCode("TICKET-001")).thenReturn(Mono.just(ticket));
+            when(ticketRepo.findByTicketCode("TICKET-001")).thenReturn(Mono.just(ticket));
 
             StepVerifier.create(eventService.getTicketByCode("TICKET-001"))
                     .assertNext(t -> assertThat(t.getTicketCode()).isEqualTo("TICKET-001"))
@@ -306,7 +318,7 @@ class EventServiceTest {
         @Test
         @DisplayName("should fail when ticket not found")
         void getTicketByCode_notFound() {
-            when(eventRepository.findTicketByCode("INVALID")).thenReturn(Mono.empty());
+            when(ticketRepo.findByTicketCode("INVALID")).thenReturn(Mono.empty());
 
             StepVerifier.create(eventService.getTicketByCode("INVALID"))
                     .expectErrorMatches(err -> err instanceof ApplicationException &&
@@ -341,7 +353,7 @@ class EventServiceTest {
                     .status(Status.ISSUED)
                     .build();
 
-            when(eventRepository.findTicketByCode("TICKET-001")).thenReturn(Mono.just(ticket));
+            when(ticketRepo.findByTicketCode("TICKET-001")).thenReturn(Mono.just(ticket));
 
             StepVerifier.create(eventService.checkIn(1L, codeRequest("TICKET-001"))
                             .contextWrite(staffContext()))
@@ -360,7 +372,7 @@ class EventServiceTest {
                     .status(Status.CHECKED_IN)
                     .build();
 
-            when(eventRepository.findTicketByCode("TICKET-001")).thenReturn(Mono.just(ticket));
+            when(ticketRepo.findByTicketCode("TICKET-001")).thenReturn(Mono.just(ticket));
 
             StepVerifier.create(eventService.checkIn(1L, codeRequest("TICKET-001"))
                             .contextWrite(staffContext()))
@@ -379,7 +391,7 @@ class EventServiceTest {
                     .status(Status.CANCELLED)
                     .build();
 
-            when(eventRepository.findTicketByCode("TICKET-001")).thenReturn(Mono.just(ticket));
+            when(ticketRepo.findByTicketCode("TICKET-001")).thenReturn(Mono.just(ticket));
 
             StepVerifier.create(eventService.checkIn(1L, codeRequest("TICKET-001"))
                             .contextWrite(staffContext()))
@@ -405,8 +417,12 @@ class EventServiceTest {
                     .status(Status.CHECKED_IN)
                     .build();
 
-            when(eventRepository.findTicketByCode("TICKET-001")).thenReturn(Mono.just(ticket));
-            when(eventRepository.checkInTicket(1L)).thenReturn(Mono.just(checkedInTicket));
+            Event event = Event.builder().id(1L).title("Test Event").build();
+
+            when(ticketRepo.findByTicketCode("TICKET-001")).thenReturn(Mono.just(ticket));
+            when(ticketRepo.checkInTicket(eq(1L), any())).thenReturn(Mono.empty());
+            when(ticketRepo.findById(1L)).thenReturn(Mono.just(checkedInTicket));
+            when(eventRepo.findById(1L)).thenReturn(Mono.just(event));
 
             StepVerifier.create(eventService.checkIn(1L, codeRequest("TICKET-001"))
                             .contextWrite(staffContext()))
@@ -424,7 +440,7 @@ class EventServiceTest {
         @Test
         @DisplayName("should fail when event not found")
         void getEventStatistics_notFound() {
-            when(eventRepository.findEventById(99L)).thenReturn(Mono.empty());
+            when(eventRepo.findById(99L)).thenReturn(Mono.empty());
 
             StepVerifier.create(eventService.getEventStatistics(99L))
                     .expectErrorMatches(err -> err instanceof ApplicationException &&

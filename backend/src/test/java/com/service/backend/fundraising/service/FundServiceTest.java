@@ -2,6 +2,8 @@ package com.service.backend.fundraising.service;
 
 import com.service.backend.fundraising.dao.*;
 import com.service.backend.fundraising.dto.*;
+import com.service.backend.organization.dao.OrganizationRepository;
+import com.service.backend.user.dao.UserProfileRepository;
 import com.service.backend.shared.entity.*;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.enums.Status;
@@ -36,10 +38,10 @@ import static org.mockito.Mockito.*;
 class FundServiceTest {
 
     @Mock private FundR2dbcRepository fundR2dbcRepository;
-    @Mock private OrganizationR2dbcRepository organizationRepository;
+    @Mock private OrganizationRepository organizationRepository;
     @Mock private FundReceivingInfosR2dbcRepository fundReceivingInfosRepository;
     @Mock private FundDonationsR2dbcRepository fundDonationsRepository;
-    @Mock private UserR2dbcRepository userRepository;
+    @Mock private UserProfileRepository userRepository;
     @Mock private CacheUtils cacheUtils;
     @Mock private ImageService imageService;
 

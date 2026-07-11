@@ -1,5 +1,7 @@
 package com.service.backend.admin.service;
 
+import com.service.backend.forum.dto.ForumCategoryDTO;
+import com.service.backend.forum.dto.ForumTopicDTO;
 import com.service.backend.shared.entity.*;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
@@ -291,7 +293,7 @@ public class AdminForumService {
                 .doOnSuccess(r -> log.info("updateTopicStatus result: {}", JsonUtils.toJson(r)));
     }
 
-    public Mono<com.service.backend.forum.dto.ForumCategoryDTO> updateCategoryStatus(Integer categoryId, String status, Integer adminUserId) {
+    public Mono<ForumCategoryDTO> updateCategoryStatus(Integer categoryId, String status, Integer adminUserId) {
         final String newStatus;
         try {
             newStatus = normalizeStatus(status);
@@ -341,13 +343,13 @@ public class AdminForumService {
 
     // ========== CATEGORY MANAGEMENT ==========
 
-    public Flux<com.service.backend.forum.dto.ForumCategoryDTO> getAllCategoriesByOrganization(Integer organizationId) {
+    public Flux<ForumCategoryDTO> getAllCategoriesByOrganization(Integer organizationId) {
         return forumCategoryRepository.findByOrganizationId(organizationId)
                 .map(this::convertToCategoryDTO)
                 .doOnError(error -> log.error("Error fetching categories for organization ID: {}", organizationId, error));
     }
 
-    public Mono<com.service.backend.forum.dto.ForumCategoryDTO> getCategoryById(Integer categoryId) {
+    public Mono<ForumCategoryDTO> getCategoryById(Integer categoryId) {
         return forumCategoryRepository.findById(categoryId)
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_CATEGORY_NOT_FOUND))))
                 .map(this::convertToCategoryDTO)
@@ -355,7 +357,7 @@ public class AdminForumService {
                 .doOnError(error -> log.error("Error fetching category ID: {}", categoryId, error));
     }
 
-    public Mono<com.service.backend.forum.dto.ForumCategoryDTO> createCategory(
+    public Mono<ForumCategoryDTO> createCategory(
             Integer organizationId, String name, String description, Integer parentId) {
         ForumCategory category =
             ForumCategory.builder()
@@ -375,7 +377,7 @@ public class AdminForumService {
                 .doOnError(error -> log.error("Error creating forum category: {}", name, error));
     }
 
-    public Mono<com.service.backend.forum.dto.ForumCategoryDTO> updateCategory(
+    public Mono<ForumCategoryDTO> updateCategory(
             Integer categoryId, String name, String description, Integer parentId) {
         return forumCategoryRepository.findById(categoryId)
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_CATEGORY_NOT_FOUND))))
@@ -499,24 +501,25 @@ public class AdminForumService {
     // ========== FORUM STATISTICS ==========
 
     public Mono<ForumStatisticsDTO> getForumStatistics() {
-        Mono<Long> totalPostsMono = forumPostRepository.count();
-        Mono<Long> bannedPostsMono = forumPostRepository.countByIsBannedTrue();
-        Mono<Long> totalTopicsMono = forumTopicRepository.count();
         Mono<Long> totalCategoriesMono = forumCategoryRepository.count();
-        Mono<Long> newTopicsTodayMono = forumTopicRepository.countTopicsCreatedToday();
-        Mono<Long> newPostsTodayMono = forumPostRepository.countPostsCreatedToday();
 
         Mono<ForumStatisticsDTO> baseMono = Mono.zip(
-                totalPostsMono, bannedPostsMono, totalTopicsMono,
-                totalCategoriesMono, newTopicsTodayMono, newPostsTodayMono
-        ).map(tuple -> ForumStatisticsDTO.builder()
-                .totalPosts(tuple.getT1())
-                .bannedPosts(tuple.getT2())
-                .totalTopics(tuple.getT3())
-                .totalCategories(tuple.getT4())
-                .newTopicsToday(tuple.getT5())
-                .newPostsToday(tuple.getT6())
-                .build());
+                forumPostRepository.getAggregatedPostStats(),
+                forumTopicRepository.getAggregatedTopicStats(),
+                totalCategoriesMono
+        ).map(tuple -> {
+            var postStats = tuple.getT1();
+            var topicStats = tuple.getT2();
+            var totalCategories = tuple.getT3();
+            return ForumStatisticsDTO.builder()
+                .totalPosts(postStats.getTotalPosts() != null ? postStats.getTotalPosts() : 0L)
+                .bannedPosts(postStats.getBannedPosts() != null ? postStats.getBannedPosts() : 0L)
+                .newPostsToday(postStats.getNewPostsToday() != null ? postStats.getNewPostsToday() : 0L)
+                .totalTopics(topicStats.getTotalTopics() != null ? topicStats.getTotalTopics() : 0L)
+                .newTopicsToday(topicStats.getNewTopicsToday() != null ? topicStats.getNewTopicsToday() : 0L)
+                .totalCategories(totalCategories)
+                .build();
+        });
 
         Mono<ForumStatisticsDTO.TopicSummary> popularTopicMono = forumPostRepository.findTopicIdWithMostPosts()
                 .flatMap(topicId -> forumTopicRepository.findById(topicId)
@@ -852,9 +855,9 @@ public class AdminForumService {
                 .then();
     }
 
-    private com.service.backend.forum.dto.ForumCategoryDTO convertToCategoryDTO(
+    private ForumCategoryDTO convertToCategoryDTO(
             ForumCategory category) {
-        return com.service.backend.forum.dto.ForumCategoryDTO.builder()
+        return ForumCategoryDTO.builder()
                 .id(category.getId())
                 .parentId(category.getParentId())
                 .organizationId(category.getOrganizationId())
@@ -866,7 +869,7 @@ public class AdminForumService {
                 .build();
     }
 
-    private Flux<com.service.backend.forum.dto.ForumTopicDTO> enrichTopics(Flux<ForumTopic> topicsFlux) {
+    private Flux<ForumTopicDTO> enrichTopics(Flux<ForumTopic> topicsFlux) {
         return topicsFlux.collectList().flatMapMany(topics -> {
             if (topics.isEmpty()) return Flux.empty();
             Set<Integer> topicIds = topics.stream().map(ForumTopic::getId).filter(Objects::nonNull).collect(Collectors.toSet());

@@ -3,13 +3,13 @@ package com.service.backend.article.dao;
 import com.service.backend.shared.entity.AlumniPost;
 import org.springframework.data.r2dbc.repository.Modifying;
 import org.springframework.data.r2dbc.repository.Query;
-import org.springframework.data.repository.reactive.ReactiveCrudRepository;
+import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Repository
-public interface AlumniPostR2dbcRepository extends ReactiveCrudRepository<AlumniPost, Integer> {
+public interface AlumniPostR2dbcRepository extends R2dbcRepository<AlumniPost, Integer> {
 
     @Query("SELECT * FROM alumni_posts WHERE organization_id = :organizationId ORDER BY published_at DESC LIMIT :limit OFFSET :offset")
     Flux<AlumniPost> findByOrganizationIdWithPagination(Integer organizationId, int limit, int offset);

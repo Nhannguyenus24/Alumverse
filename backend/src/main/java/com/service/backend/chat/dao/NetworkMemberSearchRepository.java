@@ -3,7 +3,7 @@ package com.service.backend.chat.dao;
 import java.util.List;
 
 import org.springframework.data.r2dbc.repository.Query;
-import org.springframework.data.repository.reactive.ReactiveCrudRepository;
+import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.stereotype.Repository;
 
 import com.service.backend.shared.entity.OrganizationMember;
@@ -17,7 +17,7 @@ import reactor.core.publisher.Mono;
  */
 @Repository
 public interface NetworkMemberSearchRepository
-        extends ReactiveCrudRepository<OrganizationMember, Integer> {
+        extends R2dbcRepository<OrganizationMember, Integer> {
 
     String SEARCH_FROM_JOIN = """
             FROM organization_members om

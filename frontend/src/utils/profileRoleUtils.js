@@ -56,5 +56,3 @@ export const resolveProfileRoleLabel = ({ profile, academicProfile, t }) => {
   return t('profile:member_role_default');
 };
 
-export const formatMentorHeadline = ({ jobTitle, company, t }) =>
-  [jobTitle, company].filter(Boolean).join(' @ ') || t('profile:mentor_role_default');

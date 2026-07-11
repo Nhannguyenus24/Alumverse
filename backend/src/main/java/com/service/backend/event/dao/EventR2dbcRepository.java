@@ -3,7 +3,7 @@ package com.service.backend.event.dao;
 import com.service.backend.shared.entity.Event;
 import org.springframework.data.r2dbc.repository.Modifying;
 import org.springframework.data.r2dbc.repository.Query;
-import org.springframework.data.repository.reactive.ReactiveCrudRepository;
+import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import com.service.backend.admin.dto.EventStatisticsDTO;
@@ -13,7 +13,7 @@ import reactor.core.publisher.Mono;
 import java.time.LocalDateTime;
 
 @Repository
-public interface EventR2dbcRepository extends ReactiveCrudRepository<Event, Long> {
+public interface EventR2dbcRepository extends R2dbcRepository<Event, Long> {
 
     @Query("SELECT * FROM events WHERE organization_id = :organizationId ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
     Flux<Event> findByOrganizationIdWithPagination(Long organizationId, int limit, int offset);
@@ -163,4 +163,31 @@ public interface EventR2dbcRepository extends ReactiveCrudRepository<Event, Long
     @Query("SELECT COUNT(*) FROM events WHERE organization_id = :organizationId AND is_published = :isPublished")
     Mono<Long> countEventsByOrganizationAndPublishStatus(@Param("organizationId") Long organizationId,
                                                           @Param("isPublished") Boolean isPublished);
+
+    @Query("""
+        SELECT 
+            COUNT(*) AS total_events,
+            SUM(CASE WHEN is_published = true THEN 1 ELSE 0 END) AS published_events,
+            SUM(CASE WHEN is_published = false THEN 1 ELSE 0 END) AS unpublished_events,
+            SUM(CASE WHEN start_time > :now THEN 1 ELSE 0 END) AS upcoming_events,
+            SUM(CASE WHEN start_time <= :now AND end_time >= :now THEN 1 ELSE 0 END) AS ongoing_events,
+            SUM(CASE WHEN end_time < :now THEN 1 ELSE 0 END) AS past_events,
+            SUM(CASE WHEN created_at >= :startOfDay AND created_at < :endOfDay THEN 1 ELSE 0 END) AS new_events_today
+        FROM events
+    """)
+    Mono<com.service.backend.admin.dto.EventAggregatedStatsProjection> getAggregatedEventStats(
+            @Param("now") LocalDateTime now,
+            @Param("startOfDay") LocalDateTime startOfDay,
+            @Param("endOfDay") LocalDateTime endOfDay
+    );
+
+    @Query("""
+        SELECT 
+            COUNT(*) AS total_tickets,
+            SUM(CASE WHEN status = 'REGISTERED' THEN 1 ELSE 0 END) AS registered_tickets,
+            SUM(CASE WHEN status = 'CHECKED_IN' THEN 1 ELSE 0 END) AS checked_in_tickets,
+            SUM(CASE WHEN status = 'CANCELLED' THEN 1 ELSE 0 END) AS cancelled_tickets
+        FROM event_tickets
+    """)
+    Mono<com.service.backend.admin.dto.EventTicketAggregatedStatsProjection> getAggregatedTicketStats();
 }

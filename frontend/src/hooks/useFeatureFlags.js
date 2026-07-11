@@ -28,4 +28,3 @@ export const useFeatureEnabled = (featureName) => {
   return useMemo(() => isFeatureEnabled(rawConfig, featureName), [rawConfig, featureName]);
 };
 
-export default useFeatureFlags;

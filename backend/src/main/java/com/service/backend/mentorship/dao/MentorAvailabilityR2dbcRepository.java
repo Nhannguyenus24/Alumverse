@@ -3,7 +3,7 @@ package com.service.backend.mentorship.dao;
 import com.service.backend.shared.entity.MentorAvailability;
 import org.springframework.data.r2dbc.repository.Modifying;
 import org.springframework.data.r2dbc.repository.Query;
-import org.springframework.data.repository.reactive.ReactiveCrudRepository;
+import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -11,7 +11,7 @@ import reactor.core.publisher.Mono;
 import java.time.LocalDateTime;
 
 @Repository
-public interface MentorAvailabilityR2dbcRepository extends ReactiveCrudRepository<MentorAvailability, Integer> {
+public interface MentorAvailabilityR2dbcRepository extends R2dbcRepository<MentorAvailability, Integer> {
 
     @Query("SELECT * FROM mentor_availabilities WHERE mentor_member_id = :mentorMemberId ORDER BY start_time ASC")
     Flux<MentorAvailability> findByMentorMemberId(Integer mentorMemberId);
@@ -30,9 +30,6 @@ public interface MentorAvailabilityR2dbcRepository extends ReactiveCrudRepositor
     @Modifying
     @Query("UPDATE mentor_availabilities SET status = 'EXPIRED' WHERE status = 'AVAILABLE' AND end_time < :now")
     Mono<Integer> expireStaleAvailabilities(LocalDateTime now);
-
-    @Query("DELETE FROM mentor_availabilities WHERE mentor_member_id = :mentorMemberId AND id = :id")
-    Mono<Void> deleteByMentorMemberIdAndId(Integer mentorMemberId, Integer id);
 
     // Two intervals [a,b) and [c,d) overlap iff a < d AND c < b.
     @Query("SELECT COUNT(*) FROM mentor_availabilities " +

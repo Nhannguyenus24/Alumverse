@@ -9,6 +9,7 @@ import com.service.backend.shared.entity.ForumPost;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
 import java.time.LocalDateTime;
 import java.util.Collection;
 import com.service.backend.shared.dto.IdCountDTO;
@@ -100,12 +101,6 @@ public interface ForumPostRepository extends R2dbcRepository<ForumPost, Integer>
     Mono<Long> countByIsBannedTrue();
 
     // ========== STATISTICS QUERIES ==========
-
-    /**
-     * Count posts created today
-     */
-    @Query("SELECT COUNT(*) FROM forum_posts WHERE DATE(created_at) = CURRENT_DATE")
-    Mono<Long> countPostsCreatedToday();
 
     /**
      * Find the topic_id with the most posts (returns single topic_id)
@@ -240,5 +235,12 @@ public interface ForumPostRepository extends R2dbcRepository<ForumPost, Integer>
            "WHERE ft.organization_id = :organizationId AND fp.is_hidden = true")
     Mono<Long> countHiddenPostsByOrganization(@Param("organizationId") Integer organizationId);
 
+    @Query("""
+        SELECT
+            COUNT(*) AS total_posts,
+            SUM(CASE WHEN is_banned = true THEN 1 ELSE 0 END) AS banned_posts,
+            SUM(CASE WHEN DATE(created_at) = CURRENT_DATE THEN 1 ELSE 0 END) AS new_posts_today
+        FROM forum_posts
+    """)
+    Mono<com.service.backend.forum.dto.ForumPostStatsProjection> getAggregatedPostStats();
 }
-

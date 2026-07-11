@@ -28,17 +28,8 @@ public class AdminFundraisingService {
     public Mono<FundraisingStatisticsDTO> getStatistics() {
         LocalDateTime now = LocalDateTime.now();
 
-        Mono<Long> totalFundsMono = fundRepository.countAll();
-        Mono<Long> activeFundsMono = fundRepository.countOpenFunds(now);
-        Mono<Long> completedFundsMono = fundRepository.countCompletedFunds();
-        Mono<BigDecimal> totalTargetMono = fundRepository.sumTargetAmount().defaultIfEmpty(BigDecimal.ZERO);
-        Mono<BigDecimal> totalRaisedMono = fundRepository.sumCurrentAmount().defaultIfEmpty(BigDecimal.ZERO);
-
-        Mono<Long> totalDonationsMono = fundDonationsRepository.countAllDonations();
-        Mono<Long> successfulDonationsMono = fundDonationsRepository.countByStatus("SUCCESS");
-        Mono<Long> pendingDonationsMono = fundDonationsRepository.countByStatus("PENDING");
-        Mono<Long> failedDonationsMono = fundDonationsRepository.countByStatus("FAILED");
-        Mono<BigDecimal> successfulAmountMono = fundDonationsRepository.sumSuccessfulAmount().defaultIfEmpty(BigDecimal.ZERO);
+        Mono<com.service.backend.admin.dto.AdminFundAggregatedStatsProjection> fundStatsMono = fundRepository.getAdminAggregatedFundStats(now);
+        Mono<com.service.backend.admin.dto.AdminFundDonationAggregatedStatsProjection> donStatsMono = fundDonationsRepository.getAdminAggregatedDonationStats();
 
         Mono<List<FundraisingStatisticsDTO.FundSummary>> topFundsMono = fundRepository.findTopByCurrentAmount(5)
                 .map(this::toFundSummary)
@@ -48,26 +39,25 @@ public class AdminFundraisingService {
                 .map(this::toDayCount)
                 .collectList();
 
-        return Mono.zip(
-                totalFundsMono, activeFundsMono, completedFundsMono,
-                totalTargetMono, totalRaisedMono,
-                totalDonationsMono, successfulDonationsMono, pendingDonationsMono
-        ).flatMap(t1 -> Mono.zip(
-                failedDonationsMono, successfulAmountMono, topFundsMono, timelineMono
-        ).map(t2 -> FundraisingStatisticsDTO.builder()
-                .totalFunds(t1.getT1())
-                .activeFunds(t1.getT2())
-                .completedFunds(t1.getT3())
-                .totalTarget(t1.getT4())
-                .totalRaised(t1.getT5())
-                .totalDonations(t1.getT6())
-                .successfulDonations(t1.getT7())
-                .pendingDonations(t1.getT8())
-                .failedDonations(t2.getT1())
-                .successfulAmount(t2.getT2())
-                .topFundsByRaised(t2.getT3())
-                .donationTimeline(t2.getT4())
-                .build()))
+        return Mono.zip(fundStatsMono, donStatsMono, topFundsMono, timelineMono)
+                .map(tuple -> {
+                    var fStats = tuple.getT1();
+                    var dStats = tuple.getT2();
+                    return FundraisingStatisticsDTO.builder()
+                            .totalFunds(fStats.getTotalFunds() != null ? fStats.getTotalFunds() : 0L)
+                            .activeFunds(fStats.getActiveFunds() != null ? fStats.getActiveFunds() : 0L)
+                            .completedFunds(fStats.getCompletedFunds() != null ? fStats.getCompletedFunds() : 0L)
+                            .totalTarget(fStats.getTotalTargetAmount() != null ? fStats.getTotalTargetAmount() : BigDecimal.ZERO)
+                            .totalRaised(fStats.getTotalCurrentAmount() != null ? fStats.getTotalCurrentAmount() : BigDecimal.ZERO)
+                            .totalDonations(dStats.getTotalDonations() != null ? dStats.getTotalDonations() : 0L)
+                            .successfulDonations(dStats.getSuccessfulDonations() != null ? dStats.getSuccessfulDonations() : 0L)
+                            .pendingDonations(dStats.getPendingDonations() != null ? dStats.getPendingDonations() : 0L)
+                            .failedDonations(dStats.getFailedDonations() != null ? dStats.getFailedDonations() : 0L)
+                            .successfulAmount(dStats.getSuccessfulAmount() != null ? dStats.getSuccessfulAmount() : BigDecimal.ZERO)
+                            .topFundsByRaised(tuple.getT3())
+                            .donationTimeline(tuple.getT4())
+                            .build();
+                })
                 .doOnSuccess(r -> log.info("getFundraisingStatistics completed"))
                 .doOnError(e -> log.error("Error fetching fundraising statistics", e));
     }
