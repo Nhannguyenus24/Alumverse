@@ -17,7 +17,10 @@ import com.service.backend.admin.dto.EmailTemplatePreviewRequest;
 import com.service.backend.admin.dto.EmailTemplatePreviewResponse;
 import com.service.backend.admin.dto.EmailTemplateResponse;
 import com.service.backend.admin.dto.EmailTemplateVariable;
+import com.service.backend.admin.dto.PreviewEmailTemplateRegionsRequest;
+import com.service.backend.admin.dto.UpdateEmailTemplateRegionsRequest;
 import com.service.backend.admin.dto.UpdateEmailTemplateRequest;
+import com.service.backend.admin.support.EmailTemplateRegions;
 import com.service.backend.shared.dao.EmailTemplateR2dbcRepository;
 import com.service.backend.shared.entity.EmailTemplate;
 import com.service.backend.shared.enums.ErrorCode;
@@ -68,17 +71,84 @@ public class AdminEmailTemplateService {
     }
 
     /**
+     * Cập nhật template theo vùng sửa được: ghép {@code regions} vào nội dung HTML gốc, giữ nguyên
+     * layout/CSS/binding. Chỉ dành cho template đã gắn marker vùng.
+     */
+    public Mono<EmailTemplateResponse> updateRegions(Long id, UpdateEmailTemplateRegionsRequest request, Long updatedBy) {
+        Map<String, String> regions = request.getRegions() != null ? request.getRegions() : Map.of();
+        for (String value : regions.values()) {
+            if (EmailTemplateRegions.containsMarkerSyntax(value)) {
+                return Mono.error(new ApplicationException(ErrorCode.BAD_REQUEST,
+                        "Nội dung vùng không được chứa cú pháp đánh dấu vùng"));
+            }
+        }
+        return repository.findById(id)
+                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.RESOURCES_NOT_FOUND,
+                        "Không tìm thấy email template")))
+                .flatMap(tpl -> {
+                    if (!EmailTemplateRegions.hasRegions(tpl.getContent())) {
+                        return Mono.error(new ApplicationException(ErrorCode.BAD_REQUEST,
+                                "Template chưa có vùng sửa được. Hãy dùng chế độ HTML hoặc khôi phục mẫu gốc."));
+                    }
+                    tpl.setContent(EmailTemplateRegions.apply(tpl.getContent(), regions));
+                    tpl.setSubject(StringUtils.hasText(request.getSubject()) ? request.getSubject() : null);
+                    tpl.setUpdatedBy(updatedBy);
+                    tpl.setUpdatedAt(OffsetDateTime.now());
+                    return repository.save(tpl);
+                })
+                .map(this::toResponse);
+    }
+
+    /**
+     * Khôi phục nội dung template về mẫu gốc từ file {@code templates/<code>.html} (đã gắn marker
+     * vùng). Dùng để bật chế độ sửa theo vùng cho template cũ hoặc hoàn tác chỉnh sửa hỏng.
+     */
+    public Mono<EmailTemplateResponse> resetToDefault(Long id, Long updatedBy) {
+        return repository.findById(id)
+                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.RESOURCES_NOT_FOUND,
+                        "Không tìm thấy email template")))
+                .flatMap(tpl -> {
+                    String html = readTemplateFile(tpl.getTemplateCode());
+                    if (!StringUtils.hasText(html)) {
+                        return Mono.error(new ApplicationException(ErrorCode.RESOURCES_NOT_FOUND,
+                                "Không tìm thấy mẫu gốc cho template này"));
+                    }
+                    tpl.setContent(html);
+                    tpl.setUpdatedBy(updatedBy);
+                    tpl.setUpdatedAt(OffsetDateTime.now());
+                    return repository.save(tpl);
+                })
+                .map(this::toResponse);
+    }
+
+    /**
      * Render thử template với dữ liệu mẫu. Xử lý CPU-bound chạy trên boundedElastic; lỗi cú pháp
      * Thymeleaf được bắt và trả về trong trường {@code error} thay vì ném lỗi 500.
      */
     public Mono<EmailTemplatePreviewResponse> preview(EmailTemplatePreviewRequest request) {
-        Map<String, Object> sampleData = request.getSampleData() != null ? request.getSampleData() : Map.of();
+        return renderPreview(request.getContent(), request.getSubject(), request.getSampleData());
+    }
+
+    /** Render thử theo vùng: ghép regions vào content gốc của template rồi render với dữ liệu mẫu. */
+    public Mono<EmailTemplatePreviewResponse> previewRegions(Long id, PreviewEmailTemplateRegionsRequest request) {
+        Map<String, String> regions = request.getRegions() != null ? request.getRegions() : Map.of();
+        return repository.findById(id)
+                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.RESOURCES_NOT_FOUND,
+                        "Không tìm thấy email template")))
+                .flatMap(tpl -> {
+                    String content = EmailTemplateRegions.apply(tpl.getContent(), regions);
+                    return renderPreview(content, request.getSubject(), request.getSampleData());
+                });
+    }
+
+    private Mono<EmailTemplatePreviewResponse> renderPreview(String content, String subjectInput, Map<String, Object> data) {
+        Map<String, Object> sampleData = data != null ? data : Map.of();
         return Mono.fromCallable(() -> {
             Context context = new Context();
             context.setVariables(sampleData);
             try {
-                String html = templateEngine.process(request.getContent(), context);
-                String subject = StringUtils.hasText(request.getSubject()) ? request.getSubject() : null;
+                String html = templateEngine.process(content, context);
+                String subject = StringUtils.hasText(subjectInput) ? subjectInput : null;
                 return new EmailTemplatePreviewResponse(subject, html, null);
             } catch (RuntimeException e) {
                 log.debug("Preview template lỗi cú pháp: {}", e.getMessage());
@@ -86,6 +156,15 @@ public class AdminEmailTemplateService {
                         "Lỗi cú pháp template: " + rootMessage(e));
             }
         }).subscribeOn(Schedulers.boundedElastic());
+    }
+
+    private String readTemplateFile(String code) {
+        try {
+            return JsonUtils.readResourceAsString("templates/" + code + ".html");
+        } catch (RuntimeException e) {
+            log.warn("Không đọc được file templates/{}.html: {}", code, e.getMessage());
+            return null;
+        }
     }
 
     private String rootMessage(Throwable e) {
@@ -104,6 +183,8 @@ public class AdminEmailTemplateService {
         res.setContent(tpl.getContent());
         res.setDescription(tpl.getDescription());
         res.setVariables(parseVariables(tpl.getVariables()));
+        res.setRegions(EmailTemplateRegions.extract(tpl.getContent()));
+        res.setEditable(EmailTemplateRegions.hasRegions(tpl.getContent()));
         res.setUpdatedAt(tpl.getUpdatedAt());
         return res;
     }

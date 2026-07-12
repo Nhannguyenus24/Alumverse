@@ -165,14 +165,14 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>Cảm Ơn Về Danh Nghĩa Quyên Góp</h1>
+            <h1><!--#region key="headerTitle" label="Tiêu đề chính" type="text"-->Cảm Ơn Về Danh Nghĩa Quyên Góp<!--#endregion--></h1>
             <p>Hệ Thống Quản Lý Sinh Viên - Cựu Sinh Viên HCMUS</p>
         </div>
 
         <div class="content">
             <div class="greeting">
                 <p><strong>Kính chào <span th:text="${donorName}">Quý Khách</span>!</strong></p>
-                <p>Chúng tôi xin gửi lời cảm ơn chân thành nhất vì sự ủng hộ và đóng góp chung tay của bạn cho sự phát triển của Trường Đại học Khoa học Tự nhiên - HCMUS.</p>
+                <p><!--#region key="thankYouMessage" label="Lời cảm ơn" type="html"-->Chúng tôi xin gửi lời cảm ơn chân thành nhất vì sự ủng hộ và đóng góp chung tay của bạn cho sự phát triển của Trường Đại học Khoa học Tự nhiên - HCMUS.<!--#endregion--></p>
             </div>
 
             <div class="donation-box">
@@ -194,7 +194,7 @@
                 </div>
             </div>
 
-            <div class="impact-section">
+            <div class="impact-section"><!--#region key="impact" label="Tác động quyên góp" type="html"-->
                 <strong>💡 Những tác động của sự quyên góp của bạn:</strong>
                 Đóng góp của bạn sẽ giúp chúng tôi:
                 <ul style="margin: 8px 0; padding-left: 20px;">
@@ -203,25 +203,25 @@
                     <li>Tố chức các chương trình giao lưu, hội thảo</li>
                     <li>Nâng cao chất lượng giáo dục và đào tạo</li>
                 </ul>
-            </div>
+            <!--#endregion--></div>
 
-            <div class="recognition">
+            <div class="recognition"><!--#region key="recognition" label="Sự công nhận" type="html"-->
                 <strong>🌟 Sự công nhận:</strong> Tên quý khách sẽ được ghi danh trong sổ nhân sĩ ủng hộ giáo dục và có cơ hội xác nhận công khai nếu muốn.
-            </div>
+            <!--#endregion--></div>
 
             <div class="action-button">
-                <a href="javascript:void(0);" th:href="@{/alumni/donation-history}">Xem Lịch Sử Quyên Góp</a>
+                <a href="javascript:void(0);" th:href="@{/alumni/donation-history}"><!--#region key="buttonLabel" label="Nhãn nút" type="text"-->Xem Lịch Sử Quyên Góp<!--#endregion--></a>
             </div>
 
-            <div class="contact">
+            <div class="contact"><!--#region key="contact" label="Thông tin hỗ trợ" type="html"-->
                 <strong>Cần hỗ trợ?</strong> Vui lòng liên hệ: support@alumni.hcmus.edu.vn hoặc gọi 1900-123-456
-            </div>
+            <!--#endregion--></div>
         </div>
 
-        <div class="footer">
+        <div class="footer"><!--#region key="footer" label="Chân trang" type="html"-->
             <p>&copy; 2026 Hệ Thống Alumni HCMUS. Tất cả quyền được bảo lưu.</p>
             <p>Email này được gửi tự động. Vui lòng không trả lời trực tiếp.</p>
-        </div>
+        <!--#endregion--></div>
     </div>
 </body>
 </html>

@@ -21,13 +21,13 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>Nhắc nhở tham gia sự kiện</h1>
+            <h1><!--#region key="headerTitle" label="Tiêu đề chính" type="text"-->Nhắc nhở tham gia sự kiện<!--#endregion--></h1>
             <p>Hệ Thống Quản Lý Sinh Viên - Cựu Sinh Viên HCMUS</p>
         </div>
 
-        <div class="reminder-banner">
+        <div class="reminder-banner"><!--#region key="banner" label="Băng-rôn nhắc nhở" type="html"-->
              Sự kiện sắp diễn ra! Đừng quên tham gia.
-        </div>
+        <!--#endregion--></div>
 
         <div class="event-box">
             <div class="event-title" th:text="${eventTitle}">Tên sự kiện</div>
@@ -45,10 +45,10 @@
             Nội dung nhắc nhở từ ban tổ chức.
         </div>
 
-        <div class="footer">
+        <div class="footer"><!--#region key="footer" label="Chân trang" type="html"-->
             <p>&copy; 2026 Alumniverse - Hệ Thống Alumni HCMUS. Tất cả quyền được bảo lưu.</p>
             <p>Email này được gửi tự động. Vui lòng không trả lời trực tiếp.</p>
-        </div>
+        <!--#endregion--></div>
     </div>
 </body>
 </html>

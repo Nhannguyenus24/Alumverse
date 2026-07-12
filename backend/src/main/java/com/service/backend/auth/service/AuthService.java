@@ -413,8 +413,7 @@ public class AuthService {
                                                 .defaultIfEmpty(0)
                                                 .map(level -> buildRefreshResponse(user, finalOrgId, level));
                                     });
-                        })
-                        .doOnSuccess(res -> logger.info("refreshAccessToken: userId={} token refreshed for organizationId={}", userId, organizationId)))
+                        }))
                 .doOnSuccess(res -> meterRegistry.counter("auth.token.refresh", "result", "success").increment())
                 .doOnError(error -> meterRegistry.counter("auth.token.refresh", "result", "failure").increment());
     }

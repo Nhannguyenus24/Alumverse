@@ -119,37 +119,37 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>Xác Minh OTP</h1>
+            <h1><!--#region key="headerTitle" label="Tiêu đề chính" type="text"-->Xác Minh OTP<!--#endregion--></h1>
             <p>Hệ Thống Quản Lý Sinh Viên - Cựu Sinh Viên HCMUS</p>
         </div>
 
         <div class="content">
-            <div class="alumni-info">
+            <div class="alumni-info"><!--#region key="intro" label="Đoạn mở đầu" type="html"-->
                 <p><strong>Chào mừng bạn!</strong></p>
                 <p>Để bảo vệ tài khoản Alumni của bạn, vui lòng sử dụng mã OTP dưới đây để xác minh địa chỉ email.</p>
-            </div>
+            <!--#endregion--></div>
 
             <div class="otp-box">
-                <span class="otp-label">Mã xác minh OTP của bạn:</span>
+                <span class="otp-label"><!--#region key="otpLabel" label="Nhãn mã OTP" type="text"-->Mã xác minh OTP của bạn:<!--#endregion--></span>
                 <div class="otp-code" th:text="${otp}">123456</div>
             </div>
 
-            <p style="color: #333; font-size: 14px;">
+            <p style="color: #333; font-size: 14px;"><!--#region key="expiryNote" label="Ghi chú thời hạn" type="html"-->
                 Mã OTP này sẽ hết hạn trong vòng <strong>5 phút</strong>. Vui lòng không chia sẻ mã này với bất kỳ ai.
-            </p>
+            <!--#endregion--></p>
 
-            <div class="info-text">
+            <div class="info-text"><!--#region key="infoNote" label="Ghi chú thêm" type="html"-->
                 <strong>Lưu ý:</strong> Mã OTP này sẽ được ghi lại trong lịch sử xác minh tài khoản của bạn.
-            </div>
+            <!--#endregion--></div>
 
-            <div class="contact">
+            <div class="contact"><!--#region key="contact" label="Thông tin hỗ trợ" type="html"-->
                 <strong>Cần hỗ trợ?</strong> Vui lòng liên hệ: support@alumni.hcmus.edu.vn hoặc gọi 1900-123-456
-            </div>
+            <!--#endregion--></div>
         </div>
 
-        <div class="footer">
+        <div class="footer"><!--#region key="footer" label="Chân trang" type="html"-->
             <p>&copy; 2026 Hệ Thống Alumni HCMUS. Tất cả quyền được bảo lưu.</p>
-        </div>
+        <!--#endregion--></div>
     </div>
 </body>
 </html>

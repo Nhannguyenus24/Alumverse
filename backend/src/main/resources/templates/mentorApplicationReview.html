@@ -60,12 +60,12 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>AlumVerse Mentorship</h1>
+            <h1><!--#region key="headerTitle" label="Tiêu đề chính" type="text"-->AlumVerse Mentorship<!--#endregion--></h1>
         </div>
 
         <p>Xin chào <strong th:text="${recipientName}">bạn</strong>,</p>
 
-        <p>Quản trị viên vừa cập nhật trạng thái hồ sơ Mentor của bạn:</p>
+        <p><!--#region key="intro" label="Đoạn mở đầu" type="html"-->Quản trị viên vừa cập nhật trạng thái hồ sơ Mentor của bạn:<!--#endregion--></p>
 
         <p>
             <span th:class="'status-badge status-' + ${status}" th:text="${statusLabel}">Status</span>
@@ -76,23 +76,23 @@
             <span th:text="${reason}">reason</span>
         </div>
 
-        <p th:if="${status == 'APPROVED'}">
+        <p th:if="${status == 'APPROVED'}"><!--#region key="approvedText" label="Nội dung khi Đã duyệt" type="html"-->
             Chúc mừng bạn! Hồ sơ Mentor đã được duyệt. Bạn có thể bắt đầu thiết lập lịch rảnh và
             nhận yêu cầu mentoring từ mentee.
-        </p>
+        <!--#endregion--></p>
 
-        <p th:if="${status == 'NEED_UPDATE'}">
+        <p th:if="${status == 'NEED_UPDATE'}"><!--#region key="needUpdateText" label="Nội dung khi Cần cập nhật" type="html"-->
             Vui lòng đăng nhập vào AlumVerse, chỉnh sửa hồ sơ theo yêu cầu ở trên và gửi lại để
             được xét duyệt.
-        </p>
+        <!--#endregion--></p>
 
-        <p th:if="${status == 'REJECTED'}">
+        <p th:if="${status == 'REJECTED'}"><!--#region key="rejectedText" label="Nội dung khi Từ chối" type="html"-->
             Bạn vẫn có thể chỉnh sửa hồ sơ và đăng ký lại sau khi đáp ứng các yêu cầu cộng đồng.
-        </p>
+        <!--#endregion--></p>
 
-        <div class="footer">
+        <div class="footer"><!--#region key="footer" label="Chân trang" type="html"-->
             Email được gửi tự động từ hệ thống AlumVerse. Vui lòng không trả lời email này.
-        </div>
+        <!--#endregion--></div>
     </div>
 </body>
 </html>

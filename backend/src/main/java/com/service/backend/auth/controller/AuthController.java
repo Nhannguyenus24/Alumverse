@@ -217,9 +217,6 @@ public class AuthController {
             @PathVariable @Min(value = 1, message = "Organization ID must be greater than 0") Integer organizationId,
             @CookieValue(value = "refreshToken", required = false) String refreshToken) {
 
-        logger.info("/auth/switch-organization/{} called — refreshToken cookie present: {}",
-                organizationId, org.springframework.util.StringUtils.hasText(refreshToken));
-
         return authService.switchOrganization(refreshToken, organizationId)
                 .doOnError(err -> logger.warn("/auth/switch-organization/{} failed: {}", organizationId, err.getMessage()))
                 .map(tuple -> {

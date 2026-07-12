@@ -112,7 +112,6 @@ public class ChatWebSocketHandler implements WebSocketHandler {
             com.nimbusds.jwt.JWTClaimsSet claims = jwtUtils.validateToken(token);
             Integer userId = Integer.valueOf(claims.getSubject());
             Long memberId = userId.longValue();
-            log.info("Extracted memberId {} from WebSocket handshake token", memberId);
             return Mono.just(memberId);
         } catch (Exception e) {
             log.error("Invalid token in WebSocket handshake", e);
@@ -123,7 +122,6 @@ public class ChatWebSocketHandler implements WebSocketHandler {
     private static String resolveTokenFromQueryParam(WebSocketSession session) {
         String query = session.getHandshakeInfo().getUri().getQuery();
         if (query != null && query.contains("token=")) {
-            System.out.println("from query param 1111");
             int start = query.indexOf("token=") + 6;
             int amp = query.indexOf('&', start);
             String raw = amp >= 0 ? query.substring(start, amp) : query.substring(start);
