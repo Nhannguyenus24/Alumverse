@@ -31,25 +31,7 @@ public interface UserBlockRepository extends R2dbcRepository<UserBlock, Long> {
     @Query("""
             SELECT COUNT(ub.id)
             FROM user_blocks ub
-            INNER JOIN chat_group_members cgm ON cgm.member_id = ub.blocked_member_id
-            WHERE ub.blocker_member_id = :senderMemberId
-              AND cgm.group_id = :groupId
-            """)
-    Mono<Long> countSenderBlockedMembersInGroup(Long senderMemberId, Long groupId);
-
-    @Query("""
-            SELECT COUNT(ub.id)
-            FROM user_blocks ub
-            INNER JOIN chat_group_members cgm ON cgm.member_id = ub.blocker_member_id
-            WHERE ub.blocked_member_id = :senderMemberId
-              AND cgm.group_id = :groupId
-            """)
-    Mono<Long> countSenderBlockedByMembersInGroup(Long senderMemberId, Long groupId);
-
-    @Query("""
-            SELECT COUNT(ub.id)
-            FROM user_blocks ub
-            INNER JOIN chat_group_members cgm 
+            INNER JOIN chat_group_members cgm
                 ON (cgm.member_id = ub.blocked_member_id AND ub.blocker_member_id = :senderMemberId)
                 OR (cgm.member_id = ub.blocker_member_id AND ub.blocked_member_id = :senderMemberId)
             WHERE cgm.group_id = :groupId

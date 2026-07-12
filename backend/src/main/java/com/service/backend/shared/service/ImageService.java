@@ -161,17 +161,6 @@ public class ImageService {
                 .subscribeOn(Schedulers.boundedElastic());
     }
 
-    public Mono<Boolean> imageExists(String fileName) {
-        return Mono.fromCallable(() -> {
-            try {
-                var filePath = Paths.get(uploadDir + fileName);
-                return Files.exists(filePath);
-            } catch (Exception e) {
-                return false;
-            }
-        }).subscribeOn(Schedulers.boundedElastic());
-    }
-
     public Mono<Boolean> deleteImage(String fileName) {
         return Mono.fromCallable(() -> {
             try {

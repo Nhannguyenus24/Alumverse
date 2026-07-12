@@ -96,30 +96,11 @@ public interface EventR2dbcRepository extends R2dbcRepository<Event, Long> {
     @Query("SELECT COUNT(*) FROM events WHERE is_published = :isPublished")
     Mono<Long> countEventsByPublishStatus(@Param("isPublished") Boolean isPublished);
 
-    @Query("SELECT COUNT(*) FROM events WHERE is_published = true")
-    Mono<Long> countPublishedEvents();
-
-    @Query("SELECT COUNT(*) FROM events WHERE is_published = false")
-    Mono<Long> countUnpublishedEvents();
-
     @Query("SELECT COUNT(*) FROM events WHERE start_time > :now")
     Mono<Long> countUpcomingEvents(@Param("now") LocalDateTime now);
 
-    @Query("SELECT COUNT(*) FROM events WHERE end_time < :now")
-    Mono<Long> countPastEvents(@Param("now") LocalDateTime now);
-
-    @Query("SELECT COUNT(*) FROM events WHERE start_time <= :now AND end_time >= :now")
-    Mono<Long> countOngoingEvents(@Param("now") LocalDateTime now);
-
-    @Query("SELECT COUNT(*) FROM events WHERE created_at >= :startOfDay AND created_at < :endOfDay")
-    Mono<Long> countEventsCreatedToday(@Param("startOfDay") LocalDateTime startOfDay,
-                                       @Param("endOfDay") LocalDateTime endOfDay);
-
     @Query("SELECT COUNT(*) FROM event_tickets")
     Mono<Long> countAllTickets();
-
-    @Query("SELECT COUNT(*) FROM event_tickets WHERE status = :status")
-    Mono<Long> countTicketsByStatus(@Param("status") String status);
 
     @Query("SELECT COUNT(*) FROM event_interests")
     Mono<Long> countAllInterests();
@@ -165,7 +146,7 @@ public interface EventR2dbcRepository extends R2dbcRepository<Event, Long> {
                                                           @Param("isPublished") Boolean isPublished);
 
     @Query("""
-        SELECT 
+        SELECT
             COUNT(*) AS total_events,
             SUM(CASE WHEN is_published = true THEN 1 ELSE 0 END) AS published_events,
             SUM(CASE WHEN is_published = false THEN 1 ELSE 0 END) AS unpublished_events,
@@ -182,7 +163,7 @@ public interface EventR2dbcRepository extends R2dbcRepository<Event, Long> {
     );
 
     @Query("""
-        SELECT 
+        SELECT
             COUNT(*) AS total_tickets,
             SUM(CASE WHEN status = 'REGISTERED' THEN 1 ELSE 0 END) AS registered_tickets,
             SUM(CASE WHEN status = 'CHECKED_IN' THEN 1 ELSE 0 END) AS checked_in_tickets,

@@ -130,7 +130,7 @@ public class MetricsFilter implements WebFilter {
             }
         }
 
-        return normalized.length() == 0 ? "/" : normalized.toString();
+        return normalized.isEmpty() ? "/" : normalized.toString();
     }
 
 }

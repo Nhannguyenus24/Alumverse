@@ -22,7 +22,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.service.backend.shared.dto.ApiResponse;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
-import java.nio.charset.StandardCharsets;
 
 import java.time.Duration;
 

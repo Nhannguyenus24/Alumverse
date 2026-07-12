@@ -28,9 +28,6 @@ import java.util.List;
 public class AdminEventService {
 
     private static final Logger log = LoggerFactory.getLogger(AdminEventService.class);
-
-    private static final String STATUS_REGISTERED = "REGISTERED";
-    private static final String STATUS_CHECKED_IN = "CHECKED_IN";
     private static final String STATUS_CANCELLED = "CANCELLED";
 
     private final EventR2dbcRepository eventRepo;

@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.dao.DataIntegrityViolationException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -245,17 +246,15 @@ public class UserService {
                     return Mono.fromCallable(() -> passwordEncoder.encode(newPassword))
                             .subscribeOn(Schedulers.boundedElastic())
                             .flatMap(hashedPassword -> authRepository.updatePasswordById(userId, hashedPassword))
-                            .flatMap(updatedRows -> {
-                                return emailService.sendHtmlEmail(
-                                    user.getEmail(),
-                                    "Thông báo thay đổi mật khẩu thành công",
-                                    "passwordChangedSuccessfully",
-                                    java.util.Map.of("email", user.getEmail())
-                                ).onErrorResume(err -> {
-                                    logger.error("Failed to send password changed email to {}: {}", user.getEmail(), err.getMessage());
-                                    return Mono.empty();
-                                }).then();
-                            });
+                            .then(Mono.defer(() -> emailService.sendHtmlEmail(
+                                user.getEmail(),
+                                "Thông báo thay đổi mật khẩu thành công",
+                                "passwordChangedSuccessfully",
+                                Map.of("email", user.getEmail())
+                            ).onErrorResume(err -> {
+                                logger.error("Failed to send password changed email to {}: {}", user.getEmail(), err.getMessage());
+                                return Mono.empty();
+                            }).then()));
                 })
                 .doOnSuccess(v -> logger.info("changeMyPassword: userId={} password changed", userId));
     }
@@ -461,10 +460,6 @@ public class UserService {
                 .forumReplyEnabled(true)
                 .updatedAt(null)
                 .build();
-    }
-
-    private UserOrganizationMemberResponse toOrganizationMemberResponse(OrganizationMember member) {
-        return toOrganizationMemberResponse(member, null);
     }
 
     private UserOrganizationMemberResponse toOrganizationMemberResponse(OrganizationMember member, String organizationName) {

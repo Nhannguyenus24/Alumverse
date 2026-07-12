@@ -195,7 +195,8 @@ public class AdminEmailTemplateService {
         }
         try {
             List<EmailTemplateVariable> parsed =
-                    JsonUtils.fromJson(json, new TypeReference<List<EmailTemplateVariable>>() {});
+                    JsonUtils.fromJson(json, new TypeReference<>() {
+                    });
             return parsed != null ? parsed : List.of();
         } catch (RuntimeException e) {
             log.warn("Không parse được variables JSON: {}", e.getMessage());

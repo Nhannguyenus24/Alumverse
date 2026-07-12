@@ -250,7 +250,7 @@ public class AdminInsightsService {
                         toPoints(repo.mentorReportsByStatus()),
                         toPoints(repo.forumReportsByStatus()))
                 .map(t -> PlatformStatsDTO.QualityStats.builder()
-                        .avgSessionRating(Math.round((t.getT1() == null ? 0.0 : t.getT1()) * 100) / 100.0)
+                        .avgSessionRating(Math.round(t.getT1() * 100) / 100.0)
                         .ratingDistribution(t.getT2())
                         .mentorReportsByStatus(t.getT3())
                         .forumReportsByStatus(t.getT4())

@@ -50,11 +50,11 @@ public class SseController {
         response.getHeaders().set("X-Accel-Buffering", "no");
         response.getHeaders().set("Cache-Control", "no-cache");
 
-        Long userId;
+        long userId;
         Integer organizationId;
         try {
             JWTClaimsSet claims = jwtUtils.validateToken(token);
-            userId = Long.valueOf(claims.getSubject());
+            userId = Long.parseLong(claims.getSubject());
             Object orgIdClaim = claims.getClaim("organizationId");
             organizationId = orgIdClaim instanceof Number number ? number.intValue() : null;
         } catch (Exception e) {

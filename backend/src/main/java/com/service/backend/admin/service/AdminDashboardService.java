@@ -8,6 +8,7 @@ import com.service.backend.admin.dao.AuditRepository;
 import com.service.backend.fundraising.dao.FundDonationsR2dbcRepository;
 import com.service.backend.admin.dto.DashboardMetricsDTO;
 import com.service.backend.admin.dto.ActivityItemDTO;
+import com.service.backend.shared.entity.User;
 import com.service.backend.shared.utils.CacheUtils;
 import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.dto.PaginatedResponse;
@@ -23,10 +24,7 @@ import reactor.core.publisher.Mono;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -118,7 +116,7 @@ public class AdminDashboardService {
 
             Set<Integer> adminIds = activityItems.stream()
                     .map(ActivityItemDTO::getAdminUserId)
-                    .filter(id -> id != null)
+                    .filter(Objects::nonNull)
                     .collect(Collectors.toCollection(HashSet::new));
 
             if (adminIds.isEmpty()) {
@@ -126,7 +124,7 @@ public class AdminDashboardService {
             }
 
             return adminUserRepository.findAllById(adminIds)
-                    .collectMap(user -> user.getId())
+                    .collectMap(User::getId)
                     .flatMapMany(usersById -> Flux.fromIterable(activityItems)
                             .map(item -> {
                                 var user = usersById.get(item.getAdminUserId());

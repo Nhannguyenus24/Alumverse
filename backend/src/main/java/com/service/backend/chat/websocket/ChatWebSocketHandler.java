@@ -74,7 +74,7 @@ public class ChatWebSocketHandler implements WebSocketHandler {
         Mono<Long> memberIdMono = extractMemberIdFromToken(session)
         .onErrorResume(error -> {
             //System.out.println("Error on extracting memberId from token: " + error.getMessage());
-            log.error("Error on extracting memberId from token: " + error.getMessage());
+            log.error("Error on extracting memberId from token: {}", error.getMessage());
             return Mono.error(new ApplicationException(ErrorCode.ERROR_EXTRACTING_MEMBERID_FROM_TOKEN, "Error during extracting memberId from token."));
         });
 
@@ -88,7 +88,7 @@ public class ChatWebSocketHandler implements WebSocketHandler {
                             .flatMap(messageText -> handleMessage(session, memberId, messageText))
                             .then()
                             .doFinally(signalType -> {
-                                cleanupSession(session, memberId);
+                                cleanupSession(session);
                                 log.info("WebSocket disconnected: sessionId={}, memberId={}", session.getId(), memberId);
                             });
                 })
@@ -257,14 +257,12 @@ public class ChatWebSocketHandler implements WebSocketHandler {
                 "payload", payload
         ));
 
-        return Mono.fromRunnable(() -> {
-            sessions.forEach(session -> {
-                if (session.isOpen()) {
-                    session.send(Mono.just(session.textMessage(eventJson)))
-                            .subscribe(null, error -> log.error("Error broadcasting to session {}", session.getId(), error));
-                }
-            });
-        }).then();
+        return Mono.fromRunnable(() -> sessions.forEach(session -> {
+            if (session.isOpen()) {
+                session.send(Mono.just(session.textMessage(eventJson)))
+                        .subscribe(null, error -> log.error("Error broadcasting to session {}", session.getId(), error));
+            }
+        })).then();
     }
 
     private Mono<Void> sendMessage(WebSocketSession session, String json) {
@@ -279,7 +277,7 @@ public class ChatWebSocketHandler implements WebSocketHandler {
         return sendMessage(session, errorJson);
     }
 
-    private void cleanupSession(WebSocketSession session, Long memberId) {
+    private void cleanupSession(WebSocketSession session) {
         sessionToMember.remove(session.getId());
 
         groupToSessions.values().forEach(sessions -> sessions.remove(session));

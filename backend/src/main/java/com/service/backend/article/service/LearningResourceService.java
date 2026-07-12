@@ -65,10 +65,7 @@ public class LearningResourceService {
                             existing.setType(LearningResourceType.valueOf(request.getType().toUpperCase()));
                             existing.setLinkUrl(request.getLinkUrl());
                             existing.setDescription(request.getDescription());
-                            String newThumbnail = uploadedThumbnail.orElse(null);
-                            if (newThumbnail != null) {
-                                existing.setThumbnailUrl(newThumbnail.isEmpty() ? null : newThumbnail);
-                            }
+                            uploadedThumbnail.ifPresent(newThumbnail -> existing.setThumbnailUrl(newThumbnail.isEmpty() ? null : newThumbnail));
                             return learningResourceRepository.save(existing);
                         }))
                 .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
