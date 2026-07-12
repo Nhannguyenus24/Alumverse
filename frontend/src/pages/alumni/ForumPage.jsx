@@ -1,17 +1,10 @@
-import { Box, Button, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../hooks/useAuth';
 import { useOrganization } from '../../hooks/useOrganization';
 import { useNotification } from '../../hooks/useNotification';
-import ForumFilterPanel from '../../components/forum/ForumFilterPanel';
-import ForumSection from '../../components/forum/ForumSection';
-import AlumniContentLayout from '../../layouts/AlumniContentLayout';
 
 import { useForumPageLogic } from '../../hooks/forum/useForumPageLogic';
 import { useForumManageMode } from '../../hooks/forum/useForumManageMode';
-import ForumManageView from '../../components/forum/ForumManageView';
-import TuneOutlinedIcon from '@mui/icons-material/TuneOutlined';
-import { ScrollReveal } from '../../components/animations/ScrollReveal';
 
 const ForumPage = () => {
   const { t } = useTranslation(['forum', 'common']);

@@ -6,7 +6,6 @@ import {
   useRef,
   useState,
 } from 'react';
-import { Box } from '@mui/material';
 import { motion, useReducedMotion } from 'framer-motion';
 
 const EASE_OUT = [0.22, 1, 0.36, 1];

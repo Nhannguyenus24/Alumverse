@@ -1,4 +1,3 @@
-import { Box, Typography } from "@mui/material";
 
 const LoadingScreen = ({ message}) => {
   return (

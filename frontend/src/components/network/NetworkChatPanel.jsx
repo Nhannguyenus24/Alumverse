@@ -1,41 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ScrollReveal } from '../animations/ScrollReveal';
 import {
   alpha,
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  IconButton,
-  InputAdornment,
-  ListItemIcon,
-  ListItemText,
-  MenuItem,
-  TextField,
-  Tooltip,
-  Typography,
 } from '@mui/material';
-import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
-import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
-import LockOpenOutlinedIcon from '@mui/icons-material/LockOpen';
-import SendIcon from '@mui/icons-material/Send';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import AttachFileIcon from '@mui/icons-material/AttachFile';
 
-import Scrollbar from '../Scrollbar';
-import ChatEmojiPickerButton from '../ChatEmojiPickerButton';
 import { insertTextAtInputSelection } from '../../utils/insertTextAtInputSelection';
-import ConfirmDialog from '../ConfirmDialog';
-import IconButtonMenu from '../IconButtonMenu';
-import GroupMembersDrawer from './GroupMembersDrawer';
 import { useChatMessages } from '../../hooks/chat/useChatMessages';
 import { useGroupBlockedMembersContext } from '../../hooks/chat/useGroupBlockedMembersContext';
 import { useChatWebSocket } from '../../hooks/mentorship/useChatWebSocket';
 import { useBlockUser } from '../../hooks/network/useBlockUser';
 import { useNotification } from '../../hooks/useNotification';
 import useAuthStore from '../../stores/authStore';
-import ChatAvatar from '../ChatAvatar';
 import { buildGroupBlockedMembersBannerMessage } from '../../utils/formatBlockedMemberNames';
 import { useCanContribute } from '../../hooks/useCanContribute';
 import { chatApi } from '../../utils/api';
@@ -48,7 +23,6 @@ import {
   validateChatImageFile,
   validateVideoFile,
 } from '../../utils/imageUtils';
-import ChatMessageMedia from './ChatMessageMedia';
 import { exceedsLengthLimit, MAX_MESSAGE_LENGTH } from '../../utils/messageContent';
 
 function formatTime(isoString) {

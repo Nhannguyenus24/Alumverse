@@ -1,13 +1,4 @@
-import { Box, Stack } from '@mui/material';
-import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
-import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
-import PendingActionsOutlinedIcon from '@mui/icons-material/PendingActionsOutlined';
-import TaskAltOutlinedIcon from '@mui/icons-material/TaskAltOutlined';
-import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
 import { useTranslation } from 'react-i18next';
-import Chart from '../Chart';
-import AdminSectionPanel from './AdminSectionPanel';
-import AdminDashboardMetricTile from './AdminDashboardMetricTile';
 import useAdminVerificationStats from '../../hooks/admin/useAdminVerificationStats';
 
 const metricRowSx = {

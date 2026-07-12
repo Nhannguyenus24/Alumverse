@@ -1,16 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Box, Container, Stack, Typography, Avatar, Button } from '@mui/material';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
-import SchoolIcon from '@mui/icons-material/School';
-import TopTabFilter from '../components/mentorship/TopTabFilter';
-import CoverUpload from '../components/CoverUpload';
-import {
-  ScrollReveal,
-  ScrollRevealGroup,
-  ScrollRevealItem,
-} from '../components/animations/ScrollReveal';
+
+
 
 const profileSurfaceColor = (theme) => (
   theme.palette.mode === 'dark' ? theme.palette.background.default : theme.palette.background.paper

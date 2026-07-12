@@ -1,17 +1,13 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Outlet, useParams, useLocation } from 'react-router';
+import { useParams, useLocation } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { Box, useTheme, alpha } from '@mui/material';
-import AdminSidebar from '../components/admin/AdminSidebar';
-import AdminHeader from '../components/admin/AdminHeader';
+import { useTheme, alpha } from '@mui/material';
 import useAdminSystemData from '../hooks/admin/useAdminSystemData';
 import useAdminUsersLocal from '../hooks/admin/useAdminUsersLocal';
 import useAdminForumData from '../hooks/admin/useAdminForumData';
-import { AdminProvider } from '../stores/AdminStore';
 import useOrganizationStore from '../stores/organizationStore';
 import { useAuth } from '../hooks/useAuth';
 import { useMyProfile } from '../hooks/profile/useMyProfile';
-import Page from '../components/Page';
 
 const HEADER_HEIGHT = 88;
 const SIDEBAR_WIDTH = 280;

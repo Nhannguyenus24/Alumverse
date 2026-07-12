@@ -1,21 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  TextField,
-  Typography,
-  Box,
-  Divider,
-  Stack,
-  Avatar,
-} from '@mui/material';
-import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
-import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+
+
 import { fileToBase64 } from '../../utils/imageUtils';
 
 const AdminManualMemberDialog = ({ open, onClose, member, onConfirm, title }) => {

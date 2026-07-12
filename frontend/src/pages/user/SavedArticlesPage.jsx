@@ -1,15 +1,10 @@
-import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useEffect, useState } from "react";
-import { Container, Box, Typography, Card, CardActionArea, IconButton, Tooltip } from "@mui/material";
-import FavoriteIcon from "@mui/icons-material/Favorite";
-import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
-import Page from "../../components/Page";
 import { savedItemApi } from "../../utils/api";
 import apiClient from "../../utils/axios";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
-import { ScrollReveal, getStaggerDelay } from "../../components/animations/ScrollReveal";
+import { getStaggerDelay } from "../../components/animations/ScrollReveal";
 
 /** Resolve a saved NEWS item's title/thumbnail from its id. */
 const fetchNews = async (id) => {

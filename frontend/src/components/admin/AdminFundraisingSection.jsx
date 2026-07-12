@@ -1,14 +1,4 @@
 import { useTranslation } from 'react-i18next';
-import { Box, Stack, Typography } from '@mui/material';
-import VolunteerActivismOutlinedIcon from '@mui/icons-material/VolunteerActivismOutlined';
-import PlayCircleOutlineOutlinedIcon from '@mui/icons-material/PlayCircleOutlineOutlined';
-import TaskAltOutlinedIcon from '@mui/icons-material/TaskAltOutlined';
-import TrackChangesOutlinedIcon from '@mui/icons-material/TrackChangesOutlined';
-import SavingsOutlinedIcon from '@mui/icons-material/SavingsOutlined';
-import FavoriteBorderOutlinedIcon from '@mui/icons-material/FavoriteBorderOutlined';
-import Chart from '../Chart';
-import AdminSectionPanel from './AdminSectionPanel';
-import AdminDashboardMetricTile from './AdminDashboardMetricTile';
 import useAdminFundraisingStats from '../../hooks/admin/useAdminFundraisingStats';
 
 const metricRowSx = {

@@ -1,19 +1,12 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
-import { Box, Button, Pagination, Typography } from '@mui/material';
 import { useSnackbar } from 'notistack';
 
-import WorkIcon from '@mui/icons-material/Work';
 
-import FeaturedArticleCard from '../../components/articles/FeaturedArticleCard';
-import ArticleCard from '../../components/articles/ArticleCard';
-import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
-import AlumniContentLayout from '../../layouts/AlumniContentLayout';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useAuth } from '../../hooks/useAuth';
 import { useCanContribute } from '../../hooks/useCanContribute';
-import { ContributeGuardTooltip } from '../../components/ContributeGuard';
 import { usePublishedJobs } from '../../hooks/articles/usePublishedJobs';
 import { toCardShape } from '../../hooks/articles/toCardShape';
 import apiClient from '../../utils/axios';
@@ -26,11 +19,8 @@ import {
   paginateArticles,
 } from '../../utils/articleListFilters';
 import { getDevelopmentSidebarItems } from '../../constants/developmentNav';
-import {
-  ScrollReveal,
-  ScrollRevealGroup,
-  ScrollRevealItem,
-} from '../../components/animations/ScrollReveal';
+
+
 
 const DevelopmentJobsPage = () => {
   const { t } = useTranslation(['dev', 'mentorship', 'common']);

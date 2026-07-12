@@ -1,17 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router';
-import {
-  Box, Typography, Button, Tabs, Tab, Paper, Stack, Divider, Chip, CircularProgress,
-  Table, TableHead, TableRow, TableCell, TableBody, TablePagination, Dialog, DialogTitle,
-  DialogContent, IconButton, Tooltip, Alert,
-} from '@mui/material';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
-import AutoAwesomeOutlinedIcon from '@mui/icons-material/AutoAwesomeOutlined';
-import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
-import {
-  BarChart, Bar, XAxis, YAxis, Tooltip as RTooltip, ResponsiveContainer, CartesianGrid,
-} from 'recharts';
+
+
 import { useTranslation } from 'react-i18next';
 import { surveyApi } from '../../utils/api';
 import { useNotification } from '../../hooks/useNotification';

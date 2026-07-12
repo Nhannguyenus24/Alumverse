@@ -1,6 +1,3 @@
-import { Avatar } from '@mui/material';
-import GroupsIcon from '@mui/icons-material/Groups';
-import CustomAccountCircleIcon from './CustomAccountCircleIcon';
 
 const ChatAvatar = ({
     avatarUrl,

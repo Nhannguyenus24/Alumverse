@@ -1,12 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
-import { Box, Container, Typography } from "@mui/material";
-import Page from "../../components/Page";
-import {
-  ScrollReveal,
-  ScrollRevealGroup,
-  ScrollRevealItem,
-} from "../../components/animations/ScrollReveal";
+
+
 
 const BANNER_BLUE = "#012B59";
 

@@ -1,16 +1,9 @@
 import { useState, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Box, Typography, Button, Popper, Paper } from '@mui/material';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from 'react-router';
 import { useSnackbar } from 'notistack';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import CancelIcon from '@mui/icons-material/Cancel';
-import Page from '../../components/Page';
-import { ScrollRevealFields } from '../../components/animations/ScrollReveal';
-import Input from '../../components/Input';
-import Dropdown from '../../components/Dropdown';
 import { getRegisterSchema } from '../../utils/regexUtils';
 import { useAuth } from '../../hooks/useAuth';
 import { useOrgNavigate, useOrgPath } from '../../hooks/useOrgNavigate';
@@ -187,6 +180,7 @@ const RegisterPage = () => {
           />
           <Popper
             open={showRequirements}
+            // eslint-disable-next-line react-hooks/refs
             anchorEl={passwordRef.current}
             placement={isMobile ? 'bottom-start' : 'right-start'}
             sx={{ zIndex: 2000}}

@@ -1,9 +1,5 @@
-import { Box, Typography, Button, Stack } from '@mui/material';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import LinkIcon from '@mui/icons-material/Link';
 
 const FeaturedArticleCard = ({
   article,

@@ -1,11 +1,6 @@
-import { Box, Container, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import Page from "../../components/Page";
-import {
-  ScrollReveal,
-  ScrollRevealGroup,
-  ScrollRevealItem,
-} from "../../components/animations/ScrollReveal";
+
+
 
 const BANNER_IMG = "/faculty_img/cntt.png";
 const BANNER_BLUE = "#012B59";

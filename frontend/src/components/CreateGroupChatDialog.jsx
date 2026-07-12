@@ -1,34 +1,11 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Box,
-  Button,
-  Checkbox,
-  Chip,
-  CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Divider,
-  InputAdornment,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemButton,
-  ListItemText,
-  Stack,
-  TextField,
-  Typography,
-} from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
-import GroupAddIcon from '@mui/icons-material/GroupAdd';
 
-import ChatAvatar from './ChatAvatar';
+
+
 import { usePrivateChatList } from '../hooks/chat/usePrivateChatList';
 import { useCreateGroupChat } from '../hooks/chat/useCreateGroupChat';
 import { useCanContribute } from '../hooks/useCanContribute';
-import { VerificationRequiredAlert } from './ContributeGuard';
 
 const MIN_OTHER_MEMBERS = 2;
 const MAX_OTHER_MEMBERS = 9; // 10 total including creator

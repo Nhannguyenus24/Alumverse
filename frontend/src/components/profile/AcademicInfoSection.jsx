@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Box, Grid, IconButton, Stack, Typography } from '@mui/material';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
@@ -8,13 +7,9 @@ import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import EventAvailableIcon from '@mui/icons-material/EventAvailable';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import SchoolIcon from '@mui/icons-material/School';
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 
-import AcademicInfoRowCard from './AcademicInfoRowCard';
-import ProfileSectionTitle from './ProfileSectionTitle';
 import { buildAcademicRecords } from '../../utils/academicUtils';
-import { ScrollReveal, getStaggerDelay } from '../animations/ScrollReveal';
+import { getStaggerDelay } from '../animations/ScrollReveal';
 
 const ACADEMIC_FIELD_CONFIG = [
   { key: 'faculty', labelKey: 'field_faculty', icon: AccountBalanceIcon },

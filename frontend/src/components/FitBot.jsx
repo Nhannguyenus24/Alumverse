@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Box, Button, TextField, Paper, Typography, Avatar, Fade, Tooltip } from '@mui/material';
-import { Close as CloseIcon, Send as SendIcon } from '@mui/icons-material';
+import { Box, Paper, Avatar } from '@mui/material';
 import { styled, keyframes } from '@mui/material/styles';
-import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useTranslation } from 'react-i18next';
 

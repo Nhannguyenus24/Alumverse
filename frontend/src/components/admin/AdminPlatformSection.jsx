@@ -1,13 +1,5 @@
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@mui/material/styles';
-import { Box, Stack } from '@mui/material';
-import ChatBubbleOutlineOutlinedIcon from '@mui/icons-material/ChatBubbleOutlineOutlined';
-import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
-import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
-import StarOutlineOutlinedIcon from '@mui/icons-material/StarOutlineOutlined';
-import Chart from '../Chart';
-import AdminSectionPanel from './AdminSectionPanel';
-import AdminDashboardMetricTile from './AdminDashboardMetricTile';
 import useAdminPlatformStats from '../../hooks/admin/useAdminPlatformStats';
 
 const metricRowSx = {

@@ -2,43 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
 import {
-  Box,
-  Button,
-  Collapse,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  IconButton,
-  MenuItem,
-  List,
-  ListItemButton,
-  ListItemText,
-  Skeleton,
-  TextField,
-  Tooltip,
-  Typography,
-  Stack,
   alpha,
   useTheme,
 } from '@mui/material';
 import { useOutletContext } from 'react-router';
-import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
-import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined';
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import CategoryOutlinedIcon from '@mui/icons-material/CategoryOutlined';
-import AccountTreeOutlinedIcon from '@mui/icons-material/AccountTreeOutlined';
-import SubtitlesOutlinedIcon from '@mui/icons-material/SubtitlesOutlined';
-import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined';
-import LaunchOutlinedIcon from '@mui/icons-material/LaunchOutlined';
 
-import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
-import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetricTile';
-import AdminStatusChip from '../../components/admin/AdminStatusChip';
 import { useAdminForumContext, useAdminSystemContext } from '../../stores/AdminStore';
 import { formatDate } from '../../utils/dateFormatter';
 

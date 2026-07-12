@@ -1,19 +1,9 @@
-import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import {
-  Box, Typography, Button, TextField,
-  Stack, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, Paper, IconButton,
-  Chip, Alert, Dialog, DialogTitle, DialogContent, DialogActions,
+import { Paper,
 } from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import UploadFileIcon from '@mui/icons-material/UploadFile';
-import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
 import { useSnackbar } from 'notistack';
 
 const FITBOT_API_URL = '/fitbot-api';

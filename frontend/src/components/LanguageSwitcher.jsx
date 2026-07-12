@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next';
-import { IconButton, Menu, MenuItem, Tooltip, Typography } from '@mui/material';
 import { useState } from 'react';
 import { changeLanguage } from '../i18n';
 

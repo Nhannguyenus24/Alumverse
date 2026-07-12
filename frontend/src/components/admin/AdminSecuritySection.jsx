@@ -1,10 +1,4 @@
-import { Box, Stack } from '@mui/material';
-import SecurityOutlinedIcon from '@mui/icons-material/SecurityOutlined';
-import TravelExploreOutlinedIcon from '@mui/icons-material/TravelExploreOutlined';
 import { useTranslation } from 'react-i18next';
-import Chart from '../Chart';
-import AdminSectionPanel from './AdminSectionPanel';
-import AdminDashboardMetricTile from './AdminDashboardMetricTile';
 import useAdminSecurityStats from '../../hooks/admin/useAdminSecurityStats';
 
 const metricRowSx = {

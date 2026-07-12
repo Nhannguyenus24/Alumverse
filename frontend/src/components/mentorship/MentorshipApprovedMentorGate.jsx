@@ -1,6 +1,4 @@
-import LoadingSkeleton from '../LoadingSkeleton';
 import { useEffect } from 'react';
-import { Box } from '@mui/material';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useMentorshipAccessState } from '../../hooks/mentorship/useMentorshipAccessState';
 import { MENTORSHIP_LANDING } from '../../constants/mentorshipNav';

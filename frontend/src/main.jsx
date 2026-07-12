@@ -1,14 +1,6 @@
-import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { RouterProvider } from 'react-router/dom';
-import { HelmetProvider } from 'react-helmet-async';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { GoogleOAuthProvider } from '@react-oauth/google';
-import { GoogleReCaptchaProvider } from '@google-recaptcha/react';
+import { QueryClient } from '@tanstack/react-query';
 import { router } from './routes';
-import NotistackProvider from './components/NotistackProvider';
-import RealtimeEventsProvider from './components/RealtimeEventsProvider';
-import ThemeProvider from './theme';
 import './i18n';
 
 import '@fontsource/roboto/300.css';

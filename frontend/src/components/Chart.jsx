@@ -1,36 +1,9 @@
 import { useId, useMemo } from "react";
 import {
-  Box,
-  Paper,
-  Stack,
-  Typography,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
   useTheme,
 } from "@mui/material";
-import {
-  AreaChart,
-  Area,
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  FunnelChart,
-  Funnel,
-  LabelList,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
+
+
 
 const AXIS_TICK_MARGIN = 12;
 const LEGEND_WRAPPER_STYLE = { paddingTop: 16 };

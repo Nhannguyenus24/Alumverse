@@ -1,5 +1,4 @@
-import { TextField, InputAdornment, alpha } from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
+import { alpha } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 
 const SearchBar = ({

@@ -1,12 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router';
-import { Box, Button, InputAdornment, TextField, Tooltip, Typography } from '@mui/material';
-import PersonIcon from '@mui/icons-material/Person';
-import SearchIcon from '@mui/icons-material/Search';
-import ForumFilterPanel from '../../components/forum/ForumFilterPanel';
-import Breadcrumb from '../../components/Breadcrumb';
-import AlumniContentLayout from '../../layouts/AlumniContentLayout';
 import { useCanContribute } from '../../hooks/useCanContribute';
 import { useOrganization } from '../../hooks/useOrganization';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
@@ -15,7 +9,7 @@ import { useForumTopics } from '../../hooks/forum/useForumTopics';
 import { useNotification } from '../../hooks/useNotification';
 import { formatRelativeTimeVi } from '../../utils/dateFormatter';
 import { useDebounce } from '../../hooks/useDebounce';
-import { ScrollReveal, getStaggerDelay } from '../../components/animations/ScrollReveal';
+import { getStaggerDelay } from '../../components/animations/ScrollReveal';
 
 const CAREER_CATEGORY_ID = 1;
 

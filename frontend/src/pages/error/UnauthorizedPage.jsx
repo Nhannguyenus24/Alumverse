@@ -1,11 +1,7 @@
-import { Box, Typography, Button, Container } from '@mui/material';
 import { useTranslation } from 'react-i18next';
-import Page from '../../components/Page';
 import { useErrorPageActions } from '../../hooks/useErrorPageActions';
-import {
-  ScrollRevealGroup,
-  ScrollRevealItem,
-} from '../../components/animations/ScrollReveal';
+
+
 
 const UnauthorizedPage = () => {
   const { t } = useTranslation('common');

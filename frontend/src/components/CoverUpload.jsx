@@ -1,7 +1,4 @@
-import React, { useRef } from 'react';
-import { Box, Button, Typography } from '@mui/material';
-import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
-import SwapVertIcon from '@mui/icons-material/SwapVert';
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const CoverUpload = ({

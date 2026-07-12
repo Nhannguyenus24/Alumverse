@@ -1,5 +1,5 @@
 import React from 'react';
-import { alpha, Box, Paper, Typography, useTheme } from '@mui/material';
+import { alpha, useTheme } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 
 const AdminDashboardMetricTile = ({ label, value, caption, icon, trend, sx }) => {

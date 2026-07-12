@@ -1,12 +1,7 @@
 import { useTranslation } from 'react-i18next';
-import { Stack, Typography } from '@mui/material';
 
-import NetworkSectionLayout from '../../components/network/NetworkSectionLayout';
-import NetworkBlockedMembersSection from '../../components/network/NetworkBlockedMembersSection';
-import {
-  ScrollRevealGroup,
-  ScrollRevealItem,
-} from '../../components/animations/ScrollReveal';
+
+
 
 const NetworkRestrictedConnectionsPage = () => {
   const { t } = useTranslation('network');

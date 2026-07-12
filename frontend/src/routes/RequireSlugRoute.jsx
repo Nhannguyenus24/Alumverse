@@ -1,8 +1,7 @@
-import { Navigate, useLocation, useParams } from 'react-router';
+import { useLocation, useParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useOrganization } from '../hooks/useOrganization';
 import { isBlockedOrgFetchPath } from './routeGuards';
-import LoadingScreen from '../components/LoadingScreen';
 
 const RequireSlugRoute = ({ children }) => {
   const { t } = useTranslation('common');

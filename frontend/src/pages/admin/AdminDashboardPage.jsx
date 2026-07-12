@@ -1,23 +1,8 @@
 import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { NavLink, useOutletContext } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import {
-  Box, Button, IconButton, MenuItem, Select, Skeleton, Stack,
-  Tooltip, Typography, alpha, useTheme,
+import { alpha, useTheme,
 } from '@mui/material';
-import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
-import ForumOutlinedIcon from '@mui/icons-material/ForumOutlined';
-import GavelOutlinedIcon from '@mui/icons-material/GavelOutlined';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import PeopleAltOutlinedIcon from '@mui/icons-material/PeopleAltOutlined';
-import MarkChatUnreadOutlinedIcon from '@mui/icons-material/MarkChatUnreadOutlined';
-import BusinessCenterOutlinedIcon from '@mui/icons-material/BusinessCenterOutlined';
-import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
-import VolunteerActivismOutlinedIcon from '@mui/icons-material/VolunteerActivismOutlined';
-import RefreshOutlinedIcon from '@mui/icons-material/RefreshOutlined';
-import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetricTile';
-import AdminDashboardSections from '../../components/admin/AdminDashboardSections';
-import Chart from '../../components/Chart';
 import { useAdminSystemContext, useAdminUsersContext, useAdminForumContext } from '../../stores/AdminStore';
 import useAdminDashboardAggregates from '../../hooks/admin/useAdminDashboardAggregates';
 import useAdminDashboardData from '../../hooks/admin/useAdminDashboardData';

@@ -1,13 +1,10 @@
-import { alpha, Avatar, Box, Button, Card, Chip, CircularProgress, ListItemIcon, ListItemText, MenuItem, Stack, Typography } from '@mui/material';
-import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
+import { alpha } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 
-import IconButtonMenu from '../IconButtonMenu';
 import { useNetworkMemberProfileNavigation } from '../../hooks/network/useNetworkMemberProfileNavigation';
 import { networkCardClickableSx } from './networkCardUtils';
 import { buildProgramMajorRows } from '../../utils/academicUtils';
 import { useCanContribute } from '../../hooks/useCanContribute';
-import { ContributeGuardTooltip } from '../ContributeGuard';
 
 const ACADEMIC_TAG_KEYS = {
   regular: 'regular',

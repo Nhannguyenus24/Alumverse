@@ -1,8 +1,6 @@
-/* eslint-disable no-unused-vars */
-import { Suspense } from "react";
-import { Box, CircularProgress } from "@mui/material";
-import LoadingScreen from "../components/LoadingScreen";
+ 
 
+// eslint-disable-next-line no-unused-vars
 export const Loadable = (Component) => (props) => (
   <Suspense fallback={<LoadingScreen />}>
     <Component {...props} />
@@ -16,6 +14,7 @@ const AuthRouteSuspenseFallback = () => (
   </Box>
 );
 
+// eslint-disable-next-line no-unused-vars
 export const AuthLoadable = (Component) => (props) => (
   <Suspense fallback={<AuthRouteSuspenseFallback />}>
     <Component {...props} />

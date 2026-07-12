@@ -2,23 +2,12 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router";
 import {
-  Box,
-  Container,
-  Typography,
-  CircularProgress,
-  Stack,
-  Grid,
-  Paper,
   useTheme,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
-import Page from "../../components/Page";
 import { useOrganization } from "../../hooks/useOrganization";
 import { getIntroduction } from "../../utils/api";
 import {
-  ScrollReveal,
-  ScrollRevealGroup,
-  ScrollRevealItem,
   getStaggerDelay,
 } from "../../components/animations/ScrollReveal";
 

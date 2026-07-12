@@ -1,9 +1,6 @@
 import { useState } from 'react';
-import { Badge, IconButton, Menu, Tooltip } from '@mui/material';
-import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import { useTranslation } from 'react-i18next';
 
-import MessagesPreviewPanel from './MessagesPreviewPanel';
 import { useMessagesPreviewMenu } from '../hooks/chat/useMessagesPreviewMenu';
 import { useCanAccessChat } from '../hooks/chat/useCanAccessChat';
 import useChatUnreadStore from '../stores/chatUnreadStore';

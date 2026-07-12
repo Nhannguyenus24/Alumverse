@@ -1,5 +1,3 @@
-import { Box, Typography, Stack, Avatar } from '@mui/material';
-import StarIcon from '@mui/icons-material/Star';
 
 const MentorshipReviewCard = ({ avatar, name, date, rating, content }) => {
   return (

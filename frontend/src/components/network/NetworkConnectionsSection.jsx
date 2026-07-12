@@ -1,26 +1,14 @@
-import LoadingSkeleton from '../LoadingSkeleton';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Alert,
-  Box,
-  Pagination,
-  Stack,
-  Typography,
-} from '@mui/material';
+
+
 import { useSnackbar } from 'notistack';
 
-import SearchBar from '../SearchBar';
-import ConfirmDialog from '../ConfirmDialog';
 import usePaginationScrollToTop from '../../hooks/usePaginationScrollToTop';
 import { useNetworkConnections } from '../../hooks/network/useNetworkConnections';
 import { useBlockUser } from '../../hooks/network/useBlockUser';
-import NetworkConnectionCard from './NetworkConnectionCard';
-import {
-  ScrollReveal,
-  ScrollRevealGroup,
-  ScrollRevealItem,
-} from '../animations/ScrollReveal';
+
+
 
 const PAGE_SIZE = 5;
 

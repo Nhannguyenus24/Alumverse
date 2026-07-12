@@ -1,17 +1,8 @@
-import {
-  Avatar,
-  Box,
-  Drawer,
-  IconButton,
-  Stack,
-  Typography,
-} from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
+
+
 import { useTranslation } from 'react-i18next';
 
-import Scrollbar from '../Scrollbar';
 import { formatDateTime } from '../../utils/dateFormatter';
-import ChatAvatar from '../ChatAvatar';
 
 function MessageBubble({ body, createdAt }) {
   return (

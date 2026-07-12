@@ -1,10 +1,6 @@
-import LoadingSkeleton from '../LoadingSkeleton';
-import { Box, Container, Typography, Alert, Tooltip, IconButton } from '@mui/material';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { useTranslation } from 'react-i18next';
 
 import { useCanAccessChat } from '../../hooks/chat/useCanAccessChat';
-import Page from '../Page';
 
 /**
  * Route-level gate for /chat: blocks access for members below the

@@ -1,7 +1,6 @@
 // icons
 import { Icon } from '@iconify/react';
 
-import { Box } from '@mui/material';
 
 // ----------------------------------------------------------------------
 

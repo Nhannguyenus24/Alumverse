@@ -2,36 +2,17 @@ import { useRef, useState, useMemo } from "react";
 import { z } from "zod";
 import dayjs from "dayjs";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Controller, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
 import {
   alpha,
-  Box,
-  Button,
-  CircularProgress,
-  Container,
-  Grid,
-  Paper,
-  Stack,
-  TextField,
-  Typography,
 } from "@mui/material";
-import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
-import PublishOutlinedIcon from "@mui/icons-material/PublishOutlined";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 
-import Page from "../../components/Page";
-import Breadcrumb from "../../components/Breadcrumb";
-import MoneyField from "../../components/MoneyField";
-import WYSIWYG from "../../components/WYSIWYG";
-import FundReceivingInfoSelect from "../../components/FundReceivingInfoSelect";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
 import { useCreateFund } from "../../hooks/news/useCreateFund";
 import { useFundReceivingInfos } from "../../hooks/news/useFundReceivingInfos";
-import FundLogoPreview from "../../components/FundLogoPreview";
 import {
   fileToBase64,
   validateImageFile,
@@ -41,7 +22,7 @@ import {
   FUND_CONTENT_EDITOR_HEIGHT,
 } from "../../utils/imageUtils";
 import useOrganizationStore from "../../stores/organizationStore";
-import { ScrollReveal, getStaggerDelay } from "../../components/animations/ScrollReveal";
+import { getStaggerDelay } from "../../components/animations/ScrollReveal";
 
 const AnimatedGridItem = ({ index, children, ...props }) => (
   <Grid {...props}>

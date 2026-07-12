@@ -1,29 +1,14 @@
 import {
-  Box,
   alpha,
-  Alert,
-  Button,
-  Card,
-  Stack,
-  Typography,
 } from '@mui/material';
-import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
-import EventAvailableOutlinedIcon from '@mui/icons-material/EventAvailableOutlined';
-import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
 
-import AlumniContentLayout from '../../layouts/AlumniContentLayout';
-import MentorshipHubActions from '../../components/mentorship/MentorshipHubActions';
-import MentorshipMentorListSection from '../../components/mentorship/MentorshipMentorListSection';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useAuth } from '../../hooks/useAuth';
 import { useMentorshipAccessState } from '../../hooks/mentorship/useMentorshipAccessState';
 import { getMentorshipStats } from '../../constants/mentorshipNav';
 import { useTranslation } from 'react-i18next';
-import StatsBanner from '../../components/StatsBanner'
-import {
-  ScrollRevealGroup,
-  ScrollRevealItem,
-} from '../../components/animations/ScrollReveal';
+
+
 
 const getBenefits = (t) => [
   {
