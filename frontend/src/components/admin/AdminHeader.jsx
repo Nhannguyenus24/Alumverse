@@ -2,32 +2,11 @@ import { useState, useTransition } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link as RouterLink } from 'react-router';
 import {
-  AppBar,
-  Box,
-  Toolbar,
-  IconButton,
-  Typography,
-  Stack,
-  Avatar,
-  Menu,
-  MenuItem,
-  ListItemIcon,
-  Breadcrumbs,
-  Link as MuiLink,
   alpha,
   useTheme,
-  Select,
-  FormControl,
-  Tooltip,
 } from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
-import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
-import NavigateNextIcon from '@mui/icons-material/NavigateNext';
-import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
-import BusinessCenterOutlinedIcon from '@mui/icons-material/BusinessCenterOutlined';
 import { useAdminSystemContext } from '../../stores/AdminStore';
 import useThemeModeStore from '../../stores/themeModeStore';
-import LanguageSwitcher from '../LanguageSwitcher';
 
 const ADMIN_HEADER_HEIGHT = 88;
 

@@ -1,6 +1,3 @@
-import { Box, Divider, Typography } from '@mui/material';
-import ChatBubbleOutlineOutlinedIcon from '@mui/icons-material/ChatBubbleOutlineOutlined';
-import PersonIcon from '@mui/icons-material/Person';
 import { useTranslation } from 'react-i18next';
 
 const StatCell = ({ label, value, showLabel = true }) => {

@@ -1,19 +1,11 @@
-import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useSearchParams } from "react-router";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Container, Stack, Box, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import Page from "../../components/Page";
-import SearchBar from "../../components/SearchBar";
-import MyTicketCard from "../../components/MyTicketCard";
 import { eventApi } from "../../utils/api";
 import useOrganizationStore from "../../stores/organizationStore";
-import {
-  ScrollReveal,
-  ScrollRevealGroup,
-  ScrollRevealItem,
-} from "../../components/animations/ScrollReveal";
+
+
 
 const useMyTickets = () => {
   return useQuery({

@@ -1,25 +1,13 @@
 import { useState } from 'react';
 
-import {
-  Alert,
-  Box,
-  Button,
-  Container,
-  Stack,
-  TextField,
-  Typography,
-} from '@mui/material';
+
+
 import { useTranslation } from 'react-i18next';
 
-import Page from '../../components/Page';
-import WYSIWYG from '../../components/WYSIWYG';
 import { useAuth } from '../../hooks/useAuth';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
-import {
-  ScrollReveal,
-  ScrollRevealGroup,
-  ScrollRevealItem,
-} from '../../components/animations/ScrollReveal';
+
+
 
 const RequestAchievementsPage = () => {
   const navigate = useOrgNavigate();

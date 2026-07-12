@@ -1,31 +1,9 @@
-import React, { useState, Fragment } from 'react';
+import React, { useState } from 'react';
 import {
-  Box,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
-  TextField,
-  InputAdornment,
-  Typography,
   alpha,
   useTheme,
-  Stack,
-  IconButton,
-  Tooltip,
-  Collapse,
-  Button,
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
-import SearchBar from '../SearchBar';
-import FilterListIcon from '@mui/icons-material/FilterList';
-import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 
 const AdminDataTable = ({
   columns,

@@ -3,30 +3,9 @@ import { useOutletContext } from 'react-router';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import {
-  Box,
-  Button,
-  Chip,
-  Checkbox,
-  FormControl,
-  InputLabel,
-  ListItemText,
-  MenuItem,
-  OutlinedInput,
-  Paper,
-  Select,
-  Stack,
-  TextField,
-  Typography,
   alpha,
   useTheme,
 } from '@mui/material';
-import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
-import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
-import HistoryIcon from '@mui/icons-material/History';
-import SecurityIcon from '@mui/icons-material/Security';
-import AdminStatusChip from '../../components/admin/AdminStatusChip';
-import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetricTile';
-import AdminDataTable from '../../components/admin/AdminDataTable';
 import useAdminAuditLogsData from '../../hooks/admin/useAdminAuditLogsData';
 import { formatDateTimeWithSeconds } from '../../utils/dateFormatter';
 import { stringifyJson } from '../../utils/stringUtils';

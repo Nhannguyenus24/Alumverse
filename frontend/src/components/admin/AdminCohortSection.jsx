@@ -1,7 +1,4 @@
 import { useTranslation } from 'react-i18next';
-import { Box, Stack, Typography } from '@mui/material';
-import Chart from '../Chart';
-import AdminSectionPanel from './AdminSectionPanel';
 import useAdminCohortStats from '../../hooks/admin/useAdminCohortStats';
 import { GENDER_OPTIONS, GENDER_LABEL_KEYS, normalizeGender } from '../../constants/gender';
 

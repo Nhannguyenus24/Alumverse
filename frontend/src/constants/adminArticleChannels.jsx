@@ -1,8 +1,3 @@
-import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
-import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
-import EmojiEventsOutlinedIcon from '@mui/icons-material/EmojiEventsOutlined';
-import WorkOutlineOutlinedIcon from '@mui/icons-material/WorkOutlineOutlined';
-import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
 
 const CHANNEL_KEYS = {
   all: 'admin:channel_all',

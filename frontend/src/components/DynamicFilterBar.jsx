@@ -1,12 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Stack, Button, Select, MenuItem, Checkbox, ListItemText,
-  TextField, Slider, Box, Typography, Popover, Paper
-} from '@mui/material';
+
 import { alpha } from '@mui/material/styles';
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 
 const INPUT_FILTER_DEFAULTS = { text: '', number: '' };
 

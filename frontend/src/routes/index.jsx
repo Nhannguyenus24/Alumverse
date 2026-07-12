@@ -1,19 +1,6 @@
-import { Suspense, lazy } from "react";
-import { createBrowserRouter, Navigate, Outlet, useLocation } from "react-router";
-import { Box, CircularProgress } from "@mui/material";
-import MainLayout from "../layouts/MainLayout";
-import AuthLayout from "../layouts/AuthLayout";
-import ProtectedRoute from "./ProtectedRoute";
-import PublicRoute from "./PublicRoute";
-import RequireSlugRoute from "./RequireSlugRoute";
-import FeatureRoute from "./FeatureRoute";
-import LoadingScreen from "../components/LoadingScreen";
+import { lazy } from "react";
+import { createBrowserRouter } from "react-router";
 import { Loadable, AuthLoadable } from "./loadable";
-import MentorshipFullAccessGate from "../components/mentorship/MentorshipFullAccessGate";
-import MentorshipBookingGate from "../components/mentorship/MentorshipBookingGate";
-import MentorshipApprovedMentorGate from "../components/mentorship/MentorshipApprovedMentorGate";
-import ChatAccessGate from "../components/network/ChatAccessGate";
-import MentorshipLegacyRedirect from "../components/MentorshipLegacyRedirect";
 
 if (typeof window !== "undefined") {
   queueMicrotask(() => {

@@ -1,5 +1,3 @@
-import { InputAdornment, MenuItem, Stack, TextField } from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search";
 import { useTranslation } from "react-i18next";
 import { getDonationSearchOptions } from "../../utils/regexUtils";
 

@@ -1,6 +1,5 @@
-import { Navigate, useParams } from "react-router";
+import { useParams } from "react-router";
 import { useAuth } from "../hooks/useAuth";
-import LoadingScreen from "../components/LoadingScreen";
 
 const PublicRoute = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();

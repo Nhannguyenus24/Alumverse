@@ -1,9 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router';
-import {
-  Box, Paper, Typography, TextField, RadioGroup, FormControlLabel, Radio, Checkbox,
-  FormGroup, Button, Stack, Divider, CircularProgress, Rating, Alert, Chip,
-} from '@mui/material';
+
 import { useTranslation } from 'react-i18next';
 import { surveyApi } from '../../utils/api';
 import { useNotification } from '../../hooks/useNotification';

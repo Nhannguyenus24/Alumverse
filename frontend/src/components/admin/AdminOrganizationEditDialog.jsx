@@ -1,24 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  MenuItem,
-  TextField,
-  Box,
-  Grid,
-  Typography,
-  Divider,
-  Avatar,
-  Switch,
-  FormControlLabel,
-  Stack
-} from '@mui/material';
-import BusinessIcon from '@mui/icons-material/Business';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+
+
 import { fileToBase64 } from '../../utils/imageUtils';
 
 const AdminOrganizationEditDialog = ({ open, onClose, organization, onConfirm }) => {

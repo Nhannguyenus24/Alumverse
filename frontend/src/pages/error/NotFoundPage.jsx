@@ -1,12 +1,7 @@
-import { Box, Button, Container, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
-import Page from '../../components/Page';
-import SearchOffIcon from '@mui/icons-material/SearchOff';
 import { useErrorPageActions } from '../../hooks/useErrorPageActions';
-import {
-  ScrollRevealGroup,
-  ScrollRevealItem,
-} from '../../components/animations/ScrollReveal';
+
+
 
 export default function NotFoundPage() {
   const { goBack, goHome } = useErrorPageActions();

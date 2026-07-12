@@ -1,7 +1,4 @@
-import { Box, Paper, Typography } from '@mui/material';
-import ChatBubbleOutlineOutlinedIcon from '@mui/icons-material/ChatBubbleOutlineOutlined';
-import ForumBoardRow from './ForumBoardRow';
-import { ScrollReveal, getStaggerDelay } from '../animations/ScrollReveal';
+import { getStaggerDelay } from '../animations/ScrollReveal';
 
 const ForumSection = ({ title, boards = [], onBoardClick }) => {
   return (

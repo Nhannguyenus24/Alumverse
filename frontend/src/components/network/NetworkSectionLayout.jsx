@@ -1,6 +1,5 @@
 import { useTranslation } from 'react-i18next';
 
-import AlumniContentLayout from '../../layouts/AlumniContentLayout';
 import { getNetworkSidebarItems } from '../../constants/networkNav';
 
 const NetworkSectionLayout = ({ title, children }) => {

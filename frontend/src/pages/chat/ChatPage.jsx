@@ -1,13 +1,9 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
-import { Box, useMediaQuery, useTheme } from '@mui/material';
+import { useMediaQuery, useTheme } from '@mui/material';
 import { useSnackbar } from 'notistack';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router';
 
-import Page from '../../components/Page';
-import NetworkChatPanel from '../../components/network/NetworkChatPanel';
-import NetworkChatSidebar from '../../components/network/NetworkChatSidebar';
-import CreateGroupChatDialog from '../../components/CreateGroupChatDialog';
 import { useGroupChatList } from '../../hooks/chat/useGroupChatList';
 import { usePrivateChatList } from '../../hooks/chat/usePrivateChatList';
 import { invalidateChatListQueries } from '../../hooks/chat/invalidateChatQueries';

@@ -1,19 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { Box, Button, Card, Container, Dialog, DialogActions, DialogContent, DialogTitle, Grid, MenuItem, Switch, TextField, Typography, LinearProgress } from "@mui/material";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Controller, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router";
-import Page from "../../components/Page";
-import MoneyField from "../../components/MoneyField";
 import { VIETNAM_PHONE_REGEX } from "../../utils/regexUtils";
 import { fundApi } from "../../utils/api";
 import { useAuth } from "../../hooks/useAuth";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
-import Breadcrumb from "../../components/Breadcrumb";
-import { ScrollReveal } from "../../components/animations/ScrollReveal";
-import ConfirmDialog from "../../components/ConfirmDialog";
 import { useSupportedBanks } from "../../hooks/fundraising/useSupportedBanks";
 
 const getDonationSchema = (t) => z.object({

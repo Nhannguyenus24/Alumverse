@@ -1,12 +1,7 @@
-import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { Box } from '@mui/material';
-import PostArticleForm from '../../components/PostArticleForm';
-import PostArticleShell from '../../components/PostArticleShell';
-import AdminEventQuestionSection from '../../components/admin/AdminEventQuestionSection';
 import useCoverUpload from '../../hooks/useCoverUpload';
 import { useCreateEvent } from '../../hooks/news/useCreateEvent';
 import { fileToCroppedCoverBase64 } from '../../utils/imageUtils';

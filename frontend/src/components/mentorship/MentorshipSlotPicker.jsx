@@ -1,7 +1,5 @@
 import { useMemo, useState } from 'react';
-import { alpha, Box, Button, IconButton, Stack, Typography } from '@mui/material';
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import { alpha } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import dayjs from 'dayjs';
 

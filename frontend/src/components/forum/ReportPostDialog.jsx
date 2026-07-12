@@ -1,13 +1,6 @@
 import { useState } from 'react';
-import {
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  TextField,
-  Typography,
-} from '@mui/material';
+
+
 import { useTranslation } from 'react-i18next';
 
 const ReportPostDialog = ({ open, onClose, onConfirm, isPending }) => {

@@ -1,39 +1,12 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useSnackbar } from 'notistack';
 import {
-  Box,
-  IconButton,
-  Menu,
-  MenuItem,
-  Tab,
-  Tabs,
-  TextField,
-  Tooltip,
-  Typography,
-  Stack,
   useTheme,
-  Avatar,
-  Button,
 } from '@mui/material';
-import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
 import { useDebounce } from '../../hooks/useDebounce';
 import { exportToCSV } from '../../utils/exportUtils';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
-import LockOpenOutlinedIcon from '@mui/icons-material/LockOpenOutlined';
-import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined';
-import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
-import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
-import ReportProblemOutlinedIcon from '@mui/icons-material/ReportProblemOutlined';
-import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined';
-import GppBadOutlinedIcon from '@mui/icons-material/GppBadOutlined';
 import { useTranslation } from 'react-i18next';
 
-import AdminStatusChip from '../../components/admin/AdminStatusChip';
-import AdminForumPostDetailDialog from '../../components/admin/AdminForumPostDetailDialog';
-import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
-import AdminDataTable from '../../components/admin/AdminDataTable';
-import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetricTile';
 import { FORUM_STATUS_MENU_ORDER, getForumStatusFilterOptions } from '../../constants/adminDefaultForumPosts';
 import { useAdminForumContext } from '../../stores/AdminStore';
 import { useAuth } from '../../hooks/useAuth';

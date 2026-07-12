@@ -1,4 +1,4 @@
-import { Navigate, useLocation } from "react-router";
+import { useLocation } from "react-router";
 
 const MentorshipLegacyRedirect = () => {
   const location = useLocation();

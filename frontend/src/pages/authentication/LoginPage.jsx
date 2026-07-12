@@ -1,16 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { GoogleReCaptchaCheckbox, useGoogleReCaptcha } from '@google-recaptcha/react';
+import { useGoogleReCaptcha } from '@google-recaptcha/react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useLocation, useParams } from 'react-router';
 import { useSnackbar } from 'notistack';
-import { GoogleLogin } from '@react-oauth/google';
-import { Alert, Box, Typography, Button, FormControlLabel, Checkbox, Divider, useTheme } from '@mui/material';
-import GoogleIcon from '@mui/icons-material/Google';
+import { useTheme } from '@mui/material';
 import { useTranslation } from 'react-i18next';
-import Page from '../../components/Page';
-import { ScrollRevealFields } from '../../components/animations/ScrollReveal';
-import Input from '../../components/Input';
 import { getLoginSchema } from '../../utils/regexUtils';
 import { useAuth } from '../../hooks/useAuth';
 import { useOrgNavigate, useOrgPath } from '../../hooks/useOrgNavigate';

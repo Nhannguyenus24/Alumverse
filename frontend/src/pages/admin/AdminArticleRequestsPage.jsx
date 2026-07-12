@@ -1,25 +1,9 @@
-import {
-  Box,
-  Button,
-  Chip,
-  CircularProgress,
-  IconButton,
-  Stack,
-  Tooltip,
-  Typography,
-} from '@mui/material';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
-import LinkIcon from '@mui/icons-material/Link';
+
+
 import { useEffect, useMemo, useState } from 'react';
 import { useOutletContext } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
-import AdminDataTable from '../../components/admin/AdminDataTable';
-import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
-import AdminStatusChip from '../../components/admin/AdminStatusChip';
 import useAdminArticles from '../../hooks/admin/useAdminArticles';
 import { useAdminSystemContext } from '../../stores/AdminStore';
 import { useOrgPath } from '../../hooks/useOrgNavigate';

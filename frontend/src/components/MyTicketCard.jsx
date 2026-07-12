@@ -1,11 +1,6 @@
 import { useState, useMemo } from "react";
-import { Box, Typography, Button, Chip, TextField, Stack } from "@mui/material";
-import { Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
-import ConfirmationNumberOutlinedIcon from "@mui/icons-material/ConfirmationNumberOutlined";
-import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
-import { QRCodeSVG } from "qrcode.react";
 import { eventApi } from "../utils/api";
 import useOrganizationStore from "../stores/organizationStore";
 

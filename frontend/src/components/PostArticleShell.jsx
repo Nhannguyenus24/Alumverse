@@ -1,12 +1,6 @@
-import { Box, Button, Container, Typography } from '@mui/material';
-import Page from './Page';
-import CoverUpload from './CoverUpload';
 import { useTranslation } from 'react-i18next';
-import {
-  ScrollReveal,
-  ScrollRevealGroup,
-  ScrollRevealItem,
-} from './animations/ScrollReveal';
+
+
 
 /**
  * Shared layout shell for all PostArticle pages.

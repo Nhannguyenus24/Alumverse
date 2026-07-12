@@ -1,15 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Box, Typography, Button, Stack } from '@mui/material';
 import { useTranslation } from 'react-i18next';
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { useSnackbar } from 'notistack';
 import { eventApi } from '../../utils/api';
-import JoinEventDialog from '../event/JoinEventDialog';
 import { useEventQuestions, formatAnswersForApi } from '../../hooks/events/useEventQuestions';
 import { getEventRegisteredState } from '../../utils/eventRegistration';
 import { useCanContribute } from '../../hooks/useCanContribute';
-import { ContributeGuardTooltip } from '../ContributeGuard';
 
 const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
   const { t } = useTranslation(['common', 'event']);

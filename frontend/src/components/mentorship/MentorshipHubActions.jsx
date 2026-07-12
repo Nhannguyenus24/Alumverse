@@ -1,9 +1,4 @@
 import { useTranslation } from 'react-i18next';
-import { Button, Stack } from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
-import SchoolIcon from '@mui/icons-material/School';
-import EventNoteIcon from '@mui/icons-material/EventNote';
-import PersonIcon from '@mui/icons-material/Person';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useMentorshipAccessState } from '../../hooks/mentorship/useMentorshipAccessState';
 

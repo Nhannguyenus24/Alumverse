@@ -5,12 +5,8 @@ import { Link, useLocation } from 'react-router';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { Box, Typography, Button } from '@mui/material';
-import Page from '../../components/Page';
-import Input from '../../components/Input';
 import { useAuth } from '../../hooks/useAuth';
 import { useOrgNavigate, useOrgPath } from '../../hooks/useOrgNavigate';
-import { ScrollRevealFields } from '../../components/animations/ScrollReveal';
 
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/;
 

@@ -1,19 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import {
   alpha,
-  Avatar,
-  Box,
-  Button,
-  Card,
-  Chip,
-  Stack,
-  Typography,
 } from '@mui/material';
-import EventOutlinedIcon from '@mui/icons-material/EventOutlined';
-import LinkOutlinedIcon from '@mui/icons-material/LinkOutlined';
-import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
-import VideocamOutlinedIcon from '@mui/icons-material/VideocamOutlined';
-import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
 import dayjs from 'dayjs';
 
 // const JOIN_EARLY_MINUTES = 15;

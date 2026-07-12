@@ -1,4 +1,3 @@
-import { Box, Typography } from '@mui/material';
 
 const ProfileSectionTitle = ({ icon, children, sx }) => {
   const titleIcon = icon ? <Box component={icon} /> : null;

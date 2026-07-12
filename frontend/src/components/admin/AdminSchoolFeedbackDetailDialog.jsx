@@ -1,16 +1,6 @@
 import { useTranslation } from 'react-i18next';
-import {
-  Box,
-  Button,
-  Chip,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Divider,
-  Typography,
-} from '@mui/material';
-import MarkEmailReadOutlinedIcon from '@mui/icons-material/MarkEmailReadOutlined';
+
+
 import { formatDateTime } from '../../utils/dateFormatter';
 
 const InfoRow = ({ label, children }) => (

@@ -1,21 +1,10 @@
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Box,
-  Button,
-  IconButton,
-  Skeleton,
-  Divider,
-  Tooltip,
-  Typography,
-} from '@mui/material';
-import {
-  OpenInFull as OpenInFullIcon,
-  Close as CloseIcon,
-} from '@mui/icons-material';
 
-import Scrollbar from './Scrollbar';
-import ChatAvatar from './ChatAvatar';
+
+
+
+
 import { formatDateTime } from '../utils/dateFormatter';
 import { useOrgNavigate } from '../hooks/useOrgNavigate';
 import { useRecentChatPreviews } from '../hooks/chat/useRecentChatPreviews';

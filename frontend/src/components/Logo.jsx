@@ -1,4 +1,3 @@
-import { Box, Typography } from '@mui/material';
 
 const Logo = ({ size = 'medium', variant = 'text', src, alt = 'Logo', sx, ...rest }) => {
   const sizes = {

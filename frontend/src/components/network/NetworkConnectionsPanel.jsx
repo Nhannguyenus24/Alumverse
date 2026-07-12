@@ -1,13 +1,7 @@
-import { Divider, Stack, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 
-import NetworkConnectionsSection from './NetworkConnectionsSection';
-import NetworkBlockedMembersSection from './NetworkBlockedMembersSection';
-import {
-  ScrollReveal,
-  ScrollRevealGroup,
-  ScrollRevealItem,
-} from '../animations/ScrollReveal';
+
+
 
 const NetworkConnectionsPanel = ({ variant = 'page', enableBlock = true }) => {
   const { t } = useTranslation('network');

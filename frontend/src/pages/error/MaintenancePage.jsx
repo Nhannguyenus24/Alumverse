@@ -1,14 +1,7 @@
-import { Box, Button, Container, Typography, Chip, Stack, Card } from '@mui/material';
-import BuildIcon from '@mui/icons-material/Build';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import UpdateIcon from '@mui/icons-material/Update';
 import { useTranslation } from 'react-i18next';
-import Page from '../../components/Page';
 import { useErrorPageActions } from '../../hooks/useErrorPageActions';
-import {
-  ScrollRevealGroup,
-  ScrollRevealItem,
-} from '../../components/animations/ScrollReveal';
+
+
 
 export default function MaintenancePage() {
   const { t } = useTranslation('common');
