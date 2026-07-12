@@ -1,6 +1,5 @@
 import { useRef, useState } from 'react';
 import {
-  Alert,
   Box,
   Button,
   Chip,
@@ -32,6 +31,7 @@ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
 import AdminStatusChip from './AdminStatusChip';
+import { useSnackbar } from 'notistack';
 
 // ── Template ──────────────────────────────────────────────────────────────────
 const TEMPLATE_HEADERS = [
@@ -91,7 +91,7 @@ const AdminBulkImportDialog = ({ open, onClose, organizationOptions = [], onBulk
   const [step, setStep] = useState('upload'); // upload | preview | result
   const [importing, setImporting] = useState(false);
   const [result, setResult] = useState(null);
-  const [parseError, setParseError] = useState('');
+  const { enqueueSnackbar } = useSnackbar();
   const [selectedOrgId, setSelectedOrgId] = useState(
     organizationOptions.length > 0 ? Number(organizationOptions[0].id) : ''
   );
@@ -102,7 +102,6 @@ const AdminBulkImportDialog = ({ open, onClose, organizationOptions = [], onBulk
     setStep('upload');
     setImporting(false);
     setResult(null);
-    setParseError('');
     if (fileRef.current) fileRef.current.value = '';
   };
 
@@ -112,7 +111,6 @@ const AdminBulkImportDialog = ({ open, onClose, organizationOptions = [], onBulk
   const handleFile = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setParseError('');
 
     const reader = new FileReader();
     reader.onload = async (ev) => {
@@ -122,7 +120,7 @@ const AdminBulkImportDialog = ({ open, onClose, organizationOptions = [], onBulk
         const ws = wb.Sheets[wb.SheetNames[0]];
         const raw = XLSX.utils.sheet_to_json(ws, { defval: '' });
 
-        if (!raw.length) { setParseError('File không có dữ liệu.'); return; }
+        if (!raw.length) { enqueueSnackbar('File không có dữ liệu.', { variant: 'error' }); return; }
 
         const parsed = raw.map((r, i) => validateRow({
           email: String(r.email || '').trim(),
@@ -144,7 +142,7 @@ const AdminBulkImportDialog = ({ open, onClose, organizationOptions = [], onBulk
         setFileName(file.name);
         setStep('preview');
       } catch {
-        setParseError('Không đọc được file. Vui lòng dùng file .xlsx hoặc .xls.');
+        enqueueSnackbar('Không đọc được file. Vui lòng dùng file .xlsx hoặc .xls.', { variant: 'error' });
       }
     };
     reader.readAsArrayBuffer(file);
@@ -236,8 +234,6 @@ const AdminBulkImportDialog = ({ open, onClose, organizationOptions = [], onBulk
                 Chọn file Excel
               </Button>
             </Paper>
-
-            {parseError && <Alert severity="error" sx={{ width: '100%', maxWidth: 480 }}>{parseError}</Alert>}
 
             <Divider sx={{ width: '100%', maxWidth: 480 }}>hoặc</Divider>
 

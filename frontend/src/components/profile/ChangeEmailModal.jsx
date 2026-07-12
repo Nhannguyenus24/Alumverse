@@ -9,9 +9,9 @@ import {
   Typography,
   Box,
   CircularProgress,
-  Alert
 } from '@mui/material';
 import { useTranslation, Trans } from 'react-i18next';
+import { useSnackbar } from 'notistack';
 import apiClient from '../../utils/axios';
 
 const ChangeEmailModal = ({ open, onClose, userId, currentEmail, onEmailChanged }) => {
@@ -20,28 +20,23 @@ const ChangeEmailModal = ({ open, onClose, userId, currentEmail, onEmailChanged 
   const [otp, setOtp] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
+  const { enqueueSnackbar } = useSnackbar();
 
   const handleClose = () => {
     setStep(1);
     setOtp('');
     setNewEmail('');
-    setError(null);
-    setSuccess(null);
     onClose();
   };
 
   const requestOldOtp = async () => {
     setLoading(true);
-    setError(null);
-    setSuccess(null);
     try {
       await apiClient.post(`/auth/change-email/${userId}/request-otp-old`);
       setStep(2);
-      setSuccess(t('profile:otp_sent_old', { email: currentEmail }));
+      enqueueSnackbar(t('profile:otp_sent_old', { email: currentEmail }), { variant: 'success' });
     } catch (err) {
-      setError(err.response?.data?.message || t('profile:otp_send_error'));
+      enqueueSnackbar(err.response?.data?.message || t('profile:otp_send_error'), { variant: 'error' });
     } finally {
       setLoading(false);
     }
@@ -49,14 +44,12 @@ const ChangeEmailModal = ({ open, onClose, userId, currentEmail, onEmailChanged 
 
   const verifyOldOtp = async () => {
     setLoading(true);
-    setError(null);
-    setSuccess(null);
     try {
       await apiClient.post(`/auth/change-email/${userId}/verify-otp-old`, { otp });
       setStep(3);
       setOtp('');
     } catch (err) {
-      setError(err.response?.data?.message || t('profile:otp_invalid'));
+      enqueueSnackbar(err.response?.data?.message || t('profile:otp_invalid'), { variant: 'error' });
     } finally {
       setLoading(false);
     }
@@ -64,14 +57,12 @@ const ChangeEmailModal = ({ open, onClose, userId, currentEmail, onEmailChanged 
 
   const requestNewOtp = async () => {
     setLoading(true);
-    setError(null);
-    setSuccess(null);
     try {
       await apiClient.post(`/auth/change-email/${userId}/request-otp-new`, { email: newEmail });
       setStep(4);
-      setSuccess(t('profile:otp_sent_new', { email: newEmail }));
+      enqueueSnackbar(t('profile:otp_sent_new', { email: newEmail }), { variant: 'success' });
     } catch (err) {
-      setError(err.response?.data?.message || t('profile:otp_send_new_error'));
+      enqueueSnackbar(err.response?.data?.message || t('profile:otp_send_new_error'), { variant: 'error' });
     } finally {
       setLoading(false);
     }
@@ -79,11 +70,9 @@ const ChangeEmailModal = ({ open, onClose, userId, currentEmail, onEmailChanged 
 
   const verifyNewOtp = async () => {
     setLoading(true);
-    setError(null);
-    setSuccess(null);
     try {
       await apiClient.post(`/auth/change-email/${userId}/verify-otp-new`, { email: newEmail, otp });
-      setSuccess(t('profile:change_email_success'));
+      enqueueSnackbar(t('profile:change_email_success'), { variant: 'success' });
       if (onEmailChanged) {
         onEmailChanged(newEmail);
       }
@@ -91,7 +80,7 @@ const ChangeEmailModal = ({ open, onClose, userId, currentEmail, onEmailChanged 
         handleClose();
       }, 2000);
     } catch (err) {
-      setError(err.response?.data?.message || t('profile:otp_invalid'));
+      enqueueSnackbar(err.response?.data?.message || t('profile:otp_invalid'), { variant: 'error' });
     } finally {
       setLoading(false);
     }
@@ -102,9 +91,6 @@ const ChangeEmailModal = ({ open, onClose, userId, currentEmail, onEmailChanged 
       <DialogTitle sx={{ fontWeight: 'bold' }}>{t('profile:change_email')}</DialogTitle>
       <DialogContent>
         <Box sx={{ mt: 2 }}>
-          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-          {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
-
           {step === 1 && (
             <Typography>
               <Trans i18nKey="profile:change_email_step1_desc" values={{ email: currentEmail }} components={[<b key="0" />]}/>

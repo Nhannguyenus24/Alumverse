@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
-import { Alert, Box, useMediaQuery, useTheme } from '@mui/material';
+import { Box, useMediaQuery, useTheme } from '@mui/material';
+import { useSnackbar } from 'notistack';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router';
 
@@ -50,6 +51,7 @@ const ChatPage = () => {
   const [page, setPage] = useState(1);
   const [activeChatId, setActiveChatId] = useState(null);
   const [createGroupOpen, setCreateGroupOpen] = useState(false);
+  const { enqueueSnackbar } = useSnackbar();
 
   const {
     items: groupItems,
@@ -136,6 +138,12 @@ const ChatPage = () => {
   const isError = groupError || privateError;
   const errorMessage = groupErrorMsg ?? privateErrorMsg ?? null;
 
+  useEffect(() => {
+    if (isError && errorMessage) {
+      enqueueSnackbar(errorMessage, { variant: 'error' });
+    }
+  }, [isError, errorMessage, enqueueSnackbar]);
+
   const handleSearchSubmit = useCallback(() => {
     setAppliedSearch(searchInput.trim());
     setPage(1);
@@ -185,21 +193,6 @@ const ChatPage = () => {
           overflow: 'hidden',
         }}
       >
-        {isError ? (
-          <Alert
-            severity="error"
-            sx={{
-              borderRadius: 0,
-              position: 'absolute',
-              left: 0,
-              right: 0,
-              zIndex: 2,
-            }}
-          >
-            {errorMessage}
-          </Alert>
-        ) : null}
-
         <Box
           sx={{
             display: 'flex',

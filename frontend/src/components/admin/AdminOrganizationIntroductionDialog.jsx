@@ -14,11 +14,11 @@ import {
   Avatar,
   IconButton,
 } from "@mui/material";
-import ReactQuill from "react-quill-new";
-import "react-quill-new/dist/quill.snow.css";
 import Grid from "@mui/material/Grid";
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import { fileToBase64 } from "../../utils/imageUtils";
+import { useSnackbar } from "notistack";
+import { IMAGE_ACCEPT, useUploadImage, validateImageFile } from "../../utils/imageUtils";
+import WYSIWYG from "../WYSIWYG";
 
 const AdminOrganizationIntroductionDialog = ({
   open,
@@ -27,6 +27,30 @@ const AdminOrganizationIntroductionDialog = ({
   onConfirm,
 }) => {
   const { t } = useTranslation(["admin", "common"]);
+  const { enqueueSnackbar } = useSnackbar();
+  const { uploadFile, isPending } = useUploadImage();
+
+  // Upload a picked image through the image service and return a hosted URL
+  // (never base64), reporting validation/upload errors via snackbar.
+  const uploadImage = async (file) => {
+    const validation = validateImageFile(file, t);
+    if (!validation.valid) {
+      enqueueSnackbar(validation.message, { variant: "error" });
+      return null;
+    }
+    try {
+      const url = await uploadFile(file);
+      if (!url) throw new Error("empty_url");
+      return url;
+    } catch (error) {
+      enqueueSnackbar(
+        error?.response?.data?.message ?? t("common:image_upload_error"),
+        { variant: "error" },
+      );
+      return null;
+    }
+  };
+
   const [formData, setFormData] = useState({
     content: "",
     vision: "",
@@ -106,29 +130,14 @@ const AdminOrganizationIntroductionDialog = ({
             <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 700 }}>
               {t("admin:org_intro_section_general")}
             </Typography>
-            <Box
-              sx={{
-                "& .ql-container": {
-                  borderBottomLeftRadius: 8,
-                  borderBottomRightRadius: 8,
-                  minHeight: 200,
-                },
-                "& .ql-toolbar": {
-                  borderTopLeftRadius: 8,
-                  borderTopRightRadius: 8,
-                  bgcolor: "action.hover",
-                },
-              }}
-            >
-              <ReactQuill
-                theme="snow"
-                value={formData.content}
-                onChange={(val) =>
-                  setFormData((prev) => ({ ...prev, content: val }))
-                }
-                placeholder={t("admin:org_intro_content_placeholder")}
-              />
-            </Box>
+            <WYSIWYG
+              value={formData.content}
+              onChange={(val) =>
+                setFormData((prev) => ({ ...prev, content: val }))
+              }
+              placeholder={t("admin:org_intro_content_placeholder")}
+              height={250}
+            />
           </Box>
 
           <Box>
@@ -155,18 +164,21 @@ const AdminOrganizationIntroductionDialog = ({
               variant="outlined"
               size="small"
               startIcon={<CloudUploadIcon />}
+              disabled={isPending}
               sx={{ textTransform: 'none', mb: 1 }}
             >
               {t("admin:org_intro_upload_banner")}
               <input
                 type="file"
                 hidden
-                accept="image/*"
+                accept={IMAGE_ACCEPT}
                 onChange={async (e) => {
                   const file = e.target.files?.[0];
-                  if (file) {
-                    const base64 = await fileToBase64(file);
-                    setFormData(prev => ({ ...prev, bannerUrl: base64 }));
+                  e.target.value = "";
+                  if (!file) return;
+                  const url = await uploadImage(file);
+                  if (url) {
+                    setFormData(prev => ({ ...prev, bannerUrl: url }));
                   }
                 }}
               />
@@ -207,6 +219,7 @@ const AdminOrganizationIntroductionDialog = ({
               variant="outlined"
               size="small"
               startIcon={<CloudUploadIcon />}
+              disabled={isPending}
               sx={{ textTransform: 'none' }}
             >
               {t("admin:org_intro_add_to_gallery")}
@@ -214,13 +227,15 @@ const AdminOrganizationIntroductionDialog = ({
                 type="file"
                 hidden
                 multiple
-                accept="image/*"
+                accept={IMAGE_ACCEPT}
                 onChange={async (e) => {
                   const files = Array.from(e.target.files || []);
-                  const base64s = await Promise.all(files.map(fileToBase64));
+                  e.target.value = "";
+                  const urls = (await Promise.all(files.map(uploadImage))).filter(Boolean);
+                  if (urls.length === 0) return;
                   setFormData(prev => {
                     const current = prev.images.split(",").filter(Boolean);
-                    return { ...prev, images: [...current, ...base64s].join(",") };
+                    return { ...prev, images: [...current, ...urls].join(",") };
                   });
                 }}
               />

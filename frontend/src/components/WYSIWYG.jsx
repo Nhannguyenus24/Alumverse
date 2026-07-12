@@ -1,8 +1,10 @@
 import { alpha, Box } from "@mui/material";
-import { useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import ReactQuill, { Quill } from "react-quill-new";
 import { useTranslation } from "react-i18next";
+import { useSnackbar } from "notistack";
 import "react-quill-new/dist/quill.snow.css";
+import { IMAGE_ACCEPT, useUploadImage, validateImageFile } from "../utils/imageUtils";
 
 const Delta = Quill.import("delta");
 
@@ -16,7 +18,74 @@ const WYSIWYG = ({
   requireImageCaptions = false,
 }) => {
   const { t } = useTranslation("article");
+  const { enqueueSnackbar } = useSnackbar();
   const quillRef = useRef(null);
+
+  const { uploadFile } = useUploadImage();
+  // Keep the latest uploadFile in a ref so the Quill `modules` object stays
+  // stable across renders (rebuilding it would reset the toolbar).
+  const uploadRef = useRef(uploadFile);
+  uploadRef.current = uploadFile;
+
+  // Validate + upload a file through the image service and return a hosted URL
+  // (never a base64 data URL), so editor content stored in the DB only holds links.
+  const uploadImage = useCallback(
+    async (file) => {
+      const validation = validateImageFile(file, t);
+      if (!validation.valid) {
+        enqueueSnackbar(validation.message, { variant: "error" });
+        return null;
+      }
+      try {
+        const url = await uploadRef.current(file);
+        if (!url) throw new Error("empty_url");
+        return url;
+      } catch (error) {
+        enqueueSnackbar(
+          error?.response?.data?.message ?? t("common:image_upload_error"),
+          { variant: "error" }
+        );
+        return null;
+      }
+    },
+    [enqueueSnackbar, t]
+  );
+
+  // Upload any base64/data-URL images that slipped into the editor (paste or
+  // drag-and-drop) and swap them for the hosted URL in place.
+  const replaceEmbeddedImages = useCallback(async () => {
+    const quill = quillRef.current?.getEditor?.();
+    if (!quill) return;
+
+    const dataImages = [];
+    quill.getContents().ops?.forEach((op) => {
+      const src = op?.insert?.image;
+      if (typeof src === "string" && src.startsWith("data:")) {
+        dataImages.push(src);
+      }
+    });
+    if (dataImages.length === 0) return;
+
+    for (const dataUrl of [...new Set(dataImages)]) {
+      try {
+        const blob = await (await fetch(dataUrl)).blob();
+        const file = new File([blob], "pasted-image.png", { type: blob.type });
+        const url = await uploadImage(file);
+        if (!url) continue;
+        // Re-scan the (possibly changed) document and replace every matching embed.
+        let index = 0;
+        quill.getContents().ops?.forEach((op) => {
+          if (op?.insert?.image === dataUrl) {
+            quill.deleteText(index, 1, "silent");
+            quill.insertEmbed(index, "image", url, "silent");
+          }
+          index += typeof op.insert === "string" ? op.insert.length : 1;
+        });
+      } catch {
+        // ignore a single failed image; others still get processed
+      }
+    }
+  }, [uploadImage]);
 
   const modules = useMemo(
     () => ({
@@ -34,7 +103,7 @@ const WYSIWYG = ({
           allowImages ? ["link", "image", "video"] : ["link", "video"],
           [{ color: [] }, { background: [] }, { align: [] }, "clean"],
         ],
-        handlers: allowImages && requireImageCaptions
+        handlers: allowImages
           ? {
               image: () => {
                 const quill = quillRef.current?.getEditor?.();
@@ -42,19 +111,22 @@ const WYSIWYG = ({
 
                 const input = document.createElement("input");
                 input.setAttribute("type", "file");
-                input.setAttribute("accept", "image/*");
-                input.onchange = () => {
+                input.setAttribute("accept", IMAGE_ACCEPT);
+                input.onchange = async () => {
                   const file = input.files?.[0];
                   if (!file) return;
 
-                  const reader = new FileReader();
-                  reader.onload = () => {
-                    const captionPlaceholder = t("image_caption_inline_placeholder");
-                    const range = quill.getSelection(true) ?? { index: quill.getLength(), length: 0 };
-                    const imageIndex = range.index;
-                    const captionIndex = imageIndex + 2;
+                  const url = await uploadImage(file);
+                  if (!url) return;
 
-                    quill.insertEmbed(imageIndex, "image", reader.result, "user");
+                  const range = quill.getSelection(true) ?? { index: quill.getLength(), length: 0 };
+                  const imageIndex = range.index;
+
+                  quill.insertEmbed(imageIndex, "image", url, "user");
+
+                  if (requireImageCaptions) {
+                    const captionPlaceholder = t("image_caption_inline_placeholder");
+                    const captionIndex = imageIndex + 2;
                     quill.insertText(imageIndex + 1, "\n", "user");
                     quill.insertText(
                       captionIndex,
@@ -65,8 +137,9 @@ const WYSIWYG = ({
                     quill.insertText(captionIndex + captionPlaceholder.length, "\n", "user");
                     quill.formatLine(captionIndex, captionPlaceholder.length, "align", "center", "user");
                     quill.setSelection(captionIndex, captionPlaceholder.length, "silent");
-                  };
-                  reader.readAsDataURL(file);
+                  } else {
+                    quill.setSelection(imageIndex + 1, 0, "silent");
+                  }
                 };
                 input.click();
               },
@@ -86,8 +159,31 @@ const WYSIWYG = ({
         ],
       },
     }),
-    [allowImages, requireImageCaptions, t]
+    [allowImages, requireImageCaptions, t, uploadImage]
   );
+
+  // Catch images pasted or dropped into the editor (Quill embeds them as base64)
+  // and rewrite them to hosted URLs so nothing base64 ever reaches the DB.
+  useEffect(() => {
+    if (!allowImages) return undefined;
+    const quill = quillRef.current?.getEditor?.();
+    if (!quill) return undefined;
+
+    const handler = (delta) => {
+      const hasDataImage = delta?.ops?.some(
+        (op) =>
+          typeof op?.insert?.image === "string" &&
+          op.insert.image.startsWith("data:")
+      );
+      if (hasDataImage) {
+        // Defer so Quill finishes applying the change before we rewrite it.
+        setTimeout(() => replaceEmbeddedImages(), 0);
+      }
+    };
+
+    quill.on("text-change", handler);
+    return () => quill.off("text-change", handler);
+  }, [allowImages, replaceEmbeddedImages]);
 
   const formats = [
     "header",

@@ -1,5 +1,5 @@
 import LoadingSkeleton from '../LoadingSkeleton';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Alert,
@@ -123,6 +123,12 @@ const MentorshipMentorListSection = () => {
       ? t('mentorship:need_mentee_signup_to_book')
       : undefined;
 
+  useEffect(() => {
+    if (browseQuery.isError) {
+      enqueueSnackbar(t('mentorship:load_mentors_error'), { variant: 'error' });
+    }
+  }, [browseQuery.isError, enqueueSnackbar, t]);
+
   return (
     <ScrollRevealGroup stagger={0.08} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
       {access.needsOrgVerification && (
@@ -157,7 +163,9 @@ const MentorshipMentorListSection = () => {
           <LoadingSkeleton />
         </Box>
       ) : browseQuery.isError ? (
-        <Alert severity="error">{t('mentorship:load_mentors_error')}</Alert>
+        <Typography color="error" variant="body2" sx={{ py: 4, textAlign: 'center' }}>
+          {t('mentorship:load_mentors_error')}
+        </Typography>
       ) : mentors.length === 0 ? (
         <Alert severity="info">
           {searchQuery.trim()

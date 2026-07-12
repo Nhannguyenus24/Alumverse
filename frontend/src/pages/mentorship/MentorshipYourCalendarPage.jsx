@@ -1,7 +1,6 @@
 import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useMemo, useState, useCallback } from 'react';
 import {
-  Alert,
   Box,
   Button,
   Card,
@@ -27,6 +26,7 @@ import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 
 import Page from '../../components/Page';
+import { useSnackbar } from 'notistack';
 import MentorshipProfileLayout from '../../layouts/ProfileLayout';
 import MentorshipBookingItem from '../../components/mentorship/MentorshipBookingItem';
 import MentorshipBookingWindowCard from '../../components/mentorship/MentorshipBookingWindowCard';
@@ -95,6 +95,7 @@ const MentorshipYourCalendarPage = () => {
   const WEEK_DAYS_SHORT = WEEK_DAYS_SHORT_KEYS.map((k) => t(k));
   const TOP_TABS = getMentorProfileTabs(t);
   const navigate = useOrgNavigate();
+  const { enqueueSnackbar } = useSnackbar();
 
   const profileQuery = useMyMentorProfile();
   const sessionsQuery = useMyMentorSessions({ page: 0, limit: 100 });
@@ -114,7 +115,6 @@ const MentorshipYourCalendarPage = () => {
 
   const [anchorMonth, setAnchorMonth] = useState(dayjs().startOf('month'));
   const [showAddTime, setShowAddTime] = useState(false);
-  const [submitMessage, setSubmitMessage] = useState(null);
 
   const [repeatWeekly, setRepeatWeekly] = useState(false);
   const [startTime, setStartTime] = useState(null);
@@ -127,30 +127,27 @@ const MentorshipYourCalendarPage = () => {
   const [editingSlot, setEditingSlot] = useState(null);
   const [editStartTime, setEditStartTime] = useState(null);
   const [editEndTime, setEditEndTime] = useState(null);
-  const [editError, setEditError] = useState(null);
 
   const openEditSlot = useCallback((slot) => {
     setEditingSlot(slot);
     setEditStartTime(dayjs(slot.startTime));
     setEditEndTime(dayjs(slot.endTime));
-    setEditError(null);
   }, []);
 
   const closeEditSlot = useCallback(() => {
     setEditingSlot(null);
     setEditStartTime(null);
     setEditEndTime(null);
-    setEditError(null);
   }, []);
 
   const submitEditSlot = useCallback(async () => {
     if (!editingSlot || !editStartTime || !editEndTime) return;
     if (!editEndTime.isAfter(editStartTime)) {
-      setEditError(t('postpone_error_end_before_start'));
+      enqueueSnackbar(t('postpone_error_end_before_start'), { variant: 'error' });
       return;
     }
     if (!editStartTime.isAfter(dayjs())) {
-      setEditError(t('cal_slot_must_be_future'));
+      enqueueSnackbar(t('cal_slot_must_be_future'), { variant: 'error' });
       return;
     }
     try {
@@ -159,13 +156,14 @@ const MentorshipYourCalendarPage = () => {
         startTime: editStartTime.format('YYYY-MM-DDTHH:mm:ss'),
         endTime: editEndTime.format('YYYY-MM-DDTHH:mm:ss'),
       });
+      enqueueSnackbar(t('cal_slot_updated', 'Slot updated'), { variant: 'success' });
       closeEditSlot();
     } catch (err) {
       const message =
         err?.response?.data?.message ?? updateAvailabilityMutation.errorMessage ?? t('cal_slot_update_error');
-      setEditError(message);
+      enqueueSnackbar(message, { variant: 'error' });
     }
-  }, [editingSlot, editStartTime, editEndTime, updateAvailabilityMutation, closeEditSlot]);
+  }, [editingSlot, editStartTime, editEndTime, updateAvailabilityMutation, closeEditSlot, enqueueSnackbar, t]);
 
   const toggleDay = useCallback((index) => {
     setSelectedDays((prev) => (prev.includes(index) ? prev.filter((d) => d !== index) : [...prev, index]));
@@ -216,22 +214,21 @@ const MentorshipYourCalendarPage = () => {
   const calendarCells = useMemo(() => buildMonthCells(anchorMonth), [anchorMonth]);
 
   const handleSave = useCallback(async () => {
-    setSubmitMessage(null);
     try {
       const today = dayjs();
       if (!startTime || !endTime) {
-        setSubmitMessage({ severity: 'error', text: t('cal_error_pick_times') });
+        enqueueSnackbar(t('cal_error_pick_times'), { variant: 'error' });
         return;
       }
       let dates = [];
       if (repeatWeekly) {
         if (selectedDays.length === 0) {
-          setSubmitMessage({ severity: 'error', text: t('cal_error_pick_day') });
+          enqueueSnackbar(t('cal_error_pick_day'), { variant: 'error' });
           return;
         }
         dates = expandDates(startDate, endDate, selectedDays);
         if (dates.length === 0) {
-          setSubmitMessage({ severity: 'error', text: t('cal_error_no_matching_dates') });
+          enqueueSnackbar(t('cal_error_no_matching_dates'), { variant: 'error' });
           return;
         }
       } else {
@@ -248,12 +245,12 @@ const MentorshipYourCalendarPage = () => {
         (s) => s.endTime.isBefore(s.startTime) || s.endTime.isSame(s.startTime),
       );
       if (invalid) {
-        setSubmitMessage({ severity: 'error', text: t('postpone_error_end_before_start') });
+        enqueueSnackbar(t('postpone_error_end_before_start'), { variant: 'error' });
         return;
       }
       const inPast = slots.some((s) => s.startTime.isBefore(today));
       if (inPast) {
-        setSubmitMessage({ severity: 'error', text: t('cal_error_slot_in_past') });
+        enqueueSnackbar(t('cal_error_slot_in_past'), { variant: 'error' });
         return;
       }
 
@@ -272,23 +269,24 @@ const MentorshipYourCalendarPage = () => {
         }
       }
       const baseText = t('cal_slots_added', { success, total: slots.length });
-      setSubmitMessage({
-        severity: success === slots.length ? 'success' : failures.length === slots.length ? 'error' : 'warning',
-        text: failures.length ? `${baseText} ${t('cal_error_prefix')}${failures.slice(0, 3).join('; ')}` : baseText,
-      });
+      enqueueSnackbar(
+        failures.length ? `${baseText} ${t('cal_error_prefix')}${failures.slice(0, 3).join('; ')}` : baseText,
+        { variant: success === slots.length ? 'success' : failures.length === slots.length ? 'error' : 'warning' }
+      );
     } catch {
-      setSubmitMessage({ severity: 'error', text: addMutation.errorMessage ?? t('cal_error_add_schedule') });
+      enqueueSnackbar(addMutation.errorMessage ?? t('cal_error_add_schedule'), { variant: 'error' });
     }
-  }, [startTime, endTime, repeatWeekly, selectedDays, startDate, endDate, singleDate, addMutation]);
+  }, [startTime, endTime, repeatWeekly, selectedDays, startDate, endDate, singleDate, addMutation, enqueueSnackbar, t]);
 
   const handleDeleteSlot = useCallback(async (id) => {
     if (!window.confirm(t('cal_confirm_delete_slot'))) return;
     try {
       await deleteMutation.deleteAvailability(id);
-    } catch {
-      /* surfaced via deleteMutation.errorMessage */
+      enqueueSnackbar(t('cal_slot_deleted', 'Slot deleted'), { variant: 'success' });
+    } catch (err) {
+      enqueueSnackbar(deleteMutation.errorMessage || 'Failed to delete', { variant: 'error' });
     }
-  }, [deleteMutation, t]);
+  }, [deleteMutation, enqueueSnackbar, t]);
 
   const calendarUser = useMemo(() => ({
     name: profile?.fullName ?? t('my_account_fallback'),
@@ -309,10 +307,6 @@ const MentorshipYourCalendarPage = () => {
               {t('cal_heading')}
             </Typography>
           </ScrollRevealItem>
-
-          {deleteMutation.errorMessage && (
-            <Alert severity="error">{deleteMutation.errorMessage}</Alert>
-          )}
 
           <ScrollRevealItem sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', lg: 'row' } }}>
             {/* LEFT: CALENDAR VIEW */}
@@ -567,10 +561,6 @@ const MentorshipYourCalendarPage = () => {
                             />
                           )}
 
-                          {submitMessage && (
-                            <Alert severity={submitMessage.severity}>{submitMessage.text}</Alert>
-                          )}
-
                           <Button
                             variant="contained"
                             fullWidth
@@ -655,7 +645,6 @@ const MentorshipYourCalendarPage = () => {
                     slotProps={{ textField: { size: 'small', fullWidth: true } }}
                   />
                 </Stack>
-                {editError && <Alert severity="error">{editError}</Alert>}
               </Stack>
             </LocalizationProvider>
           </DialogContent>

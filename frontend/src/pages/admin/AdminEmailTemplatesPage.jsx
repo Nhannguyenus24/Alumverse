@@ -6,7 +6,7 @@ import {
   Box, Typography, Button, TextField, Stack, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow, Paper, IconButton,
   Chip, Alert, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions,
-  Tabs, Tab, Snackbar, Tooltip, CircularProgress, Divider
+  Tabs, Tab, Tooltip, CircularProgress, Divider
 } from '@mui/material';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -17,6 +17,7 @@ import CodeIcon from '@mui/icons-material/Code';
 import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
 import WYSIWYG from '../../components/WYSIWYG';
 import useAdminEmailTemplates, { buildSampleData } from '../../hooks/admin/useAdminEmailTemplates';
+import { useSnackbar } from 'notistack';
 
 const tokenFor = (key) => `[[\${${key}}]]`;
 
@@ -48,7 +49,7 @@ const AdminEmailTemplatesPage = () => {
   const [previewState, setPreviewState] = useState({ open: false, loading: false, html: '', subject: '', error: null });
   const [resetConfirm, setResetConfirm] = useState(false);
   const [resetting, setResetting] = useState(false);
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const { enqueueSnackbar } = useSnackbar();
 
   const htmlRef = useRef(null);
 
@@ -84,7 +85,7 @@ const AdminEmailTemplatesPage = () => {
     try {
       applyDetail(await getById(id));
     } catch {
-      setSnackbar({ open: true, message: t('et_load_error'), severity: 'error' });
+      enqueueSnackbar(t('et_load_error'), { variant: 'error' });
     } finally {
       setLoadingDetail(false);
     }
@@ -116,9 +117,9 @@ const AdminEmailTemplatesPage = () => {
     }
     try {
       await navigator.clipboard.writeText(token);
-      setSnackbar({ open: true, message: t('et_var_copied', { token }), severity: 'info' });
+      enqueueSnackbar(t('et_var_copied', { token }), { variant: 'info' });
     } catch {
-      setSnackbar({ open: true, message: token, severity: 'info' });
+      enqueueSnackbar(token, { variant: 'info' });
     }
   };
 
@@ -140,7 +141,7 @@ const AdminEmailTemplatesPage = () => {
 
   const handleSave = async () => {
     if (!isRegionMode && !content?.trim()) {
-      setSnackbar({ open: true, message: t('et_content_required'), severity: 'error' });
+      enqueueSnackbar(t('et_content_required'), { variant: 'error' });
       return;
     }
     setSaving(true);
@@ -150,10 +151,10 @@ const AdminEmailTemplatesPage = () => {
         : await update(selected.id, { subject, content });
       // Đồng bộ lại từ server để giữ nội dung/vùng chuẩn (marker được ghép lại phía backend).
       if (detail?.id) applyDetail(detail);
-      setSnackbar({ open: true, message: t('et_saved'), severity: 'success' });
+      enqueueSnackbar(t('et_saved'), { variant: 'success' });
       await refresh();
     } catch {
-      setSnackbar({ open: true, message: t('et_save_error'), severity: 'error' });
+      enqueueSnackbar(t('et_save_error'), { variant: 'error' });
     } finally {
       setSaving(false);
     }
@@ -165,10 +166,10 @@ const AdminEmailTemplatesPage = () => {
       const detail = await resetToDefault(selected.id);
       if (detail?.id) applyDetail(detail);
       setResetConfirm(false);
-      setSnackbar({ open: true, message: t('et_reset_done'), severity: 'success' });
+      enqueueSnackbar(t('et_reset_done'), { variant: 'success' });
       await refresh();
     } catch {
-      setSnackbar({ open: true, message: t('et_reset_error'), severity: 'error' });
+      enqueueSnackbar(t('et_reset_error'), { variant: 'error' });
     } finally {
       setResetting(false);
     }
@@ -375,7 +376,7 @@ const AdminEmailTemplatesPage = () => {
           {previewState.loading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress size={28} /></Box>
           ) : previewState.error ? (
-            <Alert severity="error" sx={{ whiteSpace: 'pre-wrap' }}>{previewState.error}</Alert>
+            <Typography color="error" sx={{ whiteSpace: 'pre-wrap' }}>{previewState.error}</Typography>
           ) : (
             <Box
               component="iframe"
@@ -409,17 +410,6 @@ const AdminEmailTemplatesPage = () => {
           </Button>
         </DialogActions>
       </Dialog>
-
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={3000}
-        onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert severity={snackbar.severity} variant="filled" onClose={() => setSnackbar((s) => ({ ...s, open: false }))}>
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
     </Box>
   );
 };
