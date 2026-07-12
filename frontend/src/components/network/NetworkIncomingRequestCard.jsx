@@ -142,18 +142,19 @@ const NetworkIncomingRequestCard = ({
             sx={{ flexShrink: 0, alignSelf: { sm: 'center' } }}
             onClick={stopActionPropagation}
           >
-            <ContributeGuardTooltip placement="left">
+            <ContributeGuardTooltip placement="left" sx={{ width: { sm: 1 } }}>
               <Button
                 variant="contained"
                 color="primary"
                 size="small"
                 onClick={handleAccept}
                 disabled={isResponding || !canContribute}
+                sx={{ width: { sm: 1 } }}
               >
                 {isResponding ? <CircularProgress size={16} color="inherit" /> : t('accept')}
               </Button>
             </ContributeGuardTooltip>
-            <ContributeGuardTooltip placement="left">
+            <ContributeGuardTooltip placement="left" sx={{ width: { sm: 1 } }}>
               <Button
                 variant="outlined"
                 color="inherit"
@@ -161,6 +162,7 @@ const NetworkIncomingRequestCard = ({
                 onClick={handleReject}
                 disabled={isResponding || !canContribute}
                 sx={(theme) => ({
+                  width: { sm: 1 },
                   borderColor: alpha(theme.palette.text.primary, 0.23),
                 })}
               >

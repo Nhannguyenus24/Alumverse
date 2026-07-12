@@ -710,11 +710,26 @@ public class FundService {
             int limit
     ) {
         int offset = page * limit;
-        return PaginationHelper.paginate(
-                fundDonationsRepository.findByDonorMemberIdWithPagination(donorMemberId, limit, offset)
-                        .map(FundDonationMapper::toListItemResponse),
-                fundDonationsRepository.countByDonorMemberId(donorMemberId),
-                page, limit)
+        // 0 is a safe "not authenticated" sentinel here: users.id is an IDENTITY column
+        // starting at 1 (docs/postgre.sql) and no code path issues a JWT with subject 0,
+        // so it can never collide with a real donorMemberId (validated >= 1 upstream).
+        return SecurityUtils.getCurrentUserId()
+                .map(Long::intValue)
+                .defaultIfEmpty(0)
+                .flatMap(currentUserId -> {
+                    boolean isOwner = currentUserId.equals(donorMemberId);
+                    Flux<FundDonationListItemResponse> dataFlux = isOwner
+                            ? fundDonationsRepository.findByDonorMemberIdWithPagination(donorMemberId, limit, offset)
+                                    .map(FundDonationMapper::toListItemResponse)
+                            : fundDonationsRepository.findByDonorMemberIdVisibleToOthersWithPagination(
+                                            donorMemberId, FundDonationConstants.DEFAULT_DONOR_DISPLAY_NAME, limit, offset)
+                                    .map(FundDonationMapper::toListItemResponse);
+                    Mono<Long> countMono = isOwner
+                            ? fundDonationsRepository.countByDonorMemberId(donorMemberId)
+                            : fundDonationsRepository.countByDonorMemberIdVisibleToOthers(
+                                    donorMemberId, FundDonationConstants.DEFAULT_DONOR_DISPLAY_NAME);
+                    return PaginationHelper.paginate(dataFlux, countMono, page, limit);
+                })
                 .doOnSuccess(r -> org.slf4j.LoggerFactory.getLogger(FundService.class).info("getDonationsByDonorMemberId result: {}", com.service.backend.shared.utils.JsonUtils.toJson(r)));
     }
 
