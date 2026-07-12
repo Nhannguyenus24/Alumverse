@@ -52,6 +52,8 @@ public class UserService {
     private final ImageService imageService;
     private final NotificationService notificationService;
     private final OCRService ocrService;
+    private final com.service.backend.shared.service.EmailService emailService;
+
 
     @Transactional
     public Mono<Void> createVerificationRequest(Long currentUserId, CreateVerificationRequest request) {
@@ -224,7 +226,18 @@ public class UserService {
 
                     return Mono.fromCallable(() -> passwordEncoder.encode(newPassword))
                             .subscribeOn(Schedulers.boundedElastic())
-                            .flatMap(hashedPassword -> authRepository.updatePasswordById(userId, hashedPassword));
+                            .flatMap(hashedPassword -> authRepository.updatePasswordById(userId, hashedPassword))
+                            .flatMap(updatedRows -> {
+                                return emailService.sendHtmlEmail(
+                                    user.getEmail(),
+                                    "Thông báo thay đổi mật khẩu thành công",
+                                    "passwordChangedSuccessfully",
+                                    java.util.Map.of("email", user.getEmail())
+                                ).onErrorResume(err -> {
+                                    logger.error("Failed to send password changed email to {}: {}", user.getEmail(), err.getMessage());
+                                    return Mono.empty();
+                                }).then();
+                            });
                 })
                 .doOnSuccess(v -> logger.info("changeMyPassword: userId={} password changed", userId));
     }

@@ -40,6 +40,8 @@ import com.service.backend.user.service.NotificationService;
 import com.service.backend.shared.dao.UserDisplayInfo;
 import com.service.backend.user.dao.PeerVerificationRepository;
 import com.service.backend.user.dao.UserProfileRepository;
+import com.service.backend.shared.service.EmailService;
+
 
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
@@ -63,6 +65,7 @@ public class AdminUserService {
     private final PeerVerificationRepository peerVerificationRepository;
     private final NotificationService notificationService;
     private final CacheUtils cacheUtils;
+    private final EmailService emailService;
 
     public Mono<PaginatedResponse<UserResponse>> getAllUsers(int page, int size, String search, String role, String status, Integer organizationId) {
         int offset = page * size;
@@ -349,8 +352,49 @@ public class AdminUserService {
                     if (request.getEmail() != null) user.setEmail(request.getEmail());
                     if (request.getRole() != null) user.setRole(request.getRole());
                     if (request.getStatus() != null) user.setStatus(request.getStatus());
+                    
+                    boolean sendPasswordEmail = false;
+                    if (Boolean.TRUE.equals(request.getRequirePasswordChange())) {
+                        user.setMustChangePassword(true);
+                        sendPasswordEmail = true;
+                    }
+                    
                     user.setUpdatedAt(LocalDateTime.now());
-                    return adminUserRepository.save(user);
+                    
+                    final boolean shouldSendEmail = sendPasswordEmail;
+                    
+                    if (request.getVerificationLevel() != null) {
+                        String notiTitle = "Cập nhật cấp độ xác thực";
+                        String notiMessage = "Quản trị viên đã cập nhật cấp độ xác thực của bạn thành " + request.getVerificationLevel() + ".";
+                        if (request.getVerificationLevel() == 0) {
+                            notiTitle = "Yêu cầu xác thực lại";
+                            notiMessage = "Quản trị viên yêu cầu bạn xác thực lại thông tin tài khoản.";
+                        }
+                        final String finalTitle = notiTitle;
+                        final String finalMessage = notiMessage;
+                        Mono.fromRunnable(() -> notificationService.createNotificationAsync(
+                                userId, finalTitle, finalMessage, "/organization-registration"))
+                            .subscribeOn(Schedulers.boundedElastic())
+                            .subscribe();
+                    }
+
+                    return adminUserRepository.save(user)
+                        .flatMap(savedUser -> {
+                            if (shouldSendEmail) {
+                                return emailService.sendHtmlEmail(
+                                    savedUser.getEmail(), 
+                                    "Yêu cầu thay đổi mật khẩu", 
+                                    "passwordResetRequired", 
+                                    Map.of("email", savedUser.getEmail())
+                                )
+                                .thenReturn(savedUser)
+                                .onErrorResume(err -> {
+                                    logger.error("Failed to send password reset email to {}: {}", savedUser.getEmail(), err.getMessage());
+                                    return Mono.just(savedUser);
+                                });
+                            }
+                            return Mono.just(savedUser);
+                        });
                 })
                 .flatMap(saved -> applyProfileAndOrg(userId, request).then(getUserById(userId)))
                 .doOnSuccess(u -> logger.info("updateUser result: {}", JsonUtils.toJson(u)))

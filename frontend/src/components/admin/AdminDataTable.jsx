@@ -18,6 +18,7 @@ import {
   IconButton,
   Tooltip,
   Collapse,
+  Button,
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import SearchBar from '../SearchBar';
@@ -122,21 +123,23 @@ const AdminDataTable = ({
           <Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0 }}>
             {filters}
             {onExport && (
-              <Tooltip title={t('admin:export_data')}>
-                <IconButton
-                  size="small"
-                  onClick={onExport}
-                  sx={{ 
-                    border: `1px solid ${theme.palette.divider}`, 
-                    borderRadius: 2, 
-                    color: 'primary.main',
-                    height: 40,
-                    width: 40
-                  }}
-                >
-                  <FileDownloadOutlinedIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<FileDownloadOutlinedIcon />}
+                onClick={onExport}
+                sx={{
+                  border: `1px solid ${theme.palette.divider}`,
+                  borderRadius: 2,
+                  color: 'primary.main',
+                  height: 40,
+                  fontWeight: 700,
+                  textTransform: 'none',
+                  px: 2
+                }}
+              >
+                {t('admin:export_excel', { defaultValue: 'Xuất Excel' })}
+              </Button>
             )}
             {actions}
             {addButton && (
