@@ -43,7 +43,10 @@ public class MetricsFilter implements WebFilter {
     private void recordMetrics(String method, String path, int status, long durationMs) {
         try {
             if (path.startsWith("/actuator") || path.startsWith("/internal/actuator") || path.startsWith("/swagger") ||
-                path.startsWith("/v3/api-docs") || isStaticFile(path)) {
+                path.startsWith("/v3/api-docs") || isStaticFile(path) || isStreamingEndpoint(path)) {
+                // Long-lived streaming endpoints (SSE, WebSocket) stay open for minutes by
+                // design; recording their duration pollutes the latency histogram and floods
+                // logs with false "SLOW REQUEST" warnings. They have dedicated gauges instead.
                 return;
             }
 
@@ -85,6 +88,10 @@ public class MetricsFilter implements WebFilter {
         } catch (Exception e) {
             log.error("Error recording metrics for {} {}", method, path, e);
         }
+    }
+
+    private boolean isStreamingEndpoint(String path) {
+        return path.startsWith("/api/sse") || path.startsWith("/ws");
     }
 
     private boolean isStaticFile(String path) {

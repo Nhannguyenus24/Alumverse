@@ -7,6 +7,7 @@ import com.service.backend.shared.service.AITagService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
 @Component
 @RequiredArgsConstructor
 @Slf4j
+@ConditionalOnProperty(name = "forum.post.tag.enabled", havingValue = "true", matchIfMissing = true)
 public class ForumPostTagScheduler {
 
     private final ForumPostRepository forumPostRepository;

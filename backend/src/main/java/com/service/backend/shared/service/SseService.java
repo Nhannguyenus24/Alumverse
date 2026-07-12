@@ -11,6 +11,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.stereotype.Service;
 
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Sinks;
 
@@ -51,6 +53,19 @@ public class SseService {
     private final Map<Long, Set<String>> connectionsByUser = new ConcurrentHashMap<>();
     private final Map<Integer, Set<String>> connectionsByOrg = new ConcurrentHashMap<>();
 
+    private final MeterRegistry meterRegistry;
+
+    public SseService(MeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
+        // Real-time gauges: currently-open SSE connections and distinct connected users.
+        Gauge.builder("sse.active_connections", connections, Map::size)
+                .description("Number of currently open SSE connections")
+                .register(meterRegistry);
+        Gauge.builder("sse.active_users", connectionsByUser, Map::size)
+                .description("Number of distinct users with at least one open SSE connection")
+                .register(meterRegistry);
+    }
+
     /**
      * Register a new SSE connection for the given user and return the event stream.
      * The connection is removed automatically when the client disconnects.
@@ -59,6 +74,7 @@ public class SseService {
         String connectionId = UUID.randomUUID().toString();
         Sinks.Many<ServerSentEvent<Object>> sink = Sinks.many().multicast().onBackpressureBuffer();
         connections.put(connectionId, new Connection(userId, organizationId, sink));
+        meterRegistry.counter("sse.connections.opened").increment();
         connectionsByUser.computeIfAbsent(userId, k -> ConcurrentHashMap.newKeySet()).add(connectionId);
         if (organizationId != null) {
             connectionsByOrg.computeIfAbsent(organizationId, k -> ConcurrentHashMap.newKeySet()).add(connectionId);
@@ -129,7 +145,9 @@ public class SseService {
         // tryEmitNext fast path (which would return FAIL_NON_SERIALIZED under contention).
         try {
             connection.sink().emitNext(sse, EMIT_FAILURE_HANDLER);
+            meterRegistry.counter("sse.events.sent", "event", event).increment();
         } catch (RuntimeException ex) {
+            meterRegistry.counter("sse.events.failed", "event", event).increment();
             log.warn("Failed to emit SSE event '{}' to userId={}: {}",
                     event, connection.userId(), ex.getMessage());
         }
