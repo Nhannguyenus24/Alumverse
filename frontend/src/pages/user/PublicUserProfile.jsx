@@ -1,7 +1,6 @@
 import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useCallback, useEffect, useState } from 'react';
 import {
-  Alert,
   Box,
   Grid,
   Stack,
@@ -49,6 +48,12 @@ const PublicUserProfile = ({ userId, navigate }) => {
     }
   }, [isOwnProfile, navigate]);
 
+  useEffect(() => {
+    if (profileQuery.isError) {
+      showError(t('pub_load_profile_error'));
+    }
+  }, [profileQuery.isError, showError, t]);
+
   const handleMessage = useCallback(async () => {
     const targetMemberId = profile?.userId ?? userId;
     if (!targetMemberId) return;
@@ -85,9 +90,9 @@ const PublicUserProfile = ({ userId, navigate }) => {
 
   if (profileQuery.isError || !profile) {
     return (
-      <Alert severity="error" sx={{ m: 4 }}>
-        {t('pub_load_profile_error')}
-      </Alert>
+      <Box sx={{ m: 4, textAlign: 'center' }}>
+        <Typography color="error">{t('pub_load_profile_error')}</Typography>
+      </Box>
     );
   }
 

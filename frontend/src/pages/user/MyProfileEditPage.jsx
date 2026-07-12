@@ -283,7 +283,6 @@ const UnifiedProfileEditPage = () => {
   const [expertiseTags, setExpertiseTags] = useState([]);
   const [manualTag, setManualTag] = useState('');
   const [extractingTags, setExtractingTags] = useState(false);
-  const [tagExtractError, setTagExtractError] = useState('');
   const [experiences, setExperiences] = useState([]);
   const [educations, setEducations] = useState([]);
   const [projects, setProjects] = useState([]);
@@ -456,6 +455,7 @@ const UnifiedProfileEditPage = () => {
       queryClient.invalidateQueries({ queryKey: ['publicProfile'] });
 
       setSuccess(true);
+      enqueueSnackbar(t('profile:success_save'), { variant: 'success' });
       setTimeout(() => navigate(isMentorshipEdit ? '/mentorship/profile' : '/profile'), 800);
     } catch (error) {
       enqueueSnackbar(
@@ -514,21 +514,20 @@ const UnifiedProfileEditPage = () => {
     const text = experienceSummary.trim();
     if (!text) return;
     setExtractingTags(true);
-    setTagExtractError('');
     try {
       const res = await extractMentorshipSkills(text);
       const tags = res?.data?.data?.tags ?? [];
       if (tags.length === 0) {
-        setTagExtractError(t('mentorship:signup_tab_extract_empty'));
+        enqueueSnackbar(t('mentorship:signup_tab_extract_empty'), { variant: 'info' });
       } else {
         addTags(tags);
       }
     } catch (err) {
-      setTagExtractError(err?.response?.data?.message ?? t('mentorship:signup_tab_extract_error'));
+      enqueueSnackbar(err?.response?.data?.message ?? t('mentorship:signup_tab_extract_error'), { variant: 'error' });
     } finally {
       setExtractingTags(false);
     }
-  }, [addTags, experienceSummary, t]);
+  }, [addTags, experienceSummary, enqueueSnackbar, t]);
 
   const handleManualTagAdd = useCallback(() => {
     if (!manualTag.trim()) return;
@@ -770,7 +769,6 @@ const UnifiedProfileEditPage = () => {
               {extractingTags ? t('mentorship:signup_tab_extract_analyzing') : t('mentorship:signup_tab_extract_btn')}
             </Button>
           </Stack>
-          {tagExtractError && <Alert severity="info">{tagExtractError}</Alert>}
           {expertiseTags.length > 0 ? (
             <TagPriorityList
               tags={expertiseTags}
@@ -949,16 +947,6 @@ const UnifiedProfileEditPage = () => {
               )}
             </Stack>
           </ScrollRevealItem>
-
-          {success && (
-            <Alert severity="success">
-              {t('profile:success_save')}
-            </Alert>
-          )}
-
-          {errorMessage && !success && (
-            <Alert severity="error">{errorMessage}</Alert>
-          )}
 
           {isMentorshipEdit ? (
             renderMentorshipSection()

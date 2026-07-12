@@ -18,6 +18,8 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import StarIcon from '@mui/icons-material/Star';
 import dayjs from 'dayjs';
 import { useTranslation } from 'react-i18next';
+import { useSnackbar } from 'notistack';
+import { useEffect } from 'react';
 
 import Page from '../../components/Page';
 import MentorshipSlotPicker from '../../components/mentorship/MentorshipSlotPicker';
@@ -46,6 +48,7 @@ const MentorshipBookingPage = () => {
   const [activeStep, setActiveStep] = useState(0);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const { enqueueSnackbar } = useSnackbar();
   const [formValues, setFormValues] = useState({
     sessionType: '',
     introduction: '',
@@ -73,13 +76,33 @@ const MentorshipBookingPage = () => {
         cvFile: formValues.cv,
       });
       setSubmitSuccess(true);
+      enqueueSnackbar(t('mentorship:booking_success'), { variant: 'success' });
       setTimeout(() => navigate('/mentorship'), 1500);
     } catch {
-      // errorMessage from hook will surface in the alert below
+      // errorMessage from hook will surface in useEffect
     }
   };
 
   const isLoading = profileQuery.isLoading || availabilityQuery.isLoading;
+
+  useEffect(() => {
+    if (profileQuery.isError) {
+      enqueueSnackbar(t('mentorship:booking_error_load_mentor'), { variant: 'error' });
+    }
+  }, [profileQuery.isError, enqueueSnackbar, t]);
+
+  useEffect(() => {
+    if (errorMessage && !submitSuccess) {
+      enqueueSnackbar(errorMessage, { variant: 'error' });
+    }
+  }, [errorMessage, submitSuccess, enqueueSnackbar]);
+
+  useEffect(() => {
+    if (availabilityQuery.isError) {
+      enqueueSnackbar(t('mentorship:booking_error_load_slots'), { variant: 'error' });
+    }
+  }, [availabilityQuery.isError, enqueueSnackbar, t]);
+
 
   return (
     <Page title={t('mentorship:booking_page_title')}>
@@ -89,24 +112,6 @@ const MentorshipBookingPage = () => {
           <ScrollRevealItem><Typography variant="h2" fontWeight={800} color="primary.main" mb={1}>{t('mentorship:booking_heading')}</Typography></ScrollRevealItem>
           <ScrollRevealItem><Typography color="text.secondary" mb={4}>{t('mentorship:booking_desc')}</Typography></ScrollRevealItem>
         </ScrollRevealGroup>
-
-        {profileQuery.isError && (
-          <Alert severity="error" sx={{ mb: 3 }}>
-            {t('mentorship:booking_error_load_mentor')}
-          </Alert>
-        )}
-
-        {submitSuccess && (
-          <Alert severity="success" sx={{ mb: 3 }}>
-            {t('mentorship:booking_success')}
-          </Alert>
-        )}
-
-        {errorMessage && !submitSuccess && (
-          <Alert severity="error" sx={{ mb: 3 }}>
-            {errorMessage}
-          </Alert>
-        )}
 
         <Box
           sx={{
@@ -133,9 +138,9 @@ const MentorshipBookingPage = () => {
                     <LoadingSkeleton />
                   </Box>
                 ) : availabilityQuery.isError ? (
-                  <Alert severity="error">
+                  <Typography color="error" variant="body2" sx={{ py: 4, textAlign: 'center' }}>
                     {t('mentorship:booking_error_load_slots')}
-                  </Alert>
+                  </Typography>
                 ) : Object.keys(availabilityQuery.availabilityMap).length === 0 ? (
                   <Alert severity="info">
                     {t('mentorship:booking_no_slots')}

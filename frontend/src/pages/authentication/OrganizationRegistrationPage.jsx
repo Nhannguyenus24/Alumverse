@@ -155,7 +155,6 @@ const OrganizationRegistrationPage = () => {
   const [searchParams] = useSearchParams();
 
   // Status
-  const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
   // Proof file
@@ -206,11 +205,10 @@ const OrganizationRegistrationPage = () => {
   useEffect(() => {
     if (organizationId) {
       setValue("organizationId", organizationId);
-      setError(null);
     } else if (!organizationLoading) {
-      setError("Organization ID is required. Please provide a valid organization.");
+      enqueueSnackbar("Organization ID is required. Please provide a valid organization.", { variant: 'error' });
     }
-  }, [organizationId, organizationLoading, setValue]);
+  }, [organizationId, organizationLoading, setValue, enqueueSnackbar]);
 
   useEffect(() => {
     let cancelled = false;
@@ -236,9 +234,8 @@ const OrganizationRegistrationPage = () => {
     if (!file) return;
     const allowedTypes = ["application/pdf", "image/jpeg", "image/png"];
     const maxSizeBytes = 5 * 1024 * 1024;
-    if (!allowedTypes.includes(file.type)) { setError(t("auth:proof_invalid_type")); return; }
-    if (file.size > maxSizeBytes) { setError(t("auth:proof_too_large")); return; }
-    setError(null);
+    if (!allowedTypes.includes(file.type)) { enqueueSnackbar(t("auth:proof_invalid_type"), { variant: 'error' }); return; }
+    if (file.size > maxSizeBytes) { enqueueSnackbar(t("auth:proof_too_large"), { variant: 'error' }); return; }
     setShowProofPanel(true);
     setProofFile(file);
   };
@@ -251,9 +248,8 @@ const OrganizationRegistrationPage = () => {
   };
 
   const onSubmit = async (data) => {
-    setError(null);
     if (!proofFile && selectedVerifierUserIds.length === 0) {
-      setError(t("auth:select_verification_method"));
+      enqueueSnackbar(t("auth:select_verification_method"), { variant: 'error' });
       return;
     }
     setLoading(true);
@@ -341,7 +337,6 @@ const OrganizationRegistrationPage = () => {
       }
     } catch (err) {
       const errorMessage = err?.response?.data?.message || err?.message || "Failed to register to organization. Please try again.";
-      setError(errorMessage);
       enqueueSnackbar(errorMessage, { variant: "error" });
     } finally {
       setLoading(false);
@@ -619,9 +614,6 @@ const OrganizationRegistrationPage = () => {
               </Box>
             )}
           </ScrollRevealItem>
-
-          {/* ── Errors ── */} 
-          {error && <ScrollRevealItem><Alert severity="error" onClose={() => setError(null)}>{error}</Alert></ScrollRevealItem>}
 
           {/* ── Actions ── */}
           <ScrollRevealItem><Stack direction="row" spacing={2} sx={{ pt: 1 }}>

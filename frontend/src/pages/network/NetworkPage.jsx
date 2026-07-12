@@ -289,6 +289,12 @@ const NetworkMemberDirectory = () => {
     }
   }, [pageCount, page]);
 
+  useEffect(() => {
+    if (isError) {
+      showError(errorMessage);
+    }
+  }, [isError, errorMessage, showError]);
+
   const handlePageChange = usePaginationScrollToTop({ currentPage: safePage, setPage });
 
   const handleSearchKeyDown = useCallback((event) => {
@@ -374,8 +380,6 @@ const NetworkMemberDirectory = () => {
           placeholder={t('network:search_by_name_placeholder')}
         /></ScrollRevealItem>
       </ScrollRevealGroup>
-
-      {isError ? <Alert severity="error">{errorMessage}</Alert> : null}
 
       {isPending ? (
         <Stack alignItems="center" py={6}>

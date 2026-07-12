@@ -14,6 +14,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import { useSnackbar } from 'notistack';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -80,6 +81,8 @@ const MentorshipDashboardPage = () => {
   const [linkError, setLinkError] = useState(null);
   const [linkPending, setLinkPending] = useState(false);
 
+  const { enqueueSnackbar } = useSnackbar();
+
   const profileQuery = useMyMentorProfile();
   const sessionsQuery = useMyMentorSessions({ page: 0, limit: PAGE_SIZE });
   const feedbacksQuery = useMyMentorFeedbacks(0, 50);
@@ -110,6 +113,12 @@ const MentorshipDashboardPage = () => {
     [upcomingItems],
   );
 
+  useEffect(() => {
+    if (sessionsQuery.isError) {
+      enqueueSnackbar(t('dash_sessions_load_error'), { variant: 'error' });
+    }
+  }, [sessionsQuery.isError, enqueueSnackbar, t]);
+
   const stats = useMemo(() => {
     const completed = items.filter((s) => s.status === 'COMPLETED').length;
     return [
@@ -122,19 +131,18 @@ const MentorshipDashboardPage = () => {
   const callUpdate = useCallback(async (sessionId, status) => {
     try {
       await updateMutation.updateStatus({ sessionId, status });
-    } catch {
-      /* surfaced via errorMessage */
+    } catch (err) {
+      enqueueSnackbar(err?.response?.data?.message || err?.message || t('dash_update_error', 'Update failed'), { variant: 'error' });
     }
-  }, [updateMutation]);
+  }, [updateMutation, enqueueSnackbar, t]);
 
   const handleJoin = useCallback(async (session) => {
-    setActionError('');
     try {
       await joinMutation.joinSession({ sessionId: session.id, asMentor: true });
     } catch (err) {
-      setActionError(err?.response?.data?.message ?? t('dash_join_error'));
+      enqueueSnackbar(err?.response?.data?.message ?? t('dash_join_error'), { variant: 'error' });
     }
-  }, [joinMutation, setActionError, t]);
+  }, [joinMutation, enqueueSnackbar, t]);
 
   const openCancelDialog = useCallback((session) => {
     setCancelTarget(session);
@@ -182,9 +190,8 @@ const MentorshipDashboardPage = () => {
 
   const handleConfirmPostpone = useCallback(async () => {
     if (!postponeTarget) return;
-    setPostponeError(null);
     if (!postponeDate || !postponeStart || !postponeEnd) {
-      setPostponeError(t('postpone_error_pick_all'));
+      enqueueSnackbar(t('postpone_error_pick_all'), { variant: 'error' });
       return;
     }
     // Combine the chosen date with the chosen start/end times.
@@ -199,11 +206,11 @@ const MentorshipDashboardPage = () => {
       .second(0)
       .millisecond(0);
     if (!proposedEnd.isAfter(proposedStart)) {
-      setPostponeError(t('postpone_error_end_before_start'));
+      enqueueSnackbar(t('postpone_error_end_before_start'), { variant: 'error' });
       return;
     }
     if (!proposedStart.isAfter(dayjs())) {
-      setPostponeError(t('postpone_error_in_past'));
+      enqueueSnackbar(t('postpone_error_in_past'), { variant: 'error' });
       return;
     }
     setPostponePending(true);
@@ -216,11 +223,11 @@ const MentorshipDashboardPage = () => {
       sessionsQuery.refetch?.();
       closePostponeDialog();
     } catch (err) {
-      setPostponeError(err?.response?.data?.message ?? t('postpone_error_send'));
+      enqueueSnackbar(err?.response?.data?.message ?? t('postpone_error_send'), { variant: 'error' });
     } finally {
       setPostponePending(false);
     }
-  }, [postponeTarget, postponeDate, postponeStart, postponeEnd, postponeReason, sessionsQuery, closePostponeDialog, t]);
+  }, [postponeTarget, postponeDate, postponeStart, postponeEnd, postponeReason, sessionsQuery, closePostponeDialog, enqueueSnackbar, t]);
 
   const openLinkDialog = useCallback((session) => {
     setLinkTarget(session);
@@ -236,21 +243,20 @@ const MentorshipDashboardPage = () => {
     if (!linkTarget) return;
     const value = linkValue.trim();
     if (!value) {
-      setLinkError(t('link_error_empty'));
+      enqueueSnackbar(t('link_error_empty'), { variant: 'error' });
       return;
     }
     setLinkPending(true);
-    setLinkError(null);
     try {
       await updateMentorSessionMeetingLink(linkTarget.id, value);
       sessionsQuery.refetch?.();
       closeLinkDialog();
     } catch (err) {
-      setLinkError(err?.response?.data?.message ?? t('link_error_update'));
+      enqueueSnackbar(err?.response?.data?.message ?? t('link_error_update'), { variant: 'error' });
     } finally {
       setLinkPending(false);
     }
-  }, [linkTarget, linkValue, sessionsQuery, closeLinkDialog, t]);
+  }, [linkTarget, linkValue, sessionsQuery, closeLinkDialog, enqueueSnackbar, t]);
 
   const closeReportDialog = useCallback(() => {
     setReportTarget(null);
@@ -264,7 +270,6 @@ const MentorshipDashboardPage = () => {
 
   const handleConfirmReport = useCallback(async () => {
     if (!reportTarget || reportInvalid) return;
-    setActionError('');
     setReportPending(true);
     try {
       await reportSession(reportTarget.id, {
@@ -274,11 +279,11 @@ const MentorshipDashboardPage = () => {
       closeReportDialog();
       sessionsQuery.refetch?.();
     } catch (err) {
-      setActionError(err?.response?.data?.message ?? t('report_error_send'));
+      enqueueSnackbar(err?.response?.data?.message ?? t('report_error_send'), { variant: 'error' });
     } finally {
       setReportPending(false);
     }
-  }, [reportTarget, reportInvalid, reportCategory, reportDescription, sessionsQuery, closeReportDialog, t]);
+  }, [reportTarget, reportInvalid, reportCategory, reportDescription, sessionsQuery, closeReportDialog, enqueueSnackbar, t]);
 
   const profile = profileQuery.data;
   const mentorUser = useMemo(() => ({
@@ -310,22 +315,12 @@ const MentorshipDashboardPage = () => {
           {/* STATS */}
           <ScrollRevealItem><StatsBanner items={stats} /></ScrollRevealItem>
 
-          {updateMutation.errorMessage && (
-            <Alert severity="error">{updateMutation.errorMessage}</Alert>
-          )}
-
-          {actionError && (
-            <Alert severity="error" onClose={() => setActionError('')}>
-              {actionError}
-            </Alert>
-          )}
-
           {sessionsQuery.isLoading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
               <LoadingSkeleton />
             </Box>
           ) : sessionsQuery.isError ? (
-            <Alert severity="error">{t('dash_sessions_load_error')}</Alert>
+            <Typography color="error">{t('dash_sessions_load_error')}</Typography>
           ) : (
             <>
               {/* LỊCH SẮP TỚI */}
@@ -457,7 +452,6 @@ const MentorshipDashboardPage = () => {
                 multiline
                 minRows={2}
               />
-              {postponeError && <Alert severity="error">{postponeError}</Alert>}
             </Stack>
           </LocalizationProvider>
         </DialogContent>
@@ -566,11 +560,6 @@ const MentorshipDashboardPage = () => {
             placeholder="https://meet.google.com/..."
             autoFocus
           />
-          {linkError && (
-            <Alert severity="error" sx={{ mt: 2 }}>
-              {linkError}
-            </Alert>
-          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={closeLinkDialog} color="inherit">

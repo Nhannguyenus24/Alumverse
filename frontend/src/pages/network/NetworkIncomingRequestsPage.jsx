@@ -57,12 +57,17 @@ const NetworkIncomingRequestsPage = () => {
   const safePage = pageCount === 0 ? 1 : Math.min(page, pageCount);
 
   useEffect(() => {
-    if (pageCount === 0) return;
     if (page > pageCount) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setPage(pageCount);
     }
   }, [pageCount, page]);
+
+  useEffect(() => {
+    if (isError) {
+      showError(t('incoming_load_error'));
+    }
+  }, [isError, showError, t]);
 
   const handlePageChange = usePaginationScrollToTop({ currentPage: safePage, setPage });
 
@@ -146,14 +151,6 @@ const NetworkIncomingRequestsPage = () => {
         <Stack alignItems="center" py={4}>
           <LoadingSkeleton />
         </Stack>
-      );
-    }
-
-    if (isError) {
-      return (
-        <Alert severity="error">
-          {t('incoming_load_error')}
-        </Alert>
       );
     }
 
