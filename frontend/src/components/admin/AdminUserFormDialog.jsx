@@ -41,6 +41,7 @@ const defaultEmptyForm = {
   major: '',
   graduatedYear: '',
   graduationStatus: '',
+  requirePasswordChange: false,
 };
 
 const resolvedFullNameForEdit = (u) => {
@@ -116,6 +117,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
           major: Array.isArray(user.major) ? user.major[0] ?? '' : user.major || '',
           graduatedYear: Array.isArray(user.graduatedYear) ? user.graduatedYear[0] ?? '' : user.graduatedYear || '',
           graduationStatus: Array.isArray(user.graduationStatus) ? user.graduationStatus[0] ?? '' : user.graduationStatus || '',
+          requirePasswordChange: false,
         };
         setInitialTrustedVerifier(trustedVerifierValue);
         setInitialForm(nextForm);
@@ -202,6 +204,9 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
     if (mode !== 'edit' || Boolean(form.isTrustedVerifier) !== initialTrustedVerifier) {
       payload.isTrustedVerifier = Boolean(form.isTrustedVerifier);
       payload.organizationId = Number(form.organizationId);
+    }
+    if (mode === 'edit' && form.requirePasswordChange) {
+      payload.requirePasswordChange = true;
     }
     if (form.password) payload.password = form.password;
     try {
@@ -373,7 +378,6 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
           label={t('admin:verification_level_label')}
           value={form.verificationLevel}
           onChange={handleChange('verificationLevel')}
-          disabled={isMembershipReadOnly}
           fullWidth
           slotProps={slotProps}
         >
@@ -393,6 +397,18 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
           }
           label={t('admin:trusted_verifier_label')}
         />
+
+        {mode === 'edit' && (
+          <FormControlLabel
+            control={
+              <Switch
+                checked={Boolean(form.requirePasswordChange)}
+                onChange={(e) => setForm((prev) => ({ ...prev, requirePasswordChange: e.target.checked }))}
+              />
+            }
+            label={t('admin:require_password_change_label', { defaultValue: 'Yêu cầu thay đổi mật khẩu (Gửi email)' })}
+          />
+        )}
 
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>

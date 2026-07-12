@@ -29,4 +29,5 @@ public class UpdateUserRequest {
     @Min(value = 0, message = "Verification level must be at least 0")
     private Integer verificationLevel;
     private Boolean isTrustedVerifier;
+    private Boolean requirePasswordChange;
 }
