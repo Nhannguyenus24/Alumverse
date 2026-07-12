@@ -18,31 +18,52 @@ function isCooldownExpired(cooldownUntil) {
   return Date.now() >= new Date(cooldownUntil).getTime();
 }
 
+function withVerificationGate(state, targetVerified, t) {
+  if (targetVerified !== false || !state.canCompose) return state;
+
+  return {
+    ...state,
+    banner: {
+      severity: 'warning',
+      text: t('network:drawer_banner_not_verified'),
+    },
+    canCompose: false,
+    composerPlaceholder: t('network:drawer_placeholder_disabled'),
+  };
+}
+
 /**
  * @param {{
- *   status: string;
+ *   status: string | null;
  *   cooldownUntil?: string | null;
  *   latestMessage?: object | null;
+ *   targetVerified?: boolean;
  * } | null} connectionStatus
  * @param {function} t - i18next translation function
  */
 export function resolveConnectionDrawerState(connectionStatus, t) {
-  if (connectionStatus == null) {
-    return {
-      banner: {
-        severity: 'info',
-        text: t('network:drawer_banner_first_message'),
-      },
-      canCompose: true,
-      singleMessageOnly: true,
-      messages: [],
-      emptyHint: t('network:drawer_empty_first'),
-      composerPlaceholder: t('network:drawer_placeholder_type'),
-    };
-  }
+  const status = connectionStatus?.status ?? null;
+  const cooldownUntil = connectionStatus?.cooldownUntil ?? null;
+  const targetVerified = connectionStatus?.targetVerified ?? true;
+  const messages = mapLatestMessage(connectionStatus?.latestMessage ?? null);
 
-  const { status, cooldownUntil, latestMessage } = connectionStatus;
-  const messages = mapLatestMessage(latestMessage);
+  if (status == null) {
+    return withVerificationGate(
+      {
+        banner: {
+          severity: 'info',
+          text: t('network:drawer_banner_first_message'),
+        },
+        canCompose: true,
+        singleMessageOnly: true,
+        messages: [],
+        emptyHint: t('network:drawer_empty_first'),
+        composerPlaceholder: t('network:drawer_placeholder_type'),
+      },
+      targetVerified,
+      t,
+    );
+  }
 
   if (status === CONVERSATION_REQUEST_STATUS.PENDING) {
     return {
@@ -76,17 +97,21 @@ export function resolveConnectionDrawerState(connectionStatus, t) {
     const cooldownExpired = isCooldownExpired(cooldownUntil);
 
     if (cooldownExpired) {
-      return {
-        banner: {
-          severity: 'info',
-          text: t('network:drawer_banner_retry'),
+      return withVerificationGate(
+        {
+          banner: {
+            severity: 'info',
+            text: t('network:drawer_banner_retry'),
+          },
+          canCompose: true,
+          singleMessageOnly: true,
+          messages,
+          emptyHint: t('network:no_messages_yet'),
+          composerPlaceholder: t('network:drawer_placeholder_type'),
         },
-        canCompose: true,
-        singleMessageOnly: true,
-        messages,
-        emptyHint: t('network:no_messages_yet'),
-        composerPlaceholder: t('network:drawer_placeholder_type'),
-      };
+        targetVerified,
+        t,
+      );
     }
 
     return {

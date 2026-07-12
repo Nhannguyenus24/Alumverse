@@ -25,6 +25,7 @@ import com.service.backend.user.dao.UserOrganizationMemberRepository;
 import com.service.backend.user.dao.UserProfileRepository;
 import com.service.backend.user.dao.PeerVerificationRepository;
 import com.service.backend.shared.entity.PeerVerification;
+import com.service.backend.chat.service.ChatConversationRequestService;
 import com.service.backend.shared.service.FileUploadService;
 import com.service.backend.shared.service.ImageService;
 import com.service.backend.shared.service.OCRService;
@@ -48,6 +49,7 @@ public class UserService {
     private final UserOrganizationMemberRepository userOrganizationMemberRepository;
     private final OrganizationRepository organizationRepository;
     private final PeerVerificationRepository peerVerificationRepository;
+    private final ChatConversationRequestService chatConversationRequestService;
     private final FileUploadService fileUploadService;
     private final ImageService imageService;
     private final NotificationService notificationService;
@@ -112,13 +114,24 @@ public class UserService {
                                                             ? info.getFullName().trim()
                                                             : "Người dùng " + targetMember.getUserId())
                                                     .defaultIfEmpty("Người dùng " + targetMember.getUserId())
-                                                    .doOnNext(requesterName -> notificationService.createNotificationAsync(
-                                                            verifierUserId,
-                                                            "Yêu cầu xác thực đồng nghiệp",
-                                                            String.format("%s đã gửi yêu cầu xác thực đồng nghiệp cho bạn.", requesterName),
-                                                            "/settings?tab=verification"
-                                                    ))
-                                                    .thenReturn(saved);
+                                                    .flatMap(requesterName -> {
+                                                        String notice = String.format(
+                                                                "%s đã gửi yêu cầu xác thực đồng nghiệp cho bạn.", requesterName);
+                                                        notificationService.createNotificationAsync(
+                                                                verifierUserId,
+                                                                "Yêu cầu xác thực đồng nghiệp",
+                                                                notice,
+                                                                "/settings?tab=verification"
+                                                        );
+                                                        // Grants messaging access immediately so the requester can
+                                                        // reach out to the verifier while the request is pending —
+                                                        // see docs discussion on peer verification chat access.
+                                                        return chatConversationRequestService.autoAcceptConversationRequest(
+                                                                        targetMember.getUserId().longValue(),
+                                                                        verifierMember.getUserId().longValue(),
+                                                                        notice)
+                                                                .thenReturn(saved);
+                                                    });
                                         });
 
                                 return Mono.when(
@@ -189,6 +202,11 @@ public class UserService {
                     );
                 })
                 .then();
+    }
+
+    public Mono<List<Integer>> getPeerVerificationCounterparts(Long currentUserId, Integer organizationId) {
+        return peerVerificationRepository.findCounterpartMemberIds(organizationId, currentUserId.intValue())
+                .collectList();
     }
 
     public Mono<List<PendingPeerVerificationResponse>> getPendingPeerVerifications(Long currentUserId, Integer organizationId) {

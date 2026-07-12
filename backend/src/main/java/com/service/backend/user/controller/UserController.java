@@ -194,6 +194,15 @@ public class UserController {
                 .thenReturn(ResponseEntity.ok(new ApiResponse<>("User verified directly successfully", true)));
     }
 
+    @GetMapping("/peer-verifications/counterparts")
+    public Mono<ResponseEntity<ApiResponse<List<Integer>>>> getPeerVerificationCounterparts(
+            @RequestParam @Min(1) Integer organizationId) {
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(userId -> userService.getPeerVerificationCounterparts(userId, organizationId))
+                .map(counterparts -> ResponseEntity.ok(
+                        new ApiResponse<>("Peer verification counterparts retrieved successfully", counterparts)));
+    }
+
     @GetMapping("/peer-verifications/pending")
     public Mono<ResponseEntity<ApiResponse<List<PendingPeerVerificationResponse>>>> getPendingPeerVerifications(
             @RequestParam @Min(1) Integer organizationId) {

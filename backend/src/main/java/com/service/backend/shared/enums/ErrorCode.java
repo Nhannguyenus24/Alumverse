@@ -130,6 +130,12 @@ public enum ErrorCode {
     CONVERSATION_REQUEST_SEARCH_STATUS_NOT_ALLOWED(
             "Không thể lọc yêu cầu theo trạng thái ACCEPTED; vui lòng dùng tab Kết nối hiện tại",
             400),
+    CONVERSATION_REQUEST_TARGET_NOT_VERIFIED(
+            "Người này chưa đạt verification level 2 trong tổ chức của bạn, chưa thể gửi yêu cầu kết nối",
+            403),
+    CONVERSATION_REQUEST_ORGANIZATION_CONTEXT_REQUIRED(
+            "Không xác định được tổ chức hiện tại của bạn, vui lòng thử lại",
+            400),
     CHAT_USER_NOT_GROUP_MEMBER("Bạn không phải thành viên của nhóm chat này", 403),
     GROUP_MEMBER_LIMIT_EXCEEDED("Nhóm chat chỉ được phép tối đa 10 thành viên", 400),
     CANNOT_BLOCK_SELF("Bạn không thể chặn chính mình", 400),
