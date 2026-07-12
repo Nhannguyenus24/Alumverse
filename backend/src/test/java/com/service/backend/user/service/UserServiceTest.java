@@ -11,6 +11,7 @@ import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.service.FileUploadService;
 import com.service.backend.shared.service.ImageService;
 import com.service.backend.shared.service.OCRService;
+import com.service.backend.shared.service.EmailService;
 import com.service.backend.user.dao.PeerVerificationRepository;
 import com.service.backend.user.dao.UserLoginHistoryRepository;
 import com.service.backend.user.dao.UserNotificationSettingsRepository;
@@ -54,6 +55,7 @@ class UserServiceTest {
     @Mock private ImageService imageService;
     @Mock private NotificationService notificationService;
     @Mock private OCRService ocrService;
+    @Mock private EmailService emailService;
 
     @InjectMocks
     private UserService userService;
@@ -133,12 +135,13 @@ class UserServiceTest {
         @Test
         @DisplayName("should change password successfully")
         void changeMyPassword_success() {
-            User user = User.builder().id(1).passwordHash("oldHashed").build();
+            User user = User.builder().id(1).email("test@example.com").passwordHash("oldHashed").build();
 
             when(authRepository.findById(1)).thenReturn(Mono.just(user));
             when(passwordEncoder.matches("oldPass", "oldHashed")).thenReturn(true);
             when(passwordEncoder.encode("newPass")).thenReturn("newHashed");
             when(authRepository.updatePasswordById(1, "newHashed")).thenReturn(Mono.empty());
+            when(emailService.sendHtmlEmail(any(), any(), any(), any())).thenReturn(Mono.empty());
 
             StepVerifier.create(userService.changeMyPassword(1L, "oldPass", "newPass"))
                     .verifyComplete();

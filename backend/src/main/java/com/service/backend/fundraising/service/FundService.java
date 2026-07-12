@@ -469,8 +469,7 @@ public class FundService {
                             .switchIfEmpty(Mono.error(new ApplicationException(
                                     ErrorCode.FUND_NOT_FOUND, "Fund not found with id: " + fundId)))
                             .flatMap(existing -> {
-                                if (isStaff && (currentOrgId == null
-                                        || !existing.getOrganizationId().equals(currentOrgId))) {
+                                if (isStaff && (!existing.getOrganizationId().equals(currentOrgId))) {
                                     return Mono.error(new ApplicationException(ErrorCode.FORBIDDEN));
                                 }
 

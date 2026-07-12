@@ -63,7 +63,7 @@ public interface UserProfileRepository extends R2dbcRepository<User, Integer> {
         return streamByUserIds(List.of(userId)).next();
     }
 
-    public record AttendeeProfile(Integer id, String fullName, String email, String avatarUrl) {}
+    record AttendeeProfile(Integer id, String fullName, String email, String avatarUrl) {}
 
     @Query("SELECT id, full_name, email, avatar_url FROM users WHERE id = :userId")
     Mono<AttendeeProfile> findAttendeeProfileByUserId(@Param("userId") Integer userId);

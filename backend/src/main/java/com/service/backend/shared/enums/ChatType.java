@@ -1,5 +1,8 @@
 package com.service.backend.shared.enums;
 
+import lombok.Getter;
+
+@Getter
 public enum ChatType {
     PRIVATE("PRIVATE"),
     GROUP("GROUP");
@@ -10,7 +13,4 @@ public enum ChatType {
         this.value = value;
     }
 
-    public String getValue() {
-        return value;
-    }
 }

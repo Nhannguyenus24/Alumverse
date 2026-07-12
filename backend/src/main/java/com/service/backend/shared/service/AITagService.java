@@ -11,7 +11,6 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,7 +21,6 @@ public class AITagService {
     private final ModerationService moderationService;
     private static final int MAX_CHARS_PER_BATCH = 2000;
     private static final int MAX_ITEMS_PER_BATCH = 15;
-    private final String availableTags;
     private final Scheduler heavyTaskScheduler;
 
     @Value("${gemini.tagging.enabled:true}")
@@ -32,30 +30,6 @@ public class AITagService {
                         @Qualifier("heavyTaskScheduler") Scheduler heavyTaskScheduler) {
         this.moderationService = moderationService;
         this.heavyTaskScheduler = heavyTaskScheduler;
-        this.availableTags = ModerationTag.getAllTagsAsString();
-    }
-
-    /**
-     * Tags a single piece of content using default Moderation tags.
-     */
-    public Mono<String> tagContent(String content) {
-        return tagContent(content, this.availableTags);
-    }
-
-    /**
-     * Tags a single piece of content with custom available tags.
-     */
-    public Mono<String> tagContent(String content, String availableTags) {
-        return tagContents(Collections.singletonList(content), availableTags)
-                .next()
-                .defaultIfEmpty(ModerationTag.NORMAL.name());
-    }
-
-    /**
-     * Tags a list of contents by dynamically batching them, using default Moderation tags.
-     */
-    public Flux<String> tagContents(List<String> contents) {
-        return tagContents(contents, this.availableTags);
     }
 
     /**

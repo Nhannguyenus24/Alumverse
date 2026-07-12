@@ -33,7 +33,6 @@ public class ImageController {
      * {
      *   "base64String": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA..."
      * }
-     *
      * Response example:
      * {
      *   "success": true,
