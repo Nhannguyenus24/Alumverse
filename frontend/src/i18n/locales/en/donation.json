@@ -175,8 +175,16 @@
   "validation_manager_email_required": "Please enter the fund manager email",
   "validation_manager_email_invalid": "Invalid fund manager email format",
   "manager_email_label": "Contact email",
-  "connect_btn": "Connect",
+  "connect_btn": "Contact now",
   "connect_drawer_title": "Fund manager",
   "connect_drawer_note": "This is a connection request — the manager will receive and respond, not an instant message.",
-  "manager_is_you": "You are the manager of this fund"
+  "manager_is_you": "You are the manager of this fund",
+  "confirm_donation_title": "Confirm donation information",
+  "confirm_donation_desc": "Please review the fund contact and receiving account before continuing to payment.",
+  "confirm_donation_contact_heading": "Fund contact",
+  "confirm_donation_account_heading": "Receiving bank account",
+  "confirm_donation_bank_label": "Bank",
+  "confirm_donation_account_name_label": "Account name",
+  "confirm_donation_account_number_label": "Account number",
+  "confirm_donation_confirm": "Continue to payment"
 }
