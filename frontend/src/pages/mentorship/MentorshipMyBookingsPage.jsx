@@ -1,9 +1,9 @@
+import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useMemo, useState } from 'react';
 import {
   Alert,
   Box,
   Button,
-  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -492,7 +492,7 @@ const MentorshipMyBookingsPage = () => {
 
           {isLoading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-              <CircularProgress />
+              <LoadingSkeleton />
             </Box>
           ) : isError ? (
             <Alert severity="error">{t('bookings_load_error')}</Alert>

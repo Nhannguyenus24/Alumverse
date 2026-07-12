@@ -1,3 +1,4 @@
+import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useParams } from "react-router";
 import { useSnackbar } from "notistack";
@@ -6,7 +7,6 @@ import {
   Box,
   Container,
   Typography,
-  CircularProgress,
   Button,
   Stack,
   IconButton,
@@ -455,7 +455,7 @@ const ArticlePage = () => {
   if (isPending) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
-        <CircularProgress />
+        <LoadingSkeleton />
       </Box>
     );
   }

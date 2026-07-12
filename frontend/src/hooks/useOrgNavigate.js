@@ -32,7 +32,7 @@ export const useOrgPath = () => {
   const slug = organizationSlug || currentSlug || routeSlug || null;
 
   return useCallback((path) => {
-    const globalPrefixes = ['/admin', '/404', '/api'];
+    const globalPrefixes = ['/404', '/api'];
     
     // If path is external/global, use as-is.
     if (

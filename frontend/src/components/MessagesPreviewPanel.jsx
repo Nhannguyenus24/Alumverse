@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import {
   Box,
   Button,
-  CircularProgress,
+  Skeleton,
   Divider,
   Typography,
 } from '@mui/material';
@@ -62,8 +62,30 @@ export default function MessagesPreviewPanel({
 
       <Scrollbar sx={{ flex: 1, minHeight: 0 }}>
         {isPending && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
-            <CircularProgress size={24} />
+          <Box>
+            {[...Array(3)].map((_, index) => (
+              <Box
+                key={index}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 1.5,
+                  px: 2,
+                  py: 1.5,
+                  borderBottom: index < 2 ? '1px solid' : 'none',
+                  borderColor: 'divider',
+                }}
+              >
+                <Skeleton variant="circular" width={44} height={44} />
+                <Box sx={{ minWidth: 0, flex: 1 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                    <Skeleton variant="text" width="40%" height={20} />
+                    <Skeleton variant="text" width="20%" height={16} />
+                  </Box>
+                  <Skeleton variant="text" width="80%" height={20} />
+                </Box>
+              </Box>
+            ))}
           </Box>
         )}
 

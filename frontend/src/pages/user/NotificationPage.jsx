@@ -1,3 +1,4 @@
+import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useState, useEffect } from "react";
 import {
   Box,
@@ -5,7 +6,6 @@ import {
   Button,
   IconButton,
   Tooltip,
-  CircularProgress,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import Page from "../../components/Page";
@@ -176,7 +176,7 @@ const NotificationPage = () => {
         <Box sx={{ display: "flex", flexDirection: "column", gap: 0 }}>
           {loading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-              <CircularProgress />
+              <LoadingSkeleton />
             </Box>
           ) : filteredNotifications.length > 0 ? (
             filteredNotifications.map((notification, index) => (

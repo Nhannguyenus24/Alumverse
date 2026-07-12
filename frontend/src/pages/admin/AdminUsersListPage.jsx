@@ -113,7 +113,7 @@ const AdminUsersListPage = () => {
     sortedUsers,
   } = useAdminUsersContext();
 
-  const { setBreadcrumbs } = useOutletContext();
+  const { setBreadcrumbs, adminBase } = useOutletContext();
   const [searchTerm, setSearchTerm] = useState(search);
   const debouncedSearch = useDebounce(searchTerm, 500);
 
@@ -224,7 +224,7 @@ const AdminUsersListPage = () => {
       render: (_, u) => (
         <Stack direction="row" spacing={0.5} justifyContent="flex-end" onClick={(e) => e.stopPropagation()}>
           <Tooltip title={t('admin:tooltip_view_detail')}>
-            <IconButton size="small" onClick={() => navigate(`/admin/users/${u.id}`)}>
+            <IconButton size="small" onClick={() => navigate(`${adminBase}/users/${u.id}`)}>
               <VisibilityOutlinedIcon fontSize="small" sx={{ color: 'primary.main' }} />
             </IconButton>
           </Tooltip>
@@ -397,7 +397,7 @@ const AdminUsersListPage = () => {
             </Button>
           </Stack>
         }
-        onRowClick={(u) => navigate(`/admin/users/${u.id}`)}
+        onRowClick={(u) => navigate(`${adminBase}/users/${u.id}`)}
       />
 
       {/* Status Menu */}

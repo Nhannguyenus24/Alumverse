@@ -1,3 +1,4 @@
+import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router';
 import { useTranslation } from 'react-i18next';
@@ -6,7 +7,7 @@ import remarkGfm from 'remark-gfm';
 import {
   Box, Typography, Button, TextField,
   Stack, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, Paper, IconButton, CircularProgress,
+  TableHead, TableRow, Paper, IconButton,
   Chip, Alert, Dialog, DialogTitle, DialogContent, DialogActions,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -18,7 +19,7 @@ const FITBOT_API_URL = '/fitbot-api';
 
 const AdminAIBotConfigPage = () => {
   const { t } = useTranslation('admin');
-  const { setBreadcrumbs } = useOutletContext() || {};
+  const { setBreadcrumbs, adminBase } = useOutletContext() || {};
   const [files, setFiles] = useState([]);
   const [loadingFiles, setLoadingFiles] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -37,8 +38,7 @@ const AdminAIBotConfigPage = () => {
   useEffect(() => {
     if (setBreadcrumbs) {
       setBreadcrumbs([
-        { label: t('breadcrumb_admin'), path: '../' },
-        { label: t('nav_bot_config') },
+        { label: t('nav_bot_config'), active: true },
       ]);
     }
     fetchFiles();
@@ -199,7 +199,7 @@ const AdminAIBotConfigPage = () => {
                 <TableBody>
                   {loadingFiles ? (
                     <TableRow>
-                      <TableCell colSpan={2} align="center"><CircularProgress size={24} /></TableCell>
+                      <TableCell colSpan={2} align="center"><LoadingSkeleton /></TableCell>
                     </TableRow>
                   ) : apiError ? (
                     <TableRow>
@@ -289,7 +289,7 @@ const AdminAIBotConfigPage = () => {
         <DialogContent dividers>
           {viewLoading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-              <CircularProgress size={28} />
+              <LoadingSkeleton />
             </Box>
           ) : viewError ? (
             <Alert severity="error">{viewError}</Alert>

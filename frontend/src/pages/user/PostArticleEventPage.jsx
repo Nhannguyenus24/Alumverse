@@ -1,8 +1,9 @@
+import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { Box, CircularProgress } from '@mui/material';
+import { Box } from '@mui/material';
 import PostArticleForm from '../../components/PostArticleForm';
 import PostArticleShell from '../../components/PostArticleShell';
 import AdminEventQuestionSection from '../../components/admin/AdminEventQuestionSection';
@@ -179,7 +180,7 @@ const PostEventPage = () => {
   if (isEditMode && isLoadingEvent) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-        <CircularProgress />
+        <LoadingSkeleton />
       </Box>
     );
   }

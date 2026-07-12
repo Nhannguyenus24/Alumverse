@@ -1,10 +1,10 @@
+import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useParams } from 'react-router';
 import {
   Alert,
   Box,
   Button,
-  CircularProgress,
   Grid,
   Stack,
   Typography,
@@ -360,7 +360,7 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
     return (
       <Page title={t('profile:page_title_profile')}>
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-          <CircularProgress />
+          <LoadingSkeleton />
         </Box>
       </Page>
     );
@@ -613,7 +613,7 @@ const PublicMentorProfile = ({ mentorMemberId, navigate }) => {
   if (profileQuery.isLoading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-        <CircularProgress />
+        <LoadingSkeleton />
       </Box>
     );
   }

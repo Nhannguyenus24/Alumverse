@@ -1,4 +1,5 @@
-import { Box, CircularProgress, Container, Typography, Alert, Tooltip, IconButton } from '@mui/material';
+import LoadingSkeleton from '../LoadingSkeleton';
+import { Box, Container, Typography, Alert, Tooltip, IconButton } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { useTranslation } from 'react-i18next';
 
@@ -17,7 +18,7 @@ const ChatAccessGate = ({ children }) => {
   if (isLoading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-        <CircularProgress />
+        <LoadingSkeleton />
       </Box>
     );
   }

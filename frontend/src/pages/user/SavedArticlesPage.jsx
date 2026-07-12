@@ -1,5 +1,6 @@
+import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useEffect, useState } from "react";
-import { Container, Box, Typography, CircularProgress, Card, CardActionArea, IconButton, Tooltip } from "@mui/material";
+import { Container, Box, Typography, Card, CardActionArea, IconButton, Tooltip } from "@mui/material";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
 import { useSnackbar } from "notistack";
@@ -77,7 +78,7 @@ const SavedArticlesPage = () => {
 
         {loading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-            <CircularProgress />
+            <LoadingSkeleton />
           </Box>
         ) : items.length === 0 ? (
           <Box sx={{ textAlign: "center", py: 8, color: "text.secondary" }}>

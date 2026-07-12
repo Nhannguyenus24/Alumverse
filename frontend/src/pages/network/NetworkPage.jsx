@@ -1,3 +1,4 @@
+import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -5,7 +6,6 @@ import {
   Alert,
   Box,
   Button,
-  CircularProgress,
   Card,
   Pagination,
   Stack,
@@ -379,7 +379,7 @@ const NetworkMemberDirectory = () => {
 
       {isPending ? (
         <Stack alignItems="center" py={6}>
-          <CircularProgress color="primary" />
+          <LoadingSkeleton />
         </Stack>
       ) : showEmptyState ? (
         <Alert severity="info">
@@ -500,7 +500,7 @@ const NetworkPage = () => {
     return (
       <AlumniContentLayout variant="one" maxWidth="lg" pageTitle="Network" header={null}>
         <Stack alignItems="center" py={6}>
-          <CircularProgress color="primary" />
+          <LoadingSkeleton />
         </Stack>
       </AlumniContentLayout>
     );

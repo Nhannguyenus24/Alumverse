@@ -1,8 +1,8 @@
+import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   Box,
-  CircularProgress,
   Grid,
   Stack,
   Typography,
@@ -78,7 +78,7 @@ const PublicUserProfile = ({ userId, navigate }) => {
   if (profileQuery.isLoading || isOwnProfile) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-        <CircularProgress />
+        <LoadingSkeleton />
       </Box>
     );
   }

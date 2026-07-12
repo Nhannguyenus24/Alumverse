@@ -1,4 +1,6 @@
+import LoadingSkeleton from '../../components/LoadingSkeleton';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useOutletContext } from 'react-router';
 import {
   Box,
   Typography,
@@ -16,7 +18,6 @@ import {
   Paper,
   IconButton,
   Tooltip,
-  CircularProgress,
   useTheme,
   Alert,
   alpha,
@@ -227,6 +228,7 @@ const fetchPrometheusInstant = async (query, time) => {
 };
 
 const AdminSystemMonitoringPage = () => {
+  const { setBreadcrumbs } = useOutletContext() || {};
   const theme = useTheme();
   const { t } = useTranslation(['admin']);
 
@@ -261,6 +263,14 @@ const AdminSystemMonitoringPage = () => {
   const [availableStatusCodes, setAvailableStatusCodes] = useState([]);
   const [isolatedSeries, setIsolatedSeries] = useState({});
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (setBreadcrumbs) {
+      setBreadcrumbs([
+        { label: t('admin:system_monitoring.title'), active: true },
+      ]);
+    }
+  }, [setBreadcrumbs, t]);
 
   const handleLegendClick = (chartId, dataKey) => {
     setIsolatedSeries(prev => {
@@ -683,7 +693,7 @@ const AdminSystemMonitoringPage = () => {
 
         {loading && chartData.length === 0 && (
           <Box sx={{ display: 'flex', justifyContent: 'center', p: 5 }}>
-            <CircularProgress />
+            <LoadingSkeleton />
           </Box>
         )}
 

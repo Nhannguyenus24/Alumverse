@@ -1,9 +1,10 @@
+import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useEffect, useRef, useState } from 'react';
 import { useOutletContext } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import {
   Box, Typography, Button, TextField, Stack, Table, TableBody, TableCell,
-  TableContainer, TableHead, TableRow, Paper, IconButton, CircularProgress,
+  TableContainer, TableHead, TableRow, Paper, IconButton,
   Chip, Alert, Dialog, DialogTitle, DialogContent, DialogActions, Tabs, Tab,
   Snackbar, Tooltip,
 } from '@mui/material';
@@ -19,7 +20,7 @@ const tokenFor = (key) => `[[\${${key}}]]`;
 
 const AdminEmailTemplatesPage = () => {
   const { t } = useTranslation('admin');
-  const { setBreadcrumbs } = useOutletContext() || {};
+  const { setBreadcrumbs, adminBase } = useOutletContext() || {};
   const { templates, loading, refresh, getById, update, preview } = useAdminEmailTemplates();
 
   const [selected, setSelected] = useState(null); // template đang sửa (full detail)
@@ -37,8 +38,7 @@ const AdminEmailTemplatesPage = () => {
   useEffect(() => {
     if (setBreadcrumbs) {
       setBreadcrumbs([
-        { label: t('breadcrumb_admin'), path: '../' },
-        { label: t('nav_email_templates') },
+        { label: t('nav_email_templates'), active: true },
       ]);
     }
   }, [setBreadcrumbs, t]);
@@ -133,7 +133,7 @@ const AdminEmailTemplatesPage = () => {
           </TableHead>
           <TableBody>
             {loading ? (
-              <TableRow><TableCell colSpan={3} align="center"><CircularProgress size={24} /></TableCell></TableRow>
+              <TableRow><TableCell colSpan={3} align="center"><LoadingSkeleton /></TableCell></TableRow>
             ) : templates.length === 0 ? (
               <TableRow><TableCell colSpan={3} align="center">{t('et_no_templates')}</TableCell></TableRow>
             ) : (

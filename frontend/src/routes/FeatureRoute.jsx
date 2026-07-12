@@ -1,4 +1,5 @@
-import { Box, CircularProgress } from '@mui/material';
+import LoadingSkeleton from '../components/LoadingSkeleton';
+import { Box } from '@mui/material';
 import { Navigate } from 'react-router';
 
 import useOrganizationStore from '../stores/organizationStore';
@@ -24,7 +25,7 @@ const FeatureRoute = ({ feature, children }) => {
   if (!organization && loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-        <CircularProgress />
+        <LoadingSkeleton />
       </Box>
     );
   }

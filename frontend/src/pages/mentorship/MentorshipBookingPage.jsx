@@ -1,3 +1,4 @@
+import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useState } from 'react';
 import { useParams } from 'react-router';
 import {
@@ -5,7 +6,6 @@ import {
   Avatar,
   Box,
   Button,
-  CircularProgress,
   Container,
   Paper,
   Stack,
@@ -130,7 +130,7 @@ const MentorshipBookingPage = () => {
               <ScrollRevealItem><Stack spacing={2}>
                 {availabilityQuery.isLoading ? (
                   <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-                    <CircularProgress />
+                    <LoadingSkeleton />
                   </Box>
                 ) : availabilityQuery.isError ? (
                   <Alert severity="error">
@@ -192,7 +192,7 @@ const MentorshipBookingPage = () => {
             >
             {isLoading || !mentor ? (
               <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                <CircularProgress size={24} />
+                <LoadingSkeleton />
               </Box>
             ) : (
               <>

@@ -1,7 +1,8 @@
+import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useSearchParams } from "react-router";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Container, Stack, Box, Typography, CircularProgress } from "@mui/material";
+import { Container, Stack, Box, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import Page from "../../components/Page";
 import SearchBar from "../../components/SearchBar";
@@ -146,7 +147,7 @@ const MyTicketsPage = () => {
 
           {isPending && (
             <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
-              <CircularProgress />
+              <LoadingSkeleton />
             </Box>
           )}
 
