@@ -14,5 +14,9 @@ public class EmailTemplateResponse {
     private String content;
     private String description;
     private List<EmailTemplateVariable> variables;
+    /** Các vùng nội dung admin được phép sửa (rỗng nếu template chưa gắn marker vùng). */
+    private List<EmailTemplateEditableRegion> regions;
+    /** true nếu template có vùng sửa được -> frontend hiển thị chế độ chỉnh sửa thân thiện. */
+    private boolean editable;
     private OffsetDateTime updatedAt;
 }

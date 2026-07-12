@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.service.backend.admin.dto.EmailTemplatePreviewRequest;
 import com.service.backend.admin.dto.EmailTemplatePreviewResponse;
 import com.service.backend.admin.dto.EmailTemplateResponse;
+import com.service.backend.admin.dto.PreviewEmailTemplateRegionsRequest;
+import com.service.backend.admin.dto.UpdateEmailTemplateRegionsRequest;
 import com.service.backend.admin.dto.UpdateEmailTemplateRequest;
 import com.service.backend.admin.service.AdminEmailTemplateService;
 import com.service.backend.shared.dto.ApiResponse;
@@ -64,11 +66,38 @@ public class AdminEmailTemplateController {
                 .map(tpl -> ResponseEntity.ok(new ApiResponse<>("Email template updated successfully", tpl)));
     }
 
+    @Operation(summary = "Cập nhật template theo vùng sửa được (chế độ thân thiện, không đụng HTML kỹ thuật)")
+    @PutMapping("/{id}/regions")
+    public Mono<ResponseEntity<ApiResponse<EmailTemplateResponse>>> updateRegions(
+            @PathVariable @Min(1) Long id,
+            @Valid @RequestBody UpdateEmailTemplateRegionsRequest request) {
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(userId -> service.updateRegions(id, request, userId))
+                .map(tpl -> ResponseEntity.ok(new ApiResponse<>("Email template updated successfully", tpl)));
+    }
+
+    @Operation(summary = "Khôi phục nội dung template về mẫu gốc (bật lại vùng sửa được)")
+    @PostMapping("/{id}/reset")
+    public Mono<ResponseEntity<ApiResponse<EmailTemplateResponse>>> reset(@PathVariable @Min(1) Long id) {
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(userId -> service.resetToDefault(id, userId))
+                .map(tpl -> ResponseEntity.ok(new ApiResponse<>("Email template reset successfully", tpl)));
+    }
+
     @Operation(summary = "Render thử template với dữ liệu mẫu")
     @PostMapping("/preview")
     public Mono<ResponseEntity<ApiResponse<EmailTemplatePreviewResponse>>> preview(
             @Valid @RequestBody EmailTemplatePreviewRequest request) {
         return service.preview(request)
+                .map(result -> ResponseEntity.ok(new ApiResponse<>("Preview rendered", result)));
+    }
+
+    @Operation(summary = "Render thử template theo vùng sửa được (ghép regions vào mẫu gốc)")
+    @PostMapping("/{id}/preview")
+    public Mono<ResponseEntity<ApiResponse<EmailTemplatePreviewResponse>>> previewRegions(
+            @PathVariable @Min(1) Long id,
+            @RequestBody PreviewEmailTemplateRegionsRequest request) {
+        return service.previewRegions(id, request)
                 .map(result -> ResponseEntity.ok(new ApiResponse<>("Preview rendered", result)));
     }
 }

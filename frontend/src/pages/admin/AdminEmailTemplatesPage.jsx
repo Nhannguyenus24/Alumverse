@@ -1,56 +1,88 @@
 import LoadingSkeleton from '../../components/LoadingSkeleton';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useOutletContext } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import {
   Box, Typography, Button, TextField, Stack, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow, Paper, IconButton,
-  Chip, Alert, Dialog, DialogTitle, DialogContent, DialogActions, Tabs, Tab,
-  Snackbar, Tooltip, CircularProgress
+  Chip, Alert, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions,
+  Tabs, Tab, Snackbar, Tooltip, CircularProgress, Divider
 } from '@mui/material';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import SaveIcon from '@mui/icons-material/Save';
+import RestartAltIcon from '@mui/icons-material/RestartAlt';
+import CodeIcon from '@mui/icons-material/Code';
 import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
 import WYSIWYG from '../../components/WYSIWYG';
 import useAdminEmailTemplates, { buildSampleData } from '../../hooks/admin/useAdminEmailTemplates';
 
 const tokenFor = (key) => `[[\${${key}}]]`;
 
+/** {regionKey: value} từ danh sách vùng của template. */
+const buildRegionValues = (regions = []) =>
+  (regions ?? []).reduce((acc, r) => {
+    if (r?.key) acc[r.key] = r.html ?? '';
+    return acc;
+  }, {});
+
 const AdminEmailTemplatesPage = () => {
   const { t } = useTranslation('admin');
-  const { setBreadcrumbs, adminBase } = useOutletContext() || {};
-  const { templates, loading, refresh, getById, update, preview } = useAdminEmailTemplates();
+  const { setBreadcrumbs } = useOutletContext() || {};
+  const {
+    templates, loading, refresh,
+    getById, update, updateRegions, resetToDefault, preview, previewRegions,
+  } = useAdminEmailTemplates();
 
   const [selected, setSelected] = useState(null); // template đang sửa (full detail)
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [subject, setSubject] = useState('');
-  const [content, setContent] = useState('');
-  const [mode, setMode] = useState('html'); // 'html' | 'visual'
+  const [content, setContent] = useState('');       // dùng cho chế độ HTML nâng cao
+  const [regionValues, setRegionValues] = useState({}); // dùng cho chế độ vùng
+  const [advanced, setAdvanced] = useState(false);  // true = chế độ HTML nâng cao
+  const [mode, setMode] = useState('html');         // 'html' | 'visual' (trong chế độ nâng cao)
   const [saving, setSaving] = useState(false);
+  const [initial, setInitial] = useState({ subject: '', content: '', regionValues: {} });
 
   const [previewState, setPreviewState] = useState({ open: false, loading: false, html: '', subject: '', error: null });
+  const [resetConfirm, setResetConfirm] = useState(false);
+  const [resetting, setResetting] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
   const htmlRef = useRef(null);
 
+  const isRegionMode = Boolean(selected?.editable) && !advanced;
+
+  const dirty = useMemo(() => {
+    if (!selected) return false;
+    if (subject !== initial.subject) return true;
+    return isRegionMode
+      ? JSON.stringify(regionValues) !== JSON.stringify(initial.regionValues)
+      : content !== initial.content;
+  }, [selected, subject, content, regionValues, initial, isRegionMode]);
+
   useEffect(() => {
     if (setBreadcrumbs) {
-      setBreadcrumbs([
-        { label: t('nav_email_templates'), active: true },
-      ]);
+      setBreadcrumbs([{ label: t('nav_email_templates'), active: true }]);
     }
   }, [setBreadcrumbs, t]);
+
+  const applyDetail = (detail) => {
+    const rv = buildRegionValues(detail?.regions);
+    setSelected(detail);
+    setSubject(detail?.subject ?? '');
+    setContent(detail?.content ?? '');
+    setRegionValues(rv);
+    setAdvanced(!detail?.editable); // template chưa có vùng -> vào thẳng chế độ HTML
+    setMode('html');
+    setInitial({ subject: detail?.subject ?? '', content: detail?.content ?? '', regionValues: rv });
+  };
 
   const openEditor = async (id) => {
     setLoadingDetail(true);
     try {
-      const detail = await getById(id);
-      setSelected(detail);
-      setSubject(detail?.subject ?? '');
-      setContent(detail?.content ?? '');
-      setMode('html');
+      applyDetail(await getById(id));
     } catch {
       setSnackbar({ open: true, message: t('et_load_error'), severity: 'error' });
     } finally {
@@ -62,17 +94,19 @@ const AdminEmailTemplatesPage = () => {
     setSelected(null);
     setSubject('');
     setContent('');
+    setRegionValues({});
   };
+
+  const setRegion = (key, value) => setRegionValues((prev) => ({ ...prev, [key]: value }));
 
   const insertVariable = async (key) => {
     const token = tokenFor(key);
-    if (mode === 'html' && htmlRef.current) {
+    // Chế độ HTML nâng cao: chèn thẳng vào vị trí con trỏ trong ô textarea.
+    if (advanced && mode === 'html' && htmlRef.current) {
       const el = htmlRef.current;
       const start = el.selectionStart ?? content.length;
       const end = el.selectionEnd ?? content.length;
-      const next = content.slice(0, start) + token + content.slice(end);
-      setContent(next);
-      // Đặt lại con trỏ sau token vừa chèn
+      setContent(content.slice(0, start) + token + content.slice(end));
       requestAnimationFrame(() => {
         el.focus();
         const pos = start + token.length;
@@ -80,7 +114,6 @@ const AdminEmailTemplatesPage = () => {
       });
       return;
     }
-    // Visual mode: copy token để admin dán vào vị trí mong muốn trong trình soạn thảo
     try {
       await navigator.clipboard.writeText(token);
       setSnackbar({ open: true, message: t('et_var_copied', { token }), severity: 'info' });
@@ -93,7 +126,9 @@ const AdminEmailTemplatesPage = () => {
     setPreviewState({ open: true, loading: true, html: '', subject: '', error: null });
     try {
       const sampleData = buildSampleData(selected?.variables);
-      const result = await preview({ subject, content, sampleData });
+      const result = isRegionMode
+        ? await previewRegions(selected.id, { subject, regions: regionValues, sampleData })
+        : await preview({ subject, content, sampleData });
       setPreviewState({
         open: true, loading: false,
         html: result?.html ?? '', subject: result?.subject ?? '', error: result?.error ?? null,
@@ -104,19 +139,38 @@ const AdminEmailTemplatesPage = () => {
   };
 
   const handleSave = async () => {
-    if (!content?.trim()) {
+    if (!isRegionMode && !content?.trim()) {
       setSnackbar({ open: true, message: t('et_content_required'), severity: 'error' });
       return;
     }
     setSaving(true);
     try {
-      await update(selected.id, { subject, content });
+      const detail = isRegionMode
+        ? await updateRegions(selected.id, { subject, regions: regionValues })
+        : await update(selected.id, { subject, content });
+      // Đồng bộ lại từ server để giữ nội dung/vùng chuẩn (marker được ghép lại phía backend).
+      if (detail?.id) applyDetail(detail);
       setSnackbar({ open: true, message: t('et_saved'), severity: 'success' });
       await refresh();
     } catch {
       setSnackbar({ open: true, message: t('et_save_error'), severity: 'error' });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleReset = async () => {
+    setResetting(true);
+    try {
+      const detail = await resetToDefault(selected.id);
+      if (detail?.id) applyDetail(detail);
+      setResetConfirm(false);
+      setSnackbar({ open: true, message: t('et_reset_done'), severity: 'success' });
+      await refresh();
+    } catch {
+      setSnackbar({ open: true, message: t('et_reset_error'), severity: 'error' });
+    } finally {
+      setResetting(false);
     }
   };
 
@@ -155,6 +209,82 @@ const AdminEmailTemplatesPage = () => {
     </AdminSectionPanel>
   );
 
+  const renderVariablesReference = () => (
+    selected.variables?.length > 0 && (
+      <Box>
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1, fontWeight: 700 }}>
+          {isRegionMode ? t('et_variables_readonly_label') : t('et_variables_label')}
+        </Typography>
+        <Stack direction="row" flexWrap="wrap" gap={1}>
+          {selected.variables.map((v) => (
+            <Tooltip key={v.key} title={`${v.label ?? v.key} — ${tokenFor(v.key)}`} placement="top">
+              <Chip
+                label={v.key}
+                size="small"
+                variant="outlined"
+                color="primary"
+                onClick={() => insertVariable(v.key)}
+              />
+            </Tooltip>
+          ))}
+        </Stack>
+      </Box>
+    )
+  );
+
+  const renderRegionEditor = () => (
+    <Stack spacing={2.5} divider={<Divider flexItem />}>
+      {(selected.regions ?? []).map((r) => (
+        <Box key={r.key}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
+            {r.label || r.key}
+          </Typography>
+          {r.type === 'text' ? (
+            <TextField
+              value={regionValues[r.key] ?? ''}
+              onChange={(e) => setRegion(r.key, e.target.value)}
+              fullWidth
+              size="small"
+            />
+          ) : (
+            <WYSIWYG
+              value={regionValues[r.key] ?? ''}
+              onChange={(val) => setRegion(r.key, val)}
+              height={160}
+              allowImages={false}
+            />
+          )}
+        </Box>
+      ))}
+    </Stack>
+  );
+
+  const renderAdvancedEditor = () => (
+    <Box>
+      <Tabs value={mode} onChange={(_, val) => setMode(val)} sx={{ mb: 1.5, minHeight: 40 }}>
+        <Tab value="visual" label={t('et_tab_visual')} sx={{ minHeight: 40 }} />
+        <Tab value="html" label={t('et_tab_html')} sx={{ minHeight: 40 }} />
+      </Tabs>
+      {mode === 'visual' ? (
+        <>
+          <Alert severity="info" sx={{ mb: 1.5 }}>{t('et_visual_warning')}</Alert>
+          <WYSIWYG value={content} onChange={setContent} height={420} allowImages={false} />
+        </>
+      ) : (
+        <TextField
+          inputRef={htmlRef}
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          placeholder={t('et_html_placeholder')}
+          fullWidth
+          multiline
+          minRows={18}
+          InputProps={{ sx: { fontFamily: 'monospace', fontSize: '0.85rem', lineHeight: 1.5 } }}
+        />
+      )}
+    </Box>
+  );
+
   const renderEditor = () => (
     <Box>
       <Button startIcon={<ArrowBackIcon />} onClick={closeEditor} sx={{ mb: 2 }}>
@@ -165,7 +295,22 @@ const AdminEmailTemplatesPage = () => {
         title={selected.templateCode}
         subtitle={selected.description}
         action={(
-          <Stack direction="row" spacing={1}>
+          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+            {selected.editable && (
+              <Button
+                variant="text"
+                size="small"
+                startIcon={<CodeIcon />}
+                onClick={() => setAdvanced((v) => !v)}
+              >
+                {advanced ? t('et_mode_easy') : t('et_mode_advanced')}
+              </Button>
+            )}
+            <Tooltip title={t('et_reset_hint')}>
+              <Button variant="outlined" color="warning" size="small" startIcon={<RestartAltIcon />} onClick={() => setResetConfirm(true)}>
+                {t('et_reset')}
+              </Button>
+            </Tooltip>
             <Button variant="outlined" startIcon={<VisibilityIcon />} onClick={handlePreview}>
               {t('et_preview')}
             </Button>
@@ -173,7 +318,7 @@ const AdminEmailTemplatesPage = () => {
               variant="contained"
               startIcon={saving ? <CircularProgress size={18} color="inherit" /> : <SaveIcon />}
               onClick={handleSave}
-              disabled={saving}
+              disabled={saving || !dirty}
             >
               {t('et_save')}
             </Button>
@@ -181,6 +326,10 @@ const AdminEmailTemplatesPage = () => {
         )}
       >
         <Stack spacing={2.5}>
+          <Alert severity="info">
+            {isRegionMode ? t('et_easy_hint') : t('et_advanced_hint')}
+          </Alert>
+
           <TextField
             label={t('et_subject_label')}
             placeholder={t('et_subject_placeholder')}
@@ -190,51 +339,9 @@ const AdminEmailTemplatesPage = () => {
             size="small"
           />
 
-          {selected.variables?.length > 0 && (
-            <Box>
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1, fontWeight: 700 }}>
-                {t('et_variables_label')}
-              </Typography>
-              <Stack direction="row" flexWrap="wrap" gap={1}>
-                {selected.variables.map((v) => (
-                  <Tooltip key={v.key} title={`${v.label ?? v.key} — ${tokenFor(v.key)}`} placement="top">
-                    <Chip
-                      label={v.key}
-                      size="small"
-                      variant="outlined"
-                      color="primary"
-                      onClick={() => insertVariable(v.key)}
-                    />
-                  </Tooltip>
-                ))}
-              </Stack>
-            </Box>
-          )}
+          {renderVariablesReference()}
 
-          <Box>
-            <Tabs value={mode} onChange={(_, val) => setMode(val)} sx={{ mb: 1.5, minHeight: 40 }}>
-              <Tab value="visual" label={t('et_tab_visual')} sx={{ minHeight: 40 }} />
-              <Tab value="html" label={t('et_tab_html')} sx={{ minHeight: 40 }} />
-            </Tabs>
-
-            {mode === 'visual' ? (
-              <>
-                <Alert severity="info" sx={{ mb: 1.5 }}>{t('et_visual_warning')}</Alert>
-                <WYSIWYG value={content} onChange={setContent} height={420} allowImages={false} />
-              </>
-            ) : (
-              <TextField
-                inputRef={htmlRef}
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder={t('et_html_placeholder')}
-                fullWidth
-                multiline
-                minRows={18}
-                InputProps={{ sx: { fontFamily: 'monospace', fontSize: '0.85rem', lineHeight: 1.5 } }}
-              />
-            )}
-          </Box>
+          {isRegionMode ? renderRegionEditor() : renderAdvancedEditor()}
         </Stack>
       </AdminSectionPanel>
     </Box>
@@ -281,6 +388,25 @@ const AdminEmailTemplatesPage = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setPreviewState((s) => ({ ...s, open: false }))}>{t('et_preview_close')}</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={resetConfirm} onClose={() => !resetting && setResetConfirm(false)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ fontWeight: 800 }}>{t('et_reset_confirm_title')}</DialogTitle>
+        <DialogContent>
+          <DialogContentText>{t('et_reset_confirm_body')}</DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setResetConfirm(false)} disabled={resetting}>{t('et_reset_cancel')}</Button>
+          <Button
+            color="warning"
+            variant="contained"
+            onClick={handleReset}
+            disabled={resetting}
+            startIcon={resetting ? <CircularProgress size={18} color="inherit" /> : <RestartAltIcon />}
+          >
+            {t('et_reset_confirm')}
+          </Button>
         </DialogActions>
       </Dialog>
 

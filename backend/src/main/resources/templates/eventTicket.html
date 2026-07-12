@@ -25,13 +25,13 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>Vé tham dự sự kiện của bạn</h1>
+            <h1><!--#region key="headerTitle" label="Tiêu đề chính" type="text"-->Vé tham dự sự kiện của bạn<!--#endregion--></h1>
             <p>Hệ Thống Quản Lý Sinh Viên - Cựu Sinh Viên HCMUS</p>
         </div>
 
-        <div class="success-badge">
+        <div class="success-badge"><!--#region key="badge" label="Thông báo xác nhận" type="html"-->
             ✅ Đăng ký của bạn đã được xác nhận. Vui lòng mang theo mã vé này khi đến tham dự.
-        </div>
+        <!--#endregion--></div>
 
         <div class="ticket">
             <div class="ticket-title" th:text="${eventTitle}">Tên sự kiện</div>
@@ -50,15 +50,15 @@
         </div>
 
         <div class="qr-section">
-            <p style="color: #555; margin-bottom: 12px;">Mã check-in của bạn:</p>
+            <p style="color: #555; margin-bottom: 12px;"><!--#region key="checkinLabel" label="Nhãn mã check-in" type="text"-->Mã check-in của bạn:<!--#endregion--></p>
             <div class="ticket-code" th:text="${ticketCode}">ABC12345</div>
-            <p>Xuất trình mã này tại cổng để check-in</p>
+            <p><!--#region key="checkinHint" label="Hướng dẫn check-in" type="text"-->Xuất trình mã này tại cổng để check-in<!--#endregion--></p>
         </div>
 
-        <div class="footer">
+        <div class="footer"><!--#region key="footer" label="Chân trang" type="html"-->
             <p>&copy; 2026 Alumniverse - Hệ Thống Alumni HCMUS. Tất cả quyền được bảo lưu.</p>
             <p>Email này được gửi tự động. Vui lòng không trả lời trực tiếp.</p>
-        </div>
+        <!--#endregion--></div>
     </div>
 </body>
 </html>
