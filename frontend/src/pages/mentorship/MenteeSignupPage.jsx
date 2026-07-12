@@ -1,10 +1,10 @@
+import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useMemo, useState } from 'react';
 import {
   Alert,
   Box,
   Button,
   Checkbox,
-  CircularProgress,
   Container,
   FormControlLabel,
   MenuItem,
@@ -114,7 +114,7 @@ const MenteeSignupPage = () => {
     return (
       <Page title={t('mentee_signup_page_title')}>
         <Container maxWidth="md" sx={{ py: 8, textAlign: 'center' }}>
-          <CircularProgress />
+          <LoadingSkeleton />
         </Container>
       </Page>
     );

@@ -1,9 +1,9 @@
+import LoadingSkeleton from '../LoadingSkeleton';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Alert,
   Box,
-  CircularProgress,
   Pagination,
   Stack,
   Typography,
@@ -68,7 +68,7 @@ const NetworkConnectionsSection = ({ enableBlock = true }) => {
     if (isPending) {
       return (
         <Stack alignItems="center" py={4}>
-          <CircularProgress />
+          <LoadingSkeleton />
         </Stack>
       );
     }

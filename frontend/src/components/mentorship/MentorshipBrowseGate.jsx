@@ -1,5 +1,6 @@
+import LoadingSkeleton from '../LoadingSkeleton';
 import { useEffect } from 'react';
-import { CircularProgress, Box } from '@mui/material';
+import {  Box } from '@mui/material';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useMentorshipAccessState } from '../../hooks/mentorship/useMentorshipAccessState';
 import { MENTORSHIP_LANDING } from '../../constants/mentorshipNav';
@@ -22,7 +23,7 @@ const MentorshipBrowseGate = ({ children }) => {
   if (access.isLoading || blocked) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-        <CircularProgress />
+        <LoadingSkeleton />
       </Box>
     );
   }

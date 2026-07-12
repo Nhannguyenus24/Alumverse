@@ -1,10 +1,10 @@
+import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router';
+import { useParams, useOutletContext } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import {
   Box,
   Button,
-  CircularProgress,
   Container,
   Stack,
   Typography,
@@ -47,6 +47,7 @@ const AdminEditArticlePage = () => {
   const CHANNEL_LABELS = getChannelLabels(t);
   const { channel, id } = useParams();
   const navigate = useOrgNavigate();
+  const { setBreadcrumbs, adminBase } = useOutletContext();
   const { showSuccess, showError } = useNotification();
   const { article, isPending: isLoading } = useArticleById(channel, id);
   const { updateArticle, isPending: isSaving } = useUpdateArticle(channel);
@@ -72,6 +73,14 @@ const AdminEditArticlePage = () => {
     setTopic(article.topic ?? article.type ?? '');
     setUrl(article.url || article.linkUrl || '');
   }, [article]);
+
+  useEffect(() => {
+    if (!article) return;
+    setBreadcrumbs?.([
+      { label: t('admin:articles'), path: `${adminBase}/articles` },
+      { label: t('admin:edit_article_breadcrumb'), active: true },
+    ]);
+  }, [article, setBreadcrumbs, t, adminBase]);
 
   useEffect(() => {
     if (!coverFile) {
@@ -150,7 +159,7 @@ const AdminEditArticlePage = () => {
   if (isLoading) {
     return (
       <Stack alignItems="center" sx={{ py: 8 }}>
-        <CircularProgress />
+        <LoadingSkeleton />
       </Stack>
     );
   }
@@ -159,7 +168,7 @@ const AdminEditArticlePage = () => {
     return (
       <Stack alignItems="center" spacing={2} sx={{ py: 8 }}>
         <Typography color="text.secondary">{t('admin:article_not_found')}</Typography>
-        <Button variant="outlined" onClick={() => navigate('/admin/article')}>
+        <Button variant="outlined" onClick={() => navigate(`${adminBase}/articles`)}>
           Back to article list
         </Button>
       </Stack>
@@ -218,9 +227,8 @@ const AdminEditArticlePage = () => {
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, pt: 2, mt: 3 }}>
               <Button
                 variant="outlined"
-                color="inherit"
-                onClick={() => navigate('/admin/article')}
-                sx={{ px: 4 }}
+                onClick={() => navigate(`${adminBase}/articles`)}
+                sx={{ textTransform: 'none', px: 3, fontWeight: 700 }}
               >
                 {t('admin:cancel')}
               </Button>

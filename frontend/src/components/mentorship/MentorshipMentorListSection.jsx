@@ -1,10 +1,10 @@
+import LoadingSkeleton from '../LoadingSkeleton';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Alert,
   Box,
   Button,
-  CircularProgress,
   Stack,
   Typography,
 } from '@mui/material';
@@ -154,7 +154,7 @@ const MentorshipMentorListSection = () => {
 
       {browseQuery.isLoading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-          <CircularProgress />
+          <LoadingSkeleton />
         </Box>
       ) : browseQuery.isError ? (
         <Alert severity="error">{t('mentorship:load_mentors_error')}</Alert>

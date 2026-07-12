@@ -1,3 +1,4 @@
+import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useEffect, useState, useCallback } from 'react';
 import { useLocation } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
@@ -5,7 +6,6 @@ import {
   Alert,
   Box,
   Button,
-  CircularProgress,
   IconButton,
   Stack,
   TextField,
@@ -540,7 +540,7 @@ const UnifiedProfileEditPage = () => {
     return (
       <Page title={t('profile:page_title_edit')}>
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-          <CircularProgress />
+          <LoadingSkeleton />
         </Box>
       </Page>
     );

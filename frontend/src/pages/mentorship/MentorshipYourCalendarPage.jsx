@@ -1,3 +1,4 @@
+import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useMemo, useState, useCallback } from 'react';
 import {
   Alert,
@@ -5,7 +6,6 @@ import {
   Button,
   Card,
   Checkbox,
-  CircularProgress,
   FormControlLabel,
   IconButton,
   Stack,
@@ -348,7 +348,7 @@ const MentorshipYourCalendarPage = () => {
 
               {availabilityQuery.isLoading ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-                  <CircularProgress />
+                  <LoadingSkeleton />
                 </Box>
               ) : (
                 <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)' }}>
@@ -440,7 +440,7 @@ const MentorshipYourCalendarPage = () => {
                   </Typography>
                   {sessionsQuery.isLoading ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
-                      <CircularProgress size={20} />
+                      <LoadingSkeleton />
                     </Box>
                   ) : upcomingSessions.length === 0 ? (
                     <Typography variant="body2" color="text.secondary">

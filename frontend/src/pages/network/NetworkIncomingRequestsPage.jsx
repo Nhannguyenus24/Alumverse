@@ -1,8 +1,8 @@
+import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Alert,
-  CircularProgress,
   Pagination,
   Stack,
   Typography,
@@ -144,7 +144,7 @@ const NetworkIncomingRequestsPage = () => {
     if (isLoading) {
       return (
         <Stack alignItems="center" py={4}>
-          <CircularProgress />
+          <LoadingSkeleton />
         </Stack>
       );
     }

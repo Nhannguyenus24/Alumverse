@@ -47,7 +47,7 @@ const ThemeModeIcon = ({ rotated = false }) => (
   />
 );
 
-const AdminHeader = ({ onMenuOpen, isSidebarCollapsed, user, onLogout, breadcrumbs }) => {
+const AdminHeader = ({ adminBase = '/admin', onMenuOpen, isSidebarCollapsed, user, onLogout, breadcrumbs }) => {
   const theme = useTheme();
   const { t } = useTranslation(['admin', 'auth']);
   const [anchorEl, setAnchorEl] = useState(null);
@@ -121,7 +121,7 @@ const AdminHeader = ({ onMenuOpen, isSidebarCollapsed, user, onLogout, breadcrum
               component={RouterLink}
               underline="hover"
               color="inherit"
-              to="/admin"
+              to={adminBase}
               sx={{ display: 'flex', alignItems: 'center', fontSize: 14, fontWeight: 500 }}
             >
               <HomeOutlinedIcon sx={{ mr: 0.5, fontSize: 18 }} />

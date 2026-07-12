@@ -44,7 +44,7 @@ const getBankLabel = (bank) => {
 const AdminFundReceivingInfosPage = () => {
   const { enqueueSnackbar } = useSnackbar();
   const { t } = useTranslation('admin');
-  const { setBreadcrumbs } = useOutletContext();
+  const { setBreadcrumbs, adminBase } = useOutletContext();
   const [banksPayload, setBanksPayload] = useState({ message: '', banks: [] });
   const [banksLoading, setBanksLoading] = useState(true);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -69,10 +69,10 @@ const AdminFundReceivingInfosPage = () => {
 
   useEffect(() => {
     setBreadcrumbs?.([
-      { label: t('nav_fundraising'), path: '/admin/donations' },
+      { label: t('nav_fundraising'), path: `${adminBase}/donations` },
       { label: t('nav_bank_accounts'), active: true },
     ]);
-  }, [setBreadcrumbs, t]);
+  }, [setBreadcrumbs, t, adminBase]);
 
   useEffect(() => {
     const loadBanks = async () => {

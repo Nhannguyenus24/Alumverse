@@ -1,3 +1,4 @@
+import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useOutletContext } from 'react-router';
 import { useTranslation } from 'react-i18next';
@@ -7,7 +8,6 @@ import {
   Box,
   Button,
   Chip,
-  CircularProgress,
   IconButton,
   MenuItem,
   Stack,
@@ -72,7 +72,7 @@ const AdminEventManagePage = () => {
   const { enqueueSnackbar } = useSnackbar();
   const orgNavigate = useOrgNavigate();
   const toOrgPath = useOrgPath();
-  const { setBreadcrumbs } = useOutletContext();
+  const { setBreadcrumbs, adminBase } = useOutletContext();
 
   const [tab, setTab] = useState('participants');
   const [ticketKeyword, setTicketKeyword] = useState('');
@@ -136,10 +136,10 @@ const AdminEventManagePage = () => {
   useEffect(() => {
     if (!event) return;
     setBreadcrumbs?.([
-      { label: t('admin:events'), path: '/admin/events' },
+      { label: t('admin:events'), path: `${adminBase}/events` },
       { label: event.title || `#${eventId}`, active: true },
     ]);
-  }, [event, eventId, setBreadcrumbs, t]);
+  }, [event, eventId, setBreadcrumbs, t, adminBase]);
 
   const publishChip = useMemo(() => (
     event?.isPublished
@@ -351,7 +351,7 @@ const AdminEventManagePage = () => {
   if (eventLoading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-        <CircularProgress />
+        <LoadingSkeleton />
       </Box>
     );
   }

@@ -1,8 +1,8 @@
+import LoadingSkeleton from '../LoadingSkeleton';
 import { useEffect, useState } from 'react';
 import {
   Alert,
   Box,
-  CircularProgress,
   Pagination,
   Stack,
   Typography,
@@ -68,7 +68,7 @@ const NetworkBlockedMembersSection = () => {
     if (isPending) {
       return (
         <Stack alignItems="center" py={4}>
-          <CircularProgress />
+          <LoadingSkeleton />
         </Stack>
       );
     }

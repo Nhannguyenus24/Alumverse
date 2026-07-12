@@ -1,3 +1,4 @@
+import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useEffect, useState } from "react";
 import { useOutletContext } from "react-router";
 import { useSnackbar } from "notistack";
@@ -7,7 +8,6 @@ import {
   Box,
   Button,
   Chip,
-  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -301,7 +301,7 @@ const AdminMentorshipPage = () => {
           <>
             {sessionLoading ? (
               <Stack alignItems="center" sx={{ py: 4 }}>
-                <CircularProgress size={28} />
+                <LoadingSkeleton />
               </Stack>
             ) : (
               <AdminDataTable
@@ -449,7 +449,7 @@ const AdminMentorshipPage = () => {
           <>
             {mentorLoading ? (
               <Stack alignItems="center" sx={{ py: 4 }}>
-                <CircularProgress size={28} />
+                <LoadingSkeleton />
               </Stack>
             ) : (
               <AdminDataTable

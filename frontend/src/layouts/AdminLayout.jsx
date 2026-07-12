@@ -24,10 +24,10 @@ const AdminLayoutShell = () => {
   const [breadcrumbs, setBreadcrumbs] = useState(null);
   const theme = useTheme();
   
-  const outletContext = useMemo(() => ({ setBreadcrumbs }), []);
-
   const { slug } = useParams();
   const adminBase = slug ? `/${slug}/admin` : '/admin';
+
+  const outletContext = useMemo(() => ({ setBreadcrumbs, adminBase }), [adminBase]);
 
   const { user, logout } = useAuth();
   const profileQuery = useMyProfile();
@@ -97,6 +97,7 @@ const AdminLayoutShell = () => {
         }}
       >
         <AdminHeader
+          adminBase={adminBase}
           onMenuOpen={() => setMobileOpen(true)}
           isSidebarCollapsed={isSidebarCollapsed}
           user={headerUser}

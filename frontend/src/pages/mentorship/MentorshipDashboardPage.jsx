@@ -1,10 +1,10 @@
+import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useMemo, useState, useCallback } from 'react';
 import {
   Alert,
   Box,
   Button,
   Card,
-  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -322,7 +322,7 @@ const MentorshipDashboardPage = () => {
 
           {sessionsQuery.isLoading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-              <CircularProgress />
+              <LoadingSkeleton />
             </Box>
           ) : sessionsQuery.isError ? (
             <Alert severity="error">{t('dash_sessions_load_error')}</Alert>
@@ -399,7 +399,7 @@ const MentorshipDashboardPage = () => {
           >
             {feedbacksQuery.isLoading ? (
               <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
-                <CircularProgress size={20} />
+                <LoadingSkeleton />
               </Box>
             ) : feedbacks.length === 0 ? (
               <EmptyState message={t('dash_no_reviews')} />
