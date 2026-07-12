@@ -148,7 +148,7 @@ const VerificationOptionCard = ({ icon, title, description, selected, onClick })
 const OrganizationRegistrationPage = () => {
   const { t } = useTranslation(["auth", "common", "profile"]);
   const navigate = useOrgNavigate();
-  const { enqueueSnackbar } = useSnackbar();
+  const { enqueueSnackbar, closeSnackbar } = useSnackbar();
   const queryClient = useQueryClient();
   const { verificationLevel } = useAuth();
   const { organization, loading: organizationLoading } = useOrganization();
@@ -278,7 +278,22 @@ const OrganizationRegistrationPage = () => {
               requestPeerVerification({ organizationId: data.organizationId, verifierUserId: Number(verifierId) }),
             ),
           );
-          enqueueSnackbar(t("auth:peer_verification_sent"), { variant: "success" });
+          enqueueSnackbar(t("auth:peer_verification_sent"), {
+            variant: "success",
+            autoHideDuration: 8000,
+            action: (key) => (
+              <Button
+                color="inherit"
+                size="small"
+                onClick={() => {
+                  closeSnackbar(key);
+                  navigate("/chat");
+                }}
+              >
+                {t("auth:peer_verification_message_cta")}
+              </Button>
+            ),
+          });
         }
 
         // Upload proof document
@@ -302,6 +317,13 @@ const OrganizationRegistrationPage = () => {
         await queryClient.invalidateQueries({
           queryKey: ["user", "me", "organization-member", data.organizationId],
         });
+        if (selectedVerifierUserIds.length > 0) {
+          // The chosen verifier(s) are now peer-verification counterparts server-side
+          // (chat auto-accepted) — refetch so useCanAccessChat picks it up without reload.
+          await queryClient.invalidateQueries({
+            queryKey: ["user", "me", "peer-verification-counterparts", data.organizationId],
+          });
+        }
         try {
           const refreshedSession = await refreshSessionAccessToken();
           syncAuthStoreFromAccessToken(refreshedSession);

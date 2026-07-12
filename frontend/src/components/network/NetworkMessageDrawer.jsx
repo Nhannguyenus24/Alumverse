@@ -20,6 +20,7 @@ import Scrollbar from '../Scrollbar';
 import { useNetworkConversationActions } from '../../hooks/network/useNetworkConversationActions';
 import { useNetworkCurrentMemberId } from '../../hooks/network/useNetworkCurrentMemberId';
 import { useCanContribute } from '../../hooks/useCanContribute';
+import { usePeerVerificationCounterparts } from '../../hooks/usePeerVerificationCounterparts';
 import { VerificationRequiredAlert } from '../ContributeGuard';
 import {
   isComposerEnabled,
@@ -100,12 +101,18 @@ const NetworkMessageDrawer = ({
   const peerUserId = peer?.userId ?? null;
   const currentMemberId = useNetworkCurrentMemberId();
   const { canContribute } = useCanContribute();
+  const { counterparts } = usePeerVerificationCounterparts();
   const { sendMessage, isSending } = useNetworkConversationActions(peerUserId);
+
+  // A pending/verified peer-verification counterpart may message even below the
+  // general contribute threshold — that specific conversation is auto-accepted
+  // server-side, so the composer shouldn't be blocked here.
+  const isPeerVerificationCounterpart = peerUserId != null && counterparts.includes(peerUserId);
 
   const drawerState = resolveConnectionDrawerState(statusOverride ?? connectionStatus, t);
   const charCount = draft.length;
   const atLengthLimit = charCount >= MAX_MESSAGE_LENGTH;
-  const composerEnabled = canContribute && isComposerEnabled({
+  const composerEnabled = (canContribute || isPeerVerificationCounterpart) && isComposerEnabled({
     canCompose: drawerState.canCompose,
     singleMessageOnly: drawerState.singleMessageOnly,
     sentInSession,
@@ -272,7 +279,7 @@ const NetworkMessageDrawer = ({
         <div ref={messagesEndRef} />
       </Scrollbar>
 
-      <VerificationRequiredAlert sx={{ borderRadius: 0 }} />
+      {!isPeerVerificationCounterpart && <VerificationRequiredAlert sx={{ borderRadius: 0 }} />}
 
       <Box
         sx={{

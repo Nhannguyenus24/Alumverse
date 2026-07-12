@@ -51,6 +51,21 @@ public interface PeerVerificationRepository extends R2dbcRepository<PeerVerifica
     @Query("SELECT * FROM peer_verifications WHERE \"organization_id\" = :organizationId AND \"target_member_id\" = :targetMemberId AND \"verifier_member_id\" = :verifierMemberId AND \"status\" = 'PENDING'")
     Mono<PeerVerification> findPendingRequest(@Param("organizationId") Integer organizationId, @Param("targetMemberId") Integer targetMemberId, @Param("verifierMemberId") Integer verifierMemberId);
 
+    /**
+     * Member IDs the given member has a peer-verification relationship with, either as the
+     * requester (target) or the chosen verifier, regardless of status. Used to grant chat
+     * access to the specific counterpart(s) picked during verification, without waiting for
+     * verification_level to reach the general contribute threshold.
+     */
+    @Query("""
+        SELECT verifier_member_id AS member_id FROM peer_verifications
+        WHERE organization_id = :organizationId AND target_member_id = :memberId
+        UNION
+        SELECT target_member_id AS member_id FROM peer_verifications
+        WHERE organization_id = :organizationId AND verifier_member_id = :memberId
+    """)
+    Flux<Integer> findCounterpartMemberIds(@Param("organizationId") Integer organizationId, @Param("memberId") Integer memberId);
+
     @Query("""
         SELECT pv.id as request_id,
                om_target.user_id as requester_user_id,

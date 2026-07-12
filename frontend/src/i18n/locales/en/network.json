@@ -58,6 +58,7 @@
   "drawer_banner_accepted": "You are now connected.",
   "drawer_banner_retry": "You can send one more message.",
   "drawer_banner_rejected": "Connection request was declined. You can try again after {{datetime}}.",
+  "drawer_banner_not_verified": "This member hasn't reached verification level 2 in your organization yet, so you can't connect with them.",
   "send_message_aria": "Send message",
   "close_aria": "Close",
   "member_fallback_name": "Member",

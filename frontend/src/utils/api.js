@@ -1055,6 +1055,13 @@ export const userSettingsApi = {
 		return unwrap(response);
 	},
 
+	async getPeerVerificationCounterparts(organizationId) {
+		const response = await apiClient.get('/users/me/peer-verifications/counterparts', {
+			params: { organizationId },
+		});
+		return unwrap(response) ?? [];
+	},
+
 	async submitEducationRequest(payload) {
 		const response = await apiClient.post('/education-requests', payload);
 		return unwrap(response);
