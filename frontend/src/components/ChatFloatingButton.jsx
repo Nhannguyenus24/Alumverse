@@ -6,7 +6,6 @@ import {
   Button,
   Fade,
   IconButton,
-  Menu,
   Paper,
   Stack,
   Tooltip,
@@ -22,7 +21,6 @@ import { useLocation } from 'react-router';
 import { useAuth } from '../hooks/useAuth';
 import { useOrgNavigate } from '../hooks/useOrgNavigate';
 import MessagesPreviewPanel from './MessagesPreviewPanel';
-import { useMessagesPreviewMenu } from '../hooks/chat/useMessagesPreviewMenu';
 import { useCanAccessChat } from '../hooks/chat/useCanAccessChat';
 import { useTranslation } from 'react-i18next';
 import useChatUnreadStore from '../stores/chatUnreadStore';
@@ -73,6 +71,26 @@ const LoginPanel = styled(Paper)(({ theme }) => ({
   animation: `${slideUp} 0.3s ease-out`,
 }));
 
+const PreviewPanel = styled(Paper)(({ theme }) => ({
+  position: 'fixed',
+  bottom: 0,
+  right: 110,
+  width: 360,
+  height: 480,
+  maxHeight: 'calc(100vh - 32px)',
+  borderRadius: `${theme.spacing(2)} ${theme.spacing(2)} 0 0`,
+  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15)',
+  zIndex: 998,
+  display: 'flex',
+  flexDirection: 'column',
+  overflow: 'hidden',
+  animation: `${slideUp} 0.3s ease-out`,
+  [theme.breakpoints.down('sm')]: {
+    width: 'calc(100% - 130px)',
+    right: 110,
+  },
+}));
+
 const PanelHeader = styled(Box)(({ theme }) => ({
   backgroundColor: theme.palette.primary.main,
   color: theme.palette.common.white,
@@ -93,33 +111,31 @@ export default function ChatFloatingButton({ isOpen = false, onOpen, onClose }) 
   const navigate = useOrgNavigate();
   const location = useLocation();
   const [showLoginPanel, setShowLoginPanel] = useState(false);
-  const [anchorEl, setAnchorEl] = useState(null);
-  const menuOpen = Boolean(anchorEl);
-  const { menuActionsRef, slotProps, updateMenuPosition } = useMessagesPreviewMenu({ mb: 1.5 });
+  const [previewOpen, setPreviewOpen] = useState(false);
   const { canAccessChat } = useCanAccessChat();
   const unreadCount = useChatUnreadStore((state) => state.unreadCount);
   const resetUnread = useChatUnreadStore((state) => state.reset);
 
   useEffect(() => {
     if (!isOpen) {
-      setAnchorEl(null);
+      setPreviewOpen(false);
       setShowLoginPanel(false);
     }
   }, [isOpen]);
 
-  const handleClick = (event) => {
+  const handleClick = () => {
     onOpen?.();
     if (isAuthenticated) {
       if (!canAccessChat) return;
       resetUnread();
-      setAnchorEl(event.currentTarget);
+      setPreviewOpen(true);
       return;
     }
     setShowLoginPanel(true);
   };
 
-  const handleCloseMenu = () => {
-    setAnchorEl(null);
+  const handleClosePreview = () => {
+    setPreviewOpen(false);
     onClose?.();
   };
 
@@ -157,7 +173,7 @@ export default function ChatFloatingButton({ isOpen = false, onOpen, onClose }) 
         >
           <AnimatedAvatar
             onClick={handleClick}
-            isAnimating={!isBlocked && !showLoginPanel && !menuOpen}
+            isAnimating={!isBlocked && !showLoginPanel && !previewOpen}
             sx={{
               cursor: isBlocked ? 'not-allowed' : 'pointer',
               opacity: isBlocked ? 0.6 : 1,
@@ -172,22 +188,11 @@ export default function ChatFloatingButton({ isOpen = false, onOpen, onClose }) 
       </Tooltip>
 
       {isAuthenticated && (
-        <Menu
-          id="messages-floating-menu"
-          anchorEl={anchorEl}
-          open={menuOpen}
-          onClose={handleCloseMenu}
-          actions={menuActionsRef}
-          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-          transformOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-          slotProps={slotProps}
-        >
-          <MessagesPreviewPanel
-            onClose={handleCloseMenu}
-            queryEnabled={menuOpen}
-            onContentReady={updateMenuPosition}
-          />
-        </Menu>
+        <Fade in={previewOpen} timeout={300} unmountOnExit>
+          <PreviewPanel>
+            <MessagesPreviewPanel onClose={handleClosePreview} queryEnabled={previewOpen} />
+          </PreviewPanel>
+        </Fade>
       )}
 
       <Fade in={showLoginPanel} timeout={300}>

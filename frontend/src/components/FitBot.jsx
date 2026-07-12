@@ -142,8 +142,10 @@ const AnimatedAvatar = styled(Avatar, {
 
 const SuggestionBubble = styled(Paper)(({ theme }) => ({
   position: 'absolute',
-  bottom: 80,
-  right: -10,
+  top: '50%',
+  right: '100%',
+  marginRight: theme.spacing(1.5),
+  transform: 'translateY(-50%)',
   padding: theme.spacing(1.5, 2.5),
   backgroundColor: theme.palette.primary.main,
   color: theme.palette.primary.contrastText,
@@ -156,8 +158,11 @@ const SuggestionBubble = styled(Paper)(({ theme }) => ({
   boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
   transition: 'transform 0.2s, box-shadow 0.2s',
   '&:hover': {
-    transform: 'scale(1.05)',
+    transform: 'translateY(-50%) scale(1.05)',
     boxShadow: '0 6px 16px rgba(0, 0, 0, 0.25)',
+  },
+  [theme.breakpoints.down('sm')]: {
+    minWidth: 220,
   },
 }));
 
