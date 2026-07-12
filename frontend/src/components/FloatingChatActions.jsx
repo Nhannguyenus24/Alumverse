@@ -31,8 +31,8 @@ export default function FloatingChatActions() {
       <Box
         sx={{
           position: 'fixed',
-          bottom: 20,
-          right: 90,
+          bottom: 90,
+          right: 20,
           zIndex: 999,
         }}
       >

@@ -44,6 +44,7 @@ const ChatPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const targetMemberId = searchParams.get('memberId');
+  const targetChatId = searchParams.get('chatId');
   const [searchInput, setSearchInput] = useState('');
   const [appliedSearch, setAppliedSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -66,7 +67,11 @@ const ChatPage = () => {
     isFetching: privateFetching,
     isError: privateError,
     errorMessage: privateErrorMsg,
-  } = usePrivateChatList({ searchQuery: appliedSearch, page, pageSize: targetMemberId ? 100 : undefined });
+  } = usePrivateChatList({
+    searchQuery: appliedSearch,
+    page,
+    pageSize: targetMemberId || targetChatId ? 100 : undefined,
+  });
 
   const chats = useMemo(() => {
     const merged = [
@@ -104,13 +109,22 @@ const ChatPage = () => {
   }, [activeChatId, chats, targetMemberId]);
 
   useEffect(() => {
-    if (targetMemberId) return;
+    if (!targetChatId) return;
+    const targetChat = chats.find((chat) => String(chat.id) === String(targetChatId));
+    if (targetChat && activeChatId !== targetChat.id) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setActiveChatId(targetChat.id);
+    }
+  }, [activeChatId, chats, targetChatId]);
+
+  useEffect(() => {
+    if (targetMemberId || targetChatId) return;
     if (isMobile) return;
     if (activeChatId == null && chats.length > 0) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setActiveChatId(chats[0].id);
     }
-  }, [chats, activeChatId, isMobile, targetMemberId]);
+  }, [chats, activeChatId, isMobile, targetMemberId, targetChatId]);
 
   const activeChat = useMemo(
     () => chats.find((c) => c.id === activeChatId) ?? null,
