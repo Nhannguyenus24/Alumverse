@@ -1,5 +1,6 @@
 package com.service.backend.user.dao;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 
 import org.springframework.data.r2dbc.repository.Modifying;
@@ -31,6 +32,7 @@ public interface UserOrganizationMemberRepository extends R2dbcRepository<Organi
             String major
     ) {}
     public record MemberIdentity(Integer memberId, String studentId, String fullName) {}
+    public record ExpiredVerification(Integer userId, Integer organizationId) {}
 
     @Query("""
             SELECT om.user_id,
@@ -180,4 +182,29 @@ public interface UserOrganizationMemberRepository extends R2dbcRepository<Organi
             WHERE organization_id = :organizationId AND user_id = :userId
             """)
     Mono<Integer> updateVerificationLevelByOrgAndUser(@Param("organizationId") Integer organizationId, @Param("userId") Integer userId, @Param("level") Integer level);
+
+    // Đưa các thành viên đang ở trạng thái "đang xác thực" (verification_level = 1) về lại
+    // level 0 khi họ không còn yêu cầu xác thực nào (verification request hoặc peer verify)
+    // đang chờ xử lý trong vòng 3 ngày gần nhất, để họ có thể gửi lại yêu cầu.
+    // RETURNING trả về danh sách thành viên bị hạ cấp để gửi thông báo.
+    @Query("""
+            UPDATE organization_members om
+            SET verification_level = 0,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE COALESCE(om.verification_level, 0) = 1
+              AND NOT EXISTS (
+                  SELECT 1 FROM verification_requests vr
+                  WHERE vr.organization_id = om.organization_id
+                    AND vr.member_id = om.user_id
+                    AND vr."status" = 'PENDING'
+                    AND vr.created_at >= :threshold)
+              AND NOT EXISTS (
+                  SELECT 1 FROM peer_verifications pv
+                  WHERE pv.organization_id = om.organization_id
+                    AND pv.target_member_id = om.user_id
+                    AND pv."status" = 'PENDING'
+                    AND pv.created_at >= :threshold)
+            RETURNING om.user_id, om.organization_id
+            """)
+    Flux<ExpiredVerification> expireStaleVerifyingMembers(@Param("threshold") LocalDateTime threshold);
 }

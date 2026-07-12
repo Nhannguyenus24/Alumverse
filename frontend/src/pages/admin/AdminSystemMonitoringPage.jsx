@@ -97,7 +97,12 @@ const QUERIES = {
   authRefreshFailure: 'sum(rate(auth_token_refresh_total{result="failure"}[5m]))',
   rateLimitRejected: 'sum(rate(ratelimit_rejected_total[5m]))',
   wsActiveSessions: 'sum(chat_websocket_active_sessions)',
-  wsActiveGroups: 'sum(chat_websocket_active_groups)'
+  wsActiveGroups: 'sum(chat_websocket_active_groups)',
+
+  // --- SSE (real-time push) metrics ---
+  sseActiveConnections: 'sum(sse_active_connections)',
+  sseActiveUsers: 'sum(sse_active_users)',
+  sseEventsRate: 'sum(rate(sse_events_sent_total[5m]))'
 };
 
 const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#d32f2f', '#1976d2', '#388e3c', '#fbc02d', '#7b1fa2', '#c2185b'];
@@ -261,6 +266,7 @@ const AdminSystemMonitoringPage = () => {
   const [summaryStats, setSummaryStats] = useState({ totalRequests: 0, totalErrors: 0, errorRate: 0, avgLatency: 0, uptimeSeconds: 0 });
   const [availableErrorCodes, setAvailableErrorCodes] = useState([]);
   const [availableStatusCodes, setAvailableStatusCodes] = useState([]);
+  const [availableSseEvents, setAvailableSseEvents] = useState([]);
   const [isolatedSeries, setIsolatedSeries] = useState({});
   const [error, setError] = useState(null);
 
@@ -360,7 +366,11 @@ const AdminSystemMonitoringPage = () => {
         totalRequestsRes,
         totalErrorsRes,
         currentAvgLatencyRes,
-        uptimeRes
+        uptimeRes,
+        sseActiveConnectionsData,
+        sseActiveUsersData,
+        sseEventsRateData,
+        sseEventsByTypeRes
       ] = await Promise.all([
         fetchPrometheusRange(QUERIES.requestRate, start, end, step),
         fetchPrometheusRange(QUERIES.errorRate, start, end, step),
@@ -407,7 +417,11 @@ const AdminSystemMonitoringPage = () => {
         fetchPrometheusInstant(`sum(http_endpoint_requests_total)`, end),
         fetchPrometheusInstant(`sum(http_endpoint_errors_total)`, end),
         fetchPrometheusInstant(`sum(rate(http_endpoint_latency_seconds_sum[5m])) / sum(rate(http_endpoint_latency_seconds_count[5m])) * 1000`, end),
-        fetchPrometheusInstant(`process_uptime_seconds`, end)
+        fetchPrometheusInstant(`process_uptime_seconds`, end),
+        fetchPrometheusRange(QUERIES.sseActiveConnections, start, end, step),
+        fetchPrometheusRange(QUERIES.sseActiveUsers, start, end, step),
+        fetchPrometheusRange(QUERIES.sseEventsRate, start, end, step),
+        fetchPrometheusRangeMultiple(`sum by (event) (rate(sse_events_sent_total[5m]))`, start, end, step)
       ]);
 
       // Merge time-series data
@@ -466,6 +480,10 @@ const AdminSystemMonitoringPage = () => {
       processSeries(rateLimitRejectedData, 'rateLimitRejected');
       processSeries(wsActiveSessionsData, 'wsActiveSessions');
       processSeries(wsActiveGroupsData, 'wsActiveGroups');
+      // SSE real-time push metrics
+      processSeries(sseActiveConnectionsData, 'sseActiveConnections');
+      processSeries(sseActiveUsersData, 'sseActiveUsers');
+      processSeries(sseEventsRateData, 'sseEventsRate');
 
       const errorCodesSet = new Set();
       if (exceptionTimeSeriesRes) {
@@ -506,6 +524,27 @@ const AdminSystemMonitoringPage = () => {
         });
       }
       setAvailableStatusCodes(Array.from(statusCodesSet));
+
+      // SSE events broken down by type (feature-toggled, verification-updated, user-banned, new-message, connected)
+      const sseEventsSet = new Set();
+      if (sseEventsByTypeRes) {
+        sseEventsByTypeRes.forEach(seriesObj => {
+          const eventName = seriesObj.metric.event || 'UNKNOWN';
+          const key = `sse_evt_${eventName}`;
+          sseEventsSet.add(eventName);
+
+          seriesObj.values.forEach(([timestamp, value]) => {
+            const t = parseInt(timestamp, 10);
+            if (!mergedMap.has(t)) {
+              mergedMap.set(t, { time: t, timeFormatted: dayjs(t * 1000).format(formatString) });
+            }
+            let numVal = parseFloat(value);
+            if (isNaN(numVal)) numVal = 0;
+            mergedMap.get(t)[key] = numVal;
+          });
+        });
+      }
+      setAvailableSseEvents(Array.from(sseEventsSet));
 
       const mergedArray = Array.from(mergedMap.values()).sort((a, b) => a.time - b.time);
       setChartData(mergedArray);
@@ -1190,6 +1229,67 @@ const AdminSystemMonitoringPage = () => {
                       <Legend onClick={(e) => handleLegendClick('ws', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
                       <Area type="monotone" dataKey="wsActiveSessions" name={t("admin:system_monitoring.ws_sessions")} stroke={theme.palette.primary.main} fill={theme.palette.primary.light} fillOpacity={0.4} hide={isolatedSeries['ws'] && isolatedSeries['ws'] !== 'wsActiveSessions'} />
                       <Area type="monotone" dataKey="wsActiveGroups" name={t("admin:system_monitoring.ws_groups")} stroke={theme.palette.secondary.main} fill={theme.palette.secondary.light} fillOpacity={0.4} hide={isolatedSeries['ws'] && isolatedSeries['ws'] !== 'wsActiveGroups'} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </Box>
+              </AdminSectionPanel>
+
+              {/* Active SSE Connections (real-time push) */}
+              <AdminSectionPanel
+                title={t('admin:system_monitoring.sse_connections', 'SSE Connections')}
+                subtitle={t('admin:system_monitoring.sse_connections_desc', 'Currently open Server-Sent Events streams and distinct connected users')}
+                sx={monitoringPanelSx}
+              >
+                <Box sx={monitoringChartBoxSx}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="timeFormatted" minTickGap={30} />
+                      <YAxis allowDecimals={false} />
+                      <RechartsTooltip content={renderTooltip} />
+                      <Legend onClick={(e) => handleLegendClick('sse', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
+                      <Area type="monotone" dataKey="sseActiveConnections" name={t("admin:system_monitoring.sse_active_connections", "Active Connections")} stroke={theme.palette.primary.main} fill={theme.palette.primary.light} fillOpacity={0.4} hide={isolatedSeries['sse'] && isolatedSeries['sse'] !== 'sseActiveConnections'} />
+                      <Area type="monotone" dataKey="sseActiveUsers" name={t("admin:system_monitoring.sse_active_users", "Active Users")} stroke={theme.palette.info.main} fill={theme.palette.info.light} fillOpacity={0.4} hide={isolatedSeries['sse'] && isolatedSeries['sse'] !== 'sseActiveUsers'} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </Box>
+              </AdminSectionPanel>
+
+              {/* SSE Events Pushed by type (feature-toggled / verification / ban / new-message) */}
+              <AdminSectionPanel
+                title={t('admin:system_monitoring.sse_events', 'SSE Events Pushed (/s)')}
+                subtitle={t('admin:system_monitoring.sse_events_desc', 'Rate of real-time events pushed to clients, broken down by type')}
+                sx={monitoringPanelSx}
+              >
+                <Box sx={monitoringChartBoxSx}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="timeFormatted" minTickGap={30} />
+                      <YAxis />
+                      <RechartsTooltip content={renderTooltip} />
+                      <Legend onClick={(e) => handleLegendClick('sseEvents', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
+                      {availableSseEvents.length === 0 && (
+                        <Area type="monotone" dataKey="sseEventsRate" name={t("admin:system_monitoring.sse_events_total", "Events/s")} stroke={theme.palette.success.main} fill={theme.palette.success.light} fillOpacity={0.4} />
+                      )}
+                      {availableSseEvents.map((eventName, idx) => {
+                        const dataKey = `sse_evt_${eventName}`;
+                        const isIsolated = isolatedSeries['sseEvents'];
+                        const color = COLORS[idx % COLORS.length];
+                        return (
+                          <Area
+                            key={eventName}
+                            type="monotone"
+                            dataKey={dataKey}
+                            name={eventName}
+                            stackId="1"
+                            stroke={color}
+                            fill={color}
+                            fillOpacity={0.6}
+                            hide={isIsolated && isIsolated !== dataKey}
+                          />
+                        );
+                      })}
                     </AreaChart>
                   </ResponsiveContainer>
                 </Box>
