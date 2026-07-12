@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSnackbar } from 'notistack';
 import {
-  Alert,
+
   Box,
   Button,
   Checkbox,
@@ -36,6 +37,7 @@ const AddGroupMemberDialog = ({ open, onClose, groupId, existingMemberIds = [], 
   const { t } = useTranslation(['network', 'common']);
   const [searchInput, setSearchInput] = useState('');
   const [selectedMembers, setSelectedMembers] = useState([]);
+  const { enqueueSnackbar } = useSnackbar();
 
   const remainingSlots = MAX_GROUP_SIZE - currentMemberCount;
 
@@ -109,6 +111,13 @@ const AddGroupMemberDialog = ({ open, onClose, groupId, existingMemberIds = [], 
     ? error?.response?.data?.message ?? error?.message ?? t('network:generic_error')
     : null;
 
+  useEffect(() => {
+    if (errorMessage) {
+      enqueueSnackbar(errorMessage, { variant: 'error' });
+    }
+  }, [errorMessage, enqueueSnackbar]);
+
+
   return (
     <Dialog
       open={open}
@@ -127,11 +136,6 @@ const AddGroupMemberDialog = ({ open, onClose, groupId, existingMemberIds = [], 
       <Divider />
 
       <DialogContent sx={{ px: 2.5, py: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
-        {errorMessage ? (
-          <Alert severity="error" sx={{ borderRadius: 1.5 }}>
-            {errorMessage}
-          </Alert>
-        ) : null}
 
         {remainingSlots <= 0 ? (
           <Alert severity="warning" sx={{ borderRadius: 1.5 }}>

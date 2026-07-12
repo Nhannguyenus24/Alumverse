@@ -19,11 +19,11 @@ import {
   IconButton,
   Tooltip,
   useTheme,
-  Alert,
   alpha,
   Card,
   CardContent
 } from '@mui/material';
+import { useSnackbar } from 'notistack';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
@@ -236,6 +236,7 @@ const AdminSystemMonitoringPage = () => {
   const { setBreadcrumbs } = useOutletContext() || {};
   const theme = useTheme();
   const { t } = useTranslation(['admin']);
+  const { enqueueSnackbar } = useSnackbar();
 
   const TIME_RANGES = useMemo(() => [
     { label: t('admin:system_monitoring.last_1h'), value: 1 },
@@ -269,6 +270,12 @@ const AdminSystemMonitoringPage = () => {
   const [availableSseEvents, setAvailableSseEvents] = useState([]);
   const [isolatedSeries, setIsolatedSeries] = useState({});
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (error) {
+      enqueueSnackbar(error, { variant: 'error' });
+    }
+  }, [error, enqueueSnackbar]);
 
   useEffect(() => {
     if (setBreadcrumbs) {
@@ -723,12 +730,6 @@ const AdminSystemMonitoringPage = () => {
             </Tooltip>
           </Box>
         </Box>
-
-        {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
-            {error}
-          </Alert>
-        )}
 
         {loading && chartData.length === 0 && (
           <Box sx={{ display: 'flex', justifyContent: 'center', p: 5 }}>

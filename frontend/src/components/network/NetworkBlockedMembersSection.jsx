@@ -7,6 +7,7 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
+import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 
 import SearchBar from '../SearchBar';
@@ -29,6 +30,7 @@ const NetworkBlockedMembersSection = () => {
   const [appliedFullName, setAppliedFullName] = useState('');
   const [page, setPage] = useState(1);
   const [unblockTarget, setUnblockTarget] = useState(null);
+  const { enqueueSnackbar } = useSnackbar();
 
   const { items, totalPage, isPending, isFetching, isError, errorMessage } = useBlockedMembers({
     appliedFullName,
@@ -64,6 +66,12 @@ const NetworkBlockedMembersSection = () => {
   const hasActiveCriteria = Boolean(appliedFullName);
   const showEmptyState = !isPending && !isFetching && items.length === 0;
 
+  useEffect(() => {
+    if (isError) {
+      enqueueSnackbar(errorMessage, { variant: 'error' });
+    }
+  }, [isError, errorMessage, enqueueSnackbar]);
+
   const renderContent = () => {
     if (isPending) {
       return (
@@ -74,7 +82,7 @@ const NetworkBlockedMembersSection = () => {
     }
 
     if (isError) {
-      return <Alert severity="error">{errorMessage}</Alert>;
+      return <Typography color="error">{errorMessage}</Typography>;
     }
 
     if (showEmptyState) {

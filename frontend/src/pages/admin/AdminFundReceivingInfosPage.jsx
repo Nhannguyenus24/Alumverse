@@ -75,6 +75,12 @@ const AdminFundReceivingInfosPage = () => {
   }, [setBreadcrumbs, t, adminBase]);
 
   useEffect(() => {
+    if (loadError) {
+      enqueueSnackbar(t('fund_account_list_load_error'), { variant: 'error' });
+    }
+  }, [loadError, enqueueSnackbar, t]);
+
+  useEffect(() => {
     const loadBanks = async () => {
       setBanksLoading(true);
       try {
@@ -245,12 +251,6 @@ const AdminFundReceivingInfosPage = () => {
           </Box>
         )}
       </Alert>
-
-      {loadError && (
-        <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
-          {t('fund_account_list_load_error')}
-        </Alert>
-      )}
 
       <AdminDataTable
         columns={columns}

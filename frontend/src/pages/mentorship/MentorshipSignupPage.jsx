@@ -17,6 +17,8 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import CheckIcon from '@mui/icons-material/Check';
 import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined';
 import { useTranslation } from 'react-i18next';
+import { useSnackbar } from 'notistack';
+import { useEffect } from 'react';
 
 import Page from '../../components/Page';
 import {
@@ -214,6 +216,7 @@ const MentorshipSignupPage = () => {
   const [hydratedKey, setHydratedKey] = useState(null);
   const [success, setSuccess] = useState(false);
   const [draftSaved, setDraftSaved] = useState(false);
+  const { enqueueSnackbar } = useSnackbar();
 
   // Hydrate the form once when the draft profile arrives from the server. Using
   // a "key" guard during render (instead of useEffect) keeps us inside React's
@@ -286,6 +289,7 @@ const MentorshipSignupPage = () => {
         },
       });
       setSuccess(true);
+      enqueueSnackbar(t('mentor_signup_success'), { variant: 'success' });
       setTimeout(() => navigate('/mentorship'), 1200);
     } catch {
       /* surfaced via submitMutation.errorMessage */
@@ -315,12 +319,25 @@ const MentorshipSignupPage = () => {
         },
       });
       setDraftSaved(true);
+      enqueueSnackbar(t('mentor_signup_draft_saved'), { variant: 'success' });
     } catch {
       /* surfaced via draftMutation.errorMessage */
     }
   };
 
   // ===== Verification gating =====
+
+  useEffect(() => {
+    if (submitMutation.errorMessage && !success) {
+      enqueueSnackbar(submitMutation.errorMessage, { variant: 'error' });
+    }
+  }, [submitMutation.errorMessage, success, enqueueSnackbar]);
+
+  useEffect(() => {
+    if (draftMutation.errorMessage && !draftSaved) {
+      enqueueSnackbar(draftMutation.errorMessage, { variant: 'error' });
+    }
+  }, [draftMutation.errorMessage, draftSaved, enqueueSnackbar]);
 
   if (orgMemberQuery.isFetching) {
     return (
@@ -438,30 +455,6 @@ const MentorshipSignupPage = () => {
             <Typography variant="body2" sx={{ mt: 1 }}>
               {t('mentor_signup_resubmit_hint')}
             </Typography>
-          </Alert>
-        )}
-
-        {success && (
-          <Alert severity="success" sx={{ mb: 2 }}>
-            {t('mentor_signup_success')}
-          </Alert>
-        )}
-
-        {draftSaved && !success && (
-          <Alert severity="success" sx={{ mb: 2 }}>
-            {t('mentor_signup_draft_saved')}
-          </Alert>
-        )}
-
-        {submitMutation.errorMessage && !success && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {submitMutation.errorMessage}
-          </Alert>
-        )}
-
-        {draftMutation.errorMessage && !draftSaved && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {draftMutation.errorMessage}
           </Alert>
         )}
 

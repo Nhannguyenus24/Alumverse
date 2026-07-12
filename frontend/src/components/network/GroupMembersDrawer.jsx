@@ -2,7 +2,6 @@ import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   alpha,
-  Alert,
   Box,
   Button,
   Chip,
@@ -34,6 +33,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import ChatAvatar from '../ChatAvatar';
 import Scrollbar from '../Scrollbar';
+import { useSnackbar } from 'notistack';
 import AddGroupMemberDialog from '../AddGroupMemberDialog';
 import { useGroupMembers } from '../../hooks/chat/useGroupMembers';
 import { invalidateChatListQueries, invalidateGroupBlockedMembersQueries } from '../../hooks/chat/invalidateChatQueries';
@@ -81,6 +81,7 @@ function GroupMembersDrawer({ open, onClose, groupId, groupName, currentUserId, 
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const [renameValue, setRenameValue] = useState('');
   const imageInputRef = useRef(null);
+  const { enqueueSnackbar } = useSnackbar();
 
   const { members, totalItem, isPending, isError, errorMessage } = useGroupMembers(groupId, {
     enabled: open && Boolean(groupId),
@@ -169,6 +170,13 @@ function GroupMembersDrawer({ open, onClose, groupId, groupName, currentUserId, 
     (renameMutation.isError ? renameMutation.error?.response?.data?.message ?? renameMutation.error?.message : null) ??
     (changeImageMutation.isError ? changeImageMutation.error?.response?.data?.message ?? changeImageMutation.error?.message : null);
 
+  React.useEffect(() => {
+    const err = errorMessage ?? mutationError;
+    if (err) {
+      enqueueSnackbar(err, { variant: 'error' });
+    }
+  }, [errorMessage, mutationError, enqueueSnackbar]);
+
   return (
     <>
       <Drawer
@@ -215,12 +223,6 @@ function GroupMembersDrawer({ open, onClose, groupId, groupName, currentUserId, 
               <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
                 <CircularProgress size={28} />
               </Box>
-            ) : null}
-
-            {(isError || mutationError) ? (
-              <Alert severity="error" sx={{ m: 2, borderRadius: 1.5 }}>
-                {errorMessage ?? mutationError}
-              </Alert>
             ) : null}
 
             {!isPending && !isError && members.length === 0 ? (

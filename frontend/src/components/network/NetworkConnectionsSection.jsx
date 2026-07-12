@@ -8,6 +8,7 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
+import { useSnackbar } from 'notistack';
 
 import SearchBar from '../SearchBar';
 import ConfirmDialog from '../ConfirmDialog';
@@ -29,6 +30,7 @@ const NetworkConnectionsSection = ({ enableBlock = true }) => {
   const [appliedFullName, setAppliedFullName] = useState('');
   const [page, setPage] = useState(1);
   const [blockTarget, setBlockTarget] = useState(null);
+  const { enqueueSnackbar } = useSnackbar();
 
   const { items, totalPage, isPending, isFetching, isError, errorMessage } = useNetworkConnections({
     appliedFullName,
@@ -64,6 +66,12 @@ const NetworkConnectionsSection = ({ enableBlock = true }) => {
   const hasActiveCriteria = Boolean(appliedFullName);
   const showEmptyState = !isPending && !isFetching && items.length === 0;
 
+  useEffect(() => {
+    if (isError) {
+      enqueueSnackbar(errorMessage, { variant: 'error' });
+    }
+  }, [isError, errorMessage, enqueueSnackbar]);
+
   const renderContent = () => {
     if (isPending) {
       return (
@@ -74,7 +82,7 @@ const NetworkConnectionsSection = ({ enableBlock = true }) => {
     }
 
     if (isError) {
-      return <Alert severity="error">{errorMessage}</Alert>;
+      return <Typography color="error">{errorMessage}</Typography>;
     }
 
     if (showEmptyState) {

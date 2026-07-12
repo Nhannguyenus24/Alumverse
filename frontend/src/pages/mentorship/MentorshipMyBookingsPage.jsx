@@ -1,7 +1,6 @@
 import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useMemo, useState } from 'react';
 import {
-  Alert,
   Box,
   Button,
   Dialog,
@@ -21,8 +20,8 @@ import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
-import StarIcon from '@mui/icons-material/Star';
 import dayjs from 'dayjs';
+import { useSnackbar } from 'notistack';
 
 import Page from '../../components/Page';
 import ProfileLayout from '../../layouts/ProfileLayout';
@@ -77,6 +76,7 @@ const MentorshipMyBookingsPage = () => {
   const mentorProfileQuery = useMyMentorProfile();
   const menteeProfileQuery = useMyMenteeProfile();
   const baseProfileQuery = useMyProfile();
+  const { enqueueSnackbar } = useSnackbar();
 
   const [statusKey, setStatusKey] = useState('all');
 
@@ -99,9 +99,6 @@ const MentorshipMyBookingsPage = () => {
   const [feedbackPublic, setFeedbackPublic] = useState(true);
   const [rescheduleTarget, setRescheduleTarget] = useState(null);
   const [rescheduleResponsePending, setRescheduleResponsePending] = useState(false);
-  const [reportSuccess, setReportSuccess] = useState('');
-  const [feedbackSuccess, setFeedbackSuccess] = useState('');
-  const [actionError, setActionError] = useState('');
 
   const [mentorCancelTarget, setMentorCancelTarget] = useState(null);
   const [mentorCancelReason, setMentorCancelReason] = useState('');
@@ -111,11 +108,9 @@ const MentorshipMyBookingsPage = () => {
   const [postponeDate, setPostponeDate] = useState(null);
   const [postponeStart, setPostponeStart] = useState(null);
   const [postponeEnd, setPostponeEnd] = useState(null);
-  const [postponeError, setPostponeError] = useState(null);
   const [postponePending, setPostponePending] = useState(false);
   const [linkTarget, setLinkTarget] = useState(null);
   const [linkValue, setLinkValue] = useState('');
-  const [linkError, setLinkError] = useState(null);
   const [linkPending, setLinkPending] = useState(false);
 
   // Merge both roles into a single list, tagging each session with the role
@@ -158,12 +153,11 @@ const MentorshipMyBookingsPage = () => {
   };
 
   const handleJoin = async (session) => {
-    setActionError('');
     try {
       await joinMutation.joinSession({ sessionId: session.id, asMentor: session._role === 'mentor' });
       refetchActive();
     } catch (err) {
-      setActionError(err?.response?.data?.message ?? t('dash_join_error'));
+      enqueueSnackbar(err?.response?.data?.message ?? t('dash_join_error'), { variant: 'error' });
     }
   };
 
@@ -180,8 +174,8 @@ const MentorshipMyBookingsPage = () => {
     try {
       await cancelMutation.cancelSession({ sessionId: cancelTarget.id, cancelReason: cancelReason.trim() || undefined });
       closeCancelDialog();
-    } catch {
-      // noop
+    } catch (err) {
+      enqueueSnackbar(err?.response?.data?.message ?? t('cancel_error', 'Cancel failed'), { variant: 'error' });
     }
   };
 
@@ -200,18 +194,17 @@ const MentorshipMyBookingsPage = () => {
   const reportInvalid = !reportCategory || reportDescTooShort;
   const handleConfirmReport = async () => {
     if (!reportTarget || reportInvalid) return;
-    setActionError('');
     setReportPending(true);
     try {
       await reportSession(reportTarget.id, {
         reasonCategory: reportCategory,
         description: reportDescription.trim() || undefined,
       });
-      setReportSuccess(t('report_success_msg'));
+      enqueueSnackbar(t('report_success_msg'), { variant: 'success' });
       closeReportDialog();
       refetchActive();
     } catch (err) {
-      setActionError(err?.response?.data?.message ?? t('report_error_send'));
+      enqueueSnackbar(err?.response?.data?.message ?? t('report_error_send'), { variant: 'error' });
     } finally {
       setReportPending(false);
     }
@@ -238,24 +231,23 @@ const MentorshipMyBookingsPage = () => {
         comment: feedbackComment.trim() || undefined,
         isPublic: feedbackPublic,
       });
-      setFeedbackSuccess(t('feedback_success_msg'));
+      enqueueSnackbar(t('feedback_success_msg'), { variant: 'success' });
       closeFeedbackDialog();
       refetchActive();
-    } catch {
-      /* errorMessage from hook */
+    } catch (err) {
+      enqueueSnackbar(err?.response?.data?.message ?? t('feedback_error', 'Feedback failed'), { variant: 'error' });
     }
   };
 
   const openRescheduleDialog = (session) => setRescheduleTarget(session);
   const closeRescheduleDialog = () => setRescheduleTarget(null);
   const handleRescheduleResponse = async (session, accept) => {
-    setActionError('');
     setRescheduleResponsePending(true);
     try {
       await respondReschedule(session.id, accept);
       refetchActive();
     } catch (err) {
-      setActionError(err?.response?.data?.message ?? t('reschedule_respond_error'));
+      enqueueSnackbar(err?.response?.data?.message ?? t('reschedule_respond_error'), { variant: 'error' });
     } finally {
       setRescheduleResponsePending(false);
     }
@@ -274,8 +266,8 @@ const MentorshipMyBookingsPage = () => {
       } else {
         navigate('/mentorship');
       }
-    } catch {
-      /* cancelMutation.errorMessage */
+    } catch (err) {
+      enqueueSnackbar(err?.response?.data?.message ?? t('reschedule_error', 'Reschedule failed'), { variant: 'error' });
     }
   };
 
@@ -294,8 +286,8 @@ const MentorshipMyBookingsPage = () => {
       await cancelMentorSession(mentorCancelTarget.id, mentorCancelReason.trim() || undefined);
       refetchActive();
       closeMentorCancelDialog();
-    } catch {
-      // noop
+    } catch (err) {
+      enqueueSnackbar(err?.response?.data?.message ?? t('cancel_error', 'Cancel failed'), { variant: 'error' });
     } finally {
       setMentorCancelPending(false);
     }
@@ -308,7 +300,6 @@ const MentorshipMyBookingsPage = () => {
     setPostponeDate(base);
     setPostponeStart(base);
     setPostponeEnd(session.endTime ? dayjs(session.endTime) : null);
-    setPostponeError(null);
   };
   const closePostponeDialog = () => {
     setPostponeTarget(null);
@@ -316,13 +307,11 @@ const MentorshipMyBookingsPage = () => {
     setPostponeDate(null);
     setPostponeStart(null);
     setPostponeEnd(null);
-    setPostponeError(null);
   };
   const handleConfirmPostpone = async () => {
     if (!postponeTarget) return;
-    setPostponeError(null);
     if (!postponeDate || !postponeStart || !postponeEnd) {
-      setPostponeError(t('postpone_error_pick_all'));
+      enqueueSnackbar(t('postpone_error_pick_all'), { variant: 'error' });
       return;
     }
     const proposedStart = postponeDate
@@ -330,11 +319,11 @@ const MentorshipMyBookingsPage = () => {
     const proposedEnd = postponeDate
       .hour(postponeEnd.hour()).minute(postponeEnd.minute()).second(0).millisecond(0);
     if (!proposedEnd.isAfter(proposedStart)) {
-      setPostponeError(t('postpone_error_end_before_start'));
+      enqueueSnackbar(t('postpone_error_end_before_start'), { variant: 'error' });
       return;
     }
     if (!proposedStart.isAfter(dayjs())) {
-      setPostponeError(t('postpone_error_in_past'));
+      enqueueSnackbar(t('postpone_error_in_past'), { variant: 'error' });
       return;
     }
     setPostponePending(true);
@@ -347,7 +336,7 @@ const MentorshipMyBookingsPage = () => {
       refetchActive();
       closePostponeDialog();
     } catch (err) {
-      setPostponeError(err?.response?.data?.message ?? t('postpone_error_send'));
+      enqueueSnackbar(err?.response?.data?.message ?? t('postpone_error_send'), { variant: 'error' });
     } finally {
       setPostponePending(false);
     }
@@ -356,33 +345,30 @@ const MentorshipMyBookingsPage = () => {
   const openLinkDialog = (session) => {
     setLinkTarget(session);
     setLinkValue(session.meetingLink ?? '');
-    setLinkError(null);
   };
   const closeLinkDialog = () => {
     setLinkTarget(null);
     setLinkValue('');
-    setLinkError(null);
   };
   const handleConfirmLink = async () => {
     if (!linkTarget) return;
     const value = linkValue.trim();
     if (!value) {
-      setLinkError(t('link_error_empty'));
+      enqueueSnackbar(t('link_error_empty'), { variant: 'error' });
       return;
     }
     const linkValidationError = validateMeetingLink(value, { optional: false });
     if (linkValidationError) {
-      setLinkError(linkValidationError);
+      enqueueSnackbar(linkValidationError, { variant: 'error' });
       return;
     }
     setLinkPending(true);
-    setLinkError(null);
     try {
       await updateMentorSessionMeetingLink(linkTarget.id, value);
       refetchActive();
       closeLinkDialog();
     } catch (err) {
-      setLinkError(err?.response?.data?.message ?? t('link_error_update'));
+      enqueueSnackbar(err?.response?.data?.message ?? t('link_error_update'), { variant: 'error' });
     } finally {
       setLinkPending(false);
     }
@@ -456,28 +442,6 @@ const MentorshipMyBookingsPage = () => {
             </Typography>
           </ScrollRevealItem>
 
-          {cancelMutation.errorMessage && (
-            <Alert severity="error">{cancelMutation.errorMessage}</Alert>
-          )}
-          {actionError && (
-            <Alert severity="error" onClose={() => setActionError('')}>
-              {actionError}
-            </Alert>
-          )}
-          {feedbackMutation.errorMessage && (
-            <Alert severity="error">{feedbackMutation.errorMessage}</Alert>
-          )}
-          {reportSuccess && (
-            <Alert severity="success" onClose={() => setReportSuccess('')}>
-              {reportSuccess}
-            </Alert>
-          )}
-          {feedbackSuccess && (
-            <Alert severity="success" onClose={() => setFeedbackSuccess('')}>
-              {feedbackSuccess}
-            </Alert>
-          )}
-
           <ScrollRevealItem><Tabs
             value={statusKey}
             onChange={(_, v) => setStatusKey(v)}
@@ -495,7 +459,7 @@ const MentorshipMyBookingsPage = () => {
               <LoadingSkeleton />
             </Box>
           ) : isError ? (
-            <Alert severity="error">{t('bookings_load_error')}</Alert>
+            <div style={{ color: 'red', textAlign: 'center', padding: '2rem' }}>{t('bookings_load_error')}</div>
           ) : visibleItems.length === 0 ? (
             <Box sx={{ textAlign: 'center', py: 8 }}>
               <Typography color="text.secondary" mb={2}>
@@ -691,7 +655,6 @@ const MentorshipMyBookingsPage = () => {
                 multiline
                 minRows={2}
               />
-              {postponeError && <Alert severity="error">{postponeError}</Alert>}
             </Stack>
           </LocalizationProvider>
         </DialogContent>
@@ -746,15 +709,9 @@ const MentorshipMyBookingsPage = () => {
             helperText={t('link_helper_text')}
             autoFocus
           />
-          {meetingLinkPasswordWarning(linkValue) && (
-            <Alert severity="warning" sx={{ mt: 2 }}>
+            <div style={{ marginTop: 16, color: 'orange' }}>
               {meetingLinkPasswordWarning(linkValue)}
-            </Alert>
-          )}
-          {linkError && (
-            <Alert severity="error" sx={{ mt: 2 }}>
-              {linkError}
-            </Alert>
+            </div>
           )}
         </DialogContent>
         <DialogActions>

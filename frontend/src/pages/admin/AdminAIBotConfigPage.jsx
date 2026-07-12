@@ -14,6 +14,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
+import { useSnackbar } from 'notistack';
 
 const FITBOT_API_URL = '/fitbot-api';
 
@@ -23,8 +24,8 @@ const AdminAIBotConfigPage = () => {
   const [files, setFiles] = useState([]);
   const [loadingFiles, setLoadingFiles] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [uploadError, setUploadError] = useState(null);
   const [apiError, setApiError] = useState(null);
+  const { enqueueSnackbar } = useSnackbar();
 
   const [question, setQuestion] = useState('');
   const [botResponse, setBotResponse] = useState(null);
@@ -33,7 +34,6 @@ const AdminAIBotConfigPage = () => {
   const [viewFilename, setViewFilename] = useState(null);
   const [viewContent, setViewContent] = useState('');
   const [viewLoading, setViewLoading] = useState(false);
-  const [viewError, setViewError] = useState(null);
 
   useEffect(() => {
     if (setBreadcrumbs) {
@@ -71,7 +71,6 @@ const AdminAIBotConfigPage = () => {
     formData.append('file', file);
 
     setUploading(true);
-    setUploadError(null);
     try {
       const res = await fetch(`${FITBOT_API_URL}/api/files/upload?ingest=true`, {
         method: 'POST',
@@ -81,7 +80,7 @@ const AdminAIBotConfigPage = () => {
       if (!res.ok) throw new Error('Upload failed');
       await fetchFiles();
     } catch (error) {
-      setUploadError(error.message);
+      enqueueSnackbar(error.message, { variant: 'error' });
     } finally {
       setUploading(false);
       e.target.value = null; // reset input
@@ -106,7 +105,6 @@ const AdminAIBotConfigPage = () => {
   const handleViewFile = async (filename) => {
     setViewFilename(filename);
     setViewContent('');
-    setViewError(null);
     setViewLoading(true);
     try {
       const res = await fetch(`${FITBOT_API_URL}/api/files/${filename}`, {
@@ -122,7 +120,8 @@ const AdminAIBotConfigPage = () => {
       }
     } catch (error) {
       console.error(error);
-      setViewError(t('bot_view_error'));
+      enqueueSnackbar(t('bot_view_error'), { variant: 'error' });
+      setViewFilename(null);
     } finally {
       setViewLoading(false);
     }
@@ -131,7 +130,6 @@ const AdminAIBotConfigPage = () => {
   const handleCloseView = () => {
     setViewFilename(null);
     setViewContent('');
-    setViewError(null);
   };
 
   const handleAskBot = async () => {
@@ -185,9 +183,6 @@ const AdminAIBotConfigPage = () => {
             </Button>
           )}
         >
-            
-            {uploadError && <Alert severity="error" sx={{ mb: 2 }}>{uploadError}</Alert>}
-
             <TableContainer component={Paper} variant="outlined">
               <Table>
                 <TableHead>
@@ -291,8 +286,6 @@ const AdminAIBotConfigPage = () => {
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
               <LoadingSkeleton />
             </Box>
-          ) : viewError ? (
-            <Alert severity="error">{viewError}</Alert>
           ) : (
             <Box
               component="pre"

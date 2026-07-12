@@ -15,6 +15,8 @@ import {
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useTranslation } from 'react-i18next';
+import { useSnackbar } from 'notistack';
+import { useEffect } from 'react';
 
 import Page from '../../components/Page';
 import {
@@ -46,6 +48,7 @@ const MenteeSignupPage = () => {
   const [values, setValues] = useState(initialValues);
   const [hydratedKey, setHydratedKey] = useState(null);
   const [success, setSuccess] = useState(false);
+  const { enqueueSnackbar } = useSnackbar();
 
   const ACADEMIC_YEAR_OPTIONS = [
     t('mentee_signup_academic_year_1'),
@@ -104,11 +107,19 @@ const MenteeSignupPage = () => {
         termsAccepted: true,
       });
       setSuccess(true);
+      enqueueSnackbar(t('mentee_signup_saved_alert'), { variant: 'success' });
       setTimeout(() => navigate('/mentorship'), 1200);
     } catch {
       /* surfaced via errorMessage */
     }
   };
+
+  useEffect(() => {
+    if (saveMutation.errorMessage && !success) {
+      enqueueSnackbar(saveMutation.errorMessage, { variant: 'error' });
+    }
+  }, [saveMutation.errorMessage, success, enqueueSnackbar]);
+
 
   if (orgMemberQuery.isFetching) {
     return (
@@ -171,18 +182,6 @@ const MenteeSignupPage = () => {
         <ScrollReveal delay={0.06}><Typography color="text.secondary" mb={3}>
           {t('mentee_signup_subtitle')}
         </Typography></ScrollReveal>
-
-        {success && (
-          <Alert severity="success" sx={{ mb: 2 }}>
-            {t('mentee_signup_saved_alert')}
-          </Alert>
-        )}
-
-        {saveMutation.errorMessage && !success && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {saveMutation.errorMessage}
-          </Alert>
-        )}
 
         <ScrollReveal><Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, borderRadius: 2 }}>
           <ScrollRevealGroup stagger={0.08} sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>

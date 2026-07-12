@@ -56,7 +56,7 @@ import { useTheme } from '@mui/material';
 import { adminOrganizationApi } from '../../utils/api';
 import { useSnackbar } from 'notistack';
 import AdminManualMemberDialog from './AdminManualMemberDialog';
-import { fileToBase64 } from '../../utils/imageUtils';
+import { IMAGE_ACCEPT, useUploadImage, validateImageFile } from '../../utils/imageUtils';
 import { createBrandColor, DEFAULT_BRAND_COLORS, normalizeHexColor } from '../../theme/palette';
 import { useTranslation } from 'react-i18next';
 
@@ -1306,23 +1306,51 @@ const HeroBannerPreview = ({ src, sx }) => {
   );
 };
 
-const UploadImageButton = ({ label, onUpload, sx }) => (
-  <Button
-    component="label"
-    variant="outlined"
-    size="small"
-    startIcon={<CloudUploadIcon />}
-    fullWidth
-    sx={{ textTransform: 'none', alignSelf: 'stretch', ...sx }}
-  >
-    {label}
-    <input type="file" hidden accept="image/*" onChange={async (e) => {
-      const file = e.target.files?.[0];
-      if (file) {
-        onUpload(await fileToBase64(file));
-      }
-    }} />
-  </Button>
-);
+// Uploads the picked image through the image service and passes the hosted URL
+// (never a base64 data URL) up to the caller, so brand assets stored in the DB
+// only hold links.
+const UploadImageButton = ({ label, onUpload, sx }) => {
+  const { t } = useTranslation(['common']);
+  const { enqueueSnackbar } = useSnackbar();
+  const { uploadFile, isPending } = useUploadImage();
+
+  const handleChange = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+
+    const validation = validateImageFile(file, t);
+    if (!validation.valid) {
+      enqueueSnackbar(validation.message, { variant: 'error' });
+      return;
+    }
+
+    try {
+      const url = await uploadFile(file);
+      if (!url) throw new Error('empty_url');
+      onUpload(url);
+    } catch (error) {
+      enqueueSnackbar(
+        error?.response?.data?.message ?? t('common:image_upload_error'),
+        { variant: 'error' },
+      );
+    }
+  };
+
+  return (
+    <Button
+      component="label"
+      variant="outlined"
+      size="small"
+      startIcon={<CloudUploadIcon />}
+      fullWidth
+      disabled={isPending}
+      sx={{ textTransform: 'none', alignSelf: 'stretch', ...sx }}
+    >
+      {label}
+      <input type="file" hidden accept={IMAGE_ACCEPT} onChange={handleChange} />
+    </Button>
+  );
+};
 
 export default AdminOrganizationMasterDetail;

@@ -1,14 +1,14 @@
 import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useEffect, useMemo, useState } from 'react';
-import { useLocation, useParams } from 'react-router';
+import { useLocation, useNavigate, useParams } from 'react-router';
 import {
-  Alert,
   Box,
   Button,
-  Grid,
   Stack,
   Typography,
 } from '@mui/material';
+import Grid from '@mui/material/Grid';
+import { useSnackbar } from 'notistack';
 import StarIcon from '@mui/icons-material/Star';
 import PersonIcon from '@mui/icons-material/Person';
 import EmailIcon from '@mui/icons-material/Email';
@@ -299,6 +299,7 @@ const ReviewsSection = ({
 const OwnProfile = ({ navigate, isMentorshipPath }) => {
   const { t } = useTranslation(['mentorship', 'profile']);
   const authUser = useAuthStore((state) => state.user);
+  const { enqueueSnackbar } = useSnackbar();
   
   const profileQuery = useMyProfile();
   const orgMemberQuery = useMyOrganizationMember();
@@ -356,6 +357,12 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
     }
   }, [access.isMentorPending, isMentorshipPath, navigate]);
 
+  useEffect(() => {
+    if (profileQuery.isError) {
+      enqueueSnackbar(t('profile:error_load_profile', { defaultValue: 'Không thể tải thông tin hồ sơ. Vui lòng thử lại.' }), { variant: 'error' });
+    }
+  }, [profileQuery.isError, enqueueSnackbar, t]);
+
   if (profileQuery.isLoading || orgMemberQuery.isLoading || (isMentorshipPath && access.isLoading)) {
     return (
       <Page title={t('profile:page_title_profile')}>
@@ -369,10 +376,10 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
   if (profileQuery.isError || !profile) {
     return (
       <Page title={t('profile:page_title_profile')}>
-        <Box sx={{ maxWidth: 720, mx: 'auto', py: 6, px: 2 }}>
-          <Alert severity="error" sx={{ borderRadius: 2 }}>
+        <Box sx={{ maxWidth: 720, mx: 'auto', py: 6, px: 2, textAlign: 'center' }}>
+          <Typography color="error">
             {t('profile:error_load_profile', { defaultValue: 'Không thể tải thông tin hồ sơ. Vui lòng thử lại.' })}
-          </Alert>
+          </Typography>
         </Box>
       </Page>
     );
@@ -577,6 +584,7 @@ const PublicMentorProfile = ({ mentorMemberId, navigate }) => {
   const { t } = useTranslation(['mentorship', 'profile']);
   const access = useMentorshipAccessState();
   const [feedbackPage, setFeedbackPage] = useState(0);
+  const { enqueueSnackbar } = useSnackbar();
 
   const profileQuery = useMentorPublicProfile(mentorMemberId, {
     enabled: access.canPreviewMentors,
@@ -606,6 +614,12 @@ const PublicMentorProfile = ({ mentorMemberId, navigate }) => {
     }
   }, [isOwnProfile, navigate]);
 
+  useEffect(() => {
+    if (profileQuery.isError) {
+      enqueueSnackbar(t('profile:error_load_mentor'), { variant: 'error' });
+    }
+  }, [profileQuery.isError, enqueueSnackbar, t]);
+
   if (isOwnProfile) {
     return null;
   }
@@ -620,7 +634,9 @@ const PublicMentorProfile = ({ mentorMemberId, navigate }) => {
 
   if (profileQuery.isError || !mentor) {
     return (
-      <Alert severity="error">{t('profile:error_load_mentor')}</Alert>
+      <Box sx={{ maxWidth: 720, mx: 'auto', py: 6, px: 2, textAlign: 'center' }}>
+        <Typography color="error">{t('profile:error_load_mentor')}</Typography>
+      </Box>
     );
   }
 
