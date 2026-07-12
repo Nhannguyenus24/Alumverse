@@ -3,10 +3,16 @@ import { useTranslation } from 'react-i18next';
 import {
   Box,
   Button,
+  IconButton,
   Skeleton,
   Divider,
+  Tooltip,
   Typography,
 } from '@mui/material';
+import {
+  OpenInFull as OpenInFullIcon,
+  Close as CloseIcon,
+} from '@mui/icons-material';
 
 import Scrollbar from './Scrollbar';
 import ChatAvatar from './ChatAvatar';
@@ -19,7 +25,7 @@ export default function MessagesPreviewPanel({
   queryEnabled = true,
   onContentReady,
 }) {
-  const { t } = useTranslation('network');
+  const { t } = useTranslation(['network', 'common']);
   const navigate = useOrgNavigate();
   const { previews, isPending, isError } = useRecentChatPreviews({ enabled: queryEnabled });
 
@@ -28,9 +34,9 @@ export default function MessagesPreviewPanel({
     onContentReady?.();
   }, [queryEnabled, isPending, previews.length, isError, onContentReady]);
 
-  const goToChat = () => {
+  const goToChat = (chatId) => {
     onClose?.();
-    navigate('/chat');
+    navigate(chatId ? `/chat?chatId=${chatId}` : '/chat');
   };
 
   return (
@@ -56,6 +62,16 @@ export default function MessagesPreviewPanel({
         <Typography variant="h3" fontWeight={700} sx={{ color: 'primary.main' }}>
           {t('conversations')}
         </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <Tooltip title={t('view_all_messages')}>
+            <IconButton size="small" onClick={() => goToChat()} aria-label={t('view_all_messages')}>
+              <OpenInFullIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <IconButton size="small" onClick={onClose} aria-label={t('common:close')}>
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        </Box>
       </Box>
 
       <Divider />
@@ -110,11 +126,11 @@ export default function MessagesPreviewPanel({
             key={chat.id}
             role="button"
             tabIndex={0}
-            onClick={goToChat}
+            onClick={() => goToChat(chat.id)}
             onKeyDown={(event) => {
               if (event.key === 'Enter' || event.key === ' ') {
                 event.preventDefault();
-                goToChat();
+                goToChat(chat.id);
               }
             }}
             sx={{
@@ -170,7 +186,7 @@ export default function MessagesPreviewPanel({
           fullWidth
           variant="text"
           color="primary"
-          onClick={goToChat}
+          onClick={() => goToChat()}
           sx={{ fontWeight: 700, textTransform: 'none', py: 1 }}
         >
           {t('view_all_messages')}
