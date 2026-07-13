@@ -35,6 +35,7 @@ import Page from "../../components/Page";
 import AdminStatusChip from '../../components/admin/AdminStatusChip';
 import AdminDataTable from '../../components/admin/AdminDataTable';
 import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
+import ActionOverlay from '../../components/ActionOverlay';
 import Iconify from '../../components/Iconify';
 import { getVerificationRequests, reopenVerificationRequest, reviewVerificationRequest } from '../../utils/api';
 import { formatDateTime } from '../../utils/dateFormatter';
@@ -301,37 +302,43 @@ const AdminVerificationsPage = () => {
             
             {isPending && isProofRequest(r) && (
               <Tooltip title={t('verif_quick_approve')}>
-                <IconButton 
-                  size="small" 
-                  color="success" 
-                  onClick={(e) => { 
-                    e.stopPropagation(); 
-                    submitReview(r, 'APPROVED'); 
-                  }}
-                >
-                  <CheckCircleOutlineIcon fontSize="small" />
-                </IconButton>
+                <span>
+                  <IconButton
+                    size="small"
+                    color="success"
+                    disabled={submitting}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      submitReview(r, 'APPROVED');
+                    }}
+                  >
+                    <CheckCircleOutlineIcon fontSize="small" />
+                  </IconButton>
+                </span>
               </Tooltip>
             )}
             {isPending && (
               <Tooltip title={t('verif_reopen_form')}>
-                <IconButton
-                  size="small"
-                  color="warning"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    submitReopen(r);
-                  }}
-                >
-                  <RestartAltOutlinedIcon fontSize="small" />
-                </IconButton>
+                <span>
+                  <IconButton
+                    size="small"
+                    color="warning"
+                    disabled={submitting}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      submitReopen(r);
+                    }}
+                  >
+                    <RestartAltOutlinedIcon fontSize="small" />
+                  </IconButton>
+                </span>
               </Tooltip>
             )}
           </Stack>
         );
       }
     }
-  ], [theme, handleReview, submitReview]);
+  ], [theme, handleReview, submitReview, submitReopen, submitting]);
 
   return (
     <Box>
@@ -608,6 +615,8 @@ const AdminVerificationsPage = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <ActionOverlay open={submitting} />
     </Box>
   );
 };

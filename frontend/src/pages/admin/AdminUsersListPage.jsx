@@ -36,6 +36,8 @@ import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteD
 import AdminBanUserDialog from '../../components/admin/AdminBanUserDialog';
 import AdminDataTable from '../../components/admin/AdminDataTable';
 import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetricTile';
+import ActionOverlay from '../../components/ActionOverlay';
+import { useAsyncAction } from '../../hooks/useAsyncAction';
 import { formatAccountStatusLabel } from '../../constants/adminStatusDisplay';
 import { USER_ROLES } from '../../constants/adminDefaultUsers';
 import { useAdminUsersContext } from '../../stores/AdminStore';
@@ -114,6 +116,11 @@ const AdminUsersListPage = () => {
   } = useAdminUsersContext();
 
   const { setBreadcrumbs, adminBase } = useOutletContext();
+  // The store's mutations already show their own success/error snackbars and
+  // throw on failure. We use run() only for its pending flag + re-entrancy lock
+  // (drops spam-clicks) + overlay; swallow the store's throw so run() doesn't
+  // enqueue a duplicate error snackbar.
+  const { run, pending } = useAsyncAction();
   const [searchTerm, setSearchTerm] = useState(search);
   const debouncedSearch = useDebounce(searchTerm, 500);
 
@@ -243,27 +250,38 @@ const AdminUsersListPage = () => {
 
           {u.status === 'BANNED' ? (
             <Tooltip title={t('admin:tooltip_unban')}>
-              <IconButton size="small" color="success" onClick={() => unbanUser(u.id)}>
-                <LockOpenOutlinedIcon fontSize="small" />
-              </IconButton>
+              <span>
+                <IconButton
+                  size="small"
+                  color="success"
+                  disabled={pending}
+                  onClick={() => run(() => unbanUser(u.id).catch(() => {}))}
+                >
+                  <LockOpenOutlinedIcon fontSize="small" />
+                </IconButton>
+              </span>
             </Tooltip>
           ) : (
             <Tooltip title={t('admin:tooltip_ban')}>
-              <IconButton size="small" color="warning" onClick={() => setBanTarget(u)}>
-                <BlockOutlinedIcon fontSize="small" />
-              </IconButton>
+              <span>
+                <IconButton size="small" color="warning" disabled={pending} onClick={() => setBanTarget(u)}>
+                  <BlockOutlinedIcon fontSize="small" />
+                </IconButton>
+              </span>
             </Tooltip>
           )}
 
           <Tooltip title={t('admin:tooltip_delete')}>
-            <IconButton size="small" color="error" onClick={() => setDeleteTarget(u)}>
-              <DeleteOutlineIcon fontSize="small" />
-            </IconButton>
+            <span>
+              <IconButton size="small" color="error" disabled={pending} onClick={() => setDeleteTarget(u)}>
+                <DeleteOutlineIcon fontSize="small" />
+              </IconButton>
+            </span>
           </Tooltip>
         </Stack>
       )
     }
-  ], [theme, navigate, unbanUser, setBanTarget, setDeleteTarget, setUserStatusMenu, setUserFormMode, setEditingUser, setUserFormOpen, roleLabel, t]);
+  ], [theme, navigate, unbanUser, run, pending, setBanTarget, setDeleteTarget, setUserStatusMenu, setUserFormMode, setEditingUser, setUserFormOpen, roleLabel, t]);
 
   const Filters = (
     <Stack direction="row" spacing={1}>
@@ -447,10 +465,16 @@ const AdminUsersListPage = () => {
       <AdminBanUserDialog
         open={Boolean(banTarget)}
         user={banTarget}
+        loading={pending}
         onClose={() => setBanTarget(null)}
-        onConfirm={async (p) => {
-          if (banTarget) await banUser(banTarget.id, p);
-          setBanTarget(null);
+        onConfirm={(p) => {
+          if (!banTarget) return;
+          // Store shows its own snackbar + throws on error; swallow so run()
+          // doesn't duplicate the snackbar, and only close the dialog on success.
+          run(
+            () => banUser(banTarget.id, p).then(() => true).catch(() => false),
+            { onSuccess: (ok) => { if (ok) setBanTarget(null); } },
+          );
         }}
       />
 
@@ -458,12 +482,20 @@ const AdminUsersListPage = () => {
         open={Boolean(deleteTarget)}
         title={t('admin:delete_user_title')}
         description={deleteTarget ? t('admin:delete_user_description', { name: deleteTarget.fullName || deleteTarget.email, id: deleteTarget.id }) : ''}
+        loading={pending}
         onClose={() => setDeleteTarget(null)}
-        onConfirm={async () => {
-          if (deleteTarget) await deleteUser(deleteTarget.id);
-          setDeleteTarget(null);
+        onConfirm={() => {
+          if (!deleteTarget) return;
+          // Store shows its own snackbar + throws on error; swallow so run()
+          // doesn't duplicate the snackbar, and only close the dialog on success.
+          run(
+            () => deleteUser(deleteTarget.id).then(() => true).catch(() => false),
+            { onSuccess: (ok) => { if (ok) setDeleteTarget(null); } },
+          );
         }}
       />
+
+      <ActionOverlay open={pending} />
     </Box>
   );
 };

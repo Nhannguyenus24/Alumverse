@@ -13,6 +13,8 @@ import AdminOrganizationEditDialog from '../../components/admin/AdminOrganizatio
 import AdminOrganizationIntroductionDialog from '../../components/admin/AdminOrganizationIntroductionDialog';
 import { adminOrganizationApi, organizationApi } from '../../utils/api';
 import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetricTile';
+import ActionOverlay from '../../components/ActionOverlay';
+import { useAsyncAction } from '../../hooks/useAsyncAction';
 import { useAdminSystemContext } from '../../stores/AdminStore';
 
 const ORG_LOCAL_TOUCH_KEY = 'admin-organizations-local-touch';
@@ -62,6 +64,10 @@ const sortOrganizationsByRecent = (organizations) => (
 const AdminOrganizationsPage = () => {
   const { t } = useTranslation('admin');
   const { enqueueSnackbar } = useSnackbar();
+  // Handlers below already enqueue their own success/error snackbars and don't
+  // throw; run() adds a pending flag + re-entrancy lock (drops spam-clicks) +
+  // overlay without duplicating the snackbar.
+  const { run, pending } = useAsyncAction();
   const [loading, setLoading] = useState(true);
   const [organizations, setOrganizations] = useState([]);
   const [selectedOrganizationId, setSelectedOrganizationId] = useState(null);
@@ -165,52 +171,60 @@ const AdminOrganizationsPage = () => {
       departmentName: payload.departmentName,
     };
 
-    try {
-      const updated = await adminOrganizationApi.updateOrganization(targetId, cleanPayload);
-      const touchedAt = new Date().toISOString();
-      localTouchRef.current = {
-        ...localTouchRef.current,
-        [String(targetId)]: touchedAt,
-      };
-      writeLocalTouchMap(localTouchRef.current);
+    await run(async () => {
+      try {
+        const updated = await adminOrganizationApi.updateOrganization(targetId, cleanPayload);
+        const touchedAt = new Date().toISOString();
+        localTouchRef.current = {
+          ...localTouchRef.current,
+          [String(targetId)]: touchedAt,
+        };
+        writeLocalTouchMap(localTouchRef.current);
 
-      setOrganizations((prev) => {
-        const current = prev.find((item) => item.id === targetId);
-        const updatedItem = withDefaults({
-          ...(updated || { ...current, ...cleanPayload }),
-          _localTouchedAt: touchedAt,
+        setOrganizations((prev) => {
+          const current = prev.find((item) => item.id === targetId);
+          const updatedItem = withDefaults({
+            ...(updated || { ...current, ...cleanPayload }),
+            _localTouchedAt: touchedAt,
+          });
+          return sortOrganizationsByRecent([updatedItem, ...prev.filter((item) => item.id !== targetId)]);
         });
-        return sortOrganizationsByRecent([updatedItem, ...prev.filter((item) => item.id !== targetId)]);
-      });
-      setEditDialogOpen(false);
-      enqueueSnackbar(t('org_update_success'), { variant: 'success' });
-    } catch (error) {
-      enqueueSnackbar(error?.response?.data?.message || t('org_update_error'), { variant: 'error' });
-    }
-  }, [editTarget, enqueueSnackbar]);
+        setEditDialogOpen(false);
+        enqueueSnackbar(t('org_update_success'), { variant: 'success' });
+      } catch (error) {
+        enqueueSnackbar(error?.response?.data?.message || t('org_update_error'), { variant: 'error' });
+      }
+    });
+  }, [editTarget, enqueueSnackbar, run, t]);
 
   const handleDeleteOrganization = useCallback(async (orgId) => {
     if (!window.confirm(t('org_delete_confirm'))) return;
-    try {
-      await adminOrganizationApi.deleteOrganization(orgId);
-      setOrganizations((prev) => prev.filter((item) => item.id !== orgId));
-      enqueueSnackbar(t('org_delete_success'), { variant: 'success' });
-    } catch (error) {
-      enqueueSnackbar(error?.response?.data?.message || t('org_delete_error'), { variant: 'error' });
-    }
-  }, [enqueueSnackbar]);
+    // run() provides the pending flag + re-entrancy lock + overlay; the handler
+    // already shows its own snackbar, so swallow to avoid a duplicate one.
+    await run(async () => {
+      try {
+        await adminOrganizationApi.deleteOrganization(orgId);
+        setOrganizations((prev) => prev.filter((item) => item.id !== orgId));
+        enqueueSnackbar(t('org_delete_success'), { variant: 'success' });
+      } catch (error) {
+        enqueueSnackbar(error?.response?.data?.message || t('org_delete_error'), { variant: 'error' });
+      }
+    });
+  }, [enqueueSnackbar, run, t]);
 
   const handleUpdateIntroduction = useCallback(async (payload) => {
     if (!selectedOrganizationId) return;
-    try {
-      const updated = await adminOrganizationApi.upsertIntroduction(selectedOrganizationId, payload);
-      setIntroduction(updated || { ...introduction, ...payload });
-      setIntroDialogOpen(false);
-      enqueueSnackbar(t('org_intro_update_success'), { variant: 'success' });
-    } catch (error) {
-      enqueueSnackbar(error?.response?.data?.message || t('org_intro_update_error'), { variant: 'error' });
-    }
-  }, [selectedOrganizationId, introduction, enqueueSnackbar]);
+    await run(async () => {
+      try {
+        const updated = await adminOrganizationApi.upsertIntroduction(selectedOrganizationId, payload);
+        setIntroduction(updated || { ...introduction, ...payload });
+        setIntroDialogOpen(false);
+        enqueueSnackbar(t('org_intro_update_success'), { variant: 'success' });
+      } catch (error) {
+        enqueueSnackbar(error?.response?.data?.message || t('org_intro_update_error'), { variant: 'error' });
+      }
+    });
+  }, [selectedOrganizationId, introduction, enqueueSnackbar, run, t]);
 
   const handlePromoteOrganization = useCallback((orgId) => {
     const touchedAt = new Date().toISOString();
@@ -238,27 +252,29 @@ const AdminOrganizationsPage = () => {
   }, [organizations]);
 
   const handleCreateOrganization = useCallback(async (payload) => {
-    try {
-      const created = await adminOrganizationApi.createOrganization(payload);
-      const touchedAt = new Date().toISOString();
-      if (created?.id) {
-        localTouchRef.current = {
-          ...localTouchRef.current,
-          [String(created.id)]: touchedAt,
-        };
-        writeLocalTouchMap(localTouchRef.current);
-      }
+    await run(async () => {
+      try {
+        const created = await adminOrganizationApi.createOrganization(payload);
+        const touchedAt = new Date().toISOString();
+        if (created?.id) {
+          localTouchRef.current = {
+            ...localTouchRef.current,
+            [String(created.id)]: touchedAt,
+          };
+          writeLocalTouchMap(localTouchRef.current);
+        }
 
-      setOrganizations(prev => sortOrganizationsByRecent([
-        withDefaults({ ...created, _localTouchedAt: touchedAt }),
-        ...prev,
-      ]));
-      setEditDialogOpen(false);
-      enqueueSnackbar(t('org_create_success'), { variant: 'success' });
-    } catch (error) {
-      enqueueSnackbar(error?.response?.data?.message || t('org_create_error'), { variant: 'error' });
-    }
-  }, [enqueueSnackbar]);
+        setOrganizations(prev => sortOrganizationsByRecent([
+          withDefaults({ ...created, _localTouchedAt: touchedAt }),
+          ...prev,
+        ]));
+        setEditDialogOpen(false);
+        enqueueSnackbar(t('org_create_success'), { variant: 'success' });
+      } catch (error) {
+        enqueueSnackbar(error?.response?.data?.message || t('org_create_error'), { variant: 'error' });
+      }
+    });
+  }, [enqueueSnackbar, run, t]);
 
   if (loading && organizations.length === 0) {
     return (
@@ -288,6 +304,7 @@ const AdminOrganizationsPage = () => {
         <Button
           variant="contained"
           startIcon={<AddIcon />}
+          disabled={pending}
           onClick={() => { setEditTarget(null); setEditDialogOpen(true); }}
           sx={{ borderRadius: 1, fontWeight: 700, textTransform: 'none' }}
         >
@@ -344,6 +361,7 @@ const AdminOrganizationsPage = () => {
         open={editDialogOpen}
         onClose={() => setEditDialogOpen(false)}
         organization={editTarget}
+        loading={pending}
         onConfirm={editTarget ? (payload) => handleUpdateOrganization(editTarget.id, payload) : handleCreateOrganization}
       />
 
@@ -353,6 +371,8 @@ const AdminOrganizationsPage = () => {
         introduction={introduction}
         onConfirm={handleUpdateIntroduction}
       />
+
+      <ActionOverlay open={pending} />
     </Box>
   );
 };
