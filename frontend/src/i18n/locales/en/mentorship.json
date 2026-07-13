@@ -228,6 +228,10 @@
   "signup_profile_exp_company": "Company",
   "signup_profile_exp_period": "Period",
   "signup_profile_exp_period_placeholder": "E.g. 06/2024 — Present",
+  "signup_profile_exp_start": "Start (MM/YYYY)",
+  "signup_profile_exp_end": "End (MM/YYYY)",
+  "signup_profile_exp_current": "Present",
+  "signup_profile_exp_current_label": "Still working here",
   "signup_profile_exp_description": "Job description / outcomes",
   "signup_profile_projects_title": "Notable projects",
   "signup_profile_add_project": "Add project",
@@ -457,5 +461,7 @@
   "meeting_link_required": "Please enter the meeting link",
   "meeting_link_invalid": "Invalid meeting link. Only links from: {{platforms}} are accepted.",
   "meeting_link_zoom_warning": "This Zoom link may require entering a password manually. Prefer a passwordless link so mentees can join right away.",
-  "timezone_vietnam": "(GMT+07:00) Indochina Time - Ho Chi Minh City"
+  "timezone_vietnam": "(GMT+07:00) Indochina Time - Ho Chi Minh City",
+  "bachelor_of": "Bachelor of {{name}}",
+  "program_of": "Program {{name}}"
 }
