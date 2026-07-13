@@ -25,6 +25,7 @@ import com.service.backend.user.dto.JoinOrganizationRequest;
 import com.service.backend.user.dto.NotificationResponse;
 import com.service.backend.user.dto.NotificationSettingsResponse;
 import com.service.backend.user.dto.PendingPeerVerificationResponse;
+import com.service.backend.user.dto.RegisterDeviceTokenRequest;
 import com.service.backend.user.dto.RequestPeerVerificationRequest;
 import com.service.backend.user.dto.UpdateAvatarRequest;
 import com.service.backend.user.dto.UpdateCoverRequest;
@@ -168,6 +169,21 @@ public class UserController {
                 .flatMap(userId -> userService.createVerificationRequest(userId, request))
                 .thenReturn(ResponseEntity.status(HttpStatus.CREATED)
                         .body(new ApiResponse<>("Verification request submitted successfully", true)));
+    }
+
+    @PostMapping("/device-tokens")
+    public Mono<ResponseEntity<ApiResponse<Boolean>>> registerDeviceToken(
+            @Valid @RequestBody RegisterDeviceTokenRequest request) {
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(userId -> userService.registerDeviceToken(userId, request.getFcmToken(), request.getPlatform()))
+                .thenReturn(ResponseEntity.ok(new ApiResponse<>("Device token registered", true)));
+    }
+
+    @DeleteMapping("/device-tokens/{fcmToken}")
+    public Mono<ResponseEntity<ApiResponse<Boolean>>> unregisterDeviceToken(
+            @PathVariable String fcmToken) {
+        return userService.unregisterDeviceToken(fcmToken)
+                .thenReturn(ResponseEntity.ok(new ApiResponse<>("Device token removed", true)));
     }
 
     @PostMapping("/peer-verifications/request")

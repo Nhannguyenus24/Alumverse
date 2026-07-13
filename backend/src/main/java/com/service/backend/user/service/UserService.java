@@ -54,9 +54,18 @@ public class UserService {
     private final FileUploadService fileUploadService;
     private final ImageService imageService;
     private final NotificationService notificationService;
+    private final com.service.backend.user.dao.DeviceTokenRepository deviceTokenRepository;
     private final OCRService ocrService;
     private final com.service.backend.shared.service.EmailService emailService;
 
+
+    public Mono<Void> registerDeviceToken(Long currentUserId, String fcmToken, String platform) {
+        return deviceTokenRepository.upsertToken(currentUserId.intValue(), fcmToken, platform).then();
+    }
+
+    public Mono<Void> unregisterDeviceToken(String fcmToken) {
+        return deviceTokenRepository.deleteByToken(fcmToken).then();
+    }
 
     @Transactional
     public Mono<Void> createVerificationRequest(Long currentUserId, CreateVerificationRequest request) {
