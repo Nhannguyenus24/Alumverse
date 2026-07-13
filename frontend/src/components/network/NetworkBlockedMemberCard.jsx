@@ -1,9 +1,17 @@
-
-
+import {
+  Avatar,
+  Box,
+  Button,
+  Card,
+  CircularProgress,
+  Stack,
+  Typography,
+} from '@mui/material';
 import { useTranslation } from 'react-i18next';
 
 import { formatDateTime } from '../../utils/dateFormatter';
 import { useCanContribute } from '../../hooks/useCanContribute';
+import { ContributeGuardTooltip } from '../ContributeGuard';
 
 const NetworkBlockedMemberCard = ({
   member,

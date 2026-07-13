@@ -1,8 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
+import { Box, Button, Grid, Paper, Stack, Typography, Skeleton } from '@mui/material';
 import { useOutletContext } from 'react-router';
+import AddIcon from '@mui/icons-material/Add';
+import BusinessIcon from '@mui/icons-material/Business';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import ErrorIcon from '@mui/icons-material/Error';
+import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
+import AdminOrganizationMasterDetail from '../../components/admin/AdminOrganizationMasterDetail';
+import AdminOrganizationEditDialog from '../../components/admin/AdminOrganizationEditDialog';
+import AdminOrganizationIntroductionDialog from '../../components/admin/AdminOrganizationIntroductionDialog';
 import { adminOrganizationApi, organizationApi } from '../../utils/api';
+import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetricTile';
 import { useAdminSystemContext } from '../../stores/AdminStore';
 
 const ORG_LOCAL_TOUCH_KEY = 'admin-organizations-local-touch';

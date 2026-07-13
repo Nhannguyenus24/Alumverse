@@ -1,4 +1,8 @@
 
+import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
+import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined';
+import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
+import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined';
 
 export const getMentorshipStats = (t) => [
   { value: '500+', label: t('mentorship:stats_mentors') },

@@ -2,13 +2,26 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   alpha,
+  Alert,
+  Avatar,
+  Box,
+  CircularProgress,
+  Drawer,
+  IconButton,
+  Stack,
+  TextField,
+  Typography,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
+import SendIcon from '@mui/icons-material/Send';
+import Scrollbar from '../Scrollbar';
 import { useNetworkConversationActions } from '../../hooks/network/useNetworkConversationActions';
 import { useNetworkCurrentMemberId } from '../../hooks/network/useNetworkCurrentMemberId';
 import { useCanContribute } from '../../hooks/useCanContribute';
 import { usePeerVerificationCounterparts } from '../../hooks/usePeerVerificationCounterparts';
+import { VerificationRequiredAlert } from '../ContributeGuard';
 import {
   isComposerEnabled,
   resolveConnectionDrawerState,
@@ -17,6 +30,7 @@ import { buildProgramMajorRows } from '../../utils/academicUtils';
 import { CONVERSATION_REQUEST_STATUS } from '../../constants/conversationRequestStatus';
 import { exceedsLengthLimit, MAX_MESSAGE_LENGTH } from '../../utils/messageContent';
 
+import ChatAvatar from '../ChatAvatar';
 
 function NetworkMessageBubble({ message, isOwn }) {
   return (

@@ -1,18 +1,28 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
+  Box,
+  Container,
+  Stack,
+  Typography,
+  Button,
+  Card,
   useTheme,
   useMediaQuery,
 } from "@mui/material";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import Page from "../../components/Page";
 import { usePublishedAchievements } from "../../hooks/articles/usePublishedAchievements";
 import { usePublishedAlumniPosts } from "../../hooks/articles/usePublishedAlumniPosts";
 import { usePublishedNews } from "../../hooks/news/usePublishedNews";
 import { normalizeNews } from "../../hooks/articles/normalizeArticle";
 import { toCardShape } from "../../hooks/articles/toCardShape";
+import Logo from "../../components/Logo";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
 import { keyframes } from "@emotion/react";
 import { alpha } from "@mui/material/styles";
 import apiClient from "../../utils/axios";
+import ArticleCard from "../../components/articles/ArticleCard";
 import useOrganizationStore from "../../stores/organizationStore";
 
 const HERO_LOGO = "/alumverse_logo/Logo_White.svg";

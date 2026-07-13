@@ -1,3 +1,8 @@
+import { Box, Typography, Button, LinearProgress, Stack } from "@mui/material";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { useState } from "react";
 import dayjs from "dayjs";
 import { useTranslation } from "react-i18next";

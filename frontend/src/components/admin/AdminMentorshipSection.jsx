@@ -1,4 +1,14 @@
+import { Stack } from '@mui/material';
 import { useTranslation } from 'react-i18next';
+import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
+import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
+import PendingActionsOutlinedIcon from '@mui/icons-material/PendingActionsOutlined';
+import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
+import TaskAltOutlinedIcon from '@mui/icons-material/TaskAltOutlined';
+import RateReviewOutlinedIcon from '@mui/icons-material/RateReviewOutlined';
+import Chart from '../Chart';
+import AdminSectionPanel from './AdminSectionPanel';
+import AdminDashboardMetricTile from './AdminDashboardMetricTile';
 import useAdminMentorshipStats from '../../hooks/admin/useAdminMentorshipStats';
 
 const metricRowSx = {

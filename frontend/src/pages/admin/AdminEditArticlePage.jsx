@@ -1,8 +1,17 @@
+import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useEffect, useState } from 'react';
 import { useParams, useOutletContext } from 'react-router';
 import { useTranslation } from 'react-i18next';
-
-
+import {
+  Box,
+  Button,
+  Container,
+  Stack,
+  Typography,
+} from '@mui/material';
+import Page from '../../components/Page';
+import PostArticleForm from '../../components/PostArticleForm';
+import CoverUpload from '../../components/CoverUpload';
 import { useArticleById } from '../../hooks/articles/useArticleById';
 import { useUpdateArticle } from '../../hooks/articles/useUpdateArticle';
 import {

@@ -2,7 +2,15 @@ import { useEffect, useState } from 'react';
 import { useOutletContext } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
-
+import {
+  Box, Button, Dialog, DialogActions, DialogContent, DialogTitle,
+  MenuItem, Stack, Tab, Tabs, TextField, Typography,
+} from '@mui/material';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
+import AdminDataTable from '../../components/admin/AdminDataTable';
+import AdminStatusChip from '../../components/admin/AdminStatusChip';
 import { useAdminSystemContext } from '../../stores/AdminStore';
 import { formatDateTime } from '../../utils/dateFormatter';
 import { adminEducationApi } from '../../utils/api';

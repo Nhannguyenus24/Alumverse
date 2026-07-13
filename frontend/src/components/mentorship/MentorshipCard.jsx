@@ -1,4 +1,7 @@
+import { Avatar, Box, Button, Card, Stack, Tooltip, Typography } from "@mui/material";
+import StarIcon from "@mui/icons-material/Star";
 import { useTranslation } from "react-i18next";
+import MentorshipTag from "./MentorshipTag";
 
 const MentorshipCard = ({
   avatar,

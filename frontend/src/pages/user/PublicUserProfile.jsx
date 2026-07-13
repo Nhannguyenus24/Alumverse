@@ -1,12 +1,24 @@
+import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useCallback, useEffect, useState } from 'react';
-
-
+import {
+  Box,
+  Grid,
+  Stack,
+  Typography,
+} from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import EmailIcon from '@mui/icons-material/Email';
 import WorkIcon from '@mui/icons-material/Work';
 import BusinessIcon from '@mui/icons-material/Business';
 import { useTranslation } from 'react-i18next';
 
+import ProfileLayout from '../../layouts/ProfileLayout';
+import NetworkMessageDrawer from '../../components/network/NetworkMessageDrawer';
+import UserHighlights from '../../components/profile/UserHighlights';
+import AcademicInfoSection from '../../components/profile/AcademicInfoSection';
+import PersonalInfoRow from '../../components/profile/PersonalInfoRow';
+import ProfileSectionTitle from '../../components/profile/ProfileSectionTitle';
+import SocialLinksRenderer from '../../components/profile/SocialLinksRenderer';
 import { CONVERSATION_REQUEST_STATUS } from '../../constants/conversationRequestStatus';
 import { useCheckConversationRequestStatus } from '../../hooks/network/useCheckConversationRequestStatus';
 import { useNetworkCurrentMemberId } from '../../hooks/network/useNetworkCurrentMemberId';
@@ -14,6 +26,7 @@ import { useNotification } from '../../hooks/useNotification';
 import { usePublicProfile } from '../../hooks/profile/usePublicProfile';
 import { resolveProfileRoleLabel } from '../../utils/profileRoleUtils';
 import { resolveMediaUrl } from '../../utils/imageUtils';
+import { ScrollReveal } from '../../components/animations/ScrollReveal';
 
 const DEFAULT_COVER =
   'https://ethnasia.com/cdn/shop/articles/sean-o-KMn4VEeEPR8-unsplash_edited.jpg?v=1621585619';

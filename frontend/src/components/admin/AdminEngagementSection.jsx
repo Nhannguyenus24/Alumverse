@@ -1,4 +1,12 @@
 import { useTranslation } from 'react-i18next';
+import { Box, Stack } from '@mui/material';
+import TodayOutlinedIcon from '@mui/icons-material/TodayOutlined';
+import DateRangeOutlinedIcon from '@mui/icons-material/DateRangeOutlined';
+import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined';
+import InsightsOutlinedIcon from '@mui/icons-material/InsightsOutlined';
+import Chart from '../Chart';
+import AdminSectionPanel from './AdminSectionPanel';
+import AdminDashboardMetricTile from './AdminDashboardMetricTile';
 import useAdminEngagementStats from '../../hooks/admin/useAdminEngagementStats';
 
 const metricRowSx = {

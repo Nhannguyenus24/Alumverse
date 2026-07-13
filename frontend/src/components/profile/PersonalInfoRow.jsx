@@ -1,3 +1,5 @@
+import React from 'react';
+import { Box, Stack, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 
 const InfoRow = ({ icon: Icon, label, value }) => {

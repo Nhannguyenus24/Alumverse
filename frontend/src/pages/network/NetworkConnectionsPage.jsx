@@ -1,5 +1,7 @@
 import { useTranslation } from 'react-i18next';
 
+import NetworkSectionLayout from '../../components/network/NetworkSectionLayout';
+import NetworkConnectionsPanel from '../../components/network/NetworkConnectionsPanel';
 
 const NetworkConnectionsPage = () => {
   const { t } = useTranslation('network');

@@ -1,6 +1,8 @@
-import { lazy, useCallback, useState } from 'react';
+import { Suspense, lazy, useCallback, useState } from 'react';
+import { Box } from '@mui/material';
 import { useLocation, useParams } from 'react-router';
 
+import ChatFloatingButton from './ChatFloatingButton';
 import { getNormalizedPathname } from '../utils/pathUtils';
 import { useFeatureEnabled } from '../hooks/useFeatureFlags';
 

@@ -1,4 +1,5 @@
 import React from 'react';
+import Chip from '@mui/material/Chip';
 import { useTranslation } from 'react-i18next';
 import { resolveAdminStatusChip } from '../../constants/adminStatusDisplay';
 

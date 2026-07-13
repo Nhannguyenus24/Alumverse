@@ -1,7 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-
-
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  Box,
+  CircularProgress,
+} from '@mui/material';
 import { useNotification } from '../../hooks/useNotification';
+import WYSIWYG from '../WYSIWYG';
 import { useTranslation } from 'react-i18next';
 
 const EditPostDialog = ({

@@ -1,11 +1,35 @@
+import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useMemo, useState, useCallback } from 'react';
-
-
+import {
+  Box,
+  Button,
+  Card,
+  Checkbox,
+  FormControlLabel,
+  IconButton,
+  Stack,
+  Typography,
+} from '@mui/material';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogTitle from '@mui/material/DialogTitle';
 
 import dayjs from 'dayjs';
+import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { TimePicker } from '@mui/x-date-pickers/TimePicker';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 
+import Page from '../../components/Page';
 import { useSnackbar } from 'notistack';
+import MentorshipProfileLayout from '../../layouts/ProfileLayout';
+import MentorshipBookingItem from '../../components/mentorship/MentorshipBookingItem';
+import MentorshipBookingWindowCard from '../../components/mentorship/MentorshipBookingWindowCard';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useMyMentorProfile } from '../../hooks/mentorship/useMyMentorProfile';
 import { useMyMentorSessions } from '../../hooks/mentorship/useMyMentorSessions';
@@ -18,8 +42,11 @@ import { useUpdateMentorProfile } from '../../hooks/mentorship/useUpdateMentorPr
 import { formatFixed } from '../../utils/numberFormatter';
 import { getMentorProfileTabs } from '../../constants/mentorshipNav';
 import { useTranslation } from 'react-i18next';
-
-
+import {
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from '../../components/animations/ScrollReveal';
 
 const DEFAULT_COVER =
   'https://info.cognician.com/hubfs/220201%20mentorship-%20desktop.png';
@@ -101,17 +128,17 @@ const MentorshipYourCalendarPage = () => {
   const [editStartTime, setEditStartTime] = useState(null);
   const [editEndTime, setEditEndTime] = useState(null);
 
-  const openEditSlot = (slot) => {
+  const openEditSlot = useCallback((slot) => {
     setEditingSlot(slot);
     setEditStartTime(dayjs(slot.startTime));
     setEditEndTime(dayjs(slot.endTime));
-  };
+  }, []);
 
-  const closeEditSlot = () => {
+  const closeEditSlot = useCallback(() => {
     setEditingSlot(null);
     setEditStartTime(null);
     setEditEndTime(null);
-  };
+  }, []);
 
   const submitEditSlot = useCallback(async () => {
     if (!editingSlot || !editStartTime || !editEndTime) return;
@@ -256,7 +283,7 @@ const MentorshipYourCalendarPage = () => {
     try {
       await deleteMutation.deleteAvailability(id);
       enqueueSnackbar(t('cal_slot_deleted', 'Slot deleted'), { variant: 'success' });
-    } catch {
+    } catch (err) {
       enqueueSnackbar(deleteMutation.errorMessage || 'Failed to delete', { variant: 'error' });
     }
   }, [deleteMutation, enqueueSnackbar, t]);

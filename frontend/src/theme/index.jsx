@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
+import { CssBaseline } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import { createTheme } from '@mui/material/styles';
+import { createTheme, ThemeProvider as MUIThemeProvider } from '@mui/material/styles';
 import useOrganizationStore from '../stores/organizationStore';
 import useThemeModeStore from '../stores/themeModeStore';
 import palette, { createBrandPalette } from './palette';

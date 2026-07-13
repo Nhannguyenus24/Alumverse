@@ -1,16 +1,28 @@
+import LoadingSkeleton from '../LoadingSkeleton';
 import { useMemo, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-
-
+import {
+  Alert,
+  Box,
+  Button,
+  Stack,
+  Typography,
+} from '@mui/material';
 import { useSnackbar } from 'notistack';
 
+import SearchBar from '../SearchBar';
+import MentorshipCard from './MentorshipCard';
+import DynamicFilterBar from '../DynamicFilterBar';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useBrowseMentors } from '../../hooks/mentorship/useBrowseMentors';
 import { useMentorshipAccessState } from '../../hooks/mentorship/useMentorshipAccessState';
 import { useSkillSearch } from '../../hooks/mentorship/useSkillSearch';
 import { formatRating } from '../../utils/numberFormatter';
-
-
+import {
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from '../animations/ScrollReveal';
 
 const PAGE_SIZE = 9;
 

@@ -2,9 +2,13 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
+import { Box, Typography, Button } from '@mui/material';
+import Page from '../../components/Page';
+import Input from '../../components/Input';
 import { sendOtpSchema } from '../../utils/regexUtils';
 import { useAuth } from '../../hooks/useAuth';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
+import { ScrollRevealFields } from '../../components/animations/ScrollReveal';
 
 const ForgotPasswordPage = () => {
   const { t } = useTranslation(['auth', 'common']);

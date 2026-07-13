@@ -3,9 +3,39 @@ import { useOutletContext } from 'react-router';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import {
+  Box,
+  Button,
+  IconButton,
+  Typography,
+  Stack,
   alpha,
   useTheme,
+  Avatar,
+  Tooltip,
+  TextField,
+  MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Link,
+  Chip,
+  Divider,
+  Slider,
 } from '@mui/material';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import HighlightOffIcon from '@mui/icons-material/HighlightOff';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
+import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
+import RestartAltOutlinedIcon from '@mui/icons-material/RestartAltOutlined';
+import OpenInNewOutlinedIcon from '@mui/icons-material/OpenInNewOutlined';
+import ZoomInOutlinedIcon from '@mui/icons-material/ZoomInOutlined';
+import ZoomOutOutlinedIcon from '@mui/icons-material/ZoomOutOutlined';
+import Page from "../../components/Page";
+import AdminStatusChip from '../../components/admin/AdminStatusChip';
+import AdminDataTable from '../../components/admin/AdminDataTable';
+import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
+import Iconify from '../../components/Iconify';
 import { getVerificationRequests, reopenVerificationRequest, reviewVerificationRequest } from '../../utils/api';
 import { formatDateTime } from '../../utils/dateFormatter';
 import { useDebounce } from '../../hooks/useDebounce';

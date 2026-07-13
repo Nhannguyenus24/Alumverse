@@ -1,5 +1,8 @@
-import { lazy, useMemo, useState } from 'react';
+import { Suspense, lazy, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Box, Link, Typography } from '@mui/material';
+import BrokenImageOutlinedIcon from '@mui/icons-material/BrokenImageOutlined';
+import DownloadOutlinedIcon from '@mui/icons-material/DownloadOutlined';
 
 // Defer the lightbox bundle (+ its CSS) until the user first opens the zoom view.
 const FundLogoLightbox = lazy(() => import('../FundLogoLightbox'));

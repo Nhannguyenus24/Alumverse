@@ -1,3 +1,7 @@
+import SearchIcon from '@mui/icons-material/Search';
+import MailOutlineIcon from '@mui/icons-material/MailOutline';
+import PeopleIcon from '@mui/icons-material/People';
+import BlockIcon from '@mui/icons-material/Block';
 
 export const getNetworkSidebarItems = (t) => [
   { id: '/network', label: t('network:title'), icon: <SearchIcon /> },

@@ -1,5 +1,5 @@
 import React from 'react';
-import { useTheme, alpha } from '@mui/material';
+import { Box, Typography, useTheme, alpha } from '@mui/material';
 
 const AdminSectionPanel = ({ title, subtitle, action, children, sx }) => {
   const theme = useTheme();

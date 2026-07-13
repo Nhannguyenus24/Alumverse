@@ -1,7 +1,16 @@
 // components/profile/AvatarUploadDialog.jsx
 
-
-
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  Box,
+  Slider,
+} from "@mui/material";
+import CameraAltIcon from "@mui/icons-material/CameraAlt";
+import Cropper from "react-easy-crop";
 import { useTranslation } from "react-i18next";
 
 export default function AvatarUploadDialog({

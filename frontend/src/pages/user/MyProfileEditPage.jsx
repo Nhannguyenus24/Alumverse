@@ -1,14 +1,33 @@
+import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useEffect, useState, useCallback } from 'react';
 import { useLocation } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
-
-
+import {
+  Alert,
+  Box,
+  Button,
+  IconButton,
+  Stack,
+  TextField,
+  Typography,
+} from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import PersonIcon from '@mui/icons-material/Person';
+import EmailIcon from '@mui/icons-material/Email'
+import PhoneIcon from '@mui/icons-material/Phone';
+import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import WorkIcon from '@mui/icons-material/Work';
+import LinkIcon from '@mui/icons-material/Link';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import SchoolIcon from '@mui/icons-material/School';
 import ArticleIcon from '@mui/icons-material/Article';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import PsychologyIcon from '@mui/icons-material/Psychology';
+import Avatar from '@mui/material/Avatar';
 
+import Page from '../../components/Page';
+import ProfileLayout from '../../layouts/ProfileLayout';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
 import { useMyProfile } from '../../hooks/profile/useMyProfile';
@@ -18,6 +37,7 @@ import useOrganizationStore from '../../stores/organizationStore';
 import useAuthStore from '../../stores/authStore';
 
 import useAvatarCrop from '../../hooks/profile/useAvatarCrop';
+import AvatarUploadDialog from '../../components/profile/AvatarUploadDialog';
 
 import { useMyMentorProfile } from '../../hooks/mentorship/useMyMentorProfile';
 import { useUpdateMentorProfile } from '../../hooks/mentorship/useUpdateMentorProfile';
@@ -32,6 +52,7 @@ import {
 } from '../../utils/imageUtils';
 import { extractMentorshipSkills, userSettingsApi } from '../../utils/api';
 import { validateVietnamPhone } from '../../utils/regexUtils';
+import TagPriorityList from '../../components/mentorship/signup/TagPriorityList';
 import {
   getBaseProfileTabs,
   getMenteeProfileTabs,
@@ -43,6 +64,9 @@ import { useSnackbar } from 'notistack';
 import { resolveProfileRoleLabel } from '../../utils/profileRoleUtils';
 import { buildAcademicRecords } from '../../utils/academicUtils';
 import {
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
   getStaggerDelay,
 } from '../../components/animations/ScrollReveal';
 
@@ -264,7 +288,7 @@ const UnifiedProfileEditPage = () => {
   const [projects, setProjects] = useState([]);
   const [awards, setAwards] = useState([]);
   const [skills, setSkills] = useState([]);
-
+  const [success, setSuccess] = useState(false);
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [linksText, setLinksText] = useState('');
@@ -524,7 +548,7 @@ const UnifiedProfileEditPage = () => {
   const profile = profileQuery.data;
   
   const saving = savingBase || savingMentor;
-
+  const errorMessage = mentorError || baseError;
   const isPendingMentorEdit = isMentorshipEdit && access.isMentorPending;
 
   const user = {

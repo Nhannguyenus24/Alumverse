@@ -1,8 +1,16 @@
-
-
+import {
+  Box,
+  Checkbox,
+  FormControlLabel,
+  Paper,
+  Stack,
+  Typography,
+} from '@mui/material';
 import { useTranslation } from 'react-i18next';
-
-
+import {
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from '../../animations/ScrollReveal';
 
 const MentorSignupTabTerms = ({ values, onChange }) => {
   const { t } = useTranslation('mentorship');

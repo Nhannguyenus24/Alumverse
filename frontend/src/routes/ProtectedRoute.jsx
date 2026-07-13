@@ -1,6 +1,7 @@
-import { useLocation, useParams } from "react-router";
+import { Navigate, useLocation, useParams } from "react-router";
 import { useAuth } from "../hooks/useAuth";
 import useOrganizationStore from "../stores/organizationStore";
+import LoadingScreen from "../components/LoadingScreen";
 
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   const { isAuthenticated, isLoading, user, mustChangePassword } = useAuth();

@@ -1,4 +1,14 @@
+import { Box, Stack, Typography } from '@mui/material';
+import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
+import CampaignOutlinedIcon from '@mui/icons-material/CampaignOutlined';
+import UpcomingOutlinedIcon from '@mui/icons-material/UpcomingOutlined';
+import ConfirmationNumberOutlinedIcon from '@mui/icons-material/ConfirmationNumberOutlined';
+import HowToRegOutlinedIcon from '@mui/icons-material/HowToRegOutlined';
+import TodayOutlinedIcon from '@mui/icons-material/TodayOutlined';
 import { useTranslation } from 'react-i18next';
+import Chart from '../Chart';
+import AdminSectionPanel from './AdminSectionPanel';
+import AdminDashboardMetricTile from './AdminDashboardMetricTile';
 import useAdminEventStats from '../../hooks/admin/useAdminEventStats';
 
 const metricRowSx = {

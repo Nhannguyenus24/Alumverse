@@ -1,7 +1,20 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router';
-
+import {
+  Box, Typography, Chip, IconButton, Tooltip, Button, TextField, MenuItem, Grid,
+} from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import StopIcon from '@mui/icons-material/Stop';
+import BarChartOutlinedIcon from '@mui/icons-material/BarChartOutlined';
+import PollOutlinedIcon from '@mui/icons-material/PollOutlined';
 import { useTranslation } from 'react-i18next';
+import AdminDataTable from '../../components/admin/AdminDataTable';
+import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetricTile';
+import AdminSurveyBuilderDialog from '../../components/admin/AdminSurveyBuilderDialog';
+import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
 import { surveyApi } from '../../utils/api';
 import { useNotification } from '../../hooks/useNotification';
 import { useDebounce } from '../../hooks/useDebounce';

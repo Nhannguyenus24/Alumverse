@@ -1,8 +1,23 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Link, useLocation, useParams } from 'react-router';
-import { useTheme, useMediaQuery, alpha
+import {
+  AppBar, Toolbar, Box, Typography,
+  Button, IconButton, Drawer, List,
+  ListItemButton, ListItemText, Collapse,
+  Divider, useTheme, useMediaQuery, alpha, Tooltip
 } from '@mui/material';
+import ExpandLess from '@mui/icons-material/ExpandLess';
+import ExpandMore from '@mui/icons-material/ExpandMore';
+import MenuIcon from '@mui/icons-material/Menu';
+import CloseIcon from '@mui/icons-material/Close';
+import PersonIcon from '@mui/icons-material/Person';
 import { useTranslation } from 'react-i18next';
+import Iconify from './Iconify';
+import Notification from './Notification';
+import Logo from './Logo';
+import AccountMenu from './AccountMenu';
+import MessagesNavDropdown from './MessagesNavDropdown';
+import LanguageSwitcher from './LanguageSwitcher';
 import { useAuth } from '../hooks/useAuth';
 import { useOrgNavigate, useOrgPath } from '../hooks/useOrgNavigate';
 import { getNormalizedPathname } from '../utils/pathUtils';

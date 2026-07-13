@@ -1,11 +1,23 @@
 import { useState } from 'react';
-
-
+import {
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  Stack,
+  TextField,
+  Typography,
+} from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { useTranslation } from 'react-i18next';
 import { validateMeetingLink, meetingLinkPasswordWarning } from '../../../utils/meetingLink';
 import { extractMentorshipSkills } from '../../../utils/api';
-
-
+import TagPriorityList from './TagPriorityList';
+import {
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from '../../animations/ScrollReveal';
 
 /**
  * Tab 2 of mentor signup. The mentor pastes a free-text description of their

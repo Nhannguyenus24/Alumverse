@@ -1,7 +1,12 @@
 import { useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { Box, Button, Pagination, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 
+import FeaturedArticleCard from '../../components/articles/FeaturedArticleCard';
+import ArticleCard from '../../components/articles/ArticleCard';
+import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
+import AlumniContentLayout from '../../layouts/AlumniContentLayout';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { usePublishedNews } from '../../hooks/news/usePublishedNews';
 import { normalizeNews } from '../../hooks/articles/normalizeArticle';
@@ -17,8 +22,12 @@ import {
   getArticleFilterConfig,
   paginateArticles,
 } from '../../utils/articleListFilters';
-
-
+import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
+import {
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from '../../components/animations/ScrollReveal';
 
 const ActivitiesPage = () => {
   const { t } = useTranslation(['nav', 'article']);

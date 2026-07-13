@@ -1,17 +1,55 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import LoadingSkeleton from '../../components/LoadingSkeleton';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useOutletContext } from 'react-router';
 import {
+  Box,
+  Typography,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   Paper,
+  IconButton,
+  Tooltip,
   useTheme,
-  alpha
+  alpha,
+  Card,
+  CardContent
 } from '@mui/material';
 import { useSnackbar } from 'notistack';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-
-
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  Legend,
+  ResponsiveContainer,
+  AreaChart,
+  Area
+} from 'recharts';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import QueryStatsOutlinedIcon from '@mui/icons-material/QueryStatsOutlined';
+import ErrorOutlineOutlinedIcon from '@mui/icons-material/ErrorOutlineOutlined';
+import SpeedOutlinedIcon from '@mui/icons-material/SpeedOutlined';
+import TimerOutlinedIcon from '@mui/icons-material/TimerOutlined';
+import AccessTimeOutlinedIcon from '@mui/icons-material/AccessTimeOutlined';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 import dayjs from 'dayjs';
+import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetricTile';
+import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
 
 const PROMETHEUS_URL_RANGE = 'http://168.144.102.181:9090/api/v1/query_range';
 const PROMETHEUS_URL_INSTANT = 'http://168.144.102.181:9090/api/v1/query';

@@ -1,6 +1,9 @@
-import { useTheme } from '@mui/material';
+import { Outlet } from 'react-router';
+import { Box, useTheme } from '@mui/material';
+import Logo from '../components/Logo';
 import { useOrgNavigate } from '../hooks/useOrgNavigate';
 import useOrganizationStore from '../stores/organizationStore';
+import { ScrollReveal } from '../components/animations/ScrollReveal';
 
 const AuthLayout = () => {
   const navigate = useOrgNavigate();

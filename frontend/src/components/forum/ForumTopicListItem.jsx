@@ -1,3 +1,5 @@
+import { Box, Typography } from '@mui/material';
+import PersonIcon from '@mui/icons-material/Person';
 import { formatRelativeTimeVi } from '../../utils/dateFormatter';
 import { useTranslation } from 'react-i18next';
 

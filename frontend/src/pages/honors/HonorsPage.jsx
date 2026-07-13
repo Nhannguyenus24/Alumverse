@@ -1,12 +1,21 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
+import { Box, Button, ListItemIcon, ListItemText, Menu, MenuItem, Typography } from '@mui/material';
 import { useSnackbar } from 'notistack';
 
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+import GroupsIcon from '@mui/icons-material/Groups';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 
+import FeaturedArticleCard from '../../components/articles/FeaturedArticleCard';
+import ArticleCard from '../../components/articles/ArticleCard';
+import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
+import AlumniContentLayout from '../../layouts/AlumniContentLayout';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useAuth } from '../../hooks/useAuth';
 import { useCanContribute } from '../../hooks/useCanContribute';
+import { ContributeGuardTooltip } from '../../components/ContributeGuard';
 import { usePublishedAchievements } from '../../hooks/articles/usePublishedAchievements';
 import { usePublishedAlumniPosts } from '../../hooks/articles/usePublishedAlumniPosts';
 import { toCardShape } from '../../hooks/articles/toCardShape';
@@ -18,8 +27,11 @@ import {
   getArticleFilterConfig,
 } from '../../utils/articleListFilters';
 import { getHonorsSidebarItems } from '../../constants/honorsNav';
-
-
+import {
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from '../../components/animations/ScrollReveal';
 
 const HonorsPage = () => {
   const { t } = useTranslation(['honors', 'common']);

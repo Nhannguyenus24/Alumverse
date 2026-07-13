@@ -1,7 +1,11 @@
 import { useState } from "react";
 import { useLocation } from "react-router";
+import { Box, Button, Chip, Grid, LinearProgress, Typography } from "@mui/material";
+import ConnectWithoutContactOutlinedIcon from "@mui/icons-material/ConnectWithoutContactOutlined";
+import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import dayjs from "dayjs";
 import { useTranslation } from "react-i18next";
+import NetworkMessageDrawer from "../network/NetworkMessageDrawer";
 import { useCheckConversationRequestStatus } from "../../hooks/network/useCheckConversationRequestStatus";
 import { useNetworkCurrentMemberId } from "../../hooks/network/useNetworkCurrentMemberId";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";

@@ -1,7 +1,8 @@
 import { Link as RouterLink } from 'react-router';
-import { useTheme } from '@mui/material';
+import { Box, Button, Container, Stack, Typography, IconButton, useTheme } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
+import Logo from './Logo';
 import { useOrgPath } from '../hooks/useOrgNavigate';
 import useOrganizationStore from '../stores/organizationStore';
 

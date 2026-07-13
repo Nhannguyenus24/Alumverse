@@ -1,13 +1,19 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '@mui/material';
+import { Box, Container, Typography, Button, Stack, TextField, useTheme } from '@mui/material';
 import { alpha } from '@mui/material/styles';
+import Page from '../../components/Page';
+import Input from '../../components/Input';
+import Dropdown from '../../components/Dropdown';
 import { useOrganization } from '../../hooks/useOrganization';
 import { organizationApi } from '../../utils/api';
 import { useNotification } from '../../hooks/useNotification';
 import { validateVietnamPhone } from '../../utils/regexUtils';
-
-
+import {
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from '../../components/animations/ScrollReveal';
 
 const BACKGROUND_IMG = '/home_page/home_page_contact.png';
 

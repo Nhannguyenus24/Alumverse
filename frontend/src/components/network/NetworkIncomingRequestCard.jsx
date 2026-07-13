@@ -1,13 +1,21 @@
 import { useTranslation } from 'react-i18next';
-
-
+import {
+  Box,
+  Button,
+  Card,
+  CircularProgress,
+  Stack,
+  Typography,
+} from '@mui/material';
 import { alpha } from '@mui/material/styles';
 
 import { CONVERSATION_REQUEST_STATUS } from '../../constants/conversationRequestStatus';
 import { formatDateTime } from '../../utils/dateFormatter';
 import { useNetworkMemberProfileNavigation } from '../../hooks/network/useNetworkMemberProfileNavigation';
 import { networkCardClickableSx } from './networkCardUtils';
+import ChatAvatar from '../ChatAvatar';
 import { useCanContribute } from '../../hooks/useCanContribute';
+import { ContributeGuardTooltip } from '../ContributeGuard';
 
 const NetworkIncomingRequestCard = ({
   request,

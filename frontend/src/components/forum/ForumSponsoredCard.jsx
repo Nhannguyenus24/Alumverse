@@ -1,3 +1,5 @@
+import { Box, ButtonBase, Card, CardContent, CardMedia, Typography } from '@mui/material';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 
 const ForumSponsoredCard = ({
   title = 'Sponsored',

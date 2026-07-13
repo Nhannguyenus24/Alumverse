@@ -1,10 +1,33 @@
-
-
+import {
+  Box,
+  Chip,
+  CircularProgress,
+  Button,
+  IconButton,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
+  Stack,
+  TextField,
+  Tooltip,
+  Typography,
+} from '@mui/material';
+import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
+import LinkIcon from '@mui/icons-material/Link';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
 import { useEffect, useState } from 'react';
 import { useOutletContext } from 'react-router';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import { useDebounce } from '../../hooks/useDebounce';
+import AdminDataTable from '../../components/admin/AdminDataTable';
+import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
+import AdminStatusChip from '../../components/admin/AdminStatusChip';
 import useAdminArticles from '../../hooks/admin/useAdminArticles';
 import { useAdminSystemContext } from '../../stores/AdminStore';
 import { useOrgNavigate, useOrgPath } from '../../hooks/useOrgNavigate';
