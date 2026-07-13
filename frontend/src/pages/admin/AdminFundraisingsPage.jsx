@@ -2,13 +2,47 @@ import { useEffect, useState } from "react";
 import { useOutletContext, useNavigate } from "react-router";
 import { useSnackbar } from "notistack";
 import {
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Grid,
+  IconButton,
+  MenuItem,
+  Stack,
+  TextField,
+  Tooltip,
+  Typography,
+  Pagination,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   Paper,
 } from "@mui/material";
+import LaunchOutlinedIcon from "@mui/icons-material/LaunchOutlined";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
+import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
+import TrendingUpIcon from "@mui/icons-material/TrendingUp";
+import VolunteerActivismIcon from "@mui/icons-material/VolunteerActivism";
+import GroupIcon from "@mui/icons-material/Group";
+import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../hooks/useAuth";
 import { useAdminSystemContext } from "../../stores/AdminStore";
 import { fundApi } from "../../utils/api";
+import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
+import SearchIcon from "@mui/icons-material/Search";
+import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
 
+import AdminStatusChip from "../../components/admin/AdminStatusChip";
+import AdminDashboardMetricTile from "../../components/admin/AdminDashboardMetricTile";
+import AdminDataTable from "../../components/admin/AdminDataTable";
 import useAdminFundraisingsData from "../../hooks/admin/useAdminFundraisingsData";
 import { formatDateTime } from "../../utils/dateFormatter";
 import { formatCurrencyVnd } from "../../utils/numberFormatter";

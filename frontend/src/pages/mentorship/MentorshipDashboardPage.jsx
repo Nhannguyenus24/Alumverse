@@ -1,11 +1,32 @@
-import { useMemo, useState, useCallback, useEffect } from 'react';
-
-
+import LoadingSkeleton from '../../components/LoadingSkeleton';
+import { useMemo, useState, useCallback } from 'react';
+import {
+  Alert,
+  Box,
+  Button,
+  Card,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  MenuItem,
+  Stack,
+  TextField,
+  Typography,
+} from '@mui/material';
 import { useSnackbar } from 'notistack';
+import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import dayjs from 'dayjs';
 
+import StarIcon from '@mui/icons-material/Star';
 
+import Page from '../../components/Page';
+import MentorshipProfileLayout from '../../layouts/ProfileLayout';
+import MentorshipBookingItem from '../../components/mentorship/MentorshipBookingItem';
+import MentorshipReviewCard from '../../components/mentorship/MentorshipReviewCard';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useMyMentorSessions } from '../../hooks/mentorship/useMyMentorSessions';
 import { useUpdateSessionStatus } from '../../hooks/mentorship/useUpdateSessionStatus';
@@ -16,6 +37,9 @@ import { formatDate } from '../../utils/dateFormatter';
 import { resolveMediaUrl } from '../../utils/imageUtils';
 import { formatRating } from '../../utils/numberFormatter';
 import {
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
   getStaggerDelay,
 } from '../../components/animations/ScrollReveal';
 import {
@@ -27,6 +51,7 @@ import {
 import { reasonsForStatus } from '../../components/mentorship/reportReasons';
 import { getMentorProfileTabs } from '../../constants/mentorshipNav';
 import { useTranslation } from 'react-i18next';
+import StatsBanner from '../../components/StatsBanner'
 
 const DEFAULT_COVER =
   'https://info.cognician.com/hubfs/220201%20mentorship-%20desktop.png';
@@ -49,9 +74,11 @@ const MentorshipDashboardPage = () => {
   const [postponeDate, setPostponeDate] = useState(null);
   const [postponeStart, setPostponeStart] = useState(null);
   const [postponeEnd, setPostponeEnd] = useState(null);
+  const [postponeError, setPostponeError] = useState(null);
   const [postponePending, setPostponePending] = useState(false);
   const [linkTarget, setLinkTarget] = useState(null);
   const [linkValue, setLinkValue] = useState('');
+  const [linkError, setLinkError] = useState(null);
   const [linkPending, setLinkPending] = useState(false);
 
   const { enqueueSnackbar } = useSnackbar();
@@ -61,6 +88,7 @@ const MentorshipDashboardPage = () => {
   const feedbacksQuery = useMyMentorFeedbacks(0, 50);
   const updateMutation = useUpdateSessionStatus();
   const joinMutation = useJoinSession();
+  const [actionError, setActionError] = useState('');
 
   const items = useMemo(() => sessionsQuery.data?.items ?? [], [sessionsQuery.data]);
   const feedbacks = useMemo(
@@ -148,7 +176,7 @@ const MentorshipDashboardPage = () => {
     setPostponeDate(base);
     setPostponeStart(base);
     setPostponeEnd(session.endTime ? dayjs(session.endTime) : null);
-    setPostponeEnd(session.endTime ? dayjs(session.endTime) : null);
+    setPostponeError(null);
   }, []);
 
   const closePostponeDialog = useCallback(() => {
@@ -157,7 +185,7 @@ const MentorshipDashboardPage = () => {
     setPostponeDate(null);
     setPostponeStart(null);
     setPostponeEnd(null);
-    setPostponeEnd(null);
+    setPostponeError(null);
   }, []);
 
   const handleConfirmPostpone = useCallback(async () => {
@@ -204,12 +232,12 @@ const MentorshipDashboardPage = () => {
   const openLinkDialog = useCallback((session) => {
     setLinkTarget(session);
     setLinkValue(session.meetingLink ?? '');
-    setLinkValue(session.meetingLink ?? '');
+    setLinkError(null);
   }, []);
   const closeLinkDialog = useCallback(() => {
     setLinkTarget(null);
     setLinkValue('');
-    setLinkValue('');
+    setLinkError(null);
   }, []);
   const handleConfirmLink = useCallback(async () => {
     if (!linkTarget) return;

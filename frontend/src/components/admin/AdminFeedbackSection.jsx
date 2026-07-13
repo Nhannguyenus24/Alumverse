@@ -1,4 +1,11 @@
+import { Stack } from '@mui/material';
+import FeedbackOutlinedIcon from '@mui/icons-material/FeedbackOutlined';
+import MarkEmailUnreadOutlinedIcon from '@mui/icons-material/MarkEmailUnreadOutlined';
+import DraftsOutlinedIcon from '@mui/icons-material/DraftsOutlined';
 import { useTranslation } from 'react-i18next';
+import Chart from '../Chart';
+import AdminSectionPanel from './AdminSectionPanel';
+import AdminDashboardMetricTile from './AdminDashboardMetricTile';
 import useAdminFeedbackStats from '../../hooks/admin/useAdminFeedbackStats';
 
 const metricRowSx = {

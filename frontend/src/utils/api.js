@@ -1337,7 +1337,7 @@ export const {
 	updateSessionStatus: updateMentorSessionStatus,
 	updateSessionMeetingLink: updateMentorSessionMeetingLink,
 	getMyMentorFeedbacks,
-	
+	uploadCvFile,
 } = mentorshipApi;
 
 export const notificationApi = {

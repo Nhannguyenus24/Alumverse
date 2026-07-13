@@ -2,10 +2,39 @@ import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   alpha,
+  Box,
+  Button,
+  Chip,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  Divider,
+  Drawer,
+  IconButton,
+  List,
+  ListItem,
+  ListItemAvatar,
+  ListItemText,
+  Stack,
+  TextField,
+  Tooltip,
+  Typography,
 } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
+import PersonRemoveIcon from '@mui/icons-material/PersonRemove';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import ExitToAppIcon from '@mui/icons-material/ExitToApp';
+import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
+import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
+import ChatAvatar from '../ChatAvatar';
+import Scrollbar from '../Scrollbar';
 import { useSnackbar } from 'notistack';
+import AddGroupMemberDialog from '../AddGroupMemberDialog';
 import { useGroupMembers } from '../../hooks/chat/useGroupMembers';
 import { invalidateChatListQueries, invalidateGroupBlockedMembersQueries } from '../../hooks/chat/invalidateChatQueries';
 import { chatApi } from '../../utils/api';

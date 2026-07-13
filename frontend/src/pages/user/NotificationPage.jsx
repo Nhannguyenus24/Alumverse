@@ -1,11 +1,19 @@
+import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useState, useEffect } from "react";
-
-
+import {
+  Box,
+  Typography,
+  Button,
+  IconButton,
+  Tooltip,
+} from "@mui/material";
 import { useTranslation } from "react-i18next";
+import Page from "../../components/Page";
+import SettingsIcon from "@mui/icons-material/Settings";
 import { formatTimeAgoVi } from "../../utils/dateFormatter";
 import { notificationApi } from "../../utils/api";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
-import { getStaggerDelay } from "../../components/animations/ScrollReveal";
+import { ScrollReveal, getStaggerDelay } from "../../components/animations/ScrollReveal";
 
 const NotificationPage = () => {
   const navigate = useOrgNavigate();

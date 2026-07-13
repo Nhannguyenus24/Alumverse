@@ -1,4 +1,6 @@
-import { lazy, useMemo, useState } from 'react';
+import { Suspense, lazy, useMemo, useState } from 'react';
+import { Box, Typography } from '@mui/material';
+import ZoomInOutlinedIcon from '@mui/icons-material/ZoomInOutlined';
 import { FUND_LOGO_PREVIEW_SX } from '../utils/imageUtils';
 import { useTranslation } from 'react-i18next';
 

@@ -1,17 +1,32 @@
+import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useEffect, useMemo, useState } from 'react';
-import { useLocation, useParams } from 'react-router';
-
-
+import { useLocation, useNavigate, useParams } from 'react-router';
+import {
+  Box,
+  Button,
+  Stack,
+  Typography,
+} from '@mui/material';
+import Grid from '@mui/material/Grid';
 import { useSnackbar } from 'notistack';
+import StarIcon from '@mui/icons-material/Star';
 import PersonIcon from '@mui/icons-material/Person';
 import EmailIcon from '@mui/icons-material/Email';
 import SchoolIcon from '@mui/icons-material/School';
 import WorkIcon from '@mui/icons-material/Work';
 import BusinessIcon from '@mui/icons-material/Business';
+import VerifiedIcon from '@mui/icons-material/Verified';
 import ArticleIcon from '@mui/icons-material/Article';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import PsychologyIcon from '@mui/icons-material/Psychology';
+import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
+import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism';
 
+import Page from '../../components/Page';
+import ProfileLayout from '../../layouts/ProfileLayout';
+import MentorshipBrowseGate from '../../components/mentorship/MentorshipBrowseGate';
+import MentorshipTag from '../../components/mentorship/MentorshipTag';
+import MentorshipReviewCard from '../../components/mentorship/MentorshipReviewCard';
 
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useMyProfile } from '../../hooks/profile/useMyProfile';
@@ -27,6 +42,13 @@ import { useMentorPublicFeedbacks } from '../../hooks/mentorship/useMentorPublic
 import { useMentorExpertise } from '../../hooks/mentorship/useMentorExpertise';
 import { useMentorshipAccessState } from '../../hooks/mentorship/useMentorshipAccessState';
 
+import UserHighlights from '../../components/profile/UserHighlights';
+import PublicUserProfile from './PublicUserProfile';
+import StatsBanner from '../../components/StatsBanner';
+import AcademicInfoSection from '../../components/profile/AcademicInfoSection';
+import PersonalInfoRow from '../../components/profile/PersonalInfoRow';
+import ProfileSectionTitle from '../../components/profile/ProfileSectionTitle';
+import SocialLinksRenderer from '../../components/profile/SocialLinksRenderer';
 
 import {
   getMenteeProfileTabs,
@@ -38,8 +60,11 @@ import { formatDate } from '../../utils/dateFormatter';
 import { formatRating } from '../../utils/numberFormatter';
 import { resolveProfileRoleLabel } from '../../utils/profileRoleUtils';
 import { resolveMediaUrl } from '../../utils/imageUtils';
-
-
+import {
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from '../../components/animations/ScrollReveal';
 
 const DEFAULT_COVER =
   'https://ethnasia.com/cdn/shop/articles/sean-o-KMn4VEeEPR8-unsplash_edited.jpg?v=1621585619';

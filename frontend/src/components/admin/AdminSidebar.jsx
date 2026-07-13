@@ -1,8 +1,42 @@
+import { NavLink } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import {
+  Box,
+  Drawer,
+  List,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Typography,
+  Divider,
   alpha,
   useTheme,
+  Tooltip,
+  IconButton,
 } from '@mui/material';
+import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
+import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
+import ForumOutlinedIcon from '@mui/icons-material/ForumOutlined';
+import TopicOutlinedIcon from '@mui/icons-material/TopicOutlined';
+import AccountTreeOutlinedIcon from '@mui/icons-material/AccountTreeOutlined';
+import FlagOutlinedIcon from '@mui/icons-material/FlagOutlined';
+import BusinessOutlinedIcon from '@mui/icons-material/BusinessOutlined';
+import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
+import PollOutlinedIcon from '@mui/icons-material/PollOutlined';
+import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
+import RateReviewOutlinedIcon from '@mui/icons-material/RateReviewOutlined';
+import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
+import VolunteerActivismOutlinedIcon from '@mui/icons-material/VolunteerActivismOutlined';
+import AccountBalanceOutlinedIcon from '@mui/icons-material/AccountBalanceOutlined';
+import GavelOutlinedIcon from '@mui/icons-material/GavelOutlined';
+import FeedbackOutlinedIcon from '@mui/icons-material/FeedbackOutlined';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
+import SmartToyOutlinedIcon from '@mui/icons-material/SmartToyOutlined';
+import MarkEmailReadOutlinedIcon from '@mui/icons-material/MarkEmailReadOutlined';
+import HistoryEduOutlinedIcon from '@mui/icons-material/HistoryEduOutlined';
+import TimelineOutlinedIcon from '@mui/icons-material/TimelineOutlined';
 
 const DRAWER_WIDTH = 280;
 const COLLAPSED_WIDTH = 88;

@@ -1,4 +1,15 @@
+import { Box, Stack } from '@mui/material';
 import { useTranslation } from 'react-i18next';
+import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
+import RecordVoiceOverOutlinedIcon from '@mui/icons-material/RecordVoiceOverOutlined';
+import EmojiEventsOutlinedIcon from '@mui/icons-material/EmojiEventsOutlined';
+import WorkOutlineOutlinedIcon from '@mui/icons-material/WorkOutlineOutlined';
+import BusinessCenterOutlinedIcon from '@mui/icons-material/BusinessCenterOutlined';
+import MenuBookOutlinedIcon from '@mui/icons-material/MenuBookOutlined';
+import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined';
+import Chart from '../Chart';
+import AdminSectionPanel from './AdminSectionPanel';
+import AdminDashboardMetricTile from './AdminDashboardMetricTile';
 import useAdminContentStats from '../../hooks/admin/useAdminContentStats';
 
 const metricRowSx = {

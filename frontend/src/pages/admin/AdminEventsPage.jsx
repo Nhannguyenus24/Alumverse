@@ -4,8 +4,35 @@ import { useOutletContext } from "react-router";
 import { useSnackbar } from "notistack";
 import { useDebounce } from "../../hooks/useDebounce";
 import { useOrgNavigate, useOrgPath } from "../../hooks/useOrgNavigate";
-
-
+import {
+  Box,
+  Button,
+  IconButton,
+  MenuItem,
+  Stack,
+  TextField,
+  Tooltip,
+  Typography,
+} from "@mui/material";
+import AddIcon from "@mui/icons-material/Add";
+import LaunchOutlinedIcon from "@mui/icons-material/LaunchOutlined";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
+import EventNoteOutlinedIcon from "@mui/icons-material/EventNoteOutlined";
+import FavoriteBorderOutlinedIcon from "@mui/icons-material/FavoriteBorderOutlined";
+import TodayOutlinedIcon from "@mui/icons-material/TodayOutlined";
+import PlayCircleOutlineOutlinedIcon from "@mui/icons-material/PlayCircleOutlineOutlined";
+import HistoryOutlinedIcon from "@mui/icons-material/HistoryOutlined";
+import CampaignOutlinedIcon from "@mui/icons-material/CampaignOutlined";
+import DraftsOutlinedIcon from "@mui/icons-material/DraftsOutlined";
+import UpcomingOutlinedIcon from "@mui/icons-material/UpcomingOutlined";
+import ConfirmationNumberOutlinedIcon from "@mui/icons-material/ConfirmationNumberOutlined";
+import HowToRegOutlinedIcon from "@mui/icons-material/HowToRegOutlined";
+import EventBusyOutlinedIcon from "@mui/icons-material/EventBusyOutlined";
+import AdminConfirmDeleteDialog from "../../components/admin/AdminConfirmDeleteDialog";
+import AdminDataTable from "../../components/admin/AdminDataTable";
 import {
   getAdminEventSortOptions,
   getAdminEventStatusOptions,
@@ -13,6 +40,8 @@ import {
 import useAdminEvents from "../../hooks/admin/useAdminEvents";
 import { useAdminSystemContext } from "../../stores/AdminStore";
 import { formatDateTime } from "../../utils/dateFormatter";
+import AdminDashboardMetricTile from "../../components/admin/AdminDashboardMetricTile";
+import AdminStatusChip from "../../components/admin/AdminStatusChip";
 
 const AdminEventsPage = () => {
   const { t } = useTranslation(["admin", "common", "event"]);

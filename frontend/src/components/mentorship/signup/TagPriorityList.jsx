@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { alpha } from '@mui/material';
+import { Box, Chip, Stack, Typography, alpha } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
 import { useTranslation } from 'react-i18next';
 
 /**

@@ -1,13 +1,61 @@
 import {
+  Alert,
+  Avatar,
+  Box,
+  Button,
+  Card,
+  Divider,
+  Fade,
+  Grid,
+  IconButton,
+  InputAdornment,
+  List,
+  ListItemButton,
+  ListItemText,
+  MenuItem,
   Paper,
+  Stack,
+  Tab,
+  Tabs,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TextField,
+  Typography,
   alpha,
+  Switch,
+  FormControlLabel,
 } from '@mui/material';
+import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
+import BusinessOutlinedIcon from '@mui/icons-material/BusinessOutlined';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
+import RefreshOutlinedIcon from '@mui/icons-material/RefreshOutlined';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
+import AutoStoriesOutlinedIcon from '@mui/icons-material/AutoStoriesOutlined';
+import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
+import PeopleOutlineIcon from '@mui/icons-material/PeopleOutline';
+import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded';
+import RocketLaunchRoundedIcon from '@mui/icons-material/RocketLaunchRounded';
+import FavoriteRoundedIcon from '@mui/icons-material/FavoriteRounded';
+import AddIcon from '@mui/icons-material/Add';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import ColorLensIcon from '@mui/icons-material/ColorLens';
+import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 
 import DOMPurify from 'dompurify';
+import AdminStatusChip from './AdminStatusChip';
+import SearchBar from '../SearchBar';
 import { useState, useMemo, useEffect } from 'react';
 import { useTheme } from '@mui/material';
 import { adminOrganizationApi } from '../../utils/api';
 import { useSnackbar } from 'notistack';
+import AdminManualMemberDialog from './AdminManualMemberDialog';
 import { IMAGE_ACCEPT, useUploadImage, validateImageFile } from '../../utils/imageUtils';
 import { createBrandColor, DEFAULT_BRAND_COLORS, normalizeHexColor } from '../../theme/palette';
 import { useTranslation } from 'react-i18next';

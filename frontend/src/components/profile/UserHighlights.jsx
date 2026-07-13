@@ -1,14 +1,23 @@
-import { useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-
-
+import {
+  Box,
+  Typography,
+  Grid,
+  Card,
+  CardActionArea,
+  CardContent,
+  Stack,
+} from '@mui/material';
 import { alpha } from '@mui/material/styles';
+import ArticleIcon from '@mui/icons-material/Article';
+import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism';
 
 import { useUserAlumniPosts } from '../../hooks/articles/useUserAlumniPosts';
 import { useUserDonations } from '../../hooks/fundraising/useUserDonations';
 import { formatDate } from '../../utils/dateFormatter';
 import { formatCurrency } from '../../utils/numberFormatter';
-import { getStaggerDelay } from '../animations/ScrollReveal';
+import { ScrollReveal, getStaggerDelay } from '../animations/ScrollReveal';
 
 const UserHighlights = ({ userId, navigate }) => {
   const { t } = useTranslation(['profile']);

@@ -1,4 +1,14 @@
 import { useTranslation } from 'react-i18next';
+import { Box, Stack, Typography } from '@mui/material';
+import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
+import EventAvailableOutlinedIcon from '@mui/icons-material/EventAvailableOutlined';
+import MeetingRoomOutlinedIcon from '@mui/icons-material/MeetingRoomOutlined';
+import VolunteerActivismOutlinedIcon from '@mui/icons-material/VolunteerActivismOutlined';
+import SupervisorAccountOutlinedIcon from '@mui/icons-material/SupervisorAccountOutlined';
+import TaskAltOutlinedIcon from '@mui/icons-material/TaskAltOutlined';
+import Chart from '../Chart';
+import AdminSectionPanel from './AdminSectionPanel';
+import AdminDashboardMetricTile from './AdminDashboardMetricTile';
 import useAdminFunnelStats from '../../hooks/admin/useAdminFunnelStats';
 
 const metricRowSx = {

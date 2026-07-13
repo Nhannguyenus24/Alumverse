@@ -1,8 +1,24 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-
-
+import {
+  Avatar,
+  Box,
+  Button,
+  Chip,
+  CircularProgress,
+  Container,
+  IconButton,
+  Paper,
+  Stack,
+  TextField,
+  Typography,
+} from '@mui/material';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { useParams } from 'react-router';
+import Page from '../../components/Page';
+import SearchBar from '../../components/SearchBar';
 import { useDebounce } from '../../hooks/useDebounce';
 import { useEventParticipants } from '../../hooks/events/useEventParticipants';
 import { useCheckInTicket } from '../../hooks/events/useCheckInTicket';
@@ -10,6 +26,8 @@ import { useEventQuestions } from '../../hooks/events/useEventQuestions';
 import { eventApi } from '../../utils/api';
 import { formatDateTime } from '../../utils/dateFormatter';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
+import AdminDataTable from '../../components/admin/AdminDataTable';
+import AdminStatusChip from '../../components/admin/AdminStatusChip';
 
 const formatAnswerValue = (value) => {
   if (Array.isArray(value)) return value.length ? value.join(', ') : '—';

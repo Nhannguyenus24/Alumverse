@@ -1,7 +1,12 @@
+import { Box, Button, Container, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import Page from '../../components/Page';
 import { useErrorPageActions } from '../../hooks/useErrorPageActions';
-
-
+import {
+	ScrollRevealGroup,
+	ScrollRevealItem,
+} from '../../components/animations/ScrollReveal';
 
 export default function ServerErrorPage() {
 	const { goHome, retry } = useErrorPageActions();

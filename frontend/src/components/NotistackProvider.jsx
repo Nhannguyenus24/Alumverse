@@ -1,7 +1,11 @@
 
 import { useRef } from 'react';
+import { SnackbarProvider } from 'notistack';
 import { styled } from '@mui/material/styles';
+import { Box, GlobalStyles } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
+import Iconify from './Iconify';
+import IconButtonAnimate from './IconButtonAnimate';
 
 // ------------------------------------------
 // Override Material Design Content

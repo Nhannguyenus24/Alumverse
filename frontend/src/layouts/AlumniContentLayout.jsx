@@ -1,7 +1,16 @@
+import { Box, Container, Stack, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 
-
-
+import Page from '../components/Page';
+import Sidebar from '../components/Sidebar';
+import DynamicFilterBar from '../components/DynamicFilterBar';
+import SearchBar from '../components/SearchBar';
+import ForumSponsoredCard from '../components/forum/ForumSponsoredCard';
+import {
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from '../components/animations/ScrollReveal';
 
 const DEFAULT_SPONSORED_MEDIA = {
   imageSrc: '/forum/metro_station.png',

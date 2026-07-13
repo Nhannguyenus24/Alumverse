@@ -1,9 +1,24 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-
-
+import {
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  TextField,
+  Box,
+  Typography,
+  Stack,
+  Divider,
+  Avatar,
+  IconButton,
+} from "@mui/material";
+import Grid from "@mui/material/Grid";
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { useSnackbar } from "notistack";
 import { IMAGE_ACCEPT, useUploadImage, validateImageFile } from "../../utils/imageUtils";
+import WYSIWYG from "../WYSIWYG";
 
 const AdminOrganizationIntroductionDialog = ({
   open,

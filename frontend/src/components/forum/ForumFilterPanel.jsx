@@ -1,6 +1,14 @@
+import {
+  Box,
+  Paper,
+  Typography,
+  List,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+} from '@mui/material';
 
-
-
+import ChatBubbleOutlineOutlinedIcon from '@mui/icons-material/ChatBubbleOutlineOutlined';
 
 const ForumFilterPanel = ({ filters, selectedId, onChange }) => {
   return (

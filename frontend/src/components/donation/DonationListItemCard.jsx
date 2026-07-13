@@ -1,3 +1,4 @@
+import { Avatar, Badge, Box, Stack, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import {
   DONATION_AVATAR_FALLBACK,

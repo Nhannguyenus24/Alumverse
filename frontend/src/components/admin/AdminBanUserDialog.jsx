@@ -1,7 +1,18 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-
-
+import {
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControlLabel,
+  MenuItem,
+  Switch,
+  TextField,
+  Typography,
+} from '@mui/material';
 import { BAN_REASON_OPTIONS } from '../../constants/adminDefaultUsers';
 
 const AdminBanUserDialog = ({ open, user, onClose, onConfirm, loading = false }) => {

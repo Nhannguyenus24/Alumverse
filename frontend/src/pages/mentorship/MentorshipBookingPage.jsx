@@ -1,19 +1,39 @@
+import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useState } from 'react';
 import { useParams } from 'react-router';
-
-
+import {
+  Alert,
+  Avatar,
+  Box,
+  Button,
+  Container,
+  Paper,
+  Stack,
+  Step,
+  StepLabel,
+  Stepper,
+  Typography,
+} from '@mui/material';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import StarIcon from '@mui/icons-material/Star';
 import dayjs from 'dayjs';
 import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
 import { useEffect } from 'react';
 
+import Page from '../../components/Page';
+import MentorshipSlotPicker from '../../components/mentorship/MentorshipSlotPicker';
+import MentorshipBookingForm from '../../components/mentorship/MentorshipBookingForm';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useMentorPublicProfile } from '../../hooks/mentorship/useMentorPublicProfile';
 import { useMentorAvailability } from '../../hooks/mentorship/useMentorAvailability';
 import { useBookSession } from '../../hooks/mentorship/useBookSession';
 import { formatRating } from '../../utils/numberFormatter';
-
-
+import {
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from '../../components/animations/ScrollReveal';
 
 const MentorshipBookingPage = () => {
   const { t } = useTranslation(['mentorship', 'common']);

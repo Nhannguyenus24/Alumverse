@@ -1,18 +1,53 @@
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
-
+import {
+  Autocomplete, Alert, Box, Card, Container, Chip, TextField, Typography, Button, MenuItem,
+  FormControlLabel, Switch, Divider, Paper, FormControl, InputLabel, Select, Stack,
+  InputAdornment, IconButton, List, ListItem, ListItemText, CircularProgress,
+} from '@mui/material';
+import Avatar from '@mui/material/Avatar';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import CameraAltIcon from '@mui/icons-material/CameraAlt';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
+import SecurityIcon from '@mui/icons-material/Security';
+import NotificationsIcon from '@mui/icons-material/Notifications';
+import PersonIcon from '@mui/icons-material/Person';
+import EditIcon from '@mui/icons-material/Edit';
+import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
+import GroupAddIcon from '@mui/icons-material/GroupAdd';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import PeopleIcon from '@mui/icons-material/People';
+import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
+import DialogActions from '@mui/material/DialogActions';
+import Slider from '@mui/material/Slider';
 import { useTranslation } from 'react-i18next';
+import Page from '../../components/Page';
+import NetworkConnectionsPanel from '../../components/network/NetworkConnectionsPanel';
+import Sidebar from '../../components/Sidebar';
 import { userSettingsApi } from '../../utils/api';
+import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
+import SendIcon from '@mui/icons-material/Send';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import useAuthStore from '../../stores/authStore';
 import { useNotification } from '../../hooks/useNotification';
 import { useOrganization } from '../../hooks/useOrganization';
 import { useOrgPath } from '../../hooks/useOrgNavigate';
 import { formatDateTime } from '../../utils/dateFormatter';
+import AvatarUploadDialog from "../../components/profile/AvatarUploadDialog";
 import useAvatarCrop from "../../hooks/profile/useAvatarCrop";
+import ChangeEmailModal from '../../components/profile/ChangeEmailModal';
 import { GENDER_OPTIONS, GENDER_LABEL_KEYS } from '../../constants/gender';
 import { resolveProfileRoleLabel } from '../../utils/profileRoleUtils';
 import {
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
   getStaggerDelay,
 } from '../../components/animations/ScrollReveal';
 

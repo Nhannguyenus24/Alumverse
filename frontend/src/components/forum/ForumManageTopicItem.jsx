@@ -1,3 +1,9 @@
+import { Box, IconButton, Paper, TextField, Typography } from '@mui/material';
+import ChatBubbleOutlineOutlinedIcon from '@mui/icons-material/ChatBubbleOutlineOutlined';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
+import AddIcon from '@mui/icons-material/Add';
+import SaveIcon from '@mui/icons-material/Save';
 import { useTranslation } from 'react-i18next';
 
 const ForumManageTopicItem = ({

@@ -1,11 +1,35 @@
+import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useMemo, useState } from 'react';
-
-
+import {
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControlLabel,
+  MenuItem,
+  Stack,
+  Switch,
+  Tab,
+  Tabs,
+  TextField,
+  Typography,
+} from '@mui/material';
+import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import dayjs from 'dayjs';
 import { useSnackbar } from 'notistack';
 
+import Page from '../../components/Page';
+import ProfileLayout from '../../layouts/ProfileLayout';
+import MentorshipBookingItem from '../../components/mentorship/MentorshipBookingItem';
 import {
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
   getStaggerDelay,
 } from '../../components/animations/ScrollReveal';
 import { useMyMenteeSessions } from '../../hooks/mentorship/useMyMenteeSessions';
@@ -688,6 +712,7 @@ const MentorshipMyBookingsPage = () => {
             <div style={{ marginTop: 16, color: 'orange' }}>
               {meetingLinkPasswordWarning(linkValue)}
             </div>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={closeLinkDialog} color="inherit">

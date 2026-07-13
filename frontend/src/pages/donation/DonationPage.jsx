@@ -1,7 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Button, Box, Pagination, Stack, Typography } from "@mui/material";
 import { alpha } from "@mui/material/styles";
-
-
+import {
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from "../../components/animations/ScrollReveal";
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
 import dayjs from "dayjs";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
@@ -10,6 +16,11 @@ import { useOrgNavigate } from "../../hooks/useOrgNavigate";
 import usePaginationScrollToTop from "../../hooks/usePaginationScrollToTop";
 import useOrganizationStore from "../../stores/organizationStore";
 import { fundApi } from "../../utils/api";
+import ArticleDonationCard from "../../components/articles/ArticleDonationCard";
+import FeaturedArticleDonationCard from "../../components/articles/FeaturedArticleDonationCard";
+import DonationCloseDialog from "../../components/donation/DonationCloseDialog";
+import StatsBanner from "../../components/StatsBanner";
+import AlumniContentLayout from "../../layouts/AlumniContentLayout";
 import { DEFAULT_DONATION_FILTERS, getDonationFilterConfig } from "../../constants/donationConfig";
 
 const DEFAULT_ADMIN_STATS = { totalCurrentAmount: 0, totalFunds: 0, totalDonations: 0, totalDonationsAmountThisMonth: 0 };

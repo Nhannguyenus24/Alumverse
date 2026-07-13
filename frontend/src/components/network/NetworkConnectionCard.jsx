@@ -1,13 +1,25 @@
 import { useTranslation } from 'react-i18next';
+import {
+  Avatar,
+  Box,
+  Button,
+  Card,
+  ListItemIcon,
+  ListItemText,
+  MenuItem,
+  Stack,
+  Typography,
+} from '@mui/material';
+import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
 
-
-
+import IconButtonMenu from '../IconButtonMenu';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useNetworkMemberProfileNavigation } from '../../hooks/network/useNetworkMemberProfileNavigation';
 import { truncateText } from '../../utils/stringUtils';
 import { networkCardClickableSx } from './networkCardUtils';
 import { buildProgramMajorRows } from '../../utils/academicUtils';
 import { useCanContribute } from '../../hooks/useCanContribute';
+import { ContributeGuardTooltip } from '../ContributeGuard';
 
 const SUBTITLE_MAX_LEN = 72;
 

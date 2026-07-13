@@ -2,10 +2,23 @@ import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   alpha,
+  Box,
+  Button,
+  Chip,
+  MenuItem,
+  Stack,
+  TextField,
+  Typography,
 } from '@mui/material';
+import UploadFileOutlinedIcon from '@mui/icons-material/UploadFileOutlined';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import EventAvailableOutlinedIcon from '@mui/icons-material/EventAvailableOutlined';
+import AccessTimeOutlinedIcon from '@mui/icons-material/AccessTimeOutlined';
 import dayjs from 'dayjs';
-
-
+import {
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from '../animations/ScrollReveal';
 
 const getSessionOptions = (t) => [
   { value: 'CAREER', label: t('mentorship:session_type_career') },

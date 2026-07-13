@@ -1,3 +1,7 @@
+import { Box, IconButton, Paper, TextField } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
+import SaveIcon from '@mui/icons-material/Save';
+import ForumManageTopicItem from './ForumManageTopicItem';
 import { useTranslation } from 'react-i18next';
 
 const ForumManageView = ({

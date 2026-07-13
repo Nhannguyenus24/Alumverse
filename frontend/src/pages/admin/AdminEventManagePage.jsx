@@ -1,14 +1,47 @@
+import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useOutletContext } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { useSnackbar } from 'notistack';
-
-
+import {
+  Box,
+  Button,
+  Chip,
+  IconButton,
+  MenuItem,
+  Stack,
+  Tab,
+  Tabs,
+  TextField,
+  Tooltip,
+  Typography,
+} from '@mui/material';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
+import HowToRegOutlinedIcon from '@mui/icons-material/HowToRegOutlined';
+import MarkEmailReadIcon from '@mui/icons-material/MarkEmailRead';
+import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
+import SendIcon from '@mui/icons-material/Send';
+import DoDisturbAltIcon from '@mui/icons-material/DoDisturbAlt';
+import UndoIcon from '@mui/icons-material/Undo';
+import BlockIcon from '@mui/icons-material/Block';
 import { useOrgNavigate, useOrgPath } from '../../hooks/useOrgNavigate';
 import { eventApi } from '../../utils/api';
 import { formatDateTime } from '../../utils/dateFormatter';
 import { useEventQuestions } from '../../hooks/events/useEventQuestions';
+import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetricTile';
+import AdminStatusChip from '../../components/admin/AdminStatusChip';
+import AdminDataTable from '../../components/admin/AdminDataTable';
+import FavoriteBorderOutlinedIcon from '@mui/icons-material/FavoriteBorderOutlined';
+import ConfirmationNumberOutlinedIcon from '@mui/icons-material/ConfirmationNumberOutlined';
+import EventAvailableOutlinedIcon from '@mui/icons-material/EventAvailableOutlined';
+import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
+import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
+import ConfirmDialog from '../../components/ConfirmDialog';
 import * as XLSX from 'xlsx';
 
 const fallbackPage = { items: [], totalItem: 0, totalPage: 0, currentPage: 0, pageSize: 10 };

@@ -1,9 +1,15 @@
+import { Box, Button, Container, Stack, Typography, Tooltip } from '@mui/material';
 import { useTranslation } from 'react-i18next';
+import Page from '../../components/Page';
+import Breadcrumb from '../../components/Breadcrumb';
+import ForumFilterPanel from '../../components/forum/ForumFilterPanel';
+import ForumTopicListItem from '../../components/forum/ForumTopicListItem';
+import AlumniContentLayout from '../../layouts/AlumniContentLayout';
 
 import { useOrganization } from '../../hooks/useOrganization';
 import { useForumCategoryLogic } from '../../hooks/forum/useForumCategoryLogic';
 import { useCanContribute } from '../../hooks/useCanContribute';
-import { getStaggerDelay } from '../../components/animations/ScrollReveal';
+import { ScrollReveal, getStaggerDelay } from '../../components/animations/ScrollReveal';
 
 const ForumCategoryPage = () => {
   const { t } = useTranslation(['forum', 'common']);

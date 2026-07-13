@@ -1,4 +1,4 @@
-import { alpha } from "@mui/material";
+import { alpha, Box, Typography } from "@mui/material";
 
 const MentorshipTag = ({ label, sx = {} }) => {
   return (

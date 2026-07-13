@@ -1,4 +1,8 @@
 import { useState } from 'react';
+import { TextField, InputAdornment, Box, IconButton } from '@mui/material';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { useTranslation } from 'react-i18next';
 
 const Input = ({

@@ -1,8 +1,39 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMatch, useNavigate, useParams, useOutletContext } from 'react-router';
-
-
+import {
+  Avatar,
+  Box,
+  Button,
+  Chip,
+  Divider,
+  IconButton,
+  List,
+  ListItem,
+  ListItemText,
+  Paper,
+  Skeleton,
+  Stack,
+  Tab,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  Tabs,
+  Tooltip,
+  Typography,
+} from '@mui/material';
+import ArrowBackOutlinedIcon from '@mui/icons-material/ArrowBackOutlined';
+import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import LockOpenOutlinedIcon from '@mui/icons-material/LockOpenOutlined';
+import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
+import AdminStatusChip from '../../components/admin/AdminStatusChip';
+import AdminBanUserDialog from '../../components/admin/AdminBanUserDialog';
+import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
+import AdminUserFormDialog from '../../components/admin/AdminUserFormDialog';
 import { formatAccountStatusLabel } from '../../constants/adminStatusDisplay';
 import { useAdminUsersContext } from '../../stores/AdminStore';
 import useAdminAuditLogsData from '../../hooks/admin/useAdminAuditLogsData';

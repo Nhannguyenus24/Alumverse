@@ -1,24 +1,51 @@
+import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useParams } from "react-router";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
 import {
+  Box,
+  Container,
+  Typography,
+  Button,
+  Stack,
+  IconButton,
+  Tooltip,
   useTheme,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  TextField,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
+import NavigateBeforeIcon from "@mui/icons-material/NavigateBefore";
+import FavoriteIcon from "@mui/icons-material/Favorite";
+import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
+import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
+import EventOutlinedIcon from "@mui/icons-material/EventOutlined";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import LinkIcon from "@mui/icons-material/Link";
+import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
+import Page from "../../components/Page";
 import { useArticleById } from "../../hooks/articles/useArticleById";
 import DOMPurify from "dompurify";
 import { formatDate, formatDateRange } from "../../utils/dateFormatter";
 import { formatNumberVi } from "../../utils/numberFormatter";
+import JoinEventDialog from "../../components/event/JoinEventDialog";
 import { eventApi, savedItemApi } from "../../utils/api";
 import { useEventQuestions, formatAnswersForApi } from "../../hooks/events/useEventQuestions";
 import { useAuth } from "../../hooks/useAuth";
 import { useCanContribute } from "../../hooks/useCanContribute";
+import { ContributeGuardTooltip, VerificationRequiredAlert } from "../../components/ContributeGuard";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
 import { getEventRegisteredState } from "../../utils/eventRegistration";
 import { extractMainImageCaption } from "../../utils/articleContentCaption";
-
-
+import {
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from "../../components/animations/ScrollReveal";
 
 const normalizeArticleHtml = (html) => {
   if (!html || typeof document === "undefined") return html;

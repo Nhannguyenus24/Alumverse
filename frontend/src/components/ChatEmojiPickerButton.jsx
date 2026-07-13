@@ -1,4 +1,6 @@
-import { lazy, useState } from 'react';
+import { Suspense, lazy, useState } from 'react';
+import { Box, IconButton, Popover } from '@mui/material';
+import MoodIcon from '@mui/icons-material/Mood';
 
 const EmojiPicker = lazy(() => import('emoji-picker-react'));
 

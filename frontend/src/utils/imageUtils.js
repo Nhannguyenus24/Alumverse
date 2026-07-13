@@ -344,5 +344,37 @@ export const validateFundDocumentFile = (file, t = null) => {
   return { valid: true };
 };
 
+/**
+ * Upload a fund document (base64 + original filename) to the raw file endpoint.
+ * @param {{ base64String: string, fileName: string }} args
+ * @returns {Promise<string|null>} The uploaded file URL or null.
+ */
+const uploadFundDocumentBase64 = async ({ base64String, fileName }) => {
+  const res = await apiClient.post("/files/upload", { base64String, fileName });
+  return res?.data?.data ?? null;
+};
 
+/**
+ * Hook for uploading fund documents (pdf/doc/docx) via /files/upload.
+ * Mirrors {@link useUploadImage} but preserves the original filename so the
+ * backend can resolve the extension and size limit.
+ * @returns {object} { uploadFile, isPending, isError, errorMessage }
+ */
+export const useUploadFundDocument = () => {
+  const { mutateAsync, isPending, isError, error } = useMutation({
+    mutationFn: uploadFundDocumentBase64,
+  });
 
+  const uploadFile = async (file) => {
+    if (!file) return null;
+    const base64 = await fileToBase64(file);
+    return mutateAsync({ base64String: base64, fileName: file.name });
+  };
+
+  const errorMessage =
+    isError && error
+      ? error.response?.data?.message ?? error.message ?? "file_upload_error"
+      : null;
+
+  return { uploadFile, isPending, isError, errorMessage };
+};

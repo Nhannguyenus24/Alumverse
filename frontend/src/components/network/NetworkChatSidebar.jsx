@@ -1,7 +1,19 @@
 import { useSnackbar } from 'notistack';
-
-
+import {
+  Box,
+  CircularProgress,
+  IconButton,
+  Pagination,
+  Stack,
+  Tooltip,
+  Typography,
+} from '@mui/material';
+import GroupAddIcon from '@mui/icons-material/GroupAdd';
 import { useTranslation } from 'react-i18next';
+import Scrollbar from '../Scrollbar';
+import SearchBar from '../SearchBar';
+import { ScrollReveal } from '../animations/ScrollReveal';
+import ChatAvatar from '../ChatAvatar';
 import { useCanContribute } from '../../hooks/useCanContribute';
 
 const NetworkChatSidebar = ({

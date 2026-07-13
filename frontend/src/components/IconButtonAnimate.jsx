@@ -1,6 +1,7 @@
 import { m } from 'framer-motion';
 import { forwardRef } from 'react';
 // @mui
+import { Box, IconButton } from '@mui/material';
 
 // ----------------------------------------------------------------------
 

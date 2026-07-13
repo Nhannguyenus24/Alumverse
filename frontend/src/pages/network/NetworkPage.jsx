@@ -1,14 +1,29 @@
+import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-
-
+import {
+  Alert,
+  Box,
+  Button,
+  Card,
+  Pagination,
+  Stack,
+  Typography,
+} from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
 import ChatBubbleOutlineOutlinedIcon from '@mui/icons-material/ChatBubbleOutlineOutlined';
 import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
 
+import NetworkSectionLayout from '../../components/network/NetworkSectionLayout';
+import AlumniContentLayout from '../../layouts/AlumniContentLayout';
+import SearchBar from '../../components/SearchBar';
+import NetworkSearchMemberCard from '../../components/network/NetworkSearchMemberCard';
+import NetworkMessageDrawer from '../../components/network/NetworkMessageDrawer';
+import ConfirmDialog from '../../components/ConfirmDialog';
 import usePaginationScrollToTop from '../../hooks/usePaginationScrollToTop';
+import DynamicFilterBar from '../../components/DynamicFilterBar';
 import { useNetworkMembers } from '../../hooks/network/useNetworkMembers';
 import { useCheckConversationRequestStatus } from '../../hooks/network/useCheckConversationRequestStatus';
 import { useNetworkCurrentMemberId } from '../../hooks/network/useNetworkCurrentMemberId';
@@ -26,8 +41,12 @@ import {
   getNetworkGuestSteps,
   getNetworkSearchFilterConfig,
 } from '../../constants/networkConfig';
-
-
+import StatsBanner from '../../components/StatsBanner';
+import {
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from '../../components/animations/ScrollReveal';
 
 const PAGE_SIZE = 9;
 const guestBenefitIcons = [

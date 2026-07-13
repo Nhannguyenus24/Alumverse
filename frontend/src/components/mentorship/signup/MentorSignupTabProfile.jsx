@@ -1,12 +1,32 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   alpha,
+  Alert,
+  Avatar,
+  Box,
+  Button,
+  Card,
+  CircularProgress,
+  Divider,
+  IconButton,
+  Stack,
+  TextField,
+  Tooltip,
+  Typography,
 } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
+import UploadFileOutlinedIcon from '@mui/icons-material/UploadFileOutlined';
 import { useTranslation } from 'react-i18next';
+import AvatarUploadDialog from '../../profile/AvatarUploadDialog';
 import useAvatarCrop from '../../../hooks/profile/useAvatarCrop';
 import { fileToBase64 } from '../../../utils/imageUtils';
 import { extractMentorshipCv } from '../../../utils/api';
 import {
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
   getStaggerDelay,
 } from '../../animations/ScrollReveal';
 

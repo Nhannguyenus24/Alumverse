@@ -1,6 +1,6 @@
-import { alpha } from "@mui/material";
+import { alpha, Box } from "@mui/material";
 import { useCallback, useEffect, useMemo, useRef } from "react";
-import { Quill } from "react-quill-new";
+import ReactQuill, { Quill } from "react-quill-new";
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
 import "react-quill-new/dist/quill.snow.css";

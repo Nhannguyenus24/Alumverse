@@ -1,4 +1,13 @@
+import { Stack } from '@mui/material';
+import PersonAddOutlinedIcon from '@mui/icons-material/PersonAddOutlined';
+import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined';
+import CheckCircleOutlineOutlinedIcon from '@mui/icons-material/CheckCircleOutlineOutlined';
+import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
+import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import { useTranslation } from 'react-i18next';
+import Chart from '../Chart';
+import AdminSectionPanel from './AdminSectionPanel';
+import AdminDashboardMetricTile from './AdminDashboardMetricTile';
 import useAdminUserGrowthStats from '../../hooks/admin/useAdminUserGrowthStats';
 
 const metricRowSx = {

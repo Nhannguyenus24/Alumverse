@@ -1,16 +1,26 @@
 import { useEffect, useState } from 'react';
 import {
   Avatar,
+  Badge,
   Box,
+  Button,
+  Fade,
+  IconButton,
   Paper,
+  Stack,
+  Tooltip,
+  Typography,
 } from '@mui/material';
-
-
+import {
+  ChatBubbleOutline as ChatBubbleOutlineIcon,
+  Close as CloseIcon,
+} from '@mui/icons-material';
 import { styled, keyframes } from '@mui/material/styles';
 import { useLocation } from 'react-router';
 
 import { useAuth } from '../hooks/useAuth';
 import { useOrgNavigate } from '../hooks/useOrgNavigate';
+import MessagesPreviewPanel from './MessagesPreviewPanel';
 import { useCanAccessChat } from '../hooks/chat/useCanAccessChat';
 import { useTranslation } from 'react-i18next';
 import useChatUnreadStore from '../stores/chatUnreadStore';

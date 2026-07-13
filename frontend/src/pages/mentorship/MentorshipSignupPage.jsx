@@ -1,12 +1,34 @@
+import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useMemo, useState } from 'react';
-
-
+import {
+  Alert,
+  Box,
+  Button,
+  Container,
+  Paper,
+  Stack,
+  Step,
+  StepLabel,
+  Stepper,
+  Typography,
+} from '@mui/material';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import CheckIcon from '@mui/icons-material/Check';
+import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined';
 import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
 import { useEffect } from 'react';
 
-
-
+import Page from '../../components/Page';
+import {
+  ScrollReveal,
+  ScrollRevealGroup,
+  ScrollRevealItem,
+} from '../../components/animations/ScrollReveal';
+import MentorSignupTabProfile from '../../components/mentorship/signup/MentorSignupTabProfile';
+import MentorSignupTabContent from '../../components/mentorship/signup/MentorSignupTabContent';
+import MentorSignupTabTerms from '../../components/mentorship/signup/MentorSignupTabTerms';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useMyOrganizationMember } from '../../hooks/useMyOrganizationMember';
 import { useOrganization } from '../../hooks/useOrganization';

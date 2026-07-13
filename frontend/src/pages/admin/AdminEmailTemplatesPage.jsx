@@ -1,8 +1,21 @@
+import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useOutletContext } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { Paper
+import {
+  Box, Typography, Button, TextField, Stack, Table, TableBody, TableCell,
+  TableContainer, TableHead, TableRow, Paper, IconButton,
+  Chip, Alert, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions,
+  Tabs, Tab, Tooltip, CircularProgress, Divider
 } from '@mui/material';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import SaveIcon from '@mui/icons-material/Save';
+import RestartAltIcon from '@mui/icons-material/RestartAlt';
+import CodeIcon from '@mui/icons-material/Code';
+import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
+import WYSIWYG from '../../components/WYSIWYG';
 import useAdminEmailTemplates, { buildSampleData } from '../../hooks/admin/useAdminEmailTemplates';
 import { useSnackbar } from 'notistack';
 
