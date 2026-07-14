@@ -752,18 +752,18 @@ export default function SettingPage() {
 
   return (
       <Page title={t('page_title')} meta={<meta name="description" content={t('page_title')} />}>
-        <Container maxWidth="xl" sx={{ minHeight: 'calc(100vh - 60px)', display: 'flex', alignItems: 'stretch', pt: { xs: 2, sm: 3, md: 4 }, px: { xs: 2, sm: 3, lg: 6 }, pb: { xs: 2, sm: 3, lg: 6 } }}>
+        <Container maxWidth="xl" sx={{ minHeight: 'calc(100vh - 60px)', display: 'flex', alignItems: 'stretch', pt: { xs: 2, sm: 3, md: 4 }, px: { xs: 2, sm: 3, lg: 6 }, pb: { xs: 5, sm: 7, lg: 10 } }}>
           <Box sx={{ display: 'flex', width: '100%', flexDirection: { xs: 'column', md: 'row' }, gap: { xs: 2, md: 3 } }}>
             <ScrollReveal direction="right" sx={{ width: { xs: '100%', md: 260 } }}>
               <Sidebar items={menuItems} value={activeTab} onChange={setActiveTab} useRouting={false} />
             </ScrollReveal>
 
             {/* Right Content Area */}
-            <ScrollReveal direction="left" sx={{ flex: 1, minWidth: 0, px: { xs: 1.5, sm: 2, md: 2.75 } }}>
-              <Stack spacing={2}>
+            <ScrollReveal direction="left" sx={{ flex: 1, minWidth: 0, px: { xs: 1.5, sm: 2, md: 2.75 }, display: 'flex', flexDirection: 'column' }}>
+              <Stack spacing={2} sx={{ mb: { xs: 2, md: 2.5 } }}>
                 <Typography variant="h1" fontWeight={800} color="primary.main">{t('page_heading')}</Typography>
               </Stack>
-              <Card sx={{ p: 4, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', border: 1, borderColor: 'divider', borderRadius: 1, bgcolor: 'background.paper' }}>
+              <Card sx={{ p: 4, width: '100%', minHeight: { xs: 'auto', md: 520 }, display: 'flex', flexDirection: 'column', border: 1, borderColor: 'divider', borderRadius: 1, bgcolor: 'background.paper' }}>
                 <ScrollReveal key={activeTab}>{renderContent()}</ScrollReveal>
               </Card>
             </ScrollReveal>

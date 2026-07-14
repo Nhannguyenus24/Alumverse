@@ -6,13 +6,17 @@ import {
   Alert,
   Box,
   Button,
+  Checkbox,
   CircularProgress,
+  FormControlLabel,
   IconButton,
   Stack,
   TextField,
   Typography,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import CloseIcon from '@mui/icons-material/Close';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import PersonIcon from '@mui/icons-material/Person';
 import EmailIcon from '@mui/icons-material/Email'
@@ -25,6 +29,7 @@ import SchoolIcon from '@mui/icons-material/School';
 import ArticleIcon from '@mui/icons-material/Article';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import PsychologyIcon from '@mui/icons-material/Psychology';
+import SaveIcon from '@mui/icons-material/Save';
 import Avatar from '@mui/material/Avatar';
 
 import Page from '../../components/Page';
@@ -53,6 +58,13 @@ import {
 } from '../../utils/imageUtils';
 import { extractMentorshipSkills, userSettingsApi } from '../../utils/api';
 import { validateVietnamPhone } from '../../utils/regexUtils';
+import {
+  PROFILE_CONTACT_FIELDS,
+  buildProfileContactLinksPayload,
+  isValidContactEmail,
+  normalizeProfileContactLinksPayload,
+  parseProfileContactLinks,
+} from '../../utils/profileContactLinks';
 import TagPriorityList from '../../components/mentorship/signup/TagPriorityList';
 import {
   getBaseProfileTabs,
@@ -218,20 +230,6 @@ const buildPreservedAcademicPayload = (academicProfile) => {
   };
 };
 
-const parseLinks = (raw) => {
-  if (!raw) return [];
-  if (Array.isArray(raw)) return raw.map((link) => String(link).trim()).filter(Boolean);
-  try {
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.map((link) => String(link).trim()).filter(Boolean) : [];
-  } catch {
-    return [];
-  }
-};
-
-const areArraysEqual = (left, right) =>
-  left.length === right.length && left.every((item, index) => item === right[index]);
-
 const ProfileItem = ({ label, value, notUpdatedLabel = '—' }) => (
   <Box
     sx={{
@@ -268,8 +266,8 @@ const UnifiedProfileEditPage = () => {
   const mentorQuery = useMyMentorProfile();
   const access = useMentorshipAccessState();
 
-  const { updateProfile: updateBaseProfile, isPending: savingBase, errorMessage: baseError } = useUpdateProfile();
-  const { updateProfile: updateMentorProfile, isPending: savingMentor, errorMessage: mentorError } = useUpdateMentorProfile();
+  const { updateProfile: updateBaseProfile, isPending: savingBase } = useUpdateProfile();
+  const { updateProfile: updateMentorProfile, isPending: savingMentor } = useUpdateMentorProfile();
 
   const [savingMedia, setSavingMedia] = useState(false);
 
@@ -289,10 +287,12 @@ const UnifiedProfileEditPage = () => {
   const [projects, setProjects] = useState([]);
   const [awards, setAwards] = useState([]);
   const [skills, setSkills] = useState([]);
-  const [success, setSuccess] = useState(false);
-  const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [linksText, setLinksText] = useState('');
+  const [contactLinks, setContactLinks] = useState(() =>
+    Object.fromEntries(PROFILE_CONTACT_FIELDS.map((field) => [field.key, ''])),
+  );
+  const [contactLinkExtras, setContactLinkExtras] = useState([]);
+  const [showContactEmail, setShowContactEmail] = useState(false);
 
   const avatarCrop = useAvatarCrop();
   const organizationId = useOrganizationStore((state) => state.organization?.id ?? null);
@@ -311,14 +311,14 @@ const UnifiedProfileEditPage = () => {
       setCurrentCompany(p?.currentCompany ?? m?.currentCompany ?? '');
       setBio(p?.bio ?? '');
       setDefaultMeetingLink(m?.defaultMeetingLink ?? '');
-      setEmail(p?.email ?? '');
       setPhone(p?.phone ?? '');
 
       setCoverPreview(resolveMediaUrl(p?.coverUrl) || (isMentorshipEdit ? MENTORSHIP_COVER : DEFAULT_COVER));
       setCoverFile(null);
-      let parsedLinks = [];
-      try { parsedLinks = p?.links ? JSON.parse(p.links) : []; } catch { /* ignore */ }
-      setLinksText(Array.isArray(parsedLinks) ? parsedLinks.join('\n') : '');
+      const parsedContactLinks = parseProfileContactLinks(p?.links);
+      setContactLinks(parsedContactLinks.values);
+      setContactLinkExtras(parsedContactLinks.extras);
+      setShowContactEmail(parsedContactLinks.showContactEmail);
       
       const extStr = m?.extendedProfile ?? p?.extendedProfile;
       const ext = parseExtended(extStr);
@@ -356,7 +356,6 @@ const UnifiedProfileEditPage = () => {
   };
 
   const handleSave = async () => {
-    setSuccess(false);
     if (isMentorshipEdit && access.isMentorPending) {
       enqueueSnackbar(t('profile:mentor_pending_edit_warning'), { variant: 'warning' });
       return;
@@ -425,14 +424,25 @@ const UnifiedProfileEditPage = () => {
         });
       }
       
-      const linksArray = linksText.split('\n').map(l => l.trim()).filter(Boolean);
-      const existingLinks = parseLinks(profileQuery.data?.links);
+      if (showContactEmail && contactLinks.contactEmail.trim() && !isValidContactEmail(contactLinks.contactEmail)) {
+        enqueueSnackbar(
+          t('profile:contact_email_invalid', { defaultValue: 'Email liên hệ không đúng định dạng.' }),
+          { variant: 'warning' },
+        );
+        return;
+      }
+
+      const linksPayload = buildProfileContactLinksPayload(contactLinks, {
+        showContactEmail,
+        extras: contactLinkExtras,
+      });
+      const existingLinksPayload = normalizeProfileContactLinksPayload(profileQuery.data?.links);
       const hasBaseProfileChanges = !isMentorshipEdit && (
         bio.trim() !== (profileQuery.data?.bio ?? '').trim() ||
         phone.trim() !== (profileQuery.data?.phone ?? '').trim() ||
         currentJobTitle.trim() !== (profileQuery.data?.currentJobTitle ?? '').trim() ||
         currentCompany.trim() !== (profileQuery.data?.currentCompany ?? '').trim() ||
-        !areArraysEqual(linksArray, existingLinks)
+        JSON.stringify(linksPayload) !== JSON.stringify(existingLinksPayload)
       );
 
       if (hasBaseProfileChanges) {
@@ -442,7 +452,7 @@ const UnifiedProfileEditPage = () => {
           phone: phone.trim() || undefined,
           currentJobTitle: currentJobTitle.trim(),
           currentCompany: currentCompany.trim(),
-          links: linksArray,
+          links: linksPayload,
           ...buildPreservedAcademicPayload(orgMemberQuery.data),
         });
       } else if (!didUpdateMedia && !isMentorshipEdit) {
@@ -455,7 +465,6 @@ const UnifiedProfileEditPage = () => {
       queryClient.invalidateQueries({ queryKey: ['mentorship', 'mentor', 'me', 'profile'] });
       queryClient.invalidateQueries({ queryKey: ['publicProfile'] });
 
-      setSuccess(true);
       enqueueSnackbar(t('profile:success_save'), { variant: 'success' });
       setTimeout(() => navigate(isMentorshipEdit ? '/mentorship/profile' : '/profile'), 800);
     } catch (error) {
@@ -549,7 +558,6 @@ const UnifiedProfileEditPage = () => {
   const profile = profileQuery.data;
   
   const saving = savingBase || savingMentor;
-  const errorMessage = mentorError || baseError;
   const isPendingMentorEdit = isMentorshipEdit && access.isMentorPending;
 
   const user = {
@@ -612,84 +620,151 @@ const UnifiedProfileEditPage = () => {
           : topTabs)
     : topTabs;
 
+  const handleContactLinkChange = (key) => (event) => {
+    setContactLinks((current) => ({
+      ...current,
+      [key]: event.target.value,
+    }));
+  };
+
   const renderPersonalSection = () => (
-    <ScrollRevealGroup stagger={0.07} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-      <ScrollRevealItem><Typography variant="h5" fontWeight={800} color="primary.main" mb={2} display="flex" alignItems="center" gap={1}>
-        <PersonIcon />
-        {t('profile:intro_section')}
-      </Typography></ScrollRevealItem>
+    <ScrollRevealGroup stagger={0.07} sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <ScrollRevealItem>
+        <Stack spacing={1.25}>
+          <Typography variant="h5" fontWeight={800} color="primary.main" display="flex" alignItems="center" gap={1}>
+            <PersonIcon />
+            {t('profile:intro_section')}
+          </Typography>
+          <TextField
+            fullWidth
+            multiline
+            minRows={6}
+            value={bio}
+            onChange={(e) => setBio(e.target.value.slice(0, 500))}
+            placeholder={t('profile:bio_placeholder')}
+            inputProps={{ maxLength: 500 }}
+            helperText={`${bio.length}/500`}
+            FormHelperTextProps={{ sx: { textAlign: 'right', mr: 0 } }}
+          />
+        </Stack>
+      </ScrollRevealItem>
 
-      <ScrollRevealItem><TextField
-        fullWidth
-        multiline
-        minRows={6}
-        value={bio}
-        onChange={(e) => setBio(e.target.value.slice(0, 500))}
-        placeholder={t('profile:bio_placeholder')}
-        inputProps={{ maxLength: 500 }}
-        helperText={`${bio.length}/500`}
-        FormHelperTextProps={{ sx: { textAlign: 'right', mr: 0 } }}
-      /></ScrollRevealItem>
-      
-      <ScrollRevealItem><Typography variant="h5" fontWeight={800} color="primary.main" mb={2} mt={4} display="flex" alignItems="center" gap={1}>
-        <WorkIcon />
-        {t('profile:job_info', { defaultValue: 'Thông tin công việc' })}
-      </Typography></ScrollRevealItem>
-      
-      <ScrollRevealItem><Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
-        <TextField
-          label={t('profile:label_title')}
-          value={currentJobTitle}
-          onChange={(e) => setCurrentJobTitle(e.target.value)}
-          fullWidth
-        />
-        <TextField
-          label={t('profile:label_company')}
-          value={currentCompany}
-          onChange={(e) => setCurrentCompany(e.target.value)}
-          fullWidth
-        />
-      </Stack></ScrollRevealItem>
+      <ScrollRevealItem>
+        <Stack spacing={1.75}>
+          <Typography variant="h5" fontWeight={800} color="primary.main" display="flex" alignItems="center" gap={1}>
+            <WorkIcon />
+            {t('profile:job_info', { defaultValue: 'Thông tin công việc' })}
+          </Typography>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+            <TextField
+              label={t('profile:label_title')}
+              value={currentJobTitle}
+              onChange={(e) => setCurrentJobTitle(e.target.value)}
+              fullWidth
+            />
+            <TextField
+              label={t('profile:label_company')}
+              value={currentCompany}
+              onChange={(e) => setCurrentCompany(e.target.value)}
+              fullWidth
+            />
+          </Stack>
+        </Stack>
+      </ScrollRevealItem>
 
-      <ScrollRevealItem><Typography variant="h5" fontWeight={800} color="primary.main" mb={2} mt={4} display="flex" alignItems="center" gap={1}>
-        <LinkIcon />
-        {t('profile:social_links', { defaultValue: 'Liên kết mạng xã hội' })}
-      </Typography></ScrollRevealItem>
-      <ScrollRevealItem><TextField
-        fullWidth
-        multiline
-        minRows={3}
-        value={linksText}
-        onChange={(e) => setLinksText(e.target.value)}
-        placeholder={t('profile:links_placeholder', { defaultValue: 'Mỗi link một dòng (VD: https://facebook.com/...)' })}
-      /></ScrollRevealItem>
+      <ScrollRevealItem>
+        <Stack spacing={1.25}>
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            alignItems={{ xs: 'flex-start', sm: 'center' }}
+            justifyContent="space-between"
+            gap={1}
+          >
+            <Typography variant="h5" fontWeight={800} color="primary.main" display="flex" alignItems="center" gap={1}>
+              <EmailIcon />
+              {t('profile:public_contact_email', { defaultValue: 'Email liên hệ công khai' })}
+            </Typography>
+            <FormControlLabel
+              sx={{ mr: 0 }}
+              control={(
+                <Checkbox
+                  checked={showContactEmail}
+                  onChange={(event) => setShowContactEmail(event.target.checked)}
+                />
+              )}
+              label={t('profile:show_on_profile', { defaultValue: 'Hiển thị trên hồ sơ' })}
+            />
+          </Stack>
+          <TextField
+            fullWidth
+            type="email"
+            value={contactLinks.contactEmail}
+            onChange={handleContactLinkChange('contactEmail')}
+            placeholder={t('profile:public_contact_email_placeholder', { defaultValue: 'email-lien-he@example.com' })}
+            error={Boolean(contactLinks.contactEmail.trim()) && !isValidContactEmail(contactLinks.contactEmail)}
+            helperText={
+              contactLinks.contactEmail.trim() && !isValidContactEmail(contactLinks.contactEmail)
+                ? t('profile:contact_email_invalid', { defaultValue: 'Email liên hệ không đúng định dạng.' })
+                : t('profile:public_contact_email_hint', { defaultValue: 'Email này chỉ dùng để hiển thị trên trang cá nhân, không thay đổi email đăng nhập.' })
+            }
+          />
+        </Stack>
+      </ScrollRevealItem>
 
-      <ScrollRevealItem><Typography variant="h5" fontWeight={800} color="primary.main" mb={2} mt={4} display="flex" alignItems="center" gap={1}>
-        <EmailIcon />
-        {t('profile:email')}
-      </Typography></ScrollRevealItem>
+      <ScrollRevealItem>
+        <Stack spacing={1.25}>
+          <Typography variant="h5" fontWeight={800} color="primary.main" display="flex" alignItems="center" gap={1}>
+            <PhoneIcon />
+            {t('profile:phone')}
+          </Typography>
+          <TextField
+            fullWidth
+            value={phone}
+            onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+            placeholder={t('profile:phone_placeholder')}
+            inputProps={{ inputMode: 'numeric', maxLength: 10 }}
+            error={Boolean(phoneError)}
+            helperText={phoneError || t('profile:phone_private_hint', { defaultValue: 'Số điện thoại được lưu trong hệ thống và không hiển thị công khai trên hồ sơ.' })}
+          />
+        </Stack>
+      </ScrollRevealItem>
 
-      <ScrollRevealItem><TextField
-        fullWidth
-        value={email}
-        disabled
-        helperText={t('profile:email_change_hint', { defaultValue: 'Email được quản lý ở phần cài đặt tài khoản.' })}
-      /></ScrollRevealItem>
-
-      <ScrollRevealItem><Typography variant="h5" fontWeight={800} color="primary.main" mb={2} mt={4} display="flex" alignItems="center" gap={1}>
-        <PhoneIcon />
-        {t('profile:phone')}
-      </Typography></ScrollRevealItem>
-
-      <ScrollRevealItem><TextField
-        fullWidth
-        value={phone}
-        onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-        placeholder={t('profile:phone_placeholder')}
-        inputProps={{ inputMode: 'numeric', maxLength: 10 }}
-        error={Boolean(phoneError)}
-        helperText={phoneError || ''}
-      /></ScrollRevealItem>
+      <ScrollRevealItem>
+        <Stack spacing={1.75}>
+          <Typography variant="h5" fontWeight={800} color="primary.main" display="flex" alignItems="center" gap={1}>
+            <LinkIcon />
+            {t('profile:social_links', { defaultValue: 'Liên kết mạng xã hội' })}
+          </Typography>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+              gap: 1.5,
+            }}
+          >
+            {PROFILE_CONTACT_FIELDS.filter((field) => field.key !== 'contactEmail').map((field) => (
+              <TextField
+                key={field.key}
+                label={field.labelKey
+                  ? t(`profile:${field.labelKey}`, { defaultValue: field.defaultLabel })
+                  : field.label}
+                value={contactLinks[field.key]}
+                onChange={handleContactLinkChange(field.key)}
+                placeholder={field.placeholder}
+                fullWidth
+              />
+            ))}
+          </Box>
+          {contactLinkExtras.length > 0 && (
+            <Typography variant="caption" color="text.secondary">
+              {t('profile:legacy_links_preserved', {
+                count: contactLinkExtras.length,
+                defaultValue: 'Đang giữ {{count}} liên kết cũ chưa nhận diện được.',
+              })}
+            </Typography>
+          )}
+        </Stack>
+      </ScrollRevealItem>
     </ScrollRevealGroup>
   );
 
@@ -704,10 +779,10 @@ const UnifiedProfileEditPage = () => {
               </Typography>
             </Alert>
             <Stack direction="row" spacing={1.5}>
-              <Button variant="outlined" onClick={() => navigate('/mentorship/profile')}>
+              <Button variant="outlined" startIcon={<ArrowBackIcon />} onClick={() => navigate('/mentorship/profile')}>
                 {t('profile:back_to_profile_btn')}
               </Button>
-              <Button variant="contained" onClick={() => navigate('/mentorship/signup')}>
+              <Button variant="contained" startIcon={<SchoolIcon />} onClick={() => navigate('/mentorship/signup')}>
                 {t('profile:reopen_signup_btn')}
               </Button>
             </Stack>
@@ -738,7 +813,7 @@ const UnifiedProfileEditPage = () => {
 
         {isPendingMentorEdit ? (
           <Stack direction="row" spacing={1.5} flexWrap="wrap">
-            <Button variant="contained" onClick={() => navigate('/mentorship')}>
+            <Button variant="contained" startIcon={<ArrowBackIcon />} onClick={() => navigate('/mentorship')}>
               {t('mentorship:mentor_signup_go_back')}
             </Button>
           </Stack>
@@ -935,6 +1010,7 @@ const UnifiedProfileEditPage = () => {
               <Button
                 variant="outlined"
                 color="inherit"
+                startIcon={<CloseIcon />}
                 onClick={() => navigate(isPendingMentorEdit ? '/mentorship' : (isMentorshipEdit ? '/mentorship/profile' : '/profile'))}
                 disabled={saving}
               >
@@ -942,7 +1018,12 @@ const UnifiedProfileEditPage = () => {
               </Button>
 
               {!isPendingMentorEdit && (
-                <Button variant="contained" onClick={handleSave} disabled={saving || savingMedia}>
+                <Button
+                  variant="contained"
+                  startIcon={<SaveIcon />}
+                  onClick={handleSave}
+                  disabled={saving || savingMedia}
+                >
                   {saving || savingMedia ? t('profile:saving_btn') : t('profile:save_btn')}
                 </Button>
               )}

@@ -1,10 +1,16 @@
-import { Box, Typography } from '@mui/material';
+import { Avatar, Box, Typography } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import { formatRelativeTimeVi } from '../../utils/dateFormatter';
 import { useTranslation } from 'react-i18next';
 
+const getInitial = (name) => {
+  const trimmed = typeof name === 'string' ? name.trim() : '';
+  return trimmed ? trimmed.charAt(0).toUpperCase() : '';
+};
+
 const ForumTopicListItem = ({ topic, onClick }) => {
   const { t } = useTranslation(['forum']);
+  const authorName = topic.authorName?.trim() || `${t('forum:member_prefix')}${topic.createdByMemberId ?? '—'}`;
   return (
     <Box
       onClick={() => onClick(topic)}
@@ -85,27 +91,25 @@ const ForumTopicListItem = ({ topic, onClick }) => {
             justifyContent: 'flex-end',
           }}
         >
-          <Box
+          <Avatar
+            src={topic.authorAvatarUrl || undefined}
+            alt={authorName}
             sx={{
               width: 32,
               height: 32,
-              borderRadius: '50%',
               bgcolor: 'primary.main',
               color: 'primary.contrastText',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
               flexShrink: 0,
             }}
           >
-            <PersonIcon sx={{ fontSize: 18 }} />
-          </Box>
-          <Box sx={{ textAlign: 'left' }}>
-            <Typography variant="body2" fontWeight={600}>
-              {t('forum:member_prefix')}{topic.createdByMemberId ?? '—'}
+            {getInitial(authorName) || <PersonIcon sx={{ fontSize: 18 }} />}
+          </Avatar>
+          <Box sx={{ textAlign: 'left', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 0.4 }}>
+            <Typography variant="body2" fontWeight={600} sx={{ lineHeight: 1.15 }}>
+              {authorName}
             </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {formatRelativeTimeVi(topic.updatedAt)}
+            <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.1 }}>
+              {formatRelativeTimeVi(topic.createdAt)}
             </Typography>
           </Box>
         </Box>

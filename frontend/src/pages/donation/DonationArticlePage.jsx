@@ -3,6 +3,7 @@ import { useParams } from "react-router";
 import { Box, Button, Container, Divider, Stack, Typography } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import EventBusyOutlinedIcon from "@mui/icons-material/EventBusyOutlined";
 import VolunteerActivismOutlinedIcon from "@mui/icons-material/VolunteerActivismOutlined";
 import DOMPurify from "dompurify";
 import dayjs from "dayjs";
@@ -201,20 +202,23 @@ export default function DonationArticlePage() {
                   })}
                 >
                   <Box sx={{ flex: 1 }}>
-                    <DonationFundInfoPanel fundDetail={fundDetail} />
-                  </Box>
-
-                  {!isAdmin && (
-                    <Box sx={{ flex: { md: "0 0 240px" }, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                    <DonationFundInfoPanel
+                      fundDetail={fundDetail}
+                      action={!isAdmin ? (
                       <Button
-                        fullWidth
+                        fullWidth={false}
                         variant="contained"
-                        color={isClosed ? "secondary" : "primary"}
+                        color={isClosed ? "secondary" : "accent"}
+                        startIcon={isClosed ? <EventBusyOutlinedIcon /> : <VolunteerActivismOutlinedIcon />}
                         onClick={isClosed ? undefined : handleDonate}
                         disabled={isClosed}
                         sx={{
                           textTransform: "none",
                           fontWeight: 700,
+                          px: { xs: 2.5, sm: 4 },
+                          py: 1.1,
+                          minWidth: { xs: "100%", sm: 220 },
+                          maxWidth: { sm: 280 },
                           cursor: isClosed ? "not-allowed" : "pointer",
                           ...(isClosed && {
                             color: "#fff",
@@ -225,13 +229,14 @@ export default function DonationArticlePage() {
                       >
                         {isClosed ? t('article_fund_closed') : t('donate_btn')}
                       </Button>
-                    </Box>
-                  )}
+                      ) : null}
+                    />
+                  </Box>
                 </ScrollRevealItem>
 
-                <ScrollRevealItem sx={{ display: "flex", alignItems: "center", gap: 2, my: 3 }}>
+                <ScrollRevealItem sx={{ display: "flex", alignItems: "center", gap: 2, mt: { xs: 5, md: 6 }, mb: { xs: 3, md: 4 } }}>
                   <Divider sx={{ flex: 1 }} />
-                  <Typography variant="h1" component="h2" fontWeight={700} color="primary.main" sx={{ whiteSpace: "nowrap", fontSize: { xs: "1.8rem", md: "2.1rem" } }}>
+                  <Typography variant="h3" component="h2" fontWeight={700} color="primary.main" sx={{ whiteSpace: "nowrap", fontSize: { xs: "1.35rem", md: "1.6rem" } }}>
                     {t('article_section_title')}
                   </Typography>
                   <Divider sx={{ flex: 1 }} />

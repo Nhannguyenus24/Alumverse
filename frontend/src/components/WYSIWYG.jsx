@@ -27,6 +27,14 @@ const WYSIWYG = ({
   const uploadRef = useRef(uploadFile);
   uploadRef.current = uploadFile;
 
+  const getQuillEditor = useCallback(() => {
+    try {
+      return quillRef.current?.getEditor?.() ?? null;
+    } catch {
+      return null;
+    }
+  }, []);
+
   // Validate + upload a file through the image service and return a hosted URL
   // (never a base64 data URL), so editor content stored in the DB only holds links.
   const uploadImage = useCallback(
@@ -54,7 +62,7 @@ const WYSIWYG = ({
   // Upload any base64/data-URL images that slipped into the editor (paste or
   // drag-and-drop) and swap them for the hosted URL in place.
   const replaceEmbeddedImages = useCallback(async () => {
-    const quill = quillRef.current?.getEditor?.();
+    const quill = getQuillEditor();
     if (!quill) return;
 
     const dataImages = [];
@@ -85,7 +93,7 @@ const WYSIWYG = ({
         // ignore a single failed image; others still get processed
       }
     }
-  }, [uploadImage]);
+  }, [getQuillEditor, uploadImage]);
 
   const modules = useMemo(
     () => ({
@@ -106,7 +114,7 @@ const WYSIWYG = ({
         handlers: allowImages
           ? {
               image: () => {
-                const quill = quillRef.current?.getEditor?.();
+                const quill = getQuillEditor();
                 if (!quill) return;
 
                 const input = document.createElement("input");
@@ -159,14 +167,14 @@ const WYSIWYG = ({
         ],
       },
     }),
-    [allowImages, requireImageCaptions, t, uploadImage]
+    [allowImages, getQuillEditor, requireImageCaptions, t, uploadImage]
   );
 
   // Catch images pasted or dropped into the editor (Quill embeds them as base64)
   // and rewrite them to hosted URLs so nothing base64 ever reaches the DB.
   useEffect(() => {
     if (!allowImages) return undefined;
-    const quill = quillRef.current?.getEditor?.();
+    const quill = getQuillEditor();
     if (!quill) return undefined;
 
     const handler = (delta) => {
@@ -182,8 +190,14 @@ const WYSIWYG = ({
     };
 
     quill.on("text-change", handler);
-    return () => quill.off("text-change", handler);
-  }, [allowImages, replaceEmbeddedImages]);
+    return () => {
+      try {
+        quill.off("text-change", handler);
+      } catch {
+        // Editor can be torn down during route/i18n remounts.
+      }
+    };
+  }, [allowImages, getQuillEditor, replaceEmbeddedImages]);
 
   const formats = [
     "header",

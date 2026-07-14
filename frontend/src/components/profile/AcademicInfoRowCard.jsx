@@ -8,7 +8,9 @@ const AcademicCard = ({ icon: Icon, label, value }) => {
     <Box
       sx={{
         p: 2.5,
+        width: '100%',
         height: '100%',
+        minWidth: 0,
         borderRadius: 1,
         border: '1px solid',
         borderColor: 'divider',
@@ -21,7 +23,7 @@ const AcademicCard = ({ icon: Icon, label, value }) => {
         },
       }}
     >
-      <Stack spacing={1.5}>
+      <Stack spacing={1.5} sx={{ height: '100%', minWidth: 0 }}>
         {Icon && <Icon color="primary" />}
 
         <Typography
@@ -35,6 +37,10 @@ const AcademicCard = ({ icon: Icon, label, value }) => {
         <Typography
           variant="body1"
           fontWeight={600}
+          sx={{
+            overflowWrap: 'anywhere',
+            wordBreak: 'break-word',
+          }}
         >
           {value || t('not_updated')}
         </Typography>

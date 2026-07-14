@@ -11,6 +11,7 @@ import {
   Typography,
 } from '@mui/material';
 import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
+import ChatBubbleOutlineOutlinedIcon from '@mui/icons-material/ChatBubbleOutlineOutlined';
 
 import IconButtonMenu from '../IconButtonMenu';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
@@ -54,6 +55,8 @@ const NetworkConnectionCard = ({
       onKeyDown={handleCardKeyDown}
       sx={{
         p: 2,
+        height: '100%',
+        minWidth: 0,
         borderRadius: 2,
         border: '1px solid',
         borderColor: 'divider',
@@ -73,7 +76,7 @@ const NetworkConnectionCard = ({
           <Avatar src={connection.avatarUrl} sx={{ width: 56, height: 56, flexShrink: 0 }} />
 
           <Box sx={{ minWidth: 0, flex: 1 }}>
-            <Typography fontWeight={700} variant="subtitle1" noWrap sx={{ lineHeight: 1.3 }}>
+            <Typography fontWeight={700} variant="subtitle1" noWrap sx={{ lineHeight: 1.3, minWidth: 0 }}>
               {displayName}
             </Typography>
             {academicRows.length > 0 ? (
@@ -112,8 +115,9 @@ const NetworkConnectionCard = ({
               type="button"
               onClick={handleMessage}
               disabled={!canContribute}
+              startIcon={<ChatBubbleOutlineOutlinedIcon />}
             >
-              {t('connect')}
+              {t('message')}
             </Button>
           </ContributeGuardTooltip>
 

@@ -26,5 +26,13 @@ export const stringifyJson = (value, fallback = '-') => {
 
 export const toPlainText = (value) => {
   if (value == null) return '';
-  return String(value).replace(/<[^>]*>/g, '').trim();
+  const withoutTags = String(value).replace(/<[^>]*>/g, '');
+  const decoded = withoutTags
+    .replace(/&nbsp;|&#160;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'");
+  return decoded.replace(/\s+/g, ' ').trim();
 };

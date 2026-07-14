@@ -18,7 +18,7 @@ public class UpdateMyProfileRequest {
 
     private String currentCompany;
 
-    private List<String> links;
+    private Object links;
 
     @NotNull(message = "Organization ID is required")
     @Min(value = 1, message = "Organization ID must be greater than 0")

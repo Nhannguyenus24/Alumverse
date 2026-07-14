@@ -109,8 +109,22 @@ export const getChangePasswordSchema = (t) => z.object({
   path: ['confirmNewPassword'],
 });
 
+/** Change password API payload: backend only accepts oldPassword and newPassword. */
+export const getChangePasswordRequestSchema = (t) => z.object({
+  oldPassword: z.string().min(1, t ? t('auth:old_password_required') : 'Mật khẩu hiện tại là bắt buộc'),
+  newPassword: z
+    .string()
+    .min(1, t ? t('auth:new_password_required') : 'Mật khẩu mới là bắt buộc')
+    .min(8, t ? t('auth:new_password_length') : 'Mật khẩu mới từ 8–50 ký tự')
+    .max(50, t ? t('auth:new_password_length') : 'Mật khẩu mới từ 8–50 ký tự')
+    .regex(PASSWORD_REGEX, t ? t('auth:password_complexity') : 'Mật khẩu phải có ít nhất một chữ hoa, chữ thường, số và ký tự đặc biệt (@$!%*?&)'),
+});
+
 /** @deprecated Use getChangePasswordSchema(t) instead */
 export const changePasswordSchema = getChangePasswordSchema(null);
+
+/** @deprecated Use getChangePasswordRequestSchema(t) instead */
+export const changePasswordRequestSchema = getChangePasswordRequestSchema(null);
 
 // --- Donation Schemas & Utils ---
 

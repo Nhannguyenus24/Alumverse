@@ -1,6 +1,6 @@
 import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useEffect, useMemo, useState } from 'react';
-import { useLocation, useNavigate, useParams } from 'react-router';
+import { useLocation, useParams } from 'react-router';
 import {
   Alert,
   Box,
@@ -10,6 +10,8 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { useSnackbar } from 'notistack';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import StarIcon from '@mui/icons-material/Star';
 import PersonIcon from '@mui/icons-material/Person';
 import EmailIcon from '@mui/icons-material/Email';
@@ -62,6 +64,7 @@ import { formatRating } from '../../utils/numberFormatter';
 import { resolveProfileRoleLabel } from '../../utils/profileRoleUtils';
 import { resolveMediaUrl } from '../../utils/imageUtils';
 import { formatPeriodDisplay } from '../../utils/experiencePeriod';
+import { getPublicContactEmail } from '../../utils/profileContactLinks';
 import {
   ScrollReveal,
   ScrollRevealGroup,
@@ -278,7 +281,13 @@ const ReviewsSection = ({
 
         {totalPages > 1 && (
           <ScrollRevealItem sx={{ display: 'flex', justifyContent: 'center', gap: 1, mt: 4 }}>
-            <Button variant="outlined" disabled={page <= 1} onClick={() => onPageChange(page - 1)} sx={{ borderRadius: 2 }}>
+            <Button
+              variant="outlined"
+              startIcon={<ChevronLeftIcon />}
+              disabled={page <= 1}
+              onClick={() => onPageChange(page - 1)}
+              sx={{ borderRadius: 2 }}
+            >
               {t('profile:prev_page')}
             </Button>
             <Typography sx={{ display: 'flex', alignItems: 'center', px: 2, fontWeight: 600 }}>
@@ -286,6 +295,7 @@ const ReviewsSection = ({
             </Typography>
             <Button
               variant="outlined"
+              endIcon={<ChevronRightIcon />}
               disabled={page >= totalPages}
               onClick={() => onPageChange(page + 1)}
               sx={{ borderRadius: 2 }}
@@ -393,12 +403,13 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
   }
 
   const renderPersonalSection = () => {
+    const contactEmail = getPublicContactEmail(profile?.links);
     const personalFields = [
       { icon: PersonIcon, label: t('profile:full_name'), value: profile?.fullName },
-      { icon: EmailIcon, label: t('profile:email'), value: profile?.email },
+      contactEmail ? { icon: EmailIcon, label: t('profile:contact_email', { defaultValue: 'Email liên hệ' }), value: contactEmail } : null,
       { icon: WorkIcon, label: t('profile:current_job'), value: currentJobTitle },
       { icon: BusinessIcon, label: t('profile:company'), value: currentCompany },
-    ];
+    ].filter(Boolean);
 
     const hasBio = !!personalBio?.trim();
 
@@ -454,10 +465,22 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
               </Typography>
             </Alert>
             <Stack direction="row" spacing={2} flexWrap="wrap">
-              <Button variant="contained" size="large" sx={{ borderRadius: 2 }} onClick={() => navigate('/mentorship/mentee-signup')}>
+              <Button
+                variant="contained"
+                size="large"
+                startIcon={<PsychologyIcon />}
+                sx={{ borderRadius: 2 }}
+                onClick={() => navigate('/mentorship/mentee-signup')}
+              >
                 {t('profile:find_mentor_btn')}
               </Button>
-              <Button variant="outlined" size="large" sx={{ borderRadius: 2 }} onClick={() => navigate('/mentorship/signup')}>
+              <Button
+                variant="outlined"
+                size="large"
+                startIcon={<VolunteerActivismIcon />}
+                sx={{ borderRadius: 2 }}
+                onClick={() => navigate('/mentorship/signup')}
+              >
                 {t('profile:become_mentor_btn')}
               </Button>
             </Stack>

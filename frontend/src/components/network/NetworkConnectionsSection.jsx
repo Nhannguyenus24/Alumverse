@@ -107,7 +107,10 @@ const NetworkConnectionsSection = ({ enableBlock = true }) => {
         }}
       >
         {items.map((connection) => (
-          <ScrollRevealItem key={connection.connectionId}><NetworkConnectionCard
+          <ScrollRevealItem
+            key={connection.connectionId}
+            sx={{ display: 'flex', minWidth: 0, height: '100%' }}
+          ><NetworkConnectionCard
             connection={connection}
             enableBlock={enableBlock}
             onBlock={() => setBlockTarget(connection)}

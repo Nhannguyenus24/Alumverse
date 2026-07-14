@@ -122,7 +122,19 @@ const GuestLandingContent = () => {
           }}
         >
           {getBenefits(t).map((item) => (
-            <ScrollRevealItem key={item.title}><Card sx={{ p: 3, border: '1px solid', borderColor: 'divider' }} elevation={0}>
+            <ScrollRevealItem key={item.title} sx={{ display: 'flex', minWidth: 0 }}>
+              <Card
+                sx={{
+                  p: 3,
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  border: '1px solid',
+                  borderColor: 'divider',
+                }}
+                elevation={0}
+              >
               <Box mb={1.5}>{item.icon}</Box>
               <Typography fontWeight={700} mb={1}>
                 {item.title}
@@ -130,7 +142,8 @@ const GuestLandingContent = () => {
               <Typography variant="body2" color="text.secondary">
                 {item.description}
               </Typography>
-            </Card></ScrollRevealItem>
+              </Card>
+            </ScrollRevealItem>
           ))}
         </ScrollRevealGroup>
       </ScrollRevealItem>

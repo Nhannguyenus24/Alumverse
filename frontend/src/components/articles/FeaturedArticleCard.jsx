@@ -113,7 +113,17 @@ const FeaturedArticleCard = ({
           {article.description}
         </Typography>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', mt: 2.5, gap: 2, flexWrap: 'wrap' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            mt: 'auto',
+            pt: 2.5,
+            gap: 2,
+            flexWrap: 'wrap',
+          }}
+        >
           <Typography
             variant="caption"
             color="text.secondary"

@@ -182,5 +182,19 @@
   "pub_load_profile_error": "Không tải được hồ sơ người dùng. Vui lòng thử lại.",
   "pub_no_bio": "Người dùng này chưa cập nhật phần giới thiệu.",
   "go_to_organization": "Đi tới tổ chức",
+  "contact_email": "Email liên hệ",
+  "public_contact_email": "Email liên hệ công khai",
+  "public_contact_email_placeholder": "email-lien-he@example.com",
+  "public_contact_email_hint": "Email này chỉ dùng để hiển thị trên trang cá nhân, không thay đổi email đăng nhập.",
+  "contact_email_invalid": "Email liên hệ không đúng định dạng.",
+  "show_on_profile": "Hiển thị trên hồ sơ",
+  "phone_private_hint": "Số điện thoại được lưu trong hệ thống và không hiển thị công khai trên hồ sơ.",
+  "contact_website": "Website",
+  "legacy_links_preserved": "Đang giữ {{count}} liên kết cũ chưa nhận diện được.",
+  "graduation_status": {
+    "STUDYING": "Đang học",
+    "GRADUATED": "Đã tốt nghiệp",
+    "DROPPED": "Đã thôi học"
+  },
   "social_links_count": "Mạng xã hội ({{count}})"
 }
