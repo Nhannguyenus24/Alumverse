@@ -204,6 +204,21 @@ public class ForumService {
                 .doOnSuccess(result -> log.info("updateTopic result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error updating forum topic ID: {}", id, error));
     }
+    public Mono<Void> deleteTopic(Integer topicId) {
+        return forumTopicRepository.findById(topicId)
+                .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_TOPIC_NOT_FOUND))))
+                .flatMap(topic -> cascadeDeleteTopic(topicId))
+                .doOnSuccess(v -> log.info("deleteTopic: topicId={} deleted", topicId))
+                .doOnError(error -> log.error("Error deleting topic ID: {}", topicId, error));
+    }
+
+    private Mono<Void> cascadeDeleteTopic(Integer topicId) {
+        return forumPostReactionRepository.deleteByTopicId(topicId)
+                .then(forumPostReportRepository.deleteByTopicId(topicId))
+                .then(forumTopicSubscriptionRepository.deleteByTopicId(topicId))
+                .then(forumPostRepository.deleteByTopicId(topicId))
+                .then(forumTopicRepository.deleteById(topicId));
+    }
 
     // Post methods
     public Mono<PaginatedResponse<ForumPostDTO>> findPostsByTopicId(Integer topicId, int page, int size, Integer memberId) {

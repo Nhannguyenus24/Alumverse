@@ -1,5 +1,10 @@
 import { Suspense, lazy } from "react";
-import { createBrowserRouter, Navigate, Outlet, useLocation } from "react-router";
+import {
+  createBrowserRouter,
+  Navigate,
+  Outlet,
+  useLocation,
+} from "react-router";
 import { Box, CircularProgress } from "@mui/material";
 import MainLayout from "../layouts/MainLayout";
 import AuthLayout from "../layouts/AuthLayout";
@@ -62,9 +67,7 @@ const ForumPage = Loadable(lazy(() => import("../pages/alumni/ForumPage")));
 const ForumCategoryPage = Loadable(
   lazy(() => import("../pages/alumni/ForumCategoryPage")),
 );
-const ForumAlumniCareerPage = Loadable(
-  lazy(() => import("../pages/alumni/ForumAlumniCareerPage")),
-);
+
 const ForumAlumniThreadPage = Loadable(
   lazy(() => import("../pages/alumni/ForumAlumniThreadPage")),
 );
@@ -218,9 +221,7 @@ const NetworkConnectionsPage = Loadable(
 const NetworkRestrictedConnectionsPage = Loadable(
   lazy(() => import("../pages/network/NetworkRestrictedConnectionsPage")),
 );
-const ChatPage = Loadable(
-  lazy(() => import("../pages/chat/ChatPage")),
-);
+const ChatPage = Loadable(lazy(() => import("../pages/chat/ChatPage")));
 
 // Development pages
 const DevelopmentPage = Loadable(
@@ -255,7 +256,6 @@ const MentorshipSignupPage = Loadable(
 const MenteeSignupPage = Loadable(
   lazy(() => import("../pages/mentorship/MenteeSignupPage")),
 );
-
 
 const mentorshipRouteChildren = [
   {
@@ -413,36 +413,27 @@ export const router = createBrowserRouter([
             element: <ForumCategoryPage />,
           },
           {
-            path: "alumni",
+            path: "topic",
             children: [
               {
-                path: "career",
-                children: [
-                  {
-                    index: true,
-                    element: <ForumAlumniCareerPage />,
-                  },
-                  {
-                    path: "create-post",
-                    element: <Navigate to="../create-topic" replace />,
-                  },
-                  {
-                    path: "create-topic",
-                    element: (
-                      <ProtectedRoute>
-                        <ForumAlumniCreateTopicPage />
-                      </ProtectedRoute>
-                    ),
-                  },
-                  {
-                    path: ":threadId",
-                    element: <ForumAlumniThreadPage />,
-                  },
-                  {
-                    path: ":threadId/page/:pageId",
-                    element: <ForumAlumniThreadPage />,
-                  },
-                ],
+                path: "create-post",
+                element: <Navigate to="../create-topic" replace />,
+              },
+              {
+                path: "create-topic",
+                element: (
+                  <ProtectedRoute>
+                    <ForumAlumniCreateTopicPage />
+                  </ProtectedRoute>
+                ),
+              },
+              {
+                path: ":threadId",
+                element: <ForumAlumniThreadPage />,
+              },
+              {
+                path: ":threadId/page/:pageId",
+                element: <ForumAlumniThreadPage />,
               },
             ],
           },

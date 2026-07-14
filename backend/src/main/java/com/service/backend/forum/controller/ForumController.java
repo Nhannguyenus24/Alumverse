@@ -153,6 +153,16 @@ public class ForumController {
     }
 
     /**
+     * Delete forum topic by id
+     */
+    @DeleteMapping("/topic/{id}")
+    public Mono<ResponseEntity<ApiResponse<Void>>> deleteTopic(
+            @PathVariable @Min(value = 1, message = "Topic ID must be greater than 0") Integer id) {
+        return forumService.deleteTopic(id)
+                .thenReturn(ResponseEntity.ok(new ApiResponse<>("Forum topic deleted successfully", null)));
+    }
+
+    /**
      * Subscribe or unsubscribe to a forum topic
      */
     @PostMapping("/topic/subscribe")
