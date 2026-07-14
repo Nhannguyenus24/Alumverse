@@ -324,8 +324,8 @@ public class AuthController {
     private Mono<ResponseEntity<ApiResponse<LoginResponse>>> buildLoginResponse(User user, Integer organizationId, boolean rememberMe) {
         long refreshTokenExpirationMs = rememberMe ? 2592000000L : 604800000L; // 30 days vs 7 days
 
-        if (organizationId == null || user.getRole() == UserRole.ADMIN || user.getRole() == UserRole.STAFF) {
-            // For admin login without organization, generate token with null orgId
+        if (user.getRole() == UserRole.ADMIN) {
+            // For admin login, generate token with null orgId
             String accessToken = jwtUtils.generateAccessToken(user, null);
             String refreshToken = jwtUtils.generateRefreshToken(user.getId(), refreshTokenExpirationMs);
 
@@ -342,16 +342,25 @@ public class AuthController {
                     .body(new ApiResponse<>("Login successful", loginResponse)));
         }
 
+        if (organizationId == null) {
+            return Mono.error(new ApplicationException(ErrorCode.FORBIDDEN, "Organization ID is required for non-admin users"));
+        }
+
         return authService.getVerificationLevel(user.getId(), organizationId)
                 .defaultIfEmpty(0) // If user is not a member, level is 0
                 .map(level -> {
+                    int finalLevel = level;
+                    if (user.getRole() == UserRole.STAFF) {
+                        finalLevel = (level == 4) ? 4 : 2;
+                    }
+
                     String accessToken = jwtUtils.generateAccessToken(user, organizationId);
                     String refreshToken = jwtUtils.generateRefreshToken(user.getId(), refreshTokenExpirationMs);
                     ResponseCookie refreshTokenCookie = buildRefreshTokenCookie(refreshToken, refreshTokenExpirationMs);
 
                     LoginResponse loginResponse = LoginResponse.builder()
                             .accessToken(accessToken)
-                            .verificationLevel(level)
+                            .verificationLevel(finalLevel)
                             .mustChangePassword(user.isMustChangePassword())
                             .build();
 

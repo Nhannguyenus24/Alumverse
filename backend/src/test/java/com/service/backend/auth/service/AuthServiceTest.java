@@ -384,5 +384,102 @@ class AuthServiceTest {
                             ((ApplicationException) err).getErrorCode() == ErrorCode.REFRESH_TOKEN_NOT_FOUND)
                     .verify();
         }
+        @Test
+        @DisplayName("should fail for non-admin when organizationId is null")
+        void refresh_nonAdmin_nullOrgId() throws Exception {
+            com.nimbusds.jwt.JWTClaimsSet claims = new com.nimbusds.jwt.JWTClaimsSet.Builder().subject("1").build();
+            when(jwtUtils.validateToken("valid-token")).thenReturn(claims);
+            
+            User user = User.builder().id(1).role(com.service.backend.shared.enums.UserRole.STAFF).build();
+            when(authRepository.findById(1)).thenReturn(Mono.just(user));
+
+            StepVerifier.create(authService.refreshAccessToken("valid-token", null))
+                    .expectErrorMatches(err -> err instanceof ApplicationException &&
+                            ((ApplicationException) err).getErrorCode() == ErrorCode.FORBIDDEN)
+                    .verify();
+        }
+
+        @Test
+        @DisplayName("should return 4 for STAFF if verification level in org is 4")
+        void refresh_staff_level4() throws Exception {
+            com.nimbusds.jwt.JWTClaimsSet claims = new com.nimbusds.jwt.JWTClaimsSet.Builder().subject("1").build();
+            when(jwtUtils.validateToken("valid-token")).thenReturn(claims);
+            
+            User user = User.builder().id(1).role(com.service.backend.shared.enums.UserRole.STAFF).build();
+            when(authRepository.findById(1)).thenReturn(Mono.just(user));
+            when(authRepository.getVerificationLevelByUserIdAndOrgId(1, 2)).thenReturn(Mono.just(4));
+            when(jwtUtils.generateAccessToken(user, 2)).thenReturn("new-access-token");
+
+            StepVerifier.create(authService.refreshAccessToken("valid-token", 2))
+                    .assertNext(res -> {
+                        assertThat(res.getAccessToken()).isEqualTo("new-access-token");
+                        assertThat(res.getVerificationLevel()).isEqualTo(4);
+                    })
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("should default to 2 for STAFF if verification level in org is not 4")
+        void refresh_staff_defaultLevel2() throws Exception {
+            com.nimbusds.jwt.JWTClaimsSet claims = new com.nimbusds.jwt.JWTClaimsSet.Builder().subject("1").build();
+            when(jwtUtils.validateToken("valid-token")).thenReturn(claims);
+            
+            User user = User.builder().id(1).role(com.service.backend.shared.enums.UserRole.STAFF).build();
+            when(authRepository.findById(1)).thenReturn(Mono.just(user));
+            when(authRepository.getVerificationLevelByUserIdAndOrgId(1, 2)).thenReturn(Mono.just(1));
+            when(jwtUtils.generateAccessToken(user, 2)).thenReturn("new-access-token");
+
+            StepVerifier.create(authService.refreshAccessToken("valid-token", 2))
+                    .assertNext(res -> {
+                        assertThat(res.getAccessToken()).isEqualTo("new-access-token");
+                        assertThat(res.getVerificationLevel()).isEqualTo(2);
+                    })
+                    .verifyComplete();
+        }
+    }
+
+    // ─── switchOrganization ──────────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("switchOrganization()")
+    class SwitchOrganization {
+
+        @Test
+        @DisplayName("should return 4 for STAFF if verification level in new org is 4")
+        void switchOrg_staff_level4() throws Exception {
+            com.nimbusds.jwt.JWTClaimsSet claims = new com.nimbusds.jwt.JWTClaimsSet.Builder().subject("1").build();
+            when(jwtUtils.validateToken("valid-token")).thenReturn(claims);
+
+            User user = User.builder().id(1).role(com.service.backend.shared.enums.UserRole.STAFF).build();
+            when(authRepository.findById(1)).thenReturn(Mono.just(user));
+            when(authRepository.getVerificationLevelByUserIdAndOrgId(1, 2)).thenReturn(Mono.just(4));
+            when(jwtUtils.generateAccessToken(user, 2)).thenReturn("new-access-token");
+
+            StepVerifier.create(authService.switchOrganization("valid-token", 2))
+                    .assertNext(tuple -> {
+                        assertThat(tuple.getT1()).isEqualTo("new-access-token");
+                        assertThat(tuple.getT2()).isEqualTo(4);
+                    })
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("should default to 2 for STAFF if verification level in new org is not 4")
+        void switchOrg_staff_defaultLevel2() throws Exception {
+            com.nimbusds.jwt.JWTClaimsSet claims = new com.nimbusds.jwt.JWTClaimsSet.Builder().subject("1").build();
+            when(jwtUtils.validateToken("valid-token")).thenReturn(claims);
+
+            User user = User.builder().id(1).role(com.service.backend.shared.enums.UserRole.STAFF).build();
+            when(authRepository.findById(1)).thenReturn(Mono.just(user));
+            when(authRepository.getVerificationLevelByUserIdAndOrgId(1, 2)).thenReturn(Mono.just(1));
+            when(jwtUtils.generateAccessToken(user, 2)).thenReturn("new-access-token");
+
+            StepVerifier.create(authService.switchOrganization("valid-token", 2))
+                    .assertNext(tuple -> {
+                        assertThat(tuple.getT1()).isEqualTo("new-access-token");
+                        assertThat(tuple.getT2()).isEqualTo(2);
+                    })
+                    .verifyComplete();
+        }
     }
 }

@@ -389,29 +389,24 @@ public class AuthService {
                             // The refresh token no longer carries the organization. The client passes the
                             // organization it is currently viewing so the refreshed access token stays scoped
                             // to it. ADMINs operate without an org ("all orgs") and get the system-admin level.
-                            if (organizationId != null) {
-                                return getVerificationLevel(user.getId(), organizationId)
-                                        .defaultIfEmpty(0)
-                                        .map(level -> buildRefreshResponse(user, organizationId, level));
-                            }
-
                             if (user.getRole() == UserRole.ADMIN) {
                                 // Must match the login path (AuthController#buildLoginResponse)
                                 // so refresh doesn't silently downgrade a system admin.
                                 return Mono.just(buildRefreshResponse(user, null, 4));
                             }
 
-                            // No org supplied by a non-admin (rare) — fall back to the user's first org.
-                            return authRepository.getOrganizationIdByUserId(userId).next()
-                                    .defaultIfEmpty(-1)
-                                    .flatMap(orgId -> {
-                                        Integer finalOrgId = (orgId == -1) ? null : orgId;
-                                        if (finalOrgId == null) {
-                                            return Mono.just(buildRefreshResponse(user, null, 0));
+                            if (organizationId == null) {
+                                return Mono.error(new ApplicationException(ErrorCode.FORBIDDEN, "Organization ID is required for non-admin users"));
+                            }
+
+                            return getVerificationLevel(user.getId(), organizationId)
+                                    .defaultIfEmpty(0)
+                                    .map(level -> {
+                                        int finalLevel = level;
+                                        if (user.getRole() == UserRole.STAFF) {
+                                            finalLevel = (level == 4) ? 4 : 2;
                                         }
-                                        return getVerificationLevel(user.getId(), finalOrgId)
-                                                .defaultIfEmpty(0)
-                                                .map(level -> buildRefreshResponse(user, finalOrgId, level));
+                                        return buildRefreshResponse(user, organizationId, finalLevel);
                                     });
                         }))
                 .doOnSuccess(res -> meterRegistry.counter("auth.token.refresh", "result", "success").increment())
@@ -446,7 +441,13 @@ public class AuthService {
 
                     return getVerificationLevel(user.getId(), newOrganizationId)
                             .defaultIfEmpty(0)
-                            .map(level -> reactor.util.function.Tuples.of(newAccessToken, level))
+                            .map(level -> {
+                                int finalLevel = level;
+                                if (user.getRole() == UserRole.STAFF) {
+                                    finalLevel = (level == 4) ? 4 : 2;
+                                }
+                                return reactor.util.function.Tuples.of(newAccessToken, finalLevel);
+                            })
                             .doOnSuccess(tuple -> {
                                 Integer level = tuple.getT2();
                                 if (level == 0) {
