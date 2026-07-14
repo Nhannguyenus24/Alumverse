@@ -140,5 +140,8 @@
   "interested": "Đã quan tâm",
   "interest_action": "Quan tâm",
   "not_found": "Không tìm thấy bài viết",
-  "display_error": "Không thể hiển thị bài viết."
+  "display_error": "Không thể hiển thị bài viết.",
+  "main_image_too_large": "Ảnh chính quá lớn để tải lên. Vui lòng chọn ảnh nhỏ hơn.",
+  "article_too_large_post": "Bài viết quá lớn để đăng. Tổng dung lượng nội dung và ảnh chính cần dưới 19MB.",
+  "article_too_large_update": "Bài viết quá lớn để cập nhật. Tổng dung lượng nội dung và ảnh chính cần dưới 19MB."
 }

@@ -1,4 +1,4 @@
-package com.example.datn
+package com.hcmus.alumniverse
 
 import io.flutter.embedding.android.FlutterActivity
 

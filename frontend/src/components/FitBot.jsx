@@ -399,7 +399,7 @@ const streamSSEResponse = async (userMessage, onChunk, onComplete, onError, sign
     }
 
     onComplete();
-  } catch (_) {
+  } catch (error) {
     if (error.name !== 'AbortError') {
       onError(error);
     }

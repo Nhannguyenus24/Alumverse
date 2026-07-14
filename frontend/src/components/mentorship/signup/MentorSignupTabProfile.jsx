@@ -6,8 +6,10 @@ import {
   Box,
   Button,
   Card,
+  Checkbox,
   CircularProgress,
   Divider,
+  FormControlLabel,
   IconButton,
   Stack,
   TextField,
@@ -23,12 +25,88 @@ import AvatarUploadDialog from '../../profile/AvatarUploadDialog';
 import useAvatarCrop from '../../../hooks/profile/useAvatarCrop';
 import { fileToBase64 } from '../../../utils/imageUtils';
 import { extractMentorshipCv } from '../../../utils/api';
+import { splitPeriod, buildPeriod, currentMonthYear } from '../../../utils/experiencePeriod';
 import {
   ScrollReveal,
   ScrollRevealGroup,
   ScrollRevealItem,
   getStaggerDelay,
 } from '../../animations/ScrollReveal';
+
+// Digits-only "MM/YYYY" masking (auto-inserts the slash after 2 digits, max 6 digits).
+const maskMonthYear = (raw) => {
+  const digits = String(raw).replace(/\D/g, '').slice(0, 6);
+  return digits.length > 2 ? `${digits.slice(0, 2)}/${digits.slice(2)}` : digits;
+};
+
+/**
+ * Start/end month-year inputs with a "still working here" checkbox. Reads/writes
+ * the item's `period` (string) and `isCurrent` (bool). When current, only the
+ * start is stored; the end is shown live as the current month at display time.
+ */
+const MonthYearRange = ({ item, onFields, t }) => {
+  const [start, end] = splitPeriod(item.period);
+  const isCurrent = item.isCurrent === true || item.isCurrent === 'true';
+
+  const setStart = (v) => {
+    const s = maskMonthYear(v);
+    onFields({ period: buildPeriod(s, end, isCurrent) });
+  };
+  const setEnd = (v) => {
+    const e = maskMonthYear(v);
+    onFields({ period: buildPeriod(start, e, false) });
+  };
+  const toggleCurrent = (checked) => {
+    if (checked) {
+      // Ongoing job: keep only the start; freeze the end field to the current
+      // month so the user sees a concrete MM/YYYY, not just "still working".
+      onFields({ isCurrent: true, period: buildPeriod(start, '', true) });
+    } else {
+      // stopped being current now → freeze end to the current month
+      onFields({ isCurrent: false, period: buildPeriod(start, currentMonthYear(), false) });
+    }
+  };
+
+  // When current we store only the start; show the live current month in the
+  // (disabled) end box so it's a concrete date.
+  const endDisplay = isCurrent ? currentMonthYear() : end;
+
+  return (
+    <Stack spacing={1}>
+      <Stack direction="row" spacing={1}>
+        <TextField
+          label={t('signup_profile_exp_start')}
+          placeholder="MM/YYYY"
+          value={start}
+          onChange={(e) => setStart(e.target.value)}
+          fullWidth
+          size="small"
+          inputProps={{ inputMode: 'numeric' }}
+        />
+        <TextField
+          label={t('signup_profile_exp_end')}
+          placeholder="MM/YYYY"
+          value={endDisplay}
+          onChange={(e) => setEnd(e.target.value)}
+          disabled={isCurrent}
+          fullWidth
+          size="small"
+          inputProps={{ inputMode: 'numeric' }}
+        />
+      </Stack>
+      <FormControlLabel
+        control={
+          <Checkbox
+            size="small"
+            checked={isCurrent}
+            onChange={(e) => toggleCurrent(e.target.checked)}
+          />
+        }
+        label={t('signup_profile_exp_current_label')}
+      />
+    </Stack>
+  );
+};
 
 const SectionList = ({ title, subtitle, items, onChange, fields, required = false, addLabel }) => {
   const { t } = useTranslation('mentorship');
@@ -45,6 +123,12 @@ const SectionList = ({ title, subtitle, items, onChange, fields, required = fals
 
   const handleField = (idx, key, value) => {
     onChange(items.map((it, i) => (i === idx ? { ...it, [key]: value } : it)));
+  };
+
+  // Batch multiple key updates into a single onChange so we never write over a
+  // sibling key with a stale snapshot (e.g. setting isCurrent + period at once).
+  const handleFields = (idx, patch) => {
+    onChange(items.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
   };
 
   return (
@@ -77,19 +161,28 @@ const SectionList = ({ title, subtitle, items, onChange, fields, required = fals
           {items.map((item, idx) => (
             <ScrollReveal key={idx} delay={getStaggerDelay(idx, 0.06)}><Card sx={{ p: 2, border: '1px solid', borderColor: 'divider' }} elevation={0}>
               <Stack spacing={1.5}>
-                {fields.map((f) => (
-                  <TextField
-                    key={f.key}
-                    label={f.label}
-                    placeholder={f.placeholder}
-                    value={item[f.key] ?? ''}
-                    onChange={(e) => handleField(idx, f.key, e.target.value)}
-                    fullWidth
-                    size="small"
-                    multiline={f.multiline}
-                    minRows={f.multiline ? 2 : 1}
-                  />
-                ))}
+                {fields.map((f) =>
+                  f.type === 'monthYearRange' ? (
+                    <MonthYearRange
+                      key={f.key}
+                      item={item}
+                      onFields={(patch) => handleFields(idx, patch)}
+                      t={t}
+                    />
+                  ) : (
+                    <TextField
+                      key={f.key}
+                      label={f.label}
+                      placeholder={f.placeholder}
+                      value={item[f.key] ?? ''}
+                      onChange={(e) => handleField(idx, f.key, e.target.value)}
+                      fullWidth
+                      size="small"
+                      multiline={f.multiline}
+                      minRows={f.multiline ? 2 : 1}
+                    />
+                  ),
+                )}
                 <Stack direction="row" justifyContent="flex-end">
                   <IconButton size="small" color="error" onClick={() => handleRemove(idx)}>
                     <DeleteOutlineIcon />
@@ -299,7 +392,7 @@ const MentorSignupTabProfile = ({ values, onChange }) => {
         fields={[
           { key: 'title', label: t('signup_profile_exp_title'), placeholder: 'VD: Software Engineer' },
           { key: 'company', label: t('signup_profile_exp_company'), placeholder: 'VD: Google' },
-          { key: 'period', label: t('signup_profile_exp_period'), placeholder: t('signup_profile_exp_period_placeholder') },
+          { key: 'period', label: t('signup_profile_exp_period'), type: 'monthYearRange' },
           { key: 'description', label: t('signup_profile_exp_description'), multiline: true },
         ]}
       />

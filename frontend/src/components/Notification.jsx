@@ -15,6 +15,7 @@ import { formatTimeAgoVi } from "../utils/dateFormatter";
 import { notificationApi } from "../utils/api";
 import { useOrgNavigate } from "../hooks/useOrgNavigate";
 import useAuthStore from "../stores/authStore";
+import useNotificationUnreadStore from "../stores/notificationUnreadStore";
 
 const isPeerVerificationNotification = (notification) => {
   const title = String(notification?.title || "").toLowerCase();
@@ -115,6 +116,12 @@ const Notification = ({ headerTextColor = "text.primary" }) => {
     () => notifications.filter((notif) => !notif.isRead).length,
     [notifications]
   );
+
+  // Mirror the count into the global store so the favicon red-dot can react.
+  const setUnreadStoreCount = useNotificationUnreadStore((s) => s.setCount);
+  useEffect(() => {
+    setUnreadStoreCount(unreadCount);
+  }, [unreadCount, setUnreadStoreCount]);
 
   return (
     <>

@@ -1,5 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import i18next from 'i18next';
 
 import apiClient from '../utils/axios';
 import useAuthStore from '../stores/authStore';
@@ -43,10 +44,14 @@ const parseEvent = (event) => {
  * Must be mounted inside the QueryClient and Notistack providers. The connection is
  * (re)established whenever the access token changes and torn down on logout.
  */
-export const useServerSentEvents = () => {
+export const useServerSentEvents = ({ onNotify } = {}) => {
   const token = useAuthStore((state) => state.token);
   const queryClient = useQueryClient();
   const { showError, showSuccess, showWarning } = useNotification();
+
+  // Keep onNotify in a ref so changing it never tears down the SSE connection.
+  const onNotifyRef = useRef(onNotify);
+  onNotifyRef.current = onNotify;
 
   useEffect(() => {
     if (!token) return undefined;
@@ -64,15 +69,16 @@ export const useServerSentEvents = () => {
       if (!data) return;
       useAuthStore.getState().setVerificationLevel(data.verificationLevel);
       if (data.status === 'APPROVED') {
-        showSuccess('Yêu cầu xác thực của bạn đã được duyệt.');
+        showSuccess(i18next.t('common:sse_verification_approved'));
       } else if (data.status === 'REJECTED') {
-        showWarning('Yêu cầu xác thực của bạn đã bị từ chối.');
+        showWarning(i18next.t('common:sse_verification_rejected'));
       }
+      onNotifyRef.current?.();
     };
 
     const handleUserBanned = async (event) => {
       const data = parseEvent(event) ?? {};
-      showError(data.message || 'Tài khoản của bạn đã bị khóa.');
+      showError(data.message || i18next.t('common:sse_account_banned'));
       try {
         await apiClient.post('/auth/logout');
       } catch {
@@ -85,6 +91,7 @@ export const useServerSentEvents = () => {
 
     const handleNewMessage = () => {
       useChatUnreadStore.getState().increment();
+      onNotifyRef.current?.();
     };
 
     source.addEventListener('feature-toggled', handleFeatureToggled);

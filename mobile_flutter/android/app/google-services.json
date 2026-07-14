@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1094499702607",
+    "project_id": "refactoring-alumni-system",
+    "storage_bucket": "refactoring-alumni-system.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1094499702607:android:4c9fa3e5f619a88d6a573a",
+        "android_client_info": {
+          "package_name": "com.hcmus.alumniverse"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDKcAyZUkmGB6o8aL3rKRJOiiyNos35BdA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

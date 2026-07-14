@@ -12,6 +12,7 @@
   "submit": "Submit",
   "search": "Search",
   "loading": "Loading...",
+  "processing": "Processing...",
   "error": "An error occurred",
   "success": "Success",
   "no_data": "No data available",
@@ -129,5 +130,8 @@
   "loading_org_data": "Loading organization data...",
   "verification_required_login": "Please sign in to use this feature.",
   "verification_required_tooltip": "You must verify your alumni status (verification level 2) to use this feature.",
-  "verification_required_alert": "Only verified alumni (verification level 2) can use this feature. Please verify your alumni status to continue."
+  "verification_required_alert": "Only verified alumni (verification level 2) can use this feature. Please verify your alumni status to continue.",
+  "sse_verification_approved": "Your verification request has been approved.",
+  "sse_verification_rejected": "Your verification request has been rejected.",
+  "sse_account_banned": "Your account has been banned."
 }

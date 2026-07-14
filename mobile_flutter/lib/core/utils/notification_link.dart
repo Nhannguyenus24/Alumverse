@@ -63,6 +63,28 @@ String? normalizeNotificationLink(String? raw) {
     return '${RouteNames.events}/${segments[1]}';
   }
 
+  // Mentorship: web paths don't all exist on mobile — map to the closest route.
+  if (segments.first == 'mentorship') {
+    final sub = segments.length >= 2 ? segments[1] : '';
+    switch (sub) {
+      // Web /mentorship/profile and /mentorship/dashboard → mentor dashboard.
+      case 'profile':
+      case 'dashboard':
+        return RouteNames.mentorDashboard;
+      // Web /mentorship/calendar (manage availability) → mentor availability.
+      case 'calendar':
+        return RouteNames.mentorAvailability;
+      case 'my-bookings':
+        return RouteNames.mentorshipMyBookings;
+      case 'signup':
+        return RouteNames.mentorshipSignup;
+      case 'mentee-signup':
+        return RouteNames.menteeSignup;
+      default:
+        return RouteNames.mentorship;
+    }
+  }
+
   // Fallback: rebuild a flat path from the remaining segments.
   return '/${segments.join('/')}';
 }

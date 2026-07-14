@@ -12,6 +12,7 @@
   "submit": "Gửi",
   "search": "Tìm kiếm",
   "loading": "Đang tải...",
+  "processing": "Đang xử lý...",
   "error": "Đã xảy ra lỗi",
   "success": "Thành công",
   "no_data": "Không có dữ liệu",
@@ -129,5 +130,8 @@
   "loading_org_data": "Đang tải dữ liệu tổ chức...",
   "verification_required_login": "Vui lòng đăng nhập để sử dụng tính năng này.",
   "verification_required_tooltip": "Bạn cần xác minh là cựu sinh viên (mức xác minh 2) để sử dụng tính năng này.",
-  "verification_required_alert": "Chỉ cựu sinh viên đã được xác minh (mức xác minh 2) mới có thể sử dụng tính năng này. Vui lòng xác minh tình trạng cựu sinh viên để tiếp tục."
+  "verification_required_alert": "Chỉ cựu sinh viên đã được xác minh (mức xác minh 2) mới có thể sử dụng tính năng này. Vui lòng xác minh tình trạng cựu sinh viên để tiếp tục.",
+  "sse_verification_approved": "Yêu cầu xác thực của bạn đã được duyệt.",
+  "sse_verification_rejected": "Yêu cầu xác thực của bạn đã bị từ chối.",
+  "sse_account_banned": "Tài khoản của bạn đã bị khóa."
 }

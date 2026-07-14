@@ -2,6 +2,7 @@ import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router';
 import {
+  Alert,
   Box,
   Button,
   Stack,
@@ -60,6 +61,7 @@ import { formatDate } from '../../utils/dateFormatter';
 import { formatRating } from '../../utils/numberFormatter';
 import { resolveProfileRoleLabel } from '../../utils/profileRoleUtils';
 import { resolveMediaUrl } from '../../utils/imageUtils';
+import { formatPeriodDisplay } from '../../utils/experiencePeriod';
 import {
   ScrollReveal,
   ScrollRevealGroup,
@@ -116,8 +118,9 @@ const getItemTitle = (item, key) =>
 const getItemSubtitle = (item) =>
   [item.company, item.degree, item.issuer, item.category].filter(Boolean).join(' · ');
 
-const getItemPeriod = (item) =>
-  item.period || [item.from || item.startedYear, item.to || item.graduatedYear].filter(Boolean).join(' - ');
+const getItemPeriod = (item, t) =>
+  formatPeriodDisplay(item, t) ||
+  [item.from || item.startedYear, item.to || item.graduatedYear].filter(Boolean).join(' - ');
 
 const ProfileTimelineSection = ({ title, icon, items = [], t }) => {
   const rows = items.filter((item) => item && typeof item === 'object');
@@ -133,7 +136,7 @@ const ProfileTimelineSection = ({ title, icon, items = [], t }) => {
         {rows.map((item, index) => {
           const titleText = getItemTitle(item);
           const subtitle = getItemSubtitle(item);
-          const period = getItemPeriod(item);
+          const period = getItemPeriod(item, t);
           const description = item.description || item.link || '';
           return (
             <ScrollRevealItem key={`${titleText}-${index}`} sx={{ display: 'grid', gridTemplateColumns: '28px 1fr', columnGap: 1.5 }}>

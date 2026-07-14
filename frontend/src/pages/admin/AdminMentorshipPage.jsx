@@ -1,7 +1,6 @@
 import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useEffect, useState } from "react";
 import { useOutletContext } from "react-router";
-import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
 import {
   Avatar,
@@ -40,6 +39,8 @@ import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined
 import RateReviewOutlinedIcon from "@mui/icons-material/RateReviewOutlined";
 import AdminConfirmDeleteDialog from "../../components/admin/AdminConfirmDeleteDialog";
 import AdminDataTable from "../../components/admin/AdminDataTable";
+import ActionOverlay from "../../components/ActionOverlay";
+import { useAsyncAction } from "../../hooks/useAsyncAction";
 import {
   ADMIN_STATUS_CHIP_SX,
 } from "../../constants/adminUiShared";
@@ -91,7 +92,6 @@ const AdminMentorshipPage = () => {
   const sessionStatusOptions = getAdminMentorshipSessionStatusOptions(t);
   const approvalOptions = getAdminMentorshipApprovalOptions(t);
 
-  const { enqueueSnackbar } = useSnackbar();
   const { setBreadcrumbs } = useOutletContext();
   const { stableOrgId } = useAdminSystemContext();
   const {
@@ -127,39 +127,53 @@ const AdminMentorshipPage = () => {
   const [detailItem, setDetailItem] = useState(null);
   const [mentorDetail, setMentorDetail] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const { run, pending } = useAsyncAction();
 
-  const notify = (ok, okMsg, failMsg) =>
-    enqueueSnackbar(ok ? okMsg : failMsg, {
-      variant: ok ? "success" : "error",
-    });
+  // The hook methods catch internally and return true/false; throw on false so
+  // run() reports the error snackbar instead of a false success.
+  const handleConfirm = (s) =>
+    run(
+      async () => {
+        if (!(await updateSessionStatus(s.id, "Confirmed"))) throw new Error();
+      },
+      {
+        successMessage: t('mentorship_session_confirmed'),
+        errorMessage: t('mentorship_session_confirm_error'),
+      },
+    );
+  const handleCancel = (s) =>
+    run(
+      async () => {
+        if (!(await updateSessionStatus(s.id, "Cancelled"))) throw new Error();
+      },
+      {
+        successMessage: t('mentorship_session_cancelled'),
+        errorMessage: t('mentorship_session_cancel_error'),
+      },
+    );
+  const handleApprove = (m) =>
+    run(
+      async () => {
+        if (!(await approveMentor(m.memberId))) throw new Error();
+      },
+      {
+        successMessage: t('mentorship_mentor_approved'),
+        errorMessage: t('mentorship_mentor_approve_error'),
+      },
+    );
 
-  const handleConfirm = async (s) =>
-    notify(
-      await updateSessionStatus(s.id, "Confirmed"),
-      t('mentorship_session_confirmed'),
-      t('mentorship_session_confirm_error'),
-    );
-  const handleCancel = async (s) =>
-    notify(
-      await updateSessionStatus(s.id, "Cancelled"),
-      t('mentorship_session_cancelled'),
-      t('mentorship_session_cancel_error'),
-    );
-  const handleApprove = async (m) =>
-    notify(
-      await approveMentor(m.memberId),
-      t('mentorship_mentor_approved'),
-      t('mentorship_mentor_approve_error'),
-    );
-
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!deleteTarget) return;
-    notify(
-      await deleteSession(deleteTarget.id),
-      t('mentorship_session_deleted'),
-      t('mentorship_session_delete_error'),
+    run(
+      async () => {
+        if (!(await deleteSession(deleteTarget.id))) throw new Error();
+      },
+      {
+        successMessage: t('mentorship_session_deleted'),
+        errorMessage: t('mentorship_session_delete_error'),
+        onSuccess: () => setDeleteTarget(null),
+      },
     );
-    setDeleteTarget(null);
   };
 
   const metricRows = statistics
@@ -390,22 +404,28 @@ const AdminMentorshipPage = () => {
                           </Tooltip>
                           {isPending && (
                             <Tooltip title={t('mentorship_tooltip_confirm')}>
-                              <IconButton size="small" color="success" onClick={() => handleConfirm(s)}>
-                                <DoneAllOutlinedIcon fontSize="small" />
-                              </IconButton>
+                              <span>
+                                <IconButton size="small" color="success" disabled={pending} onClick={() => handleConfirm(s)}>
+                                  <DoneAllOutlinedIcon fontSize="small" />
+                                </IconButton>
+                              </span>
                             </Tooltip>
                           )}
                           {isCancellable && (
                             <Tooltip title={t('mentorship_tooltip_cancel')}>
-                              <IconButton size="small" color="warning" onClick={() => handleCancel(s)}>
-                                <CloseOutlinedIcon fontSize="small" />
-                              </IconButton>
+                              <span>
+                                <IconButton size="small" color="warning" disabled={pending} onClick={() => handleCancel(s)}>
+                                  <CloseOutlinedIcon fontSize="small" />
+                                </IconButton>
+                              </span>
                             </Tooltip>
                           )}
                           <Tooltip title={t('mentorship_tooltip_delete')}>
-                            <IconButton size="small" color="error" onClick={() => setDeleteTarget(s)}>
-                              <DeleteOutlineIcon fontSize="small" />
-                            </IconButton>
+                            <span>
+                              <IconButton size="small" color="error" disabled={pending} onClick={() => setDeleteTarget(s)}>
+                                <DeleteOutlineIcon fontSize="small" />
+                              </IconButton>
+                            </span>
                           </Tooltip>
                         </Box>
                       );
@@ -530,9 +550,11 @@ const AdminMentorshipPage = () => {
                         </Tooltip>
                         {mentorApproval(m).isPending && (
                           <Tooltip title={t('mentorship_tooltip_approve_mentor')}>
-                            <IconButton size="small" color="success" onClick={() => handleApprove(m)}>
-                              <CheckCircleOutlineIcon fontSize="small" />
-                            </IconButton>
+                            <span>
+                              <IconButton size="small" color="success" disabled={pending} onClick={() => handleApprove(m)}>
+                                <CheckCircleOutlineIcon fontSize="small" />
+                              </IconButton>
+                            </span>
                           </Tooltip>
                         )}
                       </Box>
@@ -707,11 +729,20 @@ const AdminMentorshipPage = () => {
             <Button
               variant="contained"
               color="success"
+              disabled={pending}
               startIcon={<CheckCircleOutlineIcon />}
-              onClick={async () => {
-                await handleApprove(mentorDetail);
-                setMentorDetail(null);
-              }}
+              onClick={() =>
+                run(
+                  async () => {
+                    if (!(await approveMentor(mentorDetail.memberId))) throw new Error();
+                  },
+                  {
+                    successMessage: t('mentorship_mentor_approved'),
+                    errorMessage: t('mentorship_mentor_approve_error'),
+                    onSuccess: () => setMentorDetail(null),
+                  },
+                )
+              }
               sx={{ textTransform: "none", fontWeight: 700 }}
             >
               {t('mentorship_btn_approve')}
@@ -736,7 +767,10 @@ const AdminMentorshipPage = () => {
         }
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
+        loading={pending}
       />
+
+      <ActionOverlay open={pending} />
     </Box>
   );
 };
