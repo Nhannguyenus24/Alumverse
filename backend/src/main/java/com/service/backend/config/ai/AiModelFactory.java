@@ -84,21 +84,27 @@ public class AiModelFactory {
 
     private ChatLanguageModel build(AiModelsProperties.ModelSpec spec) {
         double temperature = spec.getTemperature() != null ? spec.getTemperature() : legacyGeminiTemperature;
-        String provider = spec.getProvider() == null ? "gemini" : spec.getProvider().trim().toLowerCase();
+        String type = "openrouter".equalsIgnoreCase(spec.getProvider()) ? "openai_compatible" : "gemini";
+        String baseUrl = "openai_compatible".equals(type) ? OPENROUTER_BASE_URL : null;
+        return buildModel(type, baseUrl, spec.getApiKey(), spec.getModel(), temperature);
+    }
 
-        return switch (provider) {
-            case "openrouter" -> OpenAiChatModel.builder()
-                    .baseUrl(OPENROUTER_BASE_URL)
-                    .apiKey(spec.getApiKey())
-                    .modelName(spec.getModel())
+    public ChatLanguageModel buildModel(String providerType, String baseUrl,
+                                        String apiKey, String modelName, double temperature) {
+        String type = providerType == null ? "gemini" : providerType.trim().toLowerCase();
+        return switch (type) {
+            case "openai_compatible", "openrouter" -> OpenAiChatModel.builder()
+                    .baseUrl(baseUrl == null || baseUrl.isBlank() ? OPENROUTER_BASE_URL : baseUrl)
+                    .apiKey(apiKey)
+                    .modelName(modelName)
                     .temperature(temperature)
                     .build();
             case "gemini" -> GoogleAiGeminiChatModel.builder()
-                    .apiKey(spec.getApiKey())
-                    .modelName(spec.getModel())
+                    .apiKey(apiKey)
+                    .modelName(modelName)
                     .temperature(temperature)
                     .build();
-            default -> throw new IllegalArgumentException("Unknown AI provider: " + spec.getProvider());
+            default -> throw new IllegalArgumentException("Unknown AI provider type: " + providerType);
         };
     }
 }
