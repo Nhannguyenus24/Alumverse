@@ -67,6 +67,7 @@
   "add_question": "Add question",
   "interested": "Interested",
   "mark_interested": "Interested",
+  "unmark_interested": "Remove interest",
   "joined": "Joined",
   "join": "Join",
   "register_success": "Registration successful! View ticket in My Tickets.",

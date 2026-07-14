@@ -1,13 +1,27 @@
 import { useState, useEffect } from 'react';
-import { Box, Typography, Button, Stack } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Button,
+  Stack,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  TextField,
+} from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import EventAvailableOutlinedIcon from '@mui/icons-material/EventAvailableOutlined';
+import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
+import FavoriteIcon from '@mui/icons-material/Favorite';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import { useSnackbar } from 'notistack';
 import { eventApi } from '../../utils/api';
 import JoinEventDialog from '../event/JoinEventDialog';
 import { useEventQuestions, formatAnswersForApi } from '../../hooks/events/useEventQuestions';
-import { getEventRegisteredState } from '../../utils/eventRegistration';
+import { findCancelableTicketForEvent, getEventRegisteredState } from '../../utils/eventRegistration';
 import { useCanContribute } from '../../hooks/useCanContribute';
 import { ContributeGuardTooltip } from '../ContributeGuard';
 
@@ -22,6 +36,8 @@ const ArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
   const [checkingRegistration, setCheckingRegistration] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [openJoinDialog, setOpenJoinDialog] = useState(false);
+  const [openCancelDialog, setOpenCancelDialog] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
   const { data: questions = [] } = useEventQuestions(article?.id, !isAdmin && canContribute && Boolean(article?.id));
 
   useEffect(() => {
@@ -63,7 +79,11 @@ const ArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
 
   const handleJoinClick = (e) => {
     e.stopPropagation();
-    if (loadingJoin || checkingRegistration || isJoined || !canContribute) return;
+    if (loadingJoin || checkingRegistration || !canContribute) return;
+    if (isJoined) {
+      setOpenCancelDialog(true);
+      return;
+    }
     setOpenJoinDialog(true);
   };
 
@@ -85,6 +105,29 @@ const ArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
       } else {
         enqueueSnackbar(err?.response?.data?.message || t('event:register_failed'), { variant: 'error' });
       }
+    } finally {
+      setLoadingJoin(false);
+    }
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!cancelReason.trim() || loadingJoin || checkingRegistration || !canContribute) return;
+    setLoadingJoin(true);
+    try {
+      const ticketsPage = await eventApi.getMyTickets({ page: 0, limit: 100 });
+      const tickets = ticketsPage?.items ?? ticketsPage?.content ?? ticketsPage?.data ?? [];
+      const ticket = findCancelableTicketForEvent(tickets, article.id);
+      if (!ticket) {
+        enqueueSnackbar(t('event:ticket_not_found'), { variant: 'error' });
+        return;
+      }
+      await eventApi.cancelTicketByCode(ticket.ticketCode, cancelReason.trim());
+      setIsJoined(false);
+      setCancelReason('');
+      setOpenCancelDialog(false);
+      enqueueSnackbar(t('event:cancel_ticket_success'), { variant: 'info' });
+    } catch (err) {
+      enqueueSnackbar(err?.response?.data?.message || t('event:cancel_ticket_error'), { variant: 'error' });
     } finally {
       setLoadingJoin(false);
     }
@@ -208,9 +251,10 @@ const ArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
               variant={isInterested ? 'outlined' : 'contained'}
               color="primary"
               disabled={loadingInterest || !canContribute}
+              startIcon={isInterested ? <FavoriteIcon /> : <FavoriteBorderIcon />}
               onClick={handleInterest}
             >
-              {isInterested ? t('event:interested') : t('event:mark_interested')}
+              {isInterested ? t('event:unmark_interested') : t('event:mark_interested')}
             </Button>
           </ContributeGuardTooltip>
 
@@ -218,11 +262,12 @@ const ArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
             <Button
               fullWidth
               variant={isJoined ? 'outlined' : 'contained'}
-              color="accent"
-              disabled={loadingJoin || checkingRegistration || isJoined || !canContribute}
+              color={isJoined ? 'error' : 'accent'}
+              disabled={loadingJoin || checkingRegistration || !canContribute}
+              startIcon={isJoined ? <CancelOutlinedIcon /> : <EventAvailableOutlinedIcon />}
               onClick={handleJoinClick}
             >
-              {isJoined ? t('event:joined') : t('event:join')}
+              {isJoined ? t('event:cancel_ticket') : t('event:join')}
             </Button>
           </ContributeGuardTooltip>
         </Stack>
@@ -236,6 +281,47 @@ const ArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
         loading={loadingJoin}
         onConfirm={handleConfirmJoin}
       />
+      <Dialog
+        open={openCancelDialog}
+        onClose={(e) => {
+          e?.stopPropagation?.();
+          setOpenCancelDialog(false);
+        }}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>{t('event:cancel_ticket')}</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            {t('event:cancel_ticket_reason_prompt')}
+          </Typography>
+          <TextField
+            fullWidth
+            multiline
+            minRows={3}
+            label={t('event:cancel_reason_label')}
+            value={cancelReason}
+            onChange={(e) => setCancelReason(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button variant="outlined" color="secondary" onClick={(e) => { e.stopPropagation(); setOpenCancelDialog(false); }}>
+            {t('common:cancel')}
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            startIcon={<CancelOutlinedIcon />}
+            disabled={!cancelReason.trim() || loadingJoin}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleConfirmCancel();
+            }}
+          >
+            {t('event:confirm_cancel_ticket')}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

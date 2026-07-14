@@ -182,5 +182,19 @@
   "pub_load_profile_error": "Failed to load user profile. Please try again.",
   "pub_no_bio": "This user hasn't updated their bio yet.",
   "go_to_organization": "Go to organization",
+  "contact_email": "Contact email",
+  "public_contact_email": "Public contact email",
+  "public_contact_email_placeholder": "contact@example.com",
+  "public_contact_email_hint": "This email is only shown on your profile and does not change your login email.",
+  "contact_email_invalid": "Contact email is invalid.",
+  "show_on_profile": "Show on profile",
+  "phone_private_hint": "Your phone number is saved in the system and is not shown publicly on your profile.",
+  "contact_website": "Website",
+  "legacy_links_preserved": "Keeping {{count}} legacy links that were not recognized.",
+  "graduation_status": {
+    "STUDYING": "Studying",
+    "GRADUATED": "Graduated",
+    "DROPPED": "Dropped out"
+  },
   "social_links_count": "Social links ({{count}})"
 }

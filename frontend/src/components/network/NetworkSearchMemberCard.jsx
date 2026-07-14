@@ -1,5 +1,8 @@
 import { alpha, Avatar, Box, Button, Card, Chip, CircularProgress, ListItemIcon, ListItemText, MenuItem, Stack, Typography } from '@mui/material';
 import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
+import ChatBubbleOutlineOutlinedIcon from '@mui/icons-material/ChatBubbleOutlineOutlined';
+import HourglassEmptyOutlinedIcon from '@mui/icons-material/HourglassEmptyOutlined';
+import PersonAddAlt1OutlinedIcon from '@mui/icons-material/PersonAddAlt1Outlined';
 import { useTranslation } from 'react-i18next';
 
 import IconButtonMenu from '../IconButtonMenu';
@@ -75,6 +78,13 @@ const NetworkSearchMemberCard = ({
     useNetworkMemberProfileNavigation(userId);
   const displayName = fullName || 'N/A';
   const academicRows = buildProgramMajorRows(program, major);
+  const resolvedButtonLabel = messageButtonLabel ?? t('connect');
+  const actionIcon = (() => {
+    if (isMessageLoading) return null;
+    if (resolvedButtonLabel === t('message')) return <ChatBubbleOutlineOutlinedIcon />;
+    if (resolvedButtonLabel === t('connect_pending')) return <HourglassEmptyOutlinedIcon />;
+    return <PersonAddAlt1OutlinedIcon />;
+  })();
 
   return (
     <Card
@@ -96,6 +106,7 @@ const NetworkSearchMemberCard = ({
         flexDirection: 'column',
         justifyContent: 'flex-start',
         height: '100%',
+        minHeight: '100%',
         transition: 'transform 0.2s',
         position: 'relative',
         ...networkCardClickableSx,
@@ -132,7 +143,15 @@ const NetworkSearchMemberCard = ({
         <Avatar src={avatar} sx={{ width: 80, height: 80 }} />
 
         <Box sx={{ width: '100%' }}>
-          <Typography fontWeight={700} variant="subtitle1" sx={{ lineHeight: 1.3 }}>
+          <Typography
+            fontWeight={700}
+            variant="subtitle1"
+            sx={{
+              lineHeight: 1.3,
+              overflowWrap: 'anywhere',
+              wordBreak: 'break-word',
+            }}
+          >
             {displayName}
           </Typography>
           <Box
@@ -175,11 +194,12 @@ const NetworkSearchMemberCard = ({
             onMessage?.();
           }}
           disabled={!onMessage || isMessageLoading || !canContribute}
+          startIcon={actionIcon}
         >
           {isMessageLoading ? (
             <CircularProgress size={22} color="inherit" />
           ) : (
-            messageButtonLabel ?? t('connect')
+            resolvedButtonLabel
           )}
         </Button>
       </ContributeGuardTooltip>

@@ -184,7 +184,10 @@ const MentorshipMentorListSection = () => {
           {mentors.map((mentor) => {
             const isOwnCard = ownMentorMemberId === mentor.memberId;
             return (
-              <ScrollRevealItem key={mentor.memberId}><MentorshipCard
+              <ScrollRevealItem
+                key={mentor.memberId}
+                sx={{ display: 'flex', minWidth: 0, height: '100%' }}
+              ><MentorshipCard
                 avatar={mentor.avatarUrl}
                 name={mentor.fullName ?? `Mentor #${mentor.memberId}`}
                 role={

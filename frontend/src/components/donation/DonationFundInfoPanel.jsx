@@ -23,7 +23,7 @@ const formatAverageDonationDisplay = (value) =>
 
 const formatVndDisplay = (value) => `${Number(value ?? 0).toLocaleString("vi-VN")} VND`;
 
-export default function DonationFundInfoPanel({ fundDetail }) {
+export default function DonationFundInfoPanel({ fundDetail, action = null }) {
   const { t } = useTranslation("donation");
   const navigate = useOrgNavigate();
   const location = useLocation();
@@ -129,7 +129,7 @@ export default function DonationFundInfoPanel({ fundDetail }) {
         </Box>
       )}
 
-      <Box sx={{ mt: 1.4 }}>
+      <Box sx={{ mt: 3 }}>
         <Box sx={{ mb: 0.7, display: "flex", alignItems: "center", justifyContent: "flex-start", gap: 0.8 }}>
           <Typography sx={{ color: "text.secondary", fontSize: "0.88rem", fontWeight: 600, fontStyle: "italic" }}>
             {t("progress_label")}
@@ -151,7 +151,7 @@ export default function DonationFundInfoPanel({ fundDetail }) {
         />
       </Box>
 
-      <Grid container spacing={2} sx={{ mt: 1.8 }}>
+      <Grid container spacing={2} sx={{ mt: 2.6 }}>
         <Grid size={6}>
           <Typography sx={{ fontWeight: 800, color: "text.primary", fontSize: "1.5rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
             {formatDonorCountDisplay(donorCountValue)}
@@ -165,6 +165,12 @@ export default function DonationFundInfoPanel({ fundDetail }) {
           <Typography sx={{ color: "text.secondary", fontSize: "0.92rem", fontWeight: 600 }}>{t("average_label")}</Typography>
         </Grid>
       </Grid>
+
+      {action && (
+        <Box sx={{ mt: 2.6, display: "flex", justifyContent: { xs: "stretch", sm: "flex-start" } }}>
+          {action}
+        </Box>
+      )}
 
       <NetworkMessageDrawer
         open={drawerOpen}

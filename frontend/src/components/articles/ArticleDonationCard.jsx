@@ -3,6 +3,8 @@ import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+import VolunteerActivismOutlinedIcon from "@mui/icons-material/VolunteerActivismOutlined";
 import { useState } from "react";
 import dayjs from "dayjs";
 import { useTranslation } from "react-i18next";
@@ -181,6 +183,7 @@ const ArticleDonationCard = ({ campaign, onNavigate, onEdit, onClose, isAdmin })
       {isClosed ? (
         <Button
           fullWidth variant="outlined" color="primary" sx={{ textTransform: "none", fontWeight: 600 }}
+          startIcon={<VisibilityOutlinedIcon />}
           onClick={(e) => { e.stopPropagation(); onNavigate?.(); }}
         >
           {t('common:view')}
@@ -217,6 +220,7 @@ const ArticleDonationCard = ({ campaign, onNavigate, onEdit, onClose, isAdmin })
       ) : (
         <Button
           fullWidth variant="contained" color="accent" sx={{ textTransform: "none", fontWeight: 600 }}
+          startIcon={<VolunteerActivismOutlinedIcon />}
           onClick={(e) => { e.stopPropagation(); onNavigate?.(); }}
         >
           {t('donation:donate')}

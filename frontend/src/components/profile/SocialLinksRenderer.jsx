@@ -1,12 +1,12 @@
-import React, { useState } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
-import { IconButton, Tooltip, Stack, Menu, MenuItem, ListItemIcon, ListItemText, Button, Box } from "@mui/material";
-import { MdEmail, MdLink, MdKeyboardArrowDown } from "react-icons/md";
+import { Box, IconButton, Stack, Tooltip, Typography } from "@mui/material";
+import { MdEmail, MdLink, MdPublic } from "react-icons/md";
 import {
-  FaFacebook,
+  FaFacebookF,
   FaGithub,
   FaInstagram,
-  FaLinkedin,
+  FaLinkedinIn,
   FaYoutube,
   FaDiscord,
   FaTelegram,
@@ -54,12 +54,13 @@ import {
   SiReplit,
   SiKaggle,
 } from "react-icons/si";
+import { normalizeProfileLinks } from "../../utils/profileContactLinks";
 
 const SOCIAL_PLATFORMS = [
   {
     key: "facebook",
     domains: ["facebook.com", "fb.com"],
-    icon: FaFacebook,
+    icon: FaFacebookF,
     color: "#1877F2",
   },
   {
@@ -89,7 +90,7 @@ const SOCIAL_PLATFORMS = [
   {
     key: "linkedin",
     domains: ["linkedin.com"],
-    icon: FaLinkedin,
+    icon: FaLinkedinIn,
     color: "#0A66C2",
   },
   {
@@ -363,109 +364,142 @@ const detectPlatform = (url) => {
   return (
     found || {
       key: "other",
-      icon: MdLink,
+      icon: MdPublic,
       color: "#757575",
     }
   );
 };
 
-const SocialLinksRenderer = ({ linksRaw }) => {
+const getPlatformLabel = (platform, t) => {
+  if (platform.key === 'other') return t('contact_website', { defaultValue: 'Website' });
+  if (platform.key === 'email') return t('contact_email', { defaultValue: 'Email liên hệ' });
+  return platform.key.charAt(0).toUpperCase() + platform.key.slice(1);
+};
+
+const getLinkHref = (link, platform) => {
+  if (platform.key === "email" && !link.startsWith("mailto:")) return `mailto:${link}`;
+  if (link.startsWith("http") || link.startsWith("mailto:")) return link;
+  return `https://${link}`;
+};
+
+const SocialLinksRenderer = ({ linksRaw, includeEmail = false, title }) => {
   const { t } = useTranslation('profile');
-  const [anchorEl, setAnchorEl] = useState(null);
-  const open = Boolean(anchorEl);
-  const handleClick = (event) => setAnchorEl(event.currentTarget);
-  const handleClose = () => setAnchorEl(null);
 
   if (!linksRaw) return null;
 
-  let links = [];
+  const links = normalizeProfileLinks(linksRaw);
 
-  try {
-    links =
-      typeof linksRaw === "string"
-        ? JSON.parse(linksRaw)
-        : linksRaw;
-  } catch {
-    links = [];
-  }
+  if (!links.length) return null;
 
-  if (!Array.isArray(links) || !links.length) return null;
+  const visibleLinks = links.filter((link) => {
+    if (typeof link !== 'string') return false;
+    return includeEmail || detectPlatform(link)?.key !== 'email';
+  });
+
+  if (!visibleLinks.length) return null;
+
+  const items = visibleLinks.map((link) => {
+    const platform = detectPlatform(link);
+    return {
+      link,
+      platform,
+      href: getLinkHref(link, platform),
+      label: getPlatformLabel(platform, t),
+    };
+  });
 
   return (
-    <Box sx={{ mt: 2 }}>
-      <Button
-        variant="outlined"
-        color="inherit"
-        onClick={handleClick}
-        endIcon={<MdKeyboardArrowDown />}
-        sx={{
-          borderRadius: 2,
-          textTransform: 'none',
-          fontWeight: 600,
-          borderColor: 'divider',
-          color: 'text.secondary',
-          '&:hover': {
-            borderColor: 'primary.main',
-            color: 'primary.main',
-            bgcolor: 'transparent'
-          }
-        }}
-      >
-        {t('social_links_count', { count: links.length })}
-      </Button>
-      <Menu
-        anchorEl={anchorEl}
-        open={open}
-        onClose={handleClose}
-        transformOrigin={{ horizontal: 'left', vertical: 'top' }}
-        anchorOrigin={{ horizontal: 'left', vertical: 'bottom' }}
-        PaperProps={{
-          sx: {
-            mt: 1,
-            minWidth: 220,
-            borderRadius: 2,
-            boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-            border: '1px solid',
-            borderColor: 'divider',
-          }
-        }}
-      >
-        {links.map((link, index) => {
-          if (typeof link !== "string") return null;
+    <Box
+      sx={{
+        position: 'relative',
+        py: 1.75,
+        px: 1,
+        borderRadius: 2,
+        transition: 'all .25s ease',
 
-          const platform = detectPlatform(link);
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          left: -8,
+          top: '15%',
+          width: 3,
+          height: '70%',
+          borderRadius: 999,
+          bgcolor: 'primary.main',
+          opacity: 0,
+          transition: 'all .25s ease',
+        },
+
+        '&:hover': {
+          transform: 'translateX(4px)',
+        },
+
+        '&:hover::before': {
+          opacity: 1,
+        },
+      }}
+    >
+      <Stack direction="row" spacing={1} alignItems="center" mb={0.75}>
+        <Box
+          component={MdLink}
+          aria-hidden="true"
+          sx={{
+            fontSize: 18,
+            color: 'primary.main',
+          }}
+        />
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          fontWeight={600}
+        >
+          {title || t('social_links', { defaultValue: 'Mạng xã hội' })}
+        </Typography>
+      </Stack>
+      <Box
+        sx={{
+          ml: 3.5,
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(28px, 32px))',
+          gap: 1,
+          alignItems: 'center',
+          maxWidth: items.length <= 6 ? 232 : '100%',
+        }}
+      >
+        {items.map(({ link, platform, href, label }) => {
           const Icon = platform.icon;
 
-          const href =
-            platform.key === "email" && !link.startsWith("mailto:")
-              ? `mailto:${link}`
-              : link.startsWith("http") || link.startsWith("mailto:")
-              ? link
-              : `https://${link}`;
-
           return (
-            <MenuItem
-              key={index}
-              component="a"
-              href={href}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={handleClose}
-              sx={{ py: 1.5, px: 2 }}
-            >
-              <ListItemIcon sx={{ minWidth: 40 }}>
-                <Icon size={22} color={platform.color} />
-              </ListItemIcon>
-              <ListItemText
-                primary={platform.key === 'other' ? 'Link' : platform.key.charAt(0).toUpperCase() + platform.key.slice(1)}
-                secondary={platform.key === 'email' && link.startsWith('mailto:') ? link.replace('mailto:', '') : link}
-                primaryTypographyProps={{ fontWeight: 600, fontSize: '0.9rem' }}
-                secondaryTypographyProps={{ noWrap: true, sx: { maxWidth: 200, fontSize: '0.8rem' } }}
-              />
-            </MenuItem>
+            <Tooltip key={`${platform.key}-${link}`} title={label} arrow>
+              <IconButton
+                component="a"
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={label}
+                sx={{
+                  width: 32,
+                  height: 32,
+                  p: 0.5,
+                  borderRadius: 1.5,
+                  bgcolor: 'transparent',
+                  color: 'text.secondary',
+                  opacity: 0.9,
+                  transition: 'transform 160ms ease, opacity 160ms ease, color 160ms ease, background-color 160ms ease',
+                  '&:hover': {
+                    transform: 'translateY(-2px)',
+                    opacity: 1,
+                    color: 'primary.main',
+                    bgcolor: 'transparent',
+                  },
+                }}
+              >
+                <Icon size={21} />
+              </IconButton>
+            </Tooltip>
           );
         })}
-      </Menu>
+      </Box>
     </Box>
   );
 };

@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router';
-import { Box, Button, InputAdornment, TextField, Tooltip, Typography } from '@mui/material';
+import { Avatar, Box, Button, InputAdornment, TextField, Tooltip, Typography } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
+import AddCommentOutlinedIcon from '@mui/icons-material/AddCommentOutlined';
 import SearchIcon from '@mui/icons-material/Search';
 import ForumFilterPanel from '../../components/forum/ForumFilterPanel';
 import Breadcrumb from '../../components/Breadcrumb';
@@ -18,6 +19,11 @@ import { useDebounce } from '../../hooks/useDebounce';
 import { ScrollReveal, getStaggerDelay } from '../../components/animations/ScrollReveal';
 
 const CAREER_CATEGORY_ID = 1;
+
+const getInitial = (name) => {
+  const trimmed = typeof name === 'string' ? name.trim() : '';
+  return trimmed ? trimmed.charAt(0).toUpperCase() : '';
+};
 
 const ForumAlumniCareerPage = () => {
   const { t } = useTranslation(['forum', 'common']);
@@ -173,6 +179,7 @@ const ForumAlumniCareerPage = () => {
                         <Button
                           variant="contained"
                           color="primary"
+                          startIcon={<AddCommentOutlinedIcon sx={{ fontSize: 18 }} />}
                           onClick={() => navigate('/forum/alumni/career/create-topic')}
                           disabled={!canContribute}
                           sx={{ minWidth: { xs: '100%', sm: 'auto' }, height: 40 }}
@@ -230,7 +237,9 @@ const ForumAlumniCareerPage = () => {
                     </Typography>
                   </Box>
                 )}
-                {topics.map((topic, index) => (
+                {topics.map((topic, index) => {
+                  const authorName = topic.authorName?.trim() || `${t('forum:member_prefix')}${topic.createdByMemberId ?? '—'}`;
+                  return (
                   <ScrollReveal
                     key={topic.id}
                     delay={getStaggerDelay(index, 0.07)}
@@ -242,6 +251,8 @@ const ForumAlumniCareerPage = () => {
                             id: topic.id,
                             title: topic.title,
                             createdByMemberId: topic.createdByMemberId ?? null,
+                            authorName: topic.authorName ?? null,
+                            authorAvatarUrl: topic.authorAvatarUrl ?? null,
                             createdAt: topic.createdAt ?? null,
                             viewCount: topic.viewCount ?? null,
                             categoryId: topic.categoryId ?? null,
@@ -308,7 +319,7 @@ const ForumAlumniCareerPage = () => {
                           {topic.title}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          {`${t('forum:member_prefix')}${topic.createdByMemberId ?? '—'}`} • {formatRelativeTimeVi(topic.createdAt)}
+                          {authorName} • {formatRelativeTimeVi(topic.createdAt)}
                         </Typography>
                       </Box>
                     </Box>
@@ -344,33 +355,31 @@ const ForumAlumniCareerPage = () => {
                           justifyContent: 'flex-end',
                         }}
                       >
-                        <Box
+                        <Avatar
+                          src={topic.authorAvatarUrl || undefined}
+                          alt={authorName}
                           sx={{
                             width: 32,
                             height: 32,
-                            borderRadius: '50%',
                             bgcolor: 'primary.main',
                             color: 'primary.contrastText',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
                             flexShrink: 0,
                           }}
                         >
-                          <PersonIcon sx={{ fontSize: 18 }} />
-                        </Box>
-                        <Box sx={{ textAlign: 'left' }}>
-                          <Typography variant="body2" fontWeight={600}>
-                            {`${t('forum:member_prefix')}${topic.createdByMemberId ?? '—'}`}
+                          {getInitial(authorName) || <PersonIcon sx={{ fontSize: 18 }} />}
+                        </Avatar>
+                        <Box sx={{ textAlign: 'left', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 0.4 }}>
+                          <Typography variant="body2" fontWeight={600} sx={{ lineHeight: 1.15 }}>
+                            {authorName}
                           </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {formatRelativeTimeVi(topic.updatedAt ?? topic.createdAt)}
+                          <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.1 }}>
+                            {formatRelativeTimeVi(topic.createdAt)}
                           </Typography>
                         </Box>
                       </Box>
                     </Box>
                   </ScrollReveal>
-                ))}
+                );})}
               </Box>
             </Box>
     </AlumniContentLayout>

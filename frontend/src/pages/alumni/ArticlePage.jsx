@@ -27,6 +27,7 @@ import EventOutlinedIcon from "@mui/icons-material/EventOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import LinkIcon from "@mui/icons-material/Link";
 import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
+import EventAvailableOutlinedIcon from "@mui/icons-material/EventAvailableOutlined";
 import Page from "../../components/Page";
 import { useArticleById } from "../../hooks/articles/useArticleById";
 import DOMPurify from "dompurify";
@@ -39,7 +40,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { useCanContribute } from "../../hooks/useCanContribute";
 import { ContributeGuardTooltip, VerificationRequiredAlert } from "../../components/ContributeGuard";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
-import { getEventRegisteredState } from "../../utils/eventRegistration";
+import { findCancelableTicketForEvent, getEventRegisteredState } from "../../utils/eventRegistration";
 import { extractMainImageCaption } from "../../utils/articleContentCaption";
 import {
   ScrollReveal,
@@ -252,16 +253,7 @@ const ArticleHighlightCard = ({ data, channel, eventId, isAdmin = false }) => {
     try {
       const ticketsPage = await eventApi.getMyTickets({ page: 0, limit: 100 });
       const tickets = ticketsPage?.items ?? ticketsPage?.content ?? ticketsPage?.data ?? [];
-      const ticket = tickets.find((item) => {
-        const status = String(item?.status ?? "").toUpperCase();
-        return Number(item?.eventId) === Number(eventId)
-          && item?.ticketCode
-          && status !== "CANCELLED"
-          && status !== "EXPIRED"
-          && status !== "REJECTED"
-          && status !== "USED"
-          && status !== "CHECKED_IN";
-      });
+      const ticket = findCancelableTicketForEvent(tickets, eventId);
       if (!ticket) {
         enqueueSnackbar(t('event:ticket_not_found'), { variant: "error" });
         return;
@@ -292,7 +284,9 @@ const ArticleHighlightCard = ({ data, channel, eventId, isAdmin = false }) => {
         mt: 3,
         mb: 6,
         p: 5,
-        bgcolor: theme.palette.mode === "dark" ? alpha(theme.palette.primary.main, 0.16) : "primary.light",
+        bgcolor: alpha(theme.palette.primary.main, theme.palette.mode === "dark" ? 0.14 : 0.08),
+        border: "1px solid",
+        borderColor: alpha(theme.palette.primary.main, theme.palette.mode === "dark" ? 0.28 : 0.14),
         borderRadius: 2,
         display: "flex",
         flexDirection: { xs: "column", md: "row" },
@@ -332,9 +326,10 @@ const ArticleHighlightCard = ({ data, channel, eventId, isAdmin = false }) => {
                 fullWidth
                 variant={isInterested ? "outlined" : "contained"}
                 disabled={loadingInterest || !canContribute}
+                startIcon={isInterested ? <FavoriteIcon /> : <FavoriteBorderIcon />}
                 onClick={handleInterest}
               >
-                {isInterested ? t('article:interested') : t('article:interest_action')}
+                {isInterested ? t('event:unmark_interested') : t('article:interest_action')}
               </Button>
             </ContributeGuardTooltip>
 
@@ -345,7 +340,7 @@ const ArticleHighlightCard = ({ data, channel, eventId, isAdmin = false }) => {
                 color={isJoined ? "error" : "accent"}
                 disabled={loadingJoin || checkingRegistration || !canContribute}
                 onClick={handleJoinClick}
-                startIcon={isJoined ? <CancelOutlinedIcon /> : undefined}
+                startIcon={isJoined ? <CancelOutlinedIcon /> : <EventAvailableOutlinedIcon />}
               >
                 {isJoined ? t('event:cancel_ticket') : t('event:register_action')}
               </Button>

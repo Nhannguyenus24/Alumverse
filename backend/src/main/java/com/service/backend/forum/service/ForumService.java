@@ -530,7 +530,19 @@ public class ForumService {
     private Mono<ForumTopicDTO> convertToTopicDTOWithPostCount(ForumTopic topic) {
         return forumPostRepository.countByTopicId(topic.getId())
                 .defaultIfEmpty(0L)
-                .map(postCount -> convertToTopicDTO(topic, postCount));
+                .flatMap(postCount -> {
+                    ForumTopicDTO dto = convertToTopicDTO(topic, postCount);
+                    if (topic.getCreatedByMemberId() == null) {
+                        return Mono.just(dto);
+                    }
+                    return userProfileRepository.findDisplayInfoByUserId(topic.getCreatedByMemberId())
+                            .map(info -> {
+                                dto.setAuthorName(info.getFullName());
+                                dto.setAuthorAvatarUrl(info.getAvatarUrl());
+                                return dto;
+                            })
+                            .defaultIfEmpty(dto);
+                });
     }
 
     private ForumTopicDTO convertToTopicDTO(ForumTopic topic, Long postCount) {
@@ -539,6 +551,8 @@ public class ForumService {
                 .organizationId(topic.getOrganizationId())
                 .title(topic.getTitle())
                 .createdByMemberId(topic.getCreatedByMemberId())
+                .authorName(null)
+                .authorAvatarUrl(null)
                 .categoryId(topic.getCategoryId())
                 .viewCount(topic.getViewCount())
                 .status(topic.getStatus())

@@ -26,6 +26,7 @@ import { useNotification } from '../../hooks/useNotification';
 import { usePublicProfile } from '../../hooks/profile/usePublicProfile';
 import { resolveProfileRoleLabel } from '../../utils/profileRoleUtils';
 import { resolveMediaUrl } from '../../utils/imageUtils';
+import { getPublicContactEmail } from '../../utils/profileContactLinks';
 import { ScrollReveal } from '../../components/animations/ScrollReveal';
 
 const DEFAULT_COVER =
@@ -108,12 +109,13 @@ const PublicUserProfile = ({ userId, navigate }) => {
   };
 
   const hasBio = !!profile.bio?.trim();
+  const contactEmail = getPublicContactEmail(profile.links);
   const personalFields = [
     { icon: PersonIcon, label: t('full_name'), value: profile.fullName },
-    { icon: EmailIcon, label: t('email'), value: profile.email },
+    contactEmail ? { icon: EmailIcon, label: t('contact_email', { defaultValue: 'Email liên hệ' }), value: contactEmail } : null,
     { icon: WorkIcon, label: t('current_job'), value: profile.currentJobTitle },
     { icon: BusinessIcon, label: t('company'), value: profile.currentCompany },
-  ];
+  ].filter(Boolean);
   const academicProfile = profile.organizationMember ?? profile;
   const messagePeer = {
     userId: profile.userId ?? userId,

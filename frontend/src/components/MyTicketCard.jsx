@@ -8,6 +8,7 @@ import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
 import { QRCodeSVG } from "qrcode.react";
 import { eventApi } from "../utils/api";
 import useOrganizationStore from "../stores/organizationStore";
+import { canCancelEventTicketStatus } from "../utils/eventRegistration";
 
 const formatDate = (iso) => {
   if (!iso) return "";
@@ -19,16 +20,17 @@ const MyTicketCard = ({ ticket, onCancelled, highlighted = false }) => {
   const organization = useOrganizationStore((state) => state.organization);
 
   const STATUS_CONFIG = useMemo(() => ({
-    PENDING:   { label: t("event:status_pending"),   color: "default",   canCancel: true  },
-    ISSUED:    { label: t("event:status_issued"),    color: "tertiary",  canCancel: true  },
-    ACTIVE:    { label: t("event:status_active"),    color: "warning",   canCancel: false },
-    USED:      { label: t("event:status_used"),      color: "success",   canCancel: false },
-    CHECKED_IN:{ label: t("event:status_used"),      color: "success",   canCancel: false },
-    EXPIRED:   { label: t("event:status_expired"),   color: "default",   canCancel: false },
-    CANCELLED: { label: t("event:status_cancelled"), color: "error",     canCancel: false },
+    PENDING:   { label: t("event:status_pending"),   color: "default" },
+    ISSUED:    { label: t("event:status_issued"),    color: "tertiary" },
+    ACTIVE:    { label: t("event:status_active"),    color: "warning" },
+    USED:      { label: t("event:status_used"),      color: "success" },
+    CHECKED_IN:{ label: t("event:status_used"),      color: "success" },
+    EXPIRED:   { label: t("event:status_expired"),   color: "default" },
+    CANCELLED: { label: t("event:status_cancelled"), color: "error" },
   }), [t]);
 
   const statusCfg = STATUS_CONFIG[ticket.status] ?? STATUS_CONFIG.PENDING;
+  const canCancelTicket = canCancelEventTicketStatus(ticket.status);
   const eventTitle = ticket.eventTitle
     ?? ticket.eventName
     ?? ticket.event?.title
@@ -120,7 +122,7 @@ const MyTicketCard = ({ ticket, onCancelled, highlighted = false }) => {
           }}
         >
           <Stack spacing={1} alignItems="flex-end" sx={{ flexDirection: { xs: "column", md: "row" }, gap: 1 }}>
-            {statusCfg.canCancel && (
+            {canCancelTicket && (
               <Button
                 variant="outlined"
                 color="error"

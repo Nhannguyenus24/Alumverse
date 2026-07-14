@@ -4,6 +4,8 @@ import { Box, Container, Stack, Typography, Avatar, Button } from '@mui/material
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import SchoolIcon from '@mui/icons-material/School';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import TopTabFilter from '../components/mentorship/TopTabFilter';
 import CoverUpload from '../components/CoverUpload';
 import {
@@ -60,17 +62,17 @@ const ProfileLayout = ({
       { label: t('become_mentor'), variant: 'contained', color: 'accent', startIcon: <SchoolIcon />, onClick: () => onNavigate('/mentorship/signup') },
     ],
     mentee: [
-      { label: t('back_to_mentorship'), variant: 'outlined', onClick: () => onNavigate('/mentorship') },
-      { label: t('book_appointment'), variant: 'contained', disabled: !canBook, onClick: canBook ? () => onNavigate(`/mentorship/mentors/${mentorId}/book`) : undefined },
+      { label: t('back_to_mentorship'), variant: 'outlined', startIcon: <ArrowBackIcon />, onClick: () => onNavigate('/mentorship') },
+      { label: t('book_appointment'), variant: 'contained', startIcon: <CalendarMonthIcon />, disabled: !canBook, onClick: canBook ? () => onNavigate(`/mentorship/mentors/${mentorId}/book`) : undefined },
     ],
     user: [
-      { label: t('back'), variant: 'outlined', onClick: handleBack },
-      { label: t('edit_profile'), variant: 'outlined', color: 'secondary', onClick: () => onNavigate('/profile/edit', { state: { profileEditContext: 'profile' } }) },
+      { label: t('back'), variant: 'outlined', startIcon: <ArrowBackIcon />, onClick: handleBack },
+      { label: t('edit_profile'), variant: 'outlined', color: 'secondary', startIcon: <EditOutlinedIcon />, onClick: () => onNavigate('/profile/edit', { state: { profileEditContext: 'profile' } }) },
     ],
     userEdit: [],
     userView: [
-      { label: t('back'), variant: 'outlined', onClick: handleBack },
-      { label: resolvedMessageLabel, variant: 'contained', disabled: !onUserMessage, onClick: onUserMessage },
+      { label: t('back'), variant: 'outlined', startIcon: <ArrowBackIcon />, onClick: handleBack },
+      { label: resolvedMessageLabel, variant: 'contained', startIcon: <ChatBubbleOutlineIcon />, disabled: !onUserMessage, onClick: onUserMessage },
     ],
   }), [t, onNavigate, mentorId, canBook, handleBack, onUserMessage, resolvedMessageLabel]);
 

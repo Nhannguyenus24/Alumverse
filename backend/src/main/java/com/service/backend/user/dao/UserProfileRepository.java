@@ -113,7 +113,7 @@ public interface UserProfileRepository extends R2dbcRepository<User, Integer> {
                 bio = COALESCE(:bio, bio),
                 current_job_title = COALESCE(:currentJobTitle, current_job_title),
                 current_company = COALESCE(:currentCompany, current_company),
-                links = COALESCE(CAST(:links AS json), links),
+                links = COALESCE(CAST(:links AS jsonb), links),
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = :userId
             """)
