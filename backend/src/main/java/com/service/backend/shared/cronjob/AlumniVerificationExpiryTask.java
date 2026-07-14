@@ -41,6 +41,10 @@ public class AlumniVerificationExpiryTask {
         log.info("Running alumni verification expiry job (threshold before {})", threshold);
 
         memberRepository.expireStaleVerifyingMembers(threshold)
+                .flatMap(expired -> Mono.zip(
+                        memberRepository.expireAllUserVerificationRequests(expired.organizationId(), expired.userId()),
+                        memberRepository.expireAllUserPeerVerifications(expired.organizationId(), expired.userId())
+                ).thenReturn(expired))
                 .doOnNext(expired -> notificationService.createNotificationAsync(
                         expired.userId(),
                         "Yêu cầu xác thực đã hết hạn",
