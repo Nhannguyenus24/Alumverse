@@ -206,6 +206,14 @@ public class AdminUserService {
                 fullNameMono = adminUserRepository.upsertGlobalProfileFullName(actualUserId, fullName.trim()).then();
             }
 
+            if ("ADMIN".equalsIgnoreCase(role)) {
+                return fullNameMono
+                        .doOnSuccess(ignored -> logger.info("createOrganizationMember: userId={} is ADMIN, skipping organization member creation", actualUserId))
+                        .thenReturn(true);
+            }
+
+            Integer finalVerificationLevel = "STAFF".equalsIgnoreCase(role) ? 4 : verificationLevel;
+
             return fullNameMono.then(adminUserRepository.existsOrganizationMemberByUserId(actualUserId)
                 .flatMap(exists -> exists
                     ? adminUserRepository.updateOrganizationMemberByUserId(
@@ -216,7 +224,7 @@ public class AdminUserService {
                         graduationStatusJson,
                         programJson,
                         majorJson,
-                        verificationLevel,
+                        finalVerificationLevel,
                         trustedVerifier,
                         upperStatus)
                     : adminUserRepository.createOrganizationMember(
@@ -227,7 +235,7 @@ public class AdminUserService {
                         graduationStatusJson,
                         programJson,
                         majorJson,
-                        verificationLevel,
+                        finalVerificationLevel,
                         trustedVerifier,
                         upperStatus))
                 .map(count -> count > 0)
