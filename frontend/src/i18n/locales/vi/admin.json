@@ -75,6 +75,7 @@
   "nav_audit_logs": "Nhật ký hệ thống",
   "nav_bot_config": "Cấu hình AI Bot",
   "nav_email_templates": "Mẫu Email",
+  "nav_ai_providers": "Cấu hình AI",
   "nav_education_requests": "Yêu cầu học vấn",
   "email_templates_title": "Mẫu Email",
   "email_templates_subtitle": "Chỉnh sửa tiêu đề và nội dung các email hệ thống gửi cho người dùng.",

@@ -75,6 +75,7 @@
   "nav_audit_logs": "Audit Logs",
   "nav_bot_config": "AI Bot Configuration",
   "nav_email_templates": "Email Templates",
+  "nav_ai_providers": "AI Configuration",
   "nav_education_requests": "Education Requests",
   "email_templates_title": "Email Templates",
   "email_templates_subtitle": "Edit the subject and content of system emails sent to users.",
