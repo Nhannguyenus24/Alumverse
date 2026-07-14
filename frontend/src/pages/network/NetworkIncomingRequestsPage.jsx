@@ -54,14 +54,14 @@ const NetworkIncomingRequestsPage = () => {
   });
 
   const pageCount = totalPage > 0 ? totalPage : 0;
-  const safePage = pageCount === 0 ? 1 : Math.min(page, pageCount);
+  const safePage = pageCount === 0 ? 1 : Math.min(Math.max(page, 1), pageCount);
 
   useEffect(() => {
-    if (page > pageCount) {
+    if (page !== safePage) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setPage(pageCount);
+      setPage(safePage);
     }
-  }, [pageCount, page]);
+  }, [safePage, page]);
 
   useEffect(() => {
     if (isError) {

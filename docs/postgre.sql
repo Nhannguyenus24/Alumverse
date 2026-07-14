@@ -633,7 +633,8 @@ create table funds
     created_at             timestamp default CURRENT_TIMESTAMP,
     updated_at             timestamp default CURRENT_TIMESTAMP,
     manager_email          text not null,
-    fund_document_url      text
+    fund_document_url      text,
+    donation_list_public   boolean not null default false
 );
 
 alter table funds
