@@ -171,19 +171,43 @@ public interface UserOrganizationMemberRepository extends R2dbcRepository<Organi
             SET verification_level = 0,
                 updated_at = CURRENT_TIMESTAMP
             WHERE COALESCE(om.verification_level, 0) = 1
-              AND NOT EXISTS (
-                  SELECT 1 FROM verification_requests vr
-                  WHERE vr.organization_id = om.organization_id
-                    AND vr.member_id = om.user_id
-                    AND vr."status" = 'PENDING'
-                    AND vr.created_at >= :threshold)
-              AND NOT EXISTS (
-                  SELECT 1 FROM peer_verifications pv
-                  WHERE pv.organization_id = om.organization_id
-                    AND pv.target_member_id = om.user_id
-                    AND pv."status" = 'PENDING'
-                    AND pv.created_at >= :threshold)
+              AND (
+                  EXISTS (
+                      SELECT 1 FROM verification_requests vr
+                      WHERE vr.organization_id = om.organization_id
+                        AND vr.member_id = om.user_id
+                        AND vr."status" = 'PENDING'
+                        AND vr.created_at < :threshold)
+                  OR EXISTS (
+                      SELECT 1 FROM peer_verifications pv
+                      WHERE pv.organization_id = om.organization_id
+                        AND pv.target_member_id = om.user_id
+                        AND pv."status" = 'PENDING'
+                        AND pv.created_at < :threshold)
+              )
             RETURNING om.user_id, om.organization_id
             """)
     Flux<ExpiredVerification> expireStaleVerifyingMembers(@Param("threshold") LocalDateTime threshold);
+
+    @Modifying
+    @Query("""
+            UPDATE verification_requests
+            SET status = 'EXPIRED',
+                updated_at = CURRENT_TIMESTAMP
+            WHERE status = 'PENDING'
+              AND organization_id = :organizationId
+              AND member_id = :userId
+            """)
+    Mono<Integer> expireAllUserVerificationRequests(@Param("organizationId") Integer organizationId, @Param("userId") Integer userId);
+
+    @Modifying
+    @Query("""
+            UPDATE peer_verifications
+            SET status = 'EXPIRED',
+                created_at = created_at
+            WHERE status = 'PENDING'
+              AND organization_id = :organizationId
+              AND target_member_id = :userId
+            """)
+    Mono<Integer> expireAllUserPeerVerifications(@Param("organizationId") Integer organizationId, @Param("userId") Integer userId);
 }
