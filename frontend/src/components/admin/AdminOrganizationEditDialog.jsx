@@ -21,7 +21,7 @@ import BusinessIcon from '@mui/icons-material/Business';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { fileToBase64 } from '../../utils/imageUtils';
 
-const AdminOrganizationEditDialog = ({ open, onClose, organization, onConfirm }) => {
+const AdminOrganizationEditDialog = ({ open, onClose, organization, onConfirm, loading = false }) => {
   const { t } = useTranslation(['admin', 'common']);
   const [formData, setFormData] = useState({
     name: '',
@@ -95,7 +95,7 @@ useEffect(() => {
   };
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" PaperProps={{ sx: { borderRadius: 3 } }}>
+    <Dialog open={open} onClose={loading ? undefined : onClose} fullWidth maxWidth="sm" PaperProps={{ sx: { borderRadius: 3 } }}>
       <DialogTitle sx={{ p: 3, pb: 2 }}>
         <Typography variant="h5" sx={{ fontWeight: 800, color: 'primary.main' }}>
           {organization ? t('admin:edit_organization') : t('admin:add_organization')}
@@ -215,12 +215,13 @@ useEffect(() => {
         </Box>
       </DialogContent>
       <DialogActions sx={{ p: 3, pt: 2, bgcolor: 'action.hover' }}>
-        <Button onClick={onClose} variant="outlined" color="secondary">
+        <Button onClick={onClose} variant="outlined" color="secondary" disabled={loading}>
           {t('common:cancel')}
         </Button>
         <Button
           variant="contained"
           onClick={handleSubmit}
+          disabled={loading}
         >
           {organization ? t('common:save_changes') : t('admin:create_organization')}
         </Button>

@@ -228,6 +228,10 @@
   "signup_profile_exp_company": "Công ty",
   "signup_profile_exp_period": "Thời gian",
   "signup_profile_exp_period_placeholder": "VD: 06/2024 — Hiện tại",
+  "signup_profile_exp_start": "Bắt đầu (MM/YYYY)",
+  "signup_profile_exp_end": "Kết thúc (MM/YYYY)",
+  "signup_profile_exp_current": "Hiện tại",
+  "signup_profile_exp_current_label": "Vẫn đang công tác",
   "signup_profile_exp_description": "Mô tả công việc / outcome",
   "signup_profile_projects_title": "Project tiêu biểu",
   "signup_profile_add_project": "Thêm project",
@@ -457,5 +461,7 @@
   "meeting_link_required": "Vui lòng nhập link họp",
   "meeting_link_invalid": "Link họp không hợp lệ. Chỉ chấp nhận link từ: {{platforms}}.",
   "meeting_link_zoom_warning": "Link Zoom này có thể yêu cầu nhập mật khẩu thủ công. Ưu tiên link không cần mật khẩu để mentee vào được ngay.",
-  "timezone_vietnam": "(GMT+07:00) Giờ Đông Dương - TP Hồ Chí Minh"
+  "timezone_vietnam": "(GMT+07:00) Giờ Đông Dương - TP Hồ Chí Minh",
+  "bachelor_of": "Cử nhân {{name}}",
+  "program_of": "Chương trình {{name}}"
 }

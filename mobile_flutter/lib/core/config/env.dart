@@ -1,12 +1,12 @@
 class Env {
   static const String apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://10.0.2.2:8080',
+    defaultValue: 'https://alumni-api-hcmus.duckdns.org',
   );
 
   static const String wsBaseUrl = String.fromEnvironment(
     'WS_BASE_URL',
-    defaultValue: 'ws://10.0.2.2:8080',
+    defaultValue: 'wss://alumni-api-hcmus.duckdns.org',
   );
 
   static const String googleClientId = String.fromEnvironment(
@@ -17,7 +17,7 @@ class Env {
 
   static const String imageBaseUrl = String.fromEnvironment(
     'IMAGE_BASE_URL',
-    defaultValue: 'http://10.0.2.2/images/',
+    defaultValue: 'https://alumni-api-hcmus.duckdns.org/images/',
   );
 
   /// Default organization slug. The web client currently runs a single tenant

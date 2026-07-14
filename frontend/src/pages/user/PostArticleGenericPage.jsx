@@ -208,7 +208,7 @@ const PostArticleGenericPage = () => {
         : undefined;
 
       if (imageBase64 && getJsonPayloadByteSize({ base64String: imageBase64 }) > MAX_JSON_PAYLOAD_BYTES) {
-        showError('Ảnh chính quá lớn để tải lên. Vui lòng chọn ảnh nhỏ hơn.');
+        showError(t('main_image_too_large'));
         return;
       }
 
@@ -226,7 +226,7 @@ const PostArticleGenericPage = () => {
         return;
       }
       if (getJsonPayloadByteSize(payload) > MAX_JSON_PAYLOAD_BYTES) {
-        showError('Bài viết quá lớn để đăng. Tổng dung lượng nội dung và ảnh chính cần dưới 19MB.');
+        showError(t('article_too_large_post'));
         return;
       }
 

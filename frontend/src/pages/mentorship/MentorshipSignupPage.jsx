@@ -81,13 +81,13 @@ const validateContent = (v) =>
 
 const validateTerms = (v) => Boolean(v.termsAccepted);
 
-const toEducationRows = (member, organizationName) =>
+const toEducationRows = (member, organizationName, t) =>
   buildAcademicRecords(member)
     .map((record) => ({
       school: record.faculty || record.department || organizationName || '',
       degree: [
-        record.major ? `Cử nhân ${record.major}` : '',
-        record.program ? `Chương trình ${record.program}` : '',
+        record.major ? t('bachelor_of', { name: record.major }) : '',
+        record.program ? t('program_of', { name: record.program }) : '',
       ].filter(Boolean).join(' - '),
       period: [record.startedYear, record.graduatedYear].filter(Boolean).join(' - '),
     }))
@@ -203,13 +203,13 @@ const MentorshipSignupPage = () => {
       avatarPreview: resolveMediaUrl(profile?.avatarUrl ?? ''),
       currentJobTitle,
       currentCompany,
-      educations: toEducationRows(orgMember, orgMember?.organizationName || organization?.name),
+      educations: toEducationRows(orgMember, orgMember?.organizationName || organization?.name, t),
       experiences: workExperience,
       experienceSummary: profile?.bio?.trim() || mentee?.mentoringGoal?.trim() || '',
       expertiseTags: menteeInterests,
       skills: menteeInterests,
     };
-  }, [baseProfileQuery.data, menteeProfileQuery.data, orgMemberQuery.data, organization?.name]);
+  }, [baseProfileQuery.data, menteeProfileQuery.data, orgMemberQuery.data, organization?.name, t]);
 
   const [tabKey, setTabKey] = useState(TAB_ORDER[0]);
   const [values, setValues] = useState(initialValues);

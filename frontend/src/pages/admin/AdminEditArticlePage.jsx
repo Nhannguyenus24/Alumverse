@@ -132,7 +132,7 @@ const AdminEditArticlePage = () => {
     try {
       const thumbnailBase64 = coverFile ? await fileToCroppedCoverBase64(coverFile, coverPositionY) : null;
       if (thumbnailBase64 && getJsonPayloadByteSize({ base64String: thumbnailBase64 }) > MAX_JSON_PAYLOAD_BYTES) {
-        showError('Ảnh chính quá lớn để tải lên. Vui lòng chọn ảnh nhỏ hơn.');
+        showError(t('article:main_image_too_large'));
         return;
       }
       const payload = {
@@ -145,7 +145,7 @@ const AdminEditArticlePage = () => {
         url: url.trim() || null,
       };
       if (getJsonPayloadByteSize(payload) > MAX_JSON_PAYLOAD_BYTES) {
-        showError('Bài viết quá lớn để cập nhật. Tổng dung lượng nội dung và ảnh chính cần dưới 19MB.');
+        showError(t('article:article_too_large_update'));
         return;
       }
       await updateArticle(id, payload);

@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
+import com.service.backend.shared.service.FcmService;
 import com.service.backend.user.dao.NotificationRepository;
 import com.service.backend.user.dto.NotificationResponse;
 import com.service.backend.shared.entity.Notification;
@@ -23,6 +24,7 @@ public class NotificationService {
 	private static final Logger logger = LoggerFactory.getLogger(NotificationService.class);
 
 	private final NotificationRepository notificationRepository;
+	private final FcmService fcmService;
 
 	public void createNotificationAsync(Integer memberId, String title, String message) {
 		createNotificationAsync(memberId, title, message, null);
@@ -45,6 +47,9 @@ public class NotificationService {
 				})
 				.subscribeOn(Schedulers.boundedElastic())
 				.subscribe();
+
+		// Also push to the user's devices (no-op if Firebase/push disabled).
+		fcmService.sendToUser(memberId, title, message, link);
 	}
 
 	public Mono<List<NotificationResponse>> getMyNotifications(Long currentUserId) {

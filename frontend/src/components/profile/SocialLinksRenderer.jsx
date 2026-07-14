@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { IconButton, Tooltip, Stack, Menu, MenuItem, ListItemIcon, ListItemText, Button, Box } from "@mui/material";
 import { MdEmail, MdLink, MdKeyboardArrowDown } from "react-icons/md";
 import {
@@ -369,6 +370,7 @@ const detectPlatform = (url) => {
 };
 
 const SocialLinksRenderer = ({ linksRaw }) => {
+  const { t } = useTranslation('profile');
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
   const handleClick = (event) => setAnchorEl(event.currentTarget);
@@ -409,7 +411,7 @@ const SocialLinksRenderer = ({ linksRaw }) => {
           }
         }}
       >
-        Mạng xã hội ({links.length})
+        {t('social_links_count', { count: links.length })}
       </Button>
       <Menu
         anchorEl={anchorEl}

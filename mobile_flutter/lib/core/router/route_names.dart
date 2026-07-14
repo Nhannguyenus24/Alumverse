@@ -20,6 +20,7 @@ class RouteNames {
   static const String mentorship = '/mentorship';
   static const String mentorshipMyBookings = '/mentorship/my-bookings';
   static const String mentorshipSignup = '/mentorship/signup';
+  static const String mentorTerms = '/mentorship/terms';
   static const String menteeSignup = '/mentorship/mentee-signup';
   static const String mentorDashboard = '/mentorship/mentor-dashboard';
   static const String mentorAvailability = '/mentorship/mentor-availability';

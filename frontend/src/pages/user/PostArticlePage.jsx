@@ -53,7 +53,7 @@ const PostArticlePage = () => {
         url: url.trim() || null,
       };
       if (getJsonPayloadByteSize(payload) > MAX_JSON_PAYLOAD_BYTES) {
-        showError('Bài viết quá lớn để đăng. Tổng dung lượng nội dung và ảnh chính cần dưới 19MB.');
+        showError(t('article_too_large_post'));
         return;
       }
 

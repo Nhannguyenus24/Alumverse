@@ -538,7 +538,7 @@ const ForumAlumniThreadPage = () => {
         setIsConfirmDeleteOpen(false);
         setPostToDelete(null);
         showSuccess(t('forum:success_delete_post'));
-      } catch (_) {
+      } catch (err) {
         const message =
           err?.response?.data?.message ??
           deleteErrorMessage ??
@@ -577,7 +577,7 @@ const ForumAlumniThreadPage = () => {
       showSuccess(t('forum:success_report'));
       setIsReportOpen(false);
       setPostToReport(null);
-    } catch (_) {
+    } catch (err) {
       showError(err?.response?.data?.message ?? err?.message ?? t('forum:error_report'));
     }
   };
@@ -606,7 +606,7 @@ const ForumAlumniThreadPage = () => {
         setIsEditPostOpen(false);
         setEditingPost(null);
         showSuccess(t('forum:success_update_post'));
-      } catch (_) {
+      } catch (err) {
         const message =
           err?.response?.data?.message ??
           updatePostErrorMessage ??
@@ -630,7 +630,7 @@ const ForumAlumniThreadPage = () => {
         return;
       }
       navigate('/forum');
-    } catch (_) {
+    } catch (err) {
       const message =
         err?.response?.data?.message ??
         deleteTopicErrorMessage ??
@@ -671,7 +671,7 @@ const ForumAlumniThreadPage = () => {
       setThreadTitleOverride(updatedTopic?.title ?? trimmedTitle);
       setIsEditTopicOpen(false);
       showSuccess(t('forum:success_update_topic'));
-    } catch (_) {
+    } catch (err) {
       const message =
         err?.response?.data?.message ??
         updateTopicErrorMessage ??
@@ -746,7 +746,7 @@ const ForumAlumniThreadPage = () => {
           navigate(`/forum/alumni/career/${threadId}/page/${newLastPage + 1}`, { state: location.state });
         }
       }
-    } catch (_) {
+    } catch (err) {
       const message =
         err?.response?.data?.message ??
         err?.message ??

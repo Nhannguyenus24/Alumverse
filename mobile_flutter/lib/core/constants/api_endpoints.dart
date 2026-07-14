@@ -45,6 +45,9 @@ class ApiEndpoints {
       '/api/users/me/notifications/$id/read';
   static String meNotificationDelete(String id) =>
       '/api/users/me/notifications/$id';
+  static const String meDeviceTokens = '/api/users/me/device-tokens';
+  static String meDeviceTokenDelete(String token) =>
+      '/api/users/me/device-tokens/$token';
 
   // Peer Verification
   static const String peerVerificationRequest =

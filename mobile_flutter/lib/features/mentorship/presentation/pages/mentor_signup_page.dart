@@ -3,7 +3,9 @@ import 'dart:io';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -19,14 +21,55 @@ import '../providers/mentorship_providers.dart';
 
 const int _kMinVerificationLevel = 2;
 
+/// How a section-list field is rendered/validated. Defaults to plain text.
+enum _FieldKind { text, year, monthYearRange }
+
+/// Separator used to join the experience start/end month-year into the single
+/// `period` string the backend + CV extraction expect.
+const String _kPeriodSeparator = ' — ';
+
+/// Splits a stored `period` string ("MM/YYYY — MM/YYYY") back into [start, end].
+List<String> _splitPeriod(String? period) {
+  if (period == null || period.trim().isEmpty) return ['', ''];
+  final parts = period.split(RegExp(r'\s*[—-]\s*'));
+  final start = parts.isNotEmpty ? parts[0].trim() : '';
+  final end = parts.length > 1 ? parts[1].trim() : '';
+  return [start, end];
+}
+
+/// Valid `MM/YYYY` (month 01-12, 4-digit year). Empty is allowed (optional).
+bool _isValidMonthYear(String v) {
+  final s = v.trim();
+  if (s.isEmpty) return true;
+  final m = RegExp(r'^(\d{2})/(\d{4})$').firstMatch(s);
+  if (m == null) return false;
+  final month = int.parse(m.group(1)!);
+  return month >= 1 && month <= 12;
+}
+
+/// Valid 4-digit year not later than the current year. Empty is allowed.
+bool _isValidYear(String v) {
+  final s = v.trim();
+  if (s.isEmpty) return true;
+  if (!RegExp(r'^\d{4}$').hasMatch(s)) return false;
+  return int.parse(s) <= DateTime.now().year;
+}
+
 /// A generic key/value draft row used by the education/experience/projects/
 /// awards/skills section lists — mirrors the web `SectionList` component,
 /// which stores each item as a plain map keyed by field name.
 class _EntryDraft {
-  _EntryDraft(this.values);
+  _EntryDraft(this.values, {this.isCurrent = false});
   final Map<String, String> values;
 
-  Map<String, dynamic> toJson() => values;
+  /// Ongoing job flag (experiences only). When true, `period` holds only the
+  /// start "MM/YYYY" and the end is rendered as the live current month.
+  bool isCurrent;
+
+  Map<String, dynamic> toJson() => {
+        ...values,
+        if (isCurrent) 'isCurrent': true,
+      };
 }
 
 /// Become a mentor — native take on the web `MentorshipSignupPage`. Collects
@@ -360,7 +403,7 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
       final values = <String, String>{
         for (final key in keys) key: (raw[key] as String?) ?? '',
       };
-      target.add(_EntryDraft(values));
+      target.add(_EntryDraft(values, isCurrent: raw['isCurrent'] == true));
     }
   }
 
@@ -377,7 +420,7 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
         for (final key in keys) key: (raw[key]?.toString()) ?? '',
       };
       if (values.values.any((v) => v.trim().isNotEmpty)) {
-        target.add(_EntryDraft(values));
+        target.add(_EntryDraft(values, isCurrent: raw['isCurrent'] == true));
       }
     }
   }
@@ -435,8 +478,10 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
           final major = at(profile.major);
           final program = at(profile.program);
           final degree = [
-            if (major.isNotEmpty) 'Cử nhân $major',
-            if (program.isNotEmpty) 'Chương trình $program',
+            if (major.isNotEmpty)
+              'mentorship.signup_degree_bachelor'.tr(namedArgs: {'name': major}),
+            if (program.isNotEmpty)
+              'mentorship.signup_degree_program'.tr(namedArgs: {'name': program}),
           ].join(' - ');
           final period = [
             at(profile.startedYear),
@@ -613,7 +658,7 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
                           : null,
               decoration: InputDecoration(
                 labelText: 'mentorship.signup_job_label'.tr(),
-                hintText: 'VD: Senior Software Engineer',
+                hintText: 'mentorship.signup_job_hint'.tr(),
                 prefixIcon: const Icon(Icons.work_outline),
               ),
             ),
@@ -627,7 +672,7 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
                           : null,
               decoration: InputDecoration(
                 labelText: 'mentorship.signup_company_label'.tr(),
-                hintText: 'VD: FPT Software',
+                hintText: 'mentorship.signup_company_hint'.tr(),
                 prefixIcon: const Icon(Icons.apartment_outlined),
               ),
             ),
@@ -637,7 +682,7 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
               keyboardType: TextInputType.url,
               decoration: InputDecoration(
                 labelText: 'mentorship.signup_meeting_link_label'.tr(),
-                hintText: 'VD: https://meet.google.com/...',
+                hintText: 'mentorship.signup_meeting_link_hint'.tr(),
                 prefixIcon: const Icon(Icons.video_call_outlined),
               ),
             ),
@@ -825,6 +870,7 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
                 'mentorship.signup_exp_description'.tr(),
               ],
               multilineFields: const ['description'],
+              fieldKinds: const {'period': _FieldKind.monthYearRange},
             ),
             const SizedBox(height: 20),
             _SectionList(
@@ -852,6 +898,7 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
                 'mentorship.signup_award_year'.tr(),
                 'mentorship.signup_award_desc'.tr(),
               ],
+              fieldKinds: const {'year': _FieldKind.year},
             ),
             const SizedBox(height: 20),
             _SectionList(
@@ -871,9 +918,24 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
               onChanged: (v) => setState(() => _termsAccepted = v ?? false),
               controlAffinity: ListTileControlAffinity.leading,
               contentPadding: EdgeInsets.zero,
-              title: Text(
-                'mentorship.signup_terms_label'.tr(),
-                style: const TextStyle(fontSize: 14),
+              title: Text.rich(
+                TextSpan(
+                  style: const TextStyle(fontSize: 14, color: AppColors.textPrimary),
+                  children: [
+                    TextSpan(text: 'mentorship.signup_terms_label_prefix'.tr()),
+                    TextSpan(
+                      text: 'mentorship.signup_terms_label_link'.tr(),
+                      style: const TextStyle(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w700,
+                        decoration: TextDecoration.underline,
+                        decorationColor: AppColors.primary,
+                      ),
+                      recognizer: TapGestureRecognizer()
+                        ..onTap = () => context.push(RouteNames.mentorTerms),
+                    ),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -1119,6 +1181,7 @@ class _SectionList extends StatelessWidget {
     required this.fields,
     required this.fieldLabels,
     this.multilineFields = const [],
+    this.fieldKinds = const {},
   });
 
   final String title;
@@ -1128,6 +1191,7 @@ class _SectionList extends StatelessWidget {
   final List<String> fields;
   final List<String> fieldLabels;
   final List<String> multilineFields;
+  final Map<String, _FieldKind> fieldKinds;
 
   @override
   Widget build(BuildContext context) {
@@ -1180,15 +1244,7 @@ class _SectionList extends StatelessWidget {
                 child: Column(
                   children: [
                     for (var i = 0; i < fields.length; i++) ...[
-                      TextFormField(
-                        initialValue: entry.value.values[fields[i]],
-                        maxLines: multilineFields.contains(fields[i]) ? 3 : 1,
-                        onChanged: (v) => entry.value.values[fields[i]] = v,
-                        decoration: InputDecoration(
-                          labelText: fieldLabels[i],
-                          isDense: true,
-                        ),
-                      ),
+                      _buildField(entry.value, fields[i], fieldLabels[i]),
                       if (i != fields.length - 1) const SizedBox(height: 8),
                     ],
                     Align(
@@ -1210,6 +1266,200 @@ class _SectionList extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+
+  Widget _buildField(_EntryDraft entry, String field, String label) {
+    final kind = fieldKinds[field] ?? _FieldKind.text;
+    switch (kind) {
+      case _FieldKind.year:
+        return TextFormField(
+          initialValue: entry.values[field],
+          keyboardType: TextInputType.number,
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            LengthLimitingTextInputFormatter(4),
+          ],
+          onChanged: (v) => entry.values[field] = v,
+          validator: (v) => _isValidYear(v ?? '')
+              ? null
+              : 'mentorship.signup_year_invalid'.tr(),
+          decoration: InputDecoration(
+            labelText: label,
+            hintText: 'YYYY',
+            isDense: true,
+          ),
+        );
+      case _FieldKind.monthYearRange:
+        return _MonthYearRangeField(
+          label: label,
+          entry: entry,
+          field: field,
+        );
+      case _FieldKind.text:
+        return TextFormField(
+          initialValue: entry.values[field],
+          maxLines: multilineFields.contains(field) ? 3 : 1,
+          onChanged: (v) => entry.values[field] = v,
+          decoration: InputDecoration(labelText: label, isDense: true),
+        );
+    }
+  }
+}
+
+/// Two `MM/YYYY` inputs (start + end) that serialize into a single `period`
+/// string ("MM/YYYY — MM/YYYY") stored on the draft, keeping the backend +
+/// CV-extraction contract unchanged. Digits-only input, auto-inserts the slash.
+class _MonthYearRangeField extends StatefulWidget {
+  const _MonthYearRangeField({
+    required this.label,
+    required this.entry,
+    required this.field,
+  });
+
+  final String label;
+  final _EntryDraft entry;
+  final String field;
+
+  @override
+  State<_MonthYearRangeField> createState() => _MonthYearRangeFieldState();
+}
+
+class _MonthYearRangeFieldState extends State<_MonthYearRangeField> {
+  late final TextEditingController _startCtl;
+  late final TextEditingController _endCtl;
+
+  @override
+  void initState() {
+    super.initState();
+    final parts = _splitPeriod(widget.entry.values[widget.field]);
+    _startCtl = TextEditingController(text: parts[0]);
+    _endCtl = TextEditingController(text: parts[1]);
+  }
+
+  @override
+  void dispose() {
+    _startCtl.dispose();
+    _endCtl.dispose();
+    super.dispose();
+  }
+
+  bool get _isCurrent => widget.entry.isCurrent;
+
+  void _sync() {
+    final start = _startCtl.text.trim();
+    if (_isCurrent) {
+      // Ongoing job → store only the start; end is the live current month.
+      widget.entry.values[widget.field] = start;
+      return;
+    }
+    final end = _endCtl.text.trim();
+    if (start.isEmpty && end.isEmpty) {
+      widget.entry.values[widget.field] = '';
+    } else {
+      widget.entry.values[widget.field] = '$start$_kPeriodSeparator$end';
+    }
+  }
+
+  void _toggleCurrent(bool checked) {
+    setState(() {
+      widget.entry.isCurrent = checked;
+      if (checked) {
+        _endCtl.text = '';
+      } else {
+        // Stopped being current now → freeze the end to the current month.
+        _endCtl.text = _currentMonthYear();
+      }
+    });
+    _sync();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: _monthYearInput(_startCtl, 'mentorship.signup_exp_start'.tr())),
+            const SizedBox(width: 8),
+            Expanded(child: _endInput()),
+          ],
+        ),
+        Row(
+          children: [
+            Checkbox(
+              value: _isCurrent,
+              visualDensity: VisualDensity.compact,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              onChanged: (v) => _toggleCurrent(v ?? false),
+            ),
+            Flexible(child: Text('mentorship.signup_exp_current_label'.tr())),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _endInput() {
+    if (_isCurrent) {
+      return TextFormField(
+        enabled: false,
+        initialValue: 'mentorship.signup_exp_current'.tr(),
+        decoration: InputDecoration(
+          labelText: 'mentorship.signup_exp_end'.tr(),
+          isDense: true,
+        ),
+      );
+    }
+    return _monthYearInput(_endCtl, 'mentorship.signup_exp_end'.tr());
+  }
+
+  Widget _monthYearInput(TextEditingController ctl, String label) {
+    return TextFormField(
+      controller: ctl,
+      keyboardType: TextInputType.number,
+      inputFormatters: [_MonthYearInputFormatter()],
+      onChanged: (_) => _sync(),
+      validator: (v) => _isValidMonthYear(v ?? '')
+          ? null
+          : 'mentorship.signup_date_invalid'.tr(),
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: 'mentorship.signup_date_hint'.tr(),
+        isDense: true,
+      ),
+    );
+  }
+}
+
+/// "MM/YYYY" for the current month (used when un-checking "still working").
+String _currentMonthYear() {
+  final now = DateTime.now();
+  final mm = now.month.toString().padLeft(2, '0');
+  return '$mm/${now.year}';
+}
+
+/// Restricts input to digits and formats them as `MM/YYYY` (slash auto-inserted
+/// after 2 digits, capped at 6 digits total).
+class _MonthYearInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final digits = newValue.text.replaceAll(RegExp(r'\D'), '');
+    final capped = digits.length > 6 ? digits.substring(0, 6) : digits;
+    final buf = StringBuffer();
+    for (var i = 0; i < capped.length; i++) {
+      if (i == 2) buf.write('/');
+      buf.write(capped[i]);
+    }
+    final text = buf.toString();
+    return TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
     );
   }
 }

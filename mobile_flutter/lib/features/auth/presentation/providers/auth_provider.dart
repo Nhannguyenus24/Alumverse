@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/notifications/push_notification_service.dart';
 import '../../../organization/presentation/providers/organization_provider.dart';
 import '../../data/models/auth_user.dart';
 import '../../data/repositories/auth_repository.dart';
@@ -73,12 +74,19 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
         password: password,
         organizationId: orgId,
       );
+      _registerPush();
       return AuthState(
         user: session.user,
         verificationLevel: session.verificationLevel,
         mustChangePassword: session.mustChangePassword,
       );
     });
+  }
+
+  /// Register this device for push after a successful sign-in. Best-effort:
+  /// permission prompt + token upload, failures are swallowed inside the service.
+  void _registerPush() {
+    ref.read(pushNotificationServiceProvider).registerToken();
   }
 
   Future<void> loginWithGoogle(String idToken) async {
@@ -96,6 +104,7 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
         idToken: idToken,
         organizationId: orgId,
       );
+      _registerPush();
       return AuthState(
         user: session.user,
         verificationLevel: session.verificationLevel,
@@ -168,6 +177,7 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
   }
 
   Future<void> logout() async {
+    await ref.read(pushNotificationServiceProvider).unregisterToken();
     await _repo.logout();
     state = const AsyncData(AuthState.signedOut);
   }

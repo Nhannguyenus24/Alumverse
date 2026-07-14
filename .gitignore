@@ -63,3 +63,9 @@ frontend/*.sw?
 *.swo
 *.iml
 .DS_Store
+
+# Firebase admin private key — never commit. (google-services.json is
+# intentionally tracked: it only holds the client API key that ships in the app
+# and the CI APK build needs it.)
+backend/firebase-service-account.json
+firebase-service-account.json

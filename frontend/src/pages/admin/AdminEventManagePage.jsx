@@ -8,6 +8,7 @@ import {
   Box,
   Button,
   Chip,
+  CircularProgress,
   IconButton,
   MenuItem,
   Stack,
@@ -260,12 +261,12 @@ const AdminEventManagePage = () => {
       
       const exportData = data.map((row, index) => ({
         'STT': index + 1,
-        'Mã Vé': row.ticketCode || '—',
-        'Tên Người Dùng': row.attendeeName || row.memberName || row.guestName || memberFallback(row.memberId),
+        [t('admin:event_export_col_ticket_code')]: row.ticketCode || '—',
+        [t('admin:event_export_col_user_name')]: row.attendeeName || row.memberName || row.guestName || memberFallback(row.memberId),
         'Email': row.attendeeEmail || row.memberEmail || row.guestEmail || row.email || '—',
-        'Trạng Thái': getTicketStatusChip(t, row.status).label,
-        'Ngày Đăng Ký': row.registeredAt ? formatDateTime(row.registeredAt) : '—',
-        'Ngày Check-in': row.checkedInAt ? formatDateTime(row.checkedInAt) : '—',
+        [t('admin:event_export_col_status')]: getTicketStatusChip(t, row.status).label,
+        [t('admin:event_export_col_registered_at')]: row.registeredAt ? formatDateTime(row.registeredAt) : '—',
+        [t('admin:event_export_col_checked_in_at')]: row.checkedInAt ? formatDateTime(row.checkedInAt) : '—',
       }));
 
       const worksheet = XLSX.utils.json_to_sheet(exportData);

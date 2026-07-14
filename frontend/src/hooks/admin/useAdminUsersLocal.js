@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { enqueueSnackbar } from 'notistack';
+import i18next from 'i18next';
 import * as adminUserApi from '../../utils/api';
 
 const addDaysIso = (days) => {
@@ -124,13 +125,16 @@ const useAdminUsersLocal = (stableOrgId, shouldFetch = true) => {
       const res = await adminUserApi.bulkImportMembers({ organizationId, members });
       const data = res?.data?.data ?? res?.data ?? res;
       enqueueSnackbar(
-        `Nhập xong: ${data.successCount ?? 0} thành công, ${data.failureCount ?? 0} thất bại.`,
+        i18next.t('admin:bulk_result_summary', {
+          success: data.successCount ?? 0,
+          failure: data.failureCount ?? 0,
+        }),
         { variant: data.failureCount === 0 ? 'success' : 'warning' }
       );
       await loadUsers();
       return data;
     } catch (e) {
-      const msg = e?.response?.data?.message || 'Lỗi khi nhập hàng loạt.';
+      const msg = e?.response?.data?.message || i18next.t('admin:bulk_import_error');
       enqueueSnackbar(msg, { variant: 'error' });
       throw e;
     }

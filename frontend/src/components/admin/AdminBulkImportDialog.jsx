@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import {
+  Alert,
   Box,
   Button,
   Chip,
@@ -32,6 +33,7 @@ import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
 import AdminStatusChip from './AdminStatusChip';
 import { useSnackbar } from 'notistack';
+import { useTranslation } from 'react-i18next';
 
 // ── Template ──────────────────────────────────────────────────────────────────
 const TEMPLATE_HEADERS = [
@@ -60,17 +62,17 @@ const VALID_STATUSES = ['ACTIVE', 'INACTIVE', 'BANNED'];
 const VALID_GRADUATION = ['STUDYING', 'GRADUATED', 'DROPPED'];
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const validateRow = (row, idx) => {
+const validateRow = (row, idx, t) => {
   const errors = [];
-  if (!row.email || !EMAIL_RE.test(row.email.trim())) errors.push('Email không hợp lệ');
-  if (!row.fullName || !row.fullName.trim()) errors.push('Họ tên là bắt buộc');
-  if (row.role && !VALID_ROLES.includes(row.role.toUpperCase())) errors.push(`Role không hợp lệ (${VALID_ROLES.join('/')})`);
-  if (row.status && !VALID_STATUSES.includes(row.status.toUpperCase())) errors.push(`Status không hợp lệ (${VALID_STATUSES.join('/')})`);
-  if (row.graduationStatus && !VALID_GRADUATION.includes(row.graduationStatus.toUpperCase())) errors.push(`GraduationStatus không hợp lệ (${VALID_GRADUATION.join('/')})`);
-  if (row.graduatedYear && !/^\d{4}$/.test(String(row.graduatedYear).trim())) errors.push('GraduatedYear phải là 4 chữ số');
+  if (!row.email || !EMAIL_RE.test(row.email.trim())) errors.push(t('bulk_err_email_invalid'));
+  if (!row.fullName || !row.fullName.trim()) errors.push(t('bulk_err_fullname_required'));
+  if (row.role && !VALID_ROLES.includes(row.role.toUpperCase())) errors.push(t('bulk_err_role_invalid', { options: VALID_ROLES.join('/') }));
+  if (row.status && !VALID_STATUSES.includes(row.status.toUpperCase())) errors.push(t('bulk_err_status_invalid', { options: VALID_STATUSES.join('/') }));
+  if (row.graduationStatus && !VALID_GRADUATION.includes(row.graduationStatus.toUpperCase())) errors.push(t('bulk_err_graduation_invalid', { options: VALID_GRADUATION.join('/') }));
+  if (row.graduatedYear && !/^\d{4}$/.test(String(row.graduatedYear).trim())) errors.push(t('bulk_err_graduated_year'));
   if (row.verificationLevel !== undefined && row.verificationLevel !== '') {
     const vl = Number(row.verificationLevel);
-    if (![0, 1, 2].includes(vl)) errors.push('VerificationLevel phải là 0, 1 hoặc 2');
+    if (![0, 1, 2].includes(vl)) errors.push(t('bulk_err_verification_level'));
   }
   return { ...row, _rowIndex: idx, _errors: errors, _valid: errors.length === 0 };
 };
@@ -85,6 +87,7 @@ const statusIcon = (s) => {
 // ── Main component ─────────────────────────────────────────────────────────────
 const AdminBulkImportDialog = ({ open, onClose, organizationOptions = [], onBulkImport }) => {
   const theme = useTheme();
+  const { t } = useTranslation(['admin', 'common']);
   const fileRef = useRef(null);
   const [rows, setRows] = useState([]);
   const [fileName, setFileName] = useState('');
@@ -120,7 +123,7 @@ const AdminBulkImportDialog = ({ open, onClose, organizationOptions = [], onBulk
         const ws = wb.Sheets[wb.SheetNames[0]];
         const raw = XLSX.utils.sheet_to_json(ws, { defval: '' });
 
-        if (!raw.length) { enqueueSnackbar('File không có dữ liệu.', { variant: 'error' }); return; }
+        if (!raw.length) { enqueueSnackbar(t('bulk_snack_empty_file'), { variant: 'error' }); return; }
 
         const parsed = raw.map((r, i) => validateRow({
           email: String(r.email || '').trim(),
@@ -136,13 +139,13 @@ const AdminBulkImportDialog = ({ open, onClose, organizationOptions = [], onBulk
           status: String(r.status || 'ACTIVE').trim().toUpperCase(),
           _importStatus: 'PENDING',
           _importReason: '',
-        }, i));
+        }, i, t));
 
         setRows(parsed);
         setFileName(file.name);
         setStep('preview');
       } catch {
-        enqueueSnackbar('Không đọc được file. Vui lòng dùng file .xlsx hoặc .xls.', { variant: 'error' });
+        enqueueSnackbar(t('bulk_snack_read_failed'), { variant: 'error' });
       }
     };
     reader.readAsArrayBuffer(file);
@@ -205,7 +208,7 @@ const AdminBulkImportDialog = ({ open, onClose, organizationOptions = [], onBulk
     <Dialog open={open} onClose={handleClose} fullWidth maxWidth="lg" scroll="paper">
       <DialogTitle sx={{ fontWeight: 800, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
         <UploadFileOutlinedIcon />
-        Nhập hàng loạt từ Excel
+        {t('bulk_title')}
         {step === 'preview' && fileName && (
           <Chip label={fileName} size="small" sx={{ ml: 1, fontWeight: 500 }} />
         )}
@@ -227,15 +230,15 @@ const AdminBulkImportDialog = ({ open, onClose, organizationOptions = [], onBulk
               onClick={() => fileRef.current?.click()}
             >
               <UploadFileOutlinedIcon sx={{ fontSize: 48, color: 'primary.main', opacity: 0.7 }} />
-              <Typography variant="subtitle1" fontWeight={700}>Kéo thả hoặc nhấn để chọn file</Typography>
-              <Typography variant="body2" color="text.secondary">Hỗ trợ .xlsx, .xls</Typography>
+              <Typography variant="subtitle1" fontWeight={700}>{t('bulk_drop_hint')}</Typography>
+              <Typography variant="body2" color="text.secondary">{t('bulk_supported_formats')}</Typography>
               <input ref={fileRef} type="file" accept=".xlsx,.xls" hidden onChange={handleFile} />
               <Button variant="outlined" size="small" component="span" sx={{ mt: 1 }}>
-                Chọn file Excel
+                {t('bulk_choose_file')}
               </Button>
             </Paper>
 
-            <Divider sx={{ width: '100%', maxWidth: 480 }}>hoặc</Divider>
+            <Divider sx={{ width: '100%', maxWidth: 480 }}>{t('bulk_or')}</Divider>
 
             <Button
               variant="outlined"
@@ -243,13 +246,13 @@ const AdminBulkImportDialog = ({ open, onClose, organizationOptions = [], onBulk
               onClick={downloadTemplate}
               sx={{ fontWeight: 700, textTransform: 'none' }}
             >
-              Tải file mẫu (.xlsx)
+              {t('bulk_download_template')}
             </Button>
 
             <Alert severity="info" sx={{ width: '100%', maxWidth: 600 }}>
               <Typography variant="body2" component="div">
-                <strong>Các cột bắt buộc:</strong> email, fullName<br />
-                <strong>Các cột tùy chọn:</strong> studentId, role (mặc định USER), password, program, major, graduatedYear, graduationStatus (STUDYING/GRADUATED/DROPPED), verificationLevel (0/1/2), status (mặc định ACTIVE)
+                <strong>{t('bulk_required_columns')}</strong> email, fullName<br />
+                <strong>{t('bulk_optional_columns')}</strong> studentId, role ({t('bulk_default_user')}), password, program, major, graduatedYear, graduationStatus (STUDYING/GRADUATED/DROPPED), verificationLevel (0/1/2), status ({t('bulk_default_active')})
               </Typography>
             </Alert>
           </Box>
@@ -260,13 +263,13 @@ const AdminBulkImportDialog = ({ open, onClose, organizationOptions = [], onBulk
           <Box>
             {/* Summary bar */}
             <Box sx={{ px: 3, py: 2, display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-              <Typography variant="body2"><strong>{rows.length}</strong> dòng</Typography>
-              <Chip label={`${validCount} hợp lệ`} color="success" size="small" />
-              {invalidCount > 0 && <Chip label={`${invalidCount} lỗi`} color="error" size="small" />}
+              <Typography variant="body2"><strong>{rows.length}</strong> {t('bulk_rows')}</Typography>
+              <Chip label={t('bulk_valid_count', { count: validCount })} color="success" size="small" />
+              {invalidCount > 0 && <Chip label={t('bulk_invalid_count', { count: invalidCount })} color="error" size="small" />}
               <Box sx={{ flex: 1 }} />
               {/* Org selector */}
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography variant="body2" color="text.secondary">Tổ chức:</Typography>
+                <Typography variant="body2" color="text.secondary">{t('bulk_organization')}</Typography>
                 <select
                   value={selectedOrgId}
                   onChange={(e) => setSelectedOrgId(Number(e.target.value))}
@@ -277,7 +280,7 @@ const AdminBulkImportDialog = ({ open, onClose, organizationOptions = [], onBulk
                   ))}
                 </select>
               </Box>
-              <Tooltip title="Xóa dữ liệu và chọn lại file">
+              <Tooltip title={t('bulk_clear_and_reselect')}>
                 <IconButton size="small" onClick={reset}>
                   <DeleteOutlineIcon fontSize="small" />
                 </IconButton>
@@ -286,7 +289,7 @@ const AdminBulkImportDialog = ({ open, onClose, organizationOptions = [], onBulk
 
             {invalidCount > 0 && (
               <Alert severity="warning" sx={{ mx: 3, mb: 1 }}>
-                {invalidCount} dòng có lỗi sẽ bị bỏ qua khi nhập. Hãy kiểm tra cột <strong>Lỗi</strong>.
+                {t('bulk_invalid_rows_warning', { count: invalidCount })}
               </Alert>
             )}
 
@@ -296,16 +299,16 @@ const AdminBulkImportDialog = ({ open, onClose, organizationOptions = [], onBulk
                   <TableRow>
                     <TableCell sx={{ fontWeight: 700, minWidth: 40 }}>#</TableCell>
                     <TableCell sx={{ fontWeight: 700, minWidth: 200 }}>Email</TableCell>
-                    <TableCell sx={{ fontWeight: 700, minWidth: 150 }}>Họ tên</TableCell>
+                    <TableCell sx={{ fontWeight: 700, minWidth: 150 }}>{t('bulk_col_fullname')}</TableCell>
                     <TableCell sx={{ fontWeight: 700 }}>MSSV</TableCell>
                     <TableCell sx={{ fontWeight: 700 }}>Role</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Chương trình</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Ngành</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Năm TN</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Tình trạng</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Xác thực</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Trạng thái</TableCell>
-                    <TableCell sx={{ fontWeight: 700, minWidth: 180 }}>Lỗi</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>{t('bulk_col_program')}</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>{t('bulk_col_major')}</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>{t('bulk_col_graduated_year')}</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>{t('bulk_col_graduation_status')}</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>{t('bulk_col_verification')}</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>{t('bulk_col_status')}</TableCell>
+                    <TableCell sx={{ fontWeight: 700, minWidth: 180 }}>{t('bulk_col_error')}</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -351,15 +354,15 @@ const AdminBulkImportDialog = ({ open, onClose, organizationOptions = [], onBulk
             <Stack direction="row" spacing={3} sx={{ mb: 3 }}>
               <Paper sx={{ flex: 1, p: 2, borderRadius: 2, textAlign: 'center', bgcolor: alpha(theme.palette.success.main, 0.08) }}>
                 <Typography variant="h4" fontWeight={800} color="success.main">{result.successCount}</Typography>
-                <Typography variant="body2" color="text.secondary">Thành công</Typography>
+                <Typography variant="body2" color="text.secondary">{t('bulk_result_success')}</Typography>
               </Paper>
               <Paper sx={{ flex: 1, p: 2, borderRadius: 2, textAlign: 'center', bgcolor: alpha(theme.palette.error.main, 0.08) }}>
                 <Typography variant="h4" fontWeight={800} color="error.main">{result.failureCount}</Typography>
-                <Typography variant="body2" color="text.secondary">Thất bại</Typography>
+                <Typography variant="body2" color="text.secondary">{t('bulk_result_failure')}</Typography>
               </Paper>
               <Paper sx={{ flex: 1, p: 2, borderRadius: 2, textAlign: 'center' }}>
                 <Typography variant="h4" fontWeight={800}>{result.total}</Typography>
-                <Typography variant="body2" color="text.secondary">Tổng cộng</Typography>
+                <Typography variant="body2" color="text.secondary">{t('bulk_result_total')}</Typography>
               </Paper>
             </Stack>
 
@@ -378,10 +381,10 @@ const AdminBulkImportDialog = ({ open, onClose, organizationOptions = [], onBulk
                   <TableRow>
                     <TableCell sx={{ fontWeight: 700 }}>#</TableCell>
                     <TableCell sx={{ fontWeight: 700 }}>Email</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Họ tên</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>{t('bulk_col_fullname')}</TableCell>
                     <TableCell sx={{ fontWeight: 700 }}>MSSV</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Kết quả</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Lý do lỗi</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>{t('bulk_result_col_result')}</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>{t('bulk_result_col_reason')}</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -393,7 +396,7 @@ const AdminBulkImportDialog = ({ open, onClose, organizationOptions = [], onBulk
                       <TableCell>{row.studentId}</TableCell>
                       <TableCell>
                         {!row._valid ? (
-                          <Chip icon={<WarningAmberOutlinedIcon />} label="Bỏ qua" size="small" color="warning" />
+                          <Chip icon={<WarningAmberOutlinedIcon />} label={t('bulk_result_skipped')} size="small" color="warning" />
                         ) : (
                           <AdminStatusChip
                             icon={statusIcon(row._importStatus)}
@@ -420,7 +423,7 @@ const AdminBulkImportDialog = ({ open, onClose, organizationOptions = [], onBulk
           <Box sx={{ p: 3, textAlign: 'center' }}>
             <CircularProgress size={40} />
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-              Đang nhập {validCount} tài khoản...
+              {t('bulk_importing_count', { count: validCount })}
             </Typography>
           </Box>
         )}
@@ -429,12 +432,12 @@ const AdminBulkImportDialog = ({ open, onClose, organizationOptions = [], onBulk
       <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
         {step === 'result' ? (
           <>
-            <Button onClick={reset} variant="outlined" sx={{ textTransform: 'none' }}>Nhập thêm</Button>
-            <Button onClick={handleClose} variant="outlined" color="secondary" sx={{ textTransform: 'none', fontWeight: 700 }}>Đóng</Button>
+            <Button onClick={reset} variant="outlined" sx={{ textTransform: 'none' }}>{t('bulk_import_more')}</Button>
+            <Button onClick={handleClose} variant="outlined" color="secondary" sx={{ textTransform: 'none', fontWeight: 700 }}>{t('bulk_close')}</Button>
           </>
         ) : step === 'preview' ? (
           <>
-            <Button onClick={reset} variant="outlined" color="secondary" sx={{ textTransform: 'none' }}>Hủy</Button>
+            <Button onClick={reset} variant="outlined" color="secondary" sx={{ textTransform: 'none' }}>{t('bulk_cancel')}</Button>
             <Button
               variant="contained"
               disabled={validCount === 0 || importing || !selectedOrgId}
@@ -442,11 +445,11 @@ const AdminBulkImportDialog = ({ open, onClose, organizationOptions = [], onBulk
               startIcon={importing ? <CircularProgress size={16} color="inherit" /> : <UploadFileOutlinedIcon />}
               sx={{ textTransform: 'none', fontWeight: 700 }}
             >
-              {importing ? 'Đang nhập...' : `Nhập ${validCount} tài khoản`}
+              {importing ? t('bulk_importing') : t('bulk_import_accounts', { count: validCount })}
             </Button>
           </>
         ) : (
-          <Button onClick={handleClose} variant="outlined" color="secondary" sx={{ textTransform: 'none' }}>Đóng</Button>
+          <Button onClick={handleClose} variant="outlined" color="secondary" sx={{ textTransform: 'none' }}>{t('bulk_close')}</Button>
         )}
       </DialogActions>
     </Dialog>
