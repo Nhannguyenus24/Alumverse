@@ -27,6 +27,8 @@ import {
 import LaunchOutlinedIcon from "@mui/icons-material/LaunchOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
+import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
 import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import VolunteerActivismIcon from "@mui/icons-material/VolunteerActivism";
@@ -40,6 +42,7 @@ import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
 import SearchIcon from "@mui/icons-material/Search";
 import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
 
+import ConfirmDialog from "../../components/ConfirmDialog";
 import AdminStatusChip from "../../components/admin/AdminStatusChip";
 import AdminDashboardMetricTile from "../../components/admin/AdminDashboardMetricTile";
 import AdminDataTable from "../../components/admin/AdminDataTable";
@@ -59,6 +62,7 @@ const AdminFundraisingsPage = () => {
   const { stableOrgId, activeOrganization } = useAdminSystemContext();
   const { user } = useAuth();
   const isAdmin = user?.role === "ADMIN";
+  const canToggleDonationVisibility = isAdmin || user?.role === "STAFF";
 
   // Trạng thái quỹ được suy ra hoàn toàn từ thời gian bắt đầu/kết thúc.
   const getFundPhase = (timeStarted, timeEnded) => {
@@ -88,6 +92,7 @@ const AdminFundraisingsPage = () => {
     sortOrder,
     setSortOrder,
     closeFundById,
+    toggleDonationVisibility,
   } = useAdminFundraisingsData(stableOrgId);
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -114,6 +119,8 @@ const AdminFundraisingsPage = () => {
   const [keywordInput, setKeywordInput] = useState("");
   const [donationsSearchBy, setDonationsSearchBy] = useState("name");
   const [isExporting, setIsExporting] = useState(false);
+  const [visibilityTarget, setVisibilityTarget] = useState(null);
+  const [isTogglingVisibility, setIsTogglingVisibility] = useState(false);
 
   const loadCampaignDonations = async (fundId, pageNum = 1, keyword = "", searchByField = "name") => {
     setDonationsLoading(true);
@@ -166,6 +173,24 @@ const AdminFundraisingsPage = () => {
       enqueueSnackbar(t('fund_export_failed'), { variant: "error" });
     } finally {
       setIsExporting(false);
+    }
+  };
+
+  const handleConfirmToggleDonationVisibility = async () => {
+    if (!visibilityTarget) return;
+    const next = !visibilityTarget.donationListPublic;
+    setIsTogglingVisibility(true);
+    try {
+      await toggleDonationVisibility(visibilityTarget.id, next);
+      enqueueSnackbar(
+        next ? t('fund_donation_visibility_public_success') : t('fund_donation_visibility_private_success'),
+        { variant: "success" },
+      );
+    } catch {
+      enqueueSnackbar(t('fund_donation_visibility_update_failed'), { variant: "error" });
+    } finally {
+      setIsTogglingVisibility(false);
+      setVisibilityTarget(null);
     }
   };
 
@@ -295,6 +320,17 @@ const AdminFundraisingsPage = () => {
               <EditOutlinedIcon fontSize="small" />
             </IconButton>
           </Tooltip>
+          {canToggleDonationVisibility && (
+            <Tooltip title={fund.donationListPublic ? t('fund_action_unpublish_donations') : t('fund_action_publish_donations')}>
+              <IconButton
+                size="small"
+                color={fund.donationListPublic ? "success" : "default"}
+                onClick={() => setVisibilityTarget(fund)}
+              >
+                {fund.donationListPublic ? <VisibilityOutlinedIcon fontSize="small" /> : <VisibilityOffOutlinedIcon fontSize="small" />}
+              </IconButton>
+            </Tooltip>
+          )}
           {isAdmin && (
             getFundPhase(fund.timeStarted, fund.timeEnded).status !== "ENDED" ? (
               <Tooltip title={t('fund_action_close')}>
@@ -607,6 +643,18 @@ const AdminFundraisingsPage = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <ConfirmDialog
+        open={Boolean(visibilityTarget)}
+        title={visibilityTarget?.donationListPublic ? t('fund_donation_visibility_unpublish_title') : t('fund_donation_visibility_publish_title')}
+        message={visibilityTarget?.donationListPublic ? t('fund_donation_visibility_unpublish_body', { title: visibilityTarget?.title }) : t('fund_donation_visibility_publish_body', { title: visibilityTarget?.title })}
+        confirmText={visibilityTarget?.donationListPublic ? t('fund_action_unpublish_donations') : t('fund_action_publish_donations')}
+        cancelText={t('fund_btn_cancel')}
+        confirmColor={visibilityTarget?.donationListPublic ? "warning" : "primary"}
+        loading={isTogglingVisibility}
+        onConfirm={handleConfirmToggleDonationVisibility}
+        onCancel={() => setVisibilityTarget(null)}
+      />
 
       {/* ========================================================================= */}
       {/* DIALOG DANH SÁCH LƯỢT QUYÊN GÓP */}

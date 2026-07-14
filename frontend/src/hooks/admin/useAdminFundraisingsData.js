@@ -11,6 +11,7 @@ const mapFundRow = (fund) => ({
   raisedAmount: Number(fund.raisedAmount || fund.currentAmount || 0),
   donorCount: Number(fund.donorCount || fund.totalDonors || 0),
   updatedAt: fund.updatedAt || fund.timeUpdated || fund.createdAt || new Date().toISOString(),
+  donationListPublic: Boolean(fund.donationListPublic),
 });
 
 const extractPagedFunds = (payload) => {
@@ -128,6 +129,15 @@ const useAdminFundraisingsData = (organizationId) => {
     );
   }, []);
 
+  const toggleDonationVisibility = useCallback(async (id, nextPublic) => {
+    await fundApi.updateDonationVisibility(id, nextPublic);
+    setFundraisings((prev) =>
+      prev.map((row) =>
+        row.id === id ? { ...row, donationListPublic: nextPublic } : row,
+      ),
+    );
+  }, []);
+
   return {
     fundraisings,
     filteredCount: totalCount,
@@ -144,6 +154,7 @@ const useAdminFundraisingsData = (organizationId) => {
     rowsPerPage,
     setRowsPerPage,
     closeFundById,
+    toggleDonationVisibility,
     reload,
   };
 };

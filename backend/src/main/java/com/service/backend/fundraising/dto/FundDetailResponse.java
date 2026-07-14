@@ -43,6 +43,8 @@ public class FundDetailResponse {
 
     private String fundDocumentUrl;
 
+    private Boolean donationListPublic;
+
     public static FundDetailResponse from(
             Funds fund,
             FundReceivingInfos fundReceivingInfo,
@@ -72,6 +74,7 @@ public class FundDetailResponse {
                 .managerUserId(managerUser != null ? managerUser.getId() : null)
                 .managerAvatarUrl(managerUser != null ? managerUser.getAvatarUrl() : null)
                 .fundDocumentUrl(fund.getFundDocumentUrl())
+                .donationListPublic(Boolean.TRUE.equals(fund.getDonationListPublic()))
                 .build();
     }
 }

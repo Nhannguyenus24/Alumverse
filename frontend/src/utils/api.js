@@ -924,6 +924,11 @@ export const fundApi = {
 		const response = await apiClient.put(`${BASE_FUND}/${fundId}/close`);
 		return unwrap(response);
 	},
+
+	async updateDonationVisibility(fundId, isPublic) {
+		const response = await apiClient.put(`${BASE_FUND}/${fundId}/donation-visibility`, { isPublic });
+		return unwrap(response);
+	},
 };
 
 

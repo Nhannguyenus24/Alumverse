@@ -5,6 +5,7 @@ import com.service.backend.fundraising.dto.FundDetailResponse;
 import com.service.backend.fundraising.dto.FundListItemResponse;
 import com.service.backend.fundraising.dto.UpdateFundRequest;
 import com.service.backend.fundraising.dto.UpdateFundBasicInfoRequest;
+import com.service.backend.fundraising.dto.UpdateFundDonationVisibilityRequest;
 import com.service.backend.fundraising.dto.FundStatisticsResponse;
 import com.service.backend.fundraising.dto.SupportedBanksResponse;
 import com.service.backend.shared.entity.Funds;
@@ -117,6 +118,18 @@ public class FundController {
         return fundService.updateFundBasicInfo(fundId, request)
                 .map(updated -> ResponseEntity.ok(
                         new ApiResponse<>("Fund basic info updated successfully", updated)));
+    }
+
+    @PrivateEndpoint
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    @PutMapping("/{fundId}/donation-visibility")
+    public Mono<ResponseEntity<ApiResponse<Funds>>> updateDonationVisibility(
+            @PathVariable @Min(1) Long fundId,
+            @Valid @RequestBody UpdateFundDonationVisibilityRequest request) {
+        return fundService.updateDonationVisibility(fundId, request.getIsPublic())
+                .map(updated -> ResponseEntity.ok(
+                        new ApiResponse<>("Fund donation visibility updated successfully", updated)
+                ));
     }
 
     @PrivateEndpoint
