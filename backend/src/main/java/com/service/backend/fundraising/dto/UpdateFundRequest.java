@@ -29,7 +29,7 @@ public class UpdateFundRequest {
     private String name;
 
     @NotBlank
-    @Size(max = 100)
+    @Size(max = 120)
     @Schema(example = "Mô tả ngắn đã cập nhật")
     @JsonProperty("description_short")
     private String descriptionShort;
