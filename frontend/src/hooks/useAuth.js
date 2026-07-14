@@ -8,7 +8,7 @@ import {
   registerSchema,
   sendOtpSchema,
   verifyOtpSchema,
-  changePasswordSchema,
+  changePasswordRequestSchema,
 } from '../utils/regexUtils';
 import useAuthStore from '../stores/authStore';
 import useOrganizationStore from '../stores/organizationStore';
@@ -314,7 +314,7 @@ export const useAuth = () => {
   );
 
   const resetPassword = useCallback(async (payload) => {
-    const parsed = changePasswordSchema.safeParse(payload);
+    const parsed = changePasswordRequestSchema.safeParse(payload);
     if (!parsed.success) {
       const msg = getFirstZodMessage(parsed.error);
       store.setError(msg);
@@ -327,7 +327,7 @@ export const useAuth = () => {
     }
     setLoading(true);
     try {
-      const { data } = await apiClient.put(`/auth/password/${store.user.id}`, {
+      const { data } = await apiClient.put('/users/me/password', {
         oldPassword: parsed.data.oldPassword,
         newPassword: parsed.data.newPassword,
       });
@@ -342,10 +342,11 @@ export const useAuth = () => {
       return { ok: true, message: data?.message };
     } catch (err) {
       const message = getErrorMessage(err, t('change_password_failed'));
+      store.setLoading(false);
       store.setError(message);
       return { ok: false, error: message };
     }
-  }, [store, setLoading]);
+  }, [store, setLoading, t]);
 
   const resetPasswordWithOtp = useCallback(async (payload) => {
     const { email, otp, newPassword } = payload ?? {};

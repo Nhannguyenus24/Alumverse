@@ -16,6 +16,8 @@ public class ForumTopicDTO {
     private Integer organizationId;
     private String title;
     private Integer createdByMemberId;
+    private String authorName;
+    private String authorAvatarUrl;
     private Integer categoryId;
     private Integer viewCount;
     private String status;

@@ -1,5 +1,6 @@
 import { Box, Button, Container, Stack, Typography, Tooltip } from '@mui/material';
 import { useTranslation } from 'react-i18next';
+import AddCommentOutlinedIcon from '@mui/icons-material/AddCommentOutlined';
 import Page from '../../components/Page';
 import Breadcrumb from '../../components/Breadcrumb';
 import ForumFilterPanel from '../../components/forum/ForumFilterPanel';
@@ -39,6 +40,8 @@ const ForumCategoryPage = () => {
           id: topic.id,
           title: topic.title,
           createdByMemberId: topic.createdByMemberId ?? null,
+          authorName: topic.authorName ?? null,
+          authorAvatarUrl: topic.authorAvatarUrl ?? null,
           createdAt: topic.createdAt ?? null,
           viewCount: topic.viewCount ?? null,
           categoryId: topic.categoryId ?? null,
@@ -139,6 +142,7 @@ const ForumCategoryPage = () => {
                           <Button
                             variant="contained"
                             color="primary"
+                            startIcon={<AddCommentOutlinedIcon sx={{ fontSize: 18 }} />}
                             onClick={() => navigate('/forum/alumni/career/create-topic')}
                             sx={{ minWidth: { xs: '100%', sm: 'auto' } }}
                             disabled={!canContribute}

@@ -1,4 +1,6 @@
 import { Avatar, Box, Button, Card, Stack, Tooltip, Typography } from "@mui/material";
+import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
+import PersonSearchIcon from "@mui/icons-material/PersonSearch";
 import StarIcon from "@mui/icons-material/Star";
 import { useTranslation } from "react-i18next";
 import MentorshipTag from "./MentorshipTag";
@@ -26,6 +28,7 @@ const MentorshipCard = ({
     <Button
       variant="contained"
       fullWidth
+      startIcon={<CalendarMonthIcon />}
       disabled={!canBook}
       onClick={canBook ? stopCardClick(onBook) : stopCardClick()}
       sx={{ flex: 1, minWidth: 0, whiteSpace: "nowrap" }}
@@ -47,17 +50,18 @@ const MentorshipCard = ({
         flexDirection: "column",
         justifyContent: "space-between",
         height: "100%",
+        minWidth: 0,
         cursor: onViewProfile ? "pointer" : "default",
         transition: "transform 0.2s",
         "&:hover": { transform: "translateY(-4px)" },
       }}
       onClick={onViewProfile}
     >
-      <Stack spacing={2} alignItems="center">
+      <Stack spacing={2} alignItems="center" sx={{ minWidth: 0 }}>
         <Avatar src={avatar} sx={{ width: 80, height: 80 }} />
 
-        <Box sx={{ minHeight: 54 }}>
-          <Typography fontWeight={700} variant="subtitle1" noWrap>
+        <Box sx={{ minHeight: 54, width: "100%", minWidth: 0 }}>
+          <Typography fontWeight={700} variant="subtitle1" noWrap sx={{ minWidth: 0 }}>
             {name}
           </Typography>
           <Typography
@@ -106,6 +110,7 @@ const MentorshipCard = ({
         <Button
           variant="outlined"
           fullWidth
+          startIcon={<PersonSearchIcon />}
           onClick={stopCardClick(onViewProfile)}
           sx={{ minWidth: 0, width: "100%", whiteSpace: "nowrap" }}
         >

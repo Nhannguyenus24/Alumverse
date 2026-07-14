@@ -33,7 +33,7 @@ import { useForumTopicSubscriptionStatus } from '../../hooks/forum/useForumTopic
 import { useReportForumPost } from '../../hooks/forum/useReportForumPost';
 import { useNotification } from '../../hooks/useNotification';
 import { useOrganization } from '../../hooks/useOrganization';
-import { useOrgNavigate } from '../../hooks/useOrgNavigate';
+import { useOrgNavigate, useOrgPath } from '../../hooks/useOrgNavigate';
 import EditPostDialog from '../../components/forum/EditPostDialog';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import WYSIWYG from '../../components/WYSIWYG';
@@ -49,6 +49,7 @@ const getAvatarInitial = (name) => {
 
 const ForumReply = ({ reply, isAdmin, memberId, onReply, parentPost, onDelete, isDeleting, onEdit, onReport }) => {
   const { t } = useTranslation(['forum', 'common']);
+  const toOrgPath = useOrgPath();
   const { showError, showSuccess } = useNotification();
   const reactErrShownRef = useRef(false);
   const [actionAnchorEl, setActionAnchorEl] = useState(null);
@@ -84,6 +85,13 @@ const ForumReply = ({ reply, isAdmin, memberId, onReply, parentPost, onDelete, i
   const hasParent = !!parentPost;
   const isActionMenuOpen = Boolean(actionAnchorEl);
 
+  const handleOpenProfile = (event) => {
+    event.stopPropagation();
+    if (!reply.authorMemberId) return;
+    const url = `${window.location.origin}${toOrgPath(`/profile/${reply.authorMemberId}`)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   const handleOpenActionMenu = (event) => {
     setActionAnchorEl(event.currentTarget);
   };
@@ -103,7 +111,7 @@ const ForumReply = ({ reply, isAdmin, memberId, onReply, parentPost, onDelete, i
         display: 'flex',
         flexDirection: { xs: 'column', sm: 'row' },
         alignItems: { xs: 'center', sm: 'flex-start' },
-        gap: 2,
+        gap: { xs: 2, sm: 2.5 },
         borderTop: 1,
         borderColor: 'divider',
         ...(hasParent ? { bgcolor: 'background.default' } : null),
@@ -116,55 +124,82 @@ const ForumReply = ({ reply, isAdmin, memberId, onReply, parentPost, onDelete, i
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: 1,
+          gap: 0.5,
         }}
       >
         <Avatar
           src={reply.authorAvatarUrl || undefined}
           alt={reply.authorName}
+          onClick={handleOpenProfile}
           sx={{
             width: { xs: 48, sm: 64 },
             height: { xs: 48, sm: 64 },
+            mb: 0.5,
             bgcolor: 'primary.main',
             color: 'primary.contrastText',
+            cursor: reply.authorMemberId ? 'pointer' : 'default',
           }}
         >
           {getAvatarInitial(reply.authorName) || <PersonIcon sx={{ fontSize: 36 }} />}
         </Avatar>
-        <Typography variant="body2" fontWeight={600}>
+        <Typography
+          variant="body2"
+          fontWeight={600}
+          sx={{
+            maxWidth: 104,
+            textAlign: 'center',
+            lineHeight: 1.28,
+            overflowWrap: 'anywhere',
+          }}
+        >
           {reply.authorName}
         </Typography>
-        <Typography variant="caption" color="text.secondary">
+        <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.2 }}>
           {reply.role}
         </Typography>
       </Box>
 
-      <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: { xs: 'column', sm: 'row' },
-            alignItems: { xs: 'flex-start', sm: 'center' },
-            justifyContent: 'space-between',
-            mb: 1,
-            gap: 1.5,
-            width: '100%',
-          }}
+      <Box
+        sx={{
+          flex: 1,
+          minWidth: 0,
+          position: 'relative',
+          alignSelf: 'stretch',
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: { sm: 132 },
+        }}
+      >
+        <IconButton
+          size="small"
+          onClick={handleOpenActionMenu}
+          sx={{ position: 'absolute', top: -0.5, right: 0 }}
         >
-          <Typography variant="caption" color="text.secondary">
-            {reply.createdAt}
-          </Typography>
-          <>
-            <IconButton size="small" onClick={handleOpenActionMenu}>
-              <MoreVertIcon fontSize="small" />
-            </IconButton>
-            <Menu
-              anchorEl={actionAnchorEl}
-              open={isActionMenuOpen}
-              onClose={handleCloseActionMenu}
-              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-            >
+          <MoreVertIcon fontSize="small" />
+        </IconButton>
+        <Box
+          className="ql-editor"
+          sx={{
+            mb: 1.5,
+            mr: 4,
+            px: 0,
+            py: 0,
+            lineHeight: 1.7,
+            '&.ql-editor': { p: 0 },
+            '& p': { my: 0.75 },
+          }}
+          dangerouslySetInnerHTML={{ __html: reply.content || '' }}
+        />
+        <Box
+          sx={{ display: 'flex', justifyContent: 'flex-end', mb: hasParent ? 1.5 : 0 }}
+        >
+          <Menu
+            anchorEl={actionAnchorEl}
+            open={isActionMenuOpen}
+            onClose={handleCloseActionMenu}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+          >
               <Tooltip title={!memberId ? t('forum:login_required_to_comment') : ""} placement="left" arrow>
                 <span>
                   <MenuItem
@@ -220,20 +255,8 @@ const ForumReply = ({ reply, isAdmin, memberId, onReply, parentPost, onDelete, i
                   </span>
                 </Tooltip>
               )}
-            </Menu>
-          </>
+          </Menu>
         </Box>
-        <Box
-          className="ql-editor"
-          sx={{
-            mb: 1.5,
-            px: 0,
-            py: 0,
-            lineHeight: 1.7,
-            '& p': { my: 0.75 },
-          }}
-          dangerouslySetInnerHTML={{ __html: reply.content || '' }}
-        />
         {hasParent ? (
           <Box
             sx={{
@@ -274,9 +297,13 @@ const ForumReply = ({ reply, isAdmin, memberId, onReply, parentPost, onDelete, i
             justifyContent: 'space-between',
             flexWrap: 'wrap',
             gap: 1.5,
+            mt: 'auto',
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+          <Typography variant="caption" color="text.secondary">
+            {reply.createdAt}
+          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap', ml: 'auto' }}>
             <Button
               size="small"
               variant="text"
@@ -289,6 +316,10 @@ const ForumReply = ({ reply, isAdmin, memberId, onReply, parentPost, onDelete, i
                 alignItems: 'center',
                 gap: 0.5,
                 color: isLiked ? 'error.main' : 'text.secondary',
+                '&:hover': {
+                  bgcolor: 'transparent',
+                  color: 'error.main',
+                },
               }}
             >
               {isLiked ? (
@@ -318,17 +349,28 @@ const ForumReply = ({ reply, isAdmin, memberId, onReply, parentPost, onDelete, i
                   showSuccess(t('common:copied'));
                 });
               }}
-              sx={{ minWidth: 0, p: 0, color: 'text.secondary', textTransform: 'none' }}
+              sx={{
+                minWidth: 0,
+                p: 0,
+                color: 'text.secondary',
+                textTransform: 'none',
+                '&:hover': {
+                  bgcolor: 'transparent',
+                  color: 'primary.main',
+                },
+                '&:hover .MuiSvgIcon-root, &:hover .MuiTypography-root': {
+                  color: 'primary.main',
+                },
+              }}
             >
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <ReplyOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
-                <Typography variant="caption" color="text.secondary">
+                <ReplyOutlinedIcon sx={{ fontSize: 18, color: 'inherit' }} />
+                <Typography variant="caption" color="inherit">
                   {t('common:share')}
                 </Typography>
               </Box>
             </Button>
           </Box>
-          <Box />
         </Box>
       </Box>
     </Box>
@@ -345,6 +387,7 @@ const ForumAlumniThreadPage = () => {
   const { t } = useTranslation(['forum', 'common']);
   const location = useLocation();
   const navigate = useOrgNavigate();
+  const toOrgPath = useOrgPath();
   const { threadId, pageId } = useParams();
   const topicId = useMemo(() => {
     const id = parseInt(threadId, 10);
@@ -419,6 +462,17 @@ const ForumAlumniThreadPage = () => {
   const { showSuccess, showError, showWarning } = useNotification();
   const hasShownPostsErrorRef = useRef(false);
   const hasShownOpeningErrorRef = useRef(false);
+  const currentUserName = user?.fullName?.trim() || t('forum:me');
+  const currentUserRole = (verificationLevel ?? 0) >= 2
+    ? 'Alumni'
+    : (user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1).toLowerCase() : 'User');
+  const currentUserAvatarUrl = user?.avatarUrl ?? null;
+
+  const openProfileInNewTab = useCallback((profileUserId) => {
+    if (!profileUserId) return;
+    const url = `${window.location.origin}${toOrgPath(`/profile/${profileUserId}`)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }, [toOrgPath]);
 
   useEffect(() => {
     const p = parseInt(pageId, 10);
@@ -452,6 +506,10 @@ const ForumAlumniThreadPage = () => {
 
     const firstPost = posts?.[0] ?? null;
 
+    const topicAuthorName =
+      typeof topicSummary?.authorName === 'string' && topicSummary.authorName.trim()
+        ? topicSummary.authorName.trim()
+        : null;
     const firstPostFullName =
       typeof firstPost?.authorName === 'string' && firstPost.authorName.trim() ? firstPost.authorName.trim() : null;
     const authorFromPost = firstPostFullName
@@ -459,19 +517,20 @@ const ForumAlumniThreadPage = () => {
         ? (String(firstPost.authorMemberId) === String(user?.id) ? t('forum:me') : `${t('forum:member_prefix')}${firstPost.authorMemberId}`)
         : null);
     const authorFromTopic =
-      topicSummary?.createdByMemberId != null
+      topicAuthorName ?? (topicSummary?.createdByMemberId != null
         ? (String(topicSummary.createdByMemberId) === String(user?.id) ? t('forum:me') : `${t('forum:member_prefix')}${topicSummary.createdByMemberId}`)
-        : null;
+        : null);
 
     const createdFromPost = firstPost?.createdAt ? formatDateTime(firstPost.createdAt, '—') : null;
     const createdFromTopic = topicSummary?.createdAt ? formatDateTime(topicSummary.createdAt, '—') : null;
 
     return {
       title,
-      authorName: authorFromPost ?? authorFromTopic ?? FALLBACK_THREAD.authorName,
-      authorAvatarUrl: firstPost?.authorAvatarUrl ?? null,
+      authorName: authorFromTopic ?? authorFromPost ?? FALLBACK_THREAD.authorName,
+      authorMemberId: topicSummary?.createdByMemberId ?? firstPost?.authorMemberId ?? null,
+      authorAvatarUrl: topicSummary?.authorAvatarUrl ?? firstPost?.authorAvatarUrl ?? null,
       role: 'Alumni',
-      createdAt: createdFromPost ?? createdFromTopic ?? FALLBACK_THREAD.createdAt,
+      createdAt: createdFromTopic ?? createdFromPost ?? FALLBACK_THREAD.createdAt,
     };
   }, [location.state?.topicTitle, location.state?.topicSummary, posts, threadTitleOverride, user?.id, t]);
 
@@ -978,32 +1037,29 @@ const ForumAlumniThreadPage = () => {
                     >
                       <Button
                         fullWidth
-                        variant="contained"
+                        variant="outlined"
+                        color={isSubscribed ? 'primary' : 'secondary'}
                         size="small"
                         startIcon={<NotificationsNoneOutlinedIcon sx={{ fontSize: 18 }} />}
                         onClick={handleToggleSubscription}
                         disabled={subStatusPending || subTogglePending}
                         sx={{
-                          bgcolor: isSubscribed ? 'primary.main' : 'action.selected',
-                          color: isSubscribed ? 'primary.contrastText' : 'text.primary',
-                          '&:hover': { bgcolor: isSubscribed ? 'primary.dark' : 'action.hover' },
                           whiteSpace: 'nowrap',
+                          minWidth: 0,
                         }}
                       >
                         {isSubscribed ? t('forum:subscribed') : t('forum:subscribe')}
                       </Button>
                       <Button
                         fullWidth
-                        variant="outlined"
+                        variant="contained"
+                        color="secondary"
                         size="small"
                         startIcon={<EditOutlinedIcon sx={{ fontSize: 18 }} />}
                         onClick={handleOpenEditTopic}
                         sx={{
-                          borderColor: 'divider',
-                          color: 'text.primary',
-                          bgcolor: 'background.paper',
-                          '&:hover': { borderColor: 'text.primary', bgcolor: 'action.hover' },
                           whiteSpace: 'nowrap',
+                          minWidth: 0,
                         }}
                       >
                         {t('common:edit')}
@@ -1100,27 +1156,29 @@ const ForumAlumniThreadPage = () => {
                   <Avatar
                     src={thread.authorAvatarUrl || undefined}
                     alt={thread.authorName}
+                    onClick={() => openProfileInNewTab(thread.authorMemberId)}
                     sx={{
                       width: 48,
                       height: 48,
                       bgcolor: 'primary.main',
                       color: 'primary.contrastText',
                       flexShrink: 0,
+                      cursor: thread.authorMemberId ? 'pointer' : 'default',
                     }}
                   >
                     {getAvatarInitial(thread.authorName) || <PersonIcon sx={{ fontSize: 26 }} />}
                   </Avatar>
-                  <Box>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.4 }}>
                     {postsPending && !location.state?.topicSummary ? (
                       <Typography variant="body2" color="text.secondary">
                         {t('forum:loading_topic_info')}
                       </Typography>
                     ) : (
                       <>
-                        <Typography variant="body2" fontWeight={600}>
+                        <Typography variant="body2" fontWeight={600} sx={{ lineHeight: 1.2 }}>
                           {thread.authorName}
                         </Typography>
-                        <Typography variant="caption" color="text.secondary">
+                        <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.15 }}>
                           {thread.createdAt}
                         </Typography>
                       </>
@@ -1207,31 +1265,39 @@ const ForumAlumniThreadPage = () => {
                       display: 'flex',
                       flexDirection: { xs: 'row', sm: 'column' },
                       alignItems: { xs: 'center', sm: 'center' },
-                      gap: 1,
+                      gap: { xs: 1, sm: 0.5 },
                       pt: { sm: 0.5 },
                     }}
                   >
-                    <Box
+                    <Avatar
+                      src={currentUserAvatarUrl || undefined}
+                      alt={currentUserName}
                       sx={{
                         width: { xs: 40, sm: 56 },
                         height: { xs: 40, sm: 56 },
-                        borderRadius: '50%',
+                        mb: { sm: 0.5 },
                         bgcolor: 'primary.main',
                         color: 'primary.contrastText',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
                         flexShrink: 0,
                       }}
                     >
-                      <PersonIcon sx={{ fontSize: 30 }} />
-                    </Box>
-                    <Box sx={{ textAlign: { xs: 'left', sm: 'center' } }}>
-                      <Typography variant="body2" fontWeight={600}>
-                        {t('forum:me')}
+                      {getAvatarInitial(currentUserName) || <PersonIcon sx={{ fontSize: 30 }} />}
+                    </Avatar>
+                    <Box sx={{ textAlign: { xs: 'left', sm: 'center' }, minWidth: 0 }}>
+                      <Typography
+                        variant="body2"
+                        fontWeight={600}
+                        sx={{
+                          maxWidth: { xs: 180, sm: 104 },
+                          textAlign: { xs: 'left', sm: 'center' },
+                          lineHeight: 1.28,
+                          overflowWrap: 'anywhere',
+                        }}
+                      >
+                        {currentUserName}
                       </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {(user?.role ?? 'Student').toString().toLowerCase()}
+                      <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.2 }}>
+                        {currentUserRole}
                       </Typography>
                     </Box>
                   </Box>

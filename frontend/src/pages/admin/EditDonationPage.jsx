@@ -17,6 +17,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
@@ -386,7 +387,7 @@ export default function EditDonationPage() {
 
   return (
     <Page title={t('admin:edit_fund_page_title')} meta={<meta name="description" content={t('admin:edit_fund_page_title')} />}>
-      <Box sx={{ py: 5, backgroundColor: "#f3f5f9", minHeight: "100vh" }}>
+      <Box sx={{ py: { xs: 4, md: 6 }, backgroundColor: "background.default", minHeight: "100vh" }}>
         <Container maxWidth={false} sx={{ maxWidth: 1160 }}>
             <Breadcrumb
               items={[
@@ -397,25 +398,26 @@ export default function EditDonationPage() {
               fontSize="0.9rem"
             />
 
-          <Typography variant="h1" sx={{ mb: 2.5, fontWeight: 800, color: "#123661" }}>
+          <Typography variant="h1" sx={{ mb: 2.5, fontWeight: 800, color: "primary.main" }}>
             {t('admin:edit_fund_heading')}
           </Typography>
           <Box
-            sx={{
+            sx={(theme) => ({
               mb: 3,
               borderRadius: 2,
-              border: "1px solid #9ec5ff",
-              backgroundColor: "#eef5ff",
-              px: 1.5,
-              py: 1.2,
-            }}
+              border: "1px solid",
+              borderColor: alpha(theme.palette.primary.main, theme.palette.mode === "dark" ? 0.3 : 0.18),
+              backgroundColor: alpha(theme.palette.primary.main, theme.palette.mode === "dark" ? 0.14 : 0.08),
+              px: { xs: 2, md: 2.5 },
+              py: { xs: 1.5, md: 1.8 },
+            })}
           >
-            <Typography sx={{ color: "#0f4fb8", fontWeight: 900, fontSize: "0.95rem", letterSpacing: 0.3 }}>
+            <Typography sx={{ color: "primary.main", fontWeight: 900, fontSize: "0.95rem", letterSpacing: 0.3 }}>
               {t('admin:edit_fund_note_label')}
             </Typography>
-            <Typography sx={{ mt: 0.3, color: "#214c90", fontWeight: 600, lineHeight: 1.6 }}>{noteMessage}</Typography>
+            <Typography sx={{ mt: 0.3, color: "text.primary", fontWeight: 600, lineHeight: 1.6 }}>{noteMessage}</Typography>
             {isStaff && (
-              <Typography sx={{ mt: 0.6, color: "#214c90", fontWeight: 600, lineHeight: 1.6 }}>
+              <Typography sx={{ mt: 0.6, color: "text.primary", fontWeight: 600, lineHeight: 1.6 }}>
                 {t('admin:edit_fund_staff_note')}
               </Typography>
             )}
@@ -423,8 +425,19 @@ export default function EditDonationPage() {
 
           {isLoading && <LinearProgress sx={{ mb: 2.2 }} />}
 
-          <Box sx={{ maxWidth: 800, mx: "auto" }}>
-            <Card sx={{ borderRadius: 3, p: 3, boxShadow: "0 10px 26px rgba(15, 58, 122, 0.08)" }}>
+          <Box sx={{ maxWidth: 940, mx: "auto" }}>
+            <Card
+              sx={(theme) => ({
+                borderRadius: 3,
+                p: { xs: 2.5, sm: 3.5, md: 4 },
+                border: "1px solid",
+                borderColor: "divider",
+                boxShadow: theme.palette.mode === "dark"
+                  ? "0 18px 42px rgba(0, 0, 0, 0.26)"
+                  : "0 14px 34px rgba(15, 58, 122, 0.08)",
+                backgroundColor: "background.paper",
+              })}
+            >
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
                   <Box component="form" onSubmit={handleSubmit(onSubmit)}>
                     <Grid container spacing={2}>

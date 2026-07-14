@@ -3,6 +3,8 @@ import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+import VolunteerActivismOutlinedIcon from "@mui/icons-material/VolunteerActivismOutlined";
 import { useState } from "react";
 import dayjs from "dayjs";
 import { useTranslation } from "react-i18next";
@@ -55,7 +57,9 @@ const FeaturedArticleDonationCard = ({ campaign, article, onNavigate, onEdit, on
       <Box
         sx={{
           width: { xs: "100%", md: "45%" },
-          height: { xs: 220, md: 280 },
+          height: { xs: 220, md: "auto" },
+          minHeight: { xs: 220, md: isAdmin ? 330 : 280 },
+          alignSelf: { md: "stretch" },
 
           borderRadius: 2,
           overflow: "hidden",
@@ -88,6 +92,7 @@ const FeaturedArticleDonationCard = ({ campaign, article, onNavigate, onEdit, on
           display: "flex",
           flexDirection: "column",
           minWidth: 0,
+          minHeight: { md: isAdmin ? 330 : 280 },
         }}
       >
         {/* INFO BLOCK */}
@@ -194,11 +199,12 @@ const FeaturedArticleDonationCard = ({ campaign, article, onNavigate, onEdit, on
         )}
 
         {/* ACTION BLOCK */}
-        <Box sx={{ mt: 2.5, display: "flex", flexDirection: "column", gap: 2.5 }}>
+        <Box sx={{ mt: "auto", pt: 2.5, display: "flex", flexDirection: "column", gap: 2.5 }}>
 
           {isClosed ? (
             <Button
               fullWidth variant="outlined" color="primary" sx={{ textTransform: "none", fontWeight: 600, py: 1.2 }}
+              startIcon={<VisibilityOutlinedIcon />}
               onClick={(e) => { e.stopPropagation(); onNavigate?.(); }}
             >
               {t('common:view')}
@@ -235,6 +241,7 @@ const FeaturedArticleDonationCard = ({ campaign, article, onNavigate, onEdit, on
           ) : (
             <Button
               fullWidth variant="contained" color="accent" sx={{ textTransform: "none", fontWeight: 600, py: 1.2 }}
+              startIcon={<VolunteerActivismOutlinedIcon />}
               onClick={(e) => { e.stopPropagation(); onNavigate?.(); }}
             >
               {t('donation:donate')}

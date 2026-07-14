@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import { Alert, Box, Typography, Button } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import Page from '../../components/Page';
 import { ScrollRevealFields } from '../../components/animations/ScrollReveal';
 import Input from '../../components/Input';
@@ -69,14 +70,23 @@ const ForceChangePasswordPage = () => {
         <Typography
           variant="h5"
           fontWeight={700}
-          color="primary.dark"
+          color="primary.main"
           textAlign="center"
           sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }}
         >
           {t('auth:force_change_password_heading')}
         </Typography>
 
-        <Alert severity="info" sx={{ borderRadius: 1 }}>
+        <Alert
+          severity="info"
+          sx={(theme) => ({
+            borderRadius: 1,
+            color: 'primary.main',
+            borderColor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.34 : 0.22),
+            bgcolor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.16 : 0.08),
+            '& .MuiAlert-icon': { color: 'primary.main' },
+          })}
+        >
           {t('auth:force_change_password_desc')}
         </Alert>
 
@@ -84,6 +94,7 @@ const ForceChangePasswordPage = () => {
           label={t('auth:current_password_label')}
           placeholder="••••••••"
           type="password"
+          autoComplete="current-password"
           error={!!errors.oldPassword}
           helperText={errors.oldPassword?.message}
           {...register('oldPassword')}
@@ -92,6 +103,7 @@ const ForceChangePasswordPage = () => {
           label={t('auth:new_password_label')}
           placeholder="••••••••"
           type="password"
+          autoComplete="new-password"
           error={!!errors.newPassword}
           helperText={errors.newPassword?.message}
           {...register('newPassword')}
@@ -100,6 +112,7 @@ const ForceChangePasswordPage = () => {
           label={t('auth:confirm_new_password_label')}
           placeholder="••••••••"
           type="password"
+          autoComplete="new-password"
           error={!!errors.confirmNewPassword}
           helperText={errors.confirmNewPassword?.message}
           {...register('confirmNewPassword')}

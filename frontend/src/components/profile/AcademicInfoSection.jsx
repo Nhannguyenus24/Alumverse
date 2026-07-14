@@ -25,6 +25,20 @@ const ACADEMIC_FIELD_CONFIG = [
   { key: 'graduationStatus', labelKey: 'field_graduation_status', icon: VerifiedIcon },
 ];
 
+const graduationStatusKey = (value) =>
+  String(value ?? '')
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, '_');
+
+const formatAcademicValue = ({ fieldKey, value, t }) => {
+  if (!value) return t('profile:not_updated');
+  if (fieldKey !== 'graduationStatus') return value;
+
+  const statusKey = graduationStatusKey(value);
+  return t(`profile:graduation_status.${statusKey}`, { defaultValue: value });
+};
+
 const AcademicInfoSection = ({ academicProfile }) => {
   const { t } = useTranslation(['profile']);
   const records = useMemo(
@@ -105,16 +119,23 @@ const AcademicInfoSection = ({ academicProfile }) => {
         ) : null}
       </Stack></ScrollReveal>
 
-      <Grid container spacing={3} sx={{ py: 1.75 }}>
+      <Grid container spacing={3} sx={{ py: 1.75, alignItems: 'stretch' }}>
         {ACADEMIC_FIELD_CONFIG.map((field) => (
-          <Grid key={field.key} size={{ xs: 12, sm: 6, md: 4 }}>
-            <ScrollReveal delay={getStaggerDelay(ACADEMIC_FIELD_CONFIG.indexOf(field), 0.07)}>
+          <Grid key={field.key} size={{ xs: 12, sm: 6, md: 4 }} sx={{ display: 'flex' }}>
+            <ScrollReveal
+              delay={getStaggerDelay(ACADEMIC_FIELD_CONFIG.indexOf(field), 0.07)}
+              sx={{ display: 'flex', width: '100%', height: '100%' }}
+            >
               <AcademicInfoRowCard
                 icon={field.icon}
                 label={t(`profile:${field.labelKey}`)}
-                value={(field.key === 'faculty'
-                  ? activeRecord.faculty || activeRecord.organizationName
-                  : activeRecord[field.key]) || t('profile:not_updated')}
+                value={formatAcademicValue({
+                  fieldKey: field.key,
+                  value: field.key === 'faculty'
+                    ? activeRecord.faculty || activeRecord.organizationName
+                    : activeRecord[field.key],
+                  t,
+                })}
               />
             </ScrollReveal>
           </Grid>
