@@ -73,6 +73,16 @@ const formatFeedbackStatusLabel = (status, t) => {
   return resolveLabel(t, map, key, status);
 };
 
+const formatFundDonationStatusLabel = (status, t) => {
+  const key = String(status || '').toUpperCase();
+  const map = {
+    SUCCESS: 'admin:status_success',
+    PENDING: 'admin:fund_donation_status_pending',
+    FAILED: 'admin:status_failed',
+  };
+  return resolveLabel(t, map, key, status);
+};
+
 const formatFundraisingStatusLabel = (status, t) => {
   const key = String(status || '').toUpperCase();
   const map = {
@@ -223,6 +233,10 @@ export const resolveAdminStatusChip = (status, category, t) => {
 
     case 'fundraising':
       label = formatFundraisingStatusLabel(status, t);
+      break;
+
+    case 'fund-donation':
+      label = formatFundDonationStatusLabel(status, t);
       break;
 
     case 'article':

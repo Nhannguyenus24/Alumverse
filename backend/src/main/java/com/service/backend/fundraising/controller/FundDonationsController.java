@@ -45,9 +45,10 @@ public class FundDonationsController {
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int limit,
             @RequestParam(required = false) String searchBy,
-            @RequestParam(required = false) String keyword
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "false") boolean onlySuccess
     ) {
-        return fundService.getDonationsByFund(fundId, page, limit, searchBy, keyword)
+        return fundService.getDonationsByFund(fundId, page, limit, searchBy, keyword, onlySuccess)
                 .map(response -> ResponseEntity.ok(
                         new ApiResponse<>("Fund donations retrieved successfully", response)
                 ));
