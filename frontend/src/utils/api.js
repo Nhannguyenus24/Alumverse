@@ -2,6 +2,10 @@ import apiClient from '../utils/axios';
 
 const unwrap = (response) => response?.data?.data;
 
+// React Query throws if a queryFn resolves with `undefined` — fall back to an
+// empty page so a missing/odd response body never crashes paginated list views.
+const EMPTY_PAGE = { items: [], totalPage: 0, totalItem: 0 };
+
 const normalizeList = (payload) => {
 	if (Array.isArray(payload)) return payload;
 	if (payload?.items) return payload.items;
@@ -436,21 +440,21 @@ export const chatApi = {
 		const response = await apiClient.get('/chat/connections/search', {
 			params: { fullName, page, size },
 		});
-		return unwrap(response);
+		return unwrap(response) ?? EMPTY_PAGE;
 	},
 
 	async searchBlockedMembers({ fullName, page = 0, size = 5 } = {}) {
 		const response = await apiClient.get('/chat/blocks', {
 			params: { fullName, page, size },
 		});
-		return unwrap(response);
+		return unwrap(response) ?? EMPTY_PAGE;
 	},
 
 	async getBlockList({ fullName, page = 0, size = 5 } = {}) {
 		const response = await apiClient.get('/chat/blocks', {
 			params: { fullName, page, size },
 		});
-		return unwrap(response);
+		return unwrap(response) ?? EMPTY_PAGE;
 	},
 
 	async uploadChatImage(base64String) {
@@ -941,7 +945,7 @@ export const networkApi = {
 			// so Spring binds them to List<Integer>; axios defaults to ids[]=1.
 			paramsSerializer: { indexes: null },
 		});
-		return unwrap(response);
+		return unwrap(response) ?? EMPTY_PAGE;
 	},
 };
 

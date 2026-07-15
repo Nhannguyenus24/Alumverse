@@ -33,6 +33,7 @@ export default function FundraisingListSection({ fundId }) {
         const params = {
           page: Math.max(0, page - 1),
           limit: pageSize,
+          onlySuccess: true,
         };
 
         if (normalizedKeyword) {

@@ -766,6 +766,7 @@ const AdminFundraisingsPage = () => {
                       <TableCell sx={{ fontWeight: 700, textAlign: "right" }}>{t('fund_col_amount')}</TableCell>
                       <TableCell sx={{ fontWeight: 700 }}>{t('fund_col_message')}</TableCell>
                       <TableCell sx={{ fontWeight: 700 }}>{t('fund_col_time')}</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }}>{t('fund_col_donation_status')}</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -785,6 +786,9 @@ const AdminFundraisingsPage = () => {
                         </TableCell>
                         <TableCell sx={{ color: "text.secondary" }}>
                           {formatDateTime(item.createdAt)}
+                        </TableCell>
+                        <TableCell>
+                          <AdminStatusChip status={item.status} category="fund-donation" />
                         </TableCell>
                       </TableRow>
                     ))}
