@@ -329,7 +329,7 @@ const AdminForumTopicsPage = () => {
         searchValue={searchTerm}
         searchPlaceholder={t('forum_search_topic_placeholder')}
         loading={topicsLoading}
-        onRowClick={(row) => window.open(orgSlug ? `/${orgSlug}/forum/alumni/career/${row.id}` : `/forum/alumni/career/${row.id}`, "_blank")}
+        onRowClick={(row) => window.open(orgSlug ? `/${orgSlug}/forum/topic/${row.id}` : `/forum/topic/${row.id}`, "_blank")}
       />
 
       {/* Detail Dialog */}

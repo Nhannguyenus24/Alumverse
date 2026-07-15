@@ -9,7 +9,9 @@ import { useTranslation } from 'react-i18next';
 const ForumManageTopicItem = ({
   topic,
   newSubTopicValue,
+  newSubTopicDescValue,
   onNewSubTopicChange,
+  onNewSubTopicDescChange,
   onAddSubTopic,
   onDeleteTopic,
   onDeleteBoard,
@@ -141,6 +143,9 @@ const ForumManageTopicItem = ({
                 fullWidth
                 placeholder={t('subtopic_desc_placeholder')}
                 size="small"
+                value={newSubTopicDescValue ?? ''}
+                onChange={(e) => onNewSubTopicDescChange(topic.id, e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && onAddSubTopic(topic.id)}
                 InputProps={{ sx: { backgroundColor: 'background.default' } }}
               />
             </Box>

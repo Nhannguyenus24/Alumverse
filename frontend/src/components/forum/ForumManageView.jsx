@@ -1,4 +1,5 @@
-import { Box, IconButton, Paper, TextField } from '@mui/material';
+import { Box, IconButton, Paper, TextField, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button } from '@mui/material';
+import { useState } from 'react';
 import AddIcon from '@mui/icons-material/Add';
 import SaveIcon from '@mui/icons-material/Save';
 import ForumManageTopicItem from './ForumManageTopicItem';
@@ -8,9 +9,13 @@ const ForumManageView = ({
   manageTopics,
   newMainTopic,
   setNewMainTopic,
+  newMainTopicDesc,
+  setNewMainTopicDesc,
   handleAddMainTopic,
   newSubTopics,
+  newSubTopicDescs,
   setNewSubTopics,
+  setNewSubTopicDescs,
   handleAddSubTopic,
   handleDeleteTopic,
   handleDeleteBoard,
@@ -19,6 +24,25 @@ const ForumManageView = ({
 
   const handleNewSubTopicChange = (topicId, value) => {
     setNewSubTopics((prev) => ({ ...prev, [topicId]: value }));
+  };
+
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, type: null, topicId: null, boardId: null });
+
+  const confirmDeleteTopic = (topicId) => {
+    setDeleteDialog({ open: true, type: 'topic', topicId, boardId: null });
+  };
+
+  const confirmDeleteBoard = (topicId, boardId) => {
+    setDeleteDialog({ open: true, type: 'board', topicId, boardId });
+  };
+
+  const handleConfirmDelete = () => {
+    if (deleteDialog.type === 'topic') {
+      handleDeleteTopic(deleteDialog.topicId);
+    } else if (deleteDialog.type === 'board') {
+      handleDeleteBoard(deleteDialog.topicId, deleteDialog.boardId);
+    }
+    setDeleteDialog({ open: false, type: null, topicId: null, boardId: null });
   };
 
   return (
@@ -56,6 +80,9 @@ const ForumManageView = ({
               fullWidth
               placeholder={t('main_topic_desc_placeholder')}
               size="small"
+              value={newMainTopicDesc}
+              onChange={(e) => setNewMainTopicDesc(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleAddMainTopic()}
               InputProps={{ sx: { backgroundColor: 'background.default' } }}
             />
           </Box>
@@ -74,12 +101,35 @@ const ForumManageView = ({
           key={topic.id}
           topic={topic}
           newSubTopicValue={newSubTopics[topic.id]}
-          onNewSubTopicChange={handleNewSubTopicChange}
+          newSubTopicDescValue={newSubTopicDescs[topic.id]}
+          onNewSubTopicChange={(topicId, val) => setNewSubTopics((prev) => ({ ...prev, [topicId]: val }))}
+          onNewSubTopicDescChange={(topicId, val) => setNewSubTopicDescs((prev) => ({ ...prev, [topicId]: val }))}
           onAddSubTopic={handleAddSubTopic}
-          onDeleteTopic={handleDeleteTopic}
-          onDeleteBoard={handleDeleteBoard}
+          onDeleteTopic={confirmDeleteTopic}
+          onDeleteBoard={confirmDeleteBoard}
         />
       ))}
+      <Dialog
+        open={deleteDialog.open}
+        onClose={() => setDeleteDialog({ ...deleteDialog, open: false })}
+      >
+        <DialogTitle>{t('common:confirm_delete', { defaultValue: 'Xác nhận xoá' })}</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {deleteDialog.type === 'topic'
+              ? t('forum:confirm_delete_topic_message', { defaultValue: 'Bạn có chắc chắn muốn xoá chủ đề chính này và tất cả chủ đề con của nó không?' })
+              : t('forum:confirm_delete_board_message', { defaultValue: 'Bạn có chắc chắn muốn xoá chủ đề con này không?' })}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialog({ ...deleteDialog, open: false })} color="primary">
+            {t('common:cancel')}
+          </Button>
+          <Button onClick={handleConfirmDelete} color="error" variant="contained">
+            {t('common:delete')}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };

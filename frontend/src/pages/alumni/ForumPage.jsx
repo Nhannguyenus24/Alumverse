@@ -1,24 +1,24 @@
-import { Box, Button, Typography } from '@mui/material';
-import { useTranslation } from 'react-i18next';
-import { useAuth } from '../../hooks/useAuth';
-import { useOrganization } from '../../hooks/useOrganization';
-import { useNotification } from '../../hooks/useNotification';
-import ForumFilterPanel from '../../components/forum/ForumFilterPanel';
-import ForumSection from '../../components/forum/ForumSection';
-import AlumniContentLayout from '../../layouts/AlumniContentLayout';
+import { Box, Button, Typography } from "@mui/material";
+import { useTranslation } from "react-i18next";
+import { useAuth } from "../../hooks/useAuth";
+import { useOrganization } from "../../hooks/useOrganization";
+import { useNotification } from "../../hooks/useNotification";
+import ForumFilterPanel from "../../components/forum/ForumFilterPanel";
+import ForumSection from "../../components/forum/ForumSection";
+import AlumniContentLayout from "../../layouts/AlumniContentLayout";
 
-import { useForumPageLogic } from '../../hooks/forum/useForumPageLogic';
-import { useForumManageMode } from '../../hooks/forum/useForumManageMode';
-import ForumManageView from '../../components/forum/ForumManageView';
-import TuneOutlinedIcon from '@mui/icons-material/TuneOutlined';
-import { ScrollReveal } from '../../components/animations/ScrollReveal';
+import { useForumPageLogic } from "../../hooks/forum/useForumPageLogic";
+import { useForumManageMode } from "../../hooks/forum/useForumManageMode";
+import ForumManageView from "../../components/forum/ForumManageView";
+import TuneOutlinedIcon from "@mui/icons-material/TuneOutlined";
+import { ScrollReveal } from "../../components/animations/ScrollReveal";
 
 const ForumPage = () => {
-  const { t } = useTranslation(['forum', 'common']);
+  const { t } = useTranslation(["forum", "common"]);
   const { user } = useAuth();
   const { organization } = useOrganization();
   const notification = useNotification();
-  const isAdmin = user?.role === 'ADMIN';
+  const isAdmin = user?.role === "ADMIN";
 
   const organizationId = organization?.id ?? null;
 
@@ -35,9 +35,13 @@ const ForumPage = () => {
     isManageMode,
     manageTopics,
     newMainTopic,
+    newMainTopicDesc,
     newSubTopics,
+    newSubTopicDescs,
     setNewMainTopic,
+    setNewMainTopicDesc,
     setNewSubTopics,
+    setNewSubTopicDescs,
     handleOpenManageMode,
     handleCloseManageMode,
     handleAddMainTopic,
@@ -45,83 +49,108 @@ const ForumPage = () => {
     handleDeleteTopic,
     handleDeleteBoard,
     handleSaveTopics,
-  } = useForumManageMode({ visibleSections, ...notification });
+    isSaving,
+  } = useForumManageMode({ organizationId, visibleSections, ...notification });
 
   return (
     <AlumniContentLayout
       variant="forum"
-      pageTitle={t('forum:page_title')}
-      meta={<meta name="description" content={t('forum:page_meta_description')} />}
-      sidebar={<ForumFilterPanel filters={filters} selectedId={selectedFilterId} onChange={handleFilterChange} />}
+      pageTitle={t("forum:page_title")}
+      meta={
+        <meta name="description" content={t("forum:page_meta_description")} />
+      }
+      sidebar={
+        <ForumFilterPanel
+          filters={filters}
+          selectedId={selectedFilterId}
+          onChange={handleFilterChange}
+        />
+      }
       contentSpacing={3}
     >
-              <ScrollReveal
-                sx={{
-                  display: 'flex',
-                  flexDirection: { xs: 'column', sm: 'row' },
-                  alignItems: { xs: 'flex-start', sm: 'center' },
-                  justifyContent: 'space-between',
-                  gap: 2,
-                }}
+      <ScrollReveal
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
+          alignItems: { xs: "flex-start", sm: "center" },
+          justifyContent: "space-between",
+          gap: 2,
+        }}
+      >
+        <Typography
+          variant="h1"
+          component="h2"
+          fontWeight={800}
+          color="primary.main"
+          sx={{
+            fontSize: { xs: "1.75rem", sm: "2rem", md: "2.25rem" },
+            letterSpacing: 1,
+          }}
+        >
+          {t("forum:forum_heading")}
+        </Typography>
+        {isAdmin &&
+          (isManageMode ? (
+            <Box sx={{ display: "flex", gap: 1, flexShrink: 0 }}>
+              <Button
+                variant="outlined"
+                color="primary"
+                onClick={handleCloseManageMode}
+                disabled={isSaving}
               >
-                <Typography
-                  variant="h1"
-                  component="h2"
-                  fontWeight={800}
-                  color="primary.main"
-                  sx={{
-                    fontSize: { xs: '1.75rem', sm: '2rem', md: '2.25rem' },
-                    letterSpacing: 1,
-                  }}
-                >
-                  {t('forum:forum_heading')}
-                </Typography>
-                {isAdmin &&
-                  (isManageMode ? (
-                    <Box sx={{ display: 'flex', gap: 1, flexShrink: 0 }}>
-                      <Button variant="outlined" color="primary" onClick={handleCloseManageMode}>
-                        {t('common:cancel')}
-                      </Button>
-                      <Button variant="contained" color="primary" onClick={handleSaveTopics}>
-                        {t('common:save')}
-                      </Button>
-                    </Box>
-                  ) : (
-                    <Button
-                      variant="outlined"
-                      color="primary"
-                      startIcon={<TuneOutlinedIcon />}
-                      sx={{ flexShrink: 0 }}
-                      onClick={handleOpenManageMode}
-                    >
-                      {t('forum:manage_topics')}
-                    </Button>
-                  ))}
-              </ScrollReveal>
-              {isManageMode ? (
-                <ScrollReveal>
-                  <ForumManageView
-                    manageTopics={manageTopics}
-                    newMainTopic={newMainTopic}
-                    setNewMainTopic={setNewMainTopic}
-                    handleAddMainTopic={handleAddMainTopic}
-                    newSubTopics={newSubTopics}
-                    setNewSubTopics={setNewSubTopics}
-                    handleAddSubTopic={handleAddSubTopic}
-                    handleDeleteTopic={handleDeleteTopic}
-                    handleDeleteBoard={handleDeleteBoard}
-                  />
-                </ScrollReveal>
-              ) : (
-                visibleSections.map((section) => (
-                  <ForumSection
-                    key={section.id}
-                    title={section.title}
-                    boards={boardsForSection(section)}
-                    onBoardClick={handleBoardClick}
-                  />
-                ))
-              )}
+                {t("common:cancel")}
+              </Button>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleSaveTopics}
+                disabled={isSaving}
+              >
+                {isSaving
+                  ? t("common:saving", { defaultValue: "Đang lưu..." })
+                  : t("common:save")}
+              </Button>
+            </Box>
+          ) : (
+            <Button
+              variant="outlined"
+              color="primary"
+              startIcon={<TuneOutlinedIcon />}
+              sx={{ flexShrink: 0 }}
+              onClick={handleOpenManageMode}
+            >
+              {t("forum:manage_topics")}
+            </Button>
+          ))}
+      </ScrollReveal>
+      {isManageMode ? (
+        <ScrollReveal>
+          <ForumManageView
+            manageTopics={manageTopics}
+            newMainTopic={newMainTopic}
+            newMainTopicDesc={newMainTopicDesc}
+            setNewMainTopic={setNewMainTopic}
+            setNewMainTopicDesc={setNewMainTopicDesc}
+            handleAddMainTopic={handleAddMainTopic}
+            newSubTopics={newSubTopics}
+            newSubTopicDescs={newSubTopicDescs}
+            setNewSubTopics={setNewSubTopics}
+            setNewSubTopicDescs={setNewSubTopicDescs}
+            handleAddSubTopic={handleAddSubTopic}
+            handleDeleteTopic={handleDeleteTopic}
+            handleDeleteBoard={handleDeleteBoard}
+          />
+        </ScrollReveal>
+      ) : (
+        visibleSections.map((section) => (
+          <ForumSection
+            key={section.id}
+            title={section.title}
+            boards={boardsForSection(section)}
+            onBoardClick={handleBoardClick}
+          />
+        ))
+      )}
     </AlumniContentLayout>
   );
 };
