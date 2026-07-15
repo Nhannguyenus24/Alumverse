@@ -5,7 +5,7 @@ export const USER_ROLES = ['ADMIN', 'USER', 'STAFF'];
 
 export const GRADUATION_STATUSES = ['STUDYING', 'GRADUATED', 'DROPPED'];
 
-export const VERIFICATION_LEVELS = [0, 1, 2, 3];
+export const VERIFICATION_LEVELS = [0, 1, 2, 3, 4];
 
 export const BAN_REASON_OPTIONS = [
   { value: 'SPAM', label: 'Spam' },

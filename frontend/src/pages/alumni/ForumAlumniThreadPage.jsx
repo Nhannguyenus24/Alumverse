@@ -810,7 +810,7 @@ const ForumAlumniThreadPage = () => {
     try {
       await deleteTopic(topicId);
       showSuccess(t("forum:success_delete_topic"));
-      if (selectedFilterIdFromState?.startsWith?.("category-")) {
+      if (selectedFilterIdFromState?.startsWith?.("parent-")) {
         navigate("/forum", {
           state: { selectedFilterId: selectedFilterIdFromState },
         });

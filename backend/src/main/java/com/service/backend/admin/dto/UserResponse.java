@@ -1,5 +1,6 @@
 package com.service.backend.admin.dto;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -23,6 +24,10 @@ public class UserResponse {
     private UserRole role;
     private String avatarUrl;
     private String coverUrl;
+    private String phone;
+    private String bio;
+    private LocalDate dob;
+    private String gender;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     /** From users.full_name (admin list/detail enrichment). */
@@ -33,9 +38,11 @@ public class UserResponse {
     private Integer verificationLevel;
     private Boolean isTrustedVerifier;
     private String membershipStatus;
+    private List<String> faculty;
     private List<String> startedYear;
     private List<Integer> graduatedYear;
     private List<String> graduationStatus;
     private List<String> program;
     private List<String> major;
+    private List<String> department;
 }

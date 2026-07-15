@@ -108,8 +108,10 @@ public interface UserProfileRepository extends R2dbcRepository<User, Integer> {
     @Modifying
     @Query("""
             UPDATE users
-            SET phone = COALESCE(:phone, phone),
+            SET full_name = COALESCE(NULLIF(:fullName, ''), full_name),
+                phone = COALESCE(:phone, phone),
                 gender = COALESCE(:gender, gender),
+                dob = COALESCE(:dob, dob),
                 bio = COALESCE(:bio, bio),
                 current_job_title = COALESCE(:currentJobTitle, current_job_title),
                 current_company = COALESCE(:currentCompany, current_company),
@@ -119,8 +121,10 @@ public interface UserProfileRepository extends R2dbcRepository<User, Integer> {
             """)
     Mono<Integer> upsertProfileInfo(
             @Param("userId") Integer userId,
+            @Param("fullName") String fullName,
             @Param("phone") String phone,
             @Param("gender") String gender,
+            @Param("dob") java.time.LocalDate dob,
             @Param("bio") String bio,
             @Param("currentJobTitle") String currentJobTitle,
             @Param("currentCompany") String currentCompany,

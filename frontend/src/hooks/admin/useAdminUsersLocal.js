@@ -109,6 +109,12 @@ const useAdminUsersLocal = (stableOrgId, shouldFetch = true) => {
         organizationId: Number(payload.organizationId),
         verificationLevel: Number(payload.verificationLevel ?? 0),
         isTrustedVerifier: Boolean(payload.isTrustedVerifier),
+        faculty: payload.faculty,
+        program: payload.program,
+        major: payload.major,
+        startedYear: payload.startedYear,
+        graduatedYear: payload.graduatedYear,
+        graduationStatus: payload.graduationStatus,
         password: payload.password,
       });
       enqueueSnackbar('User account created and added to organization.', { variant: 'success' });
@@ -146,17 +152,10 @@ const useAdminUsersLocal = (stableOrgId, shouldFetch = true) => {
       const snapshot = serverUsersRef.current;
       const {
         password,
-        fullName: _fullName,
         organizationId,
         organizationName: _orgName,
         membershipStatus: _membershipStatus,
-        verificationLevel: _verificationLevel,
         isTrustedVerifier,
-        studentId: _studentId,
-        program: _program,
-        major: _major,
-        graduatedYear: _graduatedYear,
-        graduationStatus: _graduationStatus,
         ...rest
       } = payload;
       const now = new Date().toISOString();
@@ -172,8 +171,18 @@ const useAdminUsersLocal = (stableOrgId, shouldFetch = true) => {
 
       const desired = compactObject({
         email: rest.email !== undefined ? String(rest.email || '').trim() : undefined,
+        fullName: rest.fullName !== undefined ? String(rest.fullName || '').trim() : undefined,
+        studentId: rest.studentId !== undefined ? String(rest.studentId || '').trim() : undefined,
         role: rest.role,
         status: rest.status,
+        verificationLevel: rest.verificationLevel !== undefined ? Number(rest.verificationLevel) : undefined,
+        faculty: rest.faculty,
+        department: rest.department,
+        program: rest.program,
+        major: rest.major,
+        startedYear: rest.startedYear,
+        graduatedYear: rest.graduatedYear,
+        graduationStatus: rest.graduationStatus,
         organizationId: organizationNumber,
         isTrustedVerifier: typeof isTrustedVerifier === 'boolean' ? isTrustedVerifier : undefined,
       });
@@ -195,8 +204,17 @@ const useAdminUsersLocal = (stableOrgId, shouldFetch = true) => {
 
       const body = compactObject({
         email: shouldSend('email', desired.email) ? desired.email : undefined,
+        fullName: shouldSend('fullName', desired.fullName) ? desired.fullName : undefined,
+        studentId: shouldSend('studentId', desired.studentId) ? desired.studentId : undefined,
         role: shouldSend('role', desired.role) ? desired.role : undefined,
         status: shouldSend('status', desired.status) ? desired.status : undefined,
+        verificationLevel: shouldSend('verificationLevel', desired.verificationLevel) ? desired.verificationLevel : undefined,
+        faculty: shouldSend('faculty', desired.faculty) ? desired.faculty : undefined,
+        program: shouldSend('program', desired.program) ? desired.program : undefined,
+        major: shouldSend('major', desired.major) ? desired.major : undefined,
+        startedYear: shouldSend('startedYear', desired.startedYear) ? desired.startedYear : undefined,
+        graduatedYear: shouldSend('graduatedYear', desired.graduatedYear) ? desired.graduatedYear : undefined,
+        graduationStatus: shouldSend('graduationStatus', desired.graduationStatus) ? desired.graduationStatus : undefined,
       });
 
       setServerUsers((prev) =>

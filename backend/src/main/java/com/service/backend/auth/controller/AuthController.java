@@ -346,21 +346,15 @@ public class AuthController {
             return Mono.error(new ApplicationException(ErrorCode.FORBIDDEN, "Organization ID is required for non-admin users"));
         }
 
-        return authService.getVerificationLevel(user.getId(), organizationId)
-                .defaultIfEmpty(0) // If user is not a member, level is 0
+        return authService.getEffectiveVerificationLevel(user, organizationId)
                 .map(level -> {
-                    int finalLevel = level;
-                    if (user.getRole() == UserRole.STAFF) {
-                        finalLevel = (level == 4) ? 4 : 2;
-                    }
-
                     String accessToken = jwtUtils.generateAccessToken(user, organizationId);
                     String refreshToken = jwtUtils.generateRefreshToken(user.getId(), refreshTokenExpirationMs);
                     ResponseCookie refreshTokenCookie = buildRefreshTokenCookie(refreshToken, refreshTokenExpirationMs);
 
                     LoginResponse loginResponse = LoginResponse.builder()
                             .accessToken(accessToken)
-                            .verificationLevel(finalLevel)
+                            .verificationLevel(level)
                             .mustChangePassword(user.isMustChangePassword())
                             .build();
 

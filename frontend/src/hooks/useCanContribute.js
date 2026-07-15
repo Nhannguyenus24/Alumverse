@@ -7,9 +7,10 @@ import { useAuth } from './useAuth';
  *
  * Content-changing actions (posting, commenting, registering for events,
  * sending connection requests, messaging, etc.) are reserved for org-verified
- * alumni — i.e. `verificationLevel >= 2`. Privileged roles (ADMIN, STAFF)
- * always bypass the gate, mirroring the existing `isGuest` convention used in
- * the alumni forum.
+ * alumni — i.e. `verificationLevel >= 2`. ADMIN always bypasses the gate.
+ * STAFF only bypasses inside its assigned organization because the backend
+ * returns effective verificationLevel 4 there; in other organizations it falls
+ * back to level 2 and behaves like a regular verified alumnus.
  *
  * Returns:
  *  - canContribute: boolean — true when the user may perform write actions
@@ -24,8 +25,8 @@ export const useCanContribute = () => {
 
   return useMemo(() => {
     const role = user?.role ?? null;
-    const isPrivileged = role === 'ADMIN' || role === 'STAFF';
     const level = verificationLevel ?? 0;
+    const isPrivileged = role === 'ADMIN' || (role === 'STAFF' && level >= 4);
     const canContribute =
       isAuthenticated && (isPrivileged || level >= MIN_CONTRIBUTE_VERIFICATION_LEVEL);
 

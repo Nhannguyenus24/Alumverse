@@ -256,6 +256,7 @@ const adminUserApi = {
 
 export const {
 	getUsers,
+	getUserById,
 	banUser,
 	unbanUser,
 	deleteUser,

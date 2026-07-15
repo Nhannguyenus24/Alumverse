@@ -87,6 +87,18 @@ const normalizeAcademicList = (value) => {
 
 const normalizeIntegerList = (value) => normalizeAcademicList(value).map((item) => Number(item)).filter((item) => Number.isInteger(item));
 
+const GRADUATION_STATUS_OPTIONS = ['GRADUATED', 'STUDYING'];
+
+const normalizeGraduationStatus = (value) => {
+  if (!value) return '';
+  const raw = String(value).trim();
+  const upper = raw.toUpperCase();
+  if (upper === 'STUDYING' || upper.includes('ĐANG') || upper.includes('DANG')) return 'STUDYING';
+  if (upper === 'GRADUATED' || upper.includes('TỐT') || upper.includes('TOT')) return 'GRADUATED';
+  if (upper === 'DROPPED' || upper.includes('BỎ') || upper.includes('BO') || upper.includes('NGHỈ') || upper.includes('NGHI') || upper.includes('THÔI') || upper.includes('THOI')) return 'DROPPED';
+  return raw;
+};
+
 const dateInputSx = {
   '& input[type="date"]::-webkit-calendar-picker-indicator': {
     opacity: 0.75,
@@ -132,7 +144,7 @@ export default function SettingPage() {
 
   const [formData, setFormData] = useState({
     fullName: '', gender: '', birthDate: '', phone: '', studentId: '', email: '',
-    currentJobTitle: '', currentCompany: '', linksText: '',
+    currentJobTitle: '', currentCompany: '',
     educations: [{ faculty: '', department: '', program: '', startedYear: '', graduatedYear: '', major: '', graduationStatus: '' }],
   });
 
@@ -206,7 +218,10 @@ export default function SettingPage() {
         for (let i = 0; i < maxLength; i += 1) {
           educations.push({
             program: programs[i] || '', graduatedYear: graduationYears[i] || '', major: specializations[i] || '',
-            graduationStatus: graduationStatuses[i] || '', startedYear: startedYears[i] || '', faculty: faculties[i] || '', department: departments[i] || '',
+            graduationStatus: normalizeGraduationStatus(graduationStatuses[i] || ''),
+            startedYear: startedYears[i] || '',
+            faculty: faculties[i] || '',
+            department: departments[i] || '',
           });
         }
 
@@ -224,14 +239,10 @@ export default function SettingPage() {
           email: profile?.email ?? '',
           currentJobTitle: profile?.currentJobTitle ?? '',
           currentCompany: profile?.currentCompany ?? '',
-          linksText: (() => {
-            let parsedLinks = [];
-            try { parsedLinks = profile?.links ? JSON.parse(profile.links) : []; } catch { /* ignore */ }
-            return Array.isArray(parsedLinks) ? parsedLinks.join('\n') : '';
-          })(),
           role: profile?.role ?? profile?.userRole ?? user?.role ?? '',
           educations,
         }));
+        avatarCrop.setAvatarUrl(profile?.avatarUrl || user?.avatarUrl || '');
 
         setNotificationSettings((prev) => ({
           ...prev,
@@ -305,15 +316,30 @@ export default function SettingPage() {
     }
 
     try {
-      const linksArray = formData.linksText.split('\n').map(l => l.trim()).filter(Boolean);
+      const educationRows = formData.educations || [];
+      const hasAcademicContent = educationRows.some((e) => (
+        e.faculty || e.department || e.program || e.startedYear || e.graduatedYear || e.major || e.graduationStatus
+      ));
       const payload = {
         organizationId,
+        fullName: formData.fullName || null,
+        dob: formData.birthDate || null,
         phone: formData.phone || null,
         gender: formData.gender || null,
         currentJobTitle: formData.currentJobTitle || null,
         currentCompany: formData.currentCompany || null,
-        links: linksArray.length > 0 ? linksArray : null,
       };
+      if (hasAcademicContent) {
+        Object.assign(payload, {
+          program: educationRows.map((e) => e.program || ''),
+          startedYear: educationRows.map((e) => e.startedYear || ''),
+          graduatedYear: educationRows.map((e) => e.graduatedYear ? Number(e.graduatedYear) : null),
+          graduationStatus: educationRows.map((e) => normalizeGraduationStatus(e.graduationStatus) || ''),
+          major: educationRows.map((e) => e.major || ''),
+          faculty: educationRows.map((e) => e.faculty || ''),
+          department: educationRows.map((e) => e.department || ''),
+        });
+      }
 
       await userSettingsApi.updateProfile(payload);
 
@@ -328,6 +354,11 @@ export default function SettingPage() {
           queryClient.invalidateQueries({ queryKey: ['publicProfile'] });
         }
       }
+      setAuthUser({
+        ...useAuthStore.getState().user,
+        fullName: formData.fullName || useAuthStore.getState().user?.fullName,
+      });
+      queryClient.invalidateQueries({ queryKey: ['user', 'me', 'profile'] });
 
       showSuccess(t('success_save_profile'));
 
@@ -351,7 +382,7 @@ export default function SettingPage() {
         program: formData.educations.map((e) => e.program || ''),
         startedYear: formData.educations.map((e) => e.startedYear || ''),
         graduatedYear: formData.educations.map((e) => e.graduatedYear || ''),
-        graduationStatus: formData.educations.map((e) => e.graduationStatus || ''),
+        graduationStatus: formData.educations.map((e) => normalizeGraduationStatus(e.graduationStatus) || ''),
         major: formData.educations.map((e) => e.major || ''),
         faculty: formData.educations.map((e) => e.faculty || ''),
         department: formData.educations.map((e) => e.department || ''),
@@ -489,7 +520,7 @@ export default function SettingPage() {
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, }}>
           {!isEditMode && (
-            <Button variant="contained" color="secondary" startIcon={<EditIcon />}
+            <Button variant="outlined" color="secondary" startIcon={<EditIcon />}
               onClick={() => { setOriginalFormData(structuredClone(formData)); setIsEditMode(true) }}
             >
               {t('edit_info')}
@@ -509,22 +540,21 @@ export default function SettingPage() {
       <ScrollRevealItem>
         <Typography variant="h4" fontWeight="bold" sx={{ mb: 2 }}>{t('basic_info')}</Typography>
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
-          <TextField fullWidth label={t('label_fullname')} name="fullName" value={formData.fullName} InputProps={{ readOnly: !isEditMode }} />
-          <FormControl fullWidth>
+          <TextField fullWidth label={t('label_fullname')} name="fullName" value={formData.fullName} InputProps={{ readOnly: !isEditMode }} onChange={handleFormChange} autoComplete="name" />
+          <FormControl fullWidth sx={!isEditMode ? { pointerEvents: 'none' } : undefined}>
             <InputLabel>{t('label_gender')}</InputLabel>
-            <Select name="gender" value={formData.gender} label={t('label_gender')} onChange={handleFormChange} disabled={!isEditMode}>
+            <Select name="gender" value={formData.gender} label={t('label_gender')} onChange={handleFormChange} inputProps={{ readOnly: !isEditMode }} autoComplete="sex">
               {GENDER_OPTIONS.map((g) => (
                 <MenuItem key={g} value={g}>{t(GENDER_LABEL_KEYS[g])}</MenuItem>
               ))}
             </Select>
           </FormControl>
-          <TextField fullWidth label={t('label_birthdate')} name="birthDate" type="date" value={formData.birthDate} InputProps={{ readOnly: !isEditMode }} InputLabelProps={{ shrink: true }} sx={dateInputSx} />
-          <TextField fullWidth label={t('label_phone')} name="phone" value={formData.phone} InputProps={{ readOnly: !isEditMode }} onChange={handleFormChange} />
+          <TextField fullWidth label={t('label_birthdate')} name="birthDate" type="date" value={formData.birthDate} InputProps={{ readOnly: !isEditMode }} InputLabelProps={{ shrink: true }} sx={dateInputSx} onChange={handleFormChange} autoComplete="bday" />
+          <TextField fullWidth label={t('label_phone')} name="phone" value={formData.phone} InputProps={{ readOnly: !isEditMode }} onChange={handleFormChange} autoComplete="tel" />
           <TextField fullWidth label={t('label_student_id')} name="studentId" value={formData.studentId} InputProps={{ readOnly: true }} />
-          <TextField fullWidth label={t('label_email')} name="email" type="email" value={formData.email} InputProps={{ readOnly: !isEditMode }} />
+          <TextField fullWidth label={t('label_email')} name="email" type="email" value={formData.email} InputProps={{ readOnly: true }} />
           <TextField fullWidth label={t('label_job_title', { defaultValue: 'Chức danh' })} name="currentJobTitle" value={formData.currentJobTitle} InputProps={{ readOnly: !isEditMode }} onChange={handleFormChange} />
           <TextField fullWidth label={t('label_company', { defaultValue: 'Công ty' })} name="currentCompany" value={formData.currentCompany} InputProps={{ readOnly: !isEditMode }} onChange={handleFormChange} />
-          <TextField fullWidth multiline minRows={3} label={t('label_social_links', { defaultValue: 'Liên kết mạng xã hội' })} name="linksText" value={formData.linksText} InputProps={{ readOnly: !isEditMode }} onChange={handleFormChange} sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }} placeholder={t('placeholder_links', { defaultValue: 'Mỗi link một dòng (VD: https://facebook.com/...)' })} />
         </Box>
       </ScrollRevealItem>
 
@@ -554,7 +584,7 @@ export default function SettingPage() {
         <Stack spacing={3}>
           {formData.educations.map((edu, index) => (
             <ScrollReveal key={index} delay={getStaggerDelay(index, 0.06)}><Card variant="outlined" sx={{ p: 3, position: 'relative', bgcolor: 'background.default' }}>
-              {isEduEditMode && formData.educations.length > 1 && (
+              {isEditMode && formData.educations.length > 1 && (
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
                   <Typography variant="h5">{t('education_label')}</Typography>
                   <IconButton size="small" color="error" onClick={() => removeEducation(index)} sx={{ '&:hover': { bgcolor: 'action.hover' } }}>
@@ -563,13 +593,18 @@ export default function SettingPage() {
                 </Box>
               )}
               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
-                <TextField fullWidth label={t('label_faculty')} value={edu.faculty} disabled={!isEditMode} onChange={(e) => handleEducationChange(index, 'faculty', e.target.value)} />
-                <TextField fullWidth label={t('label_department')} value={edu.department} disabled={!isEditMode} onChange={(e) => handleEducationChange(index, 'department', e.target.value)} />
-                <Autocomplete freeSolo options={organizationProgramOptions} value={edu.program} disabled={!isEditMode} onInputChange={(_e, value) => handleEducationChange(index, 'program', value)} onChange={(_e, value) => handleEducationChange(index, 'program', value || '')} renderInput={(params) => <TextField {...params} label={t('label_program')} />} />
-                <TextField fullWidth label={t('label_cohort')} value={edu.startedYear} disabled={!isEditMode} onChange={(e) => handleEducationChange(index, 'startedYear', e.target.value)} />
-                <TextField fullWidth label={t('label_grad_year')} value={edu.graduatedYear} disabled={!isEditMode} onChange={(e) => handleEducationChange(index, 'graduatedYear', e.target.value)} />
-                <Autocomplete freeSolo options={organizationMajorOptions} value={edu.major} disabled={!isEditMode} onInputChange={(_e, value) => handleEducationChange(index, 'major', value)} onChange={(_e, value) => handleEducationChange(index, 'major', value || '')} renderInput={(params) => <TextField {...params} label={t('label_major')} />} />
-                <Autocomplete freeSolo options={[t('grad_status_graduated'), t('grad_status_studying')]} value={edu.graduationStatus} disabled={!isEditMode} onInputChange={(_e, value) => handleEducationChange(index, 'graduationStatus', value)} onChange={(_e, value) => handleEducationChange(index, 'graduationStatus', value || '')} renderInput={(params) => <TextField {...params} label={t('label_grad_status')} />} />
+                <TextField fullWidth label={t('label_faculty')} value={edu.faculty} InputProps={{ readOnly: !isEditMode }} onChange={(e) => handleEducationChange(index, 'faculty', e.target.value)} />
+                <TextField fullWidth label={t('label_department')} value={edu.department} InputProps={{ readOnly: !isEditMode }} onChange={(e) => handleEducationChange(index, 'department', e.target.value)} />
+                <Autocomplete freeSolo options={organizationProgramOptions} value={edu.program} readOnly={!isEditMode} onInputChange={(_e, value) => handleEducationChange(index, 'program', value)} onChange={(_e, value) => handleEducationChange(index, 'program', value || '')} renderInput={(params) => <TextField {...params} label={t('label_program')} />} />
+                <TextField fullWidth label={t('label_cohort')} value={edu.startedYear} InputProps={{ readOnly: !isEditMode }} onChange={(e) => handleEducationChange(index, 'startedYear', e.target.value)} />
+                <TextField fullWidth label={t('label_grad_year')} value={edu.graduatedYear} InputProps={{ readOnly: !isEditMode }} onChange={(e) => handleEducationChange(index, 'graduatedYear', e.target.value)} />
+                <Autocomplete freeSolo options={organizationMajorOptions} value={edu.major} readOnly={!isEditMode} onInputChange={(_e, value) => handleEducationChange(index, 'major', value)} onChange={(_e, value) => handleEducationChange(index, 'major', value || '')} renderInput={(params) => <TextField {...params} label={t('label_major')} />} />
+                <TextField select fullWidth label={t('label_grad_status')} value={normalizeGraduationStatus(edu.graduationStatus)} InputProps={{ readOnly: !isEditMode }} sx={!isEditMode ? { pointerEvents: 'none' } : undefined} onChange={(e) => handleEducationChange(index, 'graduationStatus', e.target.value)}>
+                  <MenuItem value="">{t('not_set', { defaultValue: 'Chưa cập nhật' })}</MenuItem>
+                  {GRADUATION_STATUS_OPTIONS.map((status) => (
+                    <MenuItem key={status} value={status}>{t(`grad_status_${status.toLowerCase()}`)}</MenuItem>
+                  ))}
+                </TextField>
               </Box>
             </Card></ScrollReveal>
           ))}
