@@ -476,6 +476,7 @@ const ForumAlumniThreadPage = () => {
   const [isEditPostOpen, setIsEditPostOpen] = useState(false);
   const [editingPost, setEditingPost] = useState(null);
   const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
+  const [isConfirmDeleteTopicOpen, setIsConfirmDeleteTopicOpen] = useState(false);
   const [postToDelete, setPostToDelete] = useState(null);
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [postToReport, setPostToReport] = useState(null);
@@ -804,7 +805,7 @@ const ForumAlumniThreadPage = () => {
     }
   };
 
-  const handleDeleteTopic = useCallback(async () => {
+  const handleConfirmDeleteTopic = useCallback(async () => {
     if (!topicId) return;
     try {
       await deleteTopic(topicId);
@@ -837,6 +838,10 @@ const ForumAlumniThreadPage = () => {
     showSuccess,
     topicId,
   ]);
+
+  const handleDeleteTopicClick = useCallback(() => {
+    setIsConfirmDeleteTopicOpen(true);
+  }, []);
 
   const handleOpenEditTopic = useCallback(() => {
     const topicSummary = location.state?.topicSummary;
@@ -1173,6 +1178,17 @@ const ForumAlumniThreadPage = () => {
             onConfirm={handleConfirmReport}
             isPending={reportPending}
           />
+          <ConfirmDialog
+            open={isConfirmDeleteTopicOpen}
+            title={t("common:confirm_delete", { defaultValue: 'Xác nhận xoá' })}
+            message={t("forum:confirm_delete_topic_message", { defaultValue: 'Bạn có chắc chắn muốn xoá chủ đề này không?' })}
+            confirmText={t("common:delete")}
+            cancelText={t("common:cancel")}
+            confirmColor="error"
+            loading={deleteTopicPending}
+            onConfirm={handleConfirmDeleteTopic}
+            onCancel={() => setIsConfirmDeleteTopicOpen(false)}
+          />
         </>
       }
     >
@@ -1303,7 +1319,7 @@ const ForumAlumniThreadPage = () => {
                     startIcon={
                       <DeleteOutlineOutlinedIcon sx={{ fontSize: 18 }} />
                     }
-                    onClick={handleDeleteTopic}
+                    onClick={handleDeleteTopicClick}
                     disabled={deleteTopicPending}
                     sx={{ whiteSpace: "nowrap" }}
                   >

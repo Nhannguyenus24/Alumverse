@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useManageForumCategories } from './useManageForumCategories';
 
 const sectionsToManageTopics = (sections) =>
   sections.map((s) => ({
@@ -12,17 +13,22 @@ const sectionsToManageTopics = (sections) =>
     })),
   }));
 
-export const useForumManageMode = ({ visibleSections, showSuccess, showWarning, showInfo }) => {
+export const useForumManageMode = ({ organizationId, visibleSections, showSuccess, showWarning, showInfo, showError }) => {
   const { t } = useTranslation('forum');
+  const manageCategoriesMutation = useManageForumCategories(organizationId);
   const [isManageMode, setIsManageMode] = useState(false);
   const [manageTopics, setManageTopics] = useState(() => sectionsToManageTopics([]));
   const [newMainTopic, setNewMainTopic] = useState('');
+  const [newMainTopicDesc, setNewMainTopicDesc] = useState('');
   const [newSubTopics, setNewSubTopics] = useState({});
+  const [newSubTopicDescs, setNewSubTopicDescs] = useState({});
 
   const handleOpenManageMode = () => {
     setManageTopics(sectionsToManageTopics(visibleSections));
     setNewMainTopic('');
+    setNewMainTopicDesc('');
     setNewSubTopics({});
+    setNewSubTopicDescs({});
     setIsManageMode(true);
   };
 
@@ -36,14 +42,16 @@ export const useForumManageMode = ({ visibleSections, showSuccess, showWarning, 
     }
     setManageTopics((prev) => [
       ...prev,
-      { id: `topic-${Date.now()}`, title: trimmed.toUpperCase(), boards: [] },
+      { id: `topic-${Date.now()}`, title: trimmed.toUpperCase(), description: newMainTopicDesc.trim(), boards: [] },
     ]);
     setNewMainTopic('');
+    setNewMainTopicDesc('');
     showSuccess(t('forum:manage_topic_added'));
   };
 
   const handleAddSubTopic = (topicId) => {
     const value = newSubTopics[topicId]?.trim() ?? '';
+    const descValue = newSubTopicDescs[topicId]?.trim() ?? '';
     if (!value) {
       showWarning(t('forum:manage_subtopic_name_required'));
       return;
@@ -53,12 +61,13 @@ export const useForumManageMode = ({ visibleSections, showSuccess, showWarning, 
         t.id === topicId
           ? {
               ...t,
-              boards: [...t.boards, { id: `board-${Date.now()}`, name: value, description: '' }],
+              boards: [...t.boards, { id: `board-${Date.now()}`, name: value, description: descValue }],
             }
           : t
       )
     );
     setNewSubTopics((prev) => ({ ...prev, [topicId]: '' }));
+    setNewSubTopicDescs((prev) => ({ ...prev, [topicId]: '' }));
     showSuccess(t('forum:manage_subtopic_added'));
   };
 
@@ -76,18 +85,32 @@ export const useForumManageMode = ({ visibleSections, showSuccess, showWarning, 
     showInfo(t('forum:manage_subtopic_deleted'));
   };
 
-  const handleSaveTopics = () => {
-    handleCloseManageMode();
-    showSuccess(t('forum:manage_topic_saved'));
+  const handleSaveTopics = async () => {
+    try {
+      await manageCategoriesMutation.mutateAsync({
+        originalSections: sectionsToManageTopics(visibleSections),
+        currentSections: manageTopics,
+      });
+      handleCloseManageMode();
+      showSuccess(t('forum:manage_topic_saved'));
+    } catch (error) {
+      showError(error?.response?.data?.message ?? error.message ?? 'Lỗi lưu thay đổi');
+    }
   };
+
+  const isSaving = manageCategoriesMutation.isPending;
 
   return {
     isManageMode,
     manageTopics,
     newMainTopic,
+    newMainTopicDesc,
     newSubTopics,
+    newSubTopicDescs,
     setNewMainTopic,
     setNewSubTopics,
+    setNewMainTopicDesc,
+    setNewSubTopicDescs,
     handleOpenManageMode,
     handleCloseManageMode,
     handleAddMainTopic,
@@ -95,5 +118,6 @@ export const useForumManageMode = ({ visibleSections, showSuccess, showWarning, 
     handleDeleteTopic,
     handleDeleteBoard,
     handleSaveTopics,
+    isSaving,
   };
 };
