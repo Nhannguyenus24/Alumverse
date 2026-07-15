@@ -67,6 +67,9 @@ public class Funds {
     @Column("fund_document_url")
     private String fundDocumentUrl;
 
+    @Column("donation_list_public")
+    private Boolean donationListPublic;
+
     @CreatedDate
     @Column("created_at")
     private LocalDateTime createdAt;

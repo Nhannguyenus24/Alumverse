@@ -116,7 +116,7 @@ const slideUp = keyframes`
 // Styled Components
 const AvatarWrapper = styled(Box)(({ theme }) => ({
   position: 'fixed',
-  bottom: 20,
+  bottom: 90,
   right: 20,
   cursor: 'pointer',
   zIndex: 999,
@@ -168,7 +168,7 @@ const SuggestionBubble = styled(Paper)(({ theme }) => ({
 
 const ChatWindow = styled(Paper)(({ theme }) => ({
   position: 'fixed',
-  bottom: 90,
+  bottom: 160,
   right: 20,
   width: 380,
   height: 500,

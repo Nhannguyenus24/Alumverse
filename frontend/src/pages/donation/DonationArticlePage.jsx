@@ -94,9 +94,7 @@ export default function DonationArticlePage() {
   return (
     <Page title={pageTitle} meta={<meta name="description" content={t('meta_description')} />}>
       <Container maxWidth={false} disableGutters sx={{ display: "flex", flexDirection: "column" }}>
-        <ScrollReveal
-          direction="none"
-          duration={0.8}
+        <Box
           sx={{
             height: { xs: "32vh", sm: "36vh", md: "40vh" },
             minHeight: { xs: 200, sm: 240, md: 280 },
@@ -252,7 +250,7 @@ export default function DonationArticlePage() {
           </ScrollRevealGroup>
         </Box>
 
-        {!errorMessage && fundDetail && isAdmin ? (
+        {!errorMessage && fundDetail && fundDetail?.donationListPublic ? (
           <ScrollReveal sx={{ px: { xs: 2, sm: 3 }, py: 6, backgroundColor: "background.default" }}>
             <Box sx={{ width: "100%", maxWidth: 1200, mx: "auto" }}>
               <DonationListSection fundId={id} />

@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { chatApi } from '../../utils/api';
 
 export function useNetworkIncomingRequests({ appliedFullName, status, page, pageSize }) {
-  const apiPage = page - 1; // frontend is 1-based, API is 0-based
+  const apiPage = Math.max(page - 1, 0); // frontend is 1-based, API is 0-based
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['incomingConversationRequests', appliedFullName, status, apiPage, pageSize],

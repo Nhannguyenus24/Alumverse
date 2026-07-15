@@ -490,6 +490,27 @@ public class FundService {
                 });
     }
 
+    public Mono<Funds> updateDonationVisibility(Long fundId, Boolean isPublic) {
+        return Mono.zip(
+                        SecurityUtils.getCurrentUserRole(),
+                        SecurityUtils.getCurrentOrganizationId().map(Optional::of).defaultIfEmpty(Optional.empty()))
+                .flatMap(ctx -> {
+                    String role = ctx.getT1();
+                    Integer currentOrgId = ctx.getT2().orElse(null);
+                    boolean isStaff = "STAFF".equalsIgnoreCase(role);
+                    return fundR2dbcRepository.findById(fundId)
+                            .switchIfEmpty(Mono.error(new ApplicationException(
+                                    ErrorCode.FUND_NOT_FOUND, "Fund not found with id: " + fundId)))
+                            .flatMap(existing -> {
+                                if (isStaff && (!existing.getOrganizationId().equals(currentOrgId))) {
+                                    return Mono.error(new ApplicationException(ErrorCode.FORBIDDEN));
+                                }
+                                existing.setDonationListPublic(isPublic);
+                                return fundR2dbcRepository.save(existing);
+                            });
+                });
+    }
+
     public Mono<Funds> closeFund(Long fundId) {
         return fundR2dbcRepository.findById(fundId)
                 .switchIfEmpty(Mono.error(new ApplicationException(
@@ -657,6 +678,27 @@ public class FundService {
     }
 
     public Mono<PaginatedResponse<FundDonationListItemResponse>> getDonationsByFund(
+            long fundId,
+            int page,
+            int limit,
+            String searchBy,
+            String keyword
+    ) {
+        return fundR2dbcRepository.findById(fundId)
+                .switchIfEmpty(Mono.error(new ApplicationException(
+                        ErrorCode.FUND_NOT_FOUND, "Fund not found with id: " + fundId)))
+                .flatMap(fund -> {
+                    if (Boolean.TRUE.equals(fund.getDonationListPublic())) {
+                        return doGetDonationsByFund(fundId, page, limit, searchBy, keyword);
+                    }
+                    return SecurityUtils.getCurrentUserRole()
+                            .filter(role -> "ADMIN".equalsIgnoreCase(role) || "STAFF".equalsIgnoreCase(role))
+                            .flatMap(role -> doGetDonationsByFund(fundId, page, limit, searchBy, keyword))
+                            .switchIfEmpty(Mono.just(PaginatedResponse.<FundDonationListItemResponse>of(List.of(), 0, page, limit)));
+                });
+    }
+
+    private Mono<PaginatedResponse<FundDonationListItemResponse>> doGetDonationsByFund(
             long fundId,
             int page,
             int limit,

@@ -150,7 +150,14 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
   }, [open, mode, user, firstOrganizationId]);
 
   const handleChange = (field) => (event) => {
-    setForm((prev) => ({ ...prev, [field]: event.target.value }));
+    const value = event.target.value;
+    setForm((prev) => {
+      const next = { ...prev, [field]: value };
+      if (field === 'role' && value === 'STAFF') {
+        next.verificationLevel = 4;
+      }
+      return next;
+    });
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: '' }));
   };
 
