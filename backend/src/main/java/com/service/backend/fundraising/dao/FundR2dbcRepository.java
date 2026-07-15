@@ -1,6 +1,7 @@
 package com.service.backend.fundraising.dao;
 
 import com.service.backend.shared.entity.Funds;
+import org.springframework.data.r2dbc.repository.Modifying;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.stereotype.Repository;
@@ -116,4 +117,8 @@ public interface FundR2dbcRepository extends R2dbcRepository<Funds, Long> {
         FROM funds
     """)
     Mono<com.service.backend.admin.dto.AdminFundAggregatedStatsProjection> getAdminAggregatedFundStats(@org.springframework.data.repository.query.Param("now") LocalDateTime now);
+
+    @Modifying
+    @Query("UPDATE funds SET donor_count = donor_count + 1, current_amount = current_amount + :amount WHERE id = :fundId")
+    Mono<Integer> incrementDonorCountAndAmount(Integer fundId, BigDecimal amount);
 }

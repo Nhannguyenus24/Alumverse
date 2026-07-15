@@ -32,10 +32,11 @@ public interface FundDonationsR2dbcRepository extends R2dbcRepository<FundDonati
             FROM fund_donations fd
             LEFT JOIN users u ON fd.donor_member_id IS NOT NULL AND u.id = fd.donor_member_id
             WHERE fd.fund_id = :fundId
+              AND (:onlySuccess = FALSE OR fd.status = 'SUCCESS')
             ORDER BY fd.id DESC
             LIMIT :limit OFFSET :offset
             """)
-    Flux<FundDonationListProjection> findByFundIdWithPagination(Long fundId, int limit, int offset);
+    Flux<FundDonationListProjection> findByFundIdWithPagination(Long fundId, int limit, int offset, boolean onlySuccess);
 
     @Query("""
             SELECT
@@ -58,8 +59,12 @@ public interface FundDonationsR2dbcRepository extends R2dbcRepository<FundDonati
             """)
     Flux<FundDonationListProjection> findAllByFundId(Long fundId);
 
-    @Query("SELECT COUNT(*) FROM fund_donations WHERE fund_id = :fundId")
-    Mono<Long> countByFundId(Long fundId);
+    @Query("""
+            SELECT COUNT(*) FROM fund_donations
+            WHERE fund_id = :fundId
+              AND (:onlySuccess = FALSE OR status = 'SUCCESS')
+            """)
+    Mono<Long> countByFundId(Long fundId, boolean onlySuccess);
 
     @Query("""
             SELECT
@@ -150,13 +155,18 @@ public interface FundDonationsR2dbcRepository extends R2dbcRepository<FundDonati
             LEFT JOIN users u ON u.id = fd.donor_member_id
             WHERE fd.fund_id = :fundId
               AND fd.donor_name ILIKE CONCAT('%', :keyword, '%')
+              AND (:onlySuccess = FALSE OR fd.status = 'SUCCESS')
             ORDER BY fd.id DESC
             LIMIT :limit OFFSET :offset
             """)
-    Flux<FundDonationListProjection> searchByDonorName(Long fundId, String keyword, int limit, int offset);
+    Flux<FundDonationListProjection> searchByDonorName(Long fundId, String keyword, int limit, int offset, boolean onlySuccess);
 
-    @Query("SELECT COUNT(*) FROM fund_donations WHERE fund_id = :fundId AND donor_name ILIKE CONCAT('%', :keyword, '%')")
-    Mono<Long> countSearchByDonorName(Long fundId, String keyword);
+    @Query("""
+            SELECT COUNT(*) FROM fund_donations
+            WHERE fund_id = :fundId AND donor_name ILIKE CONCAT('%', :keyword, '%')
+              AND (:onlySuccess = FALSE OR status = 'SUCCESS')
+            """)
+    Mono<Long> countSearchByDonorName(Long fundId, String keyword, boolean onlySuccess);
 
     @Query("""
             SELECT
@@ -176,13 +186,18 @@ public interface FundDonationsR2dbcRepository extends R2dbcRepository<FundDonati
             LEFT JOIN users u ON u.id = fd.donor_member_id
             WHERE fd.fund_id = :fundId
               AND fd.phone ILIKE CONCAT('%', :keyword, '%')
+              AND (:onlySuccess = FALSE OR fd.status = 'SUCCESS')
             ORDER BY fd.id DESC
             LIMIT :limit OFFSET :offset
             """)
-    Flux<FundDonationListProjection> searchByPhone(Long fundId, String keyword, int limit, int offset);
+    Flux<FundDonationListProjection> searchByPhone(Long fundId, String keyword, int limit, int offset, boolean onlySuccess);
 
-    @Query("SELECT COUNT(*) FROM fund_donations WHERE fund_id = :fundId AND phone ILIKE CONCAT('%', :keyword, '%')")
-    Mono<Long> countSearchByPhone(Long fundId, String keyword);
+    @Query("""
+            SELECT COUNT(*) FROM fund_donations
+            WHERE fund_id = :fundId AND phone ILIKE CONCAT('%', :keyword, '%')
+              AND (:onlySuccess = FALSE OR status = 'SUCCESS')
+            """)
+    Mono<Long> countSearchByPhone(Long fundId, String keyword, boolean onlySuccess);
 
     @Query("""
             SELECT
@@ -202,13 +217,18 @@ public interface FundDonationsR2dbcRepository extends R2dbcRepository<FundDonati
             LEFT JOIN users u ON u.id = fd.donor_member_id
             WHERE fd.fund_id = :fundId
               AND fd.address ILIKE CONCAT('%', :keyword, '%')
+              AND (:onlySuccess = FALSE OR fd.status = 'SUCCESS')
             ORDER BY fd.id DESC
             LIMIT :limit OFFSET :offset
             """)
-    Flux<FundDonationListProjection> searchByAddress(Long fundId, String keyword, int limit, int offset);
+    Flux<FundDonationListProjection> searchByAddress(Long fundId, String keyword, int limit, int offset, boolean onlySuccess);
 
-    @Query("SELECT COUNT(*) FROM fund_donations WHERE fund_id = :fundId AND address ILIKE CONCAT('%', :keyword, '%')")
-    Mono<Long> countSearchByAddress(Long fundId, String keyword);
+    @Query("""
+            SELECT COUNT(*) FROM fund_donations
+            WHERE fund_id = :fundId AND address ILIKE CONCAT('%', :keyword, '%')
+              AND (:onlySuccess = FALSE OR status = 'SUCCESS')
+            """)
+    Mono<Long> countSearchByAddress(Long fundId, String keyword, boolean onlySuccess);
 
     @Query("""
             SELECT
@@ -228,13 +248,18 @@ public interface FundDonationsR2dbcRepository extends R2dbcRepository<FundDonati
             LEFT JOIN users u ON u.id = fd.donor_member_id
             WHERE fd.fund_id = :fundId
               AND fd.message ILIKE CONCAT('%', :keyword, '%')
+              AND (:onlySuccess = FALSE OR fd.status = 'SUCCESS')
             ORDER BY fd.id DESC
             LIMIT :limit OFFSET :offset
             """)
-    Flux<FundDonationListProjection> searchByMessage(Long fundId, String keyword, int limit, int offset);
+    Flux<FundDonationListProjection> searchByMessage(Long fundId, String keyword, int limit, int offset, boolean onlySuccess);
 
-    @Query("SELECT COUNT(*) FROM fund_donations WHERE fund_id = :fundId AND message ILIKE CONCAT('%', :keyword, '%')")
-    Mono<Long> countSearchByMessage(Long fundId, String keyword);
+    @Query("""
+            SELECT COUNT(*) FROM fund_donations
+            WHERE fund_id = :fundId AND message ILIKE CONCAT('%', :keyword, '%')
+              AND (:onlySuccess = FALSE OR status = 'SUCCESS')
+            """)
+    Mono<Long> countSearchByMessage(Long fundId, String keyword, boolean onlySuccess);
 
     @Query("""
             SELECT
@@ -254,13 +279,18 @@ public interface FundDonationsR2dbcRepository extends R2dbcRepository<FundDonati
             LEFT JOIN users u ON u.id = fd.donor_member_id
             WHERE fd.fund_id = :fundId
               AND fd.email ILIKE CONCAT('%', :keyword, '%')
+              AND (:onlySuccess = FALSE OR fd.status = 'SUCCESS')
             ORDER BY fd.id DESC
             LIMIT :limit OFFSET :offset
             """)
-    Flux<FundDonationListProjection> searchByEmail(Long fundId, String keyword, int limit, int offset);
+    Flux<FundDonationListProjection> searchByEmail(Long fundId, String keyword, int limit, int offset, boolean onlySuccess);
 
-    @Query("SELECT COUNT(*) FROM fund_donations WHERE fund_id = :fundId AND email ILIKE CONCAT('%', :keyword, '%')")
-    Mono<Long> countSearchByEmail(Long fundId, String keyword);
+    @Query("""
+            SELECT COUNT(*) FROM fund_donations
+            WHERE fund_id = :fundId AND email ILIKE CONCAT('%', :keyword, '%')
+              AND (:onlySuccess = FALSE OR status = 'SUCCESS')
+            """)
+    Mono<Long> countSearchByEmail(Long fundId, String keyword, boolean onlySuccess);
 
     @Query("""
         SELECT
