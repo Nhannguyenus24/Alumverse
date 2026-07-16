@@ -28,10 +28,14 @@ public class ConnectionSearchController {
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<ConnectionSearchItemResponse>>>> searchConnections(
             @RequestParam(required = false) String fullName,
             @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "5") @Min(1) int size) {
+            @RequestParam(defaultValue = "5") @Min(1) int size,
+            // Ignored for USER/STAFF (their JWT already carries organizationId). ADMIN has no
+            // organization in the JWT ("all orgs"), so this lets an admin explicitly pick which
+            // organization's connections to view.
+            @RequestParam(required = false) Integer organizationId) {
 
         return connectionSearchService
-                .searchConnections(fullName, page, size)
+                .searchConnections(fullName, page, size, organizationId)
                 .map(result -> ResponseEntity.ok(
                         new ApiResponse<>("Connections retrieved successfully", result)));
     }

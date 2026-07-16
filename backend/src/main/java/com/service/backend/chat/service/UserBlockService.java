@@ -161,9 +161,8 @@ public class UserBlockService {
         }
 
         if (organizationId == null) {
-            return Mono.error(new ApplicationException(
-                    ErrorCode.ORGANIZATION_ID_REQUIRED,
-                    "Organization ID is required"));
+            // ADMIN acting system-wide: no single-org membership to check against.
+            return Mono.empty();
         }
 
         return userOrganizationMemberRepository.findByOrganizationIdAndUserId(organizationId, targetMemberId.intValue())
