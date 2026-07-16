@@ -1,6 +1,7 @@
 package com.service.backend.fundraising.service;
 
 import com.service.backend.fundraising.dao.FundDonationsR2dbcRepository;
+import com.service.backend.fundraising.dao.FundR2dbcRepository;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,12 +27,13 @@ import static org.mockito.Mockito.*;
 class SepayWebhookServiceTest {
 
     @Mock private FundDonationsR2dbcRepository fundDonationsRepository;
+    @Mock private FundR2dbcRepository fundRepository;
 
     private SepayWebhookService sepayWebhookService;
 
     @BeforeEach
     void setUp() {
-        sepayWebhookService = new SepayWebhookService(fundDonationsRepository);
+        sepayWebhookService = new SepayWebhookService(fundDonationsRepository, fundRepository);
         ReflectionTestUtils.setField(sepayWebhookService, "sepayApiKey", "test-api-key");
     }
 
@@ -91,6 +93,7 @@ class SepayWebhookServiceTest {
                             .status(com.service.backend.shared.enums.Status.SUCCESS)
                             .build())
             );
+            when(fundRepository.incrementDonorCountAndAmount(any(), any())).thenReturn(Mono.just(1));
 
             StepVerifier.create(sepayWebhookService.processWebhook("Apikey test-api-key", body))
                     .assertNext(result -> assertThat(result.get("success")).isTrue())
