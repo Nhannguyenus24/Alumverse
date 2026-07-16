@@ -21,8 +21,17 @@ public interface ConnectionSearchRepository extends R2dbcRepository<ChatConversa
             + "    AND (ccr.member_low_id = :currentUserId OR ccr.member_high_id = :currentUserId) "
             + ") conn "
             + "JOIN users u ON u.id = conn.peer_id "
-            + "JOIN organization_members om ON om.user_id = conn.peer_id "
-            + "  AND om.organization_id = :organizationId ";
+            // Connections are org-agnostic; program/major only exist on organization_members.
+            // A peer may belong to >1 organization, so pick a single membership via LATERAL to
+            // keep the join 1:1 (avoids duplicate connection rows / inflated counts). LEFT so a
+            // peer with no membership still appears (program/major null).
+            + "LEFT JOIN LATERAL ( "
+            + "  SELECT om.program, om.major "
+            + "  FROM organization_members om "
+            + "  WHERE om.user_id = conn.peer_id "
+            + "  ORDER BY om.id "
+            + "  LIMIT 1 "
+            + ") om ON true ";
 
     String SEARCH_WHERE =
             "WHERE (:fullName IS NULL OR LOWER(u.full_name) LIKE LOWER(:fullName)) ";
@@ -41,7 +50,6 @@ public interface ConnectionSearchRepository extends R2dbcRepository<ChatConversa
             + "ORDER BY conn.updated_at DESC "
             + "LIMIT :limit OFFSET :offset")
     Flux<ConnectionSearchItemResponse> searchConnections(
-            Integer organizationId,
             Long currentUserId,
             String fullName,
             int limit,
@@ -49,7 +57,6 @@ public interface ConnectionSearchRepository extends R2dbcRepository<ChatConversa
 
     @Query("SELECT COUNT(conn.id) " + CONNECTIONS_BASE + SEARCH_WHERE)
     Mono<Long> countConnections(
-            Integer organizationId,
             Long currentUserId,
             String fullName);
 }

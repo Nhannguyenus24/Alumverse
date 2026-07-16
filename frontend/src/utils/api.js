@@ -437,11 +437,11 @@ export const chatApi = {
 		return unwrap(response);
 	},
 
-	async searchConnections({ fullName, page = 0, size = 5, organizationId } = {}) {
-		// organizationId is ignored by the backend for USER/STAFF (their JWT already carries
-		// it) — it's only a fallback for ADMIN, whose JWT has no organization ("all orgs").
+	async searchConnections({ fullName, page = 0, size = 5 } = {}) {
+		// Connections are personal and org-agnostic — the backend returns all accepted
+		// connections of the current user regardless of organization.
 		const response = await apiClient.get('/chat/connections/search', {
-			params: { fullName, page, size, organizationId },
+			params: { fullName, page, size },
 		});
 		return unwrap(response) ?? EMPTY_PAGE;
 	},
