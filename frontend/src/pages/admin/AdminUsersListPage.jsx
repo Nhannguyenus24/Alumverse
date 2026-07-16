@@ -394,7 +394,7 @@ const AdminUsersListPage = () => {
         filters={Filters}
         onExport={handleExport}
         addButton={
-          <Stack direction="row" spacing={1} sx={{ ml: 1 }}>
+          <Stack direction="row" spacing={1}>
             <Button
               variant="outlined"
               size="small"

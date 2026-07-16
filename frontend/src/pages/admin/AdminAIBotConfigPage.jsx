@@ -1,6 +1,6 @@
 import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useState, useEffect } from 'react';
-import { useOutletContext } from 'react-router';
+import { useOutletContext, useSearchParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -8,19 +8,22 @@ import {
   Box, Typography, Button, TextField,
   Stack, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Paper, IconButton,
-  Chip, Alert, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions,
+  Chip, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions,
+  Tab, Tabs,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
 import { useSnackbar } from 'notistack';
+import { AdminAiProvidersContent } from './AdminAiProvidersPage';
 
 const FITBOT_API_URL = '/fitbot-api';
 
 const AdminAIBotConfigPage = () => {
   const { t } = useTranslation('admin');
-  const { setBreadcrumbs, adminBase } = useOutletContext() || {};
+  const { setBreadcrumbs } = useOutletContext() || {};
+  const [searchParams, setSearchParams] = useSearchParams();
   const [files, setFiles] = useState([]);
   const [loadingFiles, setLoadingFiles] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -34,6 +37,7 @@ const AdminAIBotConfigPage = () => {
   const [viewFilename, setViewFilename] = useState(null);
   const [viewContent, setViewContent] = useState('');
   const [viewLoading, setViewLoading] = useState(false);
+  const activeTab = searchParams.get('tab') === 'providers' ? 'providers' : 'knowledge';
 
   useEffect(() => {
     if (setBreadcrumbs) {
@@ -41,8 +45,21 @@ const AdminAIBotConfigPage = () => {
         { label: t('nav_bot_config'), active: true },
       ]);
     }
-    fetchFiles();
-  }, [setBreadcrumbs]);
+  }, [setBreadcrumbs, t]);
+
+  useEffect(() => {
+    if (activeTab === 'knowledge') {
+      fetchFiles();
+    }
+  }, [activeTab]);
+
+  const handleTabChange = (_, nextTab) => {
+    if (nextTab === 'providers') {
+      setSearchParams({ tab: 'providers' });
+      return;
+    }
+    setSearchParams({});
+  };
 
   const fetchFiles = async () => {
     setLoadingFiles(true);
@@ -166,118 +183,138 @@ const AdminAIBotConfigPage = () => {
         </Typography>
       </Box>
 
-      <Stack spacing={4}>
-        {/* Document Management Section */}
-        <AdminSectionPanel
-          title={t('bot_kb_title')}
-          subtitle={t('bot_kb_subtitle')}
-          action={(
-            <Button
-              variant="contained"
-              component="label"
-              startIcon={uploading ? <CircularProgress size={20} color="inherit" /> : <UploadFileIcon />}
-              disabled={uploading}
-            >
-              {t('bot_upload_btn')}
-              <input type="file" hidden onChange={handleFileUpload} accept=".txt,.pdf,.md,.csv,.json" />
-            </Button>
-          )}
-        >
-            <TableContainer component={Paper} variant="outlined">
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell sx={{ bgcolor: 'primary.main', color: 'primary.contrastText', fontWeight: 800 }}>{t('bot_filename')}</TableCell>
-                    <TableCell align="right" sx={{ bgcolor: 'primary.main', color: 'primary.contrastText', fontWeight: 800 }}>{t('col_actions')}</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {loadingFiles ? (
+      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+        <Tabs value={activeTab} onChange={handleTabChange} variant="scrollable" scrollButtons="auto">
+          <Tab value="knowledge" label={t('bot_config_tab_knowledge')} sx={{ textTransform: 'none', fontWeight: 700 }} />
+          <Tab value="providers" label={t('bot_config_tab_providers')} sx={{ textTransform: 'none', fontWeight: 700 }} />
+        </Tabs>
+      </Box>
+
+      {activeTab === 'providers' ? (
+        <AdminAiProvidersContent showHeader={false} />
+      ) : (
+        <Stack spacing={4}>
+          <Box>
+            <Typography variant="h5" sx={{ fontWeight: 800, color: 'primary.main' }}>
+              {t('bot_knowledge_section_title')}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
+              {t('bot_knowledge_section_subtitle')}
+            </Typography>
+          </Box>
+
+          {/* Document Management Section */}
+          <AdminSectionPanel
+            title={t('bot_kb_title')}
+            subtitle={t('bot_kb_subtitle')}
+            action={(
+              <Button
+                variant="contained"
+                component="label"
+                startIcon={uploading ? <CircularProgress size={20} color="inherit" /> : <UploadFileIcon />}
+                disabled={uploading}
+              >
+                {t('bot_upload_btn')}
+                <input type="file" hidden onChange={handleFileUpload} accept=".txt,.pdf,.md,.csv,.json" />
+              </Button>
+            )}
+          >
+              <TableContainer component={Paper} variant="outlined">
+                <Table>
+                  <TableHead>
                     <TableRow>
-                      <TableCell colSpan={2} align="center"><LoadingSkeleton /></TableCell>
+                      <TableCell sx={{ bgcolor: 'primary.main', color: 'primary.contrastText', fontWeight: 800 }}>{t('bot_filename')}</TableCell>
+                      <TableCell align="right" sx={{ bgcolor: 'primary.main', color: 'primary.contrastText', fontWeight: 800 }}>{t('col_actions')}</TableCell>
                     </TableRow>
-                  ) : apiError ? (
-                    <TableRow>
-                      <TableCell colSpan={2} align="center">
-                        <Typography color="error">{apiError}</Typography>
-                      </TableCell>
-                    </TableRow>
-                  ) : files.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={2} align="center">{t('bot_no_files')}</TableCell>
-                    </TableRow>
-                  ) : (
-                    files.map((file) => (
-                      <TableRow key={file.filename}>
-                        <TableCell>{file.filename}</TableCell>
-                        <TableCell align="right">
-                          <IconButton color="primary" onClick={() => handleViewFile(file.filename)} title={t('bot_view_file')}>
-                            <VisibilityIcon />
-                          </IconButton>
-                          <IconButton color="error" onClick={() => handleDeleteFile(file.filename)}>
-                            <DeleteIcon />
-                          </IconButton>
+                  </TableHead>
+                  <TableBody>
+                    {loadingFiles ? (
+                      <TableRow>
+                        <TableCell colSpan={2} align="center"><LoadingSkeleton /></TableCell>
+                      </TableRow>
+                    ) : apiError ? (
+                      <TableRow>
+                        <TableCell colSpan={2} align="center">
+                          <Typography color="error">{apiError}</Typography>
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
-        </AdminSectionPanel>
+                    ) : files.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={2} align="center">{t('bot_no_files')}</TableCell>
+                      </TableRow>
+                    ) : (
+                      files.map((file) => (
+                        <TableRow key={file.filename}>
+                          <TableCell>{file.filename}</TableCell>
+                          <TableCell align="right">
+                            <IconButton color="primary" onClick={() => handleViewFile(file.filename)} title={t('bot_view_file')}>
+                              <VisibilityIcon />
+                            </IconButton>
+                            <IconButton color="error" onClick={() => handleDeleteFile(file.filename)}>
+                              <DeleteIcon />
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+          </AdminSectionPanel>
 
-        {/* Bot Testing Section */}
-        <AdminSectionPanel title={t('bot_test_title')} subtitle={t('bot_test_subtitle')}>
-            <Stack direction="row" spacing={2} mb={2}>
-              <TextField
-                fullWidth
-                variant="outlined"
-                placeholder={t('bot_question_placeholder')}
-                value={question}
-                onChange={(e) => setQuestion(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleAskBot()}
-                disabled={asking}
-              />
-              <Button 
-                variant="contained" 
-                onClick={handleAskBot}
-                disabled={asking || !question.trim()}
-                sx={{ minWidth: 120 }}
-              >
-                {asking ? <CircularProgress size={24} color="inherit" /> : t('bot_send')}
-              </Button>
-            </Stack>
+          {/* Bot Testing Section */}
+          <AdminSectionPanel title={t('bot_test_title')} subtitle={t('bot_test_subtitle')}>
+              <Stack direction="row" spacing={2} mb={2}>
+                <TextField
+                  fullWidth
+                  variant="outlined"
+                  placeholder={t('bot_question_placeholder')}
+                  value={question}
+                  onChange={(e) => setQuestion(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleAskBot()}
+                  disabled={asking}
+                />
+                <Button
+                  variant="contained"
+                  onClick={handleAskBot}
+                  disabled={asking || !question.trim()}
+                  sx={{ minWidth: 120 }}
+                >
+                  {asking ? <CircularProgress size={24} color="inherit" /> : t('bot_send')}
+                </Button>
+              </Stack>
 
-            {botResponse && (
-              <Box sx={{ mt: 3, p: 2, bgcolor: 'background.default', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
-                <Typography variant="subtitle2" color="text.secondary" mb={1}>{t('bot_answer_label')}</Typography>
-                <Box sx={{ 
-                  '& p': { margin: '0 0 0.5em 0', '&:last-child': { margin: 0 } },
-                  '& ul, & ol': { margin: '0 0 0.5em 0', paddingLeft: '1.5em' },
-                  '& li': { marginBottom: '0.2em' },
-                  fontSize: '0.95rem',
-                  lineHeight: 1.5,
-                  wordWrap: 'break-word',
-                }}>
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                    {botResponse.answer}
-                  </ReactMarkdown>
-                </Box>
-                
-                {botResponse.sources && botResponse.sources.length > 0 && (
-                  <Box mt={2}>
-                    <Typography variant="subtitle2" color="text.secondary" mb={1}>{t('bot_sources_label')}</Typography>
-                    <Stack direction="row" flexWrap="wrap" gap={1}>
-                      {[...new Set(botResponse.sources.map((src, i) => src.metadata?.source || `Source ${i+1}`))].map((uniqueSource, i) => (
-                        <Chip key={i} label={uniqueSource} size="small" variant="outlined" />
-                      ))}
-                    </Stack>
+              {botResponse && (
+                <Box sx={{ mt: 3, p: 2, bgcolor: 'background.default', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
+                  <Typography variant="subtitle2" color="text.secondary" mb={1}>{t('bot_answer_label')}</Typography>
+                  <Box sx={{
+                    '& p': { margin: '0 0 0.5em 0', '&:last-child': { margin: 0 } },
+                    '& ul, & ol': { margin: '0 0 0.5em 0', paddingLeft: '1.5em' },
+                    '& li': { marginBottom: '0.2em' },
+                    fontSize: '0.95rem',
+                    lineHeight: 1.5,
+                    wordWrap: 'break-word',
+                  }}>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {botResponse.answer}
+                    </ReactMarkdown>
                   </Box>
-                )}
-              </Box>
-            )}
-        </AdminSectionPanel>
-      </Stack>
+
+                  {botResponse.sources && botResponse.sources.length > 0 && (
+                    <Box mt={2}>
+                      <Typography variant="subtitle2" color="text.secondary" mb={1}>{t('bot_sources_label')}</Typography>
+                      <Stack direction="row" flexWrap="wrap" gap={1}>
+                        {[...new Set(botResponse.sources.map((src, i) => src.metadata?.source || `Source ${i+1}`))].map((uniqueSource, i) => (
+                          <Chip key={i} label={uniqueSource} size="small" variant="outlined" />
+                        ))}
+                      </Stack>
+                    </Box>
+                  )}
+                </Box>
+              )}
+          </AdminSectionPanel>
+        </Stack>
+      )}
 
       <Dialog open={Boolean(viewFilename)} onClose={handleCloseView} maxWidth="md" fullWidth>
         <DialogTitle sx={{ fontWeight: 800, wordBreak: 'break-all' }}>{viewFilename}</DialogTitle>

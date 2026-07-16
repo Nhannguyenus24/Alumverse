@@ -25,11 +25,13 @@ public interface UserOrganizationMemberRepository extends R2dbcRepository<Organi
             Integer verificationLevel,
             Boolean isTrustedVerifier,
             String membershipStatus,
+            String faculty,
             String startedYear,
             String graduatedYear,
             String graduationStatus,
             String program,
-            String major
+            String major,
+            String department
     ) {}
     record MemberIdentity(Integer memberId, String studentId, String fullName) {}
     record ExpiredVerification(Integer userId, Integer organizationId) {}
@@ -42,11 +44,13 @@ public interface UserOrganizationMemberRepository extends R2dbcRepository<Organi
                    om.verification_level,
                    om.is_trusted_verifier,
                    CAST(om."status" AS text) AS membership_status,
+                   CAST(om.faculty AS text) AS faculty,
                    CAST(om.started_year AS text) AS started_year,
                    CAST(om.graduated_year AS text) AS graduated_year,
                    CAST(om.graduation_status AS text) AS graduation_status,
                    CAST(om.program AS text) AS program,
-                   CAST(om.major AS text) AS major
+                   CAST(om.major AS text) AS major,
+                   CAST(om.department AS text) AS department
             FROM organization_members om
             LEFT JOIN organizations o ON o.id = om.organization_id
             WHERE om.user_id IN (:userIds)
@@ -68,16 +72,17 @@ public interface UserOrganizationMemberRepository extends R2dbcRepository<Organi
     @Modifying
     @Query("""
             INSERT INTO organization_members (
-                organization_id, user_id, student_id, started_year, graduated_year,
+                organization_id, user_id, student_id, faculty, started_year, graduated_year,
                 graduation_status, program, major, verification_level, is_trusted_verifier,
                 "status", created_at, updated_at)
             VALUES (
-                :organizationId, :userId, :studentId, CAST(:startedYear AS jsonb),
-                CAST(:graduatedYear AS jsonb), CAST(:graduationStatus AS jsonb),
+                :organizationId, :userId, :studentId, CAST(:faculty AS jsonb),
+                CAST(:startedYear AS jsonb), CAST(:graduatedYear AS jsonb), CAST(:graduationStatus AS jsonb),
                 CAST(:program AS jsonb), CAST(:major AS jsonb), 0, false, 'ACTIVE',
                 CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
             ON CONFLICT (organization_id, user_id) DO UPDATE SET
                 student_id = COALESCE(EXCLUDED.student_id, organization_members.student_id),
+                faculty = COALESCE(EXCLUDED.faculty, organization_members.faculty),
                 started_year = COALESCE(EXCLUDED.started_year, organization_members.started_year),
                 graduated_year = COALESCE(EXCLUDED.graduated_year, organization_members.graduated_year),
                 graduation_status = COALESCE(EXCLUDED.graduation_status, organization_members.graduation_status),
@@ -89,6 +94,7 @@ public interface UserOrganizationMemberRepository extends R2dbcRepository<Organi
             @Param("organizationId") Integer organizationId,
             @Param("userId") Integer userId,
             @Param("studentId") String studentId,
+            @Param("faculty") String faculty,
             @Param("startedYear") String startedYear,
             @Param("graduatedYear") String graduatedYear,
             @Param("graduationStatus") String graduationStatus,
@@ -98,7 +104,8 @@ public interface UserOrganizationMemberRepository extends R2dbcRepository<Organi
     @Modifying
     @Query("""
             UPDATE organization_members
-            SET program = COALESCE(CAST(:program AS jsonb), program),
+            SET student_id = COALESCE(NULLIF(:studentId, ''), student_id),
+                program = COALESCE(CAST(:program AS jsonb), program),
                 started_year = COALESCE(CAST(:startedYear AS jsonb), started_year),
                 graduated_year = COALESCE(CAST(:graduatedYear AS jsonb), graduated_year),
                 graduation_status = COALESCE(CAST(:graduationStatus AS jsonb), graduation_status),
@@ -111,6 +118,7 @@ public interface UserOrganizationMemberRepository extends R2dbcRepository<Organi
     Mono<Integer> updateAcademicProfileByOrganizationAndUserId(
             @Param("organizationId") Integer organizationId,
             @Param("userId") Integer userId,
+            @Param("studentId") String studentId,
             @Param("program") String program,
             @Param("startedYear") String startedYear,
             @Param("graduatedYear") String graduatedYear,

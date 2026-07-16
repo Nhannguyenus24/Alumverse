@@ -35,9 +35,10 @@ import AdminBanUserDialog from '../../components/admin/AdminBanUserDialog';
 import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
 import AdminUserFormDialog from '../../components/admin/AdminUserFormDialog';
 import { formatAccountStatusLabel } from '../../constants/adminStatusDisplay';
+import { GENDER_LABEL_KEYS, normalizeGender } from '../../constants/gender';
 import { useAdminUsersContext } from '../../stores/AdminStore';
 import useAdminAuditLogsData from '../../hooks/admin/useAdminAuditLogsData';
-import { getLoginHistoryByUser, getUserActivity, adminOrganizationApi } from '../../utils/api';
+import { getLoginHistoryByUser, getUserActivity, getUserById, adminOrganizationApi } from '../../utils/api';
 import { formatDateTime } from '../../utils/dateFormatter';
 
 const formatEnumText = (value) => {
@@ -47,6 +48,43 @@ const formatEnumText = (value) => {
     .trim()
     .toLowerCase()
     .replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
+const valueOrDash = (value) => {
+  if (value === null || value === undefined || value === '') return '-';
+  return value;
+};
+
+const firstValue = (value) => {
+  if (Array.isArray(value)) return value[0] ?? '';
+  return value ?? '';
+};
+
+const listLength = (...values) => Math.max(
+  1,
+  ...values.map((value) => (Array.isArray(value) ? value.length : (value ? 1 : 0))),
+);
+
+const normalizeGraduationStatus = (value) => {
+  if (!value) return '';
+  const raw = String(value).trim();
+  const upper = raw.toUpperCase();
+  if (upper === 'STUDYING' || upper.includes('ĐANG') || upper.includes('DANG')) return 'STUDYING';
+  if (upper === 'GRADUATED' || upper.includes('TỐT') || upper.includes('TOT')) return 'GRADUATED';
+  if (upper === 'DROPPED' || upper.includes('BỎ') || upper.includes('BO') || upper.includes('NGHỈ') || upper.includes('NGHI') || upper.includes('THÔI') || upper.includes('THOI')) return 'DROPPED';
+  return raw;
+};
+
+const formatGraduationStatusLabel = (value, t) => {
+  const normalized = normalizeGraduationStatus(value);
+  if (!normalized) return '-';
+  return t(`graduation_status.${normalized}`, { defaultValue: formatEnumText(value) });
+};
+
+const formatGenderLabel = (value, t) => {
+  if (!value) return '-';
+  const normalized = normalizeGender(value);
+  return t(GENDER_LABEL_KEYS[normalized], { defaultValue: formatEnumText(value) });
 };
 
 const getDisplayStatus = (user) => {
@@ -80,7 +118,29 @@ const AdminUserDetailPage = () => {
   const { auditLogs } = useAdminAuditLogsData();
   const { setBreadcrumbs } = useOutletContext();
   const { allUsers, updateUser, deleteUser, banUser, unbanUser } = useAdminUsersContext();
-  const user = useMemo(() => allUsers.find((u) => String(u.id) === String(userId)), [allUsers, userId]);
+  const userFromList = useMemo(() => allUsers.find((u) => String(u.id) === String(userId)), [allUsers, userId]);
+  const [detailUser, setDetailUser] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const user = detailUser || userFromList;
+
+  const fetchUserDetail = useCallback(async () => {
+    if (!userId) return null;
+    setDetailLoading(true);
+    try {
+      const res = await getUserById(userId);
+      const data = res?.data?.data ?? res?.data ?? null;
+      setDetailUser(data);
+      return data;
+    } catch {
+      return null;
+    } finally {
+      setDetailLoading(false);
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    void fetchUserDetail();
+  }, [fetchUserDetail]);
 
   useEffect(() => {
     if (user) {
@@ -162,7 +222,7 @@ const AdminUserDetailPage = () => {
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (tab === 5) fetchUserLoginHistory();
+    if (tab === 3 || tab === 5) fetchUserLoginHistory();
   }, [tab, fetchUserLoginHistory]);
 
   useEffect(() => {
@@ -185,13 +245,44 @@ const AdminUserDetailPage = () => {
 
   const profile = user
     ? {
-        phone: user?.phone || '-',
-        dob: user?.dob || '-',
-        gender: user?.gender || '-',
-        bio: user?.bio || '-',
+        phone: valueOrDash(user?.phone),
+        dob: valueOrDash(user?.dob),
+        gender: formatGenderLabel(user?.gender, t),
+        bio: valueOrDash(user?.bio),
       }
     : {};
-  const academic = Array.isArray(user?.academicRecords) ? user.academicRecords : [];
+  const academic = useMemo(() => {
+    if (!user) return [];
+    const count = listLength(
+      user.faculty,
+      user.department,
+      user.major,
+      user.program,
+      user.startedYear,
+      user.graduatedYear,
+      user.graduationStatus,
+    );
+    const rows = Array.from({ length: count }, (_, index) => ({
+      studentCode: firstValue(user.studentId),
+      faculty: (Array.isArray(user.faculty) ? user.faculty[index] : user.faculty) || user.organizationName,
+      department: Array.isArray(user.department) ? user.department[index] : user.department,
+      major: Array.isArray(user.major) ? user.major[index] : user.major,
+      program: Array.isArray(user.program) ? user.program[index] : user.program,
+      startedYear: Array.isArray(user.startedYear) ? user.startedYear[index] : user.startedYear,
+      graduatedYear: Array.isArray(user.graduatedYear) ? user.graduatedYear[index] : user.graduatedYear,
+      graduationStatus: Array.isArray(user.graduationStatus) ? user.graduationStatus[index] : user.graduationStatus,
+    }));
+    return rows.filter((row) => (
+      row.studentCode ||
+      row.faculty ||
+      row.department ||
+      row.major ||
+      row.program ||
+      row.startedYear ||
+      row.graduatedYear ||
+      row.graduationStatus
+    ));
+  }, [user]);
   const memberships = user ? [{
     organizationName: user?.organizationName || '-',
     verificationLevel: user?.verificationLevel ?? '-',
@@ -205,6 +296,15 @@ const AdminUserDetailPage = () => {
     eventsAttended: user?.eventsAttended ?? '-',
     pageViewsSample: user?.pageViews ?? '-',
   };
+
+  if (!user && detailLoading) {
+    return (
+      <Stack spacing={2}>
+        <Skeleton variant="rounded" height={120} />
+        <Skeleton variant="rounded" height={260} />
+      </Stack>
+    );
+  }
 
   if (!user) {
     return (
@@ -318,7 +418,7 @@ const AdminUserDetailPage = () => {
             <Tab label={t('user_detail_tab_audit')} sx={{ textTransform: 'none' }} />
           </Tabs>
           <Divider />
-          <Box sx={{ p: 2 }}>
+          <Box sx={{ p: tab === 2 ? 1.25 : 2 }}>
             {tab === 0 ? (
               <Stack spacing={1}>
                 <Typography variant="body2">
@@ -343,25 +443,31 @@ const AdminUserDetailPage = () => {
                 <TableHead>
                   <TableRow>
                     <TableCell>{t('user_detail_academic_student_code')}</TableCell>
-                    <TableCell>{t('user_detail_academic_degree')}</TableCell>
-                    <TableCell>{t('user_detail_academic_class')}</TableCell>
+                    <TableCell>{t('edu_field_faculty')}</TableCell>
+                    <TableCell>{t('edu_field_department', { defaultValue: 'Bộ môn' })}</TableCell>
+                    <TableCell>{t('edu_field_major')}</TableCell>
+                    <TableCell>{t('edu_field_program')}</TableCell>
                     <TableCell>{t('user_detail_academic_start')}</TableCell>
                     <TableCell>{t('user_detail_academic_graduated')}</TableCell>
+                    <TableCell>{t('user_detail_academic_graduation_status', { defaultValue: 'Trạng thái tốt nghiệp' })}</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {academic.map((row, idx) => (
                     <TableRow key={`${row.studentCode || row.id || `row-${idx}`}`}>
-                      <TableCell>{row.studentCode || '-'}</TableCell>
-                      <TableCell>{row.degreeType || '-'}</TableCell>
-                      <TableCell>{row.className || '-'}</TableCell>
-                      <TableCell>{row.startYear || '-'}</TableCell>
-                      <TableCell>{row.graduatedYear || '-'}</TableCell>
+                      <TableCell>{valueOrDash(row.studentCode)}</TableCell>
+                      <TableCell>{valueOrDash(row.faculty)}</TableCell>
+                      <TableCell>{valueOrDash(row.department)}</TableCell>
+                      <TableCell>{valueOrDash(row.major)}</TableCell>
+                      <TableCell>{valueOrDash(row.program)}</TableCell>
+                      <TableCell>{valueOrDash(row.startedYear)}</TableCell>
+                      <TableCell>{valueOrDash(row.graduatedYear)}</TableCell>
+                      <TableCell>{formatGraduationStatusLabel(row.graduationStatus, t)}</TableCell>
                     </TableRow>
                   ))}
                   {academic.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5}>
+                      <TableCell colSpan={8}>
                         <Typography variant="body2" color="text.secondary">{t('user_detail_academic_empty')}</Typography>
                       </TableCell>
                     </TableRow>
@@ -546,6 +652,7 @@ const AdminUserDetailPage = () => {
         onSubmit={async (payload) => {
           try {
             await updateUser(user.id, payload);
+            await fetchUserDetail();
           } catch {
             /* snackbar in hook */
           }
