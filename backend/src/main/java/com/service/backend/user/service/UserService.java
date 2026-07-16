@@ -237,6 +237,17 @@ public class UserService {
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(
                         ErrorCode.USER_NOT_FOUND,
                         "User not found with id: " + currentUserId))))
+                .map(profile -> {
+                    boolean isMember = (profile.getOrganizationName() != null);
+                    if ("ADMIN".equals(profile.getRole())) {
+                        profile.setVerificationLevel(4);
+                    } else if ("STAFF".equals(profile.getRole())) {
+                        profile.setVerificationLevel(isMember ? 4 : 2);
+                    } else {
+                        profile.setVerificationLevel(isMember && profile.getVerificationLevel() != null ? profile.getVerificationLevel() : 0);
+                    }
+                    return profile;
+                })
                 .doOnSuccess(r -> logger.info("getMyProfile result: {}", JsonUtils.toJson(r)));
     }
 
@@ -273,6 +284,17 @@ public class UserService {
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(
                         ErrorCode.USER_NOT_FOUND,
                         "User not found with id: " + userId))))
+                .map(profile -> {
+                    boolean isMember = (profile.getOrganizationName() != null);
+                    if ("ADMIN".equals(profile.getRole())) {
+                        profile.setVerificationLevel(4);
+                    } else if ("STAFF".equals(profile.getRole())) {
+                        profile.setVerificationLevel(isMember ? 4 : 2);
+                    } else {
+                        profile.setVerificationLevel(isMember && profile.getVerificationLevel() != null ? profile.getVerificationLevel() : 0);
+                    }
+                    return profile;
+                })
                 .doOnSuccess(r -> logger.info("getPublicProfile result: {}", JsonUtils.toJson(r)));
     }
 
@@ -448,13 +470,27 @@ public class UserService {
     }
 
     public Mono<UserOrganizationMemberResponse> getMyOrganizationMember(Long currentUserId, Integer organizationId) {
-        return userOrganizationMemberRepository
-                .findByOrganizationIdAndUserId(organizationId, currentUserId.intValue())
-                .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.ORGANIZATION_MEMBER_NOT_FOUND))))
-                .flatMap(member -> organizationRepository.findById(member.getOrganizationId())
-                        .map(org -> toOrganizationMemberResponse(member, org.getName()))
-                        .defaultIfEmpty(toOrganizationMemberResponse(member, null)))
-                .doOnSuccess(r -> logger.info("getMyOrganizationMember result: {}", JsonUtils.toJson(r)));
+        return Mono.zip(
+                userOrganizationMemberRepository.findByOrganizationIdAndUserId(organizationId, currentUserId.intValue())
+                        .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.ORGANIZATION_MEMBER_NOT_FOUND)))),
+                authRepository.findById(currentUserId.intValue())
+                        .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND))))
+        ).flatMap(tuple -> {
+            var member = tuple.getT1();
+            var user = tuple.getT2();
+            return organizationRepository.findById(member.getOrganizationId())
+                    .map(org -> toOrganizationMemberResponse(member, org.getName()))
+                    .defaultIfEmpty(toOrganizationMemberResponse(member, null))
+                    .map(res -> {
+                        if (user.getRole() == com.service.backend.shared.enums.UserRole.ADMIN) {
+                            res.setVerificationLevel(4);
+                        } else if (user.getRole() == com.service.backend.shared.enums.UserRole.STAFF) {
+                            res.setVerificationLevel(4);
+                        }
+                        return res;
+                    });
+        })
+        .doOnSuccess(r -> logger.info("getMyOrganizationMember result: {}", JsonUtils.toJson(r)));
     }
 
     private NotificationSettingsResponse toNotificationResponse(UserNotificationSettings settings) {
