@@ -710,6 +710,7 @@ const MentorshipMyBookingsPage = () => {
             helperText={t('link_helper_text')}
             autoFocus
           />
+          {meetingLinkPasswordWarning(linkValue) && (
             <div style={{ marginTop: 16, color: 'orange' }}>
               {meetingLinkPasswordWarning(linkValue)}
             </div>

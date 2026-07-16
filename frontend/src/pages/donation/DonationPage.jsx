@@ -12,6 +12,7 @@ import dayjs from "dayjs";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../hooks/useAuth";
+import { useCanContribute } from "../../hooks/useCanContribute";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
 import usePaginationScrollToTop from "../../hooks/usePaginationScrollToTop";
 import useOrganizationStore from "../../stores/organizationStore";
@@ -41,9 +42,10 @@ export default function DonationPage() {
   const { t } = useTranslation(["donation", "common"]);
   const navigate = useOrgNavigate();
   const { enqueueSnackbar } = useSnackbar();
-  const { user, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
+  const { isOrgManager } = useCanContribute();
   const organizationId = useOrganizationStore((state) => state.organization?.id ?? null);
-  const isAdmin = isAuthenticated && user?.role === "ADMIN";
+  const isAdmin = isAuthenticated && isOrgManager;
 
   const [featuredCampaign, setFeaturedCampaign] = useState(null);
   const [campaigns, setCampaigns] = useState([]);

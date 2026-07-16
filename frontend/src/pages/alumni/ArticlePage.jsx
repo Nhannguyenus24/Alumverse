@@ -36,12 +36,12 @@ import { formatNumberVi } from "../../utils/numberFormatter";
 import JoinEventDialog from "../../components/event/JoinEventDialog";
 import { eventApi, savedItemApi } from "../../utils/api";
 import { useEventQuestions, formatAnswersForApi } from "../../hooks/events/useEventQuestions";
-import { useAuth } from "../../hooks/useAuth";
 import { useCanContribute } from "../../hooks/useCanContribute";
 import { ContributeGuardTooltip, VerificationRequiredAlert } from "../../components/ContributeGuard";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
 import { findCancelableTicketForEvent, getEventRegisteredState } from "../../utils/eventRegistration";
 import { extractMainImageCaption } from "../../utils/articleContentCaption";
+import { usePublicProfile } from "../../hooks/profile/usePublicProfile";
 import {
   ScrollReveal,
   ScrollRevealGroup,
@@ -216,7 +216,10 @@ const SaveArticleButton = ({ itemId }) => {
 const ArticleHighlightCard = ({ data, channel, eventId, isAdmin = false }) => {
   const { enqueueSnackbar } = useSnackbar();
   const { t } = useTranslation(['common', 'article', 'event', 'donation', 'admin']);
-  const { canContribute } = useCanContribute();
+  const { canContribute, canUseBasicActions } = useCanContribute();
+  const canUseArticleAction = channel === "event" || channel === "donation"
+    ? canUseBasicActions
+    : canContribute;
   const [isInterested, setIsInterested] = useState(false);
   const [isJoined, setIsJoined] = useState(() => getEventRegisteredState(data));
   const [interestedCount, setInterestedCount] = useState(data.stats?.[0]?.value ?? 0);
@@ -227,12 +230,12 @@ const ArticleHighlightCard = ({ data, channel, eventId, isAdmin = false }) => {
   const [openJoinDialog, setOpenJoinDialog] = useState(false);
   const [openCancelDialog, setOpenCancelDialog] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
-  const { data: questions = [] } = useEventQuestions(eventId, !isAdmin && canContribute && channel === "event" && Boolean(eventId));
+  const { data: questions = [] } = useEventQuestions(eventId, !isAdmin && canUseArticleAction && channel === "event" && Boolean(eventId));
 
   useEffect(() => {
     if (isAdmin || channel !== "event" || !eventId) return;
 
-    if (canContribute) {
+    if (canUseArticleAction) {
       eventApi.checkInterest(eventId)
         .then((res) => {
           const checked = res?.isInterested ?? res?.data?.isInterested ?? false;
@@ -258,10 +261,10 @@ const ArticleHighlightCard = ({ data, channel, eventId, isAdmin = false }) => {
         if (res?.registeredCount != null) setJoinedCount(res.registeredCount);
       })
       .catch(() => {});
-  }, [canContribute, channel, data, eventId, isAdmin]);
+  }, [canUseArticleAction, channel, data, eventId, isAdmin]);
 
   const handleInterest = async () => {
-    if (loadingInterest || !canContribute) return;
+    if (loadingInterest || !canUseArticleAction) return;
     setLoadingInterest(true);
     try {
       if (isInterested) {
@@ -281,7 +284,7 @@ const ArticleHighlightCard = ({ data, channel, eventId, isAdmin = false }) => {
   };
 
   const handleJoinClick = () => {
-    if (loadingJoin || checkingRegistration || !canContribute) return;
+    if (loadingJoin || checkingRegistration || !canUseArticleAction) return;
     if (isJoined) {
       setOpenCancelDialog(true);
       return;
@@ -290,7 +293,7 @@ const ArticleHighlightCard = ({ data, channel, eventId, isAdmin = false }) => {
   };
 
   const handleConfirmJoin = async (answerMap) => {
-    if (loadingJoin || checkingRegistration || isJoined || !canContribute) return;
+    if (loadingJoin || checkingRegistration || isJoined || !canUseArticleAction) return;
     setLoadingJoin(true);
     try {
       const payload = questions.length > 0
@@ -314,7 +317,7 @@ const ArticleHighlightCard = ({ data, channel, eventId, isAdmin = false }) => {
   };
 
   const handleConfirmCancel = async () => {
-    if (!cancelReason.trim() || loadingJoin || checkingRegistration || !canContribute) return;
+    if (!cancelReason.trim() || loadingJoin || checkingRegistration || !canUseArticleAction) return;
     setLoadingJoin(true);
     try {
       const ticketsPage = await eventApi.getMyTickets({ page: 0, limit: 100 });
@@ -380,18 +383,18 @@ const ArticleHighlightCard = ({ data, channel, eventId, isAdmin = false }) => {
         </Box>
 
         {/* BUTTONS */}
-        {!isAdmin && channel === "donation" && <VerificationRequiredAlert sx={{ mb: 1 }} />}
+        {!isAdmin && channel === "donation" && <VerificationRequiredAlert required="basic" sx={{ mb: 1 }} />}
         {isAdmin ? null : channel === "donation" ? (
-          <ContributeGuardTooltip sx={{ width: "100%", opacity: canContribute ? 1 : 0.58, filter: canContribute ? "none" : "grayscale(0.25)" }}>
-            <Button fullWidth variant="contained" color="accent" disabled={!canContribute}>{t('donation:donate_button')}</Button>
+          <ContributeGuardTooltip required="basic" sx={{ width: "100%", opacity: canUseArticleAction ? 1 : 0.58, filter: canUseArticleAction ? "none" : "grayscale(0.25)" }}>
+            <Button fullWidth variant="contained" color="accent" disabled={!canUseArticleAction}>{t('donation:donate_button')}</Button>
           </ContributeGuardTooltip>
         ) : (
           <Stack direction="row" spacing={1}>
-            <ContributeGuardTooltip sx={{ flex: 1, opacity: canContribute ? 1 : 0.58, filter: canContribute ? "none" : "grayscale(0.25)" }}>
+            <ContributeGuardTooltip required="basic" sx={{ flex: 1, opacity: canUseArticleAction ? 1 : 0.58, filter: canUseArticleAction ? "none" : "grayscale(0.25)" }}>
               <Button
                 fullWidth
                 variant={isInterested ? "outlined" : "contained"}
-                disabled={loadingInterest || !canContribute}
+                disabled={loadingInterest || !canUseArticleAction}
                 startIcon={isInterested ? <FavoriteIcon /> : <FavoriteBorderIcon />}
                 onClick={handleInterest}
               >
@@ -399,12 +402,12 @@ const ArticleHighlightCard = ({ data, channel, eventId, isAdmin = false }) => {
               </Button>
             </ContributeGuardTooltip>
 
-            <ContributeGuardTooltip sx={{ flex: 1, opacity: canContribute ? 1 : 0.58, filter: canContribute ? "none" : "grayscale(0.25)" }}>
+            <ContributeGuardTooltip required="basic" sx={{ flex: 1, opacity: canUseArticleAction ? 1 : 0.58, filter: canUseArticleAction ? "none" : "grayscale(0.25)" }}>
               <Button
                 fullWidth
                 variant={isJoined ? "outlined" : "contained"}
                 color={isJoined ? "error" : "accent"}
-                disabled={loadingJoin || checkingRegistration || !canContribute}
+                disabled={loadingJoin || checkingRegistration || !canUseArticleAction}
                 onClick={handleJoinClick}
                 startIcon={isJoined ? <CancelOutlinedIcon /> : <EventAvailableOutlinedIcon />}
               >
@@ -462,9 +465,13 @@ const ArticlePage = () => {
   const { channel, id } = useParams();
   const { enqueueSnackbar } = useSnackbar();
   const theme = useTheme();
-  const { user } = useAuth();
+  const { isOrgManager } = useCanContribute();
   const loadErrorShownRef = useRef(false);
   const { article, isPending, isError, errorMessage } = useArticleById(channel, id);
+  const authorId = article?.authorMemberId ?? null;
+  const { data: authorProfile } = usePublicProfile(authorId, {
+    enabled: Boolean(authorId) && article?.channel !== "donation",
+  });
 
   const { cleanContent, mainImageCaption } = useMemo(() => {
     const parsedContent = extractMainImageCaption(article?.content ?? "");
@@ -478,7 +485,7 @@ const ArticlePage = () => {
   const contentRef = useRef(null);
   const heroRef = useRef(null);
   const [placeholderHeight, setPlaceholderHeight] = useState(600);
-  const isAdmin = user?.role === "ADMIN";
+  const isAdmin = isOrgManager;
   const isDark = theme.palette.mode === "dark";
   const contentFrameBg = "background.paper";
   const contentFrameShadow = isDark
@@ -531,6 +538,12 @@ const ArticlePage = () => {
 
   const resolvedChannel = article.channel;
   const isEventArticle = resolvedChannel === "event";
+  const authorName =
+    authorProfile?.fullName
+    || authorProfile?.name
+    || article.memberName
+    || article.authorName
+    || null;
 
   const highlightData =
     resolvedChannel === "event"
@@ -613,10 +626,10 @@ const ArticlePage = () => {
                 {article.title}
               </Typography></ScrollRevealItem>
 
-              {/* Date */}
-              {article.publishedAt && (
+              {/* Author + Date */}
+              {(authorName || article.publishedAt) && (
                 <ScrollRevealItem><Typography variant="body2" sx={{ textAlign: "center", color: "text.secondary", mb: (article.url || article.linkUrl) ? 2 : { xs: 5, md: 6 } }}>
-                  {formatDate(article.publishedAt)}
+                  {[authorName, article.publishedAt ? formatDate(article.publishedAt) : null].filter(Boolean).join(" · ")}
                 </Typography></ScrollRevealItem>
               )}
 

@@ -66,6 +66,7 @@ const MessagesNavDropdown = ({ headerTextColor }) => {
         actions={menuActionsRef}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        sx={{ zIndex: (theme) => theme.zIndex.modal + 2 }}
         slotProps={slotProps}
       >
         <MessagesPreviewPanel

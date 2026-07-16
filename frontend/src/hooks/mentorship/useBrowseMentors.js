@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { filterMentors, getApprovedMentors, searchMentors } from '../../utils/api';
+import useOrganizationStore from '../../stores/organizationStore';
 
 const fetchPage = async ({
   keyword,
@@ -10,6 +11,7 @@ const fetchPage = async ({
   availableTo,
   page,
   limit,
+  organizationId,
 }) => {
   const trimmedKeyword = keyword?.trim();
   const hasSkillFilter = Array.isArray(skillIds) && skillIds.length > 0;
@@ -31,11 +33,12 @@ const fetchPage = async ({
       availableTo: availableTo || undefined,
       page,
       limit,
+      organizationId: organizationId || undefined,
     });
   } else if (trimmedKeyword) {
-    res = await searchMentors(trimmedKeyword, page, limit);
+    res = await searchMentors(trimmedKeyword, page, limit, organizationId);
   } else {
-    res = await getApprovedMentors(page, limit);
+    res = await getApprovedMentors(page, limit, organizationId);
   }
   return res?.data?.data ?? null;
 };
@@ -56,12 +59,15 @@ export const useBrowseMentors = ({
   page = 0,
   limit = 9,
   enabled = true,
-} = {}) =>
-  useQuery({
+} = {}) => {
+  const organizationId = useOrganizationStore((state) => state.organization?.id ?? null);
+
+  return useQuery({
     queryKey: [
       'mentorship',
       'browse',
       {
+        organizationId,
         keyword: keyword.trim(),
         skillIds: [...skillIds].sort(),
         minRating,
@@ -82,7 +88,9 @@ export const useBrowseMentors = ({
         availableTo,
         page,
         limit,
+        organizationId,
       }),
     enabled,
     keepPreviousData: true,
   });
+};

@@ -10,21 +10,24 @@ const MentorshipBookingGate = ({ children }) => {
   const access = useMentorshipAccessState();
 
   const resolved = !access.isLoading;
+  const blockedManager = resolved && access.isOrgManager;
   const blockedNoAccess = resolved && !access.canUseMentorship;
-  const blockedNotJoined = resolved && access.canUseMentorship && !access.hasJoinedMentorship;
+  const blockedNotJoined = resolved && !access.isOrgManager && access.canUseMentorship && !access.hasJoinedMentorship;
 
   useEffect(() => {
     if (!resolved) return;
     if (access.isGuest) {
       navigate('/auth/login', { replace: true });
+    } else if (blockedManager) {
+      navigate('/mentorship', { replace: true });
     } else if (blockedNoAccess) {
       navigate(MENTORSHIP_LANDING, { replace: true });
     } else if (blockedNotJoined) {
       navigate('/mentorship/mentee-signup', { replace: true });
     }
-  }, [resolved, access.isGuest, blockedNoAccess, blockedNotJoined, navigate]);
+  }, [resolved, access.isGuest, blockedManager, blockedNoAccess, blockedNotJoined, navigate]);
 
-  if (!resolved || access.isGuest || blockedNoAccess || blockedNotJoined) {
+  if (!resolved || access.isGuest || blockedManager || blockedNoAccess || blockedNotJoined) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
         <LoadingSkeleton />

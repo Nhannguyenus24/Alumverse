@@ -56,9 +56,9 @@ export const AdminAiProvidersContent = ({ showHeader = true }) => {
 
   useEffect(() => {
     if (showHeader) {
-      setBreadcrumbs?.([{ label: 'Cấu hình AI', active: true }]);
+      setBreadcrumbs?.([{ label: t('nav_ai_providers'), active: true }]);
     }
-  }, [setBreadcrumbs, showHeader]);
+  }, [setBreadcrumbs, showHeader, t]);
 
   const openCreate = () => {
     setForm(emptyForm());
@@ -165,7 +165,7 @@ export const AdminAiProvidersContent = ({ showHeader = true }) => {
         <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
           <Box>
             <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>
-              Cấu hình AI
+              {t('nav_ai_providers')}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
               Quản lý provider và model AI. Chuỗi được thử theo thứ tự ưu tiên; hết quota một provider sẽ tự chuyển sang provider kế tiếp.

@@ -30,6 +30,7 @@ import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.admin.service.AdminOrganizationService;
 import com.service.backend.shared.dto.ApiResponse;
 import com.service.backend.shared.exception.ApplicationException;
+import com.service.backend.shared.utils.SecurityUtils;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -119,6 +120,7 @@ public class AdminOrganizationController {
      * Create new organization
      */
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public Mono<ResponseEntity<ApiResponse<Organization>>> createOrganization(
             @Valid @RequestBody UpdateOrganizationRequest organization) {
         return organizationService.createOrganization(organization)
@@ -130,6 +132,7 @@ public class AdminOrganizationController {
      * Update organization
      */
     @PutMapping("/{organizationId}")
+    @PreAuthorize("hasRole('ADMIN')")
     public Mono<ResponseEntity<ApiResponse<Organization>>> updateOrganization(
             @PathVariable Integer organizationId,
             @Valid @RequestBody UpdateOrganizationRequest organizationUpdate) {
@@ -143,6 +146,7 @@ public class AdminOrganizationController {
      * Delete organization
      */
     @DeleteMapping("/{organizationId}")
+    @PreAuthorize("hasRole('ADMIN')")
     public Mono<ResponseEntity<ApiResponse<Boolean>>> deleteOrganization(
             @PathVariable Integer organizationId) {
         return organizationService.deleteOrganization(organizationId)
@@ -160,7 +164,8 @@ public class AdminOrganizationController {
     public Mono<ResponseEntity<ApiResponse<OrganizationIntroductionResponse>>> upsertIntroduction(
             @PathVariable Integer organizationId,
             @Valid @RequestBody UpsertOrganizationIntroductionRequest request) {
-        return organizationService.upsertIntroduction(organizationId, request)
+        return SecurityUtils.resolveOrganizationId(organizationId)
+                .flatMap(resolvedOrgId -> organizationService.upsertIntroduction(resolvedOrgId, request))
                 .map(intro -> ResponseEntity.ok(
                         new ApiResponse<>("Introduction saved successfully", intro)));
     }
@@ -174,6 +179,7 @@ public class AdminOrganizationController {
     }
 
     @PostMapping("/{organizationId}/programs")
+    @PreAuthorize("hasRole('ADMIN')")
     public Mono<ResponseEntity<ApiResponse<List<String>>>> addProgram(
             @PathVariable Integer organizationId,
             @Valid @RequestBody OrganizationOptionRequest request) {
@@ -183,6 +189,7 @@ public class AdminOrganizationController {
     }
 
     @PutMapping("/{organizationId}/programs")
+    @PreAuthorize("hasRole('ADMIN')")
     public Mono<ResponseEntity<ApiResponse<List<String>>>> updateProgram(
             @PathVariable Integer organizationId,
             @Valid @RequestBody UpdateOrganizationOptionRequest request) {
@@ -192,6 +199,7 @@ public class AdminOrganizationController {
     }
 
     @DeleteMapping("/{organizationId}/programs")
+    @PreAuthorize("hasRole('ADMIN')")
     public Mono<ResponseEntity<ApiResponse<List<String>>>> removeProgram(
             @PathVariable Integer organizationId,
             @RequestParam @NotBlank String value) {
@@ -209,6 +217,7 @@ public class AdminOrganizationController {
     }
 
     @PostMapping("/{organizationId}/majors")
+    @PreAuthorize("hasRole('ADMIN')")
     public Mono<ResponseEntity<ApiResponse<List<String>>>> addMajor(
             @PathVariable Integer organizationId,
             @Valid @RequestBody OrganizationOptionRequest request) {
@@ -218,6 +227,7 @@ public class AdminOrganizationController {
     }
 
     @PutMapping("/{organizationId}/majors")
+    @PreAuthorize("hasRole('ADMIN')")
     public Mono<ResponseEntity<ApiResponse<List<String>>>> updateMajor(
             @PathVariable Integer organizationId,
             @Valid @RequestBody UpdateOrganizationOptionRequest request) {
@@ -227,6 +237,7 @@ public class AdminOrganizationController {
     }
 
     @DeleteMapping("/{organizationId}/majors")
+    @PreAuthorize("hasRole('ADMIN')")
     public Mono<ResponseEntity<ApiResponse<List<String>>>> removeMajor(
             @PathVariable Integer organizationId,
             @RequestParam @NotBlank String value) {
@@ -244,6 +255,7 @@ public class AdminOrganizationController {
     }
 
     @PutMapping("/{organizationId}/features-config")
+    @PreAuthorize("hasRole('ADMIN')")
     public Mono<ResponseEntity<ApiResponse<FeatureConfig>>> updateConfig(
             @PathVariable Integer organizationId,
             @RequestBody FeatureConfig config) {
@@ -260,6 +272,7 @@ public class AdminOrganizationController {
     }
 
     @PutMapping("/{organizationId}/features-config/site-identity")
+    @PreAuthorize("hasRole('ADMIN')")
     public Mono<ResponseEntity<ApiResponse<FeatureConfig>>> updateSiteIdentity(
             @PathVariable Integer organizationId,
             @RequestBody FeatureConfig.SiteIdentity siteIdentity) {
@@ -275,6 +288,7 @@ public class AdminOrganizationController {
     }
 
     @PutMapping("/{organizationId}/features-config/brand")
+    @PreAuthorize("hasRole('ADMIN')")
     public Mono<ResponseEntity<ApiResponse<FeatureConfig>>> updateBrandConfig(
             @PathVariable Integer organizationId,
             @RequestBody FeatureConfig.BrandConfig brandConfig) {
@@ -290,6 +304,7 @@ public class AdminOrganizationController {
     }
 
     @PutMapping("/{organizationId}/features-config/features")
+    @PreAuthorize("hasRole('ADMIN')")
     public Mono<ResponseEntity<ApiResponse<FeatureConfig>>> updateFeatures(
             @PathVariable Integer organizationId,
             @RequestBody Map<String, FeatureConfig.Feature> featuresConfig) {
@@ -306,6 +321,7 @@ public class AdminOrganizationController {
     }
 
     @PutMapping("/{organizationId}/features-config/features/{featureName}")
+    @PreAuthorize("hasRole('ADMIN')")
     public Mono<ResponseEntity<ApiResponse<FeatureConfig>>> updateFeature(
             @PathVariable Integer organizationId,
             @PathVariable String featureName,
@@ -315,6 +331,7 @@ public class AdminOrganizationController {
     }
 
     @PatchMapping("/{organizationId}/features-config/features/{featureName}/toggle")
+    @PreAuthorize("hasRole('ADMIN')")
     public Mono<ResponseEntity<ApiResponse<FeatureConfig>>> toggleFeature(
             @PathVariable Integer organizationId,
             @PathVariable String featureName) {
@@ -330,6 +347,7 @@ public class AdminOrganizationController {
     }
 
     @PutMapping("/{organizationId}/features-config/privacy")
+    @PreAuthorize("hasRole('ADMIN')")
     public Mono<ResponseEntity<ApiResponse<FeatureConfig>>> updatePrivacySettings(
             @PathVariable Integer organizationId,
             @RequestBody FeatureConfig.PrivacySettings privacySettings) {

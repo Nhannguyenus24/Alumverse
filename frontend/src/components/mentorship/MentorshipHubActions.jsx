@@ -29,6 +29,16 @@ const MentorshipHubActions = ({ tone = 'default' }) => {
         },
       }
     : undefined;
+  const verificationCtaSx = onPrimary
+    ? {
+        color: 'accent.dark',
+        borderColor: 'accent.main',
+        '&:hover': {
+          borderColor: 'accent.dark',
+          bgcolor: 'accent.lighter',
+        },
+      }
+    : undefined;
 
   // Guest: invite to sign in / create account.
   if (access.isGuest) {
@@ -52,7 +62,7 @@ const MentorshipHubActions = ({ tone = 'default' }) => {
   // Logged in but email not verified yet.
   if (access.needsEmailVerification) {
     return (
-      <Button variant="contained" color="warning" onClick={() => navigate('/organization-registration')}>
+      <Button variant="contained" color="accent" onClick={() => navigate('/organization-registration')}>
         {t('mentorship:verify_email_to_start')}
       </Button>
     );
@@ -64,9 +74,9 @@ const MentorshipHubActions = ({ tone = 'default' }) => {
     return (
       <Button
         variant={onPrimary ? 'outlined' : 'contained'}
-        color={onPrimary ? undefined : 'warning'}
+        color={onPrimary ? undefined : 'accent'}
         onClick={() => navigate('/organization-registration')}
-        sx={outlinedOnPrimarySx}
+        sx={verificationCtaSx}
       >
         {t('mentorship:verify_academic_to_join')}
       </Button>

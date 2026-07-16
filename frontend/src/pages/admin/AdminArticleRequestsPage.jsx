@@ -43,13 +43,23 @@ const channelLabelOf = (value, t) => ({
   learning: t('channel_learning'),
 }[value] ?? value ?? '-');
 
-const isPendingRequest = (article) => {
+const SUBMISSION_CHANNELS = new Set(['alumni', 'achievement', 'job', 'learning']);
+
+const isSubmissionCandidate = (article) => SUBMISSION_CHANNELS.has(article?.channel);
+
+const submissionStatusOf = (article) => {
   const state = getArticleVisibilityState(article);
-  if (article.channel === 'learning') return false;
-  return state === 'hidden' || state === 'rejected';
+  if (state === 'rejected') return 'rejected';
+  if (state === 'published') return 'approved';
+  return 'pending';
 };
 
-const statusOf = (article) => (getArticleVisibilityState(article) === 'rejected' ? 'REJECTED' : 'PENDING');
+const statusOf = (article) => {
+  const status = submissionStatusOf(article);
+  if (status === 'approved') return 'APPROVED';
+  if (status === 'rejected') return 'REJECTED';
+  return 'PENDING';
+};
 
 const AdminArticleRequestsPage = () => {
   const { setBreadcrumbs } = useOutletContext();
@@ -72,6 +82,7 @@ const AdminArticleRequestsPage = () => {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [approvingId, setApprovingId] = useState(null);
+  const [statusFilter, setStatusFilter] = useState('pending');
 
   useEffect(() => {
     setBreadcrumbs?.([{ label: t('nav_submissions'), active: true }]);
@@ -82,7 +93,18 @@ const AdminArticleRequestsPage = () => {
     setSourceRowsPerPage(1000);
   }, [setSourcePage, setSourceRowsPerPage]);
 
-  const requestRows = useMemo(() => articles.filter(isPendingRequest), [articles]);
+  const requestRows = useMemo(() => articles
+    .filter(isSubmissionCandidate)
+    .filter((article) => statusFilter === 'all' || submissionStatusOf(article) === statusFilter),
+  [articles, statusFilter]);
+
+  const filterOptions = useMemo(() => ([
+    { value: 'pending', label: t('submissions_filter_pending') },
+    { value: 'approved', label: t('submissions_filter_approved') },
+    { value: 'rejected', label: t('submissions_filter_rejected') },
+    { value: 'all', label: t('submissions_filter_all') },
+  ]), [t]);
+
   const visibleRows = useMemo(() => {
     const start = page * rowsPerPage;
     return requestRows.slice(start, start + rowsPerPage);
@@ -134,6 +156,22 @@ const AdminArticleRequestsPage = () => {
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
           {t('submissions_desc')}
         </Typography>
+        <Stack direction="row" spacing={1} sx={{ mt: 2, flexWrap: 'wrap', rowGap: 1 }}>
+          {filterOptions.map((option) => (
+            <Button
+              key={option.value}
+              size="small"
+              variant={statusFilter === option.value ? 'contained' : 'outlined'}
+              onClick={() => {
+                setStatusFilter(option.value);
+                setPage(0);
+              }}
+              sx={{ borderRadius: 999, textTransform: 'none', fontWeight: 700 }}
+            >
+              {option.label}
+            </Button>
+          ))}
+        </Stack>
       </Box>
 
       {loading ? (
@@ -202,7 +240,7 @@ const AdminArticleRequestsPage = () => {
                       <IconButton
                         size="small"
                         sx={{ color: 'success.main' }}
-                        disabled={approvingId === `${a.channel}-${idOf(a)}`}
+                        disabled={!canToggleArticleVisibility(a) || approvingId === `${a.channel}-${idOf(a)}`}
                         onClick={() => handleApprove(a)}
                       >
                         <CheckCircleOutlineIcon fontSize="small" />

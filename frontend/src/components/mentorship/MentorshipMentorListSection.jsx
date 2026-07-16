@@ -100,6 +100,7 @@ const MentorshipMentorListSection = () => {
     navigate(`/mentorship/mentors/${mentorMemberId}`);
 
   const handleBook = (mentorMemberId) => {
+    if (access.isOrgManager) return;
     if (!access.canUseMentorship) {
       enqueueSnackbar(t('mentorship:snack_need_verification_to_book'), {
         variant: 'warning',
@@ -186,7 +187,7 @@ const MentorshipMentorListSection = () => {
             return (
               <ScrollRevealItem
                 key={mentor.memberId}
-                sx={{ display: 'flex', minWidth: 0, height: '100%' }}
+                sx={{ display: 'flex', minWidth: 0, width: '100%', height: '100%' }}
               ><MentorshipCard
                 avatar={mentor.avatarUrl}
                 name={mentor.fullName ?? `Mentor #${mentor.memberId}`}
@@ -202,6 +203,7 @@ const MentorshipMentorListSection = () => {
                 onBook={() => handleBook(mentor.memberId)}
                 canBook={access.canUseMentorship && access.hasJoinedMentorship && !isOwnCard}
                 bookDisabledReason={isOwnCard ? t('mentorship:this_is_your_profile') : bookDisabledReason}
+                showBook={!access.isOrgManager}
               /></ScrollRevealItem>
             );
           })}

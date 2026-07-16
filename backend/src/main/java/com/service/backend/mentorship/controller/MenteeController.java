@@ -35,33 +35,37 @@ public class MenteeController {
 
     @GetMapping("/mentors")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<MentorProfileResponse>>>> getApprovedMentors(
+            @RequestParam(required = false) Integer organizationId,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int limit) {
-        return menteeService.getApprovedMentors(page, limit)
+        return menteeService.getApprovedMentors(organizationId, page, limit)
                 .map(response -> ResponseEntity
                         .ok(new ApiResponse<>("Mentors retrieved successfully", response)));
     }
 
     @GetMapping("/mentors/{mentorMemberId}")
     public Mono<ResponseEntity<ApiResponse<MentorProfileResponse>>> getMentorProfile(
+            @RequestParam(required = false) Integer organizationId,
             @PathVariable @Min(1) Integer mentorMemberId) {
-        return menteeService.getMentorProfile(mentorMemberId)
+        return menteeService.getMentorProfile(organizationId, mentorMemberId)
                 .map(response -> ResponseEntity
                         .ok(new ApiResponse<>("Mentor profile retrieved successfully", response)));
     }
 
     @GetMapping("/mentors/search")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<MentorProfileResponse>>>> searchMentors(
+            @RequestParam(required = false) Integer organizationId,
             @RequestParam @NotBlank String keyword,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int limit) {
-        return menteeService.searchMentors(keyword, page, limit)
+        return menteeService.searchMentors(organizationId, keyword, page, limit)
                 .map(response -> ResponseEntity
                         .ok(new ApiResponse<>("Search results retrieved successfully", response)));
     }
 
     @GetMapping("/mentors/filter")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<MentorProfileResponse>>>> filterMentors(
+            @RequestParam(required = false) Integer organizationId,
             @RequestParam(required = false) String search,
             @RequestParam(required = false) List<Integer> skillIds,
             @RequestParam(required = false) BigDecimal minRating,
@@ -70,7 +74,7 @@ public class MenteeController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime availableTo,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int limit) {
-        return menteeService.filterMentors(search, skillIds, minRating, hasAvailability, availableFrom, availableTo, page, limit)
+        return menteeService.filterMentors(organizationId, search, skillIds, minRating, hasAvailability, availableFrom, availableTo, page, limit)
                 .map(response -> ResponseEntity
                         .ok(new ApiResponse<>("Filtered mentors retrieved successfully", response)));
     }
@@ -87,16 +91,18 @@ public class MenteeController {
 
     @GetMapping("/mentors/{mentorMemberId}/expertise")
     public Mono<ResponseEntity<ApiResponse<List<MentorExpertiseResponse>>>> getMentorExpertise(
+            @RequestParam(required = false) Integer organizationId,
             @PathVariable @Min(1) Integer mentorMemberId) {
-        return menteeService.getMentorExpertise(mentorMemberId)
+        return menteeService.getMentorExpertise(organizationId, mentorMemberId)
                 .map(response -> ResponseEntity
                         .ok(new ApiResponse<>("Mentor expertise retrieved successfully", response)));
     }
 
     @GetMapping("/mentors/{mentorMemberId}/availability")
     public Mono<ResponseEntity<ApiResponse<List<MentorAvailabilityResponse>>>> getMentorAvailableSlots(
+            @RequestParam(required = false) Integer organizationId,
             @PathVariable @Min(1) Integer mentorMemberId) {
-        return menteeService.getMentorAvailableSlots(mentorMemberId)
+        return menteeService.getMentorAvailableSlots(organizationId, mentorMemberId)
                 .map(response -> ResponseEntity
                         .ok(new ApiResponse<>("Available slots retrieved successfully", response)));
     }
@@ -197,9 +203,10 @@ public class MenteeController {
     @GetMapping("/mentors/{mentorMemberId}/feedbacks")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<SessionFeedbackResponse>>>> getMentorFeedbacks(
             @PathVariable @Min(1) Integer mentorMemberId,
+            @RequestParam(required = false) Integer organizationId,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int limit) {
-        return menteeService.getMentorFeedbacks(mentorMemberId, page, limit)
+        return menteeService.getMentorFeedbacks(organizationId, mentorMemberId, page, limit)
                 .map(response -> ResponseEntity
                         .ok(new ApiResponse<>("Feedbacks retrieved successfully", response)));
     }
