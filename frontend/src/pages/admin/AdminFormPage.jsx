@@ -10,6 +10,8 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import StopIcon from '@mui/icons-material/Stop';
 import BarChartOutlinedIcon from '@mui/icons-material/BarChartOutlined';
 import PollOutlinedIcon from '@mui/icons-material/PollOutlined';
+import EditNoteOutlinedIcon from '@mui/icons-material/EditNoteOutlined';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { useTranslation } from 'react-i18next';
 import AdminDataTable from '../../components/admin/AdminDataTable';
 import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetricTile';
@@ -161,9 +163,28 @@ const AdminFormPage = () => {
 
   return (
     <Box>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" fontWeight={800}>{t('survey:page_title')}</Typography>
-        <Typography variant="body2" color="text.secondary">{t('survey:page_subtitle')}</Typography>
+      <Box
+        sx={{
+          mb: 4,
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          justifyContent: 'space-between',
+          alignItems: { xs: 'flex-start', sm: 'center' },
+          gap: 2,
+        }}
+      >
+        <Box>
+          <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>
+            {t('survey:page_title')}
+          </Typography>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ mt: 0.5, fontWeight: 500 }}
+          >
+            {t('survey:page_subtitle')}
+          </Typography>
+        </Box>
       </Box>
 
       <Grid container spacing={2} sx={{ mb: 3 }}>
@@ -172,10 +193,18 @@ const AdminFormPage = () => {
             icon={<PollOutlinedIcon />} />
         </Grid>
         <Grid size={{ xs: 12, sm: 4 }}>
-          <AdminDashboardMetricTile label={t('survey:metric_draft')} value={metrics.draft} />
+          <AdminDashboardMetricTile
+            label={t('survey:metric_draft')}
+            value={metrics.draft}
+            icon={<EditNoteOutlinedIcon />}
+          />
         </Grid>
         <Grid size={{ xs: 12, sm: 4 }}>
-          <AdminDashboardMetricTile label={t('survey:metric_closed')} value={metrics.closed} />
+          <AdminDashboardMetricTile
+            label={t('survey:metric_closed')}
+            value={metrics.closed}
+            icon={<LockOutlinedIcon />}
+          />
         </Grid>
       </Grid>
 

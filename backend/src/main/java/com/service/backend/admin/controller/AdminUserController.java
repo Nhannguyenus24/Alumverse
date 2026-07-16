@@ -246,10 +246,13 @@ public class AdminUserController {
                         request.getRole(),
                         request.getAvatarUrl(),
                         request.getPassword(),
+                        request.getFaculty(),
+                        request.getStartedYear(),
                         request.getGraduatedYear(),
                         request.getGraduationStatus(),
                         request.getProgram(),
                         request.getMajor(),
+                        request.getDepartment(),
                         request.getVerificationLevel(),
                         request.getIsTrustedVerifier(),
                         request.getStatus())

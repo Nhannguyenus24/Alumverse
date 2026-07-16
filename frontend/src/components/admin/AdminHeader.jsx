@@ -70,6 +70,8 @@ const AdminHeader = ({ adminBase = '/admin', onMenuOpen, isSidebarCollapsed, use
   const SIDEBAR_COLLAPSED_WIDTH = 88;
   const currentSidebarWidth = isSidebarCollapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH;
 
+  const canSwitchOrganizations = user?.role === 'ADMIN';
+  const activeOrganization = organizations?.find((org) => String(org.id) === String(activeOrgId)) ?? null;
   const showOrgSelector = organizations && organizations.length > 0;
 
   return (
@@ -163,64 +165,89 @@ const AdminHeader = ({ adminBase = '/admin', onMenuOpen, isSidebarCollapsed, use
               flexShrink: 0,
             }}
           >
-            <FormControl variant="standard" size="small" sx={{ minWidth: 160 }}>
-              <Select
-                value={activeOrgId || ''}
-                onChange={(e) => startTransition(() => setActiveOrgId(e.target.value))}
-                disableUnderline
-                id="admin-org-selector"
-                inputProps={{ 'aria-label': t('admin:select_organization_aria') }}
-                sx={{
-                  fontSize: 13,
-                  fontWeight: 700,
-                  color: 'text.primary',
-                  '& .MuiSelect-select': {
-                    py: 0.5,
-                    px: 1,
-                    borderRadius: 1.5,
-                    bgcolor: alpha(theme.palette.primary.main, 0.08),
-                    color: 'primary.main',
-                    '&:focus': {
-                      bgcolor: alpha(theme.palette.primary.main, 0.12),
+            {canSwitchOrganizations ? (
+              <FormControl variant="standard" size="small" sx={{ minWidth: 160 }}>
+                <Select
+                  value={activeOrgId || ''}
+                  onChange={(e) => startTransition(() => setActiveOrgId(e.target.value))}
+                  disableUnderline
+                  id="admin-org-selector"
+                  inputProps={{ 'aria-label': t('admin:select_organization_aria') }}
+                  sx={{
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: 'text.primary',
+                    '& .MuiSelect-select': {
+                      py: 0.5,
+                      px: 1,
                       borderRadius: 1.5,
+                      bgcolor: alpha(theme.palette.primary.main, 0.08),
+                      color: 'primary.main',
+                      '&:focus': {
+                        bgcolor: alpha(theme.palette.primary.main, 0.12),
+                        borderRadius: 1.5,
+                      },
                     },
-                  },
-                  '& .MuiSelect-icon': {
-                    color: 'primary.main',
-                  },
-                }}
-                MenuProps={{
-                  PaperProps: {
-                    sx: {
-                      mt: 1,
-                      borderRadius: 2,
-                      border: `1px solid ${theme.palette.divider}`,
-                      boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-                      '& .MuiMenuItem-root': {
-                        fontSize: 13,
-                        fontWeight: 600,
-                        borderRadius: 1,
-                        mx: 0.5,
-                        my: 0.25,
-                        '&.Mui-selected': {
-                          bgcolor: alpha(theme.palette.primary.main, 0.1),
-                          color: 'primary.main',
-                          '&:hover': {
-                            bgcolor: alpha(theme.palette.primary.main, 0.15),
+                    '& .MuiSelect-icon': {
+                      color: 'primary.main',
+                    },
+                  }}
+                  MenuProps={{
+                    PaperProps: {
+                      sx: {
+                        mt: 1,
+                        borderRadius: 2,
+                        border: `1px solid ${theme.palette.divider}`,
+                        boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+                        '& .MuiMenuItem-root': {
+                          fontSize: 13,
+                          fontWeight: 600,
+                          borderRadius: 1,
+                          mx: 0.5,
+                          my: 0.25,
+                          '&.Mui-selected': {
+                            bgcolor: alpha(theme.palette.primary.main, 0.1),
+                            color: 'primary.main',
+                            '&:hover': {
+                              bgcolor: alpha(theme.palette.primary.main, 0.15),
+                            },
                           },
                         },
                       },
                     },
-                  },
+                  }}
+                >
+                  {organizations.map((org) => (
+                    <MenuItem key={org.id} value={org.id}>
+                      {org.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            ) : (
+              <Stack
+                direction="row"
+                alignItems="center"
+                spacing={0.75}
+                sx={{
+                  py: 0.5,
+                  px: 1.25,
+                  borderRadius: 1.5,
+                  bgcolor: alpha(theme.palette.primary.main, 0.08),
+                  color: 'primary.main',
+                  maxWidth: 220,
                 }}
               >
-                {organizations.map((org) => (
-                  <MenuItem key={org.id} value={org.id}>
-                    {org.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+                <BusinessCenterOutlinedIcon sx={{ fontSize: 18, flexShrink: 0 }} />
+                <Typography
+                  variant="body2"
+                  noWrap
+                  sx={{ fontSize: 13, fontWeight: 700, minWidth: 0 }}
+                >
+                  {activeOrganization?.name ?? activeOrgId ?? ''}
+                </Typography>
+              </Stack>
+            )}
           </Stack>
         )}
 
@@ -232,8 +259,7 @@ const AdminHeader = ({ adminBase = '/admin', onMenuOpen, isSidebarCollapsed, use
               onClick={toggleThemeMode}
               sx={{
                 color: 'primary.main',
-                bgcolor: alpha(theme.palette.primary.main, 0.08),
-                '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.14) },
+                '&:hover': { bgcolor: 'transparent' },
               }}
             >
               <ThemeModeIcon rotated={themeMode === 'dark'} />

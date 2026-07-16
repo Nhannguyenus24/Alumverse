@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSnackbar } from 'notistack';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Button,
@@ -42,9 +43,10 @@ const emptyForm = () => ({
   models: [{ modelName: '', priority: 0, enabled: true }],
 });
 
-const AdminAiProvidersPage = () => {
+export const AdminAiProvidersContent = ({ showHeader = true }) => {
   const { enqueueSnackbar } = useSnackbar();
-  const { setBreadcrumbs } = useOutletContext();
+  const { t } = useTranslation('admin');
+  const { setBreadcrumbs } = useOutletContext() || {};
   const { providers, loading, create, update, remove, test, refresh } = useAdminAiProviders();
 
   const [modal, setModal] = useState({ open: false, mode: 'create', id: null });
@@ -53,8 +55,10 @@ const AdminAiProvidersPage = () => {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    setBreadcrumbs?.([{ label: 'Cấu hình AI', active: true }]);
-  }, [setBreadcrumbs]);
+    if (showHeader) {
+      setBreadcrumbs?.([{ label: 'Cấu hình AI', active: true }]);
+    }
+  }, [setBreadcrumbs, showHeader]);
 
   const openCreate = () => {
     setForm(emptyForm());
@@ -157,19 +161,37 @@ const AdminAiProvidersPage = () => {
 
   return (
     <Box>
-      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-        <Box>
-          <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>
-            Cấu hình AI
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
-            Quản lý provider và model AI. Chuỗi được thử theo thứ tự ưu tiên; hết quota một provider sẽ tự chuyển sang provider kế tiếp.
-          </Typography>
+      {showHeader ? (
+        <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+          <Box>
+            <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>
+              Cấu hình AI
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
+              Quản lý provider và model AI. Chuỗi được thử theo thứ tự ưu tiên; hết quota một provider sẽ tự chuyển sang provider kế tiếp.
+            </Typography>
+          </Box>
+          <Button variant="contained" startIcon={<AddOutlinedIcon />} onClick={openCreate}>
+            Thêm provider
+          </Button>
         </Box>
-        <Button variant="contained" startIcon={<AddOutlinedIcon />} onClick={openCreate}>
-          Thêm provider
-        </Button>
-      </Box>
+      ) : (
+        <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2, flexWrap: 'wrap' }}>
+          <Box sx={{ minWidth: 0 }}>
+            <Typography variant="h5" sx={{ fontWeight: 800, color: 'primary.main' }}>
+              {t('bot_providers_section_title')}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
+              {t('bot_providers_section_subtitle')}
+            </Typography>
+          </Box>
+          <Box sx={{ flexShrink: 0 }}>
+            <Button variant="contained" startIcon={<AddOutlinedIcon />} onClick={openCreate}>
+              {t('bot_provider_add')}
+            </Button>
+          </Box>
+        </Box>
+      )}
 
       {loading ? (
         <Stack spacing={2}>
@@ -322,5 +344,7 @@ const AdminAiProvidersPage = () => {
     </Box>
   );
 };
+
+const AdminAiProvidersPage = () => <AdminAiProvidersContent />;
 
 export default AdminAiProvidersPage;

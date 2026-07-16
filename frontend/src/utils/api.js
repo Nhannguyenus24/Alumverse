@@ -2,6 +2,10 @@ import apiClient from '../utils/axios';
 
 const unwrap = (response) => response?.data?.data;
 
+// React Query throws if a queryFn resolves with `undefined` — fall back to an
+// empty page so a missing/odd response body never crashes paginated list views.
+const EMPTY_PAGE = { items: [], totalPage: 0, totalItem: 0 };
+
 const normalizeList = (payload) => {
 	if (Array.isArray(payload)) return payload;
 	if (payload?.items) return payload.items;
@@ -253,6 +257,7 @@ const adminUserApi = {
 
 export const {
 	getUsers,
+	getUserById,
 	banUser,
 	unbanUser,
 	deleteUser,
@@ -433,25 +438,27 @@ export const chatApi = {
 		return unwrap(response);
 	},
 
-	async searchConnections({ fullName, page = 0, size = 5 } = {}) {
+	async searchConnections({ fullName, page = 0, size = 5, organizationId } = {}) {
+		// organizationId is ignored by the backend for USER/STAFF (their JWT already carries
+		// it) — it's only a fallback for ADMIN, whose JWT has no organization ("all orgs").
 		const response = await apiClient.get('/chat/connections/search', {
-			params: { fullName, page, size },
+			params: { fullName, page, size, organizationId },
 		});
-		return unwrap(response);
+		return unwrap(response) ?? EMPTY_PAGE;
 	},
 
 	async searchBlockedMembers({ fullName, page = 0, size = 5 } = {}) {
 		const response = await apiClient.get('/chat/blocks', {
 			params: { fullName, page, size },
 		});
-		return unwrap(response);
+		return unwrap(response) ?? EMPTY_PAGE;
 	},
 
 	async getBlockList({ fullName, page = 0, size = 5 } = {}) {
 		const response = await apiClient.get('/chat/blocks', {
 			params: { fullName, page, size },
 		});
-		return unwrap(response);
+		return unwrap(response) ?? EMPTY_PAGE;
 	},
 
 	async uploadChatImage(base64String) {
@@ -942,7 +949,7 @@ export const networkApi = {
 			// so Spring binds them to List<Integer>; axios defaults to ids[]=1.
 			paramsSerializer: { indexes: null },
 		});
-		return unwrap(response);
+		return unwrap(response) ?? EMPTY_PAGE;
 	},
 };
 

@@ -125,25 +125,18 @@ const AdminDataTable = ({
             {onExport && (
               <Button
                 variant="outlined"
+                color="secondary"
                 size="small"
                 startIcon={<FileDownloadOutlinedIcon />}
                 onClick={onExport}
-                sx={{
-                  border: `1px solid ${theme.palette.divider}`,
-                  borderRadius: 2,
-                  color: 'primary.main',
-                  height: 40,
-                  fontWeight: 700,
-                  textTransform: 'none',
-                  px: 2
-                }}
+                sx={{ fontWeight: 700, textTransform: 'none' }}
               >
                 {t('admin:export_excel', { defaultValue: 'Xuất Excel' })}
               </Button>
             )}
             {actions}
             {addButton && (
-              <Box sx={{ ml: 0.5 }}>
+              <Box sx={{ display: 'flex' }}>
                 {addButton}
               </Box>
             )}
@@ -159,8 +152,9 @@ const AdminDataTable = ({
           sx={{
             borderSpacing: 0,
             '& .MuiTableCell-stickyHeader': {
-              borderLeft: '0 !important',
-              borderRight: '0 !important',
+              borderLeft: `1px solid ${tableHeadBg} !important`,
+              borderRight: `1px solid ${tableHeadBg} !important`,
+              borderColor: `${tableHeadBg} !important`,
               backgroundClip: 'border-box',
               boxShadow: 'none',
             },
@@ -174,8 +168,9 @@ const AdminDataTable = ({
                     width: 48,
                     bgcolor: tableHeadBg,
                     color: tableHeadColor,
-                    borderLeft: 0,
-                    borderRight: 0,
+                    borderLeft: `1px solid ${tableHeadBg}`,
+                    borderRight: `1px solid ${tableHeadBg}`,
+                    borderColor: tableHeadBg,
                   }}
                 />
               )}
@@ -193,8 +188,9 @@ const AdminDataTable = ({
                     py: 2,
                     textTransform: 'uppercase',
                     letterSpacing: 0.5,
-                    borderLeft: 0,
-                    borderRight: 0,
+                    borderLeft: `1px solid ${tableHeadBg}`,
+                    borderRight: `1px solid ${tableHeadBg}`,
+                    borderColor: tableHeadBg,
                   }}
                 >
                   {column.label}

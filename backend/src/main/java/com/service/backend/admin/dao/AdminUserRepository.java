@@ -91,6 +91,34 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
     @Query("UPDATE users SET \"status\" = :status, updated_at = CURRENT_TIMESTAMP WHERE id = :userId")
     Mono<Integer> updateUserStatusById(@Param("userId") Integer userId, @Param("status") String status);
 
+    @Modifying
+    @Query("""
+            UPDATE users
+            SET email = COALESCE(:email, email),
+                password_hash = COALESCE(:passwordHash, password_hash),
+                role = COALESCE(:role, role),
+                "status" = COALESCE(:status, "status"),
+                phone = COALESCE(:phone, phone),
+                dob = COALESCE(CAST(:dob AS date), dob),
+                gender = COALESCE(:gender, gender),
+                must_change_password = CASE
+                    WHEN :mustChangePassword = TRUE THEN TRUE
+                    ELSE must_change_password
+                END,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = :userId
+            """)
+    Mono<Integer> updateUserAccountFields(
+            @Param("userId") Integer userId,
+            @Param("email") String email,
+            @Param("passwordHash") String passwordHash,
+            @Param("role") String role,
+            @Param("status") String status,
+            @Param("phone") String phone,
+            @Param("dob") java.time.LocalDate dob,
+            @Param("gender") String gender,
+            @Param("mustChangePassword") Boolean mustChangePassword);
+
     @Query("SELECT COUNT(*) FROM verification_requests vr " +
            "JOIN users u ON vr.member_id = u.id " +
            "JOIN organization_members om ON u.id = om.user_id AND vr.organization_id = om.organization_id " +
@@ -280,34 +308,42 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
     Mono<Boolean> existsOrganizationMemberByUserId(@Param("userId") Integer userId);
 
     @Modifying
-    @Query("INSERT INTO organization_members (organization_id, user_id, student_id, graduated_year, graduation_status, program, major, verification_level, is_trusted_verifier, \"status\", created_at, updated_at) " +
-           "VALUES (:organizationId, :userId, :studentId, CAST(:graduatedYear AS jsonb), CAST(:graduationStatus AS jsonb), CAST(:program AS jsonb), CAST(:major AS jsonb), :verificationLevel, :isTrustedVerifier, :status, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
+    @Query("INSERT INTO organization_members (organization_id, user_id, student_id, faculty, started_year, graduated_year, graduation_status, program, major, department, verification_level, is_trusted_verifier, \"status\", created_at, updated_at) " +
+           "VALUES (:organizationId, :userId, :studentId, CAST(:faculty AS jsonb), CAST(:startedYear AS jsonb), CAST(:graduatedYear AS jsonb), CAST(:graduationStatus AS jsonb), CAST(:program AS jsonb), CAST(:major AS jsonb), CAST(:department AS jsonb), :verificationLevel, :isTrustedVerifier, :status, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
     Mono<Integer> createOrganizationMember(
            @Param("organizationId") Integer organizationId,
            @Param("userId") Integer userId,
            @Param("studentId") String studentId,
+           @Param("faculty") String faculty,
+           @Param("startedYear") String startedYear,
            @Param("graduatedYear") String graduatedYear,
            @Param("graduationStatus") String graduationStatus,
            @Param("program") String program,
            @Param("major") String major,
+           @Param("department") String department,
            @Param("verificationLevel") Integer verificationLevel,
            @Param("isTrustedVerifier") Boolean isTrustedVerifier,
            @Param("status") String status);
 
     @Modifying
     @Query("UPDATE organization_members SET organization_id = :organizationId, student_id = COALESCE(:studentId, student_id), " +
+           "faculty = CAST(:faculty AS jsonb), started_year = CAST(:startedYear AS jsonb), " +
            "graduated_year = CAST(:graduatedYear AS jsonb), " +
            "graduation_status = CAST(:graduationStatus AS jsonb), program = CAST(:program AS jsonb), major = CAST(:major AS jsonb), " +
+           "department = CAST(:department AS jsonb), " +
            "verification_level = :verificationLevel, is_trusted_verifier = :isTrustedVerifier, \"status\" = :status, updated_at = CURRENT_TIMESTAMP " +
            "WHERE user_id = :userId")
     Mono<Integer> updateOrganizationMemberByUserId(
            @Param("organizationId") Integer organizationId,
            @Param("userId") Integer userId,
            @Param("studentId") String studentId,
+           @Param("faculty") String faculty,
+           @Param("startedYear") String startedYear,
            @Param("graduatedYear") String graduatedYear,
            @Param("graduationStatus") String graduationStatus,
            @Param("program") String program,
            @Param("major") String major,
+           @Param("department") String department,
            @Param("verificationLevel") Integer verificationLevel,
            @Param("isTrustedVerifier") Boolean isTrustedVerifier,
            @Param("status") String status);
@@ -366,10 +402,13 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
             UPDATE organization_members
             SET organization_id = COALESCE(:organizationId, organization_id),
                 student_id = COALESCE(NULLIF(:studentId, ''), student_id),
+                faculty = COALESCE(CAST(:faculty AS jsonb), faculty),
+                started_year = COALESCE(CAST(:startedYear AS jsonb), started_year),
                 graduated_year = COALESCE(CAST(:graduatedYear AS jsonb), graduated_year),
                 graduation_status = COALESCE(CAST(:graduationStatus AS jsonb), graduation_status),
                 program = COALESCE(CAST(:program AS jsonb), program),
                 major = COALESCE(CAST(:major AS jsonb), major),
+                department = COALESCE(CAST(:department AS jsonb), department),
                 verification_level = COALESCE(:verificationLevel, verification_level),
                 is_trusted_verifier = COALESCE(:isTrustedVerifier, is_trusted_verifier),
                 updated_at = CURRENT_TIMESTAMP
@@ -384,10 +423,13 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
             @Param("userId") Integer userId,
             @Param("organizationId") Integer organizationId,
             @Param("studentId") String studentId,
+            @Param("faculty") String faculty,
+            @Param("startedYear") String startedYear,
             @Param("graduatedYear") String graduatedYear,
             @Param("graduationStatus") String graduationStatus,
             @Param("program") String program,
             @Param("major") String major,
+            @Param("department") String department,
             @Param("verificationLevel") Integer verificationLevel,
             @Param("isTrustedVerifier") Boolean isTrustedVerifier);
 

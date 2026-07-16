@@ -35,9 +35,15 @@ public class CreateOrganizationMemberRequest {
 
     private List<String> graduationStatus;
 
+    private List<String> startedYear;
+
+    private List<String> faculty;
+
     private List<String> program;
 
     private List<String> major;
+
+    private List<String> department;
     
     @Builder.Default
     @Min(value = 0, message = "Verification level must be at least 0")

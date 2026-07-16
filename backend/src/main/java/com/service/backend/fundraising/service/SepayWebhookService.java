@@ -1,6 +1,7 @@
 package com.service.backend.fundraising.service;
 
 import com.service.backend.fundraising.dao.FundDonationsR2dbcRepository;
+import com.service.backend.fundraising.dao.FundR2dbcRepository;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.enums.Status;
 import com.service.backend.shared.exception.ApplicationException;
@@ -22,6 +23,7 @@ public class SepayWebhookService {
     private static final Pattern DONATION_ID_PATTERN = Pattern.compile("\\bFD(\\d+)\\b");
 
     private final FundDonationsR2dbcRepository fundDonationsRepository;
+    private final FundR2dbcRepository fundRepository;
 
     @Value("${sepay.api-key}")
     private String sepayApiKey;
@@ -47,7 +49,10 @@ public class SepayWebhookService {
                         return Mono.just(existing);
                     }
                     existing.setStatus(Status.SUCCESS);
-                    return fundDonationsRepository.save(existing);
+                    return fundDonationsRepository.save(existing)
+                            .flatMap(saved -> fundRepository
+                                    .incrementDonorCountAndAmount(saved.getFundId(), saved.getAmount())
+                                    .thenReturn(saved));
                 })
                 .thenReturn(Map.of("success", true));
     }

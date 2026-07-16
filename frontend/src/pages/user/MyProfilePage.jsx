@@ -24,6 +24,7 @@ import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import PsychologyIcon from '@mui/icons-material/Psychology';
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism';
+import WcIcon from '@mui/icons-material/Wc';
 
 import Page from '../../components/Page';
 import ProfileLayout from '../../layouts/ProfileLayout';
@@ -65,6 +66,7 @@ import { resolveProfileRoleLabel } from '../../utils/profileRoleUtils';
 import { resolveMediaUrl } from '../../utils/imageUtils';
 import { formatPeriodDisplay } from '../../utils/experiencePeriod';
 import { getPublicContactEmail } from '../../utils/profileContactLinks';
+import { GENDER_LABEL_KEYS, normalizeGender } from '../../constants/gender';
 import {
   ScrollReveal,
   ScrollRevealGroup,
@@ -186,14 +188,14 @@ const ShareableContentSection = ({ summary, tags = [], t }) => {
       </Typography>
       </ScrollRevealItem>
       {hasSummary && (
-        <ScrollRevealItem><Typography color="text.secondary" sx={{ whiteSpace: 'pre-line', fontSize: '1.05rem', lineHeight: 1.7, mb: tags.length ? 2 : 0 }}>
+        <ScrollRevealItem><Typography color="text.secondary" sx={{ whiteSpace: 'pre-line', fontSize: '1.05rem', lineHeight: 1.7 }}>
           {summary.trim()}
         </Typography></ScrollRevealItem>
       )}
       {tags.length > 0 && (
-        <ScrollRevealItem sx={{ mt: hasSummary ? 2 : 0 }}>
-          <Typography variant="h6" fontWeight={800} color="primary.main" mb={1.5} display="flex" alignItems="center" gap={1}>
-            <VerifiedIcon fontSize="small" /> {t('profile:skills_section', { defaultValue: 'Kỹ năng' })}
+        <ScrollRevealItem sx={{ mt: hasSummary ? 4 : 0 }}>
+          <Typography variant="h5" fontWeight={800} color="primary.main" mb={2} display="flex" alignItems="center" gap={1}>
+            <VerifiedIcon /> {t('profile:skills_section', { defaultValue: 'Kỹ năng' })}
           </Typography>
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
             {tags.map((tag, idx) => (
@@ -206,14 +208,18 @@ const ShareableContentSection = ({ summary, tags = [], t }) => {
   );
 };
 
-const ExtendedProfileSections = ({ raw, t }) => {
+const getExtendedProfileSections = (raw) => {
   const parsed = parseExtendedProfile(raw);
-  if (!parsed || typeof parsed !== 'object') return null;
+  if (!parsed || typeof parsed !== 'object') return [];
 
-  const sectionLabels = getSectionLabels(t);
-  const sections = ['educations', 'experiences', 'projects', 'awards', 'skills']
+  return ['educations', 'experiences', 'projects', 'awards', 'skills']
     .map((key) => ({ key, items: Array.isArray(parsed[key]) ? parsed[key] : [] }))
     .filter((s) => s.items.length > 0);
+};
+
+const ExtendedProfileSections = ({ raw, sections: providedSections, t }) => {
+  const sectionLabels = getSectionLabels(t);
+  const sections = providedSections ?? getExtendedProfileSections(raw);
 
   if (sections.length === 0) return null;
 
@@ -310,7 +316,7 @@ const ReviewsSection = ({
 );
 
 const OwnProfile = ({ navigate, isMentorshipPath }) => {
-  const { t } = useTranslation(['mentorship', 'profile']);
+  const { t } = useTranslation(['mentorship', 'profile', 'settings']);
   const authUser = useAuthStore((state) => state.user);
   const { enqueueSnackbar } = useSnackbar();
   
@@ -404,8 +410,12 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
 
   const renderPersonalSection = () => {
     const contactEmail = getPublicContactEmail(profile?.links);
+    const normalizedGender = normalizeGender(profile?.gender);
+    const genderLabel = profile?.gender
+      ? t(`settings:${GENDER_LABEL_KEYS[normalizedGender]}`)
+      : '';
     const personalFields = [
-      { icon: PersonIcon, label: t('profile:full_name'), value: profile?.fullName },
+      { icon: WcIcon, label: t('settings:label_gender'), value: genderLabel },
       contactEmail ? { icon: EmailIcon, label: t('profile:contact_email', { defaultValue: 'Email liên hệ' }), value: contactEmail } : null,
       { icon: WorkIcon, label: t('profile:current_job'), value: currentJobTitle },
       { icon: BusinessIcon, label: t('profile:company'), value: currentCompany },
@@ -510,6 +520,7 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
 
       const totalPages = Math.max(1, Math.ceil(feedbacks.length / ITEMS_PER_PAGE));
       const paginatedReviews = feedbacks.slice((feedbackPage - 1) * ITEMS_PER_PAGE, feedbackPage * ITEMS_PER_PAGE);
+      const extendedSections = getExtendedProfileSections(mentor?.extendedProfile);
 
       return (
         <Stack spacing={5} sx={{ pt: isMentorshipPath ? 0 : 4, borderTop: isMentorshipPath ? 'none' : '1px solid', borderColor: 'divider' }}>
@@ -527,7 +538,9 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
 
           <ShareableContentSection summary={summary} tags={tags} t={t} />
 
-          <ExtendedProfileSections raw={mentor?.extendedProfile} t={t} />
+          {extendedSections.length > 0 && (
+            <ExtendedProfileSections sections={extendedSections} t={t} />
+          )}
 
           <ReviewsSection
             feedbacks={paginatedReviews}
@@ -680,6 +693,8 @@ const PublicMentorProfile = ({ mentorMemberId, navigate }) => {
   ];
 
   const mentorExtended = parseExtendedProfile(mentor.extendedProfile);
+  const extendedSections = getExtendedProfileSections(mentor.extendedProfile);
+  const hasExtendedSections = extendedSections.length > 0;
   const tags = Array.from(new Set([
     ...normalizeTags(mentor.expertiseTags),
     ...normalizeTags(mentorExtended.expertiseTags),
@@ -720,12 +735,14 @@ const PublicMentorProfile = ({ mentorMemberId, navigate }) => {
         />
       </Box>
 
-      <Box sx={{ mt: 5 }}>
-        <ExtendedProfileSections raw={mentor.extendedProfile} t={t} />
-      </Box>
+      {hasExtendedSections && (
+        <Box sx={{ mt: 5 }}>
+          <ExtendedProfileSections sections={extendedSections} t={t} />
+        </Box>
+      )}
 
       {access.canUseMentorship && (
-        <Box sx={{ mt: 5 }}>
+        <Box sx={{ mt: hasExtendedSections ? 5 : 4 }}>
           <ReviewsSection
             feedbacks={feedbacks}
             ratingAvg={mentor.ratingAvg}

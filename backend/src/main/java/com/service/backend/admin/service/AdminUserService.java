@@ -55,6 +55,7 @@ import java.time.LocalDateTime;
 public class AdminUserService {
     private static final Logger logger = LoggerFactory.getLogger(AdminUserService.class);
     private static final String ORG_CACHE = "organization_cache";
+    private static final int DEFAULT_ADMIN_PROVISIONED_USER_LEVEL = 3;
 
     private final AdminUserRepository adminUserRepository;
     private final AdminAuditLogRepository adminAuditLogRepository;
@@ -126,16 +127,20 @@ public class AdminUserService {
                                                   String email, String fullName, String studentId,
                                                   String role, String avatarUrl,
                                                   String password,
+                                                  List<String> faculty, List<String> startedYear,
                                                   List<Integer> graduatedYear, List<String> graduationStatus,
-                                                  List<String> program, List<String> major,
+                                                  List<String> program, List<String> major, List<String> department,
                                                   Integer verificationLevel, Boolean isTrustedVerifier,
                                                   String status) {
         String upperStatus = status == null ? "ACTIVE" : status.toUpperCase();
         boolean trustedVerifier = isTrustedVerifier != null && isTrustedVerifier;
+        String facultyJson = JsonUtils.toJson(faculty);
+        String startedYearJson = JsonUtils.toJson(startedYear);
         String graduatedYearJson = JsonUtils.toJson(graduatedYear);
         String graduationStatusJson = JsonUtils.toJson(graduationStatus);
         String programJson = JsonUtils.toJson(program);
         String majorJson = JsonUtils.toJson(major);
+        String departmentJson = JsonUtils.toJson(department);
 
         Mono<Integer> userIdMono;
 
@@ -212,7 +217,14 @@ public class AdminUserService {
                         .thenReturn(true);
             }
 
-            Integer finalVerificationLevel = "STAFF".equalsIgnoreCase(role) ? 4 : verificationLevel;
+            String normalizedRole = StringUtils.hasText(role) ? role.trim().toUpperCase() : "USER";
+            Integer finalVerificationLevel = switch (normalizedRole) {
+                case "STAFF" -> 4;
+                case "USER" -> (verificationLevel == null || verificationLevel == 0)
+                        ? DEFAULT_ADMIN_PROVISIONED_USER_LEVEL
+                        : verificationLevel;
+                default -> verificationLevel;
+            };
 
             return fullNameMono.then(adminUserRepository.existsOrganizationMemberByUserId(actualUserId)
                 .flatMap(exists -> exists
@@ -220,10 +232,13 @@ public class AdminUserService {
                         organizationId,
                         actualUserId,
                         studentId,
+                        facultyJson,
+                        startedYearJson,
                         graduatedYearJson,
                         graduationStatusJson,
                         programJson,
                         majorJson,
+                        departmentJson,
                         finalVerificationLevel,
                         trustedVerifier,
                         upperStatus)
@@ -231,10 +246,13 @@ public class AdminUserService {
                         organizationId,
                         actualUserId,
                         studentId,
+                        facultyJson,
+                        startedYearJson,
                         graduatedYearJson,
                         graduationStatusJson,
                         programJson,
                         majorJson,
+                        departmentJson,
                         finalVerificationLevel,
                         trustedVerifier,
                         upperStatus))
@@ -286,10 +304,13 @@ public class AdminUserService {
                             entry.getRole(),
                             null,
                             entry.getPassword(),
+                            null,
+                            null,
                             graduatedYearList,
                             graduationStatusList,
                             programList,
                             majorList,
+                            null,
                             entry.getVerificationLevel() != null ? entry.getVerificationLevel() : 0,
                             entry.getIsTrustedVerifier() != null ? entry.getIsTrustedVerifier() : false,
                             entry.getStatus())
@@ -357,20 +378,12 @@ public class AdminUserService {
 
         return adminUserRepository.findById(userId)
                 .flatMap(user -> {
-                    if (request.getEmail() != null) user.setEmail(request.getEmail());
-                    if (request.getRole() != null) user.setRole(request.getRole());
-                    if (request.getStatus() != null) user.setStatus(request.getStatus());
-                    
-                    boolean sendPasswordEmail = false;
-                    if (Boolean.TRUE.equals(request.getRequirePasswordChange())) {
-                        user.setMustChangePassword(true);
-                        sendPasswordEmail = true;
-                    }
-                    
-                    user.setUpdatedAt(LocalDateTime.now());
-                    
-                    final boolean shouldSendEmail = sendPasswordEmail;
-                    
+                    final boolean shouldSendEmail = Boolean.TRUE.equals(request.getRequirePasswordChange());
+                    Mono<String> passwordHashMono = StringUtils.hasText(request.getPassword())
+                            ? Mono.fromCallable(() -> passwordEncoder.encode(request.getPassword().trim()))
+                                .subscribeOn(Schedulers.boundedElastic())
+                            : Mono.justOrEmpty((String) null);
+
                     if (request.getVerificationLevel() != null) {
                         String notiTitle = "Cập nhật cấp độ xác thực";
                         String notiMessage = "Quản trị viên đã cập nhật cấp độ xác thực của bạn thành " + request.getVerificationLevel() + ".";
@@ -386,22 +399,33 @@ public class AdminUserService {
                             .subscribe();
                     }
 
-                    return adminUserRepository.save(user)
-                        .flatMap(savedUser -> {
+                    return passwordHashMono.defaultIfEmpty("")
+                        .flatMap(encodedPassword -> adminUserRepository.updateUserAccountFields(
+                            userId,
+                            StringUtils.hasText(request.getEmail()) ? request.getEmail().trim() : null,
+                            StringUtils.hasText(encodedPassword) ? encodedPassword : null,
+                            request.getRole() != null ? request.getRole().getValue() : null,
+                            request.getStatus() != null ? request.getStatus().getValue() : null,
+                            StringUtils.hasText(request.getPhone()) ? request.getPhone().trim() : null,
+                            request.getDob(),
+                            StringUtils.hasText(request.getGender()) ? request.getGender().trim() : null,
+                            shouldSendEmail))
+                        .flatMap(count -> count > 0 ? Mono.just(user) : Mono.empty())
+                        .flatMap(existingUser -> {
                             if (shouldSendEmail) {
                                 return emailService.sendHtmlEmail(
-                                    savedUser.getEmail(), 
+                                    existingUser.getEmail(),
                                     "Yêu cầu thay đổi mật khẩu", 
                                     "passwordResetRequired", 
-                                    Map.of("email", savedUser.getEmail())
+                                    Map.of("email", existingUser.getEmail())
                                 )
-                                .thenReturn(savedUser)
+                                .thenReturn(existingUser)
                                 .onErrorResume(err -> {
-                                    logger.error("Failed to send password reset email to {}: {}", savedUser.getEmail(), err.getMessage());
-                                    return Mono.just(savedUser);
+                                    logger.error("Failed to send password reset email to {}: {}", existingUser.getEmail(), err.getMessage());
+                                    return Mono.just(existingUser);
                                 });
                             }
-                            return Mono.just(savedUser);
+                            return Mono.just(existingUser);
                         });
                 })
                 .flatMap(saved -> applyProfileAndOrg(userId, request).then(getUserById(userId)))
@@ -413,6 +437,9 @@ public class AdminUserService {
         return request.getStatus() != null
                 && request.getEmail() == null
                 && request.getRole() == null
+                && !StringUtils.hasText(request.getPhone())
+                && request.getDob() == null
+                && !StringUtils.hasText(request.getGender())
                 && !StringUtils.hasText(request.getStudentId())
                 && !StringUtils.hasText(request.getFullName())
                 && !hasMembershipPatch(request);
@@ -432,10 +459,13 @@ public class AdminUserService {
     private boolean hasMembershipPatch(UpdateUserRequest request) {
         return request.getOrganizationId() != null
                 || StringUtils.hasText(request.getStudentId())
+                || request.getFaculty() != null
+                || request.getStartedYear() != null
                 || request.getGraduatedYear() != null
                 || request.getGraduationStatus() != null
                 || request.getProgram() != null
                 || request.getMajor() != null
+                || request.getDepartment() != null
                 || request.getVerificationLevel() != null
                 || request.getIsTrustedVerifier() != null;
     }
@@ -457,10 +487,13 @@ public class AdminUserService {
                         userId,
                         request.getOrganizationId(),
                         request.getStudentId(),
+                        JsonUtils.toJson(request.getFaculty()),
+                        JsonUtils.toJson(request.getStartedYear()),
                         JsonUtils.toJson(request.getGraduatedYear()),
                         JsonUtils.toJson(request.getGraduationStatus()),
                         JsonUtils.toJson(request.getProgram()),
                         JsonUtils.toJson(request.getMajor()),
+                        JsonUtils.toJson(request.getDepartment()),
                         request.getVerificationLevel(),
                         request.getIsTrustedVerifier()))
                 .delayUntil(count -> request.getOrganizationId() != null && request.getIsTrustedVerifier() != null
@@ -527,11 +560,13 @@ public class AdminUserService {
             b.verificationLevel(org.verificationLevel());
             b.isTrustedVerifier(org.isTrustedVerifier());
             b.membershipStatus(org.membershipStatus());
+            b.faculty(parseStringList(org.faculty()));
             b.startedYear(parseStringList(org.startedYear()));
             b.graduatedYear(parseIntegerList(org.graduatedYear()));
             b.graduationStatus(parseStringList(org.graduationStatus()));
             b.program(parseStringList(org.program()));
             b.major(parseStringList(org.major()));
+            b.department(parseStringList(org.department()));
         }
         return b.build();
     }
@@ -862,6 +897,11 @@ public class AdminUserService {
                 .role(user.getRole())
                 .avatarUrl(user.getAvatarUrl())
                 .coverUrl(user.getCoverUrl())
+                .fullName(user.getFullName())
+                .phone(user.getPhone())
+                .bio(user.getBio())
+                .dob(user.getDob())
+                .gender(user.getGender())
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())
                 .build();

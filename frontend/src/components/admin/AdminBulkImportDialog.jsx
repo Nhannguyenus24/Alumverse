@@ -72,7 +72,7 @@ const validateRow = (row, idx, t) => {
   if (row.graduatedYear && !/^\d{4}$/.test(String(row.graduatedYear).trim())) errors.push(t('bulk_err_graduated_year'));
   if (row.verificationLevel !== undefined && row.verificationLevel !== '') {
     const vl = Number(row.verificationLevel);
-    if (![0, 1, 2].includes(vl)) errors.push(t('bulk_err_verification_level'));
+    if (![0, 1, 2, 3, 4].includes(vl)) errors.push(t('bulk_err_verification_level'));
   }
   return { ...row, _rowIndex: idx, _errors: errors, _valid: errors.length === 0 };
 };
@@ -252,7 +252,7 @@ const AdminBulkImportDialog = ({ open, onClose, organizationOptions = [], onBulk
             <Alert severity="info" sx={{ width: '100%', maxWidth: 600 }}>
               <Typography variant="body2" component="div">
                 <strong>{t('bulk_required_columns')}</strong> email, fullName<br />
-                <strong>{t('bulk_optional_columns')}</strong> studentId, role ({t('bulk_default_user')}), password, program, major, graduatedYear, graduationStatus (STUDYING/GRADUATED/DROPPED), verificationLevel (0/1/2), status ({t('bulk_default_active')})
+                <strong>{t('bulk_optional_columns')}</strong> studentId, role ({t('bulk_default_user')}), password, program, major, graduatedYear, graduationStatus (STUDYING/GRADUATED/DROPPED), verificationLevel (0/1/2/3/4), status ({t('bulk_default_active')})
               </Typography>
             </Alert>
           </Box>

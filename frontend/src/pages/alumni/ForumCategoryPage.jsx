@@ -32,7 +32,6 @@ const ForumCategoryPage = () => {
     categoryId,
     topics,
     topicsPending,
-    isError,
     filters,
     activeCategory,
     selectedSidebarId,
