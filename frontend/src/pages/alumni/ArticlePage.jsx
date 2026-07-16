@@ -48,6 +48,57 @@ import {
   ScrollRevealItem,
 } from "../../components/animations/ScrollReveal";
 
+const isLightInlineBackground = (value) => {
+  if (!value) return false;
+  const normalized = value.toLowerCase().replace(/\s+/g, "");
+  if (normalized.includes("white") || normalized.includes("#fff")) return true;
+
+  const rgbMatch = normalized.match(/rgba?\((\d+),(\d+),(\d+)(?:,([.\d]+))?\)/);
+  if (!rgbMatch) return false;
+
+  const [, red, green, blue, alphaValue] = rgbMatch;
+  const alphaNumber = alphaValue === undefined ? 1 : Number(alphaValue);
+  if (alphaNumber === 0) return false;
+  return [red, green, blue].every((channel) => Number(channel) >= 245);
+};
+
+const parseCssColorChannels = (value) => {
+  if (!value) return null;
+  const normalized = value.toLowerCase().replace(/\s+/g, "");
+  if (normalized.includes("black")) return [0, 0, 0];
+
+  const rgbMatch = normalized.match(/rgba?\((\d+),(\d+),(\d+)(?:,([.\d]+))?\)/);
+  if (rgbMatch) {
+    const [, red, green, blue, alphaValue] = rgbMatch;
+    const alphaNumber = alphaValue === undefined ? 1 : Number(alphaValue);
+    if (alphaNumber === 0) return null;
+    return [red, green, blue].map(Number);
+  }
+
+  const hexMatch = normalized.match(/#([0-9a-f]{3}|[0-9a-f]{6})\b/);
+  if (!hexMatch) return null;
+
+  const hex = hexMatch[1];
+  if (hex.length === 3) {
+    return hex.split("").map((character) => parseInt(`${character}${character}`, 16));
+  }
+
+  return [
+    parseInt(hex.slice(0, 2), 16),
+    parseInt(hex.slice(2, 4), 16),
+    parseInt(hex.slice(4, 6), 16),
+  ];
+};
+
+const isDarkNeutralInlineText = (value) => {
+  const channels = parseCssColorChannels(value);
+  if (!channels) return false;
+
+  const darkest = Math.min(...channels);
+  const lightest = Math.max(...channels);
+  return lightest <= 90 && lightest - darkest <= 28;
+};
+
 const normalizeArticleHtml = (html) => {
   if (!html || typeof document === "undefined") return html;
 
@@ -60,6 +111,21 @@ const normalizeArticleHtml = (html) => {
 
   textNodes.forEach((node) => {
     node.nodeValue = (node.nodeValue ?? "").replace(/\u00a0/g, " ");
+  });
+
+  container.querySelectorAll("[style]").forEach((element) => {
+    const inlineBackground = element.style.background || "";
+    const inlineBackgroundColor = element.style.backgroundColor || "";
+    const inlineColor = element.style.color || "";
+
+    if (isLightInlineBackground(inlineBackground) || isLightInlineBackground(inlineBackgroundColor)) {
+      element.style.removeProperty("background");
+      element.style.removeProperty("background-color");
+    }
+
+    if (isDarkNeutralInlineText(inlineColor)) {
+      element.style.removeProperty("color");
+    }
   });
 
   container.querySelectorAll("a").forEach((anchor) => {
@@ -610,12 +676,12 @@ const ArticlePage = () => {
                   ...(theme.palette.mode === "dark" && {
                     "& span, & p, & strong, & em, & u, & s, & h1, & h2, & h3, & h4, & h5, & h6, & li, & blockquote": {
                       backgroundColor: "transparent !important",
-                      color: `${theme.palette.text.primary} !important`,
                     },
-                    "& [style*='background-color'], & [style*='background:']": {
+                    "& [style*='background-color' i], & [style*='background:' i]": {
                       backgroundColor: "transparent !important",
+                      background: "transparent !important",
                     },
-                    "& [style*='color: rgb(0'], & [style*='color:#000'], & [style*='color: #000'], & [style*='color:black'], & [style*='color: black']": {
+                    "& [style*='color: rgb(0' i], & [style*='color:#000' i], & [style*='color: #000' i], & [style*='color: #000000' i], & [style*='color:#000000' i], & [style*='color:black' i], & [style*='color: black' i]": {
                       color: `${theme.palette.text.primary} !important`,
                     },
                   }),

@@ -283,10 +283,18 @@ public class UserService {
                 ? request.getStudentId().trim()
                 : null;
 
-        return userOrganizationMemberRepository.upsertSelfRegistration(
+        return organizationRepository.findById(request.getOrganizationId())
+                .switchIfEmpty(Mono.error(new ApplicationException(
+                        ErrorCode.ORGANIZATION_NOT_FOUND,
+                        "Organization not found")))
+                .map(organization -> StringUtils.hasText(organization.getName())
+                        ? JsonUtils.toJson(List.of(organization.getName().trim()))
+                        : JsonUtils.toJson(List.of()))
+                .flatMap(defaultFaculty -> userOrganizationMemberRepository.upsertSelfRegistration(
                         request.getOrganizationId(),
                         userId,
                         studentId,
+                        defaultFaculty,
                         JsonUtils.toJson(request.getStartedYear()),
                         JsonUtils.toJson(request.getGraduatedYear()),
                         JsonUtils.toJson(request.getGraduationStatus()),
@@ -311,7 +319,7 @@ public class UserService {
                         "joinOrganization: userId={} organizationId={} updated",
                         userId,
                         request.getOrganizationId()))
-                .then();
+                .then());
     }
 
     public Mono<List<UserLoginHistoryResponse>> getMyLoginHistory(Long currentUserId, int page, int limit) {
@@ -377,7 +385,8 @@ public class UserService {
         Integer userId = currentUserId.intValue();
 
         Mono<Integer> updateGlobalProfile = userProfileRepository
-                .upsertProfileInfo(userId, request.getPhone(), request.getGender(), request.getBio(),
+                .upsertProfileInfo(userId, request.getFullName(), request.getPhone(), request.getGender(),
+                        request.getDob(), request.getBio(),
                         request.getCurrentJobTitle(), request.getCurrentCompany(),
                         request.getLinks() != null ? JsonUtils.toJson(request.getLinks()) : null);
 
@@ -385,6 +394,7 @@ public class UserService {
                 .updateAcademicProfileByOrganizationAndUserId(
                         request.getOrganizationId(),
                         userId,
+                request.getStudentId(),
                 JsonUtils.toJson(request.getProgram()),
                 JsonUtils.toJson(request.getStartedYear()),
                 JsonUtils.toJson(request.getGraduatedYear()),

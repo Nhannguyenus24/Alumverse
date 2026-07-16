@@ -4,10 +4,8 @@ import { useOutletContext } from 'react-router';
 import {
   Box,
   Typography,
-  Select,
   MenuItem,
-  FormControl,
-  InputLabel,
+  TextField,
   Stack,
   Table,
   TableBody,
@@ -132,14 +130,21 @@ const monitoringMetricGridSx = {
   display: 'grid',
   gridTemplateColumns: {
     xs: '1fr',
-    sm: 'repeat(2, minmax(0, 1fr))',
-    lg: 'repeat(4, minmax(0, 1fr))',
+    md: 'repeat(3, minmax(0, 1fr))',
   },
   gap: 3,
   alignItems: 'stretch',
   '& > *': {
     minWidth: 0,
     height: '100%',
+  },
+};
+
+const monitoringMetricPairGridSx = {
+  ...monitoringMetricGridSx,
+  gridTemplateColumns: {
+    xs: '1fr',
+    md: 'repeat(2, minmax(0, 1fr))',
   },
 };
 
@@ -656,19 +661,18 @@ const AdminSystemMonitoringPage = () => {
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-            <FormControl size="small" sx={{ minWidth: 150 }}>
-              <InputLabel sx={{ fontSize: 13, fontWeight: 600 }}>{t('admin:system_monitoring.time_range')}</InputLabel>
-              <Select
-                value={timeRange}
-                label={t("admin:system_monitoring.time_range")}
-                onChange={(e) => setTimeRange(e.target.value)}
-                sx={{ fontSize: 13, fontWeight: 700, bgcolor: 'background.paper', borderRadius: 1.5 }}
-              >
-                {TIME_RANGES.map((r) => (
-                  <MenuItem key={r.value} value={r.value} sx={{ fontSize: 13, fontWeight: 600 }}>{r.label}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <TextField
+              select
+              size="small"
+              label={t('admin:system_monitoring.time_range')}
+              value={timeRange}
+              onChange={(e) => setTimeRange(e.target.value)}
+              sx={{ minWidth: 150 }}
+            >
+              {TIME_RANGES.map((r) => (
+                <MenuItem key={r.value} value={r.value}>{r.label}</MenuItem>
+              ))}
+            </TextField>
 
             {timeRange === 'custom' && (
               <Stack direction="row" spacing={2}>
@@ -687,19 +691,19 @@ const AdminSystemMonitoringPage = () => {
               </Stack>
             )}
 
-            <FormControl size="small" sx={{ minWidth: 120 }} disabled={timeRange === 'custom'}>
-              <InputLabel sx={{ fontSize: 13, fontWeight: 600 }}>{t('admin:system_monitoring.auto_refresh')}</InputLabel>
-              <Select
-                value={refreshInterval}
-                label={t("admin:system_monitoring.auto_refresh")}
-                onChange={(e) => setRefreshInterval(e.target.value)}
-                sx={{ fontSize: 13, fontWeight: 700, bgcolor: 'background.paper', borderRadius: 1.5 }}
-              >
-                {REFRESH_INTERVALS.map((r) => (
-                  <MenuItem key={r.value} value={r.value} sx={{ fontSize: 13, fontWeight: 600 }}>{r.label}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <TextField
+              select
+              size="small"
+              label={t('admin:system_monitoring.auto_refresh')}
+              value={refreshInterval}
+              onChange={(e) => setRefreshInterval(e.target.value)}
+              disabled={timeRange === 'custom'}
+              sx={{ minWidth: 120 }}
+            >
+              {REFRESH_INTERVALS.map((r) => (
+                <MenuItem key={r.value} value={r.value}>{r.label}</MenuItem>
+              ))}
+            </TextField>
             <Tooltip title={t("admin:system_monitoring.force_refresh")}>
               <span>
                 <IconButton
@@ -714,14 +718,6 @@ const AdminSystemMonitoringPage = () => {
                     '&:hover': {
                       bgcolor: (theme) => alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.22 : 0.14),
                     },
-                    '& svg': {
-                      transition: 'transform 0.1s',
-                      animation: loading ? 'dashboardSpin 0.8s linear infinite' : 'none',
-                      '@keyframes dashboardSpin': {
-                        from: { transform: 'rotate(0deg)' },
-                        to: { transform: 'rotate(360deg)' },
-                      },
-                    },
                   }}
                 >
                   <RefreshIcon fontSize="small" />
@@ -730,6 +726,12 @@ const AdminSystemMonitoringPage = () => {
             </Tooltip>
           </Box>
         </Box>
+
+        {error && (
+          <Box sx={{ mb: 2 }}>
+            <Typography color="error">{error}</Typography>
+          </Box>
+        )}
 
         {loading && chartData.length === 0 && (
           <Box sx={{ display: 'flex', justifyContent: 'center', p: 5 }}>
@@ -740,38 +742,42 @@ const AdminSystemMonitoringPage = () => {
         {chartData.length > 0 && (
           <Stack spacing={3}>
             {/* Summary Stats */}
-            <Box sx={monitoringMetricGridSx}>
-              <AdminDashboardMetricTile
-                label={t('admin:system_monitoring.total_requests_all_time')}
-                value={summaryStats.totalRequests.toLocaleString()}
-                icon={<QueryStatsOutlinedIcon />}
-                sx={{ flex: 'unset', borderRadius: 2.5 }}
-              />
-              <AdminDashboardMetricTile
-                label={t('admin:system_monitoring.total_errors_all_time')}
-                value={summaryStats.totalErrors.toLocaleString()}
-                icon={<ErrorOutlineOutlinedIcon />}
-                sx={{ flex: 'unset', borderRadius: 2.5 }}
-              />
-              <AdminDashboardMetricTile
-                label={t('admin:system_monitoring.error_rate')}
-                value={`${summaryStats.errorRate.toFixed(2)}%`}
-                icon={<SpeedOutlinedIcon />}
-                sx={{ flex: 'unset', borderRadius: 2.5 }}
-              />
-              <AdminDashboardMetricTile
-                label={t('admin:system_monitoring.avg_latency_5m')}
-                value={`${Number.isFinite(summaryStats.avgLatency) ? summaryStats.avgLatency.toFixed(2) : '0.00'} ms`}
-                icon={<TimerOutlinedIcon />}
-                sx={{ flex: 'unset', borderRadius: 2.5 }}
-              />
-              <AdminDashboardMetricTile
-                label={t('admin:system_monitoring.uptime')}
-                value={formatUptime(summaryStats.uptimeSeconds)}
-                icon={<AccessTimeOutlinedIcon />}
-                sx={{ flex: 'unset', borderRadius: 2.5 }}
-              />
-            </Box>
+            <Stack spacing={3}>
+              <Box sx={monitoringMetricGridSx}>
+                <AdminDashboardMetricTile
+                  label={t('admin:system_monitoring.total_requests_all_time')}
+                  value={summaryStats.totalRequests.toLocaleString()}
+                  icon={<QueryStatsOutlinedIcon />}
+                  sx={{ flex: 'unset', borderRadius: 2.5 }}
+                />
+                <AdminDashboardMetricTile
+                  label={t('admin:system_monitoring.avg_latency_5m')}
+                  value={`${Number.isFinite(summaryStats.avgLatency) ? summaryStats.avgLatency.toFixed(2) : '0.00'} ms`}
+                  icon={<TimerOutlinedIcon />}
+                  sx={{ flex: 'unset', borderRadius: 2.5 }}
+                />
+                <AdminDashboardMetricTile
+                  label={t('admin:system_monitoring.uptime')}
+                  value={formatUptime(summaryStats.uptimeSeconds)}
+                  icon={<AccessTimeOutlinedIcon />}
+                  sx={{ flex: 'unset', borderRadius: 2.5 }}
+                />
+              </Box>
+              <Box sx={monitoringMetricPairGridSx}>
+                <AdminDashboardMetricTile
+                  label={t('admin:system_monitoring.total_errors_all_time')}
+                  value={summaryStats.totalErrors.toLocaleString()}
+                  icon={<ErrorOutlineOutlinedIcon />}
+                  sx={{ flex: 'unset', borderRadius: 2.5 }}
+                />
+                <AdminDashboardMetricTile
+                  label={t('admin:system_monitoring.error_rate')}
+                  value={`${summaryStats.errorRate.toFixed(2)}%`}
+                  icon={<SpeedOutlinedIcon />}
+                  sx={{ flex: 'unset', borderRadius: 2.5 }}
+                />
+              </Box>
+            </Stack>
 
             {/* Top Endpoints & Exceptions Tables */}
             <Box sx={monitoringPanelGridSx}>

@@ -19,29 +19,95 @@ import {
 } from '@mui/material';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
+import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import {
   GRADUATION_STATUSES,
   USER_ROLES,
   VERIFICATION_LEVELS,
 } from '../../constants/adminDefaultUsers';
 import { formatAccountStatusLabel } from '../../constants/adminStatusDisplay';
+import { GENDER_OPTIONS, GENDER_LABEL_KEYS, normalizeGender } from '../../constants/gender';
 import { getTrustedVerifiers } from '../../utils/api';
 
 const defaultEmptyForm = {
   email: '',
   studentId: '',
   fullName: '',
+  phone: '',
+  dob: '',
+  gender: '',
   password: '',
   role: 'USER',
   status: 'ACTIVE',
   organizationId: '',
   verificationLevel: 0,
   isTrustedVerifier: false,
+  academicRows: [],
+  requirePasswordChange: false,
+};
+
+const emptyAcademicRow = {
+  faculty: '',
+  department: '',
   program: '',
   major: '',
+  startedYear: '',
   graduatedYear: '',
   graduationStatus: '',
-  requirePasswordChange: false,
+};
+
+const asArray = (value) => {
+  if (Array.isArray(value)) return value;
+  return value || value === 0 ? [value] : [];
+};
+
+const normalizeGraduationStatus = (value) => {
+  if (!value) return '';
+  const raw = String(value).trim();
+  const upper = raw.toUpperCase();
+  if (upper === 'STUDYING' || upper.includes('ĐANG') || upper.includes('DANG')) return 'STUDYING';
+  if (upper === 'GRADUATED' || upper.includes('TỐT') || upper.includes('TOT')) return 'GRADUATED';
+  if (upper === 'DROPPED' || upper.includes('BỎ') || upper.includes('BO') || upper.includes('NGHỈ') || upper.includes('NGHI') || upper.includes('THÔI') || upper.includes('THOI')) return 'DROPPED';
+  return raw;
+};
+
+const buildAcademicRows = (source = {}) => {
+  const programs = asArray(source.program);
+  const faculties = asArray(source.faculty);
+  const departments = asArray(source.department);
+  const majors = asArray(source.major);
+  const startedYears = asArray(source.startedYear);
+  const graduatedYears = asArray(source.graduatedYear);
+  const graduationStatuses = asArray(source.graduationStatus);
+  const count = Math.max(
+    1,
+    faculties.length,
+    departments.length,
+    programs.length,
+    majors.length,
+    startedYears.length,
+    graduatedYears.length,
+    graduationStatuses.length,
+  );
+  return Array.from({ length: count }, (_, index) => ({
+    faculty: faculties[index] ?? source.organizationName ?? '',
+    department: departments[index] ?? '',
+    program: programs[index] ?? '',
+    major: majors[index] ?? '',
+    startedYear: startedYears[index] ?? '',
+    graduatedYear: graduatedYears[index] ?? '',
+    graduationStatus: normalizeGraduationStatus(graduationStatuses[index] ?? ''),
+  }));
+};
+
+const compactAcademicArray = (rows, key, mapper = (value) => value) => {
+  const values = rows
+    .map((row) => row[key])
+    .map((value) => (typeof value === 'string' ? value.trim() : value))
+    .map((value) => (value === '' || value === null || value === undefined ? null : mapper(value)));
+  const hasAny = values.some((value) => value !== null && value !== undefined && value !== '');
+  return hasAny ? values.map((value) => value ?? '') : undefined;
 };
 
 const resolvedFullNameForEdit = (u) => {
@@ -92,8 +158,8 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
   const [initialTrustedVerifier, setInitialTrustedVerifier] = useState(false);
   const [initialForm, setInitialForm] = useState(null);
   const isEditMode = mode === 'edit';
-  const isMembershipReadOnly = isEditMode;
-  const isProfileReadOnly = isEditMode;
+  const isMembershipReadOnly = false;
+  const isProfileReadOnly = false;
 
   useEffect(() => {
     if (!open) return;
@@ -103,20 +169,28 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
       if (mode === 'edit' && user) {
         const resolvedOrganizationId = user.organizationId ?? firstOrganizationId;
         const trustedVerifierValue = Boolean(user.isTrustedVerifier);
+        const academicRows = buildAcademicRows(user);
         const nextForm = {
           email: user.email || '',
           studentId: user.studentId || '',
           fullName: resolvedFullNameForEdit(user),
+          phone: user.phone || '',
+          dob: user.dob || '',
+          gender: user.gender ? normalizeGender(user.gender) : '',
           password: '',
           role: user.role || 'USER',
           status: user.status || 'ACTIVE',
           organizationId: resolvedOrganizationId,
           verificationLevel: user.verificationLevel ?? 0,
           isTrustedVerifier: trustedVerifierValue,
-          program: Array.isArray(user.program) ? user.program[0] ?? '' : user.program || '',
-          major: Array.isArray(user.major) ? user.major[0] ?? '' : user.major || '',
-          graduatedYear: Array.isArray(user.graduatedYear) ? user.graduatedYear[0] ?? '' : user.graduatedYear || '',
-          graduationStatus: Array.isArray(user.graduationStatus) ? user.graduationStatus[0] ?? '' : user.graduationStatus || '',
+          faculty: academicRows.map((row) => row.faculty),
+          department: academicRows.map((row) => row.department),
+          program: asArray(user.program),
+          major: asArray(user.major),
+          startedYear: asArray(user.startedYear).map(String),
+          graduatedYear: asArray(user.graduatedYear).map(Number),
+          graduationStatus: asArray(user.graduationStatus).map(normalizeGraduationStatus),
+          academicRows,
           requirePasswordChange: false,
         };
         setInitialTrustedVerifier(trustedVerifierValue);
@@ -139,7 +213,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
       } else {
         setInitialTrustedVerifier(false);
         setInitialForm(null);
-        setForm({ ...defaultEmptyForm, role: 'USER', organizationId: firstOrganizationId });
+        setForm({ ...defaultEmptyForm, role: 'USER', organizationId: firstOrganizationId, academicRows: [{ ...emptyAcademicRow }] });
       }
       setErrors({});
     }, 0);
@@ -161,14 +235,47 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: '' }));
   };
 
+  const handleAcademicRowChange = (index, field) => (event) => {
+    const value = event.target.value;
+    setForm((prev) => ({
+      ...prev,
+      academicRows: prev.academicRows.map((row, rowIndex) => (
+        rowIndex === index ? { ...row, [field]: value } : row
+      )),
+    }));
+    const errorKey = `${field}-${index}`;
+    if (errors[errorKey]) setErrors((prev) => ({ ...prev, [errorKey]: '' }));
+  };
+
+  const addAcademicRow = () => {
+    setForm((prev) => ({
+      ...prev,
+      academicRows: [...(prev.academicRows.length ? prev.academicRows : [{ ...emptyAcademicRow }]), { ...emptyAcademicRow }],
+    }));
+  };
+
+  const removeAcademicRow = (index) => {
+    setForm((prev) => ({
+      ...prev,
+      academicRows: prev.academicRows.length <= 1
+        ? [{ ...emptyAcademicRow }]
+        : prev.academicRows.filter((_, rowIndex) => rowIndex !== index),
+    }));
+  };
+
   const validate = () => {
     const next = {};
     if (!form.email.trim()) next.email = t('admin:error_email_required');
     if (!form.fullName.trim()) next.fullName = t('admin:error_full_name_required');
     if (form.password && form.password.length < 8) next.password = t('admin:error_password_min_length');
-    if (form.graduatedYear && !/^\d{4}$/.test(String(form.graduatedYear).trim())) {
-      next.graduatedYear = t('admin:error_graduated_year_format');
-    }
+    form.academicRows.forEach((row, index) => {
+      if (row.graduatedYear && !/^\d{4}$/.test(String(row.graduatedYear).trim())) {
+        next[`graduatedYear-${index}`] = t('admin:error_graduated_year_format');
+      }
+      if (row.startedYear && !/^\d{4}$/.test(String(row.startedYear).trim())) {
+        next[`startedYear-${index}`] = t('admin:error_started_year_format', { defaultValue: 'Khóa phải là 4 chữ số (vd: 2020)' });
+      }
+    });
     setErrors(next);
     const keys = Object.keys(next);
     if (keys.length > 0) enqueueSnackbar(next[keys[0]], { variant: 'error' });
@@ -182,22 +289,32 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
       return;
     }
     const org = organizationOptions.find((o) => Number(o.id) === Number(form.organizationId));
+    const academicRows = form.academicRows.length ? form.academicRows : [{ ...emptyAcademicRow }];
+    const hasAcademicContent = academicRows.some((row) => (
+      row.faculty || row.department || row.program || row.major || row.startedYear || row.graduatedYear || row.graduationStatus
+    ));
     const fullPayload = {
       email: form.email,
+      studentId: form.studentId,
+      fullName: form.fullName,
+      phone: form.phone,
+      dob: form.dob,
+      gender: form.gender,
       role: form.role,
       status: form.status,
+      verificationLevel: Number(form.verificationLevel),
+      faculty: hasAcademicContent ? compactAcademicArray(academicRows, 'faculty') : undefined,
+      department: hasAcademicContent ? compactAcademicArray(academicRows, 'department') : undefined,
+      program: compactAcademicArray(academicRows, 'program'),
+      major: compactAcademicArray(academicRows, 'major'),
+      startedYear: compactAcademicArray(academicRows, 'startedYear', String),
+      graduatedYear: compactAcademicArray(academicRows, 'graduatedYear', Number),
+      graduationStatus: compactAcademicArray(academicRows, 'graduationStatus', normalizeGraduationStatus),
     };
     if (!isEditMode) {
       Object.assign(fullPayload, {
-        studentId: form.studentId,
-        fullName: form.fullName,
         organizationId: Number(form.organizationId),
         organizationName: org?.name ?? '',
-        verificationLevel: Number(form.verificationLevel),
-        program: form.program.trim() ? [form.program.trim()] : undefined,
-        major: form.major.trim() ? [form.major.trim()] : undefined,
-        graduatedYear: form.graduatedYear ? [Number(form.graduatedYear)] : undefined,
-        graduationStatus: form.graduationStatus ? [form.graduationStatus] : undefined,
       });
     }
     const payload = mode === 'edit' && initialForm ? {} : { ...fullPayload };
@@ -267,6 +384,42 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
             slotProps={slotProps}
           />
         </Box>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+          <TextField
+            label={t('admin:user_detail_field_phone')}
+            value={form.phone}
+            onChange={handleChange('phone')}
+            fullWidth
+            slotProps={slotProps}
+          />
+          <TextField
+            label={t('admin:user_detail_field_dob')}
+            type="date"
+            value={form.dob}
+            onChange={handleChange('dob')}
+            fullWidth
+            slotProps={slotProps}
+          />
+          <TextField
+            select
+            label={t('admin:user_detail_field_gender')}
+            value={form.gender}
+            onChange={handleChange('gender')}
+            fullWidth
+            slotProps={slotProps}
+          >
+            <MenuItem value="">{t('admin:no_selection')}</MenuItem>
+            {GENDER_OPTIONS.map((g) => (
+              <MenuItem key={g} value={g}>{t(`admin:${GENDER_LABEL_KEYS[g]}`, { defaultValue: t(`settings:${GENDER_LABEL_KEYS[g]}`) })}</MenuItem>
+            ))}
+          </TextField>
+        </Box>
+
+        <Divider />
+
+        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>
+          {t('admin:password_section', { defaultValue: 'Mật khẩu' })}
+        </Typography>
         <TextField
           label={mode === 'edit' ? t('admin:password_new_optional') : t('admin:password_default_hint')}
           type={showPassword ? 'text' : 'password'}
@@ -289,6 +442,12 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
             },
           }}
         />
+
+        <Divider />
+
+        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>
+          {t('admin:organization_section', { defaultValue: 'Tổ chức' })}
+        </Typography>
         <TextField
           select
           label={t('admin:organization_label')}
@@ -331,55 +490,103 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
           {t('admin:education_verification_section')}
         </Typography>
 
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <TextField
-            label={t('admin:education_program_label')}
-            value={form.program}
-            onChange={handleChange('program')}
-            disabled={isMembershipReadOnly}
-            fullWidth
-            placeholder={t('admin:education_program_placeholder')}
-            slotProps={slotProps}
-          />
-          <TextField
-            label={t('admin:education_major_label')}
-            value={form.major}
-            onChange={handleChange('major')}
-            disabled={isMembershipReadOnly}
-            fullWidth
-            placeholder={t('admin:education_major_placeholder')}
-            slotProps={slotProps}
-          />
-        </Box>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <TextField
-            label={t('admin:graduated_year_label')}
-            value={form.graduatedYear}
-            onChange={handleChange('graduatedYear')}
-            error={!!errors.graduatedYear}
-            helperText={errors.graduatedYear}
-            disabled={isMembershipReadOnly}
-            fullWidth
-            placeholder={t('admin:year_placeholder')}
-            slotProps={slotProps}
-          />
-          <TextField
-            select
-            label={t('admin:graduation_status_label')}
-            value={form.graduationStatus}
-            onChange={handleChange('graduationStatus')}
-            disabled={isMembershipReadOnly}
-            fullWidth
-            slotProps={slotProps}
-          >
-            <MenuItem value="">{t('admin:no_selection')}</MenuItem>
-            {GRADUATION_STATUSES.map((s) => (
-              <MenuItem key={s} value={s}>
-                {t(`admin:graduation_status.${s}`)}
-              </MenuItem>
-            ))}
-          </TextField>
-        </Box>
+        {(form.academicRows.length ? form.academicRows : [{ ...emptyAcademicRow }]).map((row, index) => {
+          return (
+            <Box key={`academic-${index}`} sx={{ border: 1, borderColor: 'divider', borderRadius: 2, p: 1.5 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+                <Typography variant="body2" sx={{ fontWeight: 700, color: 'primary.main' }}>
+                  {t('admin:academic_record_title', { defaultValue: 'Học vấn {{index}}', index: index + 1 })}
+                </Typography>
+                <IconButton size="small" color="error" onClick={() => removeAcademicRow(index)} disabled={form.academicRows.length <= 1}>
+                  <DeleteOutlineOutlinedIcon fontSize="small" />
+                </IconButton>
+              </Box>
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+                <TextField
+                  label={t('admin:education_faculty_label', { defaultValue: 'Khoa' })}
+                  value={row.faculty}
+                  onChange={handleAcademicRowChange(index, 'faculty')}
+                  disabled={isMembershipReadOnly}
+                  fullWidth
+                  slotProps={slotProps}
+                />
+                <TextField
+                  label={t('admin:edu_field_department', { defaultValue: 'Bộ môn' })}
+                  value={row.department}
+                  onChange={handleAcademicRowChange(index, 'department')}
+                  disabled={isMembershipReadOnly}
+                  fullWidth
+                  slotProps={slotProps}
+                />
+                <TextField
+                  label={t('admin:education_major_label')}
+                  value={row.major}
+                  onChange={handleAcademicRowChange(index, 'major')}
+                  disabled={isMembershipReadOnly}
+                  fullWidth
+                  placeholder={t('admin:education_major_placeholder')}
+                  slotProps={slotProps}
+                />
+                <TextField
+                  label={t('admin:education_program_label')}
+                  value={row.program}
+                  onChange={handleAcademicRowChange(index, 'program')}
+                  disabled={isMembershipReadOnly}
+                  fullWidth
+                  placeholder={t('admin:education_program_placeholder')}
+                  slotProps={slotProps}
+                />
+                <TextField
+                  label={t('admin:started_year_label', { defaultValue: 'Khóa' })}
+                  value={row.startedYear}
+                  onChange={handleAcademicRowChange(index, 'startedYear')}
+                  error={!!errors[`startedYear-${index}`]}
+                  helperText={errors[`startedYear-${index}`]}
+                  disabled={isMembershipReadOnly}
+                  fullWidth
+                  placeholder={t('admin:year_placeholder')}
+                  slotProps={slotProps}
+                />
+                <TextField
+                  label={t('admin:graduated_year_label')}
+                  value={row.graduatedYear}
+                  onChange={handleAcademicRowChange(index, 'graduatedYear')}
+                  error={!!errors[`graduatedYear-${index}`]}
+                  helperText={errors[`graduatedYear-${index}`]}
+                  disabled={isMembershipReadOnly}
+                  fullWidth
+                  placeholder={t('admin:year_placeholder')}
+                  slotProps={slotProps}
+                />
+                <TextField
+                  select
+                  label={t('admin:graduation_status_label')}
+                  value={row.graduationStatus}
+                  onChange={handleAcademicRowChange(index, 'graduationStatus')}
+                  disabled={isMembershipReadOnly}
+                  fullWidth
+                  slotProps={slotProps}
+                >
+                  <MenuItem value="">{t('admin:no_selection')}</MenuItem>
+                  {GRADUATION_STATUSES.map((s) => (
+                    <MenuItem key={s} value={s}>
+                      {t(`admin:graduation_status.${s}`)}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Box>
+            </Box>
+          );
+        })}
+        <Button
+          variant="outlined"
+          color="secondary"
+          startIcon={<AddOutlinedIcon />}
+          onClick={addAcademicRow}
+          sx={{ alignSelf: 'flex-end', mt: 0.5, mb: 1.5 }}
+        >
+          {t('admin:add_academic_record', { defaultValue: 'Thêm học vấn' })}
+        </Button>
         <TextField
           select
           label={t('admin:verification_level_label')}
@@ -390,7 +597,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
         >
           {VERIFICATION_LEVELS.map((level) => (
             <MenuItem key={level} value={level}>
-              {level} — {t(`admin:verification_level.${level}`, { defaultValue: String(level) })}
+              {level} - {t(`admin:verification_level.${level}`, { defaultValue: String(level) })}
             </MenuItem>
           ))}
         </TextField>

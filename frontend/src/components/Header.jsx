@@ -36,6 +36,12 @@ const VERIFICATION_LABELS = {
   1: 'Verifying',
   2: 'Alumni',
   3: 'Student',
+  4: 'Admin',
+};
+
+const PRIVILEGED_ROLE_LABELS = {
+  ADMIN: 'Admin',
+  STAFF: 'Staff',
 };
 
 const HEADER_TOOLTIP_SLOT_PROPS = {
@@ -119,11 +125,18 @@ const Header = () => {
   const { displayName, displayRole } = useMemo(() => {
     const name = user?.fullName ?? 'User';
     const rawRole = user?.role ?? 'Student';
+    const normalizedRole = String(rawRole).toUpperCase();
+    if (normalizedRole === 'ADMIN') {
+      return { displayName: name, displayRole: PRIVILEGED_ROLE_LABELS.ADMIN };
+    }
+    if (Number(verificationLevel) === 4 && normalizedRole === 'STAFF') {
+      return { displayName: name, displayRole: PRIVILEGED_ROLE_LABELS.STAFF };
+    }
     const verLabel = verificationLevel != null
       ? (VERIFICATION_LABELS[verificationLevel] ?? rawRole.charAt(0) + rawRole.slice(1).toLowerCase())
       : rawRole.charAt(0) + rawRole.slice(1).toLowerCase();
-    return { displayName: name, displayRole: isAdmin ? 'Admin' : verLabel };
-  }, [user, verificationLevel, isAdmin]);
+    return { displayName: name, displayRole: verLabel };
+  }, [user, verificationLevel]);
 
   const { isEnabled: isFeatureEnabled } = useFeatureFlags();
   const navItems = useMemo(

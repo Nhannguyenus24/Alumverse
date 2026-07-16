@@ -85,10 +85,9 @@ const NAV_GROUPS = (adminBase, t) => [
       { to: `${adminBase}/feedbacks`, icon: <FeedbackOutlinedIcon />, label: t('admin:nav_feedbacks') },
       { to: `${adminBase}/education-requests`, icon: <HistoryEduOutlinedIcon />, label: t('admin:nav_education_requests') },
       { to: `${adminBase}/audit-logs`, icon: <GavelOutlinedIcon />, label: t('admin:nav_audit_logs') },
-      { to: `${adminBase}/bot-config`, icon: <SmartToyOutlinedIcon />, label: t('admin:nav_bot_config'), roles: ['ADMIN'] },
       { to: `${adminBase}/email-templates`, icon: <MarkEmailReadOutlinedIcon />, label: t('admin:nav_email_templates'), roles: ['ADMIN'] },
-      { to: `${adminBase}/ai-providers`, icon: <SmartToyOutlinedIcon />, label: t('admin:nav_ai_providers'), roles: ['ADMIN'] },
-      { to: `${adminBase}/monitoring`, icon: <TimelineOutlinedIcon />, label: 'System Monitoring', roles: ['ADMIN'] },
+      { to: `${adminBase}/bot-config`, icon: <SmartToyOutlinedIcon />, label: t('admin:nav_bot_config'), roles: ['ADMIN'] },
+      { to: `${adminBase}/monitoring`, icon: <TimelineOutlinedIcon />, label: t('admin:nav_monitoring'), roles: ['ADMIN'] },
     ],
   },
 ];

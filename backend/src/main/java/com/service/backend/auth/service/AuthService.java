@@ -229,6 +229,20 @@ public class AuthService {
         return authRepository.getVerificationLevelByUserIdAndOrgId(userId, organizationId);
     }
 
+    public Mono<Integer> getEffectiveVerificationLevel(User user, Integer organizationId) {
+        if (user.getRole() == UserRole.ADMIN) {
+            return Mono.just(4);
+        }
+        if (organizationId == null) {
+            return Mono.error(new ApplicationException(ErrorCode.FORBIDDEN, "Organization ID is required for non-admin users"));
+        }
+        if (user.getRole() == UserRole.STAFF) {
+            return authRepository.existsOrganizationMemberByUserIdAndOrgId(user.getId(), organizationId)
+                    .map(isMember -> Boolean.TRUE.equals(isMember) ? 4 : 2);
+        }
+        return getVerificationLevel(user.getId(), organizationId).defaultIfEmpty(0);
+    }
+
     public Mono<Void> sendOtpVerification(String email) {
         return authRepository.findByEmail(email)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND)))
@@ -399,15 +413,8 @@ public class AuthService {
                                 return Mono.error(new ApplicationException(ErrorCode.FORBIDDEN, "Organization ID is required for non-admin users"));
                             }
 
-                            return getVerificationLevel(user.getId(), organizationId)
-                                    .defaultIfEmpty(0)
-                                    .map(level -> {
-                                        int finalLevel = level;
-                                        if (user.getRole() == UserRole.STAFF) {
-                                            finalLevel = (level == 4) ? 4 : 2;
-                                        }
-                                        return buildRefreshResponse(user, organizationId, finalLevel);
-                                    });
+                            return getEffectiveVerificationLevel(user, organizationId)
+                                    .map(level -> buildRefreshResponse(user, organizationId, level));
                         }))
                 .doOnSuccess(res -> meterRegistry.counter("auth.token.refresh", "result", "success").increment())
                 .doOnError(error -> meterRegistry.counter("auth.token.refresh", "result", "failure").increment());
@@ -439,14 +446,9 @@ public class AuthService {
                 .flatMap(user -> {
                     String newAccessToken = jwtUtils.generateAccessToken(user, newOrganizationId);
 
-                    return getVerificationLevel(user.getId(), newOrganizationId)
-                            .defaultIfEmpty(0)
+                    return getEffectiveVerificationLevel(user, newOrganizationId)
                             .map(level -> {
-                                int finalLevel = level;
-                                if (user.getRole() == UserRole.STAFF) {
-                                    finalLevel = (level == 4) ? 4 : 2;
-                                }
-                                return reactor.util.function.Tuples.of(newAccessToken, finalLevel);
+                                return reactor.util.function.Tuples.of(newAccessToken, level);
                             })
                             .doOnSuccess(tuple -> {
                                 Integer level = tuple.getT2();

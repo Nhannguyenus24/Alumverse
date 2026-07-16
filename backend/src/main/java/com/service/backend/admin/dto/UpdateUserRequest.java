@@ -4,6 +4,7 @@ import com.service.backend.shared.enums.Status;
 import com.service.backend.shared.enums.UserRole;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Min;
+import java.time.LocalDate;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -20,12 +21,19 @@ public class UpdateUserRequest {
     private Status status;
     /** Display name stored on users.full_name (updated when non-blank). */
     private String fullName;
+    private String phone;
+    private LocalDate dob;
+    private String gender;
+    private String password;
     /** Moves the user's primary membership (lowest organization_members.id) or creates one. */
     private Integer organizationId;
+    private List<String> faculty;
+    private List<String> startedYear;
     private List<Integer> graduatedYear;
     private List<String> graduationStatus;
     private List<String> program;
     private List<String> major;
+    private List<String> department;
     @Min(value = 0, message = "Verification level must be at least 0")
     private Integer verificationLevel;
     private Boolean isTrustedVerifier;

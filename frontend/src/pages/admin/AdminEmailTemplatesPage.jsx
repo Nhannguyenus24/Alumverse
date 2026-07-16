@@ -1,10 +1,8 @@
-import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useOutletContext } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import {
-  Box, Typography, Button, TextField, Stack, Table, TableBody, TableCell,
-  TableContainer, TableHead, TableRow, Paper, IconButton,
+  Box, Typography, Button, TextField, Stack, IconButton,
   Chip, Alert, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions,
   Tabs, Tab, Tooltip, CircularProgress, Divider
 } from '@mui/material';
@@ -15,6 +13,7 @@ import SaveIcon from '@mui/icons-material/Save';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import CodeIcon from '@mui/icons-material/Code';
 import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
+import AdminDataTable from '../../components/admin/AdminDataTable';
 import WYSIWYG from '../../components/WYSIWYG';
 import useAdminEmailTemplates, { buildSampleData } from '../../hooks/admin/useAdminEmailTemplates';
 import { useSnackbar } from 'notistack';
@@ -54,6 +53,34 @@ const AdminEmailTemplatesPage = () => {
   const htmlRef = useRef(null);
 
   const isRegionMode = Boolean(selected?.editable) && !advanced;
+  const templateColumns = useMemo(() => [
+    {
+      id: 'templateCode',
+      label: t('et_col_code'),
+      minWidth: 220,
+      render: (value) => (
+        <Typography component="span" sx={{ fontFamily: 'monospace', fontWeight: 700 }}>
+          {value}
+        </Typography>
+      ),
+    },
+    {
+      id: 'description',
+      label: t('et_col_description'),
+      minWidth: 320,
+    },
+    {
+      id: 'actions',
+      label: t('col_actions'),
+      align: 'right',
+      width: 120,
+      render: (_, row) => (
+        <IconButton color="primary" onClick={() => openEditor(row.id)} title={t('et_edit')}>
+          <EditOutlinedIcon />
+        </IconButton>
+      ),
+    },
+  ], [t]);
 
   const dirty = useMemo(() => {
     if (!selected) return false;
@@ -176,38 +203,16 @@ const AdminEmailTemplatesPage = () => {
   };
 
   const renderList = () => (
-    <AdminSectionPanel title={t('email_templates_title')} subtitle={t('email_templates_subtitle')}>
-      <TableContainer component={Paper} variant="outlined">
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ bgcolor: 'primary.main', color: 'primary.contrastText', fontWeight: 800 }}>{t('et_col_code')}</TableCell>
-              <TableCell sx={{ bgcolor: 'primary.main', color: 'primary.contrastText', fontWeight: 800 }}>{t('et_col_description')}</TableCell>
-              <TableCell align="right" sx={{ bgcolor: 'primary.main', color: 'primary.contrastText', fontWeight: 800 }}>{t('col_actions')}</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {loading ? (
-              <TableRow><TableCell colSpan={3} align="center"><LoadingSkeleton /></TableCell></TableRow>
-            ) : templates.length === 0 ? (
-              <TableRow><TableCell colSpan={3} align="center">{t('et_no_templates')}</TableCell></TableRow>
-            ) : (
-              templates.map((tpl) => (
-                <TableRow key={tpl.id} hover>
-                  <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>{tpl.templateCode}</TableCell>
-                  <TableCell>{tpl.description}</TableCell>
-                  <TableCell align="right">
-                    <IconButton color="primary" onClick={() => openEditor(tpl.id)} title={t('et_edit')}>
-                      <EditOutlinedIcon />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
-    </AdminSectionPanel>
+    <AdminDataTable
+      columns={templateColumns}
+      rows={templates}
+      totalCount={templates.length}
+      page={0}
+      rowsPerPage={Math.max(templates.length, 10)}
+      loading={loading}
+      emptyMessage={t('et_no_templates')}
+      getRowId={(row) => row.id}
+    />
   );
 
   const renderVariablesReference = () => (

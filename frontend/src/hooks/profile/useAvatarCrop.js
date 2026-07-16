@@ -69,6 +69,7 @@ export default function useAvatarCrop() {
 
     avatarUrl,
     avatarPreview,
+    setAvatarUrl,
 
     crop,
     zoom,
