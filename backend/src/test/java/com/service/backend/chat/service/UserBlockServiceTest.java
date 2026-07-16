@@ -4,7 +4,6 @@ import com.service.backend.chat.dao.UserBlockRepository;
 import com.service.backend.shared.entity.UserBlock;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
-import com.service.backend.user.dao.UserOrganizationMemberRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -26,7 +25,6 @@ import static org.mockito.Mockito.*;
 class UserBlockServiceTest {
 
     @Mock private UserBlockRepository userBlockRepository;
-    @Mock private UserOrganizationMemberRepository userOrganizationMemberRepository;
 
     @InjectMocks
     private UserBlockService userBlockService;
@@ -40,8 +38,10 @@ class UserBlockServiceTest {
         @Test
         @DisplayName("should fail when blocking yourself")
         void blockUser_selfBlock() {
+            // .then(...) eagerly builds the count Mono even though the self-block error
+            // short-circuits before it is subscribed, so the stub must still be present.
             when(userBlockRepository.countByBlockerMemberIdAndBlockedMemberId(1L, 1L)).thenReturn(Mono.just(0L));
-            StepVerifier.create(userBlockService.blockUser(1L, 1L, 1))
+            StepVerifier.create(userBlockService.blockUser(1L, 1L))
                     .expectErrorMatches(err -> err instanceof ApplicationException &&
                             ((ApplicationException) err).getErrorCode() == ErrorCode.CANNOT_BLOCK_SELF)
                     .verify();
@@ -50,12 +50,10 @@ class UserBlockServiceTest {
         @Test
         @DisplayName("should fail when block relationship already exists (same direction)")
         void blockUser_alreadyBlocked() {
-            when(userOrganizationMemberRepository.findByOrganizationIdAndUserId(1, 2))
-                    .thenReturn(Mono.just(com.service.backend.shared.entity.OrganizationMember.builder().build()));
             when(userBlockRepository.countByBlockerMemberIdAndBlockedMemberId(1L, 2L))
                     .thenReturn(Mono.just(1L));
 
-            StepVerifier.create(userBlockService.blockUser(1L, 2L, 1))
+            StepVerifier.create(userBlockService.blockUser(1L, 2L))
                     .expectErrorMatches(err -> err instanceof ApplicationException &&
                             ((ApplicationException) err).getErrorCode() == ErrorCode.USER_ALREADY_BLOCKED)
                     .verify();
@@ -71,15 +69,13 @@ class UserBlockServiceTest {
                     .createdAt(LocalDateTime.now())
                     .build();
 
-            when(userOrganizationMemberRepository.findByOrganizationIdAndUserId(1, 2))
-                    .thenReturn(Mono.just(com.service.backend.shared.entity.OrganizationMember.builder().build()));
             when(userBlockRepository.countByBlockerMemberIdAndBlockedMemberId(1L, 2L))
                     .thenReturn(Mono.just(0L));
             when(userBlockRepository.countAnyBlockBetweenMembers(1L, 2L))
                     .thenReturn(Mono.just(0L));
             when(userBlockRepository.save(any())).thenReturn(Mono.just(savedBlock));
 
-            StepVerifier.create(userBlockService.blockUser(1L, 2L, 1))
+            StepVerifier.create(userBlockService.blockUser(1L, 2L))
                     .assertNext(block -> {
                         assertThat(block.getBlockerMemberId()).isEqualTo(1L);
                         assertThat(block.getBlockedMemberId()).isEqualTo(2L);

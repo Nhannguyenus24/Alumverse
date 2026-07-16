@@ -24,21 +24,16 @@ public class ConnectionSearchService {
         String fullNamePattern = toContainsPattern(fullName);
         int offset = page * size;
 
-        return Mono.zip(
-                        SecurityUtils.getCurrentOrganizationId(),
-                        SecurityUtils.getCurrentUserId())
-                .flatMap(tuple -> {
-                    Integer organizationId = tuple.getT1();
-                    Long currentUserId = tuple.getT2();
-
+        // Connections are personal and org-agnostic: return all accepted connections of the
+        // current user regardless of organization.
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(currentUserId -> {
                     Mono<Long> totalMono = connectionSearchRepository.countConnections(
-                            organizationId,
                             currentUserId,
                             fullNamePattern);
 
                     return PaginationHelper.paginate(
                             connectionSearchRepository.searchConnections(
-                                    organizationId,
                                     currentUserId,
                                     fullNamePattern,
                                     size,

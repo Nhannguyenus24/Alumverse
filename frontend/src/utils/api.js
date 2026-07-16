@@ -438,6 +438,8 @@ export const chatApi = {
 	},
 
 	async searchConnections({ fullName, page = 0, size = 5 } = {}) {
+		// Connections are personal and org-agnostic — the backend returns all accepted
+		// connections of the current user regardless of organization.
 		const response = await apiClient.get('/chat/connections/search', {
 			params: { fullName, page, size },
 		});

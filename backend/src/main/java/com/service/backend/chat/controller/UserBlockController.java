@@ -35,11 +35,9 @@ public class UserBlockController {
     public Mono<ResponseEntity<ApiResponse<UserBlock>>> blockUser(
             @PathVariable @Min(1) Long targetMemberId) {
 
-        return Mono.zip(SecurityUtils.getCurrentUserId(), SecurityUtils.getCurrentOrganizationId())
-                .flatMap(tuple -> userBlockService.blockUser(
-                        tuple.getT1(),
-                        targetMemberId,
-                        tuple.getT2()))
+        // Blocking is personal and org-agnostic — any authenticated user may block any other user.
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(currentUserId -> userBlockService.blockUser(currentUserId, targetMemberId))
                 .map(result -> ResponseEntity
                         .status(HttpStatus.CREATED)
                         .body(new ApiResponse<>("Member blocked successfully", result)));

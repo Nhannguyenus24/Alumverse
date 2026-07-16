@@ -407,7 +407,7 @@ class AuthServiceTest {
             
             User user = User.builder().id(1).role(com.service.backend.shared.enums.UserRole.STAFF).build();
             when(authRepository.findById(1)).thenReturn(Mono.just(user));
-            when(authRepository.getVerificationLevelByUserIdAndOrgId(1, 2)).thenReturn(Mono.just(4));
+            when(authRepository.existsOrganizationMemberByUserIdAndOrgId(1, 2)).thenReturn(Mono.just(true));
             when(jwtUtils.generateAccessToken(user, 2)).thenReturn("new-access-token");
 
             StepVerifier.create(authService.refreshAccessToken("valid-token", 2))
@@ -426,7 +426,7 @@ class AuthServiceTest {
             
             User user = User.builder().id(1).role(com.service.backend.shared.enums.UserRole.STAFF).build();
             when(authRepository.findById(1)).thenReturn(Mono.just(user));
-            when(authRepository.getVerificationLevelByUserIdAndOrgId(1, 2)).thenReturn(Mono.just(1));
+            when(authRepository.existsOrganizationMemberByUserIdAndOrgId(1, 2)).thenReturn(Mono.just(false));
             when(jwtUtils.generateAccessToken(user, 2)).thenReturn("new-access-token");
 
             StepVerifier.create(authService.refreshAccessToken("valid-token", 2))
@@ -452,7 +452,7 @@ class AuthServiceTest {
 
             User user = User.builder().id(1).role(com.service.backend.shared.enums.UserRole.STAFF).build();
             when(authRepository.findById(1)).thenReturn(Mono.just(user));
-            when(authRepository.getVerificationLevelByUserIdAndOrgId(1, 2)).thenReturn(Mono.just(4));
+            when(authRepository.existsOrganizationMemberByUserIdAndOrgId(1, 2)).thenReturn(Mono.just(true));
             when(jwtUtils.generateAccessToken(user, 2)).thenReturn("new-access-token");
 
             StepVerifier.create(authService.switchOrganization("valid-token", 2))
@@ -471,7 +471,7 @@ class AuthServiceTest {
 
             User user = User.builder().id(1).role(com.service.backend.shared.enums.UserRole.STAFF).build();
             when(authRepository.findById(1)).thenReturn(Mono.just(user));
-            when(authRepository.getVerificationLevelByUserIdAndOrgId(1, 2)).thenReturn(Mono.just(1));
+            when(authRepository.existsOrganizationMemberByUserIdAndOrgId(1, 2)).thenReturn(Mono.just(false));
             when(jwtUtils.generateAccessToken(user, 2)).thenReturn("new-access-token");
 
             StepVerifier.create(authService.switchOrganization("valid-token", 2))
