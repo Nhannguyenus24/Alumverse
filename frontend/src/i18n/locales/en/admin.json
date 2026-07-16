@@ -987,6 +987,8 @@
   "verif_btn_approve": "Approve",
   "verif_type_proof": "Proof document",
   "verif_type_peer": "Peer verification",
+  "verif_tab_proof": "Proof documents",
+  "verif_tab_peer": "Peer verification",
   "verif_dialog_peer_evidence": "PEER VERIFIERS",
   "verif_peer_confirmed": "Confirmed",
   "verif_peer_pending": "Pending",

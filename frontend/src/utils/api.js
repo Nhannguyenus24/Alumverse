@@ -218,10 +218,11 @@ const adminUserApi = {
 		return apiClient.post(`${BASE_ADMIN_USERS}/admins`, body);
 	},
 
-	getVerificationRequests(pendingOnly = false, page = 0, size = 20, keyword = '', organizationId = null) {
+	getVerificationRequests(pendingOnly = false, page = 0, size = 20, keyword = '', organizationId = null, requestType = null) {
 		const params = { pendingOnly, page, size };
 		if (keyword) params.keyword = keyword;
 		if (organizationId) params.organizationId = organizationId;
+		if (requestType) params.requestType = requestType;
 		return apiClient.get(`${BASE_ADMIN_USERS}/verification-requests`, { params });
 	},
 

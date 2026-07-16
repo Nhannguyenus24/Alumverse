@@ -562,24 +562,27 @@ public class AdminUserService {
         }
     }
 
-    public Mono<PaginatedResponse<VerificationRequestResponse>> getAllVerificationRequests(Integer organizationId, String keyword, int page, int size) {
-        return getVerificationRequests(organizationId, keyword, false, page, size);
+    public Mono<PaginatedResponse<VerificationRequestResponse>> getAllVerificationRequests(Integer organizationId, String keyword, String requestType, int page, int size) {
+        return getVerificationRequests(organizationId, keyword, false, requestType, page, size);
     }
 
-    public Mono<PaginatedResponse<VerificationRequestResponse>> getPendingVerificationRequests(Integer organizationId, String keyword, int page, int size) {
-        return getVerificationRequests(organizationId, keyword, true, page, size);
+    public Mono<PaginatedResponse<VerificationRequestResponse>> getPendingVerificationRequests(Integer organizationId, String keyword, String requestType, int page, int size) {
+        return getVerificationRequests(organizationId, keyword, true, requestType, page, size);
     }
 
-    private Mono<PaginatedResponse<VerificationRequestResponse>> getVerificationRequests(Integer organizationId, String keyword, boolean pendingOnly, int page, int size) {
+    private Mono<PaginatedResponse<VerificationRequestResponse>> getVerificationRequests(Integer organizationId, String keyword, boolean pendingOnly, String requestType, int page, int size) {
         int offset = page * size;
         String kw = (keyword != null && !keyword.trim().isEmpty()) ? "%" + keyword.trim() + "%" : null;
+        // Only PROOF / PEER are valid discriminators; anything else means "no type filter".
+        String normalizedType = requestType == null ? null : requestType.trim().toUpperCase();
+        final String type = ("PROOF".equals(normalizedType) || "PEER".equals(normalizedType)) ? normalizedType : null;
         return PaginationHelper.paginate(
-                adminUserRepository.findUnifiedVerificationRequests(organizationId, kw, pendingOnly, size, offset).collectList(),
-                adminUserRepository.countUnifiedVerificationRequests(organizationId, kw, pendingOnly),
+                adminUserRepository.findUnifiedVerificationRequests(organizationId, kw, pendingOnly, type, size, offset).collectList(),
+                adminUserRepository.countUnifiedVerificationRequests(organizationId, kw, pendingOnly, type),
                 page,
                 size
         )
-         .doOnSuccess(r -> logger.info("getVerificationRequests: org={}, pendingOnly={}, result={}", organizationId, pendingOnly, JsonUtils.toJson(r)))
+         .doOnSuccess(r -> logger.info("getVerificationRequests: org={}, pendingOnly={}, requestType={}, result={}", organizationId, pendingOnly, type, JsonUtils.toJson(r)))
          .doOnError(e -> logger.error("Error fetching verification requests: {}", e.getMessage()));
     }
 

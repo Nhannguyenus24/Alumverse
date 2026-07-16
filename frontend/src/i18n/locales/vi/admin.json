@@ -1012,6 +1012,8 @@
   "verif_btn_approve": "Phê duyệt",
   "verif_type_proof": "Minh chứng",
   "verif_type_peer": "Xác thực đồng nghiệp",
+  "verif_tab_proof": "Giấy tờ / Minh chứng",
+  "verif_tab_peer": "Xác thực đồng nghiệp",
   "verif_dialog_peer_evidence": "NGƯỜI XÁC THỰC",
   "verif_peer_confirmed": "Đã xác nhận",
   "verif_peer_pending": "Chờ xác nhận",

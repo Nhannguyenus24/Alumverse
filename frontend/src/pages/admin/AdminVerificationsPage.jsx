@@ -22,6 +22,8 @@ import {
   Chip,
   Divider,
   Slider,
+  Tab,
+  Tabs,
 } from '@mui/material';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
@@ -73,6 +75,8 @@ const AdminVerificationsPage = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [pendingOnly, setPendingOnly] = useState(true);
+  // Split the mixed feed into two tabs: document proofs vs. peer verifications.
+  const [requestType, setRequestType] = useState('PROOF');
 
   const [searchTerm, setSearchTerm] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -99,7 +103,7 @@ const AdminVerificationsPage = () => {
   const fetchRequests = async () => {
     setLoading(true);
     try {
-      const res = await getVerificationRequests(pendingOnly, page, rowsPerPage, searchQuery, stableOrgId || null);
+      const res = await getVerificationRequests(pendingOnly, page, rowsPerPage, searchQuery, stableOrgId || null, requestType);
       const data = res?.data?.data || {};
       setRequests(data.items || []);
       setTotalCount(data.totalElements || data.totalItem || data.totalItems || 0);
@@ -112,7 +116,7 @@ const AdminVerificationsPage = () => {
 
   useEffect(() => {
     void fetchRequests();
-  }, [page, rowsPerPage, pendingOnly, searchQuery, stableOrgId]);
+  }, [page, rowsPerPage, pendingOnly, searchQuery, stableOrgId, requestType]);
 
   const handleReview = (request) => {
     setSelectedRequest(request);
@@ -268,13 +272,8 @@ const AdminVerificationsPage = () => {
       )
     },
     {
-      id: 'requestType',
-      label: t('verif_col_doc_type'),
-      render: (_, r) => renderRequestType(r)
-    },
-    {
       id: 'documentUrl',
-      label: t('verif_col_document'),
+      label: requestType === 'PEER' ? t('verif_dialog_peer_evidence') : t('verif_col_document'),
       render: (_, r) => renderEvidence(r)
     },
     {
@@ -338,7 +337,7 @@ const AdminVerificationsPage = () => {
         );
       }
     }
-  ], [theme, handleReview, submitReview, submitReopen, submitting]);
+  ], [theme, handleReview, submitReview, submitReopen, submitting, requestType]);
 
   return (
     <Box>
@@ -350,6 +349,15 @@ const AdminVerificationsPage = () => {
           {t('verif_page_subtitle')}
         </Typography>
       </Box>
+
+      <Tabs
+        value={requestType}
+        onChange={(_, value) => { setRequestType(value); setPage(0); }}
+        sx={{ mb: 2 }}
+      >
+        <Tab value="PROOF" label={t('verif_tab_proof')} />
+        <Tab value="PEER" label={t('verif_tab_peer')} />
+      </Tabs>
 
       <AdminDataTable
         columns={columns}
