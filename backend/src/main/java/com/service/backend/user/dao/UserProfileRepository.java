@@ -96,7 +96,8 @@ public interface UserProfileRepository extends R2dbcRepository<User, Integer> {
                    CAST(om.program AS text) AS program,
                    CAST(om.major AS text) AS major,
                    CAST(om.faculty AS text) AS faculty,
-                   CAST(om.department AS text) AS department
+                   CAST(om.department AS text) AS department,
+                   om.verification_level AS verification_level
             FROM users u
             LEFT JOIN organization_members om ON om.user_id = u.id AND (:organizationId IS NULL OR om.organization_id = :organizationId)
             LEFT JOIN organizations o ON o.id = om.organization_id
