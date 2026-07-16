@@ -6,8 +6,6 @@ import com.service.backend.chat.service.UserBlockService;
 import com.service.backend.shared.dto.ApiResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.entity.UserBlock;
-import com.service.backend.shared.enums.ErrorCode;
-import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.SecurityUtils;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
@@ -37,20 +35,9 @@ public class UserBlockController {
     public Mono<ResponseEntity<ApiResponse<UserBlock>>> blockUser(
             @PathVariable @Min(1) Long targetMemberId) {
 
-        return Mono.zip(SecurityUtils.getCurrentUserId(), SecurityUtils.hasRole("ADMIN"))
-                .flatMap(ctx -> {
-                    Long currentUserId = ctx.getT1();
-                    boolean isAdmin = ctx.getT2();
-                    // ADMIN operates system-wide (no single org in JWT) — skip org resolution entirely.
-                    if (isAdmin) {
-                        return userBlockService.blockUser(currentUserId, targetMemberId, null);
-                    }
-                    return SecurityUtils.getCurrentOrganizationId()
-                            .switchIfEmpty(Mono.error(new ApplicationException(
-                                    ErrorCode.ORGANIZATION_ID_REQUIRED, "Organization ID is required")))
-                            .flatMap(organizationId -> userBlockService.blockUser(
-                                    currentUserId, targetMemberId, organizationId));
-                })
+        // Blocking is personal and org-agnostic — any authenticated user may block any other user.
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(currentUserId -> userBlockService.blockUser(currentUserId, targetMemberId))
                 .map(result -> ResponseEntity
                         .status(HttpStatus.CREATED)
                         .body(new ApiResponse<>("Member blocked successfully", result)));

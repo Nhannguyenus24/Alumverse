@@ -9,7 +9,6 @@ import com.service.backend.shared.entity.UserBlock;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.PaginationHelper;
-import com.service.backend.user.dao.UserOrganizationMemberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -26,11 +25,10 @@ import java.time.LocalDateTime;
 public class UserBlockService {
 
     private final UserBlockRepository userBlockRepository;
-    private final UserOrganizationMemberRepository userOrganizationMemberRepository;
 
     @Transactional
-    public Mono<UserBlock> blockUser(Long blockerMemberId, Long targetMemberId, Integer organizationId) {
-        return validateBlockRequest(blockerMemberId, targetMemberId, organizationId)
+    public Mono<UserBlock> blockUser(Long blockerMemberId, Long targetMemberId) {
+        return validateBlockRequest(blockerMemberId, targetMemberId)
                 .then(userBlockRepository.countByBlockerMemberIdAndBlockedMemberId(blockerMemberId, targetMemberId))
                 .flatMap(sameDirectionCount -> {
                     if (sameDirectionCount > 0) {
@@ -153,22 +151,13 @@ public class UserBlockService {
         return userBlockRepository.findBlockedMembersInGroupByBlocker(blockerMemberId, groupId);
     }
 
-    private Mono<Void> validateBlockRequest(Long blockerMemberId, Long targetMemberId, Integer organizationId) {
+    private Mono<Void> validateBlockRequest(Long blockerMemberId, Long targetMemberId) {
+        // Blocking is a personal, org-agnostic action: anyone may block anyone (except self).
         if (blockerMemberId.equals(targetMemberId)) {
             return Mono.error(new ApplicationException(
                     ErrorCode.CANNOT_BLOCK_SELF,
                     "You cannot block yourself"));
         }
-
-        if (organizationId == null) {
-            // ADMIN acting system-wide: no single-org membership to check against.
-            return Mono.empty();
-        }
-
-        return userOrganizationMemberRepository.findByOrganizationIdAndUserId(organizationId, targetMemberId.intValue())
-                .switchIfEmpty(Mono.error(new ApplicationException(
-                        ErrorCode.ORGANIZATION_MEMBER_NOT_FOUND,
-                        "Target member is not in your organization")))
-                .then();
+        return Mono.empty();
     }
 }
