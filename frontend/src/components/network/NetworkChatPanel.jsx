@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollReveal } from '../animations/ScrollReveal';
 import {
@@ -49,19 +49,13 @@ import {
   validateVideoFile,
 } from '../../utils/imageUtils';
 import ChatMessageMedia from './ChatMessageMedia';
+import ChatDateSeparator from './ChatDateSeparator';
 import { exceedsLengthLimit, MAX_MESSAGE_LENGTH } from '../../utils/messageContent';
-
-function formatTime(isoString) {
-  if (!isoString) return '';
-  const date = new Date(isoString);
-  return date.toLocaleString('vi-VN', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
+import {
+  formatChatTime,
+  formatChatDateSeparator,
+  isSameCalendarDay,
+} from '../../utils/dateFormatter';
 
 
 const SCROLL_TOP_THRESHOLD = 8;
@@ -190,7 +184,8 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
     }
   }, [isLoadingMore]);
 
-  // After a real-time message arrives: scroll to bottom if already near bottom
+  // After a real-time message arrives: always scroll to bottom for our own message,
+  // otherwise only scroll if already near bottom (avoid yanking while reading history)
   useEffect(() => {
     const el = scrollRef.current;
     const prevCount = prevMessageCountRef.current;
@@ -200,11 +195,13 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
     if (!el || isLoadingMore || newCount <= prevCount) return;
     if (isInitialLoadRef.current) return;
 
+    const lastMsg = messages[newCount - 1];
+    const isOwnMessage = lastMsg && lastMsg.senderMemberId === currentUserId;
     const isNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
-    if (isNearBottom) {
+    if (isOwnMessage || isNearBottom) {
       el.scrollTop = el.scrollHeight;
     }
-  }, [messages.length, isLoadingMore]);
+  }, [messages, isLoadingMore, currentUserId]);
 
   const handleScroll = useCallback(() => {
     const el = scrollRef.current;
@@ -513,11 +510,17 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
 
         {/* Messages */}
         {!isLoading &&
-          messages.map((msg) => {
+          messages.map((msg, index) => {
             const isOwn = msg.senderMemberId === currentUserId;
+            const prev = messages[index - 1];
+            const showDateSeparator =
+              !prev || !isSameCalendarDay(prev.createdAt, msg.createdAt);
             return (
+              <Fragment key={msg.id}>
+                {showDateSeparator && (
+                  <ChatDateSeparator label={formatChatDateSeparator(msg.createdAt, t)} />
+                )}
               <Box
-                key={msg.id}
                 sx={{
                   display: 'flex',
                   justifyContent: isOwn ? 'flex-end' : 'flex-start',
@@ -598,10 +601,11 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
                       whiteSpace: 'nowrap',
                     }}
                   >
-                    {formatTime(msg.createdAt)}
+                    {formatChatTime(msg.createdAt)}
                   </Typography>
                 </Box>
               </Box>
+              </Fragment>
             );
           })}
       </Scrollbar>

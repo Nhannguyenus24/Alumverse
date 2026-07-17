@@ -28,6 +28,7 @@ import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 
+import com.service.backend.shared.utils.AuthExchangeAttributes;
 import com.service.backend.shared.utils.JwtUtils;
 
 import reactor.core.publisher.Mono;
@@ -115,6 +116,15 @@ public class SecurityConfig {
                                 null,
                                 List.of(new SimpleGrantedAuthority("ROLE_" + userRole)));
                         auth.setDetails(organizationId);
+
+                        // Stash the resolved identity into exchange attributes so downstream
+                        // WebFilters (e.g. AdminAuditWebFilter) can read who performed the
+                        // request without depending on the reactive security context.
+                        exchange.getAttributes().put(AuthExchangeAttributes.USER_ID, userId);
+                        exchange.getAttributes().put(AuthExchangeAttributes.ROLE, userRole);
+                        if (organizationId != null) {
+                            exchange.getAttributes().put(AuthExchangeAttributes.ORGANIZATION_ID, organizationId);
+                        }
 
                         return chain.filter(exchange)
                                 .contextWrite(ReactiveSecurityContextHolder.withAuthentication(auth));
