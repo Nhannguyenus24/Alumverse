@@ -32,7 +32,7 @@ const NetworkChatSidebar = ({
 }) => {
   const { t } = useTranslation(['network', 'common']);
   const { enqueueSnackbar } = useSnackbar();
-  const { canContribute, isAuthenticated } = useCanContribute();
+  const { canUseBasicActions, isAuthenticated } = useCanContribute();
 
   const handleSearchKeyDown = (event) => {
     if (event.key !== 'Enter') return;
@@ -41,7 +41,7 @@ const NetworkChatSidebar = ({
   };
 
   const handleCreateGroupChat = () => {
-    if (!canContribute) return;
+    if (!canUseBasicActions) return;
     if (onCreateGroupChat) {
       onCreateGroupChat();
       return;
@@ -103,7 +103,7 @@ const NetworkChatSidebar = ({
           {t('chat_sidebar_title')}
         </Typography>
         <Tooltip
-          title={canContribute ? t('create_group_chat_tooltip') : (isAuthenticated ? t('common:verification_required_tooltip') : t('common:verification_required_login'))}
+          title={canUseBasicActions ? t('create_group_chat_tooltip') : (isAuthenticated ? t('common:verification_required_tooltip') : t('common:verification_required_login'))}
           placement="bottom"
         >
           <span>
@@ -111,7 +111,7 @@ const NetworkChatSidebar = ({
               size="small"
               aria-label={t('create_group_chat_aria')}
               onClick={handleCreateGroupChat}
-              disabled={!canContribute}
+              disabled={!canUseBasicActions}
               sx={{ flexShrink: 0 }}
             >
               <GroupAddIcon />

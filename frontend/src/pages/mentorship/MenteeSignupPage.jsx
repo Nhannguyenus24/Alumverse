@@ -19,6 +19,7 @@ import { useSnackbar } from 'notistack';
 import { useEffect } from 'react';
 
 import Page from '../../components/Page';
+import { verificationAccentAlertSx } from '../../components/ContributeGuard';
 import {
   ScrollReveal,
   ScrollRevealGroup,
@@ -147,7 +148,7 @@ const MenteeSignupPage = () => {
           >
             {t('mentee_signup_go_back')}
           </Button>
-          <Alert severity="warning">
+          <Alert severity="info" sx={verificationAccentAlertSx}>
             <Typography fontWeight={700} mb={0.5}>
               {t('mentee_signup_not_eligible_title')}
             </Typography>

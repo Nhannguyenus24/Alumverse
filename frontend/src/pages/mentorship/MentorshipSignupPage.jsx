@@ -21,6 +21,7 @@ import { useSnackbar } from 'notistack';
 import { useEffect } from 'react';
 
 import Page from '../../components/Page';
+import { verificationAccentAlertSx } from '../../components/ContributeGuard';
 import {
   ScrollReveal,
   ScrollRevealGroup,
@@ -364,7 +365,7 @@ const MentorshipSignupPage = () => {
           >
             {t('mentor_signup_go_back')}
           </Button>
-          <Alert severity="warning" sx={{ mb: 2 }}>
+          <Alert severity="info" sx={[verificationAccentAlertSx, { mb: 2 }]}>
             <Typography fontWeight={700} mb={0.5}>
               {t('mentor_signup_not_eligible_title')}
             </Typography>

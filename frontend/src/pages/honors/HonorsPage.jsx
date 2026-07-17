@@ -38,9 +38,9 @@ const HonorsPage = () => {
   const navigate = useOrgNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const queryClient = useQueryClient();
-  const { user, isAuthenticated } = useAuth();
-  const { canContribute } = useCanContribute();
-  const isAdmin = isAuthenticated && user?.role === 'ADMIN';
+  const { isAuthenticated } = useAuth();
+  const { canContribute, isOrgManager } = useCanContribute();
+  const isAdmin = isAuthenticated && isOrgManager;
 
   const { achievements } = usePublishedAchievements(0, ARTICLE_FETCH_LIMIT);
   const { articles: alumniArticles } = usePublishedAlumniPosts(0, ARTICLE_FETCH_LIMIT);

@@ -13,13 +13,13 @@ const fetchMyProfile = async () => {
   }
 };
 
-export const useMyMentorProfile = () => {
+export const useMyMentorProfile = ({ enabled = true } = {}) => {
   const isLoggedIn = useAuthStore((state) => Boolean(state.user?.id));
   return useQuery({
     queryKey: ['mentorship', 'mentor', 'me', 'profile'],
     queryFn: fetchMyProfile,
     retry: false,
     staleTime: 5 * 60_000,
-    enabled: isLoggedIn,
+    enabled: isLoggedIn && enabled,
   });
 };

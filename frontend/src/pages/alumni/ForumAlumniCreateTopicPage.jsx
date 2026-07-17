@@ -11,6 +11,7 @@ import {
   Typography,
 } from "@mui/material";
 import ForumFilterPanel from "../../components/forum/ForumFilterPanel";
+import { verificationAccentAlertSx } from "../../components/ContributeGuard";
 import WYSIWYG from "../../components/WYSIWYG";
 import AlumniContentLayout from "../../layouts/AlumniContentLayout";
 import {
@@ -18,6 +19,7 @@ import {
   ScrollRevealItem,
 } from "../../components/animations/ScrollReveal";
 import { useAuth } from "../../hooks/useAuth";
+import { useCanContribute } from "../../hooks/useCanContribute";
 import { useOrganization } from "../../hooks/useOrganization";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
 import { useForumCategories } from "../../hooks/forum/useForumCategories";
@@ -28,9 +30,10 @@ import { useNotification } from "../../hooks/useNotification";
 const ForumAlumniCreateTopicPage = () => {
   const { t } = useTranslation(["forum", "common"]);
   const navigate = useOrgNavigate();
-  const { user, verificationLevel } = useAuth();
-  // Only org-verified alumni (verification level >= 2) may create alumni forum topics.
-  const canPost = (verificationLevel ?? 0) >= 2;
+  const { user } = useAuth();
+  const { canContribute } = useCanContribute();
+  // Only org-verified members (effective verification level >= 2) may create forum topics.
+  const canPost = canContribute;
   const { organization } = useOrganization();
   const organizationId = organization?.id ?? null;
   const {
@@ -276,7 +279,7 @@ const ForumAlumniCreateTopicPage = () => {
 
         {!canPost && (
           <ScrollRevealItem>
-            <Alert severity="warning" sx={{ mb: 2.5 }}>
+            <Alert severity="info" sx={[verificationAccentAlertSx, { mb: 2.5 }]}>
               {t("forum:warn_alumni_verification_required")}
             </Alert>
           </ScrollRevealItem>

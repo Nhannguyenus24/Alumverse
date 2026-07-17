@@ -19,11 +19,11 @@ const NetworkBlockedMemberCard = ({
   isUnblockLoading = false,
 }) => {
   const { t } = useTranslation('network');
-  const { canContribute } = useCanContribute();
+  const { canUseBasicActions } = useCanContribute();
   const displayName = member.fullName || 'N/A';
 
   const handleUnblock = (event) => {
-    if (!canContribute) return;
+    if (!canUseBasicActions) return;
     onUnblock?.(event);
   };
 
@@ -64,14 +64,14 @@ const NetworkBlockedMemberCard = ({
         </Stack>
 
         <Box sx={{ flexShrink: 0, alignSelf: { xs: 'flex-end', sm: 'auto' } }}>
-          <ContributeGuardTooltip placement="left">
+          <ContributeGuardTooltip required="basic" placement="left">
             <Button
               variant="outlined"
               color="inherit"
               size="small"
               type="button"
               onClick={handleUnblock}
-              disabled={isUnblockLoading || !canContribute}
+              disabled={isUnblockLoading || !canUseBasicActions}
               sx={{ minWidth: 100 }}
             >
               {isUnblockLoading ? <CircularProgress size={16} color="inherit" /> : t('unblock')}

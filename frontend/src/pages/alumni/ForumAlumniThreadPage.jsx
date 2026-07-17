@@ -29,6 +29,7 @@ import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import FlagOutlinedIcon from "@mui/icons-material/FlagOutlined";
 import { useAuth } from "../../hooks/useAuth";
+import { useCanContribute } from "../../hooks/useCanContribute";
 import Breadcrumb from "../../components/Breadcrumb";
 import { useForumCategories } from "../../hooks/forum/useForumCategories";
 import { useForumPosts } from "../../hooks/forum/useForumPosts";
@@ -460,10 +461,10 @@ const ForumAlumniThreadPage = () => {
   }, [threadId]);
 
   const { isAuthenticated, user, verificationLevel } = useAuth();
+  const { isOrgManager } = useCanContribute();
   const { organization } = useOrganization();
-  const isAdmin = user?.role === "ADMIN";
-  // Admins may always participate; otherwise only org-verified alumni
-  // (verification level >= 2) may post in the alumni forum.
+  const isAdmin = isOrgManager;
+  // Org managers may moderate; regular members need level >= 2 to post.
   const isGuest =
     !isAuthenticated || (!isAdmin && (verificationLevel ?? 0) < 2);
   const [editorValue, setEditorValue] = useState("");
@@ -541,7 +542,9 @@ const ForumAlumniThreadPage = () => {
   const hasShownOpeningErrorRef = useRef(false);
   const currentUserName = user?.fullName?.trim() || t("forum:me");
   const currentUserRole =
-    (verificationLevel ?? 0) >= 2
+    isAdmin && user?.role
+      ? user.role.charAt(0).toUpperCase() + user.role.slice(1).toLowerCase()
+      : (verificationLevel ?? 0) >= 2
       ? "Alumni"
       : user?.role
         ? user.role.charAt(0).toUpperCase() + user.role.slice(1).toLowerCase()

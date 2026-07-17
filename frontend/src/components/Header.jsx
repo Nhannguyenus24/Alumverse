@@ -205,6 +205,7 @@ const Header = () => {
           borderBottom: isTransparent ? 'none' : 1,
           borderColor: 'divider',
           transition: 'all 0.4s ease-in-out',
+          zIndex: (theme) => theme.zIndex.appBar + 4,
         }}
       >
         <Toolbar
@@ -303,7 +304,7 @@ const Header = () => {
                           transform: 'translateX(-50%)',
                           width: 'max-content',
                           minWidth: 180,
-                          zIndex: 10,
+                          zIndex: (theme) => theme.zIndex.appBar + 5,
                         }}
                       >
                         <Box
@@ -487,8 +488,8 @@ const Header = () => {
                 sx={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   width: 40, height: 40, borderRadius: '50%',
-                  bgcolor: (theme) => alpha(theme.palette.warning.main, 0.12),
-                  color: 'warning.dark', flexShrink: 0
+                  bgcolor: (theme) => alpha(theme.palette.accent.main, 0.14),
+                  color: 'accent.dark', flexShrink: 0
                 }}
               >
                 <Iconify icon="eva:shield-outline" width={24} height={24} />
@@ -520,8 +521,8 @@ const Header = () => {
                 onClick={() => navigate('/organization-registration')}
                 endIcon={<Iconify icon="eva:arrow-ios-forward-fill" />}
                 sx={{
-                  fontWeight: 600, whiteSpace: 'nowrap', color: 'warning.dark',
-                  '&:hover': { bgcolor: (theme) => alpha(theme.palette.warning.main, 0.08) },
+                  fontWeight: 600, whiteSpace: 'nowrap', color: 'accent.dark',
+                  '&:hover': { bgcolor: (theme) => alpha(theme.palette.accent.main, 0.1) },
                   px: 1.5
                 }}
               >

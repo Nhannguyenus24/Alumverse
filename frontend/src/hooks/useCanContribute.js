@@ -5,36 +5,39 @@ import { useAuth } from './useAuth';
 /**
  * Central rule for "may this user push / change content?".
  *
- * Content-changing actions (posting, commenting, registering for events,
- * sending connection requests, messaging, etc.) are reserved for org-verified
- * alumni — i.e. `verificationLevel >= 2`. ADMIN always bypasses the gate.
- * STAFF only bypasses inside its assigned organization because the backend
- * returns effective verificationLevel 4 there; in other organizations it falls
- * back to level 2 and behaves like a regular verified alumnus.
+ * Centralized permission tiers:
+ * - Basic actions (chat, network, event registration, donations): logged in at level 0+
+ * - Contribute actions (forum posting/replying, article/achievement requests): level 2+
+ * - Org manager actions (admin/staff management affordances in the current org): level 4
  *
  * Returns:
- *  - canContribute: boolean — true when the user may perform write actions
+ *  - canUseBasicActions: boolean — true when logged in and allowed to use basic actions
+ *  - canContribute: boolean — true when the user may submit community content
  *  - isAuthenticated: boolean
- *  - isPrivileged: boolean — ADMIN or STAFF
+ *  - isPrivileged: boolean — backward-compatible alias for org manager
+ *  - isOrgManager: boolean — effective verification level 4
  *  - verificationLevel: number
  */
 const MIN_CONTRIBUTE_VERIFICATION_LEVEL = 2;
+const ORG_MANAGER_VERIFICATION_LEVEL = 4;
 
 export const useCanContribute = () => {
-  const { isAuthenticated, user, verificationLevel } = useAuth();
+  const { isAuthenticated, verificationLevel } = useAuth();
 
   return useMemo(() => {
-    const role = user?.role ?? null;
     const level = verificationLevel ?? 0;
-    const isPrivileged = role === 'ADMIN' || (role === 'STAFF' && level >= 4);
+    const isOrgManager = isAuthenticated && level >= ORG_MANAGER_VERIFICATION_LEVEL;
+    const canUseBasicActions = isAuthenticated;
     const canContribute =
-      isAuthenticated && (isPrivileged || level >= MIN_CONTRIBUTE_VERIFICATION_LEVEL);
+      isAuthenticated && level >= MIN_CONTRIBUTE_VERIFICATION_LEVEL;
 
     return {
+      canUseBasicActions,
       canContribute,
       isAuthenticated,
-      isPrivileged,
+      isPrivileged: isOrgManager,
+      isOrgManager,
       verificationLevel: level,
     };
-  }, [isAuthenticated, user?.role, verificationLevel]);
+  }, [isAuthenticated, verificationLevel]);
 };

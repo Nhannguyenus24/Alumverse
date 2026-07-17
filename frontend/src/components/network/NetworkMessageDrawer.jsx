@@ -100,7 +100,7 @@ const NetworkMessageDrawer = ({
 
   const peerUserId = peer?.userId ?? null;
   const currentMemberId = useNetworkCurrentMemberId();
-  const { canContribute } = useCanContribute();
+  const { canUseBasicActions } = useCanContribute();
   const { counterparts } = usePeerVerificationCounterparts();
   const { sendMessage, isSending } = useNetworkConversationActions(peerUserId);
 
@@ -112,7 +112,7 @@ const NetworkMessageDrawer = ({
   const drawerState = resolveConnectionDrawerState(statusOverride ?? connectionStatus, t);
   const charCount = draft.length;
   const atLengthLimit = charCount >= MAX_MESSAGE_LENGTH;
-  const composerEnabled = (canContribute || isPeerVerificationCounterpart) && isComposerEnabled({
+  const composerEnabled = (canUseBasicActions || isPeerVerificationCounterpart) && isComposerEnabled({
     canCompose: drawerState.canCompose,
     singleMessageOnly: drawerState.singleMessageOnly,
     sentInSession,
@@ -279,7 +279,7 @@ const NetworkMessageDrawer = ({
         <div ref={messagesEndRef} />
       </Scrollbar>
 
-      {!isPeerVerificationCounterpart && <VerificationRequiredAlert sx={{ borderRadius: 0 }} />}
+      {!isPeerVerificationCounterpart && <VerificationRequiredAlert required="basic" sx={{ borderRadius: 0 }} />}
 
       <Box
         sx={{

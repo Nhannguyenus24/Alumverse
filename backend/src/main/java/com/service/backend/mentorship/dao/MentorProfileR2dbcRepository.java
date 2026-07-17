@@ -17,11 +17,34 @@ public interface MentorProfileR2dbcRepository extends R2dbcRepository<MentorProf
 
     // ===================== Basic paginated =====================
 
-    @Query("SELECT * FROM mentor_profiles WHERE status = 'APPROVED' ORDER BY rating_avg DESC LIMIT :limit OFFSET :offset")
-    Flux<MentorProfile> findApprovedMentors(int limit, int offset);
+    @Query("SELECT DISTINCT mp.member_id, mp.current_job_title, mp.current_company, " +
+            "mp.rating_avg, mp.total_sessions, mp.status, mp.review_note, mp.reviewed_at, " +
+            "mp.reviewed_by, mp.default_meeting_link, mp.booking_window_settings, " +
+            "mp.extended_profile, mp.created_at, mp.updated_at " +
+            "FROM mentor_profiles mp " +
+            "LEFT JOIN organization_members om ON mp.member_id = om.user_id " +
+            "WHERE mp.status = 'APPROVED' " +
+            "AND (:organizationId IS NULL OR om.organization_id = :organizationId) " +
+            "ORDER BY mp.rating_avg DESC LIMIT :limit OFFSET :offset")
+    Flux<MentorProfile> findApprovedMentors(Integer organizationId, int limit, int offset);
 
-    @Query("SELECT COUNT(*) FROM mentor_profiles WHERE status = 'APPROVED'")
-    Mono<Long> countApprovedMentors();
+    @Query("SELECT COUNT(DISTINCT mp.member_id) FROM mentor_profiles mp " +
+            "LEFT JOIN organization_members om ON mp.member_id = om.user_id " +
+            "WHERE mp.status = 'APPROVED' " +
+            "AND (:organizationId IS NULL OR om.organization_id = :organizationId)")
+    Mono<Long> countApprovedMentors(Integer organizationId);
+
+    @Query("SELECT DISTINCT mp.member_id, mp.current_job_title, mp.current_company, " +
+            "mp.rating_avg, mp.total_sessions, mp.status, mp.review_note, mp.reviewed_at, " +
+            "mp.reviewed_by, mp.default_meeting_link, mp.booking_window_settings, " +
+            "mp.extended_profile, mp.created_at, mp.updated_at " +
+            "FROM mentor_profiles mp " +
+            "LEFT JOIN organization_members om ON mp.member_id = om.user_id " +
+            "WHERE mp.member_id = :memberId " +
+            "AND mp.status = 'APPROVED' " +
+            "AND (:organizationId IS NULL OR om.organization_id = :organizationId) " +
+            "LIMIT 1")
+    Mono<MentorProfile> findApprovedMentor(Integer memberId, Integer organizationId);
 
     @Query("SELECT * FROM mentor_profiles ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
     Flux<MentorProfile> findAllWithPagination(int limit, int offset);
@@ -42,6 +65,7 @@ public interface MentorProfileR2dbcRepository extends R2dbcRepository<MentorProf
             "LEFT JOIN organization_members om ON mp.member_id = om.user_id " +
             "LEFT JOIN users gp ON gp.id = om.user_id " +
             "WHERE mp.status = 'APPROVED' " +
+            "AND (:organizationId IS NULL OR om.organization_id = :organizationId) " +
             "AND (:search IS NULL OR LOWER(mp.current_job_title) LIKE LOWER(CONCAT('%', :search, '%')) " +
             "     OR LOWER(mp.current_company) LIKE LOWER(CONCAT('%', :search, '%')) " +
             "     OR LOWER(gp.full_name) LIKE LOWER(CONCAT('%', :search, '%')) " +
@@ -58,7 +82,7 @@ public interface MentorProfileR2dbcRepository extends R2dbcRepository<MentorProf
             "AND (:availableFrom IS NULL OR (ma.status = 'AVAILABLE' AND ma.end_time > :availableFrom)) " +
             "AND (:availableTo IS NULL OR (ma.status = 'AVAILABLE' AND ma.start_time < :availableTo)) " +
             "ORDER BY mp.rating_avg DESC LIMIT :limit OFFSET :offset")
-    Flux<MentorProfile> filterMentors(String search, boolean hasSkillFilter, List<Integer> skillIds, BigDecimal minRating,
+    Flux<MentorProfile> filterMentors(Integer organizationId, String search, boolean hasSkillFilter, List<Integer> skillIds, BigDecimal minRating,
                                       boolean hasAvailability,
                                       LocalDateTime availableFrom, LocalDateTime availableTo,
                                       int limit, int offset);
@@ -68,6 +92,7 @@ public interface MentorProfileR2dbcRepository extends R2dbcRepository<MentorProf
             "LEFT JOIN organization_members om ON mp.member_id = om.user_id " +
             "LEFT JOIN users gp ON gp.id = om.user_id " +
             "WHERE mp.status = 'APPROVED' " +
+            "AND (:organizationId IS NULL OR om.organization_id = :organizationId) " +
             "AND (:search IS NULL OR LOWER(mp.current_job_title) LIKE LOWER(CONCAT('%', :search, '%')) " +
             "     OR LOWER(mp.current_company) LIKE LOWER(CONCAT('%', :search, '%')) " +
             "     OR LOWER(gp.full_name) LIKE LOWER(CONCAT('%', :search, '%')) " +
@@ -83,7 +108,7 @@ public interface MentorProfileR2dbcRepository extends R2dbcRepository<MentorProf
             "AND (:hasAvailability = false OR (ma.status = 'AVAILABLE' AND ma.start_time > NOW())) " +
             "AND (:availableFrom IS NULL OR (ma.status = 'AVAILABLE' AND ma.end_time > :availableFrom)) " +
             "AND (:availableTo IS NULL OR (ma.status = 'AVAILABLE' AND ma.start_time < :availableTo))")
-    Mono<Long> countFilterMentors(String search, boolean hasSkillFilter, List<Integer> skillIds, BigDecimal minRating,
+    Mono<Long> countFilterMentors(Integer organizationId, String search, boolean hasSkillFilter, List<Integer> skillIds, BigDecimal minRating,
                                   boolean hasAvailability,
                                   LocalDateTime availableFrom, LocalDateTime availableTo);
 
@@ -95,6 +120,7 @@ public interface MentorProfileR2dbcRepository extends R2dbcRepository<MentorProf
             "LEFT JOIN organization_members om ON mp.member_id = om.user_id " +
             "LEFT JOIN users gp ON gp.id = om.user_id " +
             "WHERE mp.status = 'APPROVED' " +
+            "AND (:organizationId IS NULL OR om.organization_id = :organizationId) " +
             "AND (LOWER(mp.current_job_title) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
             "     OR LOWER(mp.current_company) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
             "     OR LOWER(gp.full_name) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
@@ -105,12 +131,13 @@ public interface MentorProfileR2dbcRepository extends R2dbcRepository<MentorProf
             "     OR EXISTS (SELECT 1 FROM mentor_skills ms JOIN skills s ON s.id = ms.skill_id " +
             "         WHERE ms.mentor_member_id = mp.member_id AND LOWER(s.name) LIKE LOWER(CONCAT('%', :keyword, '%')))) " +
             "ORDER BY mp.rating_avg DESC LIMIT :limit OFFSET :offset")
-    Flux<MentorProfile> searchMentorsWithName(String keyword, int limit, int offset);
+    Flux<MentorProfile> searchMentorsWithName(Integer organizationId, String keyword, int limit, int offset);
 
     @Query("SELECT COUNT(DISTINCT mp.member_id) FROM mentor_profiles mp " +
             "LEFT JOIN organization_members om ON mp.member_id = om.user_id " +
             "LEFT JOIN users gp ON gp.id = om.user_id " +
             "WHERE mp.status = 'APPROVED' " +
+            "AND (:organizationId IS NULL OR om.organization_id = :organizationId) " +
             "AND (LOWER(mp.current_job_title) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
             "     OR LOWER(mp.current_company) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
             "     OR LOWER(gp.full_name) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
@@ -120,7 +147,7 @@ public interface MentorProfileR2dbcRepository extends R2dbcRepository<MentorProf
             "           OR LOWER(me.tag) LIKE LOWER(CONCAT('%', :keyword, '%')))) " +
             "     OR EXISTS (SELECT 1 FROM mentor_skills ms JOIN skills s ON s.id = ms.skill_id " +
             "         WHERE ms.mentor_member_id = mp.member_id AND LOWER(s.name) LIKE LOWER(CONCAT('%', :keyword, '%'))))")
-    Mono<Long> countSearchMentorsWithName(String keyword);
+    Mono<Long> countSearchMentorsWithName(Integer organizationId, String keyword);
 
     // ===================== Status transitions (admin) =====================
 

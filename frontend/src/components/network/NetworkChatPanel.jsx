@@ -68,7 +68,7 @@ const SCROLL_TOP_THRESHOLD = 8;
 
 const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
   const { t } = useTranslation(['network', 'common']);
-  const { canContribute } = useCanContribute();
+  const { canUseBasicActions } = useCanContribute();
   const { showError } = useNotification();
   const [draft, setDraft] = useState('');
   const draftInputRef = useRef(null);
@@ -358,10 +358,10 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
             {({ close }) => (
               blockedByMe ? (
                 <MenuItem
-                  disabled={isBlockActionPending || !canContribute}
+                  disabled={isBlockActionPending || !canUseBasicActions}
                   onClick={() => {
                     close();
-                    if (!canContribute) return;
+                    if (!canUseBasicActions) return;
                     unblockUser();
                   }}
                 >
@@ -372,10 +372,10 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
                 </MenuItem>
               ) : (
                 <MenuItem
-                  disabled={isBlockActionPending || !canContribute}
+                  disabled={isBlockActionPending || !canUseBasicActions}
                   onClick={() => {
                     close();
-                    if (!canContribute) return;
+                    if (!canUseBasicActions) return;
                     setBlockConfirmOpen(true);
                   }}
                 >
@@ -414,8 +414,8 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
             <Button
               color="inherit"
               size="small"
-              onClick={() => { if (canContribute) unblockUser(); }}
-              disabled={isBlockActionPending || !canContribute}
+              onClick={() => { if (canUseBasicActions) unblockUser(); }}
+              disabled={isBlockActionPending || !canUseBasicActions}
               sx={{ fontWeight: 700, textTransform: 'none' }}
             >
               {t('network:unblock')}
@@ -758,7 +758,7 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
         cancelText={t('network:cancel')}
         confirmColor="primary"
         loading={isBlockActionPending}
-        onConfirm={() => { if (canContribute) blockUser(); }}
+        onConfirm={() => { if (canUseBasicActions) blockUser(); }}
         onCancel={() => setBlockConfirmOpen(false)}
       />
     </ScrollReveal>

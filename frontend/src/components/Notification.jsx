@@ -169,6 +169,7 @@ const Notification = ({ headerTextColor = "text.primary" }) => {
         onClose={handleClose}
         anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
         transformOrigin={{ vertical: "top", horizontal: "right" }}
+        sx={{ zIndex: (theme) => theme.zIndex.modal + 2 }}
         PaperProps={{
           sx: {
             width: 360,

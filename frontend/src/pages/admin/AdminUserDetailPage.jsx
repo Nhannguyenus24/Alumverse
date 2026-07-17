@@ -418,7 +418,7 @@ const AdminUserDetailPage = () => {
             <Tab label={t('user_detail_tab_audit')} sx={{ textTransform: 'none' }} />
           </Tabs>
           <Divider />
-          <Box sx={{ p: tab === 2 ? 1.25 : 2 }}>
+          <Box sx={tab === 2 ? { px: 2, py: 1.25 } : { p: 2 }}>
             {tab === 0 ? (
               <Stack spacing={1}>
                 <Typography variant="body2">
@@ -476,13 +476,15 @@ const AdminUserDetailPage = () => {
               </Table>
             ) : null}
             {tab === 2 ? (
-              <List dense>
+              <List dense disablePadding>
                 {memberships.map((m) => (
-                  <ListItem key={m.organizationName} disablePadding sx={{ py: 0.5 }}>
+                  <ListItem key={m.organizationName} disablePadding sx={{ py: 0 }}>
                     <ListItemText
                       primary={m.organizationName}
+                      primaryTypographyProps={{ variant: 'subtitle1', fontWeight: 800, color: 'text.primary' }}
+                      sx={{ my: 0 }}
                       secondary={
-                        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap sx={{ mt: 0.5 }}>
+                        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap sx={{ mt: 0.25 }}>
                           <Typography variant="caption" color="text.secondary">
                             {t('user_detail_membership_verification')}: {formatEnumText(m.verificationLevel)}
                           </Typography>

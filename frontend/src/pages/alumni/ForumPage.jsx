@@ -1,8 +1,9 @@
 import { Box, Button, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { useAuth } from "../../hooks/useAuth";
 import { useOrganization } from "../../hooks/useOrganization";
 import { useNotification } from "../../hooks/useNotification";
+import { useCanContribute } from "../../hooks/useCanContribute";
+import { useOrgNavigate } from "../../hooks/useOrgNavigate";
 import ForumFilterPanel from "../../components/forum/ForumFilterPanel";
 import ForumSection from "../../components/forum/ForumSection";
 import AlumniContentLayout from "../../layouts/AlumniContentLayout";
@@ -11,14 +12,16 @@ import { useForumPageLogic } from "../../hooks/forum/useForumPageLogic";
 import { useForumManageMode } from "../../hooks/forum/useForumManageMode";
 import ForumManageView from "../../components/forum/ForumManageView";
 import TuneOutlinedIcon from "@mui/icons-material/TuneOutlined";
+import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
 import { ScrollReveal } from "../../components/animations/ScrollReveal";
 
 const ForumPage = () => {
   const { t } = useTranslation(["forum", "common"]);
-  const { user } = useAuth();
+  const navigate = useOrgNavigate();
   const { organization } = useOrganization();
   const notification = useNotification();
-  const isAdmin = user?.role === "ADMIN";
+  const { isOrgManager } = useCanContribute();
+  const isAdmin = isOrgManager;
 
   const organizationId = organization?.id ?? null;
 
@@ -112,15 +115,24 @@ const ForumPage = () => {
               </Button>
             </Box>
           ) : (
-            <Button
-              variant="outlined"
-              color="primary"
-              startIcon={<TuneOutlinedIcon />}
-              sx={{ flexShrink: 0 }}
-              onClick={handleOpenManageMode}
-            >
-              {t("forum:manage_topics")}
-            </Button>
+            <Box sx={{ display: "flex", gap: 1, flexShrink: 0, flexWrap: "wrap" }}>
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<TuneOutlinedIcon />}
+                onClick={handleOpenManageMode}
+              >
+                {t("forum:manage_topics")}
+              </Button>
+              <Button
+                variant="outlined"
+                color="primary"
+                startIcon={<AdminPanelSettingsOutlinedIcon />}
+                onClick={() => navigate("/admin/forum/categories")}
+              >
+                {t("forum:manage_forum", { defaultValue: "Quản lý diễn đàn" })}
+              </Button>
+            </Box>
           ))}
       </ScrollReveal>
       {isManageMode ? (

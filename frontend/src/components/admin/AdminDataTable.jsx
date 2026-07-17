@@ -150,12 +150,13 @@ const AdminDataTable = ({
           stickyHeader
           size="medium"
           sx={{
+            borderCollapse: 'separate',
             borderSpacing: 0,
             '& .MuiTableCell-stickyHeader': {
-              borderLeft: `1px solid ${tableHeadBg} !important`,
-              borderRight: `1px solid ${tableHeadBg} !important`,
-              borderColor: `${tableHeadBg} !important`,
-              backgroundClip: 'border-box',
+              backgroundColor: `${tableHeadBg} !important`,
+              border: '0 !important',
+              outline: `1px solid ${tableHeadBg}`,
+              outlineOffset: -1,
               boxShadow: 'none',
             },
           }}
@@ -167,10 +168,9 @@ const AdminDataTable = ({
                   sx={{
                     width: 48,
                     bgcolor: tableHeadBg,
+                    backgroundColor: `${tableHeadBg} !important`,
                     color: tableHeadColor,
-                    borderLeft: `1px solid ${tableHeadBg}`,
-                    borderRight: `1px solid ${tableHeadBg}`,
-                    borderColor: tableHeadBg,
+                    border: 0,
                   }}
                 />
               )}
@@ -182,15 +182,14 @@ const AdminDataTable = ({
                     width: column.width,
                     minWidth: column.minWidth || column.width,
                     bgcolor: tableHeadBg,
+                    backgroundColor: `${tableHeadBg} !important`,
                     fontWeight: 700,
                     color: tableHeadColor,
                     fontSize: 13,
                     py: 2,
                     textTransform: 'uppercase',
                     letterSpacing: 0.5,
-                    borderLeft: `1px solid ${tableHeadBg}`,
-                    borderRight: `1px solid ${tableHeadBg}`,
-                    borderColor: tableHeadBg,
+                    border: 0,
                   }}
                 >
                   {column.label}

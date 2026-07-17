@@ -256,9 +256,8 @@ public class ChatConversationRequestService {
     private Mono<Boolean> isVerifiedInOrganization(Long targetMemberId, Integer organizationId) {
         return userOrganizationMemberRepository
                 .findByOrganizationIdAndUserId(organizationId, targetMemberId.intValue())
-                .map(OrganizationMember::getVerificationLevel)
-                .defaultIfEmpty(0)
-                .map(level -> (level != null ? level : 0) >= 2);
+                .map(member -> true)
+                .defaultIfEmpty(false);
     }
 
     private Mono<Long> createConversationRequestAfterBlockCheck(

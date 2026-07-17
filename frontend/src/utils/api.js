@@ -1141,16 +1141,22 @@ const mentorshipApi = {
 		return apiClient.get(`${BASE_MENTEE}/profile`);
 	},
 
-	getApprovedMentors(page = 0, limit = 12) {
-		return apiClient.get(`${BASE_MENTEE}/mentors`, { params: { page, limit } });
+	getApprovedMentors(page = 0, limit = 12, organizationId = null) {
+		const params = { page, limit };
+		if (organizationId) params.organizationId = organizationId;
+		return apiClient.get(`${BASE_MENTEE}/mentors`, { params });
 	},
 
-	getMentorProfile(mentorMemberId) {
-		return apiClient.get(`${BASE_MENTEE}/mentors/${mentorMemberId}`);
+	getMentorProfile(mentorMemberId, organizationId = null) {
+		const params = {};
+		if (organizationId) params.organizationId = organizationId;
+		return apiClient.get(`${BASE_MENTEE}/mentors/${mentorMemberId}`, { params });
 	},
 
-	searchMentors(keyword, page = 0, limit = 12) {
-		return apiClient.get(`${BASE_MENTEE}/mentors/search`, { params: { keyword, page, limit } });
+	searchMentors(keyword, page = 0, limit = 12, organizationId = null) {
+		const params = { keyword, page, limit };
+		if (organizationId) params.organizationId = organizationId;
+		return apiClient.get(`${BASE_MENTEE}/mentors/search`, { params });
 	},
 
 	filterMentors(params = {}) {
@@ -1168,16 +1174,22 @@ const mentorshipApi = {
 		return apiClient.get(`${BASE_MENTEE}/skills`, { params });
 	},
 
-	getMentorExpertise(mentorMemberId) {
-		return apiClient.get(`${BASE_MENTEE}/mentors/${mentorMemberId}/expertise`);
+	getMentorExpertise(mentorMemberId, organizationId = null) {
+		const params = {};
+		if (organizationId) params.organizationId = organizationId;
+		return apiClient.get(`${BASE_MENTEE}/mentors/${mentorMemberId}/expertise`, { params });
 	},
 
-	getMentorAvailableSlots(mentorMemberId) {
-		return apiClient.get(`${BASE_MENTEE}/mentors/${mentorMemberId}/availability`);
+	getMentorAvailableSlots(mentorMemberId, organizationId = null) {
+		const params = {};
+		if (organizationId) params.organizationId = organizationId;
+		return apiClient.get(`${BASE_MENTEE}/mentors/${mentorMemberId}/availability`, { params });
 	},
 
-	getMentorFeedbacks(mentorMemberId, page = 0, limit = 10) {
-		return apiClient.get(`${BASE_MENTEE}/mentors/${mentorMemberId}/feedbacks`, { params: { page, limit } });
+	getMentorFeedbacks(mentorMemberId, page = 0, limit = 10, organizationId = null) {
+		const params = { page, limit };
+		if (organizationId) params.organizationId = organizationId;
+		return apiClient.get(`${BASE_MENTEE}/mentors/${mentorMemberId}/feedbacks`, { params });
 	},
 
 	bookSession(payload) {

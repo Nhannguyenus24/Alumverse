@@ -645,7 +645,7 @@ const PublicMentorProfile = ({ mentorMemberId, navigate }) => {
 
   const isOwnProfile =
     access.mentorMemberId != null && mentor?.memberId === access.mentorMemberId;
-  const canBook = access.canUseMentorship && access.hasJoinedMentorship && !isOwnProfile;
+  const canBook = access.canUseMentorship && access.hasJoinedMentorship && !access.isOrgManager && !isOwnProfile;
 
   useEffect(() => {
     if (isOwnProfile) {

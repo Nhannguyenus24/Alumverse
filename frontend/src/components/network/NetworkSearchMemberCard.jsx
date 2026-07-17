@@ -73,7 +73,7 @@ const NetworkSearchMemberCard = ({
   messageButtonVariant = 'contained',
 }) => {
   const { t } = useTranslation('network');
-  const { canContribute } = useCanContribute();
+  const { canUseBasicActions } = useCanContribute();
   const { navigateToProfile, handleCardKeyDown, stopActionPropagation } =
     useNetworkMemberProfileNavigation(userId);
   const displayName = fullName || 'N/A';
@@ -121,11 +121,11 @@ const NetworkSearchMemberCard = ({
           >
             {({ close }) => (
               <MenuItem
-                disabled={isBlockLoading || !canContribute}
+                disabled={isBlockLoading || !canUseBasicActions}
                 onClick={(event) => {
                   stopActionPropagation(event);
                   close();
-                  if (!canContribute) return;
+                  if (!canUseBasicActions) return;
                   onBlock();
                 }}
               >
@@ -183,17 +183,17 @@ const NetworkSearchMemberCard = ({
         </Box>
       </Stack>
 
-      <ContributeGuardTooltip sx={{ width: '100%', mt: 'auto', pt: 3, display: 'flex' }}>
+      <ContributeGuardTooltip required="basic" sx={{ width: '100%', mt: 'auto', pt: 3, display: 'flex' }}>
         <Button
           variant={messageButtonVariant}
           fullWidth
           type="button"
           onClick={(event) => {
             stopActionPropagation(event);
-            if (!canContribute) return;
+            if (!canUseBasicActions) return;
             onMessage?.();
           }}
-          disabled={!onMessage || isMessageLoading || !canContribute}
+          disabled={!onMessage || isMessageLoading || !canUseBasicActions}
           startIcon={actionIcon}
         >
           {isMessageLoading ? (

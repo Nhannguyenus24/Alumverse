@@ -12,6 +12,7 @@ import com.service.backend.shared.service.ImageService;
 import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.shared.utils.SecurityUtils;
 import com.service.backend.shared.utils.CacheUtils;
+import com.service.backend.user.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -25,6 +26,7 @@ public class AlumniPostService {
     private final AlumniPostR2dbcRepository alumniPostRepository;
     private final ImageService imageService;
     private final CacheUtils cacheUtils;
+    private final NotificationService notificationService;
 
     public Mono<AlumniPostResponse> create(CreateAlumniPostRequest request) {
         return Mono.zip(SecurityUtils.getCurrentUserId(), SecurityUtils.getCurrentOrganizationId(), SecurityUtils.getCurrentUserRole())
@@ -51,6 +53,16 @@ public class AlumniPostService {
 
                                 return alumniPostRepository.save(post)
                                         .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
+                                        .doOnNext(saved -> {
+                                            if (!publishImmediately) {
+                                                notificationService.createNotificationAsync(
+                                                        saved.getAuthorMemberId(),
+                                                        "Bài viết đã được gửi",
+                                                        "Bài viết \"" + saved.getTitle() + "\" đã được gửi. Admin sẽ xem xét trước khi hiển thị công khai.",
+                                                        "/honors/alumni"
+                                                );
+                                            }
+                                        })
                                         .map(AlumniPostResponse::from);
                             });
                 });
@@ -150,6 +162,12 @@ public class AlumniPostService {
         return alumniPostRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.ALUMNI_POST_NOT_FOUND, "Alumni post not found with id: " + id)))
                 .flatMap(existing -> alumniPostRepository.publishAlumniPost(id).then(alumniPostRepository.findById(id)))
+                .doOnNext(updated -> notificationService.createNotificationAsync(
+                        updated.getAuthorMemberId(),
+                        "Bài viết đã được duyệt",
+                        "Bài viết \"" + updated.getTitle() + "\" đã được duyệt và hiển thị công khai.",
+                        "/article/alumni/" + updated.getId()
+                ))
                 .map(AlumniPostResponse::from);
     }
 
@@ -157,6 +175,12 @@ public class AlumniPostService {
         return alumniPostRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.ALUMNI_POST_NOT_FOUND, "Alumni post not found with id: " + id)))
                 .flatMap(existing -> alumniPostRepository.hideAlumniPost(id).then(alumniPostRepository.findById(id)))
+                .doOnNext(updated -> notificationService.createNotificationAsync(
+                        updated.getAuthorMemberId(),
+                        "Bài viết bị gỡ đăng",
+                        "Bài viết \"" + updated.getTitle() + "\" đã bị gỡ khỏi trang công khai.",
+                        "/honors/alumni"
+                ))
                 .map(AlumniPostResponse::from);
     }
 }

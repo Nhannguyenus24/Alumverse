@@ -120,6 +120,7 @@
   "success_achievement": "Achievement post published successfully!",
   "success_job": "Job post published successfully!",
   "success_learning": "Learning resource published successfully!",
+  "success_submitted_for_review": "Your article has been submitted. An admin will review it before it appears publicly.",
   "error_title_content_required": "Please enter a title and content",
   "error_post_failed": "Failed to publish",
   "error_event_time_required": "Please enter start and end times",
