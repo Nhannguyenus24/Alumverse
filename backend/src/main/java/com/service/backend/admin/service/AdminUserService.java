@@ -59,6 +59,7 @@ public class AdminUserService {
 
     private final AdminUserRepository adminUserRepository;
     private final AdminAuditLogRepository adminAuditLogRepository;
+    private final AdminAuditService adminAuditService;
     private final PasswordEncoder passwordEncoder;
     private final UserProfileRepository userProfileRepository;
     private final UserOrganizationMemberRepository userOrganizationMemberRepository;
@@ -791,29 +792,10 @@ public class AdminUserService {
                     if (count <= 0) {
                         return Mono.just(false);
                     }
-                    return adminAuditLogRepository
-                            .insertAuditLog(
-                                    adminUserId,
-                                    userId,
-                                    "RESET_PASSWORD",
-                                    "USER",
-                                    String.valueOf(userId),
-                                    null,
-                                    null,
-                                    request.getReason())
-                            .onErrorResume(primaryErr -> {
-                                logger.warn("Primary audit-log insert failed, retrying legacy schema for user {}", userId, primaryErr);
-                                return adminAuditLogRepository
-                                        .insertAuditLogLegacy(
-                                                adminUserId,
-                                                userId,
-                                                "RESET_PASSWORD");
-                            })
-                            .thenReturn(true)
-                            .onErrorResume(e -> {
-                                logger.warn("Password reset succeeded but all audit-log insert attempts failed for user {}", userId, e);
-                                return Mono.just(true);
-                            });
+                    return adminAuditService.recordSemantic(
+                                    adminUserId, userId, "RESET_PASSWORD", "USER", String.valueOf(userId),
+                                    null, null, request.getReason())
+                            .thenReturn(true);
                 }));
     }
 

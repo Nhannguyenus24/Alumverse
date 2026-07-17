@@ -6,10 +6,8 @@ import {
   Box,
   Button,
   Chip,
-  Checkbox,
   FormControl,
   InputLabel,
-  ListItemText,
   MenuItem,
   OutlinedInput,
   Paper,
@@ -20,28 +18,16 @@ import {
   alpha,
   useTheme,
 } from '@mui/material';
-import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
 import HistoryIcon from '@mui/icons-material/History';
 import SecurityIcon from '@mui/icons-material/Security';
+import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import AdminStatusChip from '../../components/admin/AdminStatusChip';
 import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetricTile';
 import AdminDataTable from '../../components/admin/AdminDataTable';
 import useAdminAuditLogsData from '../../hooks/admin/useAdminAuditLogsData';
 import { formatDateTimeWithSeconds } from '../../utils/dateFormatter';
 import { stringifyJson } from '../../utils/stringUtils';
-
-const DEFAULT_ENTITY_TYPES = [
-  'USER',
-  'FORUM_POST',
-  'FORUM_TOPIC',
-  'FORUM_CATEGORY',
-  'ORGANIZATION',
-  'EVENT',
-  'ORGANIZATION_MEMBER',
-];
-
-const DEFAULT_ACTIONS = ['CREATE', 'UPDATE', 'DELETE', 'BAN', 'UNBAN', 'APPROVE', 'REJECT'];
 
 const AUDIT_ACTION_LABEL_KEYS = {
   CREATE: 'audit_action_create',
@@ -97,11 +83,6 @@ const parseMaybeJson = (value) => {
   }
 };
 
-const extractDescriptionMetadata = (description) => {
-  const match = String(description || '').match(/\((.*)\)$/);
-  return match ? parseMaybeJson(match[1]) : null;
-};
-
 const METADATA_LABEL_KEYS = {
   reason: 'audit_meta_reason',
   source: 'audit_meta_source',
@@ -146,7 +127,7 @@ const formatAuditDescription = (t, log) => {
   const action = formatAuditLabel(t, AUDIT_ACTION_LABEL_KEYS, log.action);
   const entity = formatAuditLabel(t, AUDIT_ENTITY_LABEL_KEYS, log.entityType);
   const id = log.entityId || '—';
-  const metadata = formatAuditMetadata(t, log.metadata ?? extractDescriptionMetadata(log.description));
+  const metadata = formatAuditMetadata(t, log.metadata);
 
   return metadata
     ? t('audit_description_with_details', { action, entity, id, metadata })
@@ -198,71 +179,47 @@ const AdminAuditLogsPage = () => {
   useEffect(() => {
     setBreadcrumbs?.([{ label: t('nav_audit_logs'), active: true }]);
   }, [setBreadcrumbs]);
-  const { loading, auditLogs } = useAdminAuditLogsData();
 
-  const [dateFrom, setDateFrom] = useState('');
-  const [entityFilter, setEntityFilter] = useState([]);
-  const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(25);
-  const [rollingCutoffMs, setRollingCutoffMs] = useState(null);
+  const [search, setSearch] = useState('');
+  const [adminUserId, setAdminUserId] = useState('');
+  const [action, setAction] = useState('');
+  const [resourceType, setResourceType] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
-  const entityOptions = useMemo(() => {
-    const fromData = new Set(auditLogs.map((log) => String(log.entityType || '')).filter(Boolean));
-    DEFAULT_ENTITY_TYPES.forEach((e) => fromData.add(e));
-    return Array.from(fromData).sort();
-  }, [auditLogs]);
+  const filters = useMemo(() => ({
+    page,
+    size: rowsPerPage,
+    q: search,
+    adminUserId: adminUserId || undefined,
+    action: action || undefined,
+    resourceType: resourceType || undefined,
+    from: dateFrom || undefined,
+    to: dateTo || undefined,
+  }), [page, rowsPerPage, search, adminUserId, action, resourceType, dateFrom, dateTo]);
 
+  const { loading, rows, total, facets, summary, exportCsv } = useAdminAuditLogsData(filters);
 
-  const filteredLogs = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    const list = auditLogs.filter((log) => {
-      if (entityFilter.length > 0 && !entityFilter.includes(String(log.entityType || ''))) return false;
-      
-      const ts = new Date(log.timestamp).getTime();
-      if (!Number.isNaN(ts)) {
-        if (rollingCutoffMs != null && ts < rollingCutoffMs) return false;
-        if (rollingCutoffMs == null && dateFrom) {
-          const from = new Date(`${dateFrom}T00:00:00`).getTime();
-          if (ts < from) return false;
-        }
-      }
+  const stats = useMemo(() => ({
+    totalActions: summary.reduce((sum, a) => sum + (a.totalActions || 0), 0),
+    failedActions: summary.reduce((sum, a) => sum + (a.failedActions || 0), 0),
+    admins: summary.length,
+    filtered: total,
+  }), [summary, total]);
 
-      if (q) {
-        const haystack = [log.description, log.actorName, log.studentId, log.userEmail, log.entityType, String(log.entityId ?? ''), log.entityName, log.action]
-          .filter(Boolean).join(' ').toLowerCase();
-        if (!haystack.includes(q)) return false;
-      }
-      return true;
-    });
-    return [...list].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-  }, [auditLogs, entityFilter, dateFrom, search, rollingCutoffMs]);
-
-  const handleExportCsv = () => {
-    if (filteredLogs.length === 0) {
+  const handleExportCsv = async () => {
+    if (total === 0) {
       enqueueSnackbar(t('audit_no_data_export'), { variant: 'warning' });
       return;
     }
-    const escape = (v) => `"${String(v ?? '').replaceAll('"', '""')}"`;
-    const header = ['timestamp', 'studentId', 'action', 'entityType', 'status', 'description'];
-    const rows = filteredLogs.map(log => [
-      formatDateTimeWithSeconds(log.timestamp),
-      log.studentId,
-      log.action,
-      log.entityType,
-      log.status,
-      log.description
-    ].map(escape).join(','));
-    
-    const csv = [header.map(escape).join(','), ...rows].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `audit-logs-${new Date().toISOString().slice(0, 10)}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
-    enqueueSnackbar(t('audit_export_success'), { variant: 'success' });
+    try {
+      await exportCsv();
+      enqueueSnackbar(t('audit_export_success'), { variant: 'success' });
+    } catch {
+      enqueueSnackbar(t('audit_no_data_export'), { variant: 'error' });
+    }
   };
 
   const columns = [
@@ -276,7 +233,7 @@ const AdminAuditLogsPage = () => {
           <Typography variant="body2" sx={{ fontWeight: 600 }}>{row.actorName || val || '-'}</Typography>
           <Typography variant="caption" color="text.secondary">{row.userEmail || ''}</Typography>
         </Box>
-      )
+      ),
     },
     {
       id: 'action',
@@ -289,14 +246,21 @@ const AdminAuditLogsPage = () => {
           variant="outlined"
           sx={getActionChipSx(theme, val)}
         />
-      )
+      ),
     },
     { id: 'entityType', label: t('audit_col_entity'), minWidth: 150, render: (val) => formatAuditLabel(t, AUDIT_ENTITY_LABEL_KEYS, val) },
     { id: 'entityId', label: t('audit_col_entity_id'), minWidth: 110 },
     {
       id: 'status',
       label: t('audit_col_result'),
-      render: (val) => <AdminStatusChip status={val} category="audit" />
+      render: (val, row) => (
+        <Stack spacing={0.25}>
+          <AdminStatusChip status={val} category="audit" />
+          {row.statusCode != null && (
+            <Typography variant="caption" color="text.secondary">{row.statusCode}</Typography>
+          )}
+        </Stack>
+      ),
     },
     {
       id: 'description',
@@ -306,107 +270,147 @@ const AdminAuditLogsPage = () => {
         <Typography variant="body2" sx={{ maxWidth: 420, whiteSpace: 'normal', lineHeight: 1.45 }}>
           {formatAuditDescription(t, row)}
         </Typography>
-      )
-    }
+      ),
+    },
   ];
 
   const renderExpandableRow = (log) => {
     const hasRequestInfo = Boolean(log.ipAddress || log.requestPath || log.userAgent || log.executionTime != null);
 
     return (
-    <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
-      <Box
-        sx={{
-          display: 'grid',
-          gridTemplateColumns: { xs: '1fr', md: 'repeat(3, minmax(0, 1fr))' },
-          gap: 3,
-          alignItems: 'stretch',
-        }}
-      >
-        <Box sx={{ minWidth: 0 }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>{t('audit_request_info')}</Typography>
-          {hasRequestInfo ? (
-            <Stack spacing={0.5}>
-              <Typography variant="caption"><strong>IP:</strong> {log.ipAddress || '-'}</Typography>
-              <Typography variant="caption"><strong>Path:</strong> {log.requestPath || '-'}</Typography>
-              <Typography variant="caption"><strong>User Agent:</strong> {log.userAgent || '-'}</Typography>
-              <Typography variant="caption"><strong>Execution:</strong> {log.executionTime != null ? `${log.executionTime}ms` : '-'}</Typography>
-            </Stack>
-          ) : (
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.6 }}>
-              {t('audit_request_unavailable')}
-            </Typography>
-          )}
-        </Box>
-        <Box sx={{ minWidth: 0 }}>
-          <Paper variant="outlined" sx={{ p: 1.5, height: '100%' }}>
-            <Typography variant="caption" sx={{ fontWeight: 700, mb: 1, display: 'block' }}>{t('audit_old_value')}</Typography>
-            <Box component="pre" sx={{ m: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-all', fontSize: 11, color: 'text.secondary' }}>
-              {stringifyJson(log.oldValue)}
-            </Box>
-          </Paper>
-        </Box>
-        <Box sx={{ minWidth: 0 }}>
-          <Paper variant="outlined" sx={{ p: 1.5, height: '100%' }}>
-            <Typography variant="caption" sx={{ fontWeight: 700, mb: 1, display: 'block' }}>{t('audit_new_value')}</Typography>
-            <Box component="pre" sx={{ m: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-all', fontSize: 11, color: 'text.secondary' }}>
-              {stringifyJson(log.newValue)}
-            </Box>
-          </Paper>
+      <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', md: 'repeat(3, minmax(0, 1fr))' },
+            gap: 3,
+            alignItems: 'stretch',
+          }}
+        >
+          <Box sx={{ minWidth: 0 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>{t('audit_request_info')}</Typography>
+            {hasRequestInfo ? (
+              <Stack spacing={0.5}>
+                <Typography variant="caption"><strong>IP:</strong> {log.ipAddress || '-'}</Typography>
+                <Typography variant="caption"><strong>Path:</strong> {log.requestPath || '-'}</Typography>
+                <Typography variant="caption"><strong>User Agent:</strong> {log.userAgent || '-'}</Typography>
+                <Typography variant="caption"><strong>Execution:</strong> {log.executionTime != null ? `${log.executionTime}ms` : '-'}</Typography>
+              </Stack>
+            ) : (
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.6 }}>
+                {t('audit_request_unavailable')}
+              </Typography>
+            )}
+          </Box>
+          <Box sx={{ minWidth: 0 }}>
+            <Paper variant="outlined" sx={{ p: 1.5, height: '100%' }}>
+              <Typography variant="caption" sx={{ fontWeight: 700, mb: 1, display: 'block' }}>{t('audit_old_value')}</Typography>
+              <Box component="pre" sx={{ m: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-all', fontSize: 11, color: 'text.secondary' }}>
+                {stringifyJson(log.oldValue)}
+              </Box>
+            </Paper>
+          </Box>
+          <Box sx={{ minWidth: 0 }}>
+            <Paper variant="outlined" sx={{ p: 1.5, height: '100%' }}>
+              <Typography variant="caption" sx={{ fontWeight: 700, mb: 1, display: 'block' }}>{t('audit_new_value')}</Typography>
+              <Box component="pre" sx={{ m: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-all', fontSize: 11, color: 'text.secondary' }}>
+                {stringifyJson(log.newValue)}
+              </Box>
+            </Paper>
+          </Box>
         </Box>
       </Box>
-    </Box>
-  );
+    );
   };
 
+  const resetPageAnd = (setter) => (value) => { setter(value); setPage(0); };
+
   const Filters = (
-    <Stack direction="row" spacing={1}>
-      <FormControl size="small" sx={{ minWidth: 160 }}>
-        <InputLabel shrink>{t('audit_entity_filter')}</InputLabel>
+    <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+      <FormControl size="small" sx={{ minWidth: 190 }}>
+        <InputLabel shrink>{t('audit_filter_admin', { defaultValue: 'Quản trị viên' })}</InputLabel>
         <Select
-          multiple
           displayEmpty
-          value={entityFilter}
-          onChange={(e) => { setEntityFilter(e.target.value); setPage(0); }}
-          input={<OutlinedInput label={t('audit_entity_filter')} />}
-          renderValue={(selected) => selected.length ? t('audit_selected_count', { count: selected.length }) : t('filter_all')}
+          value={adminUserId}
+          onChange={(e) => resetPageAnd(setAdminUserId)(e.target.value)}
+          input={<OutlinedInput label={t('audit_filter_admin', { defaultValue: 'Quản trị viên' })} />}
+          renderValue={(selected) => {
+            if (!selected) return t('filter_all');
+            const found = facets.admins.find((a) => String(a.adminUserId) === String(selected));
+            return found?.adminFullName || found?.adminEmail || `#${selected}`;
+          }}
         >
-          {entityOptions.map((e) => (
-            <MenuItem key={e} value={e}>
-              <Checkbox checked={entityFilter.includes(e)} size="small" />
-              <ListItemText primary={formatAuditLabel(t, AUDIT_ENTITY_LABEL_KEYS, e)} />
+          <MenuItem value="">{t('filter_all')}</MenuItem>
+          {facets.admins.map((a) => (
+            <MenuItem key={a.adminUserId} value={a.adminUserId}>
+              {a.adminFullName || a.adminEmail || `#${a.adminUserId}`}
             </MenuItem>
           ))}
         </Select>
       </FormControl>
+
+      <FormControl size="small" sx={{ minWidth: 160 }}>
+        <InputLabel shrink>{t('audit_col_action')}</InputLabel>
+        <Select
+          displayEmpty
+          value={action}
+          onChange={(e) => resetPageAnd(setAction)(e.target.value)}
+          input={<OutlinedInput label={t('audit_col_action')} />}
+          renderValue={(selected) => (selected ? formatAuditLabel(t, AUDIT_ACTION_LABEL_KEYS, selected) : t('filter_all'))}
+        >
+          <MenuItem value="">{t('filter_all')}</MenuItem>
+          {facets.actions.map((a) => (
+            <MenuItem key={a} value={a}>{formatAuditLabel(t, AUDIT_ACTION_LABEL_KEYS, a)}</MenuItem>
+          ))}
+        </Select>
+      </FormControl>
+
+      <FormControl size="small" sx={{ minWidth: 160 }}>
+        <InputLabel shrink>{t('audit_entity_filter')}</InputLabel>
+        <Select
+          displayEmpty
+          value={resourceType}
+          onChange={(e) => resetPageAnd(setResourceType)(e.target.value)}
+          input={<OutlinedInput label={t('audit_entity_filter')} />}
+          renderValue={(selected) => (selected ? formatAuditLabel(t, AUDIT_ENTITY_LABEL_KEYS, selected) : t('filter_all'))}
+        >
+          <MenuItem value="">{t('filter_all')}</MenuItem>
+          {facets.resourceTypes.map((r) => (
+            <MenuItem key={r} value={r}>{formatAuditLabel(t, AUDIT_ENTITY_LABEL_KEYS, r)}</MenuItem>
+          ))}
+        </Select>
+      </FormControl>
+
       <TextField
         size="small"
         type="date"
-        label={t('admin:from_date')}
+        label={t('from_date')}
         value={dateFrom}
-        onChange={(e) => { setRollingCutoffMs(null); setDateFrom(e.target.value); setPage(0); }}
+        onChange={(e) => resetPageAnd(setDateFrom)(e.target.value)}
+        InputLabelProps={{ shrink: true }}
+      />
+      <TextField
+        size="small"
+        type="date"
+        label={t('to_date', { defaultValue: 'Đến ngày' })}
+        value={dateTo}
+        onChange={(e) => resetPageAnd(setDateTo)(e.target.value)}
         InputLabelProps={{ shrink: true }}
       />
     </Stack>
   );
 
-  const [now] = useState(() => Date.now());
-  const stats = {
-    totalLogs: auditLogs.length,
-    failedLogs: auditLogs.filter(l => l.status === 'FAILED').length,
-    distinctUsers: new Set(auditLogs.map(l => l.userId)).size,
-    last24h: auditLogs.filter(l => new Date(l.timestamp) > new Date(now - 24*60*60*1000)).length
-  };
+  const topAdmins = summary.slice(0, 6);
 
   return (
     <Box>
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <Box>
           <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>
-            {t('admin:audit_logs_heading')}
+            {t('audit_logs_heading')}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
-            {t('admin:audit_logs_subtitle')}
+            {t('audit_logs_subtitle')}
           </Typography>
         </Box>
         <Button
@@ -414,7 +418,7 @@ const AdminAuditLogsPage = () => {
           startIcon={<FileDownloadOutlinedIcon />}
           onClick={handleExportCsv}
         >
-          {t('admin:export_data')}
+          {t('export_data')}
         </Button>
       </Box>
 
@@ -430,34 +434,86 @@ const AdminAuditLogsPage = () => {
         }}
       >
         <AdminDashboardMetricTile
-          label={t('admin:audit_total')}
-          value={stats.totalLogs}
+          label={t('audit_total')}
+          value={stats.totalActions}
           icon={<HistoryIcon />}
         />
         <AdminDashboardMetricTile
-          label={t('admin:audit_24h')}
-          value={stats.last24h}
+          label={t('audit_filtered', { defaultValue: 'Kết quả lọc' })}
+          value={stats.filtered}
           icon={<HistoryIcon />}
           valueColor="info.main"
         />
         <AdminDashboardMetricTile
-          label={t('admin:audit_active_users')}
-          value={stats.distinctUsers}
+          label={t('audit_active_admins', { defaultValue: 'Số quản trị viên' })}
+          value={stats.admins}
           icon={<SecurityIcon />}
           valueColor="success.main"
         />
         <AdminDashboardMetricTile
-          label={t('admin:audit_system_errors')}
-          value={stats.failedLogs}
+          label={t('audit_system_errors')}
+          value={stats.failedActions}
           icon={<SecurityIcon />}
           valueColor="error.main"
         />
       </Box>
 
+      {topAdmins.length > 0 && (
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5 }}>
+            {t('audit_per_admin_heading', { defaultValue: 'Hoạt động theo quản trị viên' })}
+          </Typography>
+          <Stack direction="row" spacing={2} sx={{ overflowX: 'auto', pb: 1 }}>
+            {topAdmins.map((a) => {
+              const active = String(adminUserId) === String(a.adminUserId);
+              return (
+                <Paper
+                  key={a.adminUserId}
+                  variant="outlined"
+                  onClick={() => resetPageAnd(setAdminUserId)(active ? '' : a.adminUserId)}
+                  sx={{
+                    p: 2,
+                    minWidth: 220,
+                    cursor: 'pointer',
+                    borderColor: active ? 'primary.main' : undefined,
+                    bgcolor: active ? alpha(theme.palette.primary.main, 0.06) : undefined,
+                  }}
+                >
+                  <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+                    <PersonOutlineIcon fontSize="small" color="primary" />
+                    <Box sx={{ minWidth: 0 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }} noWrap>
+                        {a.adminFullName || `#${a.adminUserId}`}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" noWrap>
+                        {a.adminEmail || a.adminRole || ''}
+                      </Typography>
+                    </Box>
+                  </Stack>
+                  <Stack direction="row" spacing={2}>
+                    <Typography variant="caption">
+                      <strong>{a.totalActions ?? 0}</strong> {t('audit_actions_word', { defaultValue: 'thao tác' })}
+                    </Typography>
+                    {(a.failedActions ?? 0) > 0 && (
+                      <Typography variant="caption" color="error.main">
+                        <strong>{a.failedActions}</strong> {t('audit_failed_word', { defaultValue: 'lỗi' })}
+                      </Typography>
+                    )}
+                  </Stack>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                    {t('audit_last_active', { defaultValue: 'Gần nhất' })}: {a.lastActionAt ? formatDateTimeWithSeconds(a.lastActionAt) : '-'}
+                  </Typography>
+                </Paper>
+              );
+            })}
+          </Stack>
+        </Box>
+      )}
+
       <AdminDataTable
         columns={columns}
-        rows={filteredLogs.slice(page * rowsPerPage, (page + 1) * rowsPerPage)}
-        totalCount={filteredLogs.length}
+        rows={rows}
+        totalCount={total}
         page={page}
         onPageChange={(_, p) => setPage(p)}
         rowsPerPage={rowsPerPage}
