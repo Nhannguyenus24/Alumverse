@@ -28,7 +28,9 @@ public interface OrganizationRepository extends R2dbcRepository<Organization, In
            "WHERE om.organization_id = :organizationId " +
            "AND om.is_trusted_verifier = true " +
            "AND om.status = 'ACTIVE' " +
-           "AND u.role <> 'ADMIN'")
+           // Xác thực chéo là việc giữa các thành viên với nhau: admin/staff đã có đường
+           // duyệt riêng nên không đứng tên trong danh sách này.
+           "AND u.role NOT IN ('ADMIN', 'STAFF')")
     Flux<TrustedVerifierResponse> findTrustedVerifiersByOrganizationId(Integer organizationId);
 
     @Query("SELECT * FROM organizations WHERE :search IS NULL OR name ILIKE :search LIMIT :size OFFSET :offset")

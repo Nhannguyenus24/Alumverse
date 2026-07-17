@@ -170,6 +170,15 @@ public interface UserOrganizationMemberRepository extends R2dbcRepository<Organi
             """)
     Mono<Integer> updateVerificationLevelByOrgAndUser(@Param("organizationId") Integer organizationId, @Param("userId") Integer userId, @Param("level") Integer level);
 
+    // graduation_status là jsonb array (vd. ["GRADUATED", "STUDYING"]) nên thành viên được coi là
+    // đang học khi có bất kỳ mục nào là STUDYING. COALESCE giữ null/rỗng/dữ liệu lạ ở FALSE.
+    @Query("""
+            SELECT COALESCE(graduation_status @> '["STUDYING"]'::jsonb, FALSE)
+            FROM organization_members
+            WHERE organization_id = :organizationId AND user_id = :userId
+            """)
+    Mono<Boolean> isStudyingMemberByOrgAndUser(@Param("organizationId") Integer organizationId, @Param("userId") Integer userId);
+
     // Đưa các thành viên đang ở trạng thái "đang xác thực" (verification_level = 1) về lại
     // level 0 khi họ không còn yêu cầu xác thực nào (verification request hoặc peer verify)
     // đang chờ xử lý trong vòng 3 ngày gần nhất, để họ có thể gửi lại yêu cầu.

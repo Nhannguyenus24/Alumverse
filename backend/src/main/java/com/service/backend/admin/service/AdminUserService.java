@@ -9,6 +9,7 @@ import java.util.Collection;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.enums.Status;
 import com.service.backend.shared.enums.UserRole;
+import com.service.backend.shared.enums.VerificationLevel;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.utils.CacheUtils;
@@ -55,7 +56,6 @@ import java.time.LocalDateTime;
 public class AdminUserService {
     private static final Logger logger = LoggerFactory.getLogger(AdminUserService.class);
     private static final String ORG_CACHE = "organization_cache";
-    private static final int DEFAULT_ADMIN_PROVISIONED_USER_LEVEL = 3;
 
     private final AdminUserRepository adminUserRepository;
     private final AdminAuditLogRepository adminAuditLogRepository;
@@ -219,9 +219,10 @@ public class AdminUserService {
 
             String normalizedRole = StringUtils.hasText(role) ? role.trim().toUpperCase() : "USER";
             Integer finalVerificationLevel = switch (normalizedRole) {
-                case "STAFF" -> 4;
+                case "STAFF" -> VerificationLevel.ADMIN;
+                // Admin tạo sẵn tài khoản USER thì mặc định coi là sinh viên đang học (đã được khoa xác nhận).
                 case "USER" -> (verificationLevel == null || verificationLevel == 0)
-                        ? DEFAULT_ADMIN_PROVISIONED_USER_LEVEL
+                        ? VerificationLevel.STUDENT
                         : verificationLevel;
                 default -> verificationLevel;
             };
@@ -609,24 +610,27 @@ public class AdminUserService {
         }
     }
 
-    public Mono<PaginatedResponse<VerificationRequestResponse>> getAllVerificationRequests(Integer organizationId, String keyword, int page, int size) {
-        return getVerificationRequests(organizationId, keyword, false, page, size);
+    public Mono<PaginatedResponse<VerificationRequestResponse>> getAllVerificationRequests(Integer organizationId, String keyword, String requestType, int page, int size) {
+        return getVerificationRequests(organizationId, keyword, false, requestType, page, size);
     }
 
-    public Mono<PaginatedResponse<VerificationRequestResponse>> getPendingVerificationRequests(Integer organizationId, String keyword, int page, int size) {
-        return getVerificationRequests(organizationId, keyword, true, page, size);
+    public Mono<PaginatedResponse<VerificationRequestResponse>> getPendingVerificationRequests(Integer organizationId, String keyword, String requestType, int page, int size) {
+        return getVerificationRequests(organizationId, keyword, true, requestType, page, size);
     }
 
-    private Mono<PaginatedResponse<VerificationRequestResponse>> getVerificationRequests(Integer organizationId, String keyword, boolean pendingOnly, int page, int size) {
+    private Mono<PaginatedResponse<VerificationRequestResponse>> getVerificationRequests(Integer organizationId, String keyword, boolean pendingOnly, String requestType, int page, int size) {
         int offset = page * size;
         String kw = (keyword != null && !keyword.trim().isEmpty()) ? "%" + keyword.trim() + "%" : null;
+        // Only PROOF / PEER are valid discriminators; anything else means "no type filter".
+        String normalizedType = requestType == null ? null : requestType.trim().toUpperCase();
+        final String type = ("PROOF".equals(normalizedType) || "PEER".equals(normalizedType)) ? normalizedType : null;
         return PaginationHelper.paginate(
-                adminUserRepository.findUnifiedVerificationRequests(organizationId, kw, pendingOnly, size, offset).collectList(),
-                adminUserRepository.countUnifiedVerificationRequests(organizationId, kw, pendingOnly),
+                adminUserRepository.findUnifiedVerificationRequests(organizationId, kw, pendingOnly, type, size, offset).collectList(),
+                adminUserRepository.countUnifiedVerificationRequests(organizationId, kw, pendingOnly, type),
                 page,
                 size
         )
-         .doOnSuccess(r -> logger.info("getVerificationRequests: org={}, pendingOnly={}, result={}", organizationId, pendingOnly, JsonUtils.toJson(r)))
+         .doOnSuccess(r -> logger.info("getVerificationRequests: org={}, pendingOnly={}, requestType={}, result={}", organizationId, pendingOnly, type, JsonUtils.toJson(r)))
          .doOnError(e -> logger.error("Error fetching verification requests: {}", e.getMessage()));
     }
 
@@ -644,12 +648,20 @@ public class AdminUserService {
                                 Mono.fromRunnable(() -> notificationService.createNotificationAsync(memberId, "Xác thực thành công", "Yêu cầu xác thực của bạn đã được duyệt."))
                                         .subscribeOn(Schedulers.boundedElastic())
                                         .subscribe();
-                                return userOrganizationMemberRepository.incrementVerificationLevelByOrgAndUser(organizationId, memberId)
-                                        .doOnSuccess(ignored -> sseService.sendToUser(memberId.longValue(),
-                                                "verification-updated", Map.of(
-                                                        "verificationLevel", 2,
-                                                        "status", "APPROVED")))
-                                        .thenReturn(true);
+                                return userOrganizationMemberRepository.isStudyingMemberByOrgAndUser(organizationId, memberId)
+                                        .defaultIfEmpty(false)
+                                        .flatMap(studying -> {
+                                            int level = Boolean.TRUE.equals(studying)
+                                                    ? VerificationLevel.STUDENT
+                                                    : VerificationLevel.VERIFIED;
+                                            return userOrganizationMemberRepository
+                                                    .updateVerificationLevelByOrgAndUser(organizationId, memberId, level)
+                                                    .doOnSuccess(ignored -> sseService.sendToUser(memberId.longValue(),
+                                                            "verification-updated", Map.of(
+                                                                    "verificationLevel", level,
+                                                                    "status", "APPROVED")))
+                                                    .thenReturn(true);
+                                        });
                             } else if ("REJECTED".equals(upperStatus)) {
                                 String msg = "Yêu cầu xác thực của bạn đã bị từ chối.";
                                 if (StringUtils.hasText(adminNote)) {
@@ -838,6 +850,14 @@ public class AdminUserService {
                 .doOnSuccess(success -> {
                     if (success) {
                         logger.info("Successfully updated is_trusted_verifier for user {} in organization {}", userId, organizationId);
+                        // Người được cấp quyền cần biết để còn xử lý yêu cầu xác thực gửi tới cho họ.
+                        String title = isTrusted ? "Bạn được cấp quyền xác thực" : "Quyền xác thực đã được gỡ";
+                        String message = isTrusted
+                                ? "Bạn đã trở thành người xác thực tin cậy của tổ chức. Thành viên khác có thể nhờ bạn xác nhận thông tin học vấn."
+                                : "Bạn không còn là người xác thực tin cậy của tổ chức.";
+                        Mono.fromRunnable(() -> notificationService.createNotificationAsync(userId, title, message))
+                                .subscribeOn(Schedulers.boundedElastic())
+                                .subscribe();
                     } else {
                         logger.warn("Failed to update is_trusted_verifier: Member record not found for user {} and organization {}", userId, organizationId);
                     }

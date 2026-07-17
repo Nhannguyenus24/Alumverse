@@ -5,7 +5,7 @@ import com.service.backend.shared.dto.BatchModerationResponse;
 import com.service.backend.shared.dto.CvExtractionResponse;
 import com.service.backend.shared.service.CvExtractionService;
 import com.service.backend.shared.service.ModerationService;
-import com.service.backend.shared.service.OcrCleanupService;
+import com.service.backend.shared.service.DocumentExtractionService;
 import com.service.backend.shared.service.SkillExtractionFallback;
 import com.service.backend.shared.service.SkillExtractionService;
 import com.service.backend.shared.service.SurveyInsightService;
@@ -50,13 +50,14 @@ public class LangChain4jConfig {
     }
 
     @Bean
-    public OcrCleanupService ocrCleanupService() {
-        OcrCleanupService ai = aiDelegate(OcrCleanupService.class);
+    public DocumentExtractionService documentExtractionService() {
+        DocumentExtractionService ai = aiDelegate(DocumentExtractionService.class);
         return rawText -> {
             try {
-                return ai.cleanOcrText(rawText);
+                return ai.extractFields(rawText);
             } catch (RuntimeException e) {
-                log.warn("OCR-cleanup AI unavailable, returning raw text: {}", e.getMessage());
+                // Thà trả chữ thô dài còn hơn mất trắng nội dung giấy tờ.
+                log.warn("Document-extraction AI unavailable, returning raw text: {}", e.getMessage());
                 return rawText;
             }
         };

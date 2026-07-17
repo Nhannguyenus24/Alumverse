@@ -18,6 +18,7 @@ import com.service.backend.organization.dao.OrganizationRepository;
 import com.service.backend.shared.entity.OrganizationMember;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.enums.Status;
+import com.service.backend.shared.enums.VerificationLevel;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.user.dao.UserLoginHistoryRepository;
@@ -56,6 +57,7 @@ public class UserService {
     private final NotificationService notificationService;
     private final com.service.backend.user.dao.DeviceTokenRepository deviceTokenRepository;
     private final OCRService ocrService;
+    private final com.service.backend.shared.service.SseService sseService;
     private final com.service.backend.shared.service.EmailService emailService;
 
 
@@ -81,6 +83,12 @@ public class UserService {
                         if (localPath != null) {
                             ocrService.extractTextFromFile(localPath)
                                     .flatMap(text -> authRepository.updateAiSummary(requestId, text))
+                                    // Đọc tài liệu mất ~30s sau khi gửi. Báo cho tổ chức biết đã xong
+                                    // để màn hình duyệt của admin tự làm mới, khỏi ngồi đoán.
+                                    .doOnSuccess(ignored -> sseService.sendToOrganization(
+                                            request.getOrganizationId(),
+                                            "verification-ocr-ready",
+                                            Map.of("requestId", requestId)))
                                     .doOnError(e -> logger.error("Background OCR failed for requestId {}: {}", requestId, e.getMessage()))
                                     .subscribe();
                         }
@@ -173,6 +181,17 @@ public class UserService {
                                     return Mono.error(new ApplicationException(ErrorCode.FORBIDDEN, "Only trusted verifiers can accept verification requests"));
                                 }
 
+                                // Thành viên còn đang học lên mức "Sinh viên", đã ra trường lên "Đã xác thực".
+                                Mono<Integer> applyVerificationLevel = userOrganizationMemberRepository
+                                        .isStudyingMemberByOrgAndUser(request.getOrganizationId(), request.getTargetMemberId())
+                                        .defaultIfEmpty(false)
+                                        .flatMap(studying -> userOrganizationMemberRepository.updateVerificationLevelByOrgAndUser(
+                                                request.getOrganizationId(),
+                                                request.getTargetMemberId(),
+                                                Boolean.TRUE.equals(studying)
+                                                        ? VerificationLevel.STUDENT
+                                                        : VerificationLevel.VERIFIED));
+
                                 return Mono.when(
                                         peerVerificationRepository.updateStatus(requestId, Status.APPROVED),
                                         peerVerificationRepository.resolveOtherPendingRequestsForTarget(
@@ -180,7 +199,7 @@ public class UserService {
                                                 request.getTargetMemberId(),
                                                 requestId,
                                                 Status.CANCELLED),
-                                        userOrganizationMemberRepository.incrementVerificationLevelByOrgAndUser(request.getOrganizationId(), request.getTargetMemberId())
+                                        applyVerificationLevel
                                 );
                             });
                 })

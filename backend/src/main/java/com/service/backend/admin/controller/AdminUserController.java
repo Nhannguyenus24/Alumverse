@@ -185,15 +185,16 @@ public class AdminUserController {
             @RequestParam(required = false) Integer organizationId,
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "false") boolean pendingOnly,
+            @RequestParam(required = false) String requestType,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int size) {
         return SecurityUtils.resolveOrganizationId(organizationId)
                 .flatMap(resolvedOrgId -> pendingOnly
-                        ? adminUserService.getPendingVerificationRequests(resolvedOrgId, keyword, page, size)
-                        : adminUserService.getAllVerificationRequests(resolvedOrgId, keyword, page, size))
+                        ? adminUserService.getPendingVerificationRequests(resolvedOrgId, keyword, requestType, page, size)
+                        : adminUserService.getAllVerificationRequests(resolvedOrgId, keyword, requestType, page, size))
                 .switchIfEmpty(Mono.defer(() -> pendingOnly
-                        ? adminUserService.getPendingVerificationRequests(null, keyword, page, size)
-                        : adminUserService.getAllVerificationRequests(null, keyword, page, size)))
+                        ? adminUserService.getPendingVerificationRequests(null, keyword, requestType, page, size)
+                        : adminUserService.getAllVerificationRequests(null, keyword, requestType, page, size)))
                 .map(data -> ResponseEntity.ok(
                         new ApiResponse<>("Verification requests fetched successfully", data)));
     }
@@ -325,9 +326,10 @@ public class AdminUserController {
             @RequestParam(required = false) Integer organizationId,
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "true") boolean pendingOnly,
+            @RequestParam(required = false) String requestType,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int size) {
-        return getVerificationRequests(organizationId, keyword, pendingOnly, page, size);
+        return getVerificationRequests(organizationId, keyword, pendingOnly, requestType, page, size);
     }
 
     @PutMapping("/alumni/verification-requests/{requestId}")
