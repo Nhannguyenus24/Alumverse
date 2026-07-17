@@ -43,6 +43,29 @@ public class AdminAuditLog {
 
     private String metadata;
 
+    @Column("http_method")
+    private String httpMethod;
+
+    @Column("request_path")
+    private String requestPath;
+
+    @Column("ip_address")
+    private String ipAddress;
+
+    @Column("user_agent")
+    private String userAgent;
+
+    @Column("status_code")
+    private Integer statusCode;
+
+    @Column("latency_ms")
+    private Long latencyMs;
+
+    private String status;
+
+    @Column("admin_role")
+    private String adminRole;
+
     @CreatedDate
     @Column("created_at")
     private LocalDateTime createdAt;

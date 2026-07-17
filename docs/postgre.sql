@@ -896,6 +896,14 @@ create table admin_audit_logs
     before_data    jsonb,
     after_data     jsonb,
     metadata       jsonb,
+    http_method    text,
+    request_path   text,
+    ip_address     text,
+    user_agent     text,
+    status_code    integer,
+    latency_ms     bigint,
+    status         text,
+    admin_role     text,
     created_at     timestamp default CURRENT_TIMESTAMP
 );
 
@@ -904,6 +912,18 @@ alter table admin_audit_logs
 
 create index admin_audit_logs_target_user_id_created_at_idx
     on admin_audit_logs (target_user_id asc, created_at desc);
+
+create index idx_admin_audit_logs_admin_user
+    on admin_audit_logs (admin_user_id asc, created_at desc);
+
+create index idx_admin_audit_logs_created_at
+    on admin_audit_logs (created_at desc);
+
+create index idx_admin_audit_logs_action
+    on admin_audit_logs (action);
+
+create index idx_admin_audit_logs_resource_type
+    on admin_audit_logs (resource_type);
 
 create table chat_groups
 (
