@@ -7,6 +7,7 @@ import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.service.ImageService;
 import com.service.backend.shared.utils.CacheUtils;
+import com.service.backend.user.service.NotificationService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -30,6 +31,7 @@ class AlumniPostServiceTest {
     @Mock private AlumniPostR2dbcRepository alumniPostRepository;
     @Mock private ImageService imageService;
     @Mock private CacheUtils cacheUtils;
+    @Mock private NotificationService notificationService;
 
     @InjectMocks
     private AlumniPostService alumniPostService;

@@ -8,6 +8,7 @@ import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.enums.JobType;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.CacheUtils;
+import com.service.backend.user.service.NotificationService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -30,6 +31,7 @@ class JobServiceTest {
 
     @Mock private JobR2dbcRepository jobRepository;
     @Mock private CacheUtils cacheUtils;
+    @Mock private NotificationService notificationService;
 
     @InjectMocks
     private JobService jobService;
