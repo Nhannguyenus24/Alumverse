@@ -47,6 +47,8 @@
   "group_name_label": "Tên nhóm",
   "sent_at": "Gửi lúc {{datetime}}",
   "no_messages_yet": "Chưa có tin nhắn.",
+  "chat_today": "Hôm nay",
+  "chat_yesterday": "Hôm qua",
   "messages_all_loaded": "Đã tải hết tin nhắn",
   "messages_load_error": "Không thể tải tin nhắn.",
   "view_all_messages": "Xem tất cả",
