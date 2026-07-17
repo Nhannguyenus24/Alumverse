@@ -527,7 +527,7 @@ export default function SettingPage() {
             </Button>
           )}
           {(verificationLevel ?? 0) === 0 && (
-            <Button variant="contained" color="warning" startIcon={<ShieldOutlinedIcon />}
+            <Button variant="contained" color="accent" startIcon={<ShieldOutlinedIcon />}
                     onClick={() => navigate('/cs-hcmus/organization-registration')}
             >
               {t('verify_account')}

@@ -120,6 +120,7 @@
   "success_achievement": "Bài viết thành tựu đã được đăng thành công!",
   "success_job": "Bài đăng việc làm đã được đăng thành công!",
   "success_learning": "Bài viết học tập đã được đăng thành công!",
+  "success_submitted_for_review": "Bài đăng của bạn đã được gửi. Admin sẽ xem xét và duyệt trước khi bài được hiển thị.",
   "error_title_content_required": "Vui lòng nhập tiêu đề và nội dung",
   "error_post_failed": "Đăng bài thất bại",
   "error_event_time_required": "Vui lòng nhập thời gian bắt đầu và kết thúc",

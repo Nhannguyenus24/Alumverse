@@ -12,6 +12,7 @@ import {
 import { useTranslation } from 'react-i18next';
 
 import Page from '../../components/Page';
+import { verificationAccentAlertSx } from '../../components/ContributeGuard';
 import WYSIWYG from '../../components/WYSIWYG';
 import { useAuth } from '../../hooks/useAuth';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
@@ -101,7 +102,7 @@ const RequestAchievementsPage = () => {
             <ScrollRevealItem><Typography color="text.secondary" sx={{ mb: 3 }}>{t('request_description')}</Typography></ScrollRevealItem>
 
             {!canRequest && (
-              <ScrollRevealItem><Alert severity="warning" sx={{ mb: 3 }}>{t('warn_alumni_verification_required')}</Alert></ScrollRevealItem>
+              <ScrollRevealItem><Alert severity="info" sx={[verificationAccentAlertSx, { mb: 3 }]}>{t('warn_alumni_verification_required')}</Alert></ScrollRevealItem>
             )}
 
             {/* POST SECTION */}

@@ -28,6 +28,11 @@ export function useMessagesPreviewMenu(paperSxExtra = {}) {
 
   const slotProps = useMemo(
     () => ({
+      root: {
+        sx: {
+          zIndex: (theme) => theme.zIndex.modal + 2,
+        },
+      },
       paper: {
         sx: {
           ...MESSAGES_PREVIEW_MENU_PAPER_SX,

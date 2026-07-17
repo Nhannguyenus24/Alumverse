@@ -16,6 +16,7 @@ const MentorshipCard = ({
   onBook,
   canBook = true,
   bookDisabledReason,
+  showBook = true,
 }) => {
   const { t } = useTranslation('mentorship');
 
@@ -50,6 +51,7 @@ const MentorshipCard = ({
         flexDirection: "column",
         justifyContent: "space-between",
         height: "100%",
+        width: "100%",
         minWidth: 0,
         cursor: onViewProfile ? "pointer" : "default",
         transition: "transform 0.2s",
@@ -106,7 +108,15 @@ const MentorshipCard = ({
         </Box>
       </Stack>
 
-      <Box sx={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 1, mt: 3, width: "100%" }}>
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: showBook ? "minmax(0, 1fr) minmax(0, 1fr)" : "minmax(0, 1fr)",
+          gap: 1,
+          mt: 3,
+          width: "100%",
+        }}
+      >
         <Button
           variant="outlined"
           fullWidth
@@ -116,7 +126,7 @@ const MentorshipCard = ({
         >
           {t('profile')}
         </Button>
-        {!canBook && bookDisabledReason ? (
+        {showBook && (!canBook && bookDisabledReason ? (
           <Tooltip title={bookDisabledReason}>
             <Box onClick={(event) => event.stopPropagation()} sx={{ display: 'flex', minWidth: 0, width: '100%' }}>
               {bookButton}
@@ -126,7 +136,7 @@ const MentorshipCard = ({
           <Box onClick={(event) => event.stopPropagation()} sx={{ display: 'flex', minWidth: 0, width: '100%' }}>
             {bookButton}
           </Box>
-        )}
+        ))}
       </Box>
     </Card>
   );

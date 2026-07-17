@@ -15,9 +15,9 @@ import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
 import ConfirmationNumberOutlinedIcon from "@mui/icons-material/ConfirmationNumberOutlined";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
-import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../hooks/useAuth";
+import { useCanContribute } from "../hooks/useCanContribute";
 import { useOrgNavigate, useOrgPath } from '../hooks/useOrgNavigate';
 import useOrganizationStore from "../stores/organizationStore";
 import { resolveMediaUrl } from "../utils/imageUtils";
@@ -52,24 +52,18 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode, textCo
 
   const open = Boolean(anchorEl);
   const { logout, verificationLevel, user } = useAuth();
+  const { isOrgManager } = useCanContribute();
   const toOrgPath = useOrgPath();
   const organization = useOrganizationStore((state) => state.organization);
   const currentSlug = useOrganizationStore((state) => state.currentSlug);
   const isGuestVerificationLevel = verificationLevel === 0;
   const isAdmin = user?.role === 'ADMIN';
   const isStaff = user?.role === 'STAFF';
-  const staffOrgSlug = organization?.slug || currentSlug;
   const handleOpen = useCallback((event) => {
     event.stopPropagation();
     setAnchorEl(event.currentTarget);
   }, []);
   const handleClose = useCallback(() => setAnchorEl(null), []);
-
-  const handleOpenStaffOrganization = useCallback(() => {
-    if (!staffOrgSlug) return;
-    handleClose();
-    window.open(`/${staffOrgSlug}`, '_blank', 'noopener,noreferrer');
-  }, [handleClose, staffOrgSlug]);
 
   const handleLogout = useCallback(async () => {
     handleClose();
@@ -146,6 +140,7 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode, textCo
         onClose={handleClose}
         anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
         transformOrigin={{ vertical: "top", horizontal: "right" }}
+        sx={{ zIndex: (theme) => theme.zIndex.modal + 2 }}
         slotProps={{
           paper: {
             sx: {
@@ -222,14 +217,16 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode, textCo
           <Typography variant="body2">{t('profile:my_profile')}</Typography>
         </MenuItem>
 
-        <MenuItem
-          component={Link}
-          to={toOrgPath('/my-tickets')}
-          onClick={handleClose}
-        >
-          <ConfirmationNumberOutlinedIcon fontSize="small" />
-          <Typography variant="body2">{t('event:my_tickets')}</Typography>
-        </MenuItem>
+        {!isAdmin && !isStaff && (
+          <MenuItem
+            component={Link}
+            to={toOrgPath('/my-tickets')}
+            onClick={handleClose}
+          >
+            <ConfirmationNumberOutlinedIcon fontSize="small" />
+            <Typography variant="body2">{t('event:my_tickets')}</Typography>
+          </MenuItem>
+        )}
 
         <MenuItem
           component={Link}
@@ -251,16 +248,18 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode, textCo
           </MenuItem>
         )}
 
-        {isStaff && staffOrgSlug && (
+        {isStaff && isOrgManager && (organization?.slug || currentSlug) && (
           <MenuItem
-            onClick={handleOpenStaffOrganization}
+            component={Link}
+            to={toOrgPath('/admin')}
+            onClick={handleClose}
             sx={{
               color: "primary.main",
               "& .MuiSvgIcon-root": { color: "primary.main" },
             }}
           >
-            <OpenInNewRoundedIcon fontSize="small" />
-            <Typography variant="body2">{t('profile:go_to_organization')}</Typography>
+            <AdminPanelSettingsOutlinedIcon fontSize="small" />
+            <Typography variant="body2">{t('nav:admin')}</Typography>
           </MenuItem>
         )}
 
@@ -286,7 +285,8 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode, textCo
               borderTop: "none",
               display: "flex",
               alignItems: "center",
-              color: "warning.dark",
+              color: "accent.dark",
+              "& .MuiSvgIcon-root": { color: "accent.dark" },
             }}
           >
             <VerifiedUserIcon fontSize="small" />

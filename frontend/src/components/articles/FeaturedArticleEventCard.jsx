@@ -28,7 +28,7 @@ import { ContributeGuardTooltip } from '../ContributeGuard';
 const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
   const { t } = useTranslation(['common', 'event']);
   const { enqueueSnackbar } = useSnackbar();
-  const { canContribute } = useCanContribute();
+  const { canUseBasicActions } = useCanContribute();
   const [isInterested, setIsInterested] = useState(false);
   const [isJoined, setIsJoined] = useState(() => getEventRegisteredState(article));
   const [loadingInterest, setLoadingInterest] = useState(false);
@@ -38,11 +38,11 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
   const [openJoinDialog, setOpenJoinDialog] = useState(false);
   const [openCancelDialog, setOpenCancelDialog] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
-  const { data: questions = [] } = useEventQuestions(article?.id, !isAdmin && canContribute && Boolean(article?.id));
+  const { data: questions = [] } = useEventQuestions(article?.id, !isAdmin && canUseBasicActions && Boolean(article?.id));
 
   useEffect(() => {
     if (isAdmin || !article?.id) return;
-    if (!canContribute) {
+    if (!canUseBasicActions) {
       setIsInterested(false);
       setIsJoined(getEventRegisteredState(article));
       setCheckingRegistration(false);
@@ -56,11 +56,11 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
       .then((res) => setIsJoined(getEventRegisteredState(res)))
       .catch(() => {})
       .finally(() => setCheckingRegistration(false));
-  }, [article, article?.id, canContribute, isAdmin]);
+  }, [article, article?.id, canUseBasicActions, isAdmin]);
 
   const handleInterest = async (e) => {
     e.stopPropagation();
-    if (loadingInterest || !canContribute) return;
+    if (loadingInterest || !canUseBasicActions) return;
     setLoadingInterest(true);
     try {
       if (isInterested) {
@@ -79,7 +79,7 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
 
   const handleJoinClick = (e) => {
     e.stopPropagation();
-    if (loadingJoin || checkingRegistration || !canContribute) return;
+    if (loadingJoin || checkingRegistration || !canUseBasicActions) return;
     if (isJoined) {
       setOpenCancelDialog(true);
       return;
@@ -88,7 +88,7 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
   };
 
   const handleConfirmJoin = async (answerMap) => {
-    if (loadingJoin || checkingRegistration || isJoined || !canContribute) return;
+    if (loadingJoin || checkingRegistration || isJoined || !canUseBasicActions) return;
     setLoadingJoin(true);
     try {
       const payload = questions.length > 0
@@ -111,7 +111,7 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
   };
 
   const handleConfirmCancel = async () => {
-    if (!cancelReason.trim() || loadingJoin || checkingRegistration || !canContribute) return;
+    if (!cancelReason.trim() || loadingJoin || checkingRegistration || !canUseBasicActions) return;
     setLoadingJoin(true);
     try {
       const ticketsPage = await eventApi.getMyTickets({ page: 0, limit: 100 });
@@ -248,12 +248,12 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
           </Stack>
         ) : (
           <Stack direction="row" spacing={1} sx={{ mt: 'auto' }}>
-            <ContributeGuardTooltip sx={{ flex: 1, opacity: canContribute ? 1 : 0.58, filter: canContribute ? 'none' : 'grayscale(0.25)' }}>
+            <ContributeGuardTooltip required="basic" sx={{ flex: 1, opacity: canUseBasicActions ? 1 : 0.58, filter: canUseBasicActions ? 'none' : 'grayscale(0.25)' }}>
               <Button
                 fullWidth
                 variant={isInterested ? 'outlined' : 'contained'}
                 color="primary"
-                disabled={loadingInterest || !canContribute}
+                disabled={loadingInterest || !canUseBasicActions}
                 startIcon={isInterested ? <FavoriteIcon /> : <FavoriteBorderIcon />}
                 onClick={handleInterest}
               >
@@ -261,12 +261,12 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
               </Button>
             </ContributeGuardTooltip>
 
-            <ContributeGuardTooltip sx={{ flex: 1, opacity: canContribute ? 1 : 0.58, filter: canContribute ? 'none' : 'grayscale(0.25)' }}>
+            <ContributeGuardTooltip required="basic" sx={{ flex: 1, opacity: canUseBasicActions ? 1 : 0.58, filter: canUseBasicActions ? 'none' : 'grayscale(0.25)' }}>
               <Button
                 fullWidth
                 variant={isJoined ? 'outlined' : 'contained'}
                 color={isJoined ? 'error' : 'accent'}
-                disabled={loadingJoin || checkingRegistration || !canContribute}
+                disabled={loadingJoin || checkingRegistration || !canUseBasicActions}
                 startIcon={isJoined ? <CancelOutlinedIcon /> : <EventAvailableOutlinedIcon />}
                 onClick={handleJoinClick}
               >

@@ -1,9 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { getMentorAvailableSlots } from '../../utils/api';
+import useOrganizationStore from '../../stores/organizationStore';
 
-const fetchSlots = async (mentorMemberId) => {
-  const res = await getMentorAvailableSlots(mentorMemberId);
+const fetchSlots = async (mentorMemberId, organizationId) => {
+  const res = await getMentorAvailableSlots(mentorMemberId, organizationId);
   return res?.data?.data ?? [];
 };
 
@@ -16,9 +17,10 @@ const fetchSlots = async (mentorMemberId) => {
  * mentor can offer slots of any duration and the picker renders them faithfully.
  */
 export const useMentorAvailability = (mentorMemberId) => {
+  const organizationId = useOrganizationStore((state) => state.organization?.id ?? null);
   const query = useQuery({
-    queryKey: ['mentorship', 'mentor', mentorMemberId, 'availability'],
-    queryFn: () => fetchSlots(mentorMemberId),
+    queryKey: ['mentorship', 'mentor', mentorMemberId, 'availability', organizationId],
+    queryFn: () => fetchSlots(mentorMemberId, organizationId),
     enabled: Boolean(mentorMemberId),
   });
 

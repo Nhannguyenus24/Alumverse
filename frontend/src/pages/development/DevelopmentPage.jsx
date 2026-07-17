@@ -112,9 +112,9 @@ const DevelopmentPage = () => {
   const navigate = useOrgNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const queryClient = useQueryClient();
-  const { user, isAuthenticated } = useAuth();
-  const { canContribute } = useCanContribute();
-  const isAdmin = isAuthenticated && user?.role === 'ADMIN';
+  const { isAuthenticated } = useAuth();
+  const { canContribute, isOrgManager } = useCanContribute();
+  const isAdmin = isAuthenticated && isOrgManager;
   const sidebar = getDevelopmentSidebarItems(t);
   const filters = useMemo(() => getArticleFilterConfig(t, ['learning', 'job']), [t]);
 

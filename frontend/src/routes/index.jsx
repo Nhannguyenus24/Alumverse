@@ -801,7 +801,7 @@ export const router = createBrowserRouter([
           {
             path: "events/:eventId",
             element: (
-              <ProtectedRoute allowedRoles={["ADMIN"]}>
+              <ProtectedRoute allowedRoles={["ADMIN", "STAFF"]}>
                 <AdminEventManagePage />
               </ProtectedRoute>
             ),

@@ -211,75 +211,76 @@ public class MenteeService {
 
     // ===================== BROWSE MENTORS =====================
 
-    private Mono<List<MentorProfileResponse>> applyBrowseAccessView(List<MentorProfileResponse> profiles) {
-        return accessService.isOrgVerifiedForMentorship()
+    private Mono<List<MentorProfileResponse>> applyBrowseAccessView(List<MentorProfileResponse> profiles, Integer organizationId) {
+        return accessService.canViewFullMentorBrowse(organizationId)
                 .map(fullAccess -> profiles.stream()
                         .map(p -> fullAccess ? p : p.asPreview())
                         .toList());
     }
 
-    private Mono<MentorProfileResponse> applyBrowseAccessView(MentorProfileResponse profile) {
-        return accessService.isOrgVerifiedForMentorship()
+    private Mono<MentorProfileResponse> applyBrowseAccessView(MentorProfileResponse profile, Integer organizationId) {
+        return accessService.canViewFullMentorBrowse(organizationId)
                 .map(fullAccess -> fullAccess ? profile : profile.asPreview());
     }
 
-    public Mono<PaginatedResponse<MentorProfileResponse>> getApprovedMentors(int page, int limit) {
+    public Mono<PaginatedResponse<MentorProfileResponse>> getApprovedMentors(Integer organizationId, int page, int limit) {
         int offset = page * limit;
-        return accessService.requireEmailVerifiedForMentorBrowse()
+        return accessService.requireEmailVerifiedForMentorBrowse(organizationId)
                 .then(PaginationHelper.paginate(
-                        profileRepository.findApprovedMentors(limit, offset).map(MentorProfileResponse::from).collectList(),
-                        profileRepository.countApprovedMentors(),
+                        profileRepository.findApprovedMentors(organizationId, limit, offset).map(MentorProfileResponse::from).collectList(),
+                        profileRepository.countApprovedMentors(organizationId),
                         page,
                         limit,
-                        list -> attachProfileDisplay(list).flatMap(this::applyBrowseAccessView)));
+                        list -> attachProfileDisplay(list).flatMap(profiles -> applyBrowseAccessView(profiles, organizationId))));
     }
 
-    public Mono<MentorProfileResponse> getMentorProfile(Integer mentorMemberId) {
-        return accessService.requireEmailVerifiedForMentorBrowse()
-                .then(accessService.requireApprovedMentorProfile(mentorMemberId)
+    public Mono<MentorProfileResponse> getMentorProfile(Integer organizationId, Integer mentorMemberId) {
+        return accessService.requireEmailVerifiedForMentorBrowse(organizationId)
+                .then(accessService.requireApprovedMentorProfile(mentorMemberId, organizationId)
                         .map(MentorProfileResponse::from)
                         .flatMap(this::attachProfileDisplay)
-                        .flatMap(this::applyBrowseAccessView));
+                        .flatMap(profile -> applyBrowseAccessView(profile, organizationId)));
     }
 
-    public Mono<PaginatedResponse<MentorProfileResponse>> searchMentors(String keyword, int page, int limit) {
+    public Mono<PaginatedResponse<MentorProfileResponse>> searchMentors(Integer organizationId, String keyword, int page, int limit) {
         int offset = page * limit;
-        return accessService.requireEmailVerifiedForMentorBrowse()
+        return accessService.requireEmailVerifiedForMentorBrowse(organizationId)
                 .then(PaginationHelper.paginate(
-                        profileRepository.searchMentorsWithName(keyword, limit, offset).map(MentorProfileResponse::from).collectList(),
-                        profileRepository.countSearchMentorsWithName(keyword),
+                        profileRepository.searchMentorsWithName(organizationId, keyword, limit, offset).map(MentorProfileResponse::from).collectList(),
+                        profileRepository.countSearchMentorsWithName(organizationId, keyword),
                         page,
                         limit,
-                        list -> attachProfileDisplay(list).flatMap(this::applyBrowseAccessView)));
+                        list -> attachProfileDisplay(list).flatMap(profiles -> applyBrowseAccessView(profiles, organizationId))));
     }
 
     public Mono<PaginatedResponse<MentorProfileResponse>> filterMentors(
+            Integer organizationId,
             String search, List<Integer> skillIds, BigDecimal minRating, boolean hasAvailability,
             LocalDateTime availableFrom, LocalDateTime availableTo,
             int page, int limit) {
         int offset = page * limit;
         boolean hasSkillFilter = skillIds != null && !skillIds.isEmpty();
         List<Integer> safeSkillIds = hasSkillFilter ? skillIds : List.of(-1);
-        return accessService.requireEmailVerifiedForMentorBrowse()
+        return accessService.requireEmailVerifiedForMentorBrowse(organizationId)
                 .then(PaginationHelper.paginate(
-                        profileRepository.filterMentors(search, hasSkillFilter, safeSkillIds, minRating, hasAvailability, availableFrom, availableTo, limit, offset).map(MentorProfileResponse::from).collectList(),
-                        profileRepository.countFilterMentors(search, hasSkillFilter, safeSkillIds, minRating, hasAvailability, availableFrom, availableTo),
+                        profileRepository.filterMentors(organizationId, search, hasSkillFilter, safeSkillIds, minRating, hasAvailability, availableFrom, availableTo, limit, offset).map(MentorProfileResponse::from).collectList(),
+                        profileRepository.countFilterMentors(organizationId, search, hasSkillFilter, safeSkillIds, minRating, hasAvailability, availableFrom, availableTo),
                         page,
                         limit,
-                        list -> attachProfileDisplay(list).flatMap(this::applyBrowseAccessView)));
+                        list -> attachProfileDisplay(list).flatMap(profiles -> applyBrowseAccessView(profiles, organizationId))));
     }
 
-    public Mono<List<MentorExpertiseResponse>> getMentorExpertise(Integer mentorMemberId) {
-        return accessService.requireEmailVerifiedForMentorBrowse()
-                .then(accessService.requireApprovedMentorProfile(mentorMemberId)
+    public Mono<List<MentorExpertiseResponse>> getMentorExpertise(Integer organizationId, Integer mentorMemberId) {
+        return accessService.requireEmailVerifiedForMentorBrowse(organizationId)
+                .then(accessService.requireApprovedMentorProfile(mentorMemberId, organizationId)
                         .thenMany(expertiseRepository.findByMentorMemberId(mentorMemberId))
                         .map(MentorExpertiseResponse::from)
                         .collectList());
     }
 
-    public Mono<List<MentorAvailabilityResponse>> getMentorAvailableSlots(Integer mentorMemberId) {
-        return accessService.requireOrgVerifiedForMentorship()
-                .then(accessService.requireApprovedMentorProfile(mentorMemberId)
+    public Mono<List<MentorAvailabilityResponse>> getMentorAvailableSlots(Integer organizationId, Integer mentorMemberId) {
+        return accessService.requireMinVerificationLevel(MentorshipAccessService.MIN_ORG_VERIFIED_LEVEL, organizationId)
+                .then(accessService.requireApprovedMentorProfile(mentorMemberId, organizationId)
                         .thenMany(availabilityRepository.findAvailableSlots(mentorMemberId, LocalDateTime.now()))
                         .map(MentorAvailabilityResponse::from)
                         .collectList());
@@ -549,9 +550,9 @@ public class MenteeService {
                         .map(SessionFeedbackResponse::from));
     }
 
-    public Mono<PaginatedResponse<SessionFeedbackResponse>> getMentorFeedbacks(Integer mentorMemberId, int page, int limit) {
-        return accessService.requireOrgVerifiedForMentorship()
-                .then(accessService.requireApprovedMentorProfile(mentorMemberId)
+    public Mono<PaginatedResponse<SessionFeedbackResponse>> getMentorFeedbacks(Integer organizationId, Integer mentorMemberId, int page, int limit) {
+        return accessService.requireMinVerificationLevel(MentorshipAccessService.MIN_ORG_VERIFIED_LEVEL, organizationId)
+                .then(accessService.requireApprovedMentorProfile(mentorMemberId, organizationId)
                         .then(PaginationHelper.paginate(
                                 feedbackRepository.findPublicFeedbacksByMentorId(mentorMemberId, limit, page * limit).map(SessionFeedbackResponse::from),
                                 feedbackRepository.countPublicFeedbacksByMentorId(mentorMemberId),

@@ -11,6 +11,7 @@ import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.shared.utils.SecurityUtils;
 import com.service.backend.shared.utils.CacheUtils;
+import com.service.backend.user.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import com.service.backend.shared.enums.JobType;
@@ -25,6 +26,7 @@ public class JobService {
 
     private final JobR2dbcRepository jobRepository;
     private final CacheUtils cacheUtils;
+    private final NotificationService notificationService;
 
     public Mono<JobResponse> create(CreateJobRequest request) {
         return Mono.zip(SecurityUtils.getCurrentUserId(), SecurityUtils.getCurrentOrganizationId(), SecurityUtils.getCurrentUserRole())
@@ -52,6 +54,16 @@ public class JobService {
 
                     return jobRepository.save(job)
                             .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
+                            .doOnNext(saved -> {
+                                if (!publishImmediately) {
+                                    notificationService.createNotificationAsync(
+                                            saved.getPosterMemberId(),
+                                            "Cơ hội việc làm đã được gửi",
+                                            "Bài viết \"" + saved.getTitle() + "\" đã được gửi. Admin sẽ xem xét trước khi hiển thị công khai.",
+                                            "/development/jobs"
+                                    );
+                                }
+                            })
                             .map(JobResponse::from);
                 });
     }
@@ -148,6 +160,12 @@ public class JobService {
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.JOB_NOT_FOUND, "Job not found with id: " + id)))
                 .flatMap(existing -> jobRepository.activateJob(id).then(jobRepository.findById(id)))
                 .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
+                .doOnNext(updated -> notificationService.createNotificationAsync(
+                        updated.getPosterMemberId(),
+                        "Cơ hội việc làm đã được duyệt",
+                        "Bài viết \"" + updated.getTitle() + "\" đã được duyệt và hiển thị công khai.",
+                        "/article/job/" + updated.getId()
+                ))
                 .map(JobResponse::from);
     }
 
@@ -156,6 +174,12 @@ public class JobService {
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.JOB_NOT_FOUND, "Job not found with id: " + id)))
                 .flatMap(existing -> jobRepository.deactivateJob(id).then(jobRepository.findById(id)))
                 .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
+                .doOnNext(updated -> notificationService.createNotificationAsync(
+                        updated.getPosterMemberId(),
+                        "Cơ hội việc làm bị gỡ đăng",
+                        "Bài viết \"" + updated.getTitle() + "\" đã bị gỡ khỏi trang công khai.",
+                        "/development/jobs"
+                ))
                 .map(JobResponse::from);
     }
 }

@@ -22,6 +22,7 @@ import {
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
+import OpenInNewRoundedIcon from '@mui/icons-material/OpenInNewRounded';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
 import BusinessCenterOutlinedIcon from '@mui/icons-material/BusinessCenterOutlined';
@@ -333,6 +334,19 @@ const AdminHeader = ({ adminBase = '/admin', onMenuOpen, isSidebarCollapsed, use
               </Typography>
             </Box>
             <Box sx={{ bgcolor: 'divider', height: 1, my: 0.5 }} />
+            {activeOrganization?.slug && (
+              <MenuItem
+                component={RouterLink}
+                to={`/${activeOrganization.slug}`}
+              >
+                <ListItemIcon>
+                  <OpenInNewRoundedIcon fontSize="small" />
+                </ListItemIcon>
+                <Typography variant="body2" fontWeight={700}>
+                  {t('admin:go_to_organization', { defaultValue: 'Đi tới tổ chức' })}
+                </Typography>
+              </MenuItem>
+            )}
             <MenuItem onClick={handleLogout} sx={{ color: 'error.main', '&:hover': { bgcolor: alpha(theme.palette.error.main, 0.08) } }}>
               <ListItemIcon>
                 <LogoutOutlinedIcon fontSize="small" color="error" />
