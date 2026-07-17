@@ -133,7 +133,7 @@ const AuthLayout = () => {
           flex: '0 0 50%',
           width: '50%',
           minHeight: '100vh',
-          backgroundImage: 'url(/auth_school.png)',
+          backgroundImage: 'url(/auth_school.webp)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',

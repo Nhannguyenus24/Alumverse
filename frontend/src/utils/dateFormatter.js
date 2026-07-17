@@ -70,6 +70,39 @@ export const formatTimeAgoVi = (value, fallback = '—', t = null) => {
   return t ? t('common:days_ago', { count: Math.floor(diffInSeconds / 86400) }) : `${Math.floor(diffInSeconds / 86400)} ngày trước`;
 };
 
+/**
+ * Chỉ trả về giờ HH:mm — dùng cho timestamp dưới mỗi bubble chat.
+ */
+export const formatChatTime = (value, fallback = '') => {
+  const date = toValidDate(value);
+  if (!date) return fallback;
+  return dayjs(date).format('HH:mm');
+};
+
+/**
+ * So sánh hai giá trị ngày có cùng ngày lịch hay không (bỏ qua giờ).
+ */
+export const isSameCalendarDay = (a, b) => {
+  const dateA = toValidDate(a);
+  const dateB = toValidDate(b);
+  if (!dateA || !dateB) return false;
+  return dayjs(dateA).isSame(dayjs(dateB), 'day');
+};
+
+/**
+ * Nhãn cho dải phân cách ngày trong khung chat:
+ * Hôm nay / Hôm qua / DD/MM/YYYY (cũ hơn).
+ */
+export const formatChatDateSeparator = (value, t = null) => {
+  const date = toValidDate(value);
+  if (!date) return '';
+
+  const diffDays = dayjs().startOf('day').diff(dayjs(date).startOf('day'), 'day');
+  if (diffDays === 0) return t ? t('network:chat_today') : 'Hôm nay';
+  if (diffDays === 1) return t ? t('network:chat_yesterday') : 'Hôm qua';
+  return formatDate(date);
+};
+
 export const formatDateRange = (start, end, fallback = '') => {
   const from = formatDate(start);
   if (!from || from === "--") return fallback;

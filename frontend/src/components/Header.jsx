@@ -16,7 +16,6 @@ import Iconify from './Iconify';
 import Notification from './Notification';
 import Logo from './Logo';
 import AccountMenu from './AccountMenu';
-import MessagesNavDropdown from './MessagesNavDropdown';
 import LanguageSwitcher from './LanguageSwitcher';
 import { useAuth } from '../hooks/useAuth';
 import { useOrgNavigate, useOrgPath } from '../hooks/useOrgNavigate';
@@ -402,7 +401,6 @@ const Header = () => {
                 {isAuthenticated ? (
                   <>
                     <Notification headerTextColor={headerTextColor} />
-                    <MessagesNavDropdown headerTextColor={headerTextColor} />
                     <AccountMenu
                     displayName={displayName} displayRole={displayRole}
                     avatarUrl={user?.avatarUrl} contrastMode={isTransparent}
