@@ -47,6 +47,8 @@
   "group_name_label": "Group name",
   "sent_at": "Sent at {{datetime}}",
   "no_messages_yet": "No messages yet.",
+  "chat_today": "Today",
+  "chat_yesterday": "Yesterday",
   "messages_all_loaded": "All messages loaded",
   "messages_load_error": "Unable to load messages.",
   "view_all_messages": "View all",
