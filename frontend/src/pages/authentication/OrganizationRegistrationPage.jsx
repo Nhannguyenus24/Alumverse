@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useSnackbar } from "notistack";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import { z } from "zod";
 
 import {
@@ -31,6 +31,8 @@ import {
 } from "../../utils/api";
 
 // ─── Validation schema ────────────────────────────────────────────────────────
+const MIN_STUDY_YEARS = 3;
+
 const getValidationSchema = (t) => z.object({
   organizationId: z.number().positive("Organization ID must be provided").int(),
   studentCode: z.string().min(1, t("auth:validation_student_code_required")),
@@ -40,13 +42,44 @@ const getValidationSchema = (t) => z.object({
     z.number({ required_error: t("auth:validation_start_year_required"), invalid_type_error: t("auth:validation_start_year_required") })
       .positive(t("auth:validation_must_be_positive")).int(),
   ),
+  // Only a graduate has a graduation year; students and drop-outs leave it empty.
+  // An untouched / cleared field arrives as undefined, "" or NaN — all mean "no year".
   graduatedYear: z.preprocess(
-    (val) => (val === "" || Number.isNaN(val) ? undefined : Number(val)),
-    z.number({ required_error: t("auth:validation_graduated_year_required"), invalid_type_error: t("auth:validation_graduated_year_required") })
-      .positive(t("auth:validation_must_be_positive")).int(),
+    (val) => {
+      if (val === "" || val === null || val === undefined) return undefined;
+      const parsed = Number(val);
+      return Number.isNaN(parsed) ? undefined : parsed;
+    },
+    z.number().positive(t("auth:validation_must_be_positive")).int().optional(),
   ),
   graduationStatus: z.string().min(1, t("auth:validation_graduation_status_required")),
   degreeType: z.string().min(1, t("auth:validation_major_required")),
+}).superRefine((data, ctx) => {
+  if (data.graduationStatus !== "GRADUATED") return;
+
+  if (!data.graduatedYear) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["graduatedYear"],
+      message: t("auth:validation_graduated_year_required"),
+    });
+    return;
+  }
+  // A programme runs at least 3 years, so graduation cannot be sooner than that.
+  if (data.startYear && data.graduatedYear < data.startYear + MIN_STUDY_YEARS) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["graduatedYear"],
+      message: t("auth:validation_graduated_year_after_start", { years: MIN_STUDY_YEARS }),
+    });
+  }
+  if (data.graduatedYear > new Date().getFullYear()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["graduatedYear"],
+      message: t("auth:validation_graduated_year_future"),
+    });
+  }
 });
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -193,7 +226,7 @@ const OrganizationRegistrationPage = () => {
   const majorOptions = useMemo(() => parseOrganizationOptions(organization?.majors), [organization?.majors]);
 
   const {
-    register, handleSubmit, setValue, formState: { errors },
+    register, handleSubmit, setValue, watch, formState: { errors },
   } = useForm({
     resolver: zodResolver(getValidationSchema(t)),
     defaultValues: {
@@ -201,6 +234,17 @@ const OrganizationRegistrationPage = () => {
       studentCode: "", className: "", startYear: undefined, graduatedYear: undefined, graduationStatus: "", degreeType: "",
     },
   });
+
+  // Graduation year only applies to graduates; clear it whenever another status is picked
+  // so a stale year is never submitted.
+  const graduationStatus = watch("graduationStatus");
+  const isGraduated = graduationStatus === "GRADUATED";
+
+  useEffect(() => {
+    if (!isGraduated) {
+      setValue("graduatedYear", "", { shouldValidate: false });
+    }
+  }, [isGraduated, setValue]);
 
   useEffect(() => {
     if (organizationId) {
@@ -424,9 +468,11 @@ const OrganizationRegistrationPage = () => {
             <Typography variant="h1" fontWeight={700} color="primary.main" sx={{ mb: 1.5 }}>
               {t("auth:org_registration_heading")}
             </Typography>
-            <Typography variant="body1" color="textSecondary">
-              {t("auth:org_registration_description")} <br />
-              {t("auth:org_registration_submit_hint")} <strong>{t("auth:org_registration_submit_hint_bold")}</strong>.
+            <Typography variant="body1" color="textSecondary" sx={{ mb: 1.5, textAlign: "justify" }}>
+              <Trans i18nKey="auth:org_registration_description" />
+            </Typography>
+            <Typography variant="body1" color="textSecondary" sx={{ textAlign: "justify" }}>
+              <Trans i18nKey="auth:org_registration_submit_hint" />
             </Typography>
           </ScrollRevealItem>
 
@@ -460,10 +506,14 @@ const OrganizationRegistrationPage = () => {
               <Input label={t("auth:program_label")} placeholder={t("auth:program_placeholder")} error={!!errors.className} helperText={errors.className?.message} {...register("className")} />
             )}
 
-            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-              <Input label={t("auth:start_year_label")} type="number" placeholder={t("auth:start_year_placeholder")} error={!!errors.startYear} helperText={errors.startYear?.message} sx={{ flex: 1 }} {...register("startYear", { valueAsNumber: true })} />
-              <Input label={t("auth:graduated_year_label")} type="number" placeholder={t("auth:graduated_year_placeholder")} error={!!errors.graduatedYear} helperText={errors.graduatedYear?.message} sx={{ flex: 1 }} {...register("graduatedYear", { valueAsNumber: true })} />
-            </Stack>
+            {majorOptions.length > 0 ? (
+              <TextField select label={t("auth:major_label")} error={!!errors.degreeType} helperText={errors.degreeType?.message} defaultValue="" {...register("degreeType")}>
+                <MenuItem value="">{t("auth:major_select_placeholder")}</MenuItem>
+                {majorOptions.map((m) => <MenuItem key={m} value={m}>{m}</MenuItem>)}
+              </TextField>
+            ) : (
+              <Input label={t("auth:major_label")} placeholder={t("auth:major_placeholder")} error={!!errors.degreeType} helperText={errors.degreeType?.message} {...register("degreeType")} />
+            )}
 
             <TextField select label={t("auth:graduation_status_label")} error={!!errors.graduationStatus} helperText={errors.graduationStatus?.message} defaultValue="" {...register("graduationStatus")}>
               <MenuItem value="">{t("auth:graduation_status_placeholder")}</MenuItem>
@@ -474,14 +524,20 @@ const OrganizationRegistrationPage = () => {
               ))}
             </TextField>
 
-            {majorOptions.length > 0 ? (
-              <TextField select label={t("auth:major_label")} error={!!errors.degreeType} helperText={errors.degreeType?.message} defaultValue="" {...register("degreeType")}>
-                <MenuItem value="">{t("auth:major_select_placeholder")}</MenuItem>
-                {majorOptions.map((m) => <MenuItem key={m} value={m}>{m}</MenuItem>)}
-              </TextField>
-            ) : (
-              <Input label={t("auth:major_label")} placeholder={t("auth:major_placeholder")} error={!!errors.degreeType} helperText={errors.degreeType?.message} {...register("degreeType")} />
-            )}
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+              <Input label={t("auth:start_year_label")} type="number" placeholder={t("auth:start_year_placeholder")} error={!!errors.startYear} helperText={errors.startYear?.message} sx={{ flex: 1 }} {...register("startYear", { valueAsNumber: true })} />
+              <Input
+                label={t("auth:graduated_year_label")}
+                type="number"
+                placeholder={t("auth:graduated_year_placeholder")}
+                disabled={!isGraduated}
+                error={!!errors.graduatedYear}
+                helperText={errors.graduatedYear?.message
+                  || (!isGraduated ? t("auth:graduated_year_disabled_hint") : undefined)}
+                sx={{ flex: 1 }}
+                {...register("graduatedYear", { valueAsNumber: true })}
+              />
+            </Stack>
           </ScrollRevealItem>
 
           {/* ── Section 3: Verification Method ── */}
@@ -625,7 +681,7 @@ const OrganizationRegistrationPage = () => {
               onClick={() => navigate("/", { replace: true })}
               disabled={loading}
             >
-              {t("auth:cancel")}
+              {t("auth:org_registration_skip_btn")}
             </Button>
             <Button type="submit" variant="contained" fullWidth size="large" disabled={loading}>
               {loading
