@@ -43,7 +43,7 @@ class MentorshipAccessServiceTest {
                     .status(Status.APPROVED)
                     .build();
 
-            when(mentorProfileRepository.findById(1)).thenReturn(Mono.just(profile));
+            when(mentorProfileRepository.findApprovedMentor(1, null)).thenReturn(Mono.just(profile));
 
             StepVerifier.create(accessService.requireApprovedMentorProfile(1))
                     .assertNext(p -> assertThat(p.getStatus()).isEqualTo(Status.APPROVED))
@@ -53,7 +53,7 @@ class MentorshipAccessServiceTest {
         @Test
         @DisplayName("should fail when mentor profile not found")
         void requireApprovedMentorProfile_notFound() {
-            when(mentorProfileRepository.findById(99)).thenReturn(Mono.empty());
+            when(mentorProfileRepository.findApprovedMentor(99, null)).thenReturn(Mono.empty());
 
             StepVerifier.create(accessService.requireApprovedMentorProfile(99))
                     .expectErrorMatches(err -> err instanceof ApplicationException &&
@@ -64,12 +64,9 @@ class MentorshipAccessServiceTest {
         @Test
         @DisplayName("should fail when mentor profile is pending (not approved)")
         void requireApprovedMentorProfile_pending() {
-            MentorProfile profile = MentorProfile.builder()
-                    .memberId(1)
-                    .status(Status.PENDING)
-                    .build();
-
-            when(mentorProfileRepository.findById(1)).thenReturn(Mono.just(profile));
+            // A pending profile is excluded by findApprovedMentor, so the query returns empty
+            // and the service surfaces MENTOR_PROFILE_NOT_FOUND (avoids exposing pending profiles).
+            when(mentorProfileRepository.findApprovedMentor(1, null)).thenReturn(Mono.empty());
 
             StepVerifier.create(accessService.requireApprovedMentorProfile(1))
                     .expectErrorMatches(err -> err instanceof ApplicationException &&

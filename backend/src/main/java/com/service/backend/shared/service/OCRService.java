@@ -13,6 +13,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.Optional;
+
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.text.PDFTextStripper;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Mono;
@@ -42,14 +46,25 @@ public class OCRService {
     }
 
     private final MeterRegistry meterRegistry;
-    private final OcrCleanupService ocrCleanupService;
+    private final DocumentExtractionService documentExtractionService;
+    private final VisionOcrService visionOcrService;
     private final Scheduler heavyTaskScheduler;
 
-    public OCRService(MeterRegistry meterRegistry, OcrCleanupService ocrCleanupService,
+    public OCRService(MeterRegistry meterRegistry, DocumentExtractionService documentExtractionService,
+                      VisionOcrService visionOcrService,
                       @Qualifier("heavyTaskScheduler") Scheduler heavyTaskScheduler) {
         this.meterRegistry = meterRegistry;
-        this.ocrCleanupService = ocrCleanupService;
+        this.documentExtractionService = documentExtractionService;
+        this.visionOcrService = visionOcrService;
         this.heavyTaskScheduler = heavyTaskScheduler;
+    }
+
+    /**
+     * Kết quả OCR kèm cờ cho biết chữ còn ở dạng thô hay đã là các trường đối chiếu.
+     * Model vision trả về sẵn dạng trường nên khỏi trích lại; PDF text layer và Tesseract
+     * thì ra nguyên văn giấy tờ (kèm URL, menu, bảng điểm...) nên phải rút gọn.
+     */
+    private record OcrResult(String text, boolean needsExtraction) {
     }
 
     /**
@@ -70,17 +85,21 @@ public class OCRService {
             String extension = getFileExtension(file.getName()).toLowerCase();
 
                     return switch (extension) {
-                        case "txt" -> readTextFile(file);
-                        case "png", "jpeg", "jpg", "pdf" -> performOcr(file);
+                        case "txt" -> new OcrResult(readTextFile(file), true);
+                        case "png", "jpeg", "jpg" -> readImage(file, extension);
+                        case "pdf" -> readPdf(file);
                         default -> throw new IllegalArgumentException("Unsupported file format: " + extension);
                     };
         }).subscribeOn(heavyTaskScheduler)
-          .map(rawText -> {
+          .map(result -> {
+              if (!result.needsExtraction()) {
+                  return result.text();
+              }
               try {
-                  return ocrCleanupService.cleanOcrText(rawText);
+                  return documentExtractionService.extractFields(result.text());
               } catch (Exception e) {
-                  log.warn("Gemini OCR cleanup failed, returning raw text", e);
-                  return rawText;
+                  log.warn("Document extraction failed, returning raw text", e);
+                  return result.text();
               }
           })
           .onErrorMap(IOException.class, e -> {
@@ -111,6 +130,42 @@ public class OCRService {
                     }
                 })
           );
+    }
+
+    /**
+     * PDF xuất từ máy (Word, hệ thống của trường...) đã có sẵn text layer: bóc thẳng ra thì
+     * chính xác tuyệt đối và không tốn một token AI nào. Chỉ PDF scan (ảnh chụp lưu thành PDF,
+     * không có text layer) mới phải OCR.
+     */
+    private OcrResult readPdf(File file) throws TesseractException {
+        try (PDDocument document = PDDocument.load(file)) {
+            String text = new PDFTextStripper().getText(document);
+            if (text != null && !text.isBlank()) {
+                log.info("PDF '{}' có sẵn text layer — bóc trực tiếp, không cần OCR.", file.getName());
+                // Text layer là nguyên văn cả trang (kèm URL, menu, bảng điểm) nên vẫn phải rút gọn.
+                return new OcrResult(text.trim(), true);
+            }
+            log.info("PDF '{}' không có text layer (bản scan) — chuyển sang OCR.", file.getName());
+        } catch (IOException e) {
+            log.warn("Không đọc được text layer của PDF '{}', chuyển sang OCR: {}", file.getName(), e.getMessage());
+        }
+        return new OcrResult(performOcr(file), true);
+    }
+
+    /**
+     * Ảnh thì để model vision đọc thẳng vì nó "nhìn" được bố cục giấy tờ; Tesseract chỉ dùng khi
+     * vision tắt / lỗi / không đọc nổi. Chữ vision trả về đã sạch nên không cần dọn thêm.
+     */
+    private OcrResult readImage(File file, String extension) throws TesseractException {
+        Optional<String> viaVision = visionOcrService.extractText(file, mimeTypeOf(extension));
+        if (viaVision.isPresent()) {
+            return new OcrResult(viaVision.get(), false);
+        }
+        return new OcrResult(performOcr(file), true);
+    }
+
+    private String mimeTypeOf(String extension) {
+        return "png".equals(extension) ? "image/png" : "image/jpeg";
     }
 
     private String readTextFile(File file) throws IOException {

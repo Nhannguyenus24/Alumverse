@@ -201,6 +201,7 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
             ) combined
             WHERE (CAST(:organizationId AS INTEGER) IS NULL OR combined.organization_id = :organizationId)
               AND (:pendingOnly = FALSE OR combined.status = 'PENDING')
+              AND (CAST(:requestType AS TEXT) IS NULL OR combined.request_type = :requestType)
               AND (
                   CAST(:keyword AS TEXT) IS NULL
                   OR combined.email ILIKE :keyword
@@ -215,6 +216,7 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
             @Param("organizationId") Integer organizationId,
             @Param("keyword") String keyword,
             @Param("pendingOnly") boolean pendingOnly,
+            @Param("requestType") String requestType,
             @Param("limit") int limit,
             @Param("offset") int offset);
 
@@ -223,6 +225,7 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
             FROM (
                 SELECT
                     vr.organization_id AS organization_id,
+                    'PROOF' AS request_type,
                     u.full_name AS full_name,
                     u.email AS email,
                     om.student_id AS student_id,
@@ -236,6 +239,7 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
 
                 SELECT
                     pv.organization_id AS organization_id,
+                    'PEER' AS request_type,
                     target_user.full_name AS full_name,
                     target_user.email AS email,
                     target_member.student_id AS student_id,
@@ -261,6 +265,7 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
             ) combined
             WHERE (CAST(:organizationId AS INTEGER) IS NULL OR combined.organization_id = :organizationId)
               AND (:pendingOnly = FALSE OR combined.status = 'PENDING')
+              AND (CAST(:requestType AS TEXT) IS NULL OR combined.request_type = :requestType)
               AND (
                   CAST(:keyword AS TEXT) IS NULL
                   OR combined.email ILIKE :keyword
@@ -272,7 +277,8 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
     Mono<Long> countUnifiedVerificationRequests(
             @Param("organizationId") Integer organizationId,
             @Param("keyword") String keyword,
-            @Param("pendingOnly") boolean pendingOnly);
+            @Param("pendingOnly") boolean pendingOnly,
+            @Param("requestType") String requestType);
 
     /**
      * Update verification request "status" and admin note

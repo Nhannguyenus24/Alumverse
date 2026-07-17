@@ -44,6 +44,9 @@ const parseEvent = (event) => {
  * Must be mounted inside the QueryClient and Notistack providers. The connection is
  * (re)established whenever the access token changes and torn down on logout.
  */
+/** DOM event phát lại khi backend đọc xong tài liệu của một yêu cầu xác thực. */
+export const VERIFICATION_OCR_READY_EVENT = 'alumverse:verification-ocr-ready';
+
 export const useServerSentEvents = ({ onNotify } = {}) => {
   const token = useAuthStore((state) => state.token);
   const queryClient = useQueryClient();
@@ -94,10 +97,19 @@ export const useServerSentEvents = ({ onNotify } = {}) => {
       onNotifyRef.current?.();
     };
 
+    // Chỉ màn hình duyệt xác thực quan tâm sự kiện này, mà kết nối SSE thì dùng chung cả app,
+    // nên phát lại thành DOM event để trang nào cần thì tự lắng nghe.
+    const handleVerificationOcrReady = (event) => {
+      const data = parseEvent(event);
+      if (!data) return;
+      window.dispatchEvent(new CustomEvent(VERIFICATION_OCR_READY_EVENT, { detail: data }));
+    };
+
     source.addEventListener('feature-toggled', handleFeatureToggled);
     source.addEventListener('verification-updated', handleVerificationUpdated);
     source.addEventListener('user-banned', handleUserBanned);
     source.addEventListener('new-message', handleNewMessage);
+    source.addEventListener('verification-ocr-ready', handleVerificationOcrReady);
     source.onerror = () => {
       // EventSource reconnects automatically; log only for diagnostics.
       if (source.readyState === EventSource.CLOSED) {
@@ -110,6 +122,7 @@ export const useServerSentEvents = ({ onNotify } = {}) => {
       source.removeEventListener('verification-updated', handleVerificationUpdated);
       source.removeEventListener('user-banned', handleUserBanned);
       source.removeEventListener('new-message', handleNewMessage);
+      source.removeEventListener('verification-ocr-ready', handleVerificationOcrReady);
       source.close();
     };
   }, [token, queryClient, showError, showSuccess, showWarning]);

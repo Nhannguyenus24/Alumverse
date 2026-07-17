@@ -53,8 +53,8 @@ const NAV_GROUPS = (adminBase, t) => [
   {
     title: t('admin:nav_group_entity_management'),
     items: [
-      { to: `${adminBase}/users`, icon: <GroupsOutlinedIcon />, label: t('admin:nav_users') },
       { to: `${adminBase}/organizations`, icon: <BusinessOutlinedIcon />, label: t('admin:nav_organizations'), roles: ['ADMIN'] },
+      { to: `${adminBase}/users`, icon: <GroupsOutlinedIcon />, label: t('admin:nav_users') },
       { to: `${adminBase}/verifications`, icon: <VerifiedUserOutlinedIcon />, label: t('admin:nav_verifications') },
       { to: `${adminBase}/mentorship`, icon: <SchoolOutlinedIcon />, label: t('admin:nav_mentorship') },
     ],
