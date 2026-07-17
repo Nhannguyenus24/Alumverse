@@ -41,4 +41,7 @@ public class UserProfileResponse {
     private String major;
     private String faculty;
     private String department;
+    
+    // Dynamically calculated based on user role and organization membership
+    private Integer verificationLevel;
 }

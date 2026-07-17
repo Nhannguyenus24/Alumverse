@@ -12,6 +12,7 @@ import com.service.backend.shared.service.ImageService;
 import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.shared.utils.SecurityUtils;
 import com.service.backend.shared.utils.CacheUtils;
+import com.service.backend.user.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -25,6 +26,7 @@ public class NewsService {
     private final NewsR2dbcRepository newsRepository;
     private final ImageService imageService;
     private final CacheUtils cacheUtils;
+    private final NotificationService notificationService;
 
     public Mono<NewsResponse> create(CreateNewsRequest request) {
         return Mono.zip(SecurityUtils.getCurrentUserId(), SecurityUtils.getCurrentOrganizationId(), SecurityUtils.getCurrentUserRole())
@@ -51,6 +53,16 @@ public class NewsService {
 
                                 return newsRepository.save(news)
                                         .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
+                                        .doOnNext(saved -> {
+                                            if (!publishImmediately) {
+                                                notificationService.createNotificationAsync(
+                                                        saved.getAuthorMemberId(),
+                                                        "Bài viết đã được gửi",
+                                                        "Bài viết \"" + saved.getTitle() + "\" đã được gửi. Admin sẽ xem xét trước khi hiển thị công khai.",
+                                                        "/news"
+                                                );
+                                            }
+                                        })
                                         .map(NewsResponse::from);
                             });
                 });
@@ -137,6 +149,12 @@ public class NewsService {
         return newsRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.NEWS_NOT_FOUND, "News not found with id: " + id)))
                 .flatMap(existing -> newsRepository.publishNews(id).then(newsRepository.findById(id)))
+                .doOnNext(updated -> notificationService.createNotificationAsync(
+                        updated.getAuthorMemberId(),
+                        "Bài viết đã được duyệt",
+                        "Bài viết \"" + updated.getTitle() + "\" đã được duyệt và hiển thị công khai.",
+                        "/article/news/" + updated.getId()
+                ))
                 .map(NewsResponse::from);
     }
 
@@ -144,6 +162,12 @@ public class NewsService {
         return newsRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.NEWS_NOT_FOUND, "News not found with id: " + id)))
                 .flatMap(existing -> newsRepository.hideNews(id).then(newsRepository.findById(id)))
+                .doOnNext(updated -> notificationService.createNotificationAsync(
+                        updated.getAuthorMemberId(),
+                        "Bài viết bị gỡ đăng",
+                        "Bài viết \"" + updated.getTitle() + "\" đã bị gỡ khỏi trang công khai.",
+                        "/news"
+                ))
                 .map(NewsResponse::from);
     }
 }

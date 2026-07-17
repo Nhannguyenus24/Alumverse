@@ -17,6 +17,8 @@ const MentorshipApprovedMentorGate = ({ children }) => {
     if (!blocked) return;
     if (access.isGuest) {
       navigate('/auth/login', { replace: true });
+    } else if (access.isOrgManager) {
+      navigate('/mentorship', { replace: true });
     } else if (!access.canUseMentorship) {
       navigate(MENTORSHIP_LANDING, { replace: true });
     } else if (access.hasMentorProfile) {
@@ -28,6 +30,7 @@ const MentorshipApprovedMentorGate = ({ children }) => {
     resolved,
     blocked,
     access.isGuest,
+    access.isOrgManager,
     access.canUseMentorship,
     access.hasMentorProfile,
     navigate,

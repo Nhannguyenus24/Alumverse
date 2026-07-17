@@ -14,6 +14,7 @@ import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.shared.utils.SecurityUtils;
 import com.service.backend.shared.utils.CacheUtils;
+import com.service.backend.user.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -29,6 +30,7 @@ public class AchievementService {
     private final AchievementR2dbcRepository achievementRepository;
     private final ImageService imageService;
     private final CacheUtils cacheUtils;
+    private final NotificationService notificationService;
 
     public Mono<AchievementResponse> create(CreateAchievementRequest request) {
         return SecurityUtils.getCurrentUserId()
@@ -48,6 +50,16 @@ public class AchievementService {
 
                             return achievementRepository.save(achievement)
                                     .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
+                                    .doOnNext(saved -> {
+                                        if (Status.PENDING.equals(saved.getStatus())) {
+                                            notificationService.createNotificationAsync(
+                                                    saved.getMemberId(),
+                                                    "Bài vinh danh đã được gửi",
+                                                    "Bài viết \"" + saved.getTitle() + "\" đã được gửi. Admin sẽ xem xét trước khi hiển thị công khai.",
+                                                    "/honors/achievements"
+                                            );
+                                        }
+                                    })
                                     .map(AchievementResponse::from);
                         }));
     }

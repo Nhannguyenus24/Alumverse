@@ -36,7 +36,7 @@ const DIALOG_PAGE_SIZE = 20;
 
 const CreateGroupChatDialog = ({ open, onClose, onCreated }) => {
   const { t } = useTranslation(['network', 'common']);
-  const { canContribute } = useCanContribute();
+  const { canUseBasicActions } = useCanContribute();
   const [title, setTitle] = useState('');
   const [searchInput, setSearchInput] = useState('');
   const [selectedMembers, setSelectedMembers] = useState([]);
@@ -83,14 +83,14 @@ const CreateGroupChatDialog = ({ open, onClose, onCreated }) => {
   }, []);
 
   const handleSubmit = useCallback(() => {
-    if (selectedMembers.length < MIN_OTHER_MEMBERS || !canContribute) return;
+    if (selectedMembers.length < MIN_OTHER_MEMBERS || !canUseBasicActions) return;
     createGroup({
       title: title.trim() || null,
       memberIds: selectedMembers.map((m) => m.peerMemberId),
     });
-  }, [selectedMembers, createGroup, title, canContribute]);
+  }, [selectedMembers, createGroup, title, canUseBasicActions]);
 
-  const canSubmit = canContribute && selectedMembers.length >= MIN_OTHER_MEMBERS && selectedMembers.length <= MAX_OTHER_MEMBERS && !isCreating;
+  const canSubmit = canUseBasicActions && selectedMembers.length >= MIN_OTHER_MEMBERS && selectedMembers.length <= MAX_OTHER_MEMBERS && !isCreating;
 
   useEffect(() => {
     if (!open) {
@@ -118,7 +118,7 @@ const CreateGroupChatDialog = ({ open, onClose, onCreated }) => {
       <Divider />
 
       <DialogContent sx={{ px: 2.5, py: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <VerificationRequiredAlert />
+        <VerificationRequiredAlert required="basic" />
         <TextField
           label={t('network:group_name_optional_label')}
           value={title}

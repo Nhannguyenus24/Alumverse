@@ -25,7 +25,7 @@ const NetworkIncomingRequestCard = ({
   isResponding = false,
 }) => {
   const { t } = useTranslation('network');
-  const { canContribute } = useCanContribute();
+  const { canUseBasicActions } = useCanContribute();
   const previewMessage = request.message ?? '';
   const isPending = request.status === CONVERSATION_REQUEST_STATUS.PENDING;
   const { navigateToProfile, stopActionPropagation } =
@@ -62,13 +62,13 @@ const NetworkIncomingRequestCard = ({
 
   const handleAccept = (event) => {
     stopActionPropagation(event);
-    if (!canContribute) return;
+    if (!canUseBasicActions) return;
     onAccept?.(request.id);
   };
 
   const handleReject = (event) => {
     stopActionPropagation(event);
-    if (!canContribute) return;
+    if (!canUseBasicActions) return;
     onReject?.(request.id);
   };
 
@@ -142,25 +142,25 @@ const NetworkIncomingRequestCard = ({
             sx={{ flexShrink: 0, alignSelf: { sm: 'center' } }}
             onClick={stopActionPropagation}
           >
-            <ContributeGuardTooltip placement="left" sx={{ width: { sm: 1 } }}>
+            <ContributeGuardTooltip required="basic" placement="left" sx={{ width: { sm: 1 } }}>
               <Button
                 variant="contained"
                 color="primary"
                 size="small"
                 onClick={handleAccept}
-                disabled={isResponding || !canContribute}
+                disabled={isResponding || !canUseBasicActions}
                 sx={{ width: { sm: 1 } }}
               >
                 {isResponding ? <CircularProgress size={16} color="inherit" /> : t('accept')}
               </Button>
             </ContributeGuardTooltip>
-            <ContributeGuardTooltip placement="left" sx={{ width: { sm: 1 } }}>
+            <ContributeGuardTooltip required="basic" placement="left" sx={{ width: { sm: 1 } }}>
               <Button
                 variant="outlined"
                 color="inherit"
                 size="small"
                 onClick={handleReject}
-                disabled={isResponding || !canContribute}
+                disabled={isResponding || !canUseBasicActions}
                 sx={(theme) => ({
                   width: { sm: 1 },
                   borderColor: alpha(theme.palette.text.primary, 0.23),

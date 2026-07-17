@@ -11,16 +11,18 @@ const MentorshipFullAccessGate = ({ children }) => {
   const access = useMentorshipAccessState();
 
   const resolved = !access.isLoading;
-  const blocked = resolved && !access.canUseMentorship;
+  const blocked = resolved && (!access.canUseMentorship || access.isOrgManager);
 
   useEffect(() => {
     if (!resolved) return;
     if (access.isGuest) {
       navigate('/auth/login', { replace: true });
+    } else if (access.isOrgManager) {
+      navigate('/mentorship', { replace: true });
     } else if (blocked) {
       navigate(MENTORSHIP_LANDING, { replace: true });
     }
-  }, [resolved, access.isGuest, blocked, navigate]);
+  }, [resolved, access.isGuest, access.isOrgManager, blocked, navigate]);
 
   if (!resolved || blocked || access.isGuest) {
     return (

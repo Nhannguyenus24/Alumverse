@@ -605,6 +605,10 @@ create table learning_resources
     link_url           text,
     description        text,
     thumbnail_url      text,
+    status             text      default 'APPROVED'::text not null
+        constraint learning_resources_status_check
+            check (status = ANY
+                   (ARRAY ['PENDING'::text, 'APPROVED'::text, 'REJECTED'::text])),
     created_at         timestamp,
     updated_at         timestamp default CURRENT_TIMESTAMP
 );

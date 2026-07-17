@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 
 import { useCanAccessChat } from '../../hooks/chat/useCanAccessChat';
 import Page from '../Page';
+import { verificationAccentAlertSx } from '../ContributeGuard';
 
 /**
  * Route-level gate for /chat: blocks access for members below the
@@ -31,7 +32,10 @@ const ChatAccessGate = ({ children }) => {
         <Typography variant="h5" gutterBottom>
           {t('network:chat.access_blocked_title')}
         </Typography>
-        <Alert severity="warning" sx={{ textAlign: 'left', mt: 2, alignItems: 'center' }}>
+        <Alert
+          severity="info"
+          sx={[verificationAccentAlertSx, { textAlign: 'left', mt: 2, alignItems: 'center' }]}
+        >
           {isAuthenticated
             ? t('common:verification_required_alert')
             : t('common:verification_required_login')}

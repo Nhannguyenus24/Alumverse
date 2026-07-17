@@ -32,7 +32,7 @@ const NetworkConnectionCard = ({
 }) => {
   const { t } = useTranslation('network');
   const navigate = useOrgNavigate();
-  const { canContribute } = useCanContribute();
+  const { canUseBasicActions } = useCanContribute();
   const { navigateToProfile, handleCardKeyDown, stopActionPropagation } =
     useNetworkMemberProfileNavigation(connection.peerMemberId);
   const displayName = connection.fullName || 'N/A';
@@ -43,7 +43,7 @@ const NetworkConnectionCard = ({
 
   const handleMessage = (event) => {
     stopActionPropagation(event);
-    if (!canContribute) return;
+    if (!canUseBasicActions) return;
     navigate(`/chat?memberId=${connection.peerMemberId}`);
   };
 
@@ -109,13 +109,13 @@ const NetworkConnectionCard = ({
           sx={{ flexShrink: 0 }}
           onClick={stopActionPropagation}
         >
-          <ContributeGuardTooltip>
+          <ContributeGuardTooltip required="basic">
             <Button
               variant="contained"
               size="small"
               type="button"
               onClick={handleMessage}
-              disabled={!canContribute}
+              disabled={!canUseBasicActions}
               startIcon={<ChatBubbleOutlineOutlinedIcon />}
             >
               {t('message')}
@@ -129,11 +129,11 @@ const NetworkConnectionCard = ({
             >
               {({ close }) => (
                 <MenuItem
-                  disabled={isBlockLoading || !canContribute}
+                  disabled={isBlockLoading || !canUseBasicActions}
                   onClick={(event) => {
                     stopActionPropagation(event);
                     close();
-                    if (!canContribute) return;
+                    if (!canUseBasicActions) return;
                     onBlock?.();
                   }}
                 >

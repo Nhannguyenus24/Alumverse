@@ -17,7 +17,7 @@ import {
 import { useNotification } from '../../hooks/useNotification';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useState } from 'react';
-import { useAuth } from '../../hooks/useAuth';
+import { useCanContribute } from '../../hooks/useCanContribute';
 import { withMainImageCaption } from '../../utils/articleContentCaption';
 
 const JOB_TYPE_BY_TOPIC = {
@@ -54,6 +54,7 @@ const CHANNEL_CONFIG = {
     pageTitleKey: 'page_title_news',
     successMsgKey: 'success_news',
     redirect: (id) => `/article/news/${id}`,
+    pendingRedirect: () => `/news`,
     useHook: useCreateNews,
     payloadKey: 'thumbnailBase64',
     useBase64: true,
@@ -71,6 +72,7 @@ const CHANNEL_CONFIG = {
     pageTitleKey: 'page_title_alumni',
     successMsgKey: 'success_alumni',
     redirect: (id) => `/article/alumni/${id}`,
+    pendingRedirect: () => `/honors/alumni`,
     useHook: useCreateAlumniPost,
     payloadKey: 'thumbnailBase64',
     useBase64: true,
@@ -88,6 +90,7 @@ const CHANNEL_CONFIG = {
     pageTitleKey: 'page_title_achievement',
     successMsgKey: 'success_achievement',
     redirect: (id) => `/article/achievement/${id}`,
+    pendingRedirect: () => `/honors/achievements`,
     useHook: useCreateAchievement,
     payloadKey: 'imageBase64',
     useBase64: true,
@@ -107,6 +110,7 @@ const CHANNEL_CONFIG = {
     pageTitleKey: 'page_title_job',
     successMsgKey: 'success_job',
     redirect: (id) => `/article/job/${id}`,
+    pendingRedirect: () => `/development/jobs`,
     useHook: useCreateJob,
     payloadKey: null,
     useBase64: false,
@@ -124,6 +128,7 @@ const CHANNEL_CONFIG = {
     pageTitleKey: 'page_title_learning',
     successMsgKey: 'success_learning',
     redirect: (id) => `/article/learning/${id}`,
+    pendingRedirect: () => `/development/academic`,
     useHook: useCreateLearningResource,
     payloadKey: 'thumbnailBase64',
     useBase64: true,
@@ -152,8 +157,8 @@ const PostArticleGenericPage = () => {
   const navigate = useOrgNavigate();
   const { t } = useTranslation('article');
   const { showSuccess, showError } = useNotification();
-  const { user } = useAuth();
-  const isAdminLike = ['ADMIN', 'STAFF', 'MODERATOR'].includes(user?.role);
+  const { isOrgManager } = useCanContribute();
+  const isAdminLike = isOrgManager;
   const {
     coverFile,
     coverPreview,
@@ -231,8 +236,9 @@ const PostArticleGenericPage = () => {
       }
 
       const result = await createFn(payload);
-      showSuccess(t(config.successMsgKey));
-      navigate(config.redirect(result.id));
+      const usesReviewFlow = !isAdminLike && channel !== 'learning';
+      showSuccess(usesReviewFlow ? t('success_submitted_for_review') : t(config.successMsgKey));
+      navigate(usesReviewFlow ? config.pendingRedirect() : config.redirect(result.id));
     } catch (err) {
       showError(err.response?.data?.message ?? t('error_post_failed'));
     }

@@ -20,6 +20,7 @@ import {
 } from "../../components/animations/ScrollReveal";
 import { fundApi } from "../../utils/api";
 import { useAuth } from "../../hooks/useAuth";
+import { useCanContribute } from "../../hooks/useCanContribute";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
 const ARTICLE_IMG_FALLBACK = "https://placehold.co/1200x720/eef3ff/0f3a7a?text=Fund";
 const ARTICLE_IMAGE_ASPECT_RATIO = "16 / 9";
@@ -47,9 +48,10 @@ export default function DonationArticlePage() {
   const { t } = useTranslation('donation');
   const { id } = useParams();
   const navigate = useOrgNavigate();
-  const { user, isAuthenticated } = useAuth();
-  const isAdmin = isAuthenticated && user?.role === "ADMIN";
-  const canEditFund = isAuthenticated && (user?.role === "ADMIN" || user?.role === "STAFF");
+  const { isAuthenticated } = useAuth();
+  const { isOrgManager } = useCanContribute();
+  const isAdmin = isAuthenticated && isOrgManager;
+  const canEditFund = isAdmin;
 
   const [fundDetail, setFundDetail] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");

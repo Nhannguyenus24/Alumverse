@@ -4,7 +4,7 @@ import { usePeerVerificationCounterparts } from '../usePeerVerificationCounterpa
 
 /**
  * Whether the current user may access chat at all (open conversations,
- * see previews, send messages) — verificationLevel >= 2, ADMIN/STAFF bypass.
+ * see previews, send messages) — logged-in users can use chat from level 0.
  * Takes the higher of the (possibly stale) authStore level and the live
  * OrganizationMember record, same as useMentorshipAccessState, so a
  * newly-approved member doesn't have to log out/in to unlock chat.
@@ -15,14 +15,12 @@ import { usePeerVerificationCounterparts } from '../usePeerVerificationCounterpa
  * from reaching it. General messaging with everyone else still requires level 2.
  */
 export const useCanAccessChat = () => {
-  const { isAuthenticated, isPrivileged, verificationLevel } = useCanContribute();
+  const { isAuthenticated, canUseBasicActions } = useCanContribute();
   const orgMemberQuery = useMyOrganizationMember();
   const { counterparts, isLoading: counterpartsLoading } = usePeerVerificationCounterparts();
-  const liveLevel = Number(orgMemberQuery.data?.verificationLevel ?? 0);
-  const level = Math.max(verificationLevel ?? 0, liveLevel);
 
   return {
-    canAccessChat: isPrivileged || level >= 2 || counterparts.length > 0,
+    canAccessChat: canUseBasicActions || counterparts.length > 0,
     isAuthenticated,
     isLoading: orgMemberQuery.isLoading || counterpartsLoading,
   };

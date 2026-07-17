@@ -13,6 +13,7 @@ import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { usePublishedEvents } from '../../hooks/articles/usePublishedEvents';
 import { toEventCardShape } from '../../hooks/articles/toEventCardShape';
 import { useAuth } from '../../hooks/useAuth';
+import { useCanContribute } from '../../hooks/useCanContribute';
 import { eventApi } from '../../utils/api';
 import {
   ARTICLE_FETCH_LIMIT,
@@ -70,8 +71,9 @@ const ActivitiesPage = () => {
     navigate(`/article/${article.channel}/${article.id}`);
   };
 
-  const { user, isAuthenticated } = useAuth();
-  const isAdmin = isAuthenticated && user?.role === 'ADMIN';
+  const { isAuthenticated } = useAuth();
+  const { isOrgManager } = useCanContribute();
+  const isAdmin = isAuthenticated && isOrgManager;
 
   const handleEdit = (event) => {
     navigate(`/post/event/${event.id}`);

@@ -554,11 +554,13 @@ public class AdminUserService {
         if (di != null && StringUtils.hasText(di.getFullName())) {
             b.fullName(di.getFullName());
         }
-        if (org != null && org.organizationId() != null) {
+        
+        boolean isMember = (org != null && org.organizationId() != null);
+        
+        if (isMember) {
             b.organizationId(org.organizationId());
             b.organizationName(org.organizationName());
             b.studentId(org.studentId());
-            b.verificationLevel(org.verificationLevel());
             b.isTrustedVerifier(org.isTrustedVerifier());
             b.membershipStatus(org.membershipStatus());
             b.faculty(parseStringList(org.faculty()));
@@ -569,6 +571,16 @@ public class AdminUserService {
             b.major(parseStringList(org.major()));
             b.department(parseStringList(org.department()));
         }
+        
+        // Dynamic verification level logic
+        if (base.getRole() == UserRole.ADMIN) {
+            b.verificationLevel(4);
+        } else if (base.getRole() == UserRole.STAFF) {
+            b.verificationLevel(isMember ? 4 : 2);
+        } else {
+            b.verificationLevel(isMember && org.verificationLevel() != null ? org.verificationLevel() : 0);
+        }
+
         return b.build();
     }
 

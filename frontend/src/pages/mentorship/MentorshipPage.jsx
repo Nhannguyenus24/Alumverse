@@ -15,7 +15,6 @@ import AlumniContentLayout from '../../layouts/AlumniContentLayout';
 import MentorshipHubActions from '../../components/mentorship/MentorshipHubActions';
 import MentorshipMentorListSection from '../../components/mentorship/MentorshipMentorListSection';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
-import { useAuth } from '../../hooks/useAuth';
 import { useMentorshipAccessState } from '../../hooks/mentorship/useMentorshipAccessState';
 import { getMentorshipStats } from '../../constants/mentorshipNav';
 import { useTranslation } from 'react-i18next';
@@ -53,9 +52,8 @@ const getSteps = (t) => [
 const GuestLandingContent = () => {
   const { t } = useTranslation(['nav', 'mentorship']);
   const access = useMentorshipAccessState();
-  const { user, isAuthenticated } = useAuth();
   const navigate = useOrgNavigate();
-  const isAdmin = isAuthenticated && user?.role === 'ADMIN';
+  const isAdmin = access.isOrgManager;
 
   return (
     <ScrollRevealGroup stagger={0.09} sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -211,7 +209,7 @@ const GuestLandingContent = () => {
         <Stack direction="row" spacing={1.5} justifyContent="center" flexWrap="wrap" useFlexGap>
           <MentorshipHubActions />
           {isAdmin && (
-            <Button color="secondary" variant="outlined" startIcon={<GroupsOutlinedIcon />} onClick={() => navigate('/admin/mentorship')}>
+            <Button color="primary" variant="outlined" startIcon={<GroupsOutlinedIcon />} onClick={() => navigate('/admin/mentorship')}>
               {t('mentorship:manage_mentors')}
             </Button>
           )}
@@ -229,10 +227,9 @@ const GuestLandingContent = () => {
 /** Hub header + mentor list — level 1 & 2 */
 const HubContent = () => {
   const { t } = useTranslation(['nav', 'mentorship']);
-  const { user, isAuthenticated } = useAuth();
   const access = useMentorshipAccessState();
   const navigate = useOrgNavigate();
-  const isAdmin = isAuthenticated && user?.role === 'ADMIN';
+  const isAdmin = access.isOrgManager;
 
   return (
     <ScrollRevealGroup stagger={0.09} sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -265,9 +262,9 @@ const HubContent = () => {
             {t('mentorship:hub_heading')}
           </Typography>
           <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
-            <MentorshipHubActions />
+            {!isAdmin && <MentorshipHubActions />}
             {isAdmin && (
-              <Button color="secondary" variant="outlined" startIcon={<GroupsOutlinedIcon />} onClick={() => navigate('/admin/mentorship')}>
+              <Button color="primary" variant="outlined" startIcon={<GroupsOutlinedIcon />} onClick={() => navigate('/admin/mentorship')}>
                 {t('mentorship:manage_mentors')}
               </Button>
             )}

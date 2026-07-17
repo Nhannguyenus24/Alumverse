@@ -12,6 +12,7 @@ import { usePublishedNews } from '../../hooks/news/usePublishedNews';
 import { normalizeNews } from '../../hooks/articles/normalizeArticle';
 import { toCardShape } from '../../hooks/articles/toCardShape';
 import { useAuth } from '../../hooks/useAuth';
+import { useCanContribute } from '../../hooks/useCanContribute';
 import { useSnackbar } from 'notistack';
 import apiClient from '../../utils/axios';
 import { deleteArticleByChannel, getArticleAdminEditPath } from '../../utils/articleAdminActions';
@@ -60,8 +61,9 @@ const ActivitiesPage = () => {
     navigate(`/article/${article.channel}/${article.id}`);
   };
 
-  const { user, isAuthenticated } = useAuth();
-  const isAdmin = isAuthenticated && user?.role === 'ADMIN';
+  const { isAuthenticated } = useAuth();
+  const { isOrgManager } = useCanContribute();
+  const isAdmin = isAuthenticated && isOrgManager;
 
   const handleEdit = (article) => {
     const editPath = getArticleAdminEditPath(article);

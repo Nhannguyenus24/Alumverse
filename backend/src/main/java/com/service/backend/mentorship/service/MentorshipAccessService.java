@@ -31,6 +31,13 @@ public class MentorshipAccessService {
     private final AuthRepository authRepository;
     private final MentorProfileR2dbcRepository mentorProfileRepository;
 
+    private Mono<Boolean> isGlobalMentorshipReviewerRole() {
+        return SecurityUtils.getCurrentUserRole()
+                .map(role -> "ADMIN".equalsIgnoreCase(role))
+                .defaultIfEmpty(false)
+                .onErrorReturn(false);
+    }
+
     public Mono<Integer> getCurrentVerificationLevel() {
         return SecurityUtils.getCurrentUserId()
                 .zipWith(SecurityUtils.getCurrentOrganizationId())
@@ -40,8 +47,23 @@ public class MentorshipAccessService {
                 .defaultIfEmpty(0);
     }
 
+    public Mono<Integer> getVerificationLevel(Integer organizationId) {
+        if (organizationId == null) {
+            return getCurrentVerificationLevel();
+        }
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(userId -> authRepository.getVerificationLevelByUserIdAndOrgId(
+                        userId.intValue(),
+                        organizationId))
+                .defaultIfEmpty(0);
+    }
+
     public Mono<Void> requireMinVerificationLevel(int minLevel) {
-        return getCurrentVerificationLevel()
+        return requireMinVerificationLevel(minLevel, null);
+    }
+
+    public Mono<Void> requireMinVerificationLevel(int minLevel, Integer organizationId) {
+        return getVerificationLevel(organizationId)
                 .flatMap(level -> {
                     int current = level != null ? level : 0;
                     if (current >= minLevel) {
@@ -59,7 +81,14 @@ public class MentorshipAccessService {
     }
 
     public Mono<Void> requireEmailVerifiedForMentorBrowse() {
-        return requireMinVerificationLevel(MIN_EMAIL_VERIFIED_LEVEL);
+        return requireEmailVerifiedForMentorBrowse(null);
+    }
+
+    public Mono<Void> requireEmailVerifiedForMentorBrowse(Integer organizationId) {
+        return isGlobalMentorshipReviewerRole()
+                .flatMap(isReviewer -> isReviewer
+                        ? Mono.empty()
+                        : requireMinVerificationLevel(MIN_EMAIL_VERIFIED_LEVEL, organizationId));
     }
 
     public Mono<Void> requireOrgVerifiedForMentorship() {
@@ -67,8 +96,21 @@ public class MentorshipAccessService {
     }
 
     public Mono<Boolean> isOrgVerifiedForMentorship() {
-        return getCurrentVerificationLevel()
+        return isOrgVerifiedForMentorship(null);
+    }
+
+    public Mono<Boolean> isOrgVerifiedForMentorship(Integer organizationId) {
+        return getVerificationLevel(organizationId)
                 .map(level -> level != null && level >= MIN_ORG_VERIFIED_LEVEL);
+    }
+
+    public Mono<Boolean> canViewFullMentorBrowse() {
+        return canViewFullMentorBrowse(null);
+    }
+
+    public Mono<Boolean> canViewFullMentorBrowse(Integer organizationId) {
+        return isGlobalMentorshipReviewerRole()
+                .flatMap(isReviewer -> isReviewer ? Mono.just(true) : isOrgVerifiedForMentorship(organizationId));
     }
 
     /**
@@ -80,18 +122,22 @@ public class MentorshipAccessService {
                     ErrorCode.MENTOR_PROFILE_NOT_FOUND,
                     "Không tìm thấy hồ sơ mentor"));
         }
-        return mentorProfileRepository.findById(mentorMemberId)
+        return mentorProfileRepository.findApprovedMentor(mentorMemberId, null)
                 .switchIfEmpty(Mono.error(new ApplicationException(
                         ErrorCode.MENTOR_PROFILE_NOT_FOUND,
-                        "Không tìm thấy hồ sơ mentor")))
-                .flatMap(profile -> {
-                    if (!Status.APPROVED.equals(profile.getStatus())) {
-                        return Mono.error(new ApplicationException(
-                                ErrorCode.MENTOR_PROFILE_NOT_FOUND,
-                                "Không tìm thấy hồ sơ mentor"));
-                    }
-                    return Mono.just(profile);
-                });
+                        "Không tìm thấy hồ sơ mentor")));
+    }
+
+    public Mono<MentorProfile> requireApprovedMentorProfile(Integer mentorMemberId, Integer organizationId) {
+        if (mentorMemberId == null) {
+            return Mono.error(new ApplicationException(
+                    ErrorCode.MENTOR_PROFILE_NOT_FOUND,
+                    "Không tìm thấy hồ sơ mentor"));
+        }
+        return mentorProfileRepository.findApprovedMentor(mentorMemberId, organizationId)
+                .switchIfEmpty(Mono.error(new ApplicationException(
+                        ErrorCode.MENTOR_PROFILE_NOT_FOUND,
+                        "Không tìm thấy hồ sơ mentor")));
     }
 
     public Mono<Void> requireCurrentUserApprovedMentor() {
