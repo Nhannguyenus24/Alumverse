@@ -56,7 +56,6 @@ import java.time.LocalDateTime;
 public class AdminUserService {
     private static final Logger logger = LoggerFactory.getLogger(AdminUserService.class);
     private static final String ORG_CACHE = "organization_cache";
-    private static final int DEFAULT_ADMIN_PROVISIONED_USER_LEVEL = 3;
 
     private final AdminUserRepository adminUserRepository;
     private final AdminAuditLogRepository adminAuditLogRepository;
@@ -220,9 +219,10 @@ public class AdminUserService {
 
             String normalizedRole = StringUtils.hasText(role) ? role.trim().toUpperCase() : "USER";
             Integer finalVerificationLevel = switch (normalizedRole) {
-                case "STAFF" -> 4;
+                case "STAFF" -> VerificationLevel.ADMIN;
+                // Admin tạo sẵn tài khoản USER thì mặc định coi là sinh viên đang học (đã được khoa xác nhận).
                 case "USER" -> (verificationLevel == null || verificationLevel == 0)
-                        ? DEFAULT_ADMIN_PROVISIONED_USER_LEVEL
+                        ? VerificationLevel.STUDENT
                         : verificationLevel;
                 default -> verificationLevel;
             };
