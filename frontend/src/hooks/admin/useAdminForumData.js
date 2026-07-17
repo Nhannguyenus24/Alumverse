@@ -78,6 +78,17 @@ const normalizePostRowForAdmin = (dto) => {
 
 /* ─── Hook ─── */
 
+const useSmartFetch = (fetcher, shouldFetch) => {
+  const lastFetcher = useRef(null);
+  useEffect(() => {
+    if (!shouldFetch) return;
+    if (lastFetcher.current === fetcher) return;
+    lastFetcher.current = fetcher;
+    const timer = setTimeout(fetcher, 0);
+    return () => clearTimeout(timer);
+  }, [fetcher, shouldFetch]);
+};
+
 const useAdminForumData = (activeOrgId, shouldFetch = true) => {
   const { user } = useAuth();
   const adminUserId = Number(user?.id);
@@ -136,11 +147,7 @@ const useAdminForumData = (activeOrgId, shouldFetch = true) => {
     setLoading(false);
   }, []);
 
-  useEffect(() => {
-    if (!shouldFetch) return;
-    const timer = setTimeout(loadStatistics, 0);
-    return () => clearTimeout(timer);
-  }, [loadStatistics, shouldFetch]);
+  useSmartFetch(loadStatistics, shouldFetch);
 
   /* ─── Load top contributors (when month/year changes) ─── */
 
@@ -152,11 +159,7 @@ const useAdminForumData = (activeOrgId, shouldFetch = true) => {
     setTopContributors(Array.isArray(data) ? data : []);
   }, [contributorMonth, contributorYear]);
 
-  useEffect(() => {
-    if (!shouldFetch) return;
-    const timer = setTimeout(loadTopContributors, 0);
-    return () => clearTimeout(timer);
-  }, [loadTopContributors, shouldFetch]);
+  useSmartFetch(loadTopContributors, shouldFetch);
 
   /* ─── Load monthly timeline (when year changes) ─── */
 
@@ -165,11 +168,7 @@ const useAdminForumData = (activeOrgId, shouldFetch = true) => {
     setMonthlyTimeline(data);
   }, [timelineYear]);
 
-  useEffect(() => {
-    if (!shouldFetch) return;
-    const timer = setTimeout(loadTimeline, 0);
-    return () => clearTimeout(timer);
-  }, [loadTimeline, shouldFetch]);
+  useSmartFetch(loadTimeline, shouldFetch);
 
   /* ─── Load banned posts ─── */
 
@@ -188,11 +187,7 @@ const useAdminForumData = (activeOrgId, shouldFetch = true) => {
     }
   }, [bannedPage, activeOrgId]);
 
-  useEffect(() => {
-    if (!shouldFetch) return;
-    const timer = setTimeout(loadBannedPosts, 0);
-    return () => clearTimeout(timer);
-  }, [loadBannedPosts, shouldFetch]);
+  useSmartFetch(loadBannedPosts, shouldFetch);
 
   /* ─── Load yesterday posts ─── */
 
@@ -214,11 +209,7 @@ const useAdminForumData = (activeOrgId, shouldFetch = true) => {
     }
   }, [yesterdayPage, activeOrgId]);
 
-  useEffect(() => {
-    if (!shouldFetch) return;
-    const timer = setTimeout(loadYesterdayPosts, 0);
-    return () => clearTimeout(timer);
-  }, [loadYesterdayPosts, shouldFetch]);
+  useSmartFetch(loadYesterdayPosts, shouldFetch);
 
   const reportsAbortRef = useRef(null);
   const loadReports = useCallback(async () => {
@@ -235,11 +226,7 @@ const useAdminForumData = (activeOrgId, shouldFetch = true) => {
     }
   }, [reportsPage, activeOrgId]);
 
-  useEffect(() => {
-    if (!shouldFetch) return;
-    const timer = setTimeout(loadReports, 0);
-    return () => clearTimeout(timer);
-  }, [loadReports, shouldFetch]);
+  useSmartFetch(loadReports, shouldFetch);
 
   const allPostsAbortRef = useRef(null);
   const loadAllPosts = useCallback(async () => {
@@ -260,11 +247,7 @@ const useAdminForumData = (activeOrgId, shouldFetch = true) => {
     }
   }, [postsSearch, postsPage, postsSize, activeOrgId]);
 
-  useEffect(() => {
-    if (!shouldFetch) return;
-    const timer = setTimeout(loadAllPosts, 0);
-    return () => clearTimeout(timer);
-  }, [loadAllPosts, shouldFetch]);
+  useSmartFetch(loadAllPosts, shouldFetch);
 
   const posts = useMemo(() => {
     let list = allPosts.content;
@@ -297,13 +280,10 @@ const useAdminForumData = (activeOrgId, shouldFetch = true) => {
     }
   }, []);
 
-  useEffect(() => {
-    if (!shouldFetch) return;
-    if (activeOrgId) {
-      const timer = setTimeout(() => loadCategories(activeOrgId), 0);
-      return () => clearTimeout(timer);
-    }
-  }, [activeOrgId, loadCategories, shouldFetch]);
+  const boundLoadCategories = useCallback(() => {
+    if (activeOrgId) loadCategories(activeOrgId);
+  }, [activeOrgId, loadCategories]);
+  useSmartFetch(boundLoadCategories, shouldFetch);
 
   /* ─── Load topics ─── */
 
@@ -328,13 +308,10 @@ const useAdminForumData = (activeOrgId, shouldFetch = true) => {
     }
   }, [topicsSearch, topicsPage, topicsSize]);
 
-  useEffect(() => {
-    if (!shouldFetch) return;
-    if (activeOrgId) {
-      const timer = setTimeout(() => loadTopics(activeOrgId), 0);
-      return () => clearTimeout(timer);
-    }
-  }, [activeOrgId, loadTopics, shouldFetch]);
+  const boundLoadTopics = useCallback(() => {
+    if (activeOrgId) loadTopics(activeOrgId);
+  }, [activeOrgId, loadTopics]);
+  useSmartFetch(boundLoadTopics, shouldFetch);
 
   /* ─── Mutation helpers ─── */
 

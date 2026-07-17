@@ -17,7 +17,6 @@ import java.util.stream.Collectors;
 import com.service.backend.shared.dto.IdCountDTO;
 import com.service.backend.shared.dao.UserDisplayInfo;
 
-import com.service.backend.admin.dao.AdminAuditLogRepository;
 import com.service.backend.organization.dao.OrganizationRepository;
 import com.service.backend.admin.dao.AdminUserRepository;
 import com.service.backend.user.dao.UserProfileRepository;
@@ -64,7 +63,7 @@ public class AdminForumService {
     private final CacheUtils cacheUtils;
     private final OrganizationRepository organizationRepository;
     private final AdminUserRepository adminUserRepository;
-    private final AdminAuditLogRepository adminAuditLogRepository;
+    private final AdminAuditService adminAuditService;
     private final NotificationService notificationService;
     private final UserProfileRepository userProfileRepository;
 
@@ -828,31 +827,8 @@ public class AdminForumService {
             String resourceId,
             String beforeData,
             String afterData) {
-        if (adminUserId == null) {
-            return Mono.empty();
-        }
-        return adminAuditLogRepository
-                .insertAuditLog(
-                        adminUserId,
-                        targetUserId,
-                        action,
-                        resourceType,
-                        resourceId,
-                        beforeData,
-                        afterData,
-                        null)
-                .onErrorResume(primaryErr -> {
-                    log.warn("Primary forum audit-log insert failed, retrying legacy schema for action {}", action, primaryErr);
-                    return adminAuditLogRepository.insertAuditLogLegacy(
-                            adminUserId,
-                            targetUserId,
-                            action);
-                })
-                .onErrorResume(fallbackErr -> {
-                    log.warn("All forum audit-log insert attempts failed for action {}", action, fallbackErr);
-                    return Mono.empty();
-                })
-                .then();
+        return adminAuditService.recordSemantic(
+                adminUserId, targetUserId, action, resourceType, resourceId, beforeData, afterData, null);
     }
 
     private ForumCategoryDTO convertToCategoryDTO(

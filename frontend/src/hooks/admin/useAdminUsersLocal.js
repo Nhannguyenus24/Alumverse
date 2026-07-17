@@ -72,8 +72,11 @@ const useAdminUsersLocal = (stableOrgId, shouldFetch = true) => {
     }
   }, [page, rowsPerPage, search, roleFilter, statusFilter, stableOrgId]);
 
+  const lastFetchTrigger = useRef(null);
+
   useEffect(() => {
-    if (shouldFetch) {
+    if (shouldFetch && lastFetchTrigger.current !== loadUsers) {
+      lastFetchTrigger.current = loadUsers;
       loadUsers();
     }
   }, [loadUsers, shouldFetch]);
