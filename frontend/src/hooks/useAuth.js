@@ -240,7 +240,6 @@ export const useAuth = () => {
     try {
       const { data } = await apiClient.post('/auth/register', {
         email: parsed.data.email,
-        studentId: parsed.data.studentId,
         fullName: parsed.data.fullName,
         password: parsed.data.password,
         organizationId,

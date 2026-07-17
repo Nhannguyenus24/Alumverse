@@ -36,6 +36,11 @@ const NetworkConnectionsPanel = ({ variant = 'page', enableBlock = true }) => {
       {showBlockedSection ? (
         <>
           <ScrollReveal><Divider /></ScrollReveal>
+          <ScrollReveal>
+            <Typography variant="h4" fontWeight={700}>
+              {t('restricted_connections')}
+            </Typography>
+          </ScrollReveal>
           <NetworkBlockedMembersSection />
         </>
       ) : null}

@@ -95,9 +95,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // dispose the form and swallow its error toast.
       final isResolving = authState.isLoading || orgState.isLoading;
       if (isResolving) {
-        if (isSplash) return null;
-        if (isAuthRoute || isOrgSelectRoute) return null;
-        return RouteNames.splash;
+        return null;
       }
 
       final isLoggedIn = authState.maybeWhen(
@@ -356,7 +354,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             ),
       ),
       // Admin/staff event check-in. The auth gate keeps these behind login;
-      // the picker page itself hides its content from non-staff roles.
+      // the pages themselves require effective organization-manager level.
       GoRoute(
         path: RouteNames.adminCheckIn,
         builder: (_, __) => const AdminCheckInEventsPage(),

@@ -31,6 +31,7 @@
   "label_grad_status": "Graduation status",
   "grad_status_graduated": "Graduated",
   "grad_status_studying": "Studying",
+  "grad_status_dropped": "Dropped out",
   "save_changes": "Save changes",
   "cancel": "Cancel",
   "email_section": "Email address",

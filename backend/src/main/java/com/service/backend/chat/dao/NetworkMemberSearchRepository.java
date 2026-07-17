@@ -27,6 +27,7 @@ public interface NetworkMemberSearchRepository
     String SEARCH_WHERE = """
             WHERE (:filterByOrg = FALSE OR om.organization_id IN (:organizationIds))
               AND om.status = 'ACTIVE'
+              AND u.status = 'ACTIVE'
               AND u.id <> :currentUserId
               AND NOT EXISTS (
                 SELECT 1 FROM user_blocks ub

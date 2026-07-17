@@ -23,6 +23,8 @@ class ApiEndpoints {
   static const String authGoogleLogin = '/api/auth/google-login';
   static const String authSendOtp = '/api/auth/send-otp';
   static const String authVerifyOtp = '/api/auth/verify-otp';
+  static String authSwitchOrganization(int organizationId) =>
+      '/api/auth/switch-organization/$organizationId';
   static String authChangePassword(int userId) => '/api/auth/password/$userId';
 
   // --- User Settings / Me ---

@@ -29,13 +29,14 @@ public class AlumniPostService {
     private final NotificationService notificationService;
 
     public Mono<AlumniPostResponse> create(CreateAlumniPostRequest request) {
-        return Mono.zip(SecurityUtils.getCurrentUserId(), SecurityUtils.getCurrentOrganizationId(), SecurityUtils.getCurrentUserRole())
+        return Mono.zip(SecurityUtils.getCurrentUserId(), SecurityUtils.getCurrentUserRole())
                 .flatMap(ctx -> {
                     Long userId = ctx.getT1();
-                    Integer orgId = ctx.getT2();
-                    String role = ctx.getT3();
+                    String role = ctx.getT2();
                     boolean publishImmediately = "ADMIN".equalsIgnoreCase(role) || "STAFF".equalsIgnoreCase(role);
-                    return imageService.uploadBase64IfPresent(request.getThumbnailBase64())
+                    return SecurityUtils.resolveContentOrganizationId(request.getOrganizationId())
+                            .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.BAD_REQUEST, "Organization ID is required to create alumni post")))
+                            .flatMap(orgId -> imageService.uploadBase64IfPresent(request.getThumbnailBase64())
                             .defaultIfEmpty("")
                             .flatMap(thumbnailUrl -> {
                                 AlumniPost post = AlumniPost.builder()
@@ -64,7 +65,7 @@ public class AlumniPostService {
                                             }
                                         })
                                         .map(AlumniPostResponse::from);
-                            });
+                            }));
                 });
     }
 

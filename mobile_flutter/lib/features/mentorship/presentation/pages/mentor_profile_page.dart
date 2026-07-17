@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -36,12 +38,16 @@ class _MentorProfilePageState extends ConsumerState<MentorProfilePage>
   @override
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(mentorProfileProvider(widget.memberId));
+    final accessAsync = ref.watch(mentorshipAccessProvider);
+    final access = accessAsync.valueOrNull;
     final myMentorAsync = ref.watch(myMentorProfileProvider);
     final myMenteeAsync = ref.watch(myMenteeProfileProvider);
     final myMentor = myMentorAsync.valueOrNull;
     final isMentorPending = (myMentor?.status ?? '').toUpperCase() == 'PENDING';
     final isOwnMentorProfile = myMentor?.memberId == widget.memberId;
+    final showBook = !(access?.isOrgManager ?? false);
     final canBook =
+        (access?.canParticipateInMentorship ?? false) &&
         !isMentorPending &&
         !isOwnMentorProfile &&
         ((myMentor?.status ?? '').toUpperCase() == 'APPROVED' ||
@@ -80,6 +86,13 @@ class _MentorProfilePageState extends ConsumerState<MentorProfilePage>
           final avatar = resolveImageUrl(m.avatarUrl);
           final rating =
               m.ratingAvg != null ? m.ratingAvg!.toStringAsFixed(1) : '0.0';
+          final extended = _MentorExtendedProfile.fromRaw(m.extendedProfile);
+          final tags =
+              {
+                ...m.expertiseTags,
+                ...extended.expertiseTags,
+                ...m.expertiseTopics,
+              }.where((t) => t.trim().isNotEmpty).toList();
 
           return Column(
             children: [
@@ -153,25 +166,27 @@ class _MentorProfilePageState extends ConsumerState<MentorProfilePage>
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed:
-                            canBook
-                                ? () => context.push(
-                                  '${RouteNames.mentorship}/mentors/${widget.memberId}/book',
-                                )
-                                : null,
-                        icon: const Icon(Icons.calendar_month, size: 18),
-                        label: Text('mentorship.book_appointment'.tr()),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: AppColors.primary,
-                          padding: const EdgeInsets.symmetric(vertical: 10),
+                    if (showBook) ...[
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed:
+                              canBook
+                                  ? () => context.push(
+                                    '${RouteNames.mentorship}/mentors/${widget.memberId}/book',
+                                  )
+                                  : null,
+                          icon: const Icon(Icons.calendar_month, size: 18),
+                          label: Text('mentorship.book_appointment'.tr()),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: AppColors.primary,
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),
@@ -181,39 +196,62 @@ class _MentorProfilePageState extends ConsumerState<MentorProfilePage>
                   controller: _tabCtrl,
                   children: [
                     // Tab 1: Info
-                    Builder(
-                      builder: (_) {
-                        final tags =
-                            {...m.expertiseTags, ...m.expertiseTopics}.toList();
-                        return ListView(
-                          padding: const EdgeInsets.all(16),
-                          children: [
-                            if (tags.isNotEmpty) ...[
-                              _SectionLabel('mentorship.expertise'.tr()),
-                              const SizedBox(height: 8),
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
-                                children:
-                                    tags
-                                        .map(
-                                          (t) => Chip(
-                                            label: Text(t),
-                                            backgroundColor: AppColors.primary
-                                                .withValues(alpha: 0.08),
-                                            labelStyle: const TextStyle(
-                                              color: AppColors.primary,
-                                              fontSize: 13,
-                                            ),
-                                            side: BorderSide.none,
+                    ListView(
+                      padding: const EdgeInsets.all(16),
+                      children: [
+                        if (extended.experienceSummary.isNotEmpty) ...[
+                          _SectionLabel(
+                            'mentorship.shareable_content'.tr(),
+                            icon: Icons.workspace_premium_outlined,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            extended.experienceSummary,
+                            style: const TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 15,
+                              height: 1.55,
+                            ),
+                          ),
+                          const SizedBox(height: 22),
+                        ],
+                        if (tags.isNotEmpty) ...[
+                          _SectionLabel(
+                            'mentorship.expertise'.tr(),
+                            icon: Icons.verified_outlined,
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children:
+                                tags
+                                    .map(
+                                      (t) => Chip(
+                                        label: Text(t),
+                                        backgroundColor: AppColors.primary
+                                            .withValues(alpha: 0.08),
+                                        labelStyle: const TextStyle(
+                                          color: AppColors.primary,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                        side: BorderSide(
+                                          color: AppColors.primary.withValues(
+                                            alpha: 0.12,
                                           ),
-                                        )
-                                        .toList(),
-                              ),
-                            ],
-                          ],
-                        );
-                      },
+                                        ),
+                                      ),
+                                    )
+                                    .toList(),
+                          ),
+                          const SizedBox(height: 22),
+                        ],
+                        for (final section in extended.sections) ...[
+                          _ProfileSection(section: section),
+                          const SizedBox(height: 22),
+                        ],
+                      ],
                     ),
 
                     // Tab 2: Feedback / Reviews
@@ -317,22 +355,310 @@ class _FeedbackTab extends ConsumerWidget {
   }
 }
 
-class _SectionLabel extends StatelessWidget {
-  const _SectionLabel(this.text);
-  final String text;
+class _ProfileSection extends StatelessWidget {
+  const _ProfileSection({required this.section});
+
+  final _ExtendedSection section;
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      text.toUpperCase(),
-      style: const TextStyle(
-        color: AppColors.primary,
-        fontWeight: FontWeight.w700,
-        fontSize: 12,
-        letterSpacing: 0.5,
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionLabel(section.title, icon: section.icon),
+        const SizedBox(height: 10),
+        ...section.items.map(
+          (item) => Container(
+            width: double.infinity,
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppColors.divider),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.035),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (item.title.isNotEmpty)
+                  Text(
+                    item.title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 15,
+                    ),
+                  ),
+                if (item.subtitle.isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    item.subtitle,
+                    style: const TextStyle(
+                      color: AppColors.primary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+                if (item.period.isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    item.period,
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+                if (item.description.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    item.description,
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 13,
+                      height: 1.45,
+                    ),
+                  ),
+                ],
+                if (item.link.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    item.link,
+                    style: const TextStyle(
+                      color: AppColors.primary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
+}
+
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel(this.text, {this.icon});
+  final String text;
+  final IconData? icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        if (icon != null) ...[
+          Icon(icon, color: AppColors.primary, size: 18),
+          const SizedBox(width: 6),
+        ],
+        Expanded(
+          child: Text(
+            text.toUpperCase(),
+            style: const TextStyle(
+              color: AppColors.primary,
+              fontWeight: FontWeight.w800,
+              fontSize: 12,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _MentorExtendedProfile {
+  const _MentorExtendedProfile({
+    this.experienceSummary = '',
+    this.expertiseTags = const [],
+    this.sections = const [],
+  });
+
+  final String experienceSummary;
+  final List<String> expertiseTags;
+  final List<_ExtendedSection> sections;
+
+  factory _MentorExtendedProfile.fromRaw(String? raw) {
+    if (raw == null || raw.trim().isEmpty) {
+      return const _MentorExtendedProfile();
+    }
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map<String, dynamic>) {
+        return const _MentorExtendedProfile();
+      }
+
+      return _MentorExtendedProfile(
+        experienceSummary: _text(decoded['experienceSummary']),
+        expertiseTags: _stringList(decoded['expertiseTags']),
+        sections:
+            [
+              _section(
+                key: 'educations',
+                title: 'mentorship.signup_education_title'.tr().replaceAll(
+                  '*',
+                  '',
+                ),
+                icon: Icons.school_outlined,
+                rows: decoded['educations'],
+                titleKeys: const ['school', 'degree', 'name', 'title'],
+                subtitleKeys: const ['degree', 'school'],
+                periodKeys: const ['period'],
+              ),
+              _section(
+                key: 'experiences',
+                title: 'mentorship.signup_experience_title'.tr().replaceAll(
+                  '*',
+                  '',
+                ),
+                icon: Icons.work_outline,
+                rows: decoded['experiences'],
+                titleKeys: const ['title', 'role', 'position'],
+                subtitleKeys: const ['company', 'organization'],
+                periodKeys: const ['period'],
+                descriptionKeys: const ['description'],
+              ),
+              _section(
+                key: 'projects',
+                title: 'mentorship.signup_projects_title'.tr(),
+                icon: Icons.folder_open_outlined,
+                rows: decoded['projects'],
+                titleKeys: const ['name', 'title'],
+                descriptionKeys: const ['description'],
+                linkKeys: const ['link', 'url'],
+              ),
+              _section(
+                key: 'awards',
+                title: 'mentorship.signup_awards_title'.tr(),
+                icon: Icons.emoji_events_outlined,
+                rows: decoded['awards'],
+                titleKeys: const ['name', 'title'],
+                periodKeys: const ['year'],
+                descriptionKeys: const ['description'],
+              ),
+              _section(
+                key: 'skills',
+                title: 'mentorship.signup_skills_title'.tr(),
+                icon: Icons.workspace_premium_outlined,
+                rows: decoded['skills'],
+                titleKeys: const ['name', 'title'],
+                subtitleKeys: const ['issuer'],
+              ),
+            ].where((s) => s.items.isNotEmpty).toList(),
+      );
+    } catch (_) {
+      return const _MentorExtendedProfile();
+    }
+  }
+
+  static _ExtendedSection _section({
+    required String key,
+    required String title,
+    required IconData icon,
+    required dynamic rows,
+    List<String> titleKeys = const [],
+    List<String> subtitleKeys = const [],
+    List<String> periodKeys = const [],
+    List<String> descriptionKeys = const [],
+    List<String> linkKeys = const [],
+  }) {
+    final items =
+        rows is List
+            ? rows
+                .whereType<Map>()
+                .map((row) => row.cast<String, dynamic>())
+                .map(
+                  (row) => _ExtendedItem(
+                    title: _first(row, titleKeys),
+                    subtitle: _firstDifferent(
+                      row,
+                      subtitleKeys,
+                      _first(row, titleKeys),
+                    ),
+                    period: _first(row, periodKeys),
+                    description: _first(row, descriptionKeys),
+                    link: _first(row, linkKeys),
+                  ),
+                )
+                .where((item) => item.hasContent)
+                .toList()
+            : <_ExtendedItem>[];
+    return _ExtendedSection(key: key, title: title, icon: icon, items: items);
+  }
+
+  static String _first(Map<String, dynamic> row, List<String> keys) {
+    for (final key in keys) {
+      final value = _text(row[key]);
+      if (value.isNotEmpty) return value;
+    }
+    return '';
+  }
+
+  static String _firstDifferent(
+    Map<String, dynamic> row,
+    List<String> keys,
+    String existing,
+  ) {
+    final value = _first(row, keys);
+    return value == existing ? '' : value;
+  }
+
+  static String _text(dynamic value) => value?.toString().trim() ?? '';
+
+  static List<String> _stringList(dynamic value) =>
+      value is List
+          ? value
+              .map((e) => e.toString().trim())
+              .where((e) => e.isNotEmpty)
+              .toSet()
+              .toList()
+          : const [];
+}
+
+class _ExtendedSection {
+  const _ExtendedSection({
+    required this.key,
+    required this.title,
+    required this.icon,
+    required this.items,
+  });
+
+  final String key;
+  final String title;
+  final IconData icon;
+  final List<_ExtendedItem> items;
+}
+
+class _ExtendedItem {
+  const _ExtendedItem({
+    this.title = '',
+    this.subtitle = '',
+    this.period = '',
+    this.description = '',
+    this.link = '',
+  });
+
+  final String title;
+  final String subtitle;
+  final String period;
+  final String description;
+  final String link;
+
+  bool get hasContent =>
+      title.isNotEmpty ||
+      subtitle.isNotEmpty ||
+      period.isNotEmpty ||
+      description.isNotEmpty ||
+      link.isNotEmpty;
 }
 
 /// Extract an HTTP status from an error (ApiException via DioException).

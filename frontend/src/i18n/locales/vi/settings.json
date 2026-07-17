@@ -31,6 +31,7 @@
   "label_grad_status": "Trạng thái tốt nghiệp",
   "grad_status_graduated": "Đã tốt nghiệp",
   "grad_status_studying": "Đang học",
+  "grad_status_dropped": "Đã thôi học",
   "save_changes": "Lưu thay đổi",
   "cancel": "Huỷ",
   "email_section": "Địa chỉ email",

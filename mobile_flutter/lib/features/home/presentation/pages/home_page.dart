@@ -12,6 +12,7 @@ import '../../../article/presentation/providers/news_provider.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../event/presentation/providers/event_provider.dart';
 import '../../../network/presentation/providers/network_provider.dart';
+import '../../../organization/data/repositories/organization_repository.dart';
 import '../../../organization/presentation/providers/organization_provider.dart';
 import '../../../user/presentation/providers/user_providers.dart';
 import '../../../user/presentation/widgets/notification_bell.dart';
@@ -36,11 +37,7 @@ class HomePage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         titleSpacing: 16,
-        title: Row(
-          children: [
-            const AlumverseLogo(size: 30),
-          ],
-        ),
+        title: Row(children: [const AlumverseLogo(size: 30)]),
         actions: [
           _OrgSwitchButton(currentName: org?.name),
           const _LanguageSwitchButton(),
@@ -99,17 +96,20 @@ class _AccountMenuButton extends ConsumerWidget {
   Future<void> _open(BuildContext context, WidgetRef ref) async {
     final authUser = ref.read(authStateProvider).valueOrNull?.user;
     final profile = ref.read(myProfileProvider).valueOrNull;
-    final fullName = profile?.fullName?.trim().isNotEmpty == true
-        ? profile!.fullName!.trim()
-        : authUser?.fullName?.trim().isNotEmpty == true
+    final fullName =
+        profile?.fullName?.trim().isNotEmpty == true
+            ? profile!.fullName!.trim()
+            : authUser?.fullName?.trim().isNotEmpty == true
             ? authUser!.fullName!.trim()
             : 'profile.title'.tr();
-    final role = profile?.role?.trim().isNotEmpty == true
-        ? profile!.role!.trim()
-        : authUser?.role?.trim();
-    final email = profile?.email.trim().isNotEmpty == true
-        ? profile!.email.trim()
-        : authUser?.email ?? '';
+    final role =
+        profile?.role?.trim().isNotEmpty == true
+            ? profile!.role!.trim()
+            : authUser?.role?.trim();
+    final email =
+        profile?.email.trim().isNotEmpty == true
+            ? profile!.email.trim()
+            : authUser?.email ?? '';
 
     await showAnchoredDropdown<void>(
       anchorContext: context,
@@ -234,12 +234,79 @@ class _OrgSwitchButton extends ConsumerWidget {
   const _OrgSwitchButton({this.currentName});
   final String? currentName;
 
-  Future<void> _switch(WidgetRef ref, String slug) async {
-    await ref.read(organizationStateProvider.notifier).fetchOrganization(slug);
-    // Reload everything scoped to the organization.
-    ref.invalidate(publishedNewsProvider);
-    ref.invalidate(upcomingEventsProvider);
-    ref.invalidate(featuredMembersProvider);
+  Future<void> _switch(BuildContext context, WidgetRef ref, String slug) async {
+    _showSwitchingOverlay(context);
+    var overlayOpen = true;
+    void closeOverlay() {
+      if (overlayOpen && context.mounted) {
+        overlayOpen = false;
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+    }
+
+    final isLoggedIn =
+        ref.read(authStateProvider).valueOrNull?.isLoggedIn ?? false;
+    try {
+      if (isLoggedIn) {
+        final nextOrg = await ref
+            .read(organizationRepositoryProvider)
+            .getOrganizationBySlug(slug);
+        await ref
+            .read(authStateProvider.notifier)
+            .switchOrganization(nextOrg.id);
+      }
+      await ref
+          .read(organizationStateProvider.notifier)
+          .fetchOrganization(slug);
+      ref.invalidate(myVerificationLevelProvider);
+      ref.invalidate(isOrgManagerProvider);
+      ref.invalidate(canEventCheckInProvider);
+      ref.invalidate(canContributeProvider);
+      ref.invalidate(isTrustedVerifierProvider);
+      // Reload everything scoped to the organization.
+      ref.invalidate(publishedNewsProvider);
+      ref.invalidate(upcomingEventsProvider);
+      ref.invalidate(featuredMembersProvider);
+      await Future.wait([
+        ref
+            .read(publishedNewsProvider.future)
+            .then<void>((_) {})
+            .catchError((_) {}),
+        ref
+            .read(upcomingEventsProvider.future)
+            .then<void>((_) {})
+            .catchError((_) {}),
+        ref
+            .read(featuredMembersProvider.future)
+            .then<void>((_) {})
+            .catchError((_) {}),
+      ]);
+    } finally {
+      closeOverlay();
+    }
+  }
+
+  void _showSwitchingOverlay(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.white,
+      useRootNavigator: true,
+      builder:
+          (_) => const PopScope(
+            canPop: false,
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AlumverseLogo(size: 84, full: false),
+                  SizedBox(height: 32),
+                  CircularProgressIndicator(),
+                ],
+              ),
+            ),
+          ),
+    );
   }
 
   void _open(BuildContext context, WidgetRef ref) {
@@ -304,7 +371,7 @@ class _OrgSwitchButton extends ConsumerWidget {
                                     ? null
                                     : () {
                                       close();
-                                      _switch(ref, o.slug);
+                                      _switch(context, ref, o.slug);
                                     },
                           ),
                       ],

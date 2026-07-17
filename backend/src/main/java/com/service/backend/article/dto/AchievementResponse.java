@@ -9,6 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Data
 @Builder
@@ -17,12 +18,15 @@ import java.time.LocalDate;
 public class AchievementResponse {
 
     private Integer id;
+    private Integer organizationId;
     private Integer memberId;
     private String title;
     private String description;
     private String imageUrl;
     private String url;
     private LocalDate awardedDate;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
     private String topic;
     private Status status;
 
@@ -30,16 +34,22 @@ public class AchievementResponse {
     private String memberAvatar;
     private String memberJobTitle;
     private String memberCompany;
+    private String submitterName;
+    private String submitterRole;
+    private Boolean userSubmitted;
 
     public static AchievementResponse from(Achievement achievement) {
         return AchievementResponse.builder()
                 .id(achievement.getId())
+                .organizationId(achievement.getOrganizationId())
                 .memberId(achievement.getMemberId())
                 .title(achievement.getTitle())
                 .description(achievement.getDescription())
                 .imageUrl(achievement.getImageUrl())
                 .url(achievement.getUrl())
                 .awardedDate(achievement.getAwardedDate())
+                .createdAt(achievement.getCreatedAt())
+                .updatedAt(achievement.getUpdatedAt())
                 .topic(achievement.getTopic())
                 .status(achievement.getStatus())
                 .build();

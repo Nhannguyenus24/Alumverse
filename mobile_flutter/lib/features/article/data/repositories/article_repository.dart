@@ -10,17 +10,24 @@ final articleRepositoryProvider = Provider<ArticleRepository>((ref) {
   return ArticleRepository(ref.watch(dioProvider));
 });
 
-/// Reads published articles. The organization is resolved server-side from the
-/// JWT, so no orgId needs to be passed — the auth header is enough.
+/// Reads published articles for the organization currently selected in the UI.
 class ArticleRepository {
   ArticleRepository(this._dio);
 
   final Dio _dio;
 
-  Future<List<Article>> getPublishedNews({int page = 0, int limit = 10}) async {
+  Future<List<Article>> getPublishedNews({
+    int page = 0,
+    int limit = 10,
+    int? organizationId,
+  }) async {
     final res = await _dio.get(
       ApiEndpoints.newsPublished,
-      queryParameters: {'page': page, 'limit': limit},
+      queryParameters: {
+        'page': page,
+        'limit': limit,
+        if (organizationId != null) 'organizationId': organizationId,
+      },
     );
     return _itemsFrom(res.data, channel: 'news');
   }
@@ -28,10 +35,15 @@ class ArticleRepository {
   Future<List<Article>> getPublishedAlumniPosts({
     int page = 0,
     int limit = 10,
+    int? organizationId,
   }) async {
     final res = await _dio.get(
       ApiEndpoints.alumniPostsPublished,
-      queryParameters: {'page': page, 'limit': limit},
+      queryParameters: {
+        'page': page,
+        'limit': limit,
+        if (organizationId != null) 'organizationId': organizationId,
+      },
     );
     return _itemsFrom(res.data, channel: 'alumni');
   }
@@ -39,10 +51,15 @@ class ArticleRepository {
   Future<List<Article>> getApprovedAchievements({
     int page = 0,
     int limit = 10,
+    int? organizationId,
   }) async {
     final res = await _dio.get(
       ApiEndpoints.achievementsApproved,
-      queryParameters: {'page': page, 'limit': limit},
+      queryParameters: {
+        'page': page,
+        'limit': limit,
+        if (organizationId != null) 'organizationId': organizationId,
+      },
     );
     return _itemsFrom(res.data, channel: 'achievement');
   }
@@ -129,7 +146,9 @@ class ArticleRepository {
     final items = data is Map ? data['items'] : data;
     if (items is! List) return const [];
     return items
-        .map((e) => Article.fromJson(e as Map<String, dynamic>, channel: channel))
+        .map(
+          (e) => Article.fromJson(e as Map<String, dynamic>, channel: channel),
+        )
         .toList();
   }
 }

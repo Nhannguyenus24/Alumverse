@@ -206,13 +206,13 @@ const DevelopmentPage = () => {
             open={Boolean(submitAnchorEl)}
             onClose={() => setSubmitAnchorEl(null)}
           >
-            <MenuItem onClick={() => { setSubmitAnchorEl(null); navigate('/post/job'); }}>
-              <ListItemIcon><WorkIcon fontSize="small" /></ListItemIcon>
-              <ListItemText>{t('dev:create_job_opportunity')}</ListItemText>
-            </MenuItem>
             <MenuItem onClick={() => { setSubmitAnchorEl(null); navigate('/post/learning'); }}>
               <ListItemIcon><MenuBookIcon fontSize="small" /></ListItemIcon>
               <ListItemText>{t('dev:create_academic_opportunity')}</ListItemText>
+            </MenuItem>
+            <MenuItem onClick={() => { setSubmitAnchorEl(null); navigate('/post/job'); }}>
+              <ListItemIcon><WorkIcon fontSize="small" /></ListItemIcon>
+              <ListItemText>{t('dev:create_job_opportunity')}</ListItemText>
             </MenuItem>
           </Menu>
         </ContributeGuardTooltip>

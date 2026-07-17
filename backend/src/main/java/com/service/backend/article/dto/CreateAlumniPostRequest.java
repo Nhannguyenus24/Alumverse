@@ -14,6 +14,8 @@ import org.hibernate.validator.constraints.URL;
 @AllArgsConstructor
 public class CreateAlumniPostRequest {
 
+    private Integer organizationId;
+
     @NotBlank
     @Size(min = 3, max = 255)
     private String title;

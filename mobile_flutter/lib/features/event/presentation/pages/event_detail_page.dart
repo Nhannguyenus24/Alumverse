@@ -10,7 +10,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/image_url.dart';
 import '../../../../shared/widgets/app_toast.dart';
 import '../../../../shared/widgets/error_view.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../user/presentation/providers/user_providers.dart';
 import '../../data/models/event_summary.dart';
 import '../../data/repositories/event_repository.dart';
 import '../providers/event_provider.dart';
@@ -28,13 +28,13 @@ class EventDetailPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final detailAsync = ref.watch(eventDetailProvider(eventId));
 
-    final isStaff = ref.watch(isStaffProvider);
+    final isOrgManager = ref.watch(isOrgManagerProvider).valueOrNull ?? false;
 
     return Scaffold(
       appBar: AppBar(
         title: Text('event.detail_title'.tr()),
         actions: [
-          if (isStaff)
+          if (isOrgManager)
             IconButton(
               icon: const Icon(Icons.admin_panel_settings_outlined),
               tooltip: 'event.manage_btn'.tr(),
@@ -175,7 +175,7 @@ class _DetailBody extends ConsumerWidget {
                   },
                 ),
               const SizedBox(height: 24),
-              if (!ref.watch(isStaffProvider))
+              if (!(ref.watch(isOrgManagerProvider).valueOrNull ?? false))
                 _Actions(eventId: event.id, eventTitle: event.title),
             ],
           ),

@@ -7,7 +7,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../../../core/errors/api_exception.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/empty_view.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../user/presentation/providers/user_providers.dart';
 import '../../data/models/event_ticket.dart';
 import '../../data/repositories/event_repository.dart';
 
@@ -186,8 +186,17 @@ class _EventCheckInScannerPageState
 
   @override
   Widget build(BuildContext context) {
-    final isStaff = ref.watch(isStaffProvider);
-    if (!isStaff) {
+    final canCheckInAsync = ref.watch(canEventCheckInProvider);
+    final canCheckIn = canCheckInAsync.valueOrNull ?? false;
+    if (canCheckInAsync.isLoading) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(widget.eventTitle ?? 'event.checkin_title'.tr()),
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (!canCheckIn) {
       return Scaffold(
         appBar: AppBar(
           title: Text(widget.eventTitle ?? 'event.checkin_title'.tr()),

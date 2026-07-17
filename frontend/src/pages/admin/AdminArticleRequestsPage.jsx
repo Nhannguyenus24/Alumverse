@@ -1,10 +1,11 @@
 import {
   Box,
-  Button,
   Chip,
   CircularProgress,
   IconButton,
+  MenuItem,
   Stack,
+  TextField,
   Tooltip,
   Typography,
 } from '@mui/material';
@@ -34,7 +35,9 @@ import {
 
 const titleOf = (a) => a.title || a.name || a.position || '-';
 const idOf = (a) => a.id;
-const createdOf = (a) => a.createdAt || a.created_at || a.publishedAt || a.awardedDate || a.deadline;
+const createdOf = (a) => a.createdAt || a.created_at || null;
+const updatedOf = (a) => a.updatedAt || a.updated_at || null;
+const submitterOf = (a) => a.submitterName || a.memberName || a.authorName || '-';
 const channelLabelOf = (value, t) => ({
   news: t('channel_news'),
   alumni: t('channel_alumni'),
@@ -45,7 +48,7 @@ const channelLabelOf = (value, t) => ({
 
 const SUBMISSION_CHANNELS = new Set(['alumni', 'achievement', 'job', 'learning']);
 
-const isSubmissionCandidate = (article) => SUBMISSION_CHANNELS.has(article?.channel);
+const isSubmissionCandidate = (article) => SUBMISSION_CHANNELS.has(article?.channel) && article?.userSubmitted === true;
 
 const submissionStatusOf = (article) => {
   const state = getArticleVisibilityState(article);
@@ -101,7 +104,6 @@ const AdminArticleRequestsPage = () => {
   const filterOptions = useMemo(() => ([
     { value: 'pending', label: t('submissions_filter_pending') },
     { value: 'approved', label: t('submissions_filter_approved') },
-    { value: 'rejected', label: t('submissions_filter_rejected') },
     { value: 'all', label: t('submissions_filter_all') },
   ]), [t]);
 
@@ -156,22 +158,6 @@ const AdminArticleRequestsPage = () => {
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
           {t('submissions_desc')}
         </Typography>
-        <Stack direction="row" spacing={1} sx={{ mt: 2, flexWrap: 'wrap', rowGap: 1 }}>
-          {filterOptions.map((option) => (
-            <Button
-              key={option.value}
-              size="small"
-              variant={statusFilter === option.value ? 'contained' : 'outlined'}
-              onClick={() => {
-                setStatusFilter(option.value);
-                setPage(0);
-              }}
-              sx={{ borderRadius: 999, textTransform: 'none', fontWeight: 700 }}
-            >
-              {option.label}
-            </Button>
-          ))}
-        </Stack>
       </Box>
 
       {loading ? (
@@ -184,7 +170,15 @@ const AdminArticleRequestsPage = () => {
               id: 'title',
               label: t('col_title'),
               render: (_, a) => (
-                <Typography variant="body2" noWrap sx={{ maxWidth: 360 }}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    maxWidth: 360,
+                    whiteSpace: 'normal',
+                    overflowWrap: 'break-word',
+                    wordBreak: 'normal',
+                  }}
+                >
                   {titleOf(a)}
                 </Typography>
               ),
@@ -194,6 +188,15 @@ const AdminArticleRequestsPage = () => {
               label: t('channel_label'),
               render: (value, a) => (
                 <Chip size="small" color="primary" variant="outlined" label={channelLabelOf(value || a.channel, t)} sx={{ fontWeight: 700 }} />
+              ),
+            },
+            {
+              id: 'submitter',
+              label: t('col_submitter'),
+              render: (_, a) => (
+                <Typography variant="body2" noWrap sx={{ maxWidth: 180 }}>
+                  {submitterOf(a)}
+                </Typography>
               ),
             },
             {
@@ -208,6 +211,7 @@ const AdminArticleRequestsPage = () => {
               ),
             },
             { id: 'createdAt', label: t('col_submitted_at'), render: (_, a) => formatDateTime(createdOf(a)) },
+            { id: 'updatedAt', label: t('col_updated_at'), render: (_, a) => formatDateTime(updatedOf(a)) },
             {
               id: 'actions',
               label: t('col_actions'),
@@ -273,6 +277,27 @@ const AdminArticleRequestsPage = () => {
           searchValue={search}
           searchPlaceholder={t('submissions_search_placeholder')}
           onRowClick={openEdit}
+          filters={
+            <Stack direction="row" spacing={1} alignItems="center">
+              <TextField
+                select
+                size="small"
+                label={t('col_status')}
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setPage(0);
+                }}
+                sx={{ minWidth: 180 }}
+              >
+                {filterOptions.map((option) => (
+                  <MenuItem key={option.value} value={option.value}>
+                    {option.label}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Stack>
+          }
         />
       )}
 

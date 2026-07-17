@@ -33,24 +33,27 @@ import {
 // ─── Validation schema ────────────────────────────────────────────────────────
 const MIN_STUDY_YEARS = 3;
 
+const parseYearInput = (val) => {
+  if (val === "" || val === null || val === undefined) return undefined;
+  const parsed = Number(val);
+  return Number.isNaN(parsed) ? undefined : parsed;
+};
+
 const getValidationSchema = (t) => z.object({
   organizationId: z.number().positive("Organization ID must be provided").int(),
   studentCode: z.string().min(1, t("auth:validation_student_code_required")),
   className: z.string().min(1, t("auth:validation_program_required")),
   startYear: z.preprocess(
-    (val) => (val === "" || Number.isNaN(val) ? undefined : Number(val)),
-    z.number({ required_error: t("auth:validation_start_year_required"), invalid_type_error: t("auth:validation_start_year_required") })
+    parseYearInput,
+    z.number({ error: t("auth:validation_start_year_required") })
       .positive(t("auth:validation_must_be_positive")).int(),
   ),
   // Only a graduate has a graduation year; students and drop-outs leave it empty.
   // An untouched / cleared field arrives as undefined, "" or NaN — all mean "no year".
   graduatedYear: z.preprocess(
-    (val) => {
-      if (val === "" || val === null || val === undefined) return undefined;
-      const parsed = Number(val);
-      return Number.isNaN(parsed) ? undefined : parsed;
-    },
-    z.number().positive(t("auth:validation_must_be_positive")).int().optional(),
+    parseYearInput,
+    z.number({ error: t("auth:validation_graduated_year_required") })
+      .positive(t("auth:validation_must_be_positive")).int().optional(),
   ),
   graduationStatus: z.string().min(1, t("auth:validation_graduation_status_required")),
   degreeType: z.string().min(1, t("auth:validation_major_required")),

@@ -123,6 +123,20 @@ public class AdminArticleController {
                 .map(response -> ResponseEntity.ok(new ApiResponse<>("Achievement rejected successfully", response)));
     }
 
+    @Operation(summary = "Approve a learning resource article request")
+    @PostMapping("/learning-resources/{id}/approve")
+    public Mono<ResponseEntity<ApiResponse<LearningResourceResponse>>> approveLearningResource(@PathVariable @Min(1) Integer id) {
+        return adminArticleService.updateLearningResourceStatus(id, Status.APPROVED)
+                .map(response -> ResponseEntity.ok(new ApiResponse<>("Learning resource approved successfully", response)));
+    }
+
+    @Operation(summary = "Reject a learning resource article request")
+    @PostMapping("/learning-resources/{id}/reject")
+    public Mono<ResponseEntity<ApiResponse<LearningResourceResponse>>> rejectLearningResource(@PathVariable @Min(1) Integer id) {
+        return adminArticleService.updateLearningResourceStatus(id, Status.REJECTED)
+                .map(response -> ResponseEntity.ok(new ApiResponse<>("Learning resource rejected successfully", response)));
+    }
+
     @Operation(summary = "Get all events across organizations")
     @GetMapping("/events")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<Event>>>> getAllEvents(

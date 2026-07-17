@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import {
-  Box, Paper, Typography, TextField, RadioGroup, FormControlLabel, Radio, Checkbox,
+  Box, Container, Paper, Typography, TextField, RadioGroup, FormControlLabel, Radio, Checkbox,
   FormGroup, Button, Stack, Divider, CircularProgress, Rating, Alert, Chip,
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
@@ -116,7 +116,7 @@ const SurveyFillPage = ({ mode }) => {
         );
       case 'DATE':
         return <TextField type="date" value={value || ''} InputLabelProps={{ shrink: true }}
-          onChange={(e) => setAnswer(q.id, e.target.value)} />;
+          fullWidth onChange={(e) => setAnswer(q.id, e.target.value)} />;
       case 'NUMBER':
         return <TextField type="number" value={value ?? ''} fullWidth
           onChange={(e) => setAnswer(q.id, e.target.value)} />;
@@ -137,10 +137,17 @@ const SurveyFillPage = ({ mode }) => {
   const canFill = !reviewMode && survey.effectiveStatus === 'OPEN';
 
   return (
-    <Box sx={{ maxWidth: 760, mx: 'auto', py: 4, px: 2 }}>
-      <Paper sx={{ p: { xs: 2, sm: 4 }, borderRadius: 3 }}>
+    <Container maxWidth="md" sx={{ py: { xs: 3, md: 5 } }}>
+      <Paper sx={{ p: { xs: 2.5, sm: 4, md: 5 }, borderRadius: 3 }}>
         <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
-          <Typography variant="h5" fontWeight={800} sx={{ flex: 1 }}>{survey.title}</Typography>
+          <Typography
+            variant="h2"
+            color="primary.main"
+            fontWeight={800}
+            sx={{ flex: 1 }}
+          >
+            {survey.title}
+          </Typography>
           {reviewMode && <Chip size="small" color="success" label={t('survey:submitted_chip')} />}
         </Stack>
         {survey.description && (
@@ -177,7 +184,7 @@ const SurveyFillPage = ({ mode }) => {
           )}
         </Stack>
       </Paper>
-    </Box>
+    </Container>
   );
 };
 

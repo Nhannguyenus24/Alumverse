@@ -23,6 +23,10 @@ const ARTICLE_VISIBILITY_ACTIONS = {
     publish: (id) => `/admin/articles/achievements/${id}/approve`,
     unpublish: (id) => `/admin/articles/achievements/${id}/reject`,
   },
+  learning: {
+    publish: (id) => `/admin/articles/learning-resources/${id}/approve`,
+    unpublish: (id) => `/admin/articles/learning-resources/${id}/reject`,
+  },
 };
 
 export const getArticleAdminEditPath = (article) => {
@@ -52,7 +56,7 @@ export const getArticleVisibilityState = (article) => {
   if (article.channel === 'job') {
     return article.isActive ? 'published' : 'hidden';
   }
-  if (article.channel === 'achievement') {
+  if (article.channel === 'achievement' || article.channel === 'learning') {
     if (article.status === 'APPROVED') return 'published';
     if (article.status === 'REJECTED') return 'rejected';
     return 'hidden';

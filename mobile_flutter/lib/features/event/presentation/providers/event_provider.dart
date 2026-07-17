@@ -1,36 +1,49 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../organization/presentation/providers/organization_provider.dart';
 import '../../data/models/event_summary.dart';
 import '../../data/models/event_ticket.dart';
 import '../../data/repositories/event_repository.dart';
 
 /// Upcoming events for the home feed.
 final upcomingEventsProvider = FutureProvider<List<EventSummary>>((ref) async {
-  return ref.watch(eventRepositoryProvider).getUpcoming(page: 0, limit: 6);
+  final orgId = ref.watch(organizationStateProvider).valueOrNull?.id;
+  if (orgId == null) return const [];
+  return ref
+      .watch(eventRepositoryProvider)
+      .getUpcoming(page: 0, limit: 6, organizationId: orgId);
 });
 
 /// Full upcoming list for the Events screen.
 final allUpcomingEventsProvider = FutureProvider<List<EventSummary>>((
   ref,
 ) async {
-  return ref.watch(eventRepositoryProvider).getUpcoming(page: 0, limit: 20);
+  final orgId = ref.watch(organizationStateProvider).valueOrNull?.id;
+  if (orgId == null) return const [];
+  return ref
+      .watch(eventRepositoryProvider)
+      .getUpcoming(page: 0, limit: 20, organizationId: orgId);
 });
 
 /// Past events for the Events screen.
 final pastEventsProvider = FutureProvider<List<EventSummary>>((ref) async {
-  return ref.watch(eventRepositoryProvider).getPast(page: 0, limit: 12);
+  final orgId = ref.watch(organizationStateProvider).valueOrNull?.id;
+  if (orgId == null) return const [];
+  return ref
+      .watch(eventRepositoryProvider)
+      .getPast(page: 0, limit: 12, organizationId: orgId);
 });
 
 /// Full detail for one event.
-final eventDetailProvider =
-    FutureProvider.autoDispose.family<EventSummary, int>((ref, id) {
-  return ref.read(eventRepositoryProvider).getDetail(id);
-});
+final eventDetailProvider = FutureProvider.autoDispose
+    .family<EventSummary, int>((ref, id) {
+      return ref.read(eventRepositoryProvider).getDetail(id);
+    });
 
 /// Events of an organization for the admin check-in picker (drafts + past
 /// included). Keyed by organization id. Admin/staff session required.
-final adminCheckInEventsProvider =
-    FutureProvider.autoDispose.family<List<EventSummary>, int>((ref, organizationId) {
+final adminCheckInEventsProvider = FutureProvider.autoDispose
+    .family<List<EventSummary>, int>((ref, organizationId) {
       return ref
           .watch(eventRepositoryProvider)
           .getOrganizationEvents(organizationId);
@@ -42,12 +55,10 @@ final myTicketsProvider = FutureProvider<List<EventTicket>>((ref) {
 });
 
 /// A ticket's full detail by its code (used by the ticket detail screen).
-final ticketByCodeProvider = FutureProvider.autoDispose.family<EventTicket, String>((
-  ref,
-  code,
-) {
-  return ref.read(eventRepositoryProvider).getTicketByCode(code);
-});
+final ticketByCodeProvider = FutureProvider.autoDispose
+    .family<EventTicket, String>((ref, code) {
+      return ref.read(eventRepositoryProvider).getTicketByCode(code);
+    });
 
 /// Interaction state for the detail screen: interested/registered flags +
 /// live stat counts.

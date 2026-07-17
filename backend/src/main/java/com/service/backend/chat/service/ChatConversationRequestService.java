@@ -220,9 +220,19 @@ public class ChatConversationRequestService {
                     "Cannot send a conversation request to yourself"));
         }
 
-        return assertTargetVerifiedInCurrentOrganization(targetMemberId)
+        return assertTargetActive(targetMemberId)
+                .then(assertTargetVerifiedInCurrentOrganization(targetMemberId))
                 .then(userBlockService.assertCommunicationNotBlocked(currentMemberId, targetMemberId))
                 .then(createConversationRequestAfterBlockCheck(currentMemberId, targetMemberId, message));
+    }
+
+    private Mono<Void> assertTargetActive(Long targetMemberId) {
+        return chatConversationRequestRepository.existsActiveUserById(targetMemberId)
+                .flatMap(active -> active
+                        ? Mono.<Void>empty()
+                        : Mono.error(new ApplicationException(
+                                ErrorCode.USER_NOT_FOUND,
+                                "Target member is not active")));
     }
 
     /**
