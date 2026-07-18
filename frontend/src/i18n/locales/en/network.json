@@ -208,6 +208,8 @@
   "cannot_message_user": "You cannot message {{name}}.",
   "blocked_placeholder": "You have blocked this user. Unblock to send messages.",
   "cannot_message_placeholder": "You cannot message this person.",
+  "peer_inactive_user": "{{name}}'s account is no longer active. You cannot send them messages.",
+  "peer_inactive_placeholder": "This account is no longer active.",
   "cannot_send_placeholder": "Cannot send messages...",
   "message_input_placeholder": "Type a message...",
   "block_dialog_title": "Block user",

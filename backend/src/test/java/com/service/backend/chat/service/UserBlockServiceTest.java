@@ -93,6 +93,7 @@ class UserBlockServiceTest {
         @Test
         @DisplayName("should unblock user successfully")
         void unblockUser_success() {
+            when(userBlockRepository.existsActiveUserById(2L)).thenReturn(Mono.just(true));
             when(userBlockRepository.countByBlockerMemberIdAndBlockedMemberId(1L, 2L))
                     .thenReturn(Mono.just(1L));
             when(userBlockRepository.deleteByBlockerMemberIdAndBlockedMemberId(1L, 2L)).thenReturn(Mono.just(1));
@@ -104,6 +105,7 @@ class UserBlockServiceTest {
         @Test
         @DisplayName("should fail when user is not blocked")
         void unblockUser_notBlocked() {
+            when(userBlockRepository.existsActiveUserById(2L)).thenReturn(Mono.just(true));
             when(userBlockRepository.countByBlockerMemberIdAndBlockedMemberId(1L, 2L))
                     .thenReturn(Mono.just(0L));
 
@@ -111,6 +113,23 @@ class UserBlockServiceTest {
                     .expectErrorMatches(err -> err instanceof ApplicationException &&
                             ((ApplicationException) err).getErrorCode() == ErrorCode.USER_NOT_BLOCKED)
                     .verify();
+        }
+
+        @Test
+        @DisplayName("should fail when target member is not active")
+        void unblockUser_targetNotActive() {
+            // .then(...) eagerly builds the count Mono even though the not-active error
+            // short-circuits before it is subscribed, so the stub must still be present.
+            when(userBlockRepository.existsActiveUserById(2L)).thenReturn(Mono.just(false));
+            when(userBlockRepository.countByBlockerMemberIdAndBlockedMemberId(1L, 2L))
+                    .thenReturn(Mono.just(1L));
+
+            StepVerifier.create(userBlockService.unblockUser(1L, 2L))
+                    .expectErrorMatches(err -> err instanceof ApplicationException &&
+                            ((ApplicationException) err).getErrorCode() == ErrorCode.USER_NOT_FOUND)
+                    .verify();
+
+            verify(userBlockRepository, never()).deleteByBlockerMemberIdAndBlockedMemberId(anyLong(), anyLong());
         }
     }
 
@@ -142,6 +161,39 @@ class UserBlockServiceTest {
             StepVerifier.create(userBlockService.getBlockStatus(1L, 2L))
                     .assertNext(status -> {
                         assertThat(status.isBlocked()).isFalse();
+                    })
+                    .verifyComplete();
+        }
+    }
+
+    // ─── getPeerActiveStatus ──────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("getPeerActiveStatus()")
+    class GetPeerActiveStatus {
+
+        @Test
+        @DisplayName("should return active=true when target status is ACTIVE or UNVERIFIED")
+        void getPeerActiveStatus_eligible() {
+            when(userBlockRepository.existsMessagingEligibleUserById(2L)).thenReturn(Mono.just(true));
+
+            StepVerifier.create(userBlockService.getPeerActiveStatus(2L))
+                    .assertNext(status -> {
+                        assertThat(status.getPeerMemberId()).isEqualTo(2L);
+                        assertThat(status.isActive()).isTrue();
+                    })
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("should return active=false when target status is suspended/banned/deleted/disabled/inactive")
+        void getPeerActiveStatus_notEligible() {
+            when(userBlockRepository.existsMessagingEligibleUserById(2L)).thenReturn(Mono.just(false));
+
+            StepVerifier.create(userBlockService.getPeerActiveStatus(2L))
+                    .assertNext(status -> {
+                        assertThat(status.getPeerMemberId()).isEqualTo(2L);
+                        assertThat(status.isActive()).isFalse();
                     })
                     .verifyComplete();
         }

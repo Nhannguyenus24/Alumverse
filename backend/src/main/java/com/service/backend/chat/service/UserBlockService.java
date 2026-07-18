@@ -4,6 +4,7 @@ import com.service.backend.chat.dao.UserBlockRepository;
 import com.service.backend.chat.dto.BlockStatusResponse;
 import com.service.backend.chat.dto.BlockedMemberInGroupItemResponse;
 import com.service.backend.chat.dto.BlockedMemberItemResponse;
+import com.service.backend.chat.dto.PeerActiveStatusResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.entity.UserBlock;
 import com.service.backend.shared.enums.ErrorCode;
@@ -68,7 +69,8 @@ public class UserBlockService {
                     "Cannot unblock yourself"));
         }
 
-        return userBlockRepository.countByBlockerMemberIdAndBlockedMemberId(blockerMemberId, targetMemberId)
+        return assertTargetActive(targetMemberId)
+                .then(userBlockRepository.countByBlockerMemberIdAndBlockedMemberId(blockerMemberId, targetMemberId))
                 .flatMap(count -> {
                     if (count == 0) {
                         return Mono.error(new ApplicationException(
@@ -85,9 +87,29 @@ public class UserBlockService {
                 });
     }
 
+    private Mono<Void> assertTargetActive(Long targetMemberId) {
+        return userBlockRepository.existsActiveUserById(targetMemberId)
+                .flatMap(active -> active
+                        ? Mono.<Void>empty()
+                        : Mono.error(new ApplicationException(
+                                ErrorCode.USER_NOT_FOUND,
+                                "Target member is not active")));
+    }
+
     public Mono<BlockStatusResponse> getBlockStatus(Long blockerMemberId, Long targetMemberId) {
         return userBlockRepository.countByBlockerMemberIdAndBlockedMemberId(blockerMemberId, targetMemberId)
                 .map(count -> new BlockStatusResponse(targetMemberId, count > 0));
+    }
+
+    /**
+     * Whether the target member's account is eligible to receive messages
+     * (status ACTIVE or UNVERIFIED). Used by the private chat UI to warn the
+     * current user and disable the composer when the peer's account has been
+     * suspended, banned, disabled or deleted.
+     */
+    public Mono<PeerActiveStatusResponse> getPeerActiveStatus(Long targetMemberId) {
+        return userBlockRepository.existsMessagingEligibleUserById(targetMemberId)
+                .map(active -> new PeerActiveStatusResponse(targetMemberId, active));
     }
 
     public Mono<PaginatedResponse<BlockedMemberItemResponse>> searchBlockedMembers(

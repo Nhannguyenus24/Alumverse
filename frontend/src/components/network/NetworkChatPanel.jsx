@@ -31,6 +31,7 @@ import IconButtonMenu from '../IconButtonMenu';
 import GroupMembersDrawer from './GroupMembersDrawer';
 import { useChatMessages } from '../../hooks/chat/useChatMessages';
 import { useGroupBlockedMembersContext } from '../../hooks/chat/useGroupBlockedMembersContext';
+import { usePeerActiveStatus } from '../../hooks/chat/usePeerActiveStatus';
 import { useChatWebSocket } from '../../hooks/mentorship/useChatWebSocket';
 import { useBlockUser } from '../../hooks/network/useBlockUser';
 import { useNotification } from '../../hooks/useNotification';
@@ -78,7 +79,13 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
   const peerMemberId = isPrivateChat ? activeChat?.peerMemberId ?? null : null;
   const blockedByMe = Boolean(activeChat?.blockedByMe);
   const blockedByPeer = Boolean(activeChat?.blockedByPeer);
-  const isMessagingBlocked = blockedByMe || blockedByPeer;
+
+  const { peerActive } = usePeerActiveStatus(peerMemberId, {
+    enabled: isPrivateChat && !blockedByMe && !blockedByPeer,
+  });
+  const peerInactive = isPrivateChat && !blockedByMe && !blockedByPeer && !peerActive;
+
+  const isMessagingBlocked = blockedByMe || blockedByPeer || peerInactive;
 
   const { blockUser, unblockUser, isPending: isBlockActionPending } = useBlockUser({
     targetMemberId: peerMemberId,
@@ -429,6 +436,12 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
         </Alert>
       ) : null}
 
+      {peerInactive ? (
+        <Alert severity="warning" sx={{ borderRadius: 0 }}>
+          {t('network:peer_inactive_user', { name: activeChat?.name })}
+        </Alert>
+      ) : null}
+
       {isGroupChat && groupBlockedBannerMessage ? (
         <Alert
           severity="info"
@@ -670,7 +683,9 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
               ? t('network:blocked_placeholder')
               : blockedByPeer
                 ? t('network:cannot_message_placeholder')
-                : ''
+                : peerInactive
+                  ? t('network:peer_inactive_placeholder')
+                  : ''
           }
           placement="top"
           disableHoverListener={!isMessagingBlocked}

@@ -209,6 +209,8 @@
   "cannot_message_user": "Bạn không thể nhắn tin cho {{name}}.",
   "blocked_placeholder": "Bạn đã chặn người dùng này. Bỏ chặn để gửi tin nhắn.",
   "cannot_message_placeholder": "Bạn không thể nhắn tin cho người này.",
+  "peer_inactive_user": "Tài khoản của {{name}} không còn hoạt động. Bạn không thể gửi tin nhắn cho họ.",
+  "peer_inactive_placeholder": "Tài khoản này không còn hoạt động.",
   "cannot_send_placeholder": "Không thể gửi tin nhắn...",
   "message_input_placeholder": "Nhập tin nhắn...",
   "block_dialog_title": "Chặn người dùng",

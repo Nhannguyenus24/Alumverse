@@ -38,6 +38,15 @@ class ChatBlockedBanner extends StatelessWidget {
     );
   }
 
+  /// Private: the peer's account is no longer active (banned/suspended/
+  /// disabled/deleted/inactive).
+  factory ChatBlockedBanner.peerInactive({required String peerName}) {
+    return ChatBlockedBanner._(
+      text: 'chat.peer_inactive'.tr(namedArgs: {'name': peerName}),
+      color: AppColors.warning,
+    );
+  }
+
   /// Group: some members are blocked.
   factory ChatBlockedBanner.group(GroupBlockedContext context) {
     final names = context.blockedMembers.map((m) => m.fullName).join(', ');

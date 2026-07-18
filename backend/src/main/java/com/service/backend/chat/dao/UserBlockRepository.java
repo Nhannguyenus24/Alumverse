@@ -21,6 +21,22 @@ public interface UserBlockRepository extends R2dbcRepository<UserBlock, Long> {
     Mono<Long> countByBlockerMemberIdAndBlockedMemberId(Long blockerMemberId, Long blockedMemberId);
 
     @Query("""
+            SELECT COUNT(1) > 0
+            FROM users
+            WHERE id = :userId
+              AND status = 'ACTIVE'
+            """)
+    Mono<Boolean> existsActiveUserById(Long userId);
+
+    @Query("""
+            SELECT COUNT(1) > 0
+            FROM users
+            WHERE id = :userId
+              AND status IN ('ACTIVE', 'UNVERIFIED')
+            """)
+    Mono<Boolean> existsMessagingEligibleUserById(Long userId);
+
+    @Query("""
             SELECT COUNT(id)
             FROM user_blocks
             WHERE (blocker_member_id = :memberAId AND blocked_member_id = :memberBId)

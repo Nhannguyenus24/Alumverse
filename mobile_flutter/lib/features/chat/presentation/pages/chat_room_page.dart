@@ -11,6 +11,7 @@ import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/loading_view.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../network/data/repositories/network_repository.dart';
+import '../../data/repositories/chat_repository.dart';
 import '../../realtime/chat_socket_service.dart';
 import '../providers/chat_list_provider.dart';
 import '../providers/chat_messages_provider.dart';
@@ -51,12 +52,30 @@ class ChatRoomPage extends ConsumerStatefulWidget {
 class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
   final ScrollController _scrollController = ScrollController();
   late bool _blockedByMe;
+  // Defaults to true (eligible) until the check resolves, so the composer
+  // isn't wrongly hidden while the request is in flight.
+  bool _peerActive = true;
 
   @override
   void initState() {
     super.initState();
     _blockedByMe = widget.args.blockedByMe;
     _scrollController.addListener(_onScroll);
+    _loadPeerActiveStatus();
+  }
+
+  Future<void> _loadPeerActiveStatus() async {
+    final peerId = widget.args.peerMemberId;
+    if (widget.args.type != 'PRIVATE' || peerId == null) return;
+    try {
+      final active = await ref
+          .read(chatRepositoryProvider)
+          .getPeerActiveStatus(peerId);
+      if (mounted) setState(() => _peerActive = active);
+    } catch (_) {
+      // Leave the default (active) on failure — don't lock the composer
+      // over a transient network error.
+    }
   }
 
   @override
@@ -100,9 +119,11 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
       ref.watch(authStateProvider).valueOrNull?.user?.id ?? '',
     );
 
-    // Messaging is blocked in a private chat if either side blocked the other.
+    // Messaging is blocked in a private chat if either side blocked the other,
+    // or if the peer's account is no longer active.
     final privateBlocked =
-        args.type == 'PRIVATE' && (_blockedByMe || args.blockedByPeer);
+        args.type == 'PRIVATE' &&
+        (_blockedByMe || args.blockedByPeer || !_peerActive);
 
     return Scaffold(
       appBar: AppBar(
@@ -199,6 +220,9 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
       }
       if (args.blockedByPeer) {
         return ChatBlockedBanner.blockedByPeer(peerName: args.title);
+      }
+      if (!_peerActive) {
+        return ChatBlockedBanner.peerInactive(peerName: args.title);
       }
       return const SizedBox.shrink();
     }
