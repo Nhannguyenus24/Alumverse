@@ -189,6 +189,7 @@ const AdminDataTable = ({
                     py: 2,
                     textTransform: 'uppercase',
                     letterSpacing: 0.5,
+                    whiteSpace: 'nowrap',
                     border: 0,
                   }}
                 >
