@@ -1,6 +1,6 @@
 /// A published article (news channel). Mirrors the web client's normalized
 /// news shape (`frontend/src/hooks/articles/normalizeArticle.js`):
-/// id, title, content (HTML), thumbnailUrl, publishedAt, topic.
+/// id, title, content (HTML), thumbnailUrl, updatedAt-as-display-date, topic.
 class Article {
   final int id;
   final String channel;
@@ -20,7 +20,10 @@ class Article {
     this.topic,
   });
 
-  factory Article.fromJson(Map<String, dynamic> json, {String channel = 'news'}) {
+  factory Article.fromJson(
+    Map<String, dynamic> json, {
+    String channel = 'news',
+  }) {
     return Article(
       id: (json['id'] as num).toInt(),
       channel: json['channel'] as String? ?? channel,
@@ -29,12 +32,12 @@ class Article {
       thumbnailUrl:
           json['thumbnailUrl'] as String? ?? json['imageUrl'] as String?,
       publishedAt: _parseDate(
-        json['publishedAt'] ??
-            json['published_at'] ??
-            json['awardedDate'] ??
-            json['awarded_date'] ??
+        json['updatedAt'] ??
+            json['updated_at'] ??
             json['createdAt'] ??
-            json['created_at'],
+            json['created_at'] ??
+            json['awardedDate'] ??
+            json['awarded_date'],
       ),
       topic: json['topic'] as String?,
     );

@@ -24,7 +24,6 @@ public class AlumniPostResponse {
     private String topic;
     private String url;
     private Boolean isHidden;
-    private LocalDateTime publishedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private String submitterName;
@@ -43,7 +42,6 @@ public class AlumniPostResponse {
                 .topic(post.getTopic())
                 .url(post.getUrl())
                 .isHidden(post.getIsHidden())
-                .publishedAt(post.getPublishedAt())
                 .createdAt(post.getCreatedAt())
                 .updatedAt(post.getUpdatedAt())
                 .build();

@@ -64,6 +64,11 @@ const visibilityStatusOf = (article) => {
   if (state === 'hidden') return 'HIDDEN';
   return 'UNSUPPORTED';
 };
+const renderCompactDateTime = (value) => (
+  <Typography variant="body2" noWrap sx={{ fontSize: 13 }}>
+    {formatDateTime(value)}
+  </Typography>
+);
 
 const ActionSlot = ({ children }) => (
   <Box sx={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -210,11 +215,13 @@ const AdminArticlesPage = () => {
             {
               id: "title",
               label: t('admin:col_title'),
+              width: '34%',
+              minWidth: 320,
               render: (_, a) => (
                 <Typography
                   variant="body2"
                   sx={{
-                    maxWidth: 360,
+                    maxWidth: 520,
                     whiteSpace: 'normal',
                     overflowWrap: 'break-word',
                     wordBreak: 'normal',
@@ -249,12 +256,18 @@ const AdminArticlesPage = () => {
             {
               id: "createdAt",
               label: t('admin:col_created_at'),
-              render: (_, a) => formatDateTime(createdOf(a)),
+              width: 132,
+              minWidth: 132,
+              maxWidth: 132,
+              render: (_, a) => renderCompactDateTime(createdOf(a)),
             },
             {
               id: "updatedAt",
-              label: t('admin:col_updated_at'),
-              render: (_, a) => formatDateTime(updatedOf(a)),
+              label: t('admin:col_updated_at_short'),
+              width: 132,
+              minWidth: 132,
+              maxWidth: 132,
+              render: (_, a) => renderCompactDateTime(updatedOf(a)),
             },
             {
               id: "visibility",

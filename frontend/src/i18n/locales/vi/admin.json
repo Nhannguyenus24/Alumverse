@@ -354,6 +354,7 @@
   "col_submitter": "Người đăng",
   "col_created_at": "Ngày tạo",
   "col_updated_at": "Ngày chỉnh sửa",
+  "col_updated_at_short": "Cập nhật",
   "col_actions": "Thao tác",
   "col_organization": "Tổ chức",
   "col_status": "Trạng thái",

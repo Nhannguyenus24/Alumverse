@@ -181,6 +181,7 @@ const AdminDataTable = ({
                   sx={{
                     width: column.width,
                     minWidth: column.minWidth || column.width,
+                    maxWidth: column.maxWidth,
                     bgcolor: tableHeadBg,
                     backgroundColor: `${tableHeadBg} !important`,
                     fontWeight: 700,
@@ -249,6 +250,7 @@ const AdminDataTable = ({
                               fontSize: 14,
                               width: column.width,
                               minWidth: column.minWidth || column.width,
+                              maxWidth: column.maxWidth,
                             }}
                           >
                             {column.render ? column.render(value, row) : (value || '—')}

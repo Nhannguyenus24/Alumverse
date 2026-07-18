@@ -367,7 +367,7 @@ const ArticleHighlightCard = ({ data, channel, eventId, isAdmin = false }) => {
         <Typography variant="h4" sx={{ color: "primary.main" }}>{data.channel}</Typography>
         <Typography variant="h2" sx={{ color: "primary.main" }}>{data.title}</Typography>
         <Typography variant="body1">{data.organizer}</Typography>
-        <Typography variant="body2" color="text.secondary">{data.date}</Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>{data.date}</Typography>
       </Box>
 
       {/* RIGHT */}
@@ -627,9 +627,9 @@ const ArticlePage = () => {
               </Typography></ScrollRevealItem>
 
               {/* Author + Date */}
-              {(authorName || article.publishedAt) && (
+              {(authorName || article.updatedAt || article.createdAt || article.publishedAt) && (
                 <ScrollRevealItem><Typography variant="body2" sx={{ textAlign: "center", color: "text.secondary", mb: (article.url || article.linkUrl) ? 2 : { xs: 5, md: 6 } }}>
-                  {[authorName, article.publishedAt ? formatDate(article.publishedAt) : null].filter(Boolean).join(" · ")}
+                  {[authorName, (article.updatedAt || article.createdAt || article.publishedAt) ? formatDate(article.updatedAt || article.createdAt || article.publishedAt) : null].filter(Boolean).join(" · ")}
                 </Typography></ScrollRevealItem>
               )}
 

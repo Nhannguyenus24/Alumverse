@@ -94,10 +94,11 @@ public class AchievementController {
     @GetMapping("/status/{status}")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<AchievementResponse>>>> getByStatus(
             @PathVariable @NotBlank String status,
+            @RequestParam(required = false) Integer organizationId,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int limit) {
         Status achievementStatus = Status.valueOf(status.toUpperCase());
-        return achievementService.getByStatus(achievementStatus, page, limit)
+        return achievementService.getByStatus(achievementStatus, organizationId, page, limit)
                 .map(response -> ResponseEntity
                         .ok(new ApiResponse<>("Achievements by status retrieved successfully", response)));
     }

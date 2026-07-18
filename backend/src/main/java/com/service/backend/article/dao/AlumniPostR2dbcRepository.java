@@ -47,13 +47,13 @@ public interface AlumniPostR2dbcRepository extends R2dbcRepository<AlumniPost, I
     Mono<AlumniPost> findBySlug(String slug);
 
     @Modifying
-    @Query("UPDATE alumni_posts SET is_hidden = false, published_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = :id")
+    @Query("UPDATE alumni_posts SET is_hidden = false, updated_at = CURRENT_TIMESTAMP WHERE id = :id")
     Mono<Integer> publishAlumniPost(Integer id);
 
     @Modifying
     @Query("UPDATE alumni_posts SET is_hidden = true, updated_at = CURRENT_TIMESTAMP WHERE id = :id")
     Mono<Integer> hideAlumniPost(Integer id);
 
-    @Query("SELECT COUNT(*) FROM alumni_posts WHERE published_at >= :since")
+    @Query("SELECT COUNT(*) FROM alumni_posts WHERE created_at >= :since")
     Mono<Long> countSince(java.time.LocalDateTime since);
 }
