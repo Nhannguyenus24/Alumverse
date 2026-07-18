@@ -14,6 +14,7 @@ import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.service.ImageService;
 import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.utils.PaginationHelper;
+import com.service.backend.user.service.NotificationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -29,20 +30,49 @@ public class AdminEventService {
 
     private static final Logger log = LoggerFactory.getLogger(AdminEventService.class);
     private static final String STATUS_CANCELLED = "CANCELLED";
+    private static final String STATUS_REGISTERED = "REGISTERED";
+    private static final String STATUS_BANNED = "BANNED";
 
     private final EventR2dbcRepository eventRepo;
     private final EventTicketR2dbcRepository ticketRepo;
     private final EventInterestR2dbcRepository interestRepo;
     private final ImageService imageService;
+    private final NotificationService notificationService;
 
     public AdminEventService(EventR2dbcRepository eventRepo,
                              EventTicketR2dbcRepository ticketRepo,
                              EventInterestR2dbcRepository interestRepo,
-                             ImageService imageService) {
+                             ImageService imageService,
+                             NotificationService notificationService) {
         this.eventRepo = eventRepo;
         this.ticketRepo = ticketRepo;
         this.interestRepo = interestRepo;
         this.imageService = imageService;
+        this.notificationService = notificationService;
+    }
+
+    /**
+     * Fire-and-forget notification to the ticket holder. Guest tickets (no
+     * member_id) are skipped. Pulls the event title so the message is meaningful.
+     */
+    private void notifyTicketHolder(EventTicket ticket, String title, String messageTemplate) {
+        if (ticket.getMemberId() == null) {
+            return;
+        }
+        eventRepo.findById(ticket.getEventId())
+                .map(Event::getTitle)
+                .defaultIfEmpty("sự kiện")
+                .doOnNext(eventTitle -> notificationService.createNotificationAsync(
+                        ticket.getMemberId().intValue(),
+                        title,
+                        String.format(messageTemplate, eventTitle),
+                        "/events/" + ticket.getEventId()))
+                .onErrorResume(e -> {
+                    log.warn("Failed to notify ticket holder {} for ticket {}",
+                            ticket.getMemberId(), ticket.getTicketCode(), e);
+                    return Mono.empty();
+                })
+                .subscribe();
     }
 
     public Mono<PaginatedResponse<Event>> getAllEvents(Long organizationId, int page, int size) {
@@ -178,14 +208,30 @@ public class AdminEventService {
                     }
                     return ticketRepo.cancelTicket(ticket.getId(), "Cancelled by admin").then(ticketRepo.findById(ticket.getId()));
                 })
-                .doOnSuccess(t -> log.info("cancelTicket result: {}", JsonUtils.toJson(t)));
+                .doOnSuccess(t -> {
+                    notifyTicketHolder(t, "Vé sự kiện đã bị huỷ",
+                            "Vé của bạn cho \"%s\" đã bị quản trị viên huỷ.");
+                });
     }
 
     public Mono<EventTicket> undoTicket(String ticketCode) {
         return ticketRepo.findByTicketCode(ticketCode)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.TICKET_NOT_FOUND,
                         "Ticket not found with code: " + ticketCode)))
-                .flatMap(ticket -> ticketRepo.undoTicket(ticket.getId()).then(ticketRepo.findById(ticket.getId())))
+                .flatMap(ticket -> {
+                    if (STATUS_REGISTERED.equals(ticket.getStatus().toString())) {
+                        return Mono.error(new ApplicationException(ErrorCode.TICKET_ALREADY_CANCELLED,
+                                "Ticket is already in REGISTERED state, nothing to revert"));
+                    }
+                    boolean wasUsed = "USED".equals(ticket.getStatus().toString())
+                            || "CHECKED_IN".equals(ticket.getStatus().toString());
+                    return ticketRepo.undoTicket(ticket.getId())
+                            .then(ticketRepo.findById(ticket.getId()))
+                            .doOnSuccess(t -> notifyTicketHolder(t, "Vé sự kiện đã được khôi phục",
+                                    wasUsed
+                                            ? "Trạng thái check-in của bạn cho \"%s\" đã được quản trị viên hoàn tác. Vé của bạn hiện đã hợp lệ trở lại."
+                                            : "Vé của bạn cho \"%s\" đã được quản trị viên khôi phục."));
+                })
                 .doOnSuccess(t -> log.info("undoTicket result: {}", JsonUtils.toJson(t)));
     }
 
@@ -194,13 +240,16 @@ public class AdminEventService {
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.TICKET_NOT_FOUND,
                         "Ticket not found with code: " + ticketCode)))
                 .flatMap(ticket -> {
-                    if ("BANNED".equals(ticket.getStatus().toString())) {
+                    if (STATUS_BANNED.equals(ticket.getStatus().toString())) {
                         return Mono.error(new ApplicationException(ErrorCode.TICKET_ALREADY_CANCELLED,
                                 "Ticket already banned"));
                     }
                     return ticketRepo.banTicket(ticket.getId(), "Banned due to signs of fraud").then(ticketRepo.findById(ticket.getId()));
                 })
-                .doOnSuccess(t -> log.info("banTicket result: {}", JsonUtils.toJson(t)));
+                .doOnSuccess(t -> {
+                    notifyTicketHolder(t, "Vé sự kiện đã bị khoá",
+                            "Vé của bạn cho \"%s\" đã bị khoá do có dấu hiệu gian lận.");
+                });
     }
 
     public Mono<PaginatedResponse<EventInterest>> getInterestsByEvent(Long eventId, int page, int size) {
