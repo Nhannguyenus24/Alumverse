@@ -858,6 +858,7 @@
     "group_owner": "Nhóm trưởng",
     "blocked_by_me": "Bạn đã chặn {name}.",
     "blocked_by_peer": "Bạn không thể nhắn tin cho {name}.",
+    "peer_inactive": "Tài khoản của {name} không còn hoạt động. Bạn không thể gửi tin nhắn cho họ.",
     "group_blocked": "Có thành viên bị bạn chặn trong nhóm: {names}.",
     "cannot_send": "Không thể gửi tin nhắn",
     "load_failed": "Không thể tải tin nhắn.",

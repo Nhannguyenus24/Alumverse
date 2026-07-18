@@ -152,6 +152,9 @@ class ChatRepository {
   Future<GroupBlockedContext> getBlockedContext(int groupId) =>
       _api.getBlockedContext(groupId);
 
+  Future<bool> getPeerActiveStatus(int peerMemberId) =>
+      _api.getPeerActiveStatus(peerMemberId);
+
   Future<ChatConversation> createGroup({
     String? title,
     required List<int> memberIds,
