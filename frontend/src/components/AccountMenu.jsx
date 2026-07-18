@@ -38,7 +38,20 @@ const FALLBACK_PERSON_ICON_SX = {
     : theme.palette.common.white,
 };
 
-const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode, textColor }) => {
+const DEFAULT_MENU_ANCHOR_ORIGIN = { vertical: "bottom", horizontal: "right" };
+const DEFAULT_MENU_TRANSFORM_ORIGIN = { vertical: "top", horizontal: "right" };
+
+const AccountMenu = ({
+  displayName,
+  displayRole,
+  avatarUrl,
+  contrastMode,
+  textColor,
+  onNavigate,
+  sx,
+  menuAnchorOrigin = DEFAULT_MENU_ANCHOR_ORIGIN,
+  menuTransformOrigin = DEFAULT_MENU_TRANSFORM_ORIGIN,
+}) => {
   const { t } = useTranslation(['profile', 'common', 'event', 'article', 'nav']);
   const navigate = useOrgNavigate();
   const [anchorEl, setAnchorEl] = useState(null);
@@ -65,11 +78,16 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode, textCo
   }, []);
   const handleClose = useCallback(() => setAnchorEl(null), []);
 
-  const handleLogout = useCallback(async () => {
+  const handleItemClick = useCallback(() => {
     handleClose();
+    onNavigate?.();
+  }, [handleClose, onNavigate]);
+
+  const handleLogout = useCallback(async () => {
+    handleItemClick();
     await logout();
     navigate("/");
-  }, [handleClose, logout, navigate]);
+  }, [handleItemClick, logout, navigate]);
 
   const resolvedAvatarUrl = !avatarLoadFailed && avatarUrl ? resolveMediaUrl(avatarUrl) : undefined;
   const avatarImgProps = useMemo(() => ({
@@ -86,6 +104,7 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode, textCo
           gap: 1,
           ml: 0.5,
           cursor: "pointer",
+          ...sx,
         }}
         onClick={handleOpen}
         aria-haspopup="true"
@@ -138,8 +157,8 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode, textCo
         anchorEl={anchorEl}
         open={open}
         onClose={handleClose}
-        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-        transformOrigin={{ vertical: "top", horizontal: "right" }}
+        anchorOrigin={menuAnchorOrigin}
+        transformOrigin={menuTransformOrigin}
         sx={{ zIndex: (theme) => theme.zIndex.modal + 2 }}
         slotProps={{
           paper: {
@@ -206,7 +225,7 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode, textCo
         <MenuItem
           component={Link}
           to={toOrgPath('/profile')}
-          onClick={handleClose}
+          onClick={handleItemClick}
           sx={{
             borderTop: "none",
             display: "flex",
@@ -221,7 +240,7 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode, textCo
           <MenuItem
             component={Link}
             to={toOrgPath('/my-tickets')}
-            onClick={handleClose}
+            onClick={handleItemClick}
           >
             <ConfirmationNumberOutlinedIcon fontSize="small" />
             <Typography variant="body2">{t('event:my_tickets')}</Typography>
@@ -231,7 +250,7 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode, textCo
         <MenuItem
           component={Link}
           to={toOrgPath('/saved-articles')}
-          onClick={handleClose}
+          onClick={handleItemClick}
         >
           <FavoriteBorderIcon fontSize="small" />
           <Typography variant="body2">{t('article:saved_articles')}</Typography>
@@ -243,7 +262,7 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode, textCo
             to="/admin"
             target="_blank"
             rel="noopener noreferrer"
-            onClick={handleClose}
+            onClick={handleItemClick}
           >
             <AdminPanelSettingsOutlinedIcon fontSize="small" />
             <Typography variant="body2">{t('nav:admin')}</Typography>
@@ -256,7 +275,7 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode, textCo
             to={toOrgPath('/admin')}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={handleClose}
+            onClick={handleItemClick}
             sx={{
               color: "primary.main",
               "& .MuiSvgIcon-root": { color: "primary.main" },
@@ -270,7 +289,7 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode, textCo
         <MenuItem
           component={Link}
           to={toOrgPath('/settings')}
-          onClick={handleClose}
+          onClick={handleItemClick}
           sx={{
             borderTop: "none",
             display: "flex",
@@ -284,7 +303,7 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode, textCo
           <MenuItem
             component={Link}
             to={toOrgPath('/organization-registration')}
-            onClick={handleClose}
+            onClick={handleItemClick}
             sx={{
               borderTop: "none",
               display: "flex",

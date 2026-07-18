@@ -10,7 +10,6 @@ import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
-import PersonIcon from '@mui/icons-material/Person';
 import { useTranslation } from 'react-i18next';
 import Iconify from './Iconify';
 import Notification from './Notification';
@@ -567,6 +566,7 @@ const Header = () => {
               </IconButton>
             </Tooltip>
             <LanguageSwitcher />
+            {isAuthenticated && <Notification />}
           </Box>
         </Box>
 
@@ -655,22 +655,14 @@ const Header = () => {
 
         <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
           {isAuthenticated ? (
-            <Box sx={{ display: 'flex', alignItems: 'center',
-                        gap: 1.5, p: 1.5, borderRadius: 1, bgcolor: 'action.hover' }}
-                  onClick={() => { closeDrawer(); navigate('/dashboard'); }}>
-              <Box sx={{ width: 40, height: 40, borderRadius: '50%',
-                          bgcolor: 'primary.main', color: 'primary.contrastText',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {user?.avatarUrl ?
-                  <Box component="img" src={user.avatarUrl}
-                        sx={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
-                  : <PersonIcon />}
-              </Box>
-              <Box>
-                <Typography variant="body2" fontWeight={600}>{displayName}</Typography>
-                <Typography variant="caption" color="text.secondary">{displayRole}</Typography>
-              </Box>
-            </Box>
+            <AccountMenu
+              displayName={displayName} displayRole={displayRole}
+              avatarUrl={user?.avatarUrl} textColor="text.primary"
+              onNavigate={closeDrawer}
+              sx={{ width: '100%', ml: 0, p: 1.5, borderRadius: 1, bgcolor: 'action.hover' }}
+              menuAnchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+              menuTransformOrigin={{ vertical: 'top', horizontal: 'right' }}
+            />
           ) : (
             <>
               <Button component={Link} to={toOrgPath('/auth/register')} variant="outlined"
