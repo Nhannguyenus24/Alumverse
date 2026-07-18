@@ -40,6 +40,17 @@
 			<artifactId>r2dbc-postgresql</artifactId>
 			<scope>runtime</scope>
 		</dependency>
+
+		<!-- Flyway: schema migrations. Runs over JDBC (Flyway does not support R2DBC),
+		     using the postgresql JDBC driver above; the app runtime stays on R2DBC. -->
+		<dependency>
+			<groupId>org.flywaydb</groupId>
+			<artifactId>flyway-core</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.flywaydb</groupId>
+			<artifactId>flyway-database-postgresql</artifactId>
+		</dependency>
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
