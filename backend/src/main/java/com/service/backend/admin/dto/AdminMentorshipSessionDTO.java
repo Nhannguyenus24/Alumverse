@@ -28,7 +28,15 @@ public class AdminMentorshipSessionDTO {
     private String description;
     private String meetingLink;
     private String cvUrl;
+    private String cancelReason;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
+
+    // Audit / join tracking
+    private LocalDateTime mentorJoinedAt;
+    private LocalDateTime menteeJoinedAt;
+    private LocalDateTime startedAt;
+    private LocalDateTime endedAt;
+
     private LocalDateTime createdAt;
 }

@@ -37,6 +37,18 @@ public class MentorshipReport {
 
     private String status;
 
+    @Column("resolved_by")
+    private Integer resolvedBy;
+
+    @Column("resolved_at")
+    private LocalDateTime resolvedAt;
+
+    @Column("resolution_note")
+    private String resolutionNote;
+
+    @Column("action_taken")
+    private String actionTaken;
+
     @CreatedDate
     @Column("created_at")
     private LocalDateTime createdAt;
