@@ -12,6 +12,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import SaveIcon from '@mui/icons-material/Save';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import CodeIcon from '@mui/icons-material/Code';
+import SendOutlinedIcon from '@mui/icons-material/SendOutlined';
 import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
 import AdminDataTable from '../../components/admin/AdminDataTable';
 import WYSIWYG from '../../components/WYSIWYG';
@@ -32,7 +33,7 @@ const AdminEmailTemplatesPage = () => {
   const { setBreadcrumbs } = useOutletContext() || {};
   const {
     templates, loading, refresh,
-    getById, update, updateRegions, resetToDefault, preview, previewRegions,
+    getById, update, updateRegions, resetToDefault, preview, previewRegions, sendTest,
   } = useAdminEmailTemplates();
 
   const [selected, setSelected] = useState(null); // template đang sửa (full detail)
@@ -48,6 +49,7 @@ const AdminEmailTemplatesPage = () => {
   const [previewState, setPreviewState] = useState({ open: false, loading: false, html: '', subject: '', error: null });
   const [resetConfirm, setResetConfirm] = useState(false);
   const [resetting, setResetting] = useState(false);
+  const [testState, setTestState] = useState({ open: false, email: '', sending: false });
   const { enqueueSnackbar } = useSnackbar();
 
   const htmlRef = useRef(null);
@@ -202,6 +204,32 @@ const AdminEmailTemplatesPage = () => {
     }
   };
 
+  const handleSendTest = async () => {
+    const email = testState.email.trim();
+    if (!email) return;
+    setTestState((s) => ({ ...s, sending: true }));
+    try {
+      const sampleData = buildSampleData(selected?.variables);
+      const rendered = isRegionMode
+        ? await previewRegions(selected.id, { subject, regions: regionValues, sampleData })
+        : await preview({ subject, content, sampleData });
+      if (rendered?.error) {
+        throw new Error(rendered.error);
+      }
+      await sendTest({
+        recipientEmail: email,
+        subject: rendered?.subject ?? subject,
+        content: rendered?.html ?? content,
+        sampleData: {},
+      });
+      setTestState({ open: false, email: '', sending: false });
+      enqueueSnackbar(t('et_send_test_success', { email }), { variant: 'success' });
+    } catch {
+      setTestState((s) => ({ ...s, sending: false }));
+      enqueueSnackbar(t('et_send_test_error'), { variant: 'error' });
+    }
+  };
+
   const renderList = () => (
     <AdminDataTable
       columns={templateColumns}
@@ -321,6 +349,14 @@ const AdminEmailTemplatesPage = () => {
               {t('et_preview')}
             </Button>
             <Button
+              variant="outlined"
+              color="secondary"
+              startIcon={<SendOutlinedIcon />}
+              onClick={() => setTestState({ open: true, email: '', sending: false })}
+            >
+              {t('et_send_test')}
+            </Button>
+            <Button
               variant="contained"
               startIcon={saving ? <CircularProgress size={18} color="inherit" /> : <SaveIcon />}
               onClick={handleSave}
@@ -412,6 +448,42 @@ const AdminEmailTemplatesPage = () => {
             startIcon={resetting ? <CircularProgress size={18} color="inherit" /> : <RestartAltIcon />}
           >
             {t('et_reset_confirm')}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={testState.open}
+        onClose={() => !testState.sending && setTestState((s) => ({ ...s, open: false }))}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle sx={{ fontWeight: 800 }}>{t('et_send_test_title')}</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>{t('et_send_test_hint')}</DialogContentText>
+          <TextField
+            autoFocus
+            type="email"
+            label={t('et_send_test_email_label')}
+            value={testState.email}
+            onChange={(e) => setTestState((s) => ({ ...s, email: e.target.value }))}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleSendTest(); }}
+            fullWidth
+            size="small"
+            disabled={testState.sending}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setTestState((s) => ({ ...s, open: false }))} disabled={testState.sending}>
+            {t('et_send_test_cancel')}
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleSendTest}
+            disabled={testState.sending || !testState.email.trim()}
+            startIcon={testState.sending ? <CircularProgress size={18} color="inherit" /> : <SendOutlinedIcon />}
+          >
+            {t('et_send_test_send')}
           </Button>
         </DialogActions>
       </Dialog>

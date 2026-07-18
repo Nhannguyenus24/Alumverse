@@ -17,6 +17,7 @@ import com.service.backend.admin.dto.EmailTemplatePreviewRequest;
 import com.service.backend.admin.dto.EmailTemplatePreviewResponse;
 import com.service.backend.admin.dto.EmailTemplateResponse;
 import com.service.backend.admin.dto.PreviewEmailTemplateRegionsRequest;
+import com.service.backend.admin.dto.SendTestEmailRequest;
 import com.service.backend.admin.dto.UpdateEmailTemplateRegionsRequest;
 import com.service.backend.admin.dto.UpdateEmailTemplateRequest;
 import com.service.backend.admin.service.AdminEmailTemplateService;
@@ -99,5 +100,14 @@ public class AdminEmailTemplateController {
             @RequestBody PreviewEmailTemplateRegionsRequest request) {
         return service.previewRegions(id, request)
                 .map(result -> ResponseEntity.ok(new ApiResponse<>("Preview rendered", result)));
+    }
+
+    @Operation(summary = "Gửi email thử tới một địa chỉ thật với nội dung template đang chỉnh")
+    @PostMapping("/send-test")
+    public Mono<ResponseEntity<ApiResponse<Void>>> sendTest(
+            @Valid @RequestBody SendTestEmailRequest request) {
+        return service.sendTestEmail(request)
+                .thenReturn(ResponseEntity.ok(new ApiResponse<Void>(
+                        "Đã gửi email thử tới " + request.getRecipientEmail(), null)));
     }
 }

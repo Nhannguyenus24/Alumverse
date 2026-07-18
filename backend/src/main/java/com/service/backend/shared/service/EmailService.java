@@ -45,24 +45,15 @@ public class EmailService {
         this.emailTemplateRepository = emailTemplateRepository;
     }
 
-    /**
-     * Gửi email HTML với template (Reactive).
-     *
-     * <p>Nội dung template được phân giải ưu tiên từ DB (bảng {@code email_templates}) theo
-     * {@code templateName}; nếu không có bản ghi hoặc {@code content} trống thì fallback về file
-     * {@code templates/<templateName>.html}. Tương tự, nếu bản ghi DB có {@code subject} thì dùng
-     * subject đó (admin cấu hình), ngược lại dùng {@code subject} truyền vào (subject động từ code).
-     */
     public Mono<Void> sendHtmlEmail(String to, String subject, String templateName, Map<String, Object> variables) {
         return resolveTemplate(templateName, subject)
                 .flatMap(resolved -> dispatch(to, resolved.subject(), resolved.templateOrContent(), variables));
     }
 
-    /**
-     * Phân giải template: trả về chuỗi để đưa vào {@code templateEngine.process(...)}.
-     * - Có content trong DB  -> trả chính chuỗi HTML (StringTemplateResolver xử lý).
-     * - Không có / content trống / lỗi truy vấn -> trả tên template (ClassLoaderTemplateResolver đọc file).
-     */
+    public Mono<Void> sendRawHtmlEmail(String to, String subject, String htmlContent, Map<String, Object> variables) {
+        return dispatch(to, subject, htmlContent, variables);
+    }
+
     private Mono<ResolvedTemplate> resolveTemplate(String templateName, String subject) {
         ResolvedTemplate fileFallback = new ResolvedTemplate(templateName, subject);
         return emailTemplateRepository.findByTemplateCode(templateName)
