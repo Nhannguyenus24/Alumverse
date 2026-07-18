@@ -8,8 +8,8 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/empty_view.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/skeleton.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../organization/presentation/providers/organization_provider.dart';
+import '../../../user/presentation/providers/user_providers.dart';
 import '../../data/models/event_summary.dart';
 import '../providers/event_provider.dart';
 
@@ -21,13 +21,16 @@ class AdminCheckInEventsPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isStaff = ref.watch(isStaffProvider);
+    final canCheckInAsync = ref.watch(canEventCheckInProvider);
+    final canCheckIn = canCheckInAsync.valueOrNull ?? false;
     final orgId = ref.watch(organizationStateProvider).valueOrNull?.id;
 
     return Scaffold(
       appBar: AppBar(title: Text('event.checkin_pick_event'.tr())),
       body:
-          !isStaff
+          canCheckInAsync.isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : !canCheckIn
               ? EmptyView(
                 icon: Icons.lock_outline,
                 title: 'event.checkin_forbidden'.tr(),

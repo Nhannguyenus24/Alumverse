@@ -1,11 +1,12 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -24,8 +25,8 @@ const _graduationStatusOptions = <MapEntry<String, String>>[
 ];
 
 /// Join an organization with academic info — native port of the web
-/// `OrganizationRegistrationPage.jsx`. Picking a trusted verifier makes every
-/// field optional; attaching a proof file makes the academic fields optional.
+/// `OrganizationRegistrationPage.jsx`. Academic fields are required; the user
+/// must choose at least one verification method (proof and/or verifier).
 class OrganizationRegistrationPage extends ConsumerStatefulWidget {
   const OrganizationRegistrationPage({super.key});
 
@@ -49,7 +50,7 @@ class _OrganizationRegistrationPageState
 
   // Multiple trusted verifiers can be selected; the request is sent to each.
   final Set<int> _selectedVerifierIds = {};
-  XFile? _proofFile;
+  PlatformFile? _proofFile;
   bool _submitting = false;
 
   @override
@@ -82,17 +83,62 @@ class _OrganizationRegistrationPageState
   String? _major(List<String> options) =>
       options.isNotEmpty ? _selectedMajor : _majorCtl.text.trim();
 
+  bool get _isGraduated => _selectedGraduationStatus == 'GRADUATED';
+
   Future<void> _pickProof() async {
-    final picker = ImagePicker();
-    final file = await picker.pickImage(source: ImageSource.gallery);
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+      withData: true,
+    );
+    final file = result?.files.firstOrNull;
     if (file == null) return;
-    final length = await file.length();
+    final length = file.size;
     if (length > 5 * 1024 * 1024) {
       if (!mounted) return;
       AppToast.error(context, 'organization.proof_too_large'.tr());
       return;
     }
     setState(() => _proofFile = file);
+  }
+
+  String? _requiredYearValidator(String? value) {
+    final raw = value?.trim() ?? '';
+    if (raw.isEmpty) return 'common.required_field'.tr();
+    final year = int.tryParse(raw);
+    if (year == null || year <= 0) return 'organization.year_invalid'.tr();
+    return null;
+  }
+
+  String? _graduatedYearValidator(String? value) {
+    if (!_isGraduated) return null;
+    final raw = value?.trim() ?? '';
+    if (raw.isEmpty) return 'organization.graduated_year_required'.tr();
+    final gradYear = int.tryParse(raw);
+    if (gradYear == null || gradYear <= 0) {
+      return 'organization.year_invalid'.tr();
+    }
+    final startYear = int.tryParse(_startYearCtl.text.trim());
+    if (startYear != null && gradYear < startYear + 3) {
+      return 'organization.graduated_year_after_start'.tr();
+    }
+    if (gradYear > DateTime.now().year) {
+      return 'organization.graduated_year_future'.tr();
+    }
+    return null;
+  }
+
+  String _proofDocumentType(PlatformFile file) {
+    final ext = (file.extension ?? '').toLowerCase();
+    return ext == 'pdf' ? 'pdf' : 'image';
+  }
+
+  Future<List<int>> _proofBytes(PlatformFile file) async {
+    final bytes = file.bytes;
+    if (bytes != null) return bytes;
+    final path = file.path;
+    if (path == null) return const <int>[];
+    return File(path).readAsBytes();
   }
 
   /// Toggle a verifier in/out of the selection (multi-select).
@@ -145,9 +191,11 @@ class _OrganizationRegistrationPageState
 
     setState(() => _submitting = true);
     try {
+      var verificationSubmitted = false;
       final program = _program(programOptions);
       final major = _major(majorOptions);
-      final gradYear = int.tryParse(_graduatedYearCtl.text.trim());
+      final gradYear =
+          _isGraduated ? int.tryParse(_graduatedYearCtl.text.trim()) : null;
       final studentCode = _studentCodeCtl.text.trim();
       final startYear = _startYearCtl.text.trim();
 
@@ -176,6 +224,7 @@ class _OrganizationRegistrationPageState
               organizationId: orgId,
               verifierUserId: verifierId,
             );
+            verificationSubmitted = true;
           } catch (_) {
             failed++;
           }
@@ -197,18 +246,19 @@ class _OrganizationRegistrationPageState
       // Upload proof document if the user chose that verification channel.
       if (_proofFile != null) {
         try {
-          final bytes = await _proofFile!.readAsBytes();
+          final bytes = await _proofBytes(_proofFile!);
           await ref
               .read(organizationRepositoryProvider)
               .createVerificationRequest(
                 organizationId: orgId,
                 base64File: base64Encode(bytes),
                 originalFileName: _proofFile!.name,
-                documentType: 'image',
+                documentType: _proofDocumentType(_proofFile!),
               );
           if (mounted) {
             AppToast.success(context, 'organization.proof_sent'.tr());
           }
+          verificationSubmitted = true;
         } catch (e) {
           if (mounted) {
             AppToast.fromError(
@@ -221,6 +271,14 @@ class _OrganizationRegistrationPageState
       }
 
       if (!mounted) return;
+      if (verificationSubmitted) {
+        await ref.read(authStateProvider.notifier).markVerificationSubmitted();
+        if (!mounted) return;
+        ref.invalidate(myVerificationLevelProvider);
+        ref.invalidate(canContributeProvider);
+        ref.invalidate(isOrgManagerProvider);
+        ref.invalidate(canEventCheckInProvider);
+      }
       AppToast.success(context, 'organization.join_success'.tr());
       context.go(RouteNames.home);
     } catch (e) {
@@ -346,11 +404,7 @@ class _OrganizationRegistrationPageState
                       child: TextFormField(
                         controller: _startYearCtl,
                         keyboardType: TextInputType.number,
-                        validator:
-                            (v) =>
-                                (v == null || v.trim().isEmpty)
-                                    ? 'common.required_field'.tr()
-                                    : null,
+                        validator: _requiredYearValidator,
                         decoration: InputDecoration(
                           labelText: 'organization.start_year'.tr(),
                           hintText: '2015',
@@ -362,11 +416,8 @@ class _OrganizationRegistrationPageState
                       child: TextFormField(
                         controller: _graduatedYearCtl,
                         keyboardType: TextInputType.number,
-                        validator:
-                            (v) =>
-                                (v == null || v.trim().isEmpty)
-                                    ? 'common.required_field'.tr()
-                                    : null,
+                        enabled: _isGraduated,
+                        validator: _graduatedYearValidator,
                         decoration: InputDecoration(
                           labelText: 'profile.graduation_year'.tr(),
                           hintText: '2019',
@@ -406,7 +457,10 @@ class _OrganizationRegistrationPageState
                       ),
                   ],
                   onSelected:
-                      (v) => setState(() => _selectedGraduationStatus = v),
+                      (v) => setState(() {
+                        _selectedGraduationStatus = v;
+                        if (v != 'GRADUATED') _graduatedYearCtl.clear();
+                      }),
                 ),
                 const SizedBox(height: 16),
                 if (majorOptions.isNotEmpty)

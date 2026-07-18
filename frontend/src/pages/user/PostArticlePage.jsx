@@ -12,12 +12,16 @@ import {
 } from '../../utils/imageUtils';
 import { useNotification } from '../../hooks/useNotification';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
+import useOrganizationStore from '../../stores/organizationStore';
+
+const unwrapCreatedArticle = (result) => result?.data?.data ?? result?.data ?? result ?? null;
 
 const PostArticlePage = () => {
   const navigate = useOrgNavigate();
   const { t } = useTranslation('article');
   const { showSuccess, showError } = useNotification();
   const { createNews, isPending } = useCreateNews();
+  const organizationId = useOrganizationStore((state) => state.organization?.id ?? null);
   const {
     coverFile,
     coverPreview,
@@ -47,6 +51,7 @@ const PostArticlePage = () => {
     try {
       const thumbnailBase64 = coverFile ? await fileToCroppedCoverBase64(coverFile, coverPositionY) : null;
       const payload = {
+        organizationId: organizationId != null ? Number(organizationId) : null,
         title: title.trim(),
         content: content.trim(),
         thumbnailBase64,
@@ -57,9 +62,9 @@ const PostArticlePage = () => {
         return;
       }
 
-      const result = await createNews(payload);
+      const result = unwrapCreatedArticle(await createNews(payload));
       showSuccess(t('success_news'));
-      navigate(`/article/news/${result.id}`);
+      navigate(result?.id ? `/article/news/${result.id}` : '/admin/article');
     } catch (err) {
       showError(err.response?.data?.message ?? t('error_post_failed'));
     }

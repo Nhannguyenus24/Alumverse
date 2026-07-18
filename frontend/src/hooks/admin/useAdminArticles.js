@@ -40,11 +40,6 @@ const withChannel = (items, channel) =>
 const createdOf = (item) =>
   item?.createdAt
   || item?.created_at
-  || item?.publishedAt
-  || item?.awardedDate
-  || item?.timeStarted
-  || item?.eventDate
-  || item?.deadline
   || null;
 
 const timestampOf = (item) => {

@@ -84,7 +84,6 @@ const AdminEditArticlePage = () => {
 
   useEffect(() => {
     if (!coverFile) {
-      setCoverCroppedPreview(null);
       return undefined;
     }
 

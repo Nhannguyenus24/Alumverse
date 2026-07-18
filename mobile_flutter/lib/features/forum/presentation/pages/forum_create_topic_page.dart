@@ -4,9 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/route_names.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/app_toast.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../organization/presentation/providers/organization_provider.dart';
+import '../../../user/presentation/providers/user_providers.dart';
 import '../../data/repositories/forum_repository.dart';
 import '../providers/forum_providers.dart';
 
@@ -98,6 +100,58 @@ class _ForumCreateTopicPageState extends ConsumerState<ForumCreateTopicPage> {
 
   @override
   Widget build(BuildContext context) {
+    final canContributeAsync = ref.watch(canContributeProvider);
+    final canContribute = canContributeAsync.valueOrNull ?? false;
+
+    if (canContributeAsync.isLoading) {
+      return Scaffold(
+        appBar: AppBar(title: Text('forum.create_topic'.tr())),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (!canContribute) {
+      return Scaffold(
+        appBar: AppBar(title: Text('forum.create_topic'.tr())),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.verified_user_outlined,
+                  size: 44,
+                  color: AppColors.textSecondary,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'mentorship.mentee_signup_not_eligible_title'.tr(),
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'mentorship.mentee_signup_not_eligible_academic'.tr(),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: AppColors.textSecondary),
+                ),
+                const SizedBox(height: 16),
+                FilledButton.icon(
+                  onPressed:
+                      () => context.push(RouteNames.organizationRegistration),
+                  icon: const Icon(Icons.verified_user_outlined),
+                  label: Text('mentorship.verify_account'.tr()),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(title: Text('forum.create_topic'.tr())),
       body: SafeArea(

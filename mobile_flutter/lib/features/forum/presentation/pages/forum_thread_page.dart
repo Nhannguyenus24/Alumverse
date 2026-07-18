@@ -3,13 +3,16 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/image_url.dart';
 import '../../../../core/utils/relative_time.dart';
 import '../../../../shared/widgets/app_toast.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../user/presentation/providers/user_providers.dart';
 import '../../data/models/forum_post.dart';
 import '../../data/models/forum_topic.dart';
 import '../../data/repositories/forum_repository.dart';
@@ -55,6 +58,15 @@ class _ForumThreadPageState extends ConsumerState<ForumThreadPage> {
       AppToast.info(context, 'forum.login_to_comment'.tr());
       return;
     }
+    final canContribute = await ref.read(canContributeProvider.future);
+    if (!canContribute) {
+      if (!mounted) return;
+      AppToast.info(
+        context,
+        'mentorship.mentee_signup_not_eligible_academic'.tr(),
+      );
+      return;
+    }
     setState(() => _sending = true);
     try {
       await ref
@@ -94,6 +106,8 @@ class _ForumThreadPageState extends ConsumerState<ForumThreadPage> {
   @override
   Widget build(BuildContext context) {
     final async = ref.watch(forumPostsProvider(widget.topicId));
+    final canContributeAsync = ref.watch(canContributeProvider);
+    final canContribute = canContributeAsync.valueOrNull ?? false;
 
     return Scaffold(
       appBar: AppBar(title: Text(widget.topicTitle ?? 'forum.discussion'.tr())),
@@ -153,7 +167,12 @@ class _ForumThreadPageState extends ConsumerState<ForumThreadPage> {
               },
             ),
           ),
-          _Composer(controller: _commentCtl, sending: _sending, onSend: _send),
+          _Composer(
+            controller: _commentCtl,
+            sending: _sending || canContributeAsync.isLoading,
+            canContribute: canContribute,
+            onSend: _send,
+          ),
         ],
       ),
     );
@@ -161,10 +180,7 @@ class _ForumThreadPageState extends ConsumerState<ForumThreadPage> {
 }
 
 class _OpeningPostCard extends StatelessWidget {
-  const _OpeningPostCard({
-    required this.post,
-    required this.onLike,
-  });
+  const _OpeningPostCard({required this.post, required this.onLike});
 
   final ForumPost post;
   final VoidCallback onLike;
@@ -338,15 +354,16 @@ class _ForumAvatar extends StatelessWidget {
       backgroundColor: AppColors.primaryLighter,
       backgroundImage:
           resolved != null ? CachedNetworkImageProvider(resolved) : null,
-      child: resolved == null
-          ? Text(
-              name.characters.first.toUpperCase(),
-              style: const TextStyle(
-                color: AppColors.primary,
-                fontWeight: FontWeight.bold,
-              ),
-            )
-          : null,
+      child:
+          resolved == null
+              ? Text(
+                name.characters.first.toUpperCase(),
+                style: const TextStyle(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.bold,
+                ),
+              )
+              : null,
     );
   }
 }
@@ -359,7 +376,6 @@ class _PostCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -391,14 +407,17 @@ class _PostAuthorRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final date = post.createdAt != null
-        ? DateFormat('dd/MM/yyyy • HH:mm').format(post.createdAt!)
-        : '';
-    final name = (post.authorName?.trim().isNotEmpty ?? false)
-        ? post.authorName!.trim()
-        : post.authorMemberId != null
-            ? 'forum.member_id'
-                .tr(namedArgs: {'id': post.authorMemberId.toString()})
+    final date =
+        post.createdAt != null
+            ? DateFormat('dd/MM/yyyy • HH:mm').format(post.createdAt!)
+            : '';
+    final name =
+        (post.authorName?.trim().isNotEmpty ?? false)
+            ? post.authorName!.trim()
+            : post.authorMemberId != null
+            ? 'forum.member_id'.tr(
+              namedArgs: {'id': post.authorMemberId.toString()},
+            )
             : 'forum.member'.tr();
     final avatarUrl = post.authorAvatarUrl;
 
@@ -410,14 +429,20 @@ class _PostAuthorRow extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.w600)),
+              Text(
+                name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
               if (date.isNotEmpty)
-                Text(date,
-                    style: const TextStyle(
-                        fontSize: 11, color: AppColors.textSecondary)),
+                Text(
+                  date,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
             ],
           ),
         ),
@@ -443,8 +468,10 @@ class _LikeButton extends StatelessWidget {
           size: 18,
           color: post.likedByMe ? AppColors.error : AppColors.textSecondary,
         ),
-        label: Text('${post.likeCount}',
-            style: const TextStyle(color: AppColors.textSecondary)),
+        label: Text(
+          '${post.likeCount}',
+          style: const TextStyle(color: AppColors.textSecondary),
+        ),
         style: TextButton.styleFrom(
           padding: const EdgeInsets.symmetric(horizontal: 8),
           minimumSize: const Size(0, 32),
@@ -475,11 +502,13 @@ class _Composer extends StatelessWidget {
   const _Composer({
     required this.controller,
     required this.sending,
+    required this.canContribute,
     required this.onSend,
   });
 
   final TextEditingController controller;
   final bool sending;
+  final bool canContribute;
   final VoidCallback onSend;
 
   @override
@@ -498,11 +527,16 @@ class _Composer extends StatelessWidget {
             Expanded(
               child: TextField(
                 controller: controller,
+                enabled: canContribute,
                 minLines: 1,
                 maxLines: 4,
                 textInputAction: TextInputAction.newline,
                 decoration: InputDecoration(
-                  hintText: 'forum.write_comment'.tr(),
+                  hintText:
+                      canContribute
+                          ? 'forum.write_comment'.tr()
+                          : 'mentorship.mentee_signup_not_eligible_academic'
+                              .tr(),
                   isDense: true,
                   border: const OutlineInputBorder(),
                 ),
@@ -519,8 +553,14 @@ class _Composer extends StatelessWidget {
                   ),
                 )
                 : IconButton.filled(
-                  onPressed: onSend,
-                  icon: const Icon(Icons.send),
+                  onPressed:
+                      canContribute
+                          ? onSend
+                          : () =>
+                              context.push(RouteNames.organizationRegistration),
+                  icon: Icon(
+                    canContribute ? Icons.send : Icons.verified_user_outlined,
+                  ),
                 ),
           ],
         ),

@@ -11,6 +11,7 @@ import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 import com.service.backend.shared.enums.LearningResourceType;
+import com.service.backend.shared.enums.Status;
 import java.time.LocalDateTime;
 
 @Data
@@ -44,6 +45,9 @@ public class LearningResource {
 
     @Column("thumbnail_url")
     private String thumbnailUrl;
+
+    @Column("status")
+    private Status status;
 
     @CreatedDate
     @Column("created_at")

@@ -31,6 +31,8 @@ const normalizeQuestions = (questions = []) =>
       );
     });
 
+const unwrapCreatedEvent = (result) => result?.data?.data ?? result?.data ?? result ?? null;
+
 const toIsoDateTime = (value) => {
   if (!value) return null;
   const d = new Date(value);
@@ -156,7 +158,7 @@ const PostEventPage = () => {
         return;
       }
 
-      const result = await createEvent(payload);
+      const result = unwrapCreatedEvent(await createEvent(payload));
       const questionsPayload = normalizeQuestions(registrationQuestions);
       if (result?.id && questionsPayload.length > 0) {
         try {
@@ -169,7 +171,7 @@ const PostEventPage = () => {
       }
 
       showSuccess(t('post_success'));
-      navigate(`/admin/events/${result.id}`);
+      navigate(result?.id ? `/admin/events/${result.id}` : '/admin/events');
     } catch (err) {
       showError(err.response?.data?.message ?? (isEditMode ? t('update_failed') : t('post_failed')));
     } finally {

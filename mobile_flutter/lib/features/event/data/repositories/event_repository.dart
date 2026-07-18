@@ -18,18 +18,34 @@ class EventRepository {
 
   final Dio _dio;
 
-  Future<List<EventSummary>> getUpcoming({int page = 0, int limit = 10}) async {
+  Future<List<EventSummary>> getUpcoming({
+    int page = 0,
+    int limit = 10,
+    int? organizationId,
+  }) async {
     final res = await _dio.get(
       ApiEndpoints.eventsUpcoming,
-      queryParameters: {'page': page, 'limit': limit},
+      queryParameters: {
+        'page': page,
+        'limit': limit,
+        if (organizationId != null) 'organizationId': organizationId,
+      },
     );
     return _items(res.data);
   }
 
-  Future<List<EventSummary>> getPast({int page = 0, int limit = 10}) async {
+  Future<List<EventSummary>> getPast({
+    int page = 0,
+    int limit = 10,
+    int? organizationId,
+  }) async {
     final res = await _dio.get(
       ApiEndpoints.eventsPast,
-      queryParameters: {'page': page, 'limit': limit},
+      queryParameters: {
+        'page': page,
+        'limit': limit,
+        if (organizationId != null) 'organizationId': organizationId,
+      },
     );
     return _items(res.data);
   }

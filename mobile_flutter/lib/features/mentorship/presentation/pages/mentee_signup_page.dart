@@ -4,13 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/app_toast.dart';
-import '../../../user/presentation/providers/user_providers.dart';
 import '../../data/models/mentee_profile.dart';
 import '../../data/repositories/mentorship_repository.dart';
 import '../providers/mentorship_providers.dart';
-
-/// Mirrors web's `MIN_VERIFICATION_LEVEL` gate on `MenteeSignupPage.jsx`.
-const int _kMinVerificationLevel = 2;
 
 const List<String> _kAcademicYearKeys = [
   'mentorship.mentee_year_1',
@@ -104,13 +100,70 @@ class _MenteeSignupPageState extends ConsumerState<MenteeSignupPage> {
 
   @override
   Widget build(BuildContext context) {
-    final verificationAsync = ref.watch(myVerificationLevelProvider);
+    final accessAsync = ref.watch(mentorshipAccessProvider);
     final mentorProfileAsync = ref.watch(myMentorProfileProvider);
 
-    if (verificationAsync.isLoading || mentorProfileAsync.isLoading) {
+    if (accessAsync.isLoading || mentorProfileAsync.isLoading) {
       return Scaffold(
         appBar: AppBar(title: Text('mentorship.become_mentee'.tr())),
         body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final access = accessAsync.valueOrNull;
+    if (access == null || !access.canParticipateInMentorship) {
+      final verificationLevel = access?.verificationLevel ?? 0;
+      final isManager = access?.isOrgManager ?? false;
+      final needsEmail = verificationLevel < 1;
+      return Scaffold(
+        appBar: AppBar(title: Text('mentorship.become_mentee'.tr())),
+        body: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextButton.icon(
+                onPressed: () => Navigator.of(context).pop(),
+                icon: const Icon(Icons.arrow_back),
+                label: Text('mentorship.mentee_signup_go_back'.tr()),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: (isManager ? AppColors.info : Colors.amber)
+                      .withValues(alpha: 0.12),
+                  border: Border.all(
+                    color: isManager ? AppColors.info : Colors.amber,
+                  ),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isManager
+                          ? 'mentorship.manager_signup_locked_title'.tr()
+                          : 'mentorship.mentee_signup_not_eligible_title'.tr(),
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      isManager
+                          ? 'mentorship.manager_signup_locked_desc'.tr()
+                          : needsEmail
+                              ? 'mentorship.mentee_signup_not_eligible_email'
+                                  .tr()
+                              : 'mentorship.mentee_signup_not_eligible_academic'
+                                  .tr(),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       );
     }
 
@@ -147,53 +200,6 @@ class _MenteeSignupPageState extends ConsumerState<MenteeSignupPage> {
                     ),
                     const SizedBox(height: 6),
                     Text('mentorship.mentor_signup_pending_desc'.tr()),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    final verificationLevel = verificationAsync.valueOrNull ?? 0;
-    if (verificationLevel < _kMinVerificationLevel) {
-      final needsEmail = verificationLevel < 1;
-      return Scaffold(
-        appBar: AppBar(title: Text('mentorship.become_mentee'.tr())),
-        body: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              TextButton.icon(
-                onPressed: () => Navigator.of(context).pop(),
-                icon: const Icon(Icons.arrow_back),
-                label: Text('mentorship.mentee_signup_go_back'.tr()),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.amber.withValues(alpha: 0.12),
-                  border: Border.all(color: Colors.amber),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'mentorship.mentee_signup_not_eligible_title'.tr(),
-                      style: const TextStyle(fontWeight: FontWeight.w700),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      needsEmail
-                          ? 'mentorship.mentee_signup_not_eligible_email'.tr()
-                          : 'mentorship.mentee_signup_not_eligible_academic'
-                              .tr(),
-                    ),
                   ],
                 ),
               ),

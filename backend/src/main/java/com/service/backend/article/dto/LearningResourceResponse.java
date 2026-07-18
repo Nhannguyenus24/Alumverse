@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import com.service.backend.shared.enums.LearningResourceType;
+import com.service.backend.shared.enums.Status;
 import java.time.LocalDateTime;
 
 @Data
@@ -23,7 +24,12 @@ public class LearningResourceResponse {
     private String linkUrl;
     private String description;
     private String thumbnailUrl;
+    private Status status;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private String submitterName;
+    private String submitterRole;
+    private Boolean userSubmitted;
 
     public static LearningResourceResponse from(LearningResource resource) {
         return LearningResourceResponse.builder()
@@ -35,7 +41,9 @@ public class LearningResourceResponse {
                 .linkUrl(resource.getLinkUrl())
                 .description(resource.getDescription())
                 .thumbnailUrl(resource.getThumbnailUrl())
+                .status(resource.getStatus())
                 .createdAt(resource.getCreatedAt())
+                .updatedAt(resource.getUpdatedAt())
                 .build();
     }
 }

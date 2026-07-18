@@ -292,7 +292,7 @@
   "graduation_status": {
     "STUDYING": "Đang học",
     "GRADUATED": "Đã tốt nghiệp",
-    "DROPPED": "Bỏ học"
+    "DROPPED": "Đã thôi học"
   },
   "create_event_title": "Tạo sự kiện",
   "edit_event_title": "Chỉnh sửa sự kiện #{{id}}",
@@ -343,7 +343,9 @@
   "channel_event": "Sự kiện",
   "channel_donation": "Quyên góp",
   "col_title": "Tiêu đề",
+  "col_submitter": "Người đăng",
   "col_created_at": "Ngày tạo",
+  "col_updated_at": "Ngày chỉnh sửa",
   "col_actions": "Thao tác",
   "col_organization": "Tổ chức",
   "col_status": "Trạng thái",
@@ -1353,7 +1355,7 @@
   "cohort_verif_accepted": "Đã xác thực",
   "grad_status_graduated": "Đã tốt nghiệp",
   "grad_status_studying": "Đang học",
-  "grad_status_dropped": "Đã nghỉ học",
+  "grad_status_dropped": "Đã thôi học",
   "gender_male": "Nam",
   "gender_female": "Nữ",
   "gender_other": "Khác",
@@ -1506,5 +1508,6 @@
     "jvm_cpu_pct": "CPU JVM (%)",
     "heap_mb": "Heap (MB)",
     "gc_pause_ms": "Dừng GC (ms)"
-  }
+  },
+  "edit_article_breadcrumb": "S?a b?i vi?t"
 }

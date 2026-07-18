@@ -15,6 +15,8 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class CreateJobRequest {
 
+    private Integer organizationId;
+
     @NotBlank
     @Size(min = 3, max = 255)
     private String title;

@@ -8,7 +8,6 @@ import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/image_url.dart';
 import '../../../../shared/widgets/error_view.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../data/models/user_profile.dart';
 import '../providers/user_providers.dart';
 
@@ -23,8 +22,8 @@ class MyProfilePage extends ConsumerWidget {
     // Only authorised trusted verifiers see the alumni-verification entry.
     final isVerifier =
         ref.watch(isTrustedVerifierProvider).valueOrNull ?? false;
-    // Admin/staff don't need academic verification — hide the button for them.
-    final isStaff = ref.watch(isStaffProvider);
+    // Org managers don't need academic verification in the current org.
+    final isOrgManager = ref.watch(isOrgManagerProvider).valueOrNull ?? false;
 
     return Scaffold(
       appBar: AppBar(
@@ -53,7 +52,7 @@ class MyProfilePage extends ConsumerWidget {
               (p) => _ProfileView(
                 profile: p,
                 showVerifier: isVerifier,
-                showEducationVerify: !isStaff,
+                showEducationVerify: !isOrgManager,
               ),
         ),
       ),

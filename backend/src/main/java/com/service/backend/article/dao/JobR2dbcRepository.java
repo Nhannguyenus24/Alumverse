@@ -47,11 +47,11 @@ public interface JobR2dbcRepository extends R2dbcRepository<Job, Integer> {
     Mono<Long> countSearchJobs(Integer organizationId, String keyword);
 
     @Modifying
-    @Query("UPDATE jobs SET is_active = true WHERE id = :id")
+    @Query("UPDATE jobs SET is_active = true, updated_at = CURRENT_TIMESTAMP WHERE id = :id")
     Mono<Integer> activateJob(Integer id);
 
     @Modifying
-    @Query("UPDATE jobs SET is_active = false WHERE id = :id")
+    @Query("UPDATE jobs SET is_active = false, updated_at = CURRENT_TIMESTAMP WHERE id = :id")
     Mono<Integer> deactivateJob(Integer id);
 
     @Query("SELECT COUNT(*) FROM jobs WHERE is_active = true")

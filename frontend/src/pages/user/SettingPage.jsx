@@ -87,7 +87,7 @@ const normalizeAcademicList = (value) => {
 
 const normalizeIntegerList = (value) => normalizeAcademicList(value).map((item) => Number(item)).filter((item) => Number.isInteger(item));
 
-const GRADUATION_STATUS_OPTIONS = ['GRADUATED', 'STUDYING'];
+const GRADUATION_STATUS_OPTIONS = ['STUDYING', 'GRADUATED', 'DROPPED'];
 
 const normalizeGraduationStatus = (value) => {
   if (!value) return '';
@@ -787,18 +787,18 @@ export default function SettingPage() {
 
   return (
       <Page title={t('page_title')} meta={<meta name="description" content={t('page_title')} />}>
-        <Container maxWidth="xl" sx={{ minHeight: 'calc(100vh - 60px)', display: 'flex', alignItems: 'stretch', pt: { xs: 2, sm: 3, md: 4 }, px: { xs: 2, sm: 3, lg: 6 }, pb: { xs: 5, sm: 7, lg: 10 } }}>
-          <Box sx={{ display: 'flex', width: '100%', flexDirection: { xs: 'column', md: 'row' }, gap: { xs: 2, md: 3 } }}>
+        <Container maxWidth="xl" sx={{ minHeight: { xs: 'auto', md: 'calc(100dvh - 64px)' }, boxSizing: 'border-box', display: 'flex', alignItems: 'stretch', pt: { xs: 2, sm: 3, md: 4 }, px: { xs: 2, sm: 3, lg: 6 }, pb: { xs: 5, sm: 7, md: 3 } }}>
+          <Box sx={{ display: 'flex', width: '100%', flexDirection: { xs: 'column', md: 'row' }, alignItems: 'stretch', gap: { xs: 2, md: 3 } }}>
             <ScrollReveal direction="right" sx={{ width: { xs: '100%', md: 260 } }}>
               <Sidebar items={menuItems} value={activeTab} onChange={setActiveTab} useRouting={false} />
             </ScrollReveal>
 
             {/* Right Content Area */}
-            <ScrollReveal direction="left" sx={{ flex: 1, minWidth: 0, px: { xs: 1.5, sm: 2, md: 2.75 }, display: 'flex', flexDirection: 'column' }}>
-              <Stack spacing={2} sx={{ mb: { xs: 2, md: 2.5 } }}>
+            <ScrollReveal direction="left" sx={{ flex: 1, minWidth: 0, px: { xs: 1.5, sm: 2, md: 2.75 }, display: 'flex', flexDirection: 'column', alignSelf: 'stretch' }}>
+              <Stack spacing={2} sx={{ mb: { xs: 2.5, md: 3.5 }, flexShrink: 0 }}>
                 <Typography variant="h1" fontWeight={800} color="primary.main">{t('page_heading')}</Typography>
               </Stack>
-              <Card sx={{ p: 4, width: '100%', minHeight: { xs: 'auto', md: 520 }, display: 'flex', flexDirection: 'column', border: 1, borderColor: 'divider', borderRadius: 1, bgcolor: 'background.paper' }}>
+              <Card sx={{ p: 4, width: '100%', flex: { md: 1 }, minHeight: { xs: 'auto', md: 0 }, display: 'flex', flexDirection: 'column', border: 1, borderColor: 'divider', borderRadius: 1, bgcolor: 'background.paper' }}>
                 <ScrollReveal key={activeTab}>{renderContent()}</ScrollReveal>
               </Card>
             </ScrollReveal>

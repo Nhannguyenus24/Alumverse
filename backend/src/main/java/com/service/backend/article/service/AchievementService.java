@@ -34,71 +34,78 @@ public class AchievementService {
 
     public Mono<AchievementResponse> create(CreateAchievementRequest request) {
         return SecurityUtils.getCurrentUserId()
-                .flatMap(userId -> imageService.uploadBase64IfPresent(request.getImageBase64())
-                        .defaultIfEmpty("")
-                        .flatMap(imageUrl -> {
-                            Achievement achievement = Achievement.builder()
-                                    .memberId(userId.intValue())
-                                    .title(request.getTitle())
-                                    .description(request.getDescription())
-                                    .url(request.getUrl())
-                                    .imageUrl(imageUrl.isEmpty() ? null : imageUrl)
-                                    .awardedDate(request.getAwardedDate() != null ? request.getAwardedDate() : LocalDate.now())
-                                    .topic(request.getTopic())
-                                    .status(request.getStatus())
-                                    .build();
+                .flatMap(userId -> SecurityUtils.resolveContentOrganizationId(request.getOrganizationId())
+                        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.BAD_REQUEST, "Organization ID is required to create achievement")))
+                        .flatMap(orgId -> imageService.uploadBase64IfPresent(request.getImageBase64())
+                                .defaultIfEmpty("")
+                                .flatMap(imageUrl -> {
+                                    Achievement achievement = Achievement.builder()
+                                            .organizationId(orgId)
+                                            .memberId(userId.intValue())
+                                            .title(request.getTitle())
+                                            .description(request.getDescription())
+                                            .url(request.getUrl())
+                                            .imageUrl(imageUrl.isEmpty() ? null : imageUrl)
+                                            .awardedDate(request.getAwardedDate() != null ? request.getAwardedDate() : LocalDate.now())
+                                            .topic(request.getTopic())
+                                            .status(request.getStatus())
+                                            .build();
 
-                            return achievementRepository.save(achievement)
-                                    .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
-                                    .doOnNext(saved -> {
-                                        if (Status.PENDING.equals(saved.getStatus())) {
-                                            notificationService.createNotificationAsync(
-                                                    saved.getMemberId(),
-                                                    "Bài vinh danh đã được gửi",
-                                                    "Bài viết \"" + saved.getTitle() + "\" đã được gửi. Admin sẽ xem xét trước khi hiển thị công khai.",
-                                                    "/honors/achievements"
-                                            );
-                                        }
-                                    })
-                                    .map(AchievementResponse::from);
-                        }));
+                                    return achievementRepository.save(achievement)
+                                            .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
+                                            .doOnNext(saved -> {
+                                                if (Status.PENDING.equals(saved.getStatus())) {
+                                                    notificationService.createNotificationAsync(
+                                                            saved.getMemberId(),
+                                                            "Bài vinh danh đã được gửi",
+                                                            "Bài viết \"" + saved.getTitle() + "\" đã được gửi. Admin sẽ xem xét trước khi hiển thị công khai.",
+                                                            "/honors/achievements"
+                                                    );
+                                                }
+                                            })
+                                            .map(AchievementResponse::from);
+                                })));
     }
 
     public Mono<AchievementResponse> update(Integer id, UpdateAchievementRequest request) {
-        return SecurityUtils.getCurrentUserId()
-                .flatMap(currentUserId -> achievementRepository.findById(id)
+        return Mono.zip(SecurityUtils.getCurrentUserId(), SecurityUtils.getCurrentUserRole())
+                .flatMap(ctx -> achievementRepository.findById(id)
                         .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.ACHIEVEMENT_NOT_FOUND, "Achievement not found with id: " + id)))
                         .flatMap(existing -> {
-                            if (!existing.getMemberId().equals(currentUserId.intValue())) {
-                                return Mono.error(new ApplicationException(ErrorCode.FORBIDDEN));
-                            }
-                            return imageService.uploadBase64IfPresent(request.getImageBase64())
-                                    .defaultIfEmpty("")
-                                    .flatMap(imageUrl -> {
-                                        existing.setTitle(request.getTitle());
-                                        existing.setDescription(request.getDescription());
-                                        existing.setUrl(request.getUrl());
-                                        existing.setImageUrl(imageUrl.isEmpty() ? existing.getImageUrl() : imageUrl);
-                                        if (request.getStatus() != null) existing.setStatus(request.getStatus());
-                                        if (request.getTopic() != null) existing.setTopic(request.getTopic());
-                                        return achievementRepository.save(existing);
-                                    });
+                            Long currentUserId = ctx.getT1();
+                            String role = ctx.getT2();
+                            return canManageAchievement(existing, currentUserId, role)
+                                    .flatMap(allowed -> allowed
+                                            ? imageService.uploadBase64IfPresent(request.getImageBase64())
+                                                    .defaultIfEmpty("")
+                                                    .flatMap(imageUrl -> {
+                                                        existing.setTitle(request.getTitle());
+                                                        existing.setDescription(request.getDescription());
+                                                        existing.setUrl(request.getUrl());
+                                                        existing.setImageUrl(imageUrl.isEmpty() ? existing.getImageUrl() : imageUrl);
+                                                        if (request.getStatus() != null) existing.setStatus(request.getStatus());
+                                                        if (request.getTopic() != null) existing.setTopic(request.getTopic());
+                                                        return achievementRepository.save(existing);
+                                                    })
+                                            : Mono.error(new ApplicationException(ErrorCode.FORBIDDEN)));
                         }))
                 .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
                 .map(AchievementResponse::from);
     }
 
     public Mono<Boolean> delete(Integer id) {
-        return SecurityUtils.getCurrentUserId()
-                .flatMap(currentUserId -> achievementRepository.findById(id)
+        return Mono.zip(SecurityUtils.getCurrentUserId(), SecurityUtils.getCurrentUserRole())
+                .flatMap(ctx -> achievementRepository.findById(id)
                         .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.ACHIEVEMENT_NOT_FOUND, "Achievement not found with id: " + id)))
                         .flatMap(existing -> {
-                            if (!existing.getMemberId().equals(currentUserId.intValue())) {
-                                return Mono.error(new ApplicationException(ErrorCode.FORBIDDEN));
-                            }
-                            return achievementRepository.deleteById(id)
-                                    .then(cacheUtils.clear("admin_content_statistics"))
-                                    .thenReturn(true);
+                            Long currentUserId = ctx.getT1();
+                            String role = ctx.getT2();
+                            return canManageAchievement(existing, currentUserId, role)
+                                    .flatMap(allowed -> allowed
+                                            ? achievementRepository.deleteById(id)
+                                                    .then(cacheUtils.clear("admin_content_statistics"))
+                                                    .thenReturn(true)
+                                            : Mono.error(new ApplicationException(ErrorCode.FORBIDDEN)));
                         }));
     }
 
@@ -152,5 +159,17 @@ public class AchievementService {
                 achievementRepository.countSearchAchievements(keyword),
                 page, limit
         );
+    }
+
+    private Mono<Boolean> canManageAchievement(Achievement achievement, Long currentUserId, String role) {
+        if ("ADMIN".equalsIgnoreCase(role)) {
+            return Mono.just(true);
+        }
+        if ("STAFF".equalsIgnoreCase(role)) {
+            return SecurityUtils.getCurrentOrganizationId()
+                    .map(orgId -> achievement.getOrganizationId() != null && achievement.getOrganizationId().equals(orgId))
+                    .defaultIfEmpty(false);
+        }
+        return Mono.just(achievement.getMemberId() != null && achievement.getMemberId().equals(currentUserId.intValue()));
     }
 }

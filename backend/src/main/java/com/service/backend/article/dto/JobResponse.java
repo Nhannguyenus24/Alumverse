@@ -31,6 +31,10 @@ public class JobResponse {
     private LocalDate deadline;
     private Boolean isActive;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private String submitterName;
+    private String submitterRole;
+    private Boolean userSubmitted;
 
     public static JobResponse from(Job job) {
         return JobResponse.builder()
@@ -49,6 +53,7 @@ public class JobResponse {
                 .deadline(job.getDeadline())
                 .isActive(job.getIsActive())
                 .createdAt(job.getCreatedAt())
+                .updatedAt(job.getUpdatedAt())
                 .build();
     }
 }

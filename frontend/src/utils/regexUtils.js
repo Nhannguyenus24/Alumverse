@@ -6,9 +6,6 @@ import dayjs from "dayjs";
 /** Password pattern: at least one lowercase, uppercase, digit, special char @$!%*?& */
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/;
 
-/** StudentId: digits only (mã số sinh viên chỉ gồm chữ số). */
-const STUDENT_ID_REGEX = /^[0-9]+$/;
-
 /** OTP: exactly 6 digits */
 const OTP_REGEX = /^[0-9]{6}$/;
 
@@ -45,7 +42,7 @@ export const getLoginSchema = (t) => z.object({
 /** @deprecated Use getLoginSchema(t) instead */
 export const loginSchema = getLoginSchema(null);
 
-/** Register: backend RegisterRequest — email, studentId, fullName, password; UI: studentId, enrollmentYear (bắt buộc) */
+/** Register: backend RegisterRequest — email, fullName, password */
 export const getRegisterSchema = (t) => z
   .object({
     fullName: z
@@ -53,13 +50,6 @@ export const getRegisterSchema = (t) => z
       .min(1, t ? t('auth:fullname_required') : 'Họ và tên là bắt buộc')
       .min(2, t ? t('auth:fullname_length') : 'Họ và tên từ 2–100 ký tự')
       .max(100, t ? t('auth:fullname_length') : 'Họ và tên từ 2–100 ký tự'),
-    studentId: z
-      .string()
-      .min(1, t ? t('auth:student_id_required') : 'Mã số sinh viên là bắt buộc')
-      .min(3, t ? t('auth:student_id_length') : 'Mã số sinh viên từ 3–50 ký tự')
-      .max(50, t ? t('auth:student_id_length') : 'Mã số sinh viên từ 3–50 ký tự')
-      .regex(STUDENT_ID_REGEX, t ? t('auth:student_id_digits_only') : 'Mã số sinh viên chỉ được chứa chữ số'),
-    enrollmentYear: z.string().min(1, t ? t('auth:enrollment_year_required') : 'Vui lòng chọn năm nhập học'),
     email: z.email(t ? t('auth:email_required') : "Email là bắt buộc"),
     password: z
       .string()
