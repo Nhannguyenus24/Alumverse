@@ -43,12 +43,10 @@ const useAdminEmailTemplates = () => {
     return extractData(await apiClient.put(`${BASE}/${id}`, body));
   }, []);
 
-  /** Cập nhật theo vùng sửa được: body = { subject, regions: {key: value} }. */
   const updateRegions = useCallback(async (id, body) => {
     return extractData(await apiClient.put(`${BASE}/${id}/regions`, body));
   }, []);
 
-  /** Khôi phục template về mẫu gốc (bật lại vùng sửa được). */
   const resetToDefault = useCallback(async (id) => {
     return extractData(await apiClient.post(`${BASE}/${id}/reset`));
   }, []);
@@ -57,14 +55,17 @@ const useAdminEmailTemplates = () => {
     return extractData(await apiClient.post(`${BASE}/preview`, body));
   }, []);
 
-  /** Xem trước theo vùng: body = { subject, regions, sampleData }. */
   const previewRegions = useCallback(async (id, body) => {
     return extractData(await apiClient.post(`${BASE}/${id}/preview`, body));
   }, []);
 
+  const sendTest = useCallback(async (body) => {
+    return extractData(await apiClient.post(`${BASE}/send-test`, body));
+  }, []);
+
   return {
     templates, loading, error, refresh: load,
-    getById, update, updateRegions, resetToDefault, preview, previewRegions,
+    getById, update, updateRegions, resetToDefault, preview, previewRegions, sendTest,
   };
 };
 
