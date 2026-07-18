@@ -17,6 +17,8 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class CreateAchievementRequest {
 
+    private Integer organizationId;
+
     @NotBlank
     @Size(min = 3, max = 255)
     private String title;

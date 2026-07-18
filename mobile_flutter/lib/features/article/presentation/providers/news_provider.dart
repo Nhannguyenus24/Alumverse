@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../organization/presentation/providers/organization_provider.dart';
 import '../../data/models/article.dart';
 import '../../data/models/saved_item.dart';
 import '../../data/repositories/article_repository.dart';
@@ -8,14 +9,18 @@ import '../../data/repositories/article_repository.dart';
 /// (pull-to-refresh on the home screen).
 final publishedNewsProvider = FutureProvider<List<Article>>((ref) async {
   final repo = ref.watch(articleRepositoryProvider);
-  return repo.getPublishedNews(page: 0, limit: 10);
+  final orgId = ref.watch(organizationStateProvider).valueOrNull?.id;
+  if (orgId == null) return const [];
+  return repo.getPublishedNews(page: 0, limit: 10, organizationId: orgId);
 });
 
 final honorsArticlesProvider = FutureProvider<List<Article>>((ref) async {
   final repo = ref.watch(articleRepositoryProvider);
+  final orgId = ref.watch(organizationStateProvider).valueOrNull?.id;
+  if (orgId == null) return const [];
   final results = await Future.wait([
-    repo.getPublishedAlumniPosts(page: 0, limit: 10),
-    repo.getApprovedAchievements(page: 0, limit: 10),
+    repo.getPublishedAlumniPosts(page: 0, limit: 10, organizationId: orgId),
+    repo.getApprovedAchievements(page: 0, limit: 10, organizationId: orgId),
   ]);
   final articles = [...results[0], ...results[1]];
   articles.sort((a, b) {
@@ -33,15 +38,12 @@ final newsDetailProvider = FutureProvider.autoDispose.family<Article, int>((
   return ref.watch(articleRepositoryProvider).getNewsDetail(id);
 });
 
-final articleDetailProvider =
-    FutureProvider.autoDispose.family<Article, ArticleDetailRequest>((
-      ref,
-      request,
-    ) async {
+final articleDetailProvider = FutureProvider.autoDispose
+    .family<Article, ArticleDetailRequest>((ref, request) async {
       return ref
           .watch(articleRepositoryProvider)
           .getArticleDetail(request.id, channel: request.channel);
-});
+    });
 
 class ArticleDetailRequest {
   const ArticleDetailRequest({required this.id, required this.channel});

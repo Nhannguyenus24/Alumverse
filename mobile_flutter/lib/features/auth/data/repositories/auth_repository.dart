@@ -58,6 +58,14 @@ class AuthRepository {
     return _persistSession(res);
   }
 
+  Future<AuthSession> switchOrganization(int organizationId) async {
+    final res = await api.switchOrganization(organizationId);
+    return _persistSession(res);
+  }
+
+  Future<void> persistVerificationLevel(int level) =>
+      storage.writeVerificationLevel(level);
+
   /// Step 1 of signup: create the (inactive) account.
   Future<void> register({
     required String email,

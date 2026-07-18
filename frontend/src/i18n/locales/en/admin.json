@@ -436,13 +436,15 @@
   "channel_label": "Channel",
   "channel_news": "News",
   "channel_alumni": "Alumni",
-  "channel_achievement": "Achievements",
+  "channel_achievement": "Achievements channel",
   "channel_job": "Job opportunities",
   "channel_learning": "Learning opportunities",
   "channel_event": "Events",
   "channel_donation": "Donation",
   "col_title": "Title",
+  "col_submitter": "Poster",
   "col_created_at": "Created at",
+  "col_updated_at": "Updated at",
   "col_actions": "Actions",
   "col_submitted_at": "Submitted at",
   "col_time": "Time",
@@ -1482,5 +1484,6 @@
     "jvm_cpu_pct": "JVM CPU (%)",
     "heap_mb": "Heap (MB)",
     "gc_pause_ms": "GC Pause (ms)"
-  }
+  },
+  "edit_article_breadcrumb": "Edit article"
 }

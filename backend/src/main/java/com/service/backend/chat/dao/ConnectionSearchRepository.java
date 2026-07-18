@@ -34,7 +34,8 @@ public interface ConnectionSearchRepository extends R2dbcRepository<ChatConversa
             + ") om ON true ";
 
     String SEARCH_WHERE =
-            "WHERE (:fullName IS NULL OR LOWER(u.full_name) LIKE LOWER(:fullName)) ";
+            "WHERE u.status = 'ACTIVE' "
+            + "AND (:fullName IS NULL OR LOWER(u.full_name) LIKE LOWER(:fullName)) ";
 
     String SEARCH_SELECT =
             "SELECT conn.id AS connection_id, "

@@ -47,14 +47,15 @@ import {
 
 const titleOf = (a) => a.title || a.name || a.position || '-';
 const idOf = (a) => a.id;
+const submitterOf = (a) => a.submitterName || a.memberName || a.authorName || '-';
 const createdOf = (a) =>
   a.createdAt
   || a.created_at
-  || a.publishedAt
-  || a.awardedDate
-  || a.timeStarted
-  || a.eventDate
-  || a.deadline;
+  || null;
+const updatedOf = (a) =>
+  a.updatedAt
+  || a.updated_at
+  || null;
 const channelOf = (a, fallbackChannel) => a.channel || fallbackChannel;
 const visibilityStatusOf = (article) => {
   const state = getArticleVisibilityState(article);
@@ -210,7 +211,15 @@ const AdminArticlesPage = () => {
               id: "title",
               label: t('admin:col_title'),
               render: (_, a) => (
-                <Typography variant="body2" noWrap sx={{ maxWidth: 360 }}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    maxWidth: 360,
+                    whiteSpace: 'normal',
+                    overflowWrap: 'break-word',
+                    wordBreak: 'normal',
+                  }}
+                >
                   {titleOf(a)}
                 </Typography>
               ),
@@ -229,9 +238,23 @@ const AdminArticlesPage = () => {
               ),
             },
             {
+              id: "submitter",
+              label: t('admin:col_submitter'),
+              render: (_, a) => (
+                <Typography variant="body2" noWrap sx={{ maxWidth: 180 }}>
+                  {submitterOf(a)}
+                </Typography>
+              ),
+            },
+            {
               id: "createdAt",
               label: t('admin:col_created_at'),
               render: (_, a) => formatDateTime(createdOf(a)),
+            },
+            {
+              id: "updatedAt",
+              label: t('admin:col_updated_at'),
+              render: (_, a) => formatDateTime(updatedOf(a)),
             },
             {
               id: "visibility",

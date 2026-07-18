@@ -116,6 +116,10 @@ class AuthInterceptor extends Interceptor {
     final token = (data is Map ? data['accessToken'] : null) as String?;
     if (token == null || token.isEmpty) return null;
     await _storage.writeAccessToken(token);
+    final verificationLevel = data is Map ? data['verificationLevel'] : null;
+    if (verificationLevel is num) {
+      await _storage.writeVerificationLevel(verificationLevel.toInt());
+    }
     return token;
   }
 }

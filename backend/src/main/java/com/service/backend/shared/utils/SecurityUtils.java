@@ -68,4 +68,19 @@ public final class SecurityUtils {
                     return requestedOrgId != null ? Mono.just(requestedOrgId) : Mono.empty();
                 });
     }
+
+    /**
+     * Resolve the organization for content creation.
+     * STAFF must always use their token organization.
+     * ADMIN/USER create content for the organization currently selected by the UI slug.
+     */
+    public static Mono<Integer> resolveContentOrganizationId(Integer requestedOrgId) {
+        return getCurrentUserRole()
+                .flatMap(role -> {
+                    if ("STAFF".equalsIgnoreCase(role)) {
+                        return getCurrentOrganizationId();
+                    }
+                    return requestedOrgId != null ? Mono.just(requestedOrgId) : getCurrentOrganizationId();
+                });
+    }
 }

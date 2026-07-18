@@ -1,5 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../organization/presentation/providers/organization_provider.dart';
+import '../../../user/presentation/providers/user_providers.dart';
 import '../../data/models/mentee_profile.dart';
 import '../../data/models/mentor_availability.dart';
 import '../../data/models/mentor_profile.dart';
@@ -29,14 +32,53 @@ final mentorQueryProvider = StateProvider<MentorQuery>(
   (ref) => const MentorQuery(),
 );
 
+class MentorshipAccess {
+  const MentorshipAccess({
+    required this.isLoggedIn,
+    required this.isGlobalAdmin,
+    required this.verificationLevel,
+  });
+
+  final bool isLoggedIn;
+  final bool isGlobalAdmin;
+  final int verificationLevel;
+
+  bool get isOrgManager => isGlobalAdmin || verificationLevel >= 4;
+  bool get canUseMentorship =>
+      isLoggedIn && (isGlobalAdmin || verificationLevel >= 2);
+  bool get canParticipateInMentorship => canUseMentorship && !isOrgManager;
+  bool get canPreviewMentors =>
+      isLoggedIn && (isGlobalAdmin || verificationLevel >= 1);
+}
+
+final mentorshipAccessProvider = FutureProvider<MentorshipAccess>((ref) async {
+  final auth = ref.watch(authStateProvider).valueOrNull;
+  final user = auth?.user;
+  final role = user?.role?.toUpperCase();
+  final isGlobalAdmin = role == 'ADMIN';
+  final isLoggedIn = user != null;
+  final level =
+      isLoggedIn ? await ref.watch(myVerificationLevelProvider.future) : 0;
+
+  return MentorshipAccess(
+    isLoggedIn: isLoggedIn,
+    isGlobalAdmin: isGlobalAdmin,
+    verificationLevel: level,
+  );
+});
+
 /// Mentor list, reacting to the current [mentorQueryProvider].
 final mentorListProvider = FutureProvider<List<MentorProfile>>((ref) async {
   final q = ref.watch(mentorQueryProvider);
+  final access = await ref.watch(mentorshipAccessProvider.future);
+  final org = ref.watch(organizationStateProvider).valueOrNull;
+  if (!access.canPreviewMentors || org == null) return const [];
   return ref
       .watch(mentorshipRepositoryProvider)
       .browseMentors(
         keyword: q.keyword,
         skillIds: q.skills.map((s) => s.id).toList(),
+        organizationId: org.id,
         limit: 20,
       );
 });
@@ -54,14 +96,20 @@ final mentorProfileProvider = FutureProvider.family<MentorProfile, int>((
   ref,
   memberId,
 ) {
-  return ref.watch(mentorshipRepositoryProvider).getMentorProfile(memberId);
+  final org = ref.watch(organizationStateProvider).valueOrNull;
+  return ref
+      .watch(mentorshipRepositoryProvider)
+      .getMentorProfile(memberId, organizationId: org?.id);
 });
 
 final mentorAvailabilityProvider =
-    FutureProvider.family<List<MentorAvailability>, int>((ref, memberId) {
+    FutureProvider.family<List<MentorAvailability>, int>((ref, memberId) async {
+      final access = await ref.watch(mentorshipAccessProvider.future);
+      if (!access.canParticipateInMentorship) return const [];
+      final org = ref.watch(organizationStateProvider).valueOrNull;
       return ref
           .watch(mentorshipRepositoryProvider)
-          .getMentorAvailability(memberId);
+          .getMentorAvailability(memberId, organizationId: org?.id);
     });
 
 final mySessionsProvider = FutureProvider<List<MentorshipSession>>((ref) {
@@ -70,7 +118,9 @@ final mySessionsProvider = FutureProvider<List<MentorshipSession>>((ref) {
 
 /// The current user's mentor profile (null if not a mentor). Used to decide
 /// whether to show "Trở thành cố vấn" vs an already-registered state.
-final myMentorProfileProvider = FutureProvider<MentorProfile?>((ref) {
+final myMentorProfileProvider = FutureProvider<MentorProfile?>((ref) async {
+  final access = await ref.watch(mentorshipAccessProvider.future);
+  if (!access.canParticipateInMentorship) return null;
   return ref.watch(mentorshipRepositoryProvider).getMyMentorProfile();
 });
 
@@ -113,9 +163,15 @@ final myMentorFeedbacksProvider = FutureProvider<List<SessionFeedback>>((
 /// Public feedback list for a mentor's profile page.
 final mentorFeedbacksProvider =
     FutureProvider.family<List<SessionFeedback>, int>((ref, memberId) {
+      final org = ref.watch(organizationStateProvider).valueOrNull;
       return ref
           .watch(mentorshipRepositoryProvider)
-          .getMentorFeedbacks(memberId, page: 0, limit: 20);
+          .getMentorFeedbacks(
+            memberId,
+            page: 0,
+            limit: 20,
+            organizationId: org?.id,
+          );
     });
 
 /// Single mentee session by ID — used by the session detail screen.
@@ -127,6 +183,8 @@ final menteeSessionByIdProvider = FutureProvider.family<MentorshipSession, int>(
   },
 );
 
-final myMenteeProfileProvider = FutureProvider<MenteeProfile?>((ref) {
+final myMenteeProfileProvider = FutureProvider<MenteeProfile?>((ref) async {
+  final access = await ref.watch(mentorshipAccessProvider.future);
+  if (!access.canParticipateInMentorship) return null;
   return ref.watch(mentorshipRepositoryProvider).getMyMenteeProfile();
 });

@@ -55,6 +55,14 @@ const valueOrDash = (value) => {
   return value;
 };
 
+const tableHeadSx = {
+  '& .MuiTableCell-head': {
+    bgcolor: 'primary.main',
+    color: 'primary.contrastText',
+    fontWeight: 800,
+  },
+};
+
 const firstValue = (value) => {
   if (Array.isArray(value)) return value[0] ?? '';
   return value ?? '';
@@ -418,7 +426,7 @@ const AdminUserDetailPage = () => {
             <Tab label={t('user_detail_tab_audit')} sx={{ textTransform: 'none' }} />
           </Tabs>
           <Divider />
-          <Box sx={tab === 2 ? { px: 2, py: 1.25 } : { p: 2 }}>
+          <Box sx={tab === 2 ? { px: 2, py: 2.25 } : { p: 2 }}>
             {tab === 0 ? (
               <Stack spacing={1}>
                 <Typography variant="body2">
@@ -440,7 +448,7 @@ const AdminUserDetailPage = () => {
             ) : null}
             {tab === 1 ? (
               <Table size="small">
-                <TableHead>
+                <TableHead sx={tableHeadSx}>
                   <TableRow>
                     <TableCell>{t('user_detail_academic_student_code')}</TableCell>
                     <TableCell>{t('edu_field_faculty')}</TableCell>
@@ -478,13 +486,13 @@ const AdminUserDetailPage = () => {
             {tab === 2 ? (
               <List dense disablePadding>
                 {memberships.map((m) => (
-                  <ListItem key={m.organizationName} disablePadding sx={{ py: 0 }}>
+                  <ListItem key={m.organizationName} disablePadding sx={{ py: 0.5 }}>
                     <ListItemText
                       primary={m.organizationName}
                       primaryTypographyProps={{ variant: 'subtitle1', fontWeight: 800, color: 'text.primary' }}
                       sx={{ my: 0 }}
                       secondary={
-                        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap sx={{ mt: 0.25 }}>
+                        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap sx={{ mt: 0.5 }}>
                           <Typography variant="caption" color="text.secondary">
                             {t('user_detail_membership_verification')}: {formatEnumText(m.verificationLevel)}
                           </Typography>
@@ -549,7 +557,7 @@ const AdminUserDetailPage = () => {
                   </Stack>
                 ) : (
                   <Table size="small">
-                    <TableHead>
+                    <TableHead sx={tableHeadSx}>
                       <TableRow>
                         <TableCell>{t('user_detail_col_time')}</TableCell>
                         <TableCell>{t('user_detail_col_action')}</TableCell>
@@ -616,7 +624,7 @@ const AdminUserDetailPage = () => {
                       {t('user_detail_admin_actions')}
                     </Typography>
                     <Table size="small">
-                      <TableHead>
+                      <TableHead sx={tableHeadSx}>
                         <TableRow>
                           <TableCell>{t('user_detail_col_time')}</TableCell>
                           <TableCell>{t('user_detail_col_action')}</TableCell>

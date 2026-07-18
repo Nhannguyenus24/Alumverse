@@ -8,7 +8,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/app_toast.dart';
 import '../../../../shared/widgets/empty_view.dart';
 import '../../../../shared/widgets/error_view.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../user/presentation/providers/user_providers.dart';
 import '../../data/repositories/event_repository.dart';
 import '../providers/event_provider.dart';
 
@@ -173,8 +173,15 @@ class _AdminEventManagePageState extends ConsumerState<AdminEventManagePage>
 
   @override
   Widget build(BuildContext context) {
-    final isStaff = ref.watch(isStaffProvider);
-    if (!isStaff) {
+    final isOrgManagerAsync = ref.watch(isOrgManagerProvider);
+    final isOrgManager = isOrgManagerAsync.valueOrNull ?? false;
+    if (isOrgManagerAsync.isLoading) {
+      return Scaffold(
+        appBar: AppBar(title: Text('event.manage_title'.tr())),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (!isOrgManager) {
       return Scaffold(
         appBar: AppBar(title: Text('event.manage_title'.tr())),
         body: EmptyView(

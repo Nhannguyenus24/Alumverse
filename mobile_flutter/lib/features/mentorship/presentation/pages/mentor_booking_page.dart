@@ -109,6 +109,8 @@ class _MentorBookingPageState extends ConsumerState<MentorBookingPage> {
 
   @override
   Widget build(BuildContext context) {
+    final accessAsync = ref.watch(mentorshipAccessProvider);
+    final access = accessAsync.valueOrNull;
     final slotsAsync = ref.watch(mentorAvailabilityProvider(widget.memberId));
     final myMentorAsync = ref.watch(myMentorProfileProvider);
     final myMenteeAsync = ref.watch(myMenteeProfileProvider);
@@ -116,11 +118,13 @@ class _MentorBookingPageState extends ConsumerState<MentorBookingPage> {
     final isMentorPending = (myMentor?.status ?? '').toUpperCase() == 'PENDING';
     final isOwnMentorProfile = myMentor?.memberId == widget.memberId;
     final canBook =
+        (access?.canParticipateInMentorship ?? false) &&
         !isMentorPending &&
         !isOwnMentorProfile &&
         ((myMentor?.status ?? '').toUpperCase() == 'APPROVED' ||
             myMenteeAsync.valueOrNull != null);
-    final isAccessLoading = myMentorAsync.isLoading || myMenteeAsync.isLoading;
+    final isAccessLoading =
+        accessAsync.isLoading || myMentorAsync.isLoading || myMenteeAsync.isLoading;
     final sessionTypes = _sessionTypes(context);
 
     if (isAccessLoading) {

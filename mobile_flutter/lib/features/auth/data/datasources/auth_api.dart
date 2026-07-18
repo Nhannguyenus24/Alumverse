@@ -34,6 +34,13 @@ class AuthApi {
     return LoginResponse.fromJson(res.data as Map<String, dynamic>);
   }
 
+  Future<LoginResponse> switchOrganization(int organizationId) async {
+    final res = await _dio.post(
+      ApiEndpoints.authSwitchOrganization(organizationId),
+    );
+    return LoginResponse.fromJson(res.data as Map<String, dynamic>);
+  }
+
   /// Registers the account. Returns nothing meaningful on success — the account
   /// is created but inactive until OTP verification.
   Future<void> register(RegisterRequest request) =>

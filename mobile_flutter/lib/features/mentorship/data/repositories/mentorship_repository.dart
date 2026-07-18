@@ -24,6 +24,7 @@ class MentorshipRepository {
   Future<List<MentorProfile>> browseMentors({
     String keyword = '',
     List<int> skillIds = const [],
+    int? organizationId,
     int page = 0,
     int limit = 10,
   }) async {
@@ -37,6 +38,7 @@ class MentorshipRepository {
         queryParameters: {
           if (kw.isNotEmpty) 'search': kw,
           'skillIds': skillIds,
+          if (organizationId != null) 'organizationId': organizationId,
           'page': page,
           'limit': limit,
         },
@@ -47,24 +49,49 @@ class MentorshipRepository {
     } else if (kw.isNotEmpty) {
       res = await _dio.get(
         ApiEndpoints.menteeMentorSearch,
-        queryParameters: {'keyword': kw, 'page': page, 'limit': limit},
+        queryParameters: {
+          'keyword': kw,
+          if (organizationId != null) 'organizationId': organizationId,
+          'page': page,
+          'limit': limit,
+        },
       );
     } else {
       res = await _dio.get(
         ApiEndpoints.menteeMentors,
-        queryParameters: {'page': page, 'limit': limit},
+        queryParameters: {
+          if (organizationId != null) 'organizationId': organizationId,
+          'page': page,
+          'limit': limit,
+        },
       );
     }
     return _items(res.data, MentorProfile.fromJson);
   }
 
-  Future<MentorProfile> getMentorProfile(int memberId) async {
-    final res = await _dio.get(ApiEndpoints.menteeMentorProfile(memberId));
+  Future<MentorProfile> getMentorProfile(
+    int memberId, {
+    int? organizationId,
+  }) async {
+    final res = await _dio.get(
+      ApiEndpoints.menteeMentorProfile(memberId),
+      queryParameters: {
+        if (organizationId != null) 'organizationId': organizationId,
+      },
+    );
     return MentorProfile.fromJson(_dataMap(res.data));
   }
 
-  Future<List<MentorAvailability>> getMentorAvailability(int memberId) async {
-    final res = await _dio.get(ApiEndpoints.menteeMentorAvailability(memberId));
+  Future<List<MentorAvailability>> getMentorAvailability(
+    int memberId, {
+    int? organizationId,
+  }) async {
+    final res = await _dio.get(
+      ApiEndpoints.menteeMentorAvailability(memberId),
+      queryParameters: {
+        if (organizationId != null) 'organizationId': organizationId,
+      },
+    );
     return _dataList(res.data)
         .map((e) => MentorAvailability.fromJson(e as Map<String, dynamic>))
         .toList();
@@ -140,10 +167,15 @@ class MentorshipRepository {
     int memberId, {
     int page = 0,
     int limit = 10,
+    int? organizationId,
   }) async {
     final res = await _dio.get(
       ApiEndpoints.menteeMentorFeedbacks(memberId),
-      queryParameters: {'page': page, 'limit': limit},
+      queryParameters: {
+        if (organizationId != null) 'organizationId': organizationId,
+        'page': page,
+        'limit': limit,
+      },
     );
     return _items(res.data, SessionFeedback.fromJson);
   }

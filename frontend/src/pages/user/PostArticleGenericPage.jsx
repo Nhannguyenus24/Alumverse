@@ -19,6 +19,7 @@ import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useState } from 'react';
 import { useCanContribute } from '../../hooks/useCanContribute';
 import { withMainImageCaption } from '../../utils/articleContentCaption';
+import useOrganizationStore from '../../stores/organizationStore';
 
 const JOB_TYPE_BY_TOPIC = {
   internship: 'INTERNSHIP',
@@ -59,7 +60,8 @@ const CHANNEL_CONFIG = {
     payloadKey: 'thumbnailBase64',
     useBase64: true,
     contentKey: 'content',
-    buildPayload: ({ title, content, topic, url, imageBase64 }) => ({
+    buildPayload: ({ title, content, topic, url, imageBase64, organizationId }) => ({
+      organizationId,
       title,
       content,
       topic,
@@ -77,7 +79,8 @@ const CHANNEL_CONFIG = {
     payloadKey: 'thumbnailBase64',
     useBase64: true,
     contentKey: 'content',
-    buildPayload: ({ title, content, topic, url, imageBase64 }) => ({
+    buildPayload: ({ title, content, topic, url, imageBase64, organizationId }) => ({
+      organizationId,
       title,
       content,
       topic,
@@ -95,7 +98,8 @@ const CHANNEL_CONFIG = {
     payloadKey: 'imageBase64',
     useBase64: true,
     contentKey: 'description',
-    buildPayload: ({ title, content, topic, imageBase64, isAdminLike, url }) => ({
+    buildPayload: ({ title, content, topic, imageBase64, isAdminLike, url, organizationId }) => ({
+      organizationId,
       title,
       description: content,
       topic,
@@ -115,7 +119,8 @@ const CHANNEL_CONFIG = {
     payloadKey: null,
     useBase64: false,
     contentKey: 'description',
-    buildPayload: ({ title, content, topic, url }) => ({
+    buildPayload: ({ title, content, topic, url, organizationId }) => ({
+      organizationId,
       title,
       description: content,
       type: JOB_TYPE_BY_TOPIC[topic],
@@ -133,7 +138,8 @@ const CHANNEL_CONFIG = {
     payloadKey: 'thumbnailBase64',
     useBase64: true,
     contentKey: 'description',
-    buildPayload: ({ title, content, topic, url, imageBase64 }) => ({
+    buildPayload: ({ title, content, topic, url, imageBase64, organizationId }) => ({
+      organizationId,
       title,
       description: content,
       type: LEARNING_TYPE_BY_TOPIC[topic],
@@ -142,6 +148,8 @@ const CHANNEL_CONFIG = {
     }),
   },
 };
+
+const unwrapCreatedArticle = (result) => result?.data?.data ?? result?.data ?? result ?? null;
 
 // Hooks must be called unconditionally — call all, use the right one.
 const useAllHooks = () => ({
@@ -158,6 +166,7 @@ const PostArticleGenericPage = () => {
   const { t } = useTranslation('article');
   const { showSuccess, showError } = useNotification();
   const { isOrgManager } = useCanContribute();
+  const organizationId = useOrganizationStore((state) => state.organization?.id ?? null);
   const isAdminLike = isOrgManager;
   const {
     coverFile,
@@ -225,6 +234,7 @@ const PostArticleGenericPage = () => {
         url: url.trim(),
         imageBase64,
         isAdminLike,
+        organizationId: organizationId != null ? Number(organizationId) : null,
       });
       if ((channel === 'job' || channel === 'learning') && !payload.type) {
         showError(t('error_topic_required', { defaultValue: 'Vui lòng chọn chủ đề' }));
@@ -235,10 +245,13 @@ const PostArticleGenericPage = () => {
         return;
       }
 
-      const result = await createFn(payload);
-      const usesReviewFlow = !isAdminLike && channel !== 'learning';
+      const result = unwrapCreatedArticle(await createFn(payload));
+      const usesReviewFlow = !isAdminLike;
+      const successRedirect = usesReviewFlow
+        ? config.pendingRedirect()
+        : (result?.id ? config.redirect(result.id) : '/admin/article');
       showSuccess(usesReviewFlow ? t('success_submitted_for_review') : t(config.successMsgKey));
-      navigate(usesReviewFlow ? config.pendingRedirect() : config.redirect(result.id));
+      navigate(successRedirect);
     } catch (err) {
       showError(err.response?.data?.message ?? t('error_post_failed'));
     }
@@ -269,7 +282,7 @@ const PostArticleGenericPage = () => {
         mainImagePreview={coverCroppedPreview ?? coverPreview}
         mainImageCaption={mainImageCaption}
         setMainImageCaption={setMainImageCaption}
-        showSourceUrl={!isAdminLike}
+        showSourceUrl
       />
     </PostArticleShell>
   );

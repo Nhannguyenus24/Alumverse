@@ -167,7 +167,11 @@ const AdminHeader = ({ adminBase = '/admin', onMenuOpen, isSidebarCollapsed, use
             }}
           >
             {canSwitchOrganizations ? (
-              <FormControl variant="standard" size="small" sx={{ minWidth: 160 }}>
+              <FormControl
+                variant="standard"
+                size="small"
+                sx={{ width: 'fit-content', minWidth: 0 }}
+              >
                 <Select
                   value={activeOrgId || ''}
                   onChange={(e) => startTransition(() => setActiveOrgId(e.target.value))}
@@ -175,12 +179,18 @@ const AdminHeader = ({ adminBase = '/admin', onMenuOpen, isSidebarCollapsed, use
                   id="admin-org-selector"
                   inputProps={{ 'aria-label': t('admin:select_organization_aria') }}
                   sx={{
+                    width: 'fit-content',
+                    minWidth: 0,
+                    display: 'inline-flex',
                     fontSize: 13,
                     fontWeight: 700,
                     color: 'text.primary',
                     '& .MuiSelect-select': {
                       py: 0.5,
-                      px: 1,
+                      pl: 1,
+                      pr: 4,
+                      width: 'auto',
+                      minWidth: 0,
                       borderRadius: 1.5,
                       bgcolor: alpha(theme.palette.primary.main, 0.08),
                       color: 'primary.main',
@@ -338,6 +348,8 @@ const AdminHeader = ({ adminBase = '/admin', onMenuOpen, isSidebarCollapsed, use
               <MenuItem
                 component={RouterLink}
                 to={`/${activeOrganization.slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
               >
                 <ListItemIcon>
                   <OpenInNewRoundedIcon fontSize="small" />

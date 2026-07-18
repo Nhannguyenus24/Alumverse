@@ -19,8 +19,6 @@ import '../../data/models/mentor_profile.dart';
 import '../../data/repositories/mentorship_repository.dart';
 import '../providers/mentorship_providers.dart';
 
-const int _kMinVerificationLevel = 2;
-
 /// How a section-list field is rendered/validated. Defaults to plain text.
 enum _FieldKind { text, year, monthYearRange }
 
@@ -578,31 +576,44 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
 
   @override
   Widget build(BuildContext context) {
-    final verificationAsync = ref.watch(myVerificationLevelProvider);
+    final accessAsync = ref.watch(mentorshipAccessProvider);
     final existingProfileAsync = ref.watch(myMentorProfileProvider);
     final accountProfileAsync = ref.watch(myProfileProvider);
     final menteeProfileAsync = ref.watch(myMenteeProfileProvider);
 
-    if (verificationAsync.isLoading || existingProfileAsync.isLoading) {
+    if (accessAsync.isLoading || existingProfileAsync.isLoading) {
       return Scaffold(
         appBar: AppBar(title: Text('mentorship.become_mentor'.tr())),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
 
-    final verificationLevel = verificationAsync.valueOrNull ?? 0;
-    if (verificationLevel < _kMinVerificationLevel) {
+    final access = accessAsync.valueOrNull;
+    if (access == null || !access.canParticipateInMentorship) {
+      final verificationLevel = access?.verificationLevel ?? 0;
+      final isManager = access?.isOrgManager ?? false;
       final needsEmail = verificationLevel < 1;
       return _MentorSignupStatusScaffold(
-        severityColor: AppColors.warning,
-        icon: Icons.verified_user_outlined,
-        title: 'mentorship.mentor_signup_not_eligible_title'.tr(),
+        severityColor: isManager ? AppColors.info : AppColors.warning,
+        icon:
+            isManager
+                ? Icons.admin_panel_settings_outlined
+                : Icons.verified_user_outlined,
+        title:
+            isManager
+                ? 'mentorship.manager_signup_locked_title'.tr()
+                : 'mentorship.mentor_signup_not_eligible_title'.tr(),
         message:
-            needsEmail
-                ? 'mentorship.mentee_signup_not_eligible_email'.tr()
-                : 'mentorship.mentee_signup_not_eligible_academic'.tr(),
-        actionLabel: 'mentorship.verify_account'.tr(),
-        onAction: () => context.push(RouteNames.organizationRegistration),
+            isManager
+                ? 'mentorship.manager_signup_locked_desc'.tr()
+                : needsEmail
+                    ? 'mentorship.mentee_signup_not_eligible_email'.tr()
+                    : 'mentorship.mentee_signup_not_eligible_academic'.tr(),
+        actionLabel: isManager ? null : 'mentorship.verify_account'.tr(),
+        onAction:
+            isManager
+                ? null
+                : () => context.push(RouteNames.organizationRegistration),
       );
     }
 

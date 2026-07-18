@@ -25,6 +25,11 @@ public class NewsResponse {
     private String url;
     private Boolean isHidden;
     private LocalDateTime publishedAt;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private String submitterName;
+    private String submitterRole;
+    private Boolean userSubmitted;
 
     public static NewsResponse from(News news) {
         return NewsResponse.builder()
@@ -39,6 +44,8 @@ public class NewsResponse {
                 .url(news.getUrl())
                 .isHidden(news.getIsHidden())
                 .publishedAt(news.getPublishedAt())
+                .createdAt(news.getCreatedAt())
+                .updatedAt(news.getUpdatedAt())
                 .build();
     }
 }

@@ -20,13 +20,13 @@ class SettingsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settingsAsync = ref.watch(notificationSettingsProvider);
-    final isStaff = ref.watch(isStaffProvider);
+    final canCheckIn = ref.watch(canEventCheckInProvider).valueOrNull ?? false;
 
     return Scaffold(
       appBar: AppBar(title: Text('common.settings'.tr())),
       body: ListView(
         children: [
-          if (isStaff) ...[
+          if (canCheckIn) ...[
             _GroupHeader('settings.admin_tools'.tr()),
             ListTile(
               leading: const Icon(Icons.qr_code_scanner),

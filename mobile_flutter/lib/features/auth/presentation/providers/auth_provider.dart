@@ -28,18 +28,6 @@ final authStateProvider = AsyncNotifierProvider<AuthNotifier, AuthState>(
   AuthNotifier.new,
 );
 
-/// Roles allowed to run event check-in (mirrors the web admin gate, which
-/// admits ADMIN/MODERATOR; STAFF is included for on-site organizers).
-const _checkInRoles = {'ADMIN', 'MODERATOR', 'STAFF'};
-
-/// True when the signed-in user may access admin-only tools (event check-in).
-/// Derived from the JWT `role` claim exposed on [AuthUser].
-final isStaffProvider = Provider<bool>((ref) {
-  final role =
-      ref.watch(authStateProvider).valueOrNull?.user?.role?.toUpperCase();
-  return role != null && _checkInRoles.contains(role);
-});
-
 class AuthNotifier extends AsyncNotifier<AuthState> {
   AuthRepository get _repo => ref.read(authRepositoryProvider);
 
@@ -111,6 +99,36 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
         mustChangePassword: session.mustChangePassword,
       );
     });
+  }
+
+  Future<void> switchOrganization(int organizationId) async {
+    final current = state.valueOrNull;
+    if (current?.user == null) return;
+
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      final session = await _repo.switchOrganization(organizationId);
+      return AuthState(
+        user: session.user,
+        verificationLevel: session.verificationLevel,
+        mustChangePassword: session.mustChangePassword,
+      );
+    });
+  }
+
+  Future<void> markVerificationSubmitted() async {
+    final current = state.valueOrNull;
+    if (current?.user == null) return;
+    final nextLevel =
+        (current!.verificationLevel ?? 0) < 1 ? 1 : current.verificationLevel!;
+    await _repo.persistVerificationLevel(nextLevel);
+    state = AsyncData(
+      AuthState(
+        user: current.user,
+        verificationLevel: nextLevel,
+        mustChangePassword: current.mustChangePassword,
+      ),
+    );
   }
 
   /// Creates the account (step 1 of signup). Does NOT sign the user in — the

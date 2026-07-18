@@ -31,9 +31,18 @@ public interface ChatConversationRequestRepository extends R2dbcRepository<ChatC
     String SEARCH_WHERE = """
             WHERE ccr.target_member_id = :currentUserId
               AND ccr.status <> 'ACCEPTED'
+              AND u.status = 'ACTIVE'
               AND (:fullName IS NULL OR LOWER(u.full_name) LIKE LOWER(:fullName))
               AND (:status IS NULL OR ccr.status = :status)
             """;
+
+    @Query("""
+            SELECT COUNT(1) > 0
+            FROM users
+            WHERE id = :userId
+              AND status = 'ACTIVE'
+            """)
+    Mono<Boolean> existsActiveUserById(Long userId);
 
     @Query("""
             SELECT ccr.id,

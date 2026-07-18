@@ -9,7 +9,6 @@ import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/empty_view.dart';
 import '../../../../shared/widgets/skeleton.dart';
-import '../../../user/presentation/providers/user_providers.dart';
 import '../../data/models/skill.dart';
 import '../providers/mentorship_providers.dart';
 import '../widgets/mentor_card.dart';
@@ -45,19 +44,23 @@ class _MentorshipPageState extends ConsumerState<MentorshipPage> {
     final query = ref.watch(mentorQueryProvider);
     final mentorProfileAsync = ref.watch(myMentorProfileProvider);
     final menteeProfileAsync = ref.watch(myMenteeProfileProvider);
-    final verificationAsync = ref.watch(myVerificationLevelProvider);
+    final accessAsync = ref.watch(mentorshipAccessProvider);
+    final access = accessAsync.valueOrNull;
     final myMentor = mentorProfileAsync.valueOrNull;
     final mentorStatus = mentorProfileAsync.maybeWhen(
       data: (profile) => (profile?.status ?? '').toUpperCase(),
       orElse: () => '',
     );
-    final verificationLevel = verificationAsync.valueOrNull ?? 0;
-    final canUseMentorship = verificationLevel >= 2;
+    final verificationLevel = access?.verificationLevel ?? 0;
+    final canUseMentorship = access?.canUseMentorship ?? false;
+    final canParticipate = access?.canParticipateInMentorship ?? false;
+    final isOrgManager = access?.isOrgManager ?? false;
     final isMentorPending = mentorStatus == 'PENDING';
     final isAccessLoading =
-        verificationAsync.isLoading || mentorProfileAsync.isLoading;
+        accessAsync.isLoading ||
+        (canParticipate && mentorProfileAsync.isLoading);
     final hasActiveMentorship =
-        canUseMentorship &&
+        canParticipate &&
         !isMentorPending &&
         (mentorProfileAsync.maybeWhen(
               data:
@@ -110,12 +113,12 @@ class _MentorshipPageState extends ConsumerState<MentorshipPage> {
             const SizedBox(height: 12),
             if (isAccessLoading)
               const SizedBox.shrink()
-            else if (!canUseMentorship)
+            else if (!canUseMentorship && !isOrgManager)
               _VerifyAcademicBanner(verificationLevel: verificationLevel)
-            else ...[
+            else if (canParticipate) ...[
               const _BecomeMentorBanner(),
             ],
-            if (canUseMentorship && !isMentorPending && !isAccessLoading) ...[
+            if (canParticipate && !isMentorPending && !isAccessLoading) ...[
               const SizedBox(height: 12),
               const _BecomeMenteeBanner(),
             ],
@@ -177,13 +180,15 @@ class _MentorshipPageState extends ConsumerState<MentorshipPage> {
                                       '${RouteNames.mentorship}/mentors/${m.memberId}',
                                     ),
                                 onBook:
-                                    (!isMentorPending &&
+                                    (!isOrgManager &&
+                                            !isMentorPending &&
                                             hasActiveMentorship &&
                                             myMentor?.memberId != m.memberId)
                                         ? () => context.push(
                                           '${RouteNames.mentorship}/mentors/${m.memberId}/book',
                                         )
                                         : null,
+                                showBook: !isOrgManager,
                               ),
                             ),
                           )

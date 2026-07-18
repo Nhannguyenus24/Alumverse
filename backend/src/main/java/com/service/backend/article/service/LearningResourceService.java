@@ -8,11 +8,13 @@ import com.service.backend.article.dto.LearningResourceResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.enums.LearningResourceType;
+import com.service.backend.shared.enums.Status;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.shared.utils.SecurityUtils;
 import com.service.backend.shared.utils.CacheUtils;
 import com.service.backend.shared.service.ImageService;
+import com.service.backend.user.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -27,14 +29,18 @@ public class LearningResourceService {
     private final LearningResourceR2dbcRepository learningResourceRepository;
     private final CacheUtils cacheUtils;
     private final ImageService imageService;
+    private final NotificationService notificationService;
 
     public Mono<LearningResourceResponse> create(CreateLearningResourceRequest request) {
-        return Mono.zip(SecurityUtils.getCurrentUserId(), SecurityUtils.getCurrentOrganizationId())
+        return Mono.zip(SecurityUtils.getCurrentUserId(), SecurityUtils.getCurrentUserRole())
                 .flatMap(ctx -> {
                     Long userId = ctx.getT1();
-                    Integer orgId = ctx.getT2();
+                    String role = ctx.getT2();
+                    boolean publishImmediately = "ADMIN".equalsIgnoreCase(role) || "STAFF".equalsIgnoreCase(role);
                     // A base64 thumbnail is converted to WebP and stored; otherwise fall back to the URL.
-                    return imageService.uploadBase64IfPresent(request.getThumbnailBase64())
+                    return SecurityUtils.resolveContentOrganizationId(request.getOrganizationId())
+                            .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.BAD_REQUEST, "Organization ID is required to create learning resource")))
+                            .flatMap(orgId -> imageService.uploadBase64IfPresent(request.getThumbnailBase64())
                             .defaultIfEmpty("")
                             .flatMap(thumbnailUrl -> {
                                 LearningResource resource = LearningResource.builder()
@@ -45,13 +51,24 @@ public class LearningResourceService {
                                         .linkUrl(request.getLinkUrl())
                                         .description(request.getDescription())
                                         .thumbnailUrl(thumbnailUrl.isEmpty() ? null : thumbnailUrl)
+                                        .status(publishImmediately ? Status.APPROVED : Status.PENDING)
                                         .createdAt(LocalDateTime.now())
                                         .build();
 
                                 return learningResourceRepository.save(resource)
                                         .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
+                                        .doOnNext(saved -> {
+                                            if (!publishImmediately) {
+                                                notificationService.createNotificationAsync(
+                                                        saved.getUploaderMemberId(),
+                                                        "Cơ hội học tập đã được gửi",
+                                                        "Bài viết \"" + saved.getTitle() + "\" đã được gửi. Admin sẽ xem xét trước khi hiển thị công khai.",
+                                                        "/development/academics"
+                                                );
+                                            }
+                                        })
                                         .map(LearningResourceResponse::from);
-                            });
+                            }));
                 });
     }
 
@@ -90,12 +107,12 @@ public class LearningResourceService {
         int offset = page * limit;
         return SecurityUtils.getCurrentOrganizationId()
                 .flatMap(orgId -> PaginationHelper.paginate(
-                        learningResourceRepository.findByOrganizationIdWithPagination(orgId, limit, offset).map(LearningResourceResponse::from),
-                        learningResourceRepository.countByOrganizationId(orgId),
+                        learningResourceRepository.findApprovedByOrganizationId(orgId, limit, offset).map(LearningResourceResponse::from),
+                        learningResourceRepository.countApprovedByOrganizationId(orgId),
                         page, limit))
                 .switchIfEmpty(Mono.defer(() -> PaginationHelper.paginate(
-                        learningResourceRepository.findAllWithPagination(limit, offset).map(LearningResourceResponse::from),
-                        learningResourceRepository.count(),
+                        learningResourceRepository.findAllApprovedWithPagination(limit, offset).map(LearningResourceResponse::from),
+                        learningResourceRepository.countAllApproved(),
                         page, limit)));
     }
 
@@ -109,11 +126,11 @@ public class LearningResourceService {
                         page, limit))
                 .switchIfEmpty(Mono.defer(() -> PaginationHelper.paginate(
                         learningResourceRepository.findAll()
-                                .filter(r -> r.getType() == resourceType)
+                                .filter(r -> r.getType() == resourceType && Status.APPROVED.equals(r.getStatus()))
                                 .skip(offset)
                                 .take(limit)
                                 .map(LearningResourceResponse::from),
-                        learningResourceRepository.count(),
+                        learningResourceRepository.countAllApproved(),
                         page, limit)));
     }
 
@@ -125,8 +142,8 @@ public class LearningResourceService {
                         learningResourceRepository.countSearchResources(orgId, keyword),
                         page, limit))
                 .switchIfEmpty(Mono.defer(() -> PaginationHelper.paginate(
-                        learningResourceRepository.searchAllByTitleWithPagination(keyword, limit, offset).map(LearningResourceResponse::from),
-                        learningResourceRepository.countAllSearchByTitle(keyword),
+                        learningResourceRepository.searchAllApprovedByTitleWithPagination(keyword, limit, offset).map(LearningResourceResponse::from),
+                        learningResourceRepository.countAllApprovedSearchByTitle(keyword),
                         page, limit)));
     }
 }

@@ -241,6 +241,8 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode, textCo
           <MenuItem
             component={Link}
             to="/admin"
+            target="_blank"
+            rel="noopener noreferrer"
             onClick={handleClose}
           >
             <AdminPanelSettingsOutlinedIcon fontSize="small" />
@@ -252,6 +254,8 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode, textCo
           <MenuItem
             component={Link}
             to={toOrgPath('/admin')}
+            target="_blank"
+            rel="noopener noreferrer"
             onClick={handleClose}
             sx={{
               color: "primary.main",

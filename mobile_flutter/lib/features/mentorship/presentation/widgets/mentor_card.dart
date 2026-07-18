@@ -14,11 +14,13 @@ class MentorCard extends StatelessWidget {
     required this.mentor,
     required this.onViewProfile,
     this.onBook,
+    this.showBook = true,
   });
 
   final MentorProfile mentor;
   final VoidCallback onViewProfile;
   final VoidCallback? onBook;
+  final bool showBook;
 
   @override
   Widget build(BuildContext context) {
@@ -129,6 +131,7 @@ class MentorCard extends StatelessWidget {
           Row(
             children: [
               Expanded(
+                flex: showBook ? 1 : 2,
                 child: OutlinedButton(
                   onPressed: onViewProfile,
                   child: Text(
@@ -138,17 +141,19 @@ class MentorCard extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: onBook,
-                  child: Text(
-                    'mentorship.book_appointment'.tr(),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+              if (showBook) ...[
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: onBook,
+                    child: Text(
+                      'mentorship.book_appointment'.tr(),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ),
-              ),
+              ],
             ],
           ),
         ],

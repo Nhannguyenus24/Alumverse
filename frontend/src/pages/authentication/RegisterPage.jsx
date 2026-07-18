@@ -1,7 +1,7 @@
 import { useState, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Box, Typography, Button, Popper, Paper } from '@mui/material';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from 'react-router';
 import { useSnackbar } from 'notistack';
@@ -10,7 +10,6 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import Page from '../../components/Page';
 import { ScrollRevealFields } from '../../components/animations/ScrollReveal';
 import Input from '../../components/Input';
-import Dropdown from '../../components/Dropdown';
 import { getRegisterSchema } from '../../utils/regexUtils';
 import { useAuth } from '../../hooks/useAuth';
 import { useOrgNavigate, useOrgPath } from '../../hooks/useOrgNavigate';
@@ -29,12 +28,6 @@ const PasswordRequirementItem = ({ label, met }) => (
     </Typography>
   </Box>
 );
-
-const CURRENT_YEAR = new Date().getFullYear();
-const YEAR_OPTIONS = Array.from({ length: 20 }, (_, i) => ({
-  value: String(CURRENT_YEAR - i),
-  label: String(CURRENT_YEAR - i),
-}));
 
 const RegisterPage = () => {
   const { t } = useTranslation(['auth', 'common']);
@@ -61,15 +54,12 @@ const RegisterPage = () => {
 
   const {
     register,
-    control,
     handleSubmit,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(registerSchema),
     defaultValues: {
       fullName: '',
-      studentId: '',
-      enrollmentYear: '',
       email: '',
       password: '',
       confirmPassword: '',
@@ -85,8 +75,6 @@ const RegisterPage = () => {
     const result = await registerUser({
       email: data.email,
       fullName: data.fullName,
-      studentId: data.studentId,
-      enrollmentYear: data.enrollmentYear,
       password: data.password,
       confirmPassword: data.confirmPassword,
       organizationId,
@@ -115,6 +103,10 @@ const RegisterPage = () => {
           flexDirection: 'column',
           alignItems: 'stretch',
           gap: { xs: 1.5, sm: 2 },
+          mt: { xs: 1, sm: 2, md: 0 },
+          '@media (max-height: 760px)': {
+            mt: { xs: 0, md: 2 },
+          },
         }}
       >
         <ScrollRevealFields>
@@ -135,34 +127,6 @@ const RegisterPage = () => {
           error={!!errors.fullName}
           helperText={errors.fullName?.message}
           {...register('fullName')}
-        />
-        <Input
-          label={t('auth:student_id_label')}
-          placeholder={t('auth:student_id_placeholder')}
-          type="text"
-          inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 50 }}
-          error={!!errors.studentId}
-          helperText={errors.studentId?.message}
-          {...register('studentId')}
-          onInput={(e) => {
-            // MSSV chỉ gồm chữ số.
-            e.target.value = e.target.value.replace(/\D/g, '');
-          }}
-        />
-        <Controller
-          name="enrollmentYear"
-          control={control}
-          render={({ field }) => (
-            <Dropdown
-              label={t('auth:enrollment_year_label')}
-              placeholder={t('auth:enrollment_year_placeholder')}
-              value={field.value}
-              onChange={(e) => field.onChange(e.target.value)}
-              options={YEAR_OPTIONS}
-              error={!!errors.enrollmentYear}
-              helperText={errors.enrollmentYear?.message}
-            />
-          )}
         />
         <Input
           label="Email"

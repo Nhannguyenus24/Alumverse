@@ -11,7 +11,11 @@ const AuthLayout = () => {
   const theme = useTheme();
   const { organization } = useOrganizationStore();
   const isLoginPage = /\/auth\/login\/?$/.test(location.pathname);
-  const isCompactAuthPage = isLoginPage || /\/auth\/change-password\/?$/.test(location.pathname) || /\/admin\/change-password\/?$/.test(location.pathname);
+  const isCompactAuthPage = isLoginPage
+  || /\/auth\/register\/?$/.test(location.pathname)
+  || /\/auth\/signup-code\/?$/.test(location.pathname)
+  || /\/auth\/change-password\/?$/.test(location.pathname)
+  || /\/admin\/change-password\/?$/.test(location.pathname);
   const defaultLogoSrc = theme.palette.mode === 'dark'
     ? '/alumverse_logo/Logo_White_Full.svg'
     : '/alumverse_logo/Logo_Main_Full.svg';
