@@ -18,6 +18,7 @@ import com.service.backend.admin.dto.EmailTemplatePreviewResponse;
 import com.service.backend.admin.dto.EmailTemplateResponse;
 import com.service.backend.admin.dto.EmailTemplateVariable;
 import com.service.backend.admin.dto.PreviewEmailTemplateRegionsRequest;
+import com.service.backend.admin.dto.SendTestEmailRequest;
 import com.service.backend.admin.dto.UpdateEmailTemplateRegionsRequest;
 import com.service.backend.admin.dto.UpdateEmailTemplateRequest;
 import com.service.backend.admin.support.EmailTemplateRegions;
@@ -25,6 +26,7 @@ import com.service.backend.shared.dao.EmailTemplateR2dbcRepository;
 import com.service.backend.shared.entity.EmailTemplate;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
+import com.service.backend.shared.service.EmailService;
 import com.service.backend.shared.utils.JsonUtils;
 
 import reactor.core.publisher.Mono;
@@ -37,10 +39,14 @@ public class AdminEmailTemplateService {
 
     private final EmailTemplateR2dbcRepository repository;
     private final TemplateEngine templateEngine;
+    private final EmailService emailService;
 
-    public AdminEmailTemplateService(EmailTemplateR2dbcRepository repository, @Qualifier("emailTemplateEngine") TemplateEngine templateEngine) {
+    public AdminEmailTemplateService(EmailTemplateR2dbcRepository repository,
+                                     @Qualifier("emailTemplateEngine") TemplateEngine templateEngine,
+                                     EmailService emailService) {
         this.repository = repository;
         this.templateEngine = templateEngine;
+        this.emailService = emailService;
     }
 
     public Mono<List<EmailTemplateResponse>> getAll() {
@@ -139,6 +145,32 @@ public class AdminEmailTemplateService {
                     String content = EmailTemplateRegions.apply(tpl.getContent(), regions);
                     return renderPreview(content, request.getSubject(), request.getSampleData());
                 });
+    }
+
+    public Mono<Void> sendTestEmail(SendTestEmailRequest request) {
+        Map<String, Object> sampleData = request.getSampleData() != null ? request.getSampleData() : Map.of();
+        String subject = StringUtils.hasText(request.getSubject())
+                ? request.getSubject()
+                : "[Email thử] Xem trước template";
+        return Mono.fromCallable(() -> {
+                    try {
+                        templateEngine.process(request.getContent(), buildContext(sampleData));
+                        return true;
+                    } catch (RuntimeException e) {
+                        throw new ApplicationException(ErrorCode.BAD_REQUEST,
+                                "Lỗi cú pháp template: " + rootMessage(e));
+                    }
+                })
+                .subscribeOn(Schedulers.boundedElastic())
+                .flatMap(ok -> emailService.sendRawHtmlEmail(
+                        request.getRecipientEmail(), subject, request.getContent(), sampleData))
+                .doOnSuccess(v -> log.info("Đã gửi email thử tới {}", request.getRecipientEmail()));
+    }
+
+    private Context buildContext(Map<String, Object> data) {
+        Context context = new Context();
+        context.setVariables(data);
+        return context;
     }
 
     private Mono<EmailTemplatePreviewResponse> renderPreview(String content, String subjectInput, Map<String, Object> data) {

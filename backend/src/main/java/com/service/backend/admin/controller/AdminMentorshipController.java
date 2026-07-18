@@ -1,9 +1,12 @@
 package com.service.backend.admin.controller;
 
+import com.service.backend.admin.dto.AdminMenteeDTO;
 import com.service.backend.admin.dto.AdminMentorProfileDTO;
+import com.service.backend.admin.dto.AdminMentorshipReportDTO;
 import com.service.backend.admin.dto.AdminMentorshipSessionDTO;
 import com.service.backend.admin.dto.MentorApplicationReviewRequest;
 import com.service.backend.admin.dto.MentorshipStatisticsDTO;
+import com.service.backend.admin.dto.ResolveReportRequest;
 import com.service.backend.admin.service.AdminMentorshipService;
 import com.service.backend.shared.dto.ApiResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
@@ -13,7 +16,6 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -90,12 +92,49 @@ public class AdminMentorshipController {
                 .map(s -> ResponseEntity.ok(new ApiResponse<>("Session status updated", s)));
     }
 
-    @Operation(summary = "Delete a session (admin override)")
+    @Operation(summary = "Delete a session (admin override) — ADMIN only")
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/sessions/{sessionId}")
     public Mono<ResponseEntity<ApiResponse<Void>>> deleteSession(
             @PathVariable @Min(value = 1, message = "Session ID must be greater than 0") Integer sessionId) {
         return adminMentorshipService.deleteSession(sessionId)
                 .thenReturn(ResponseEntity.ok(new ApiResponse<Void>("Session deleted successfully", null)));
+    }
+
+    @Operation(summary = "List mentees (people who booked at least one session)")
+    @GetMapping("/mentees")
+    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<AdminMenteeDTO>>>> getMentees(
+            @RequestParam(required = false) Integer organizationId,
+            @Parameter(example = "0")
+            @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page must be at least 0") int page,
+            @Parameter(example = "10")
+            @RequestParam(defaultValue = "10") @Min(value = 1, message = "Size must be at least 1") int size) {
+        return SecurityUtils.resolveOrganizationId(organizationId)
+                .flatMap(resolvedOrgId -> adminMentorshipService.getMentees(resolvedOrgId, page, size))
+                .switchIfEmpty(adminMentorshipService.getMentees(null, page, size))
+                .map(p -> ResponseEntity.ok(new ApiResponse<>("Retrieved mentees", p)));
+    }
+
+    @Operation(summary = "List mentorship reports, optionally filtered by status")
+    @GetMapping("/reports")
+    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<AdminMentorshipReportDTO>>>> getReports(
+            @RequestParam(required = false) String status,
+            @Parameter(example = "0")
+            @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page must be at least 0") int page,
+            @Parameter(example = "10")
+            @RequestParam(defaultValue = "10") @Min(value = 1, message = "Size must be at least 1") int size) {
+        return adminMentorshipService.getReports(status, page, size)
+                .map(p -> ResponseEntity.ok(new ApiResponse<>("Retrieved mentorship reports", p)));
+    }
+
+    @Operation(summary = "Resolve a report: close it and optionally sanction the reported member — ADMIN only")
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/reports/{reportId}/resolve")
+    public Mono<ResponseEntity<ApiResponse<AdminMentorshipReportDTO>>> resolveReport(
+            @PathVariable @Min(value = 1, message = "Report ID must be greater than 0") Integer reportId,
+            @Valid @RequestBody ResolveReportRequest request) {
+        return adminMentorshipService.resolveReport(reportId, request.getAction(), request.getResolutionNote())
+                .map(r -> ResponseEntity.ok(new ApiResponse<>("Report resolved", r)));
     }
 
     @Operation(summary = "List all mentor profiles, optionally filtered by organization")

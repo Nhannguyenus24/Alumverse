@@ -312,6 +312,30 @@ const adminMentorshipApi = {
 		return apiClient.post(`${BASE_ADMIN_MENTORSHIP}/mentors/${memberId}/approve`);
 	},
 
+	rejectMentor(memberId, reason) {
+		return apiClient.post(`${BASE_ADMIN_MENTORSHIP}/mentors/${memberId}/reject`, { reason });
+	},
+
+	requestMentorUpdate(memberId, reason) {
+		return apiClient.post(`${BASE_ADMIN_MENTORSHIP}/mentors/${memberId}/request-update`, { reason });
+	},
+
+	getMentees(page = 0, size = 10, organizationId = null) {
+		const params = { page, size };
+		if (organizationId) params.organizationId = organizationId;
+		return apiClient.get(`${BASE_ADMIN_MENTORSHIP}/mentees`, { params });
+	},
+
+	getMentorReports(status = null, page = 0, size = 10) {
+		const params = { page, size };
+		if (status && status !== 'ALL') params.status = status;
+		return apiClient.get(`${BASE_ADMIN_MENTORSHIP}/reports`, { params });
+	},
+
+	resolveMentorReport(reportId, action, resolutionNote) {
+		return apiClient.post(`${BASE_ADMIN_MENTORSHIP}/reports/${reportId}/resolve`, { action, resolutionNote });
+	},
+
 	getMentorshipStatistics() {
 		return apiClient.get(`${BASE_ADMIN_MENTORSHIP}/statistics`);
 	},
@@ -320,11 +344,17 @@ const adminMentorshipApi = {
 export const {
 	getAllSessions,
 	getSessionsByStatus,
+	getSessionById: getAdminSessionById,
 	updateSessionStatus,
 	deleteSession,
 	getAllMentorProfiles,
 	getMentorProfilesByStatus,
 	approveMentor,
+	rejectMentor,
+	requestMentorUpdate,
+	getMentees,
+	getMentorReports,
+	resolveMentorReport,
 	getMentorshipStatistics,
 } = adminMentorshipApi;
 

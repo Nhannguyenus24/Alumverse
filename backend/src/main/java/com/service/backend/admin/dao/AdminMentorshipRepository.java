@@ -129,4 +129,31 @@ public interface AdminMentorshipRepository extends R2dbcRepository<MentorshipSes
         FROM mentor_profiles
     """)
     Mono<com.service.backend.admin.dto.AdminMentorProfileAggregatedStatsProjection> getAggregatedMentorProfileStats();
+
+    @Query("""
+        SELECT u.id AS member_id, u.full_name, u.email, u.status,
+               COUNT(ms.id) AS total_sessions,
+               SUM(CASE WHEN ms.status = 'COMPLETED' THEN 1 ELSE 0 END) AS completed_sessions,
+               MAX(ms.created_at) AS last_session_at
+        FROM mentorship_sessions ms
+        JOIN users u ON u.id = ms.mentee_member_id
+        WHERE (:organizationId IS NULL OR EXISTS (
+                   SELECT 1 FROM organization_members om
+                   WHERE om.user_id = u.id AND om.organization_id = :organizationId))
+        GROUP BY u.id, u.full_name, u.email, u.status
+        ORDER BY MAX(ms.created_at) DESC
+        LIMIT :limit OFFSET :offset
+    """)
+    Flux<com.service.backend.admin.dto.AdminMenteeProjection> findMentees(@Param("organizationId") Integer organizationId,
+                                                                          @Param("limit") int limit,                                                                   @Param("offset") int offset);
+
+    @Query("""
+        SELECT COUNT(DISTINCT ms.mentee_member_id)
+        FROM mentorship_sessions ms
+        JOIN users u ON u.id = ms.mentee_member_id
+        WHERE (:organizationId IS NULL OR EXISTS (
+                   SELECT 1 FROM organization_members om
+                   WHERE om.user_id = u.id AND om.organization_id = :organizationId))
+    """)
+    Mono<Long> countMentees(@Param("organizationId") Integer organizationId);
 }

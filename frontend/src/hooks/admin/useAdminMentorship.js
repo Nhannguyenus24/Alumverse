@@ -25,9 +25,21 @@ const useAdminMentorship = (organizationId = null) => {
 
   const [mentorPage, setMentorPage] = useState(0);
   const [mentorRowsPerPage, setMentorRowsPerPage] = useState(10);
-  const [approvalFilter, setApprovalFilter] = useState('ALL');
+  // Trang mở ở tab "Cần duyệt" nên mặc định lọc PENDING; tab "DS Mentor" sẽ đổi sang ALL.
+  const [approvalFilter, setApprovalFilter] = useState('PENDING');
   const [mentorPaged, setMentorPaged] = useState(fallbackPage);
   const [mentorLoading, setMentorLoading] = useState(true);
+
+  const [menteePage, setMenteePage] = useState(0);
+  const [menteeRowsPerPage, setMenteeRowsPerPage] = useState(10);
+  const [menteePaged, setMenteePaged] = useState(fallbackPage);
+  const [menteeLoading, setMenteeLoading] = useState(true);
+
+  const [reportPage, setReportPage] = useState(0);
+  const [reportRowsPerPage, setReportRowsPerPage] = useState(10);
+  const [reportStatusFilter, setReportStatusFilter] = useState('PENDING');
+  const [reportPaged, setReportPaged] = useState(fallbackPage);
+  const [reportLoading, setReportLoading] = useState(true);
 
   const [statistics, setStatistics] = useState(null);
 
@@ -60,6 +72,25 @@ const useAdminMentorship = (organizationId = null) => {
 
   useEffect(() => { loadMentors(); }, [loadMentors]);
 
+  const loadMentees = useCallback(async () => {
+    setMenteeLoading(true);
+    const orgId = organizationId || null;
+    const data = await safeFetch(() => api.getMentees(menteePage, menteeRowsPerPage, orgId), fallbackPage);
+    setMenteePaged(data || fallbackPage);
+    setMenteeLoading(false);
+  }, [menteePage, menteeRowsPerPage, organizationId]);
+
+  useEffect(() => { loadMentees(); }, [loadMentees]);
+
+  const loadReports = useCallback(async () => {
+    setReportLoading(true);
+    const data = await safeFetch(() => api.getMentorReports(reportStatusFilter, reportPage, reportRowsPerPage), fallbackPage);
+    setReportPaged(data || fallbackPage);
+    setReportLoading(false);
+  }, [reportStatusFilter, reportPage, reportRowsPerPage]);
+
+  useEffect(() => { loadReports(); }, [loadReports]);
+
   const loadStatistics = useCallback(async () => {
     const data = await safeFetch(() => api.getMentorshipStatistics(), null);
     setStatistics(data);
@@ -91,6 +122,30 @@ const useAdminMentorship = (organizationId = null) => {
     } catch { return false; }
   }, [loadMentors, loadStatistics]);
 
+  const rejectMentor = useCallback(async (memberId, reason) => {
+    try {
+      await api.rejectMentor(memberId, reason);
+      await Promise.all([loadMentors(), loadStatistics()]);
+      return true;
+    } catch { return false; }
+  }, [loadMentors, loadStatistics]);
+
+  const requestMentorUpdate = useCallback(async (memberId, reason) => {
+    try {
+      await api.requestMentorUpdate(memberId, reason);
+      await Promise.all([loadMentors(), loadStatistics()]);
+      return true;
+    } catch { return false; }
+  }, [loadMentors, loadStatistics]);
+
+  const resolveReport = useCallback(async (reportId, action, resolutionNote) => {
+    try {
+      await api.resolveMentorReport(reportId, action, resolutionNote);
+      await Promise.all([loadReports(), loadMentees()]);
+      return true;
+    } catch { return false; }
+  }, [loadReports, loadMentees]);
+
   return {
     sessions: sessionPaged?.items ?? [],
     sessionTotal: sessionPaged?.totalItem ?? 0,
@@ -108,10 +163,28 @@ const useAdminMentorship = (organizationId = null) => {
     mentorRowsPerPage, setMentorRowsPerPage,
     approvalFilter, setApprovalFilter,
     approveMentor,
+    rejectMentor,
+    requestMentorUpdate,
+
+    mentees: menteePaged?.items ?? [],
+    menteeTotal: menteePaged?.totalItem ?? 0,
+    menteeLoading,
+    menteePage, setMenteePage,
+    menteeRowsPerPage, setMenteeRowsPerPage,
+
+    reports: reportPaged?.items ?? [],
+    reportTotal: reportPaged?.totalItem ?? 0,
+    reportLoading,
+    reportPage, setReportPage,
+    reportRowsPerPage, setReportRowsPerPage,
+    reportStatusFilter, setReportStatusFilter,
+    resolveReport,
 
     statistics,
     refreshSessions: loadSessions,
     refreshMentors: loadMentors,
+    refreshMentees: loadMentees,
+    refreshReports: loadReports,
   };
 };
 

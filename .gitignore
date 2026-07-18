@@ -64,6 +64,9 @@ frontend/*.sw?
 *.iml
 .DS_Store
 
+# Claude Code local workspace (agent scratch, worktrees, settings) — never commit
+.claude/
+
 # Firebase admin private key — never commit. (google-services.json is
 # intentionally tracked: it only holds the client API key that ships in the app
 # and the CI APK build needs it.)

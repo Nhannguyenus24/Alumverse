@@ -6,6 +6,8 @@ import com.service.backend.shared.dto.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -84,6 +86,24 @@ public class GlobalExceptionHandler {
                 ResponseEntity
                         .status(404)
                         .body(new ApiResponse<>("Not found", ex.getMessage()))
+        );
+    }
+
+    /**
+     * Quyền bị từ chối: {@code @PreAuthorize} ném {@link AuthorizationDeniedException} (Spring
+     * Security 6), còn tầng web ném {@link AccessDeniedException}. Trả 403 thay vì để rơi xuống
+     * handler chung (500). VD: STAFF gọi endpoint chỉ dành cho ADMIN.
+     */
+    @ExceptionHandler({AuthorizationDeniedException.class, AccessDeniedException.class})
+    public Mono<ResponseEntity<?>> handleAccessDenied(RuntimeException ex) {
+        log.warn("Access denied: {}", ex.getMessage());
+
+        meterRegistry.counter("api.errors.count", "error_code", "FORBIDDEN").increment();
+
+        return Mono.just(
+                ResponseEntity
+                        .status(403)
+                        .body(new ApiResponse<>("Bạn không có quyền thực hiện thao tác này", null))
         );
     }
 

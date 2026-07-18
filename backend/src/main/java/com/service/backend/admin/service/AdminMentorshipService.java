@@ -2,15 +2,19 @@ package com.service.backend.admin.service;
 
 import com.service.backend.admin.dao.AdminMentorshipRepository;
 import com.service.backend.admin.dao.AdminUserRepository;
+import com.service.backend.admin.dto.AdminMenteeDTO;
 import com.service.backend.admin.dto.AdminMentorProfileDTO;
+import com.service.backend.admin.dto.AdminMentorshipReportDTO;
 import com.service.backend.admin.dto.AdminMentorshipSessionDTO;
 import com.service.backend.admin.dto.MentorshipStatisticsDTO;
 import com.service.backend.shared.entity.User;
 import com.service.backend.mentorship.dao.MentorAvailabilityR2dbcRepository;
 import com.service.backend.mentorship.dao.MentorProfileR2dbcRepository;
+import com.service.backend.mentorship.dao.MentorshipReportR2dbcRepository;
 import com.service.backend.mentorship.dao.MentorshipSessionR2dbcRepository;
 import com.service.backend.shared.entity.MentorAvailability;
 import com.service.backend.shared.entity.MentorProfile;
+import com.service.backend.shared.entity.MentorshipReport;
 import com.service.backend.shared.enums.Status;
 import com.service.backend.shared.entity.MentorshipSession;
 import com.service.backend.shared.enums.ErrorCode;
@@ -24,6 +28,7 @@ import com.service.backend.user.service.NotificationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -43,6 +48,7 @@ public class AdminMentorshipService {
     private final MentorshipSessionR2dbcRepository sessionRepo;
     private final MentorProfileR2dbcRepository mentorProfileRepo;
     private final MentorAvailabilityR2dbcRepository availabilityRepo;
+    private final MentorshipReportR2dbcRepository reportRepo;
     private final AdminUserRepository adminUserRepository;
     private final EmailService emailService;
     private final NotificationService notificationService;
@@ -51,6 +57,7 @@ public class AdminMentorshipService {
                                   MentorshipSessionR2dbcRepository sessionRepo,
                                   MentorProfileR2dbcRepository mentorProfileRepo,
                                   MentorAvailabilityR2dbcRepository availabilityRepo,
+                                  MentorshipReportR2dbcRepository reportRepo,
                                   AdminUserRepository adminUserRepository,
                                   EmailService emailService,
                                   NotificationService notificationService) {
@@ -58,6 +65,7 @@ public class AdminMentorshipService {
         this.sessionRepo = sessionRepo;
         this.mentorProfileRepo = mentorProfileRepo;
         this.availabilityRepo = availabilityRepo;
+        this.reportRepo = reportRepo;
         this.adminUserRepository = adminUserRepository;
         this.emailService = emailService;
         this.notificationService = notificationService;
@@ -275,6 +283,143 @@ public class AdminMentorshipService {
         });
     }
 
+    public Mono<PaginatedResponse<AdminMenteeDTO>> getMentees(Integer organizationId, int page, int size) {
+        int offset = page * size;
+        Flux<AdminMenteeDTO> rows = adminMentorshipRepository.findMentees(organizationId, size, offset)
+                .map(p -> AdminMenteeDTO.builder()
+                        .memberId(p.getMemberId())
+                        .menteeName(StringUtils.hasText(p.getFullName()) ? p.getFullName() : p.getEmail())
+                        .menteeEmail(p.getEmail())
+                        .userStatus(p.getStatus())
+                        .totalSessions(p.getTotalSessions() != null ? p.getTotalSessions() : 0L)
+                        .completedSessions(p.getCompletedSessions() != null ? p.getCompletedSessions() : 0L)
+                        .lastSessionAt(p.getLastSessionAt())
+                        .build());
+        return PaginationHelper.paginate(rows, adminMentorshipRepository.countMentees(organizationId), page, size)
+                .doOnSuccess(r -> log.info("getMentees (org={}) result size: {}", organizationId,
+                        r.getItems() != null ? r.getItems().size() : 0));
+    }
+
+    public Mono<PaginatedResponse<AdminMentorshipReportDTO>> getReports(String status, int page, int size) {
+        int offset = page * size;
+        String upper = StringUtils.hasText(status) ? status.toUpperCase() : null;
+        Flux<MentorshipReport> reports = upper != null
+                ? reportRepo.findReportsByStatus(upper, size, offset)
+                : reportRepo.findAllReports(size, offset);
+        Mono<Long> count = upper != null ? reportRepo.countReportsByStatus(upper) : reportRepo.countAllReports();
+        return PaginationHelper.paginate(enrichReports(reports), count, page, size)
+                .doOnSuccess(r -> log.info("getReports (status={}) result size: {}", upper,
+                        r.getItems() != null ? r.getItems().size() : 0));
+    }
+
+    public Mono<AdminMentorshipReportDTO> resolveReport(Integer reportId, String action, String note) {
+        String actionUpper = action == null ? "" : action.trim().toUpperCase();
+        return SecurityUtils.getCurrentUserId().map(Long::intValue).defaultIfEmpty(0)
+                .flatMap(resolverId -> reportRepo.findById(reportId)
+                        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.RESOURCES_NOT_FOUND,
+                                "Không tìm thấy report")))
+                        .flatMap(report -> {
+                            if (!"PENDING".equalsIgnoreCase(report.getStatus())) {
+                                return Mono.error(new ApplicationException(ErrorCode.BAD_REQUEST,
+                                        "Report này đã được xử lý"));
+                            }
+                            String reportStatus = "DISMISS".equals(actionUpper) ? "DISMISSED" : "RESOLVED";
+                            String actionTaken = normalizeAction(actionUpper);
+                            return applySanction(report.getReportedMemberId(), actionTaken)
+                                    .then(reportRepo.resolveReport(reportId, reportStatus, actionTaken, note, resolverId))
+                                    .then(reportRepo.findById(reportId))
+                                    .doOnNext(updated -> notifyReportOutcome(updated, actionTaken));
+                        })
+                        .flatMap(this::enrichReport)
+                        .doOnSuccess(r -> log.info("resolveReport id={} action={} result: {}",
+                                reportId, actionUpper, JsonUtils.toJson(r))));
+    }
+
+    private String normalizeAction(String actionUpper) {
+        return switch (actionUpper) {
+            case "SUSPENDED", "SUSPEND" -> "SUSPENDED";
+            case "BANNED", "BAN" -> "BANNED";
+            case "WARNING", "WARN" -> "WARNING";
+            case "DISMISS" -> "NONE";
+            default -> "NONE";
+        };
+    }
+
+    private Mono<Void> applySanction(Integer reportedMemberId, String actionTaken) {
+        if (reportedMemberId == null) return Mono.empty();
+        return switch (actionTaken) {
+            case "SUSPENDED" -> adminUserRepository.updateUserStatusById(reportedMemberId, Status.SUSPENDED.getValue()).then();
+            case "BANNED" -> adminUserRepository.banUserById(reportedMemberId).then();
+            default -> Mono.empty();
+        };
+    }
+
+    private void notifyReportOutcome(MentorshipReport report, String actionTaken) {
+        if (report.getReporterMemberId() != null) {
+            notificationService.createNotificationAsync(report.getReporterMemberId(),
+                    "Báo cáo của bạn đã được xử lý",
+                    "Báo cáo về buổi mentoring của bạn đã được ban quản trị xem xét và xử lý. Cảm ơn bạn đã phản ánh.",
+                    "/mentorship");
+        }
+        if (report.getReportedMemberId() != null) {
+            String msg = switch (actionTaken) {
+                case "SUSPENDED" -> "Tài khoản của bạn đã bị tạm khoá do vi phạm quy tắc mentoring. Vui lòng liên hệ ban quản trị để biết thêm chi tiết.";
+                case "BANNED" -> "Tài khoản của bạn đã bị cấm do vi phạm nghiêm trọng quy tắc mentoring.";
+                case "WARNING" -> "Bạn nhận được một cảnh báo liên quan tới buổi mentoring gần đây. Vui lòng tuân thủ quy tắc để tránh bị xử phạt.";
+                default -> null;
+            };
+            if (msg != null) {
+                notificationService.createNotificationAsync(report.getReportedMemberId(),
+                        "Thông báo xử lý vi phạm", msg, "/mentorship");
+            }
+        }
+    }
+
+    private Mono<AdminMentorshipReportDTO> enrichReport(MentorshipReport r) {
+        return enrichReports(Flux.just(r)).next();
+    }
+
+    private Flux<AdminMentorshipReportDTO> enrichReports(Flux<MentorshipReport> reportsFlux) {
+        return reportsFlux.collectList().flatMapMany(reports -> {
+            if (reports.isEmpty()) return Flux.empty();
+            Set<Integer> userIds = new HashSet<>();
+            for (MentorshipReport r : reports) {
+                if (r.getReporterMemberId() != null) userIds.add(r.getReporterMemberId());
+                if (r.getReportedMemberId() != null) userIds.add(r.getReportedMemberId());
+            }
+            if (userIds.isEmpty()) {
+                return Flux.fromIterable(reports).map(r -> buildReportDTO(r, null, null));
+            }
+            return adminUserRepository.findAllById(userIds).collectMap(User::getId)
+                    .flatMapMany(userMap -> Flux.fromIterable(reports)
+                            .map(r -> buildReportDTO(r, userMap.get(r.getReporterMemberId()),
+                                    userMap.get(r.getReportedMemberId()))));
+        });
+    }
+
+    private AdminMentorshipReportDTO buildReportDTO(MentorshipReport r, User reporter, User reported) {
+        return AdminMentorshipReportDTO.builder()
+                .id(r.getId())
+                .sessionId(r.getSessionId())
+                .reporterMemberId(r.getReporterMemberId())
+                .reporterName(displayName(reporter))
+                .reporterEmail(reporter != null ? reporter.getEmail() : null)
+                .reportedMemberId(r.getReportedMemberId())
+                .reportedName(displayName(reported))
+                .reportedEmail(reported != null ? reported.getEmail() : null)
+                .reportedUserStatus(reported != null && reported.getStatus() != null
+                        ? reported.getStatus().getValue() : null)
+                .reasonCategory(r.getReasonCategory())
+                .description(r.getDescription())
+                .status(r.getStatus())
+                .actionTaken(r.getActionTaken())
+                .resolutionNote(r.getResolutionNote())
+                .resolvedBy(r.getResolvedBy())
+                .resolvedAt(r.getResolvedAt())
+                .createdAt(r.getCreatedAt())
+                .build();
+    }
+
     private Mono<AdminMentorshipSessionDTO> enrichSession(MentorshipSession s) {
         return enrichSessions(Flux.just(s)).next();
     }
@@ -311,10 +456,10 @@ public class AdminMentorshipService {
                 .id(s.getId())
                 .availabilityId(s.getAvailabilityId())
                 .menteeMemberId(s.getMenteeMemberId())
-                .menteeName(mentee != null ? mentee.getEmail() : null)
+                .menteeName(displayName(mentee))
                 .menteeEmail(mentee != null ? mentee.getEmail() : null)
                 .mentorMemberId(avail != null ? avail.getMentorMemberId() : null)
-                .mentorName(mentor != null ? mentor.getEmail() : null)
+                .mentorName(displayName(mentor))
                 .mentorEmail(mentor != null ? mentor.getEmail() : null)
                 .status(s.getStatus() != null ? s.getStatus().getValue() : null)
                 .sessionType(s.getSessionType() != null ? s.getSessionType().getValue() : null)
@@ -323,8 +468,13 @@ public class AdminMentorshipService {
                 .description(s.getDescription())
                 .meetingLink(s.getMeetingLink())
                 .cvUrl(s.getCvUrl())
+                .cancelReason(s.getCancelReason())
                 .startTime(avail != null ? avail.getStartTime() : null)
                 .endTime(avail != null ? avail.getEndTime() : null)
+                .mentorJoinedAt(s.getMentorJoinedAt())
+                .menteeJoinedAt(s.getMenteeJoinedAt())
+                .startedAt(s.getStartedAt())
+                .endedAt(s.getEndedAt())
                 .createdAt(s.getCreatedAt())
                 .build();
     }
@@ -347,10 +497,17 @@ public class AdminMentorshipService {
         });
     }
 
+    /** Tên hiển thị ưu tiên full_name; rỗng thì fallback về email để không hiện null. */
+    private String displayName(User u) {
+        if (u == null) return null;
+        if (u.getFullName() != null && !u.getFullName().isBlank()) return u.getFullName();
+        return u.getEmail();
+    }
+
     private AdminMentorProfileDTO buildProfileDTO(MentorProfile p, User u) {
         return AdminMentorProfileDTO.builder()
                 .memberId(p.getMemberId())
-                .mentorName(u != null ? u.getEmail() : null)
+                .mentorName(displayName(u))
                 .mentorEmail(u != null ? u.getEmail() : null)
                 .currentJobTitle(p.getCurrentJobTitle())
                 .currentCompany(p.getCurrentCompany())
