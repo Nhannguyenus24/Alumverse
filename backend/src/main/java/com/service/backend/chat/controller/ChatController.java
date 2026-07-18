@@ -7,12 +7,14 @@ import com.service.backend.chat.dto.ChatMessageResponse;
 import com.service.backend.chat.dto.CreateGroupRequest;
 import com.service.backend.chat.dto.GroupBlockedMembersContextResponse;
 import com.service.backend.chat.dto.GroupChatListItemResponse;
+import com.service.backend.chat.dto.PeerActiveStatusResponse;
 import com.service.backend.chat.dto.PrivateChatListItemResponse;
 import com.service.backend.chat.dto.PrivateChatRequest;
 import com.service.backend.chat.dto.UpdateGroupAvatarRequest;
 import com.service.backend.chat.dto.UpdateGroupRequest;
 import com.service.backend.shared.entity.ChatGroup;
 import com.service.backend.chat.service.ChatService;
+import com.service.backend.chat.service.UserBlockService;
 import com.service.backend.shared.dto.ApiResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.utils.SecurityUtils;
@@ -44,6 +46,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class ChatController {
 
     private final ChatService chatService;
+    private final UserBlockService userBlockService;
 
     /*
         Search group chats of the current user.
@@ -79,7 +82,22 @@ public class ChatController {
 
 
     /*
-        Get chat information (not message) from member A and member B 
+        Get whether the peer of a private chat is still eligible to receive messages
+        (account status ACTIVE or UNVERIFIED). Used by the chat UI, right when a private
+        chat is opened, to warn the user and disable the composer if the peer's account
+        has since been suspended, banned, disabled or deleted.
+    */
+    @GetMapping("/private/{peerMemberId}/status")
+    public Mono<ResponseEntity<ApiResponse<PeerActiveStatusResponse>>> getPeerActiveStatus(
+            @PathVariable("peerMemberId") @Min(1) Long peerMemberId) {
+        return SecurityUtils.getCurrentUserId()
+                .then(userBlockService.getPeerActiveStatus(peerMemberId))
+                .map(result -> ResponseEntity
+                        .ok(new ApiResponse<>("Peer active status retrieved successfully", result)));
+    }
+
+    /*
+        Get chat information (not message) from member A and member B
     */
     @GetMapping("/private")
     public Mono<ResponseEntity<ApiResponse<ChatGroup>>> getPrivateChat(

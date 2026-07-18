@@ -403,6 +403,11 @@ export const chatApi = {
 		return unwrap(response);
 	},
 
+	async getPeerActiveStatus(peerMemberId) {
+		const response = await apiClient.get(`/chat/private/${peerMemberId}/status`);
+		return unwrap(response);
+	},
+
 	async getConversationRequestStatus(targetMemberId) {
 		const response = await apiClient.get('/chat/conversation-requests/connection-status', {
 			params: { targetMemberId },

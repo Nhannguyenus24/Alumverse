@@ -66,6 +66,8 @@ class ApiEndpoints {
       '/api/chat/groups/$groupId/messages';
   static String chatGroupBlockedContext(int groupId) =>
       '/api/chat/groups/$groupId/blocked-members-context';
+  static String chatPrivatePeerStatus(int peerMemberId) =>
+      '/api/chat/private/$peerMemberId/status';
   static const String chatPrivateCreate = '/api/chat/private/create';
   static const String chatPrivateInfo = '/api/chat/private';
   static const String chatRecentPreviews = '/api/chat/recent-previews';

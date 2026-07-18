@@ -82,6 +82,19 @@ class ChatApi {
     return GroupBlockedContext.fromJson(data as Map<String, dynamic>);
   }
 
+  /// Whether a private chat's peer account is still eligible to receive
+  /// messages (status ACTIVE or UNVERIFIED). Called when a private chat room
+  /// opens. Defaults to `true` on a malformed response so a transient issue
+  /// doesn't wrongly lock the composer.
+  Future<bool> getPeerActiveStatus(int peerMemberId) async {
+    final res = await _dio.get(
+      ApiEndpoints.chatPrivatePeerStatus(peerMemberId),
+    );
+    final data = res.data is Map ? res.data['data'] : res.data;
+    if (data is! Map) return true;
+    return data['active'] as bool? ?? true;
+  }
+
   /// Creates a new group chat (max 10 members including creator).
   Future<ChatConversation> createGroup({
     String? title,

@@ -858,6 +858,7 @@
     "group_owner": "Group owner",
     "blocked_by_me": "You have blocked {name}.",
     "blocked_by_peer": "You cannot message {name}.",
+    "peer_inactive": "{name}'s account is no longer active. You cannot send them messages.",
     "group_blocked": "Some members you blocked are in this group: {names}.",
     "cannot_send": "Cannot send message",
     "load_failed": "Could not load messages.",
