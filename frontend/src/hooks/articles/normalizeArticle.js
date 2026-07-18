@@ -2,15 +2,16 @@ import { resolveMediaUrl } from "../../utils/imageUtils";
 
 export const normalizeNews = (data) => {
   if (!data) return null;
-  const createdAt = data.createdAt ?? data.created_at ?? data.publishedAt ?? data.published_at;
+  const createdAt = data.createdAt ?? data.created_at;
   const updatedAt = data.updatedAt ?? data.updated_at;
+  const displayDate = updatedAt ?? createdAt;
   return {
     id: data.id,
     channel: "news",
     title: data.title,
     content: data.content,
     thumbnailUrl: resolveMediaUrl(data.thumbnailUrl),
-    publishedAt: createdAt,
+    publishedAt: displayDate,
     createdAt,
     updatedAt,
     authorMemberId: data.authorMemberId ?? data.author_member_id,
@@ -21,15 +22,16 @@ export const normalizeNews = (data) => {
 
 export const normalizeAlumniPost = (data) => {
   if (!data) return null;
-  const createdAt = data.createdAt ?? data.created_at ?? data.publishedAt ?? data.published_at;
+  const createdAt = data.createdAt ?? data.created_at;
   const updatedAt = data.updatedAt ?? data.updated_at;
+  const displayDate = updatedAt ?? createdAt;
   return {
     id: data.id,
     channel: "alumni",
     title: data.title,
     content: data.content,
     thumbnailUrl: resolveMediaUrl(data.thumbnailUrl),
-    publishedAt: createdAt,
+    publishedAt: displayDate,
     createdAt,
     updatedAt,
     authorMemberId: data.authorMemberId ?? data.author_member_id,
@@ -42,13 +44,14 @@ export const normalizeEvent = (data) => {
   if (!data) return null;
   const createdAt = data.createdAt ?? data.created_at;
   const updatedAt = data.updatedAt ?? data.updated_at;
+  const displayDate = updatedAt ?? createdAt;
   return {
     id: data.id,
     channel: "event",
     title: data.title,
     content: data.description,
     thumbnailUrl: resolveMediaUrl(data.bannerUrl),
-    publishedAt: createdAt,
+    publishedAt: displayDate,
     createdAt,
     updatedAt,
     authorMemberId: data.creatorMemberId ?? data.creator_member_id,
@@ -68,6 +71,7 @@ export const normalizeJob = (data) => {
   if (!data) return null;
   const createdAt = data.createdAt ?? data.created_at;
   const updatedAt = data.updatedAt ?? data.updated_at;
+  const displayDate = updatedAt ?? createdAt;
   const topic = data.topic ?? data.type;
   return {
     id: data.id,
@@ -75,7 +79,7 @@ export const normalizeJob = (data) => {
     title: data.title,
     content: data.description,
     thumbnailUrl: null,
-    publishedAt: createdAt,
+    publishedAt: displayDate,
     createdAt,
     updatedAt,
     authorMemberId: data.posterMemberId ?? data.poster_member_id,
@@ -95,6 +99,7 @@ export const normalizeAchievement = (data) => {
   if (!data) return null;
   const createdAt = data.createdAt ?? data.created_at;
   const updatedAt = data.updatedAt ?? data.updated_at;
+  const displayDate = updatedAt ?? createdAt;
   return {
     id: data.id,
     channel: "achievement",
@@ -102,7 +107,7 @@ export const normalizeAchievement = (data) => {
     title: data.title,
     content: data.description,
     thumbnailUrl: resolveMediaUrl(data.imageUrl),
-    publishedAt: createdAt,
+    publishedAt: displayDate,
     createdAt,
     updatedAt,
     authorMemberId: data.memberId ?? data.member_id,
@@ -120,6 +125,7 @@ export const normalizeLearning = (data) => {
   if (!data) return null;
   const createdAt = data.createdAt ?? data.created_at;
   const updatedAt = data.updatedAt ?? data.updated_at;
+  const displayDate = updatedAt ?? createdAt;
   const topic = data.topic ?? data.type;
   return {
     id: data.id,
@@ -127,7 +133,7 @@ export const normalizeLearning = (data) => {
     title: data.title,
     content: data.description,
     thumbnailUrl: resolveMediaUrl(data.thumbnailUrl),
-    publishedAt: createdAt,
+    publishedAt: displayDate,
     createdAt,
     updatedAt,
     authorMemberId: data.uploaderMemberId ?? data.uploader_member_id,

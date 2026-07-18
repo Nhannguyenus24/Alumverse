@@ -24,7 +24,6 @@ public class NewsResponse {
     private String topic;
     private String url;
     private Boolean isHidden;
-    private LocalDateTime publishedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private String submitterName;
@@ -43,7 +42,6 @@ public class NewsResponse {
                 .topic(news.getTopic())
                 .url(news.getUrl())
                 .isHidden(news.getIsHidden())
-                .publishedAt(news.getPublishedAt())
                 .createdAt(news.getCreatedAt())
                 .updatedAt(news.getUpdatedAt())
                 .build();

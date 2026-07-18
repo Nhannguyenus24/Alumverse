@@ -24,7 +24,6 @@ const buildPayload = (channel, input) => {
   // existing image when no base64 is provided. No image URL is sent anymore.
   delete rest.thumbnailUrl;
   delete rest.publishedAt;
-  delete rest.published_at;
   delete rest.createdAt;
   delete rest.created_at;
   delete rest.awardedDate;

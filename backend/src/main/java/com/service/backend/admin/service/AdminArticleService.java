@@ -11,6 +11,7 @@ import com.service.backend.shared.enums.Status;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.utils.PaginationHelper;
+import com.service.backend.shared.utils.CacheUtils;
 import com.service.backend.user.service.NotificationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +33,7 @@ public class AdminArticleService {
     private final FundR2dbcRepository fundRepository;
     private final NotificationService notificationService;
     private final AdminUserRepository adminUserRepository;
+    private final CacheUtils cacheUtils;
 
     public AdminArticleService(NewsR2dbcRepository newsRepository,
                                AlumniPostR2dbcRepository alumniPostRepository,
@@ -40,7 +42,8 @@ public class AdminArticleService {
                                LearningResourceR2dbcRepository learningResourceRepository,
                                FundR2dbcRepository fundRepository,
                                NotificationService notificationService,
-                               AdminUserRepository adminUserRepository) {
+                               AdminUserRepository adminUserRepository,
+                               CacheUtils cacheUtils) {
         this.newsRepository = newsRepository;
         this.alumniPostRepository = alumniPostRepository;
         this.achievementRepository = achievementRepository;
@@ -49,6 +52,7 @@ public class AdminArticleService {
         this.fundRepository = fundRepository;
         this.notificationService = notificationService;
         this.adminUserRepository = adminUserRepository;
+        this.cacheUtils = cacheUtils;
     }
 
     public Mono<PaginatedResponse<NewsResponse>> getAllNews(Integer organizationId, String keyword, int page, int limit) {
@@ -226,6 +230,8 @@ public class AdminArticleService {
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.ACHIEVEMENT_NOT_FOUND, "Achievement not found with id: " + id)))
                 .flatMap(existing -> achievementRepository.updateStatus(id, status)
                         .then(achievementRepository.findById(id)))
+                .delayUntil(updated -> cacheUtils.clear("achievement_cache")
+                        .then(cacheUtils.clear("admin_content_statistics")))
                 .doOnNext(updated -> {
                     if (Status.APPROVED.equals(status)) {
                         notificationService.createNotificationAsync(

@@ -7,8 +7,9 @@ export const toCardShape = (article) => {
   const raw = article.content ?? "";
   const plain = normalizePreviewText(raw);
   const description = plain.length > 180 ? `${plain.slice(0, 180)}…` : plain;
-  const date = article.publishedAt
-    ? new Date(article.publishedAt).toLocaleDateString("vi-VN")
+  const displayDate = article.updatedAt ?? article.createdAt ?? article.publishedAt;
+  const date = displayDate
+    ? new Date(displayDate).toLocaleDateString("vi-VN")
     : "";
   return {
     id: article.id,

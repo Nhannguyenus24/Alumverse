@@ -17,8 +17,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
-import java.time.LocalDateTime;
-
 @Service
 @RequiredArgsConstructor
 public class AlumniPostService {
@@ -49,7 +47,6 @@ public class AlumniPostService {
                                         .topic(request.getTopic())
                                         .url(request.getUrl())
                                         .isHidden(!publishImmediately)
-                                        .publishedAt(LocalDateTime.now())
                                         .build();
 
                                 return alumniPostRepository.save(post)

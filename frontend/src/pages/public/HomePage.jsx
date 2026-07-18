@@ -209,7 +209,7 @@ const HomePage = () => {
   const featuredArticleGroups = useMemo(() => {
     const combined = [...alumniArticles, ...achievements]
       .filter(Boolean)
-      .sort((left, right) => new Date(right.publishedAt || 0) - new Date(left.publishedAt || 0))
+      .sort((left, right) => new Date(right.updatedAt ?? right.createdAt ?? right.publishedAt ?? 0) - new Date(left.updatedAt ?? left.createdAt ?? left.publishedAt ?? 0))
       .slice(0, 6)
       .map(toCardShape)
       .filter(Boolean);

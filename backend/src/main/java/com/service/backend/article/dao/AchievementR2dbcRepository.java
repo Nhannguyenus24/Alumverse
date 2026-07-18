@@ -33,7 +33,10 @@ public interface AchievementR2dbcRepository extends R2dbcRepository<Achievement,
     @Query("SELECT COUNT(*) FROM achievements WHERE status = :status")
     Mono<Long> countByStatus(Status status);
 
-    @Query("SELECT a.id, a.organization_id, a.member_id, a.title, a.description, a.image_url, a.url, a.awarded_date, a.topic, a.status, " +
+    @Query("SELECT COUNT(*) FROM achievements WHERE status = :status AND organization_id = :organizationId")
+    Mono<Long> countByStatusAndOrganizationId(Status status, Integer organizationId);
+
+    @Query("SELECT a.id, a.organization_id, a.member_id, a.title, a.description, a.image_url, a.url, a.awarded_date, a.created_at, a.updated_at, a.topic, a.status, " +
            "u.full_name as member_name, u.avatar_url as member_avatar, " +
            "mp.current_job_title as member_job_title, mp.current_company as member_company " +
            "FROM achievements a " +
@@ -42,6 +45,16 @@ public interface AchievementR2dbcRepository extends R2dbcRepository<Achievement,
            "WHERE a.status = :status " +
            "ORDER BY a.awarded_date DESC LIMIT :limit OFFSET :offset")
     Flux<AchievementDetailDTO> findDetailsByStatus(Status status, int limit, int offset);
+
+    @Query("SELECT a.id, a.organization_id, a.member_id, a.title, a.description, a.image_url, a.url, a.awarded_date, a.created_at, a.updated_at, a.topic, a.status, " +
+           "u.full_name as member_name, u.avatar_url as member_avatar, " +
+           "mp.current_job_title as member_job_title, mp.current_company as member_company " +
+           "FROM achievements a " +
+           "LEFT JOIN users u ON a.member_id = u.id " +
+           "LEFT JOIN mentor_profiles mp ON a.member_id = mp.member_id " +
+           "WHERE a.status = :status AND a.organization_id = :organizationId " +
+           "ORDER BY a.awarded_date DESC LIMIT :limit OFFSET :offset")
+    Flux<AchievementDetailDTO> findDetailsByStatusAndOrganizationId(Status status, Integer organizationId, int limit, int offset);
 
     @Query("SELECT * FROM achievements WHERE (LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(description) LIKE LOWER(CONCAT('%', :keyword, '%'))) ORDER BY awarded_date DESC LIMIT :limit OFFSET :offset")
     Flux<Achievement> searchAchievements(String keyword, int limit, int offset);

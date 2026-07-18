@@ -19,6 +19,16 @@ backend/src/main/resources/db/migration/V<yyyyMMddHHmmss>__snake_case_descriptio
 
 Example: `V20260718143000__add_status_to_events.sql`
 
+The database-side record of what has actually run is the Flyway table:
+
+```
+flyway_schema_history
+```
+
+For a human-readable summary of project migrations, update
+`docs/migration-log.md`. Do not copy the SQL into docs; the Flyway migration
+file remains the only executable source of truth.
+
 Rules:
 - Use the current UTC timestamp as the version (avoids collisions across
   parallel branches; always sorts after the `V1` baseline).

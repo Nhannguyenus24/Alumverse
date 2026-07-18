@@ -51,9 +51,6 @@ public class AlumniPost {
     @Builder.Default
     private Boolean isHidden = false;
 
-    @Column("published_at")
-    private LocalDateTime publishedAt;
-
     @CreatedDate
     @Column("created_at")
     private LocalDateTime createdAt;
