@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.relational.core.mapping.Column;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Data
 @Builder
@@ -14,6 +15,9 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class AchievementDetailDTO {
     private Integer id;
+
+    @Column("organization_id")
+    private Integer organizationId;
     
     @Column("member_id")
     private Integer memberId;
@@ -29,6 +33,12 @@ public class AchievementDetailDTO {
     
     @Column("awarded_date")
     private LocalDate awardedDate;
+
+    @Column("created_at")
+    private LocalDateTime createdAt;
+
+    @Column("updated_at")
+    private LocalDateTime updatedAt;
     
     private String topic;
     private Status status;

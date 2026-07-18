@@ -52,7 +52,7 @@ public class AchievementService {
                                             .build();
 
                                     return achievementRepository.save(achievement)
-                                            .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
+                                            .delayUntil(res -> clearAchievementCaches())
                                             .doOnNext(saved -> {
                                                 if (Status.PENDING.equals(saved.getStatus())) {
                                                     notificationService.createNotificationAsync(
@@ -89,7 +89,7 @@ public class AchievementService {
                                                     })
                                             : Mono.error(new ApplicationException(ErrorCode.FORBIDDEN)));
                         }))
-                .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
+                .delayUntil(res -> clearAchievementCaches())
                 .map(AchievementResponse::from);
     }
 
@@ -103,7 +103,7 @@ public class AchievementService {
                             return canManageAchievement(existing, currentUserId, role)
                                     .flatMap(allowed -> allowed
                                             ? achievementRepository.deleteById(id)
-                                                    .then(cacheUtils.clear("admin_content_statistics"))
+                                                    .then(clearAchievementCaches())
                                                     .thenReturn(true)
                                             : Mono.error(new ApplicationException(ErrorCode.FORBIDDEN)));
                         }));
@@ -138,10 +138,20 @@ public class AchievementService {
                 .flatMap(userId -> getByMemberId(userId.intValue(), page, limit));
     }
 
-    public Mono<PaginatedResponse<AchievementResponse>> getByStatus(Status status, int page, int limit) {
-        String cacheKey = "status_" + status + "_page_" + page + "_limit_" + limit;
+    public Mono<PaginatedResponse<AchievementResponse>> getByStatus(Status status, Integer organizationId, int page, int limit) {
+        String orgKey = organizationId != null ? organizationId.toString() : "all";
+        String cacheKey = "status_" + status + "_org_" + orgKey + "_page_" + page + "_limit_" + limit;
         return cacheUtils.getOrCompute("achievement_cache", cacheKey, java.time.Duration.ofMinutes(5), () -> {
             int offset = page * limit;
+            if (organizationId != null) {
+                return PaginationHelper.paginate(
+                        achievementRepository.findDetailsByStatusAndOrganizationId(status, organizationId, limit, offset)
+                                .doOnNext(item -> log.info("Fetched achievement with status {} and org {}: {}", status, organizationId, JsonUtils.toJson(item)))
+                                .map(AchievementResponse::from),
+                        achievementRepository.countByStatusAndOrganizationId(status, organizationId),
+                        page, limit
+                );
+            }
             return PaginationHelper.paginate(
                     achievementRepository.findDetailsByStatus(status, limit, offset)
                             .doOnNext(item -> log.info("Fetched achievement with status {}: {}", status, JsonUtils.toJson(item)))
@@ -171,5 +181,10 @@ public class AchievementService {
                     .defaultIfEmpty(false);
         }
         return Mono.just(achievement.getMemberId() != null && achievement.getMemberId().equals(currentUserId.intValue()));
+    }
+
+    private Mono<Void> clearAchievementCaches() {
+        return cacheUtils.clear("admin_content_statistics")
+                .then(cacheUtils.clear("achievement_cache"));
     }
 }

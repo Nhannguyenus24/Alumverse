@@ -44,13 +44,13 @@ public interface NewsR2dbcRepository extends R2dbcRepository<News, Integer> {
     Mono<News> findBySlug(String slug);
 
     @Modifying
-    @Query("UPDATE news SET is_hidden = false, published_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = :id")
+    @Query("UPDATE news SET is_hidden = false, updated_at = CURRENT_TIMESTAMP WHERE id = :id")
     Mono<Integer> publishNews(Integer id);
 
     @Modifying
     @Query("UPDATE news SET is_hidden = true, updated_at = CURRENT_TIMESTAMP WHERE id = :id")
     Mono<Integer> hideNews(Integer id);
 
-    @Query("SELECT COUNT(*) FROM news WHERE published_at >= :since")
+    @Query("SELECT COUNT(*) FROM news WHERE created_at >= :since")
     Mono<Long> countSince(java.time.LocalDateTime since);
 }

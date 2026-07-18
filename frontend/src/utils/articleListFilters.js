@@ -8,9 +8,11 @@ const normalizeComparable = (value) => String(value ?? '')
   .toLowerCase()
   .replace(/[-\s]+/g, '_');
 
-const getArticleDate = (article) => article?.publishedAt
+const getArticleDate = (article) => article?.updatedAt
+  ?? article?.updated_at
   ?? article?.createdAt
   ?? article?.created_at
+  ?? article?.publishedAt
   ?? article?.eventDate
   ?? article?.donationDate
   ?? null;

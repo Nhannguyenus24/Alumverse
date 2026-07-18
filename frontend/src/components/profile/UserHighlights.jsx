@@ -59,7 +59,7 @@ const UserHighlights = ({ userId, navigate }) => {
                         {article.title}
                       </Typography>
                       <Typography variant="body2" color="text.secondary" mt={0.5}>
-                        {formatDate(article.publishedAt)}
+                        {formatDate(article.updatedAt ?? article.createdAt ?? article.publishedAt)}
                       </Typography>
                     </Box>
                   </CardActionArea>

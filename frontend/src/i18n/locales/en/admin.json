@@ -453,6 +453,7 @@
   "col_submitter": "Poster",
   "col_created_at": "Created at",
   "col_updated_at": "Updated at",
+  "col_updated_at_short": "Updated",
   "col_actions": "Actions",
   "col_submitted_at": "Submitted at",
   "col_time": "Time",

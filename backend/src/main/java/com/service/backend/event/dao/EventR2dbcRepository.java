@@ -46,11 +46,11 @@ public interface EventR2dbcRepository extends R2dbcRepository<Event, Long> {
     Mono<Long> countSearchEvents(Long organizationId, String keyword);
 
     @Modifying
-    @Query("UPDATE events SET is_published = true WHERE id = :eventId")
+    @Query("UPDATE events SET is_published = true, updated_at = CURRENT_TIMESTAMP WHERE id = :eventId")
     Mono<Integer> publishEvent(Long eventId);
 
     @Modifying
-    @Query("UPDATE events SET is_published = false WHERE id = :eventId")
+    @Query("UPDATE events SET is_published = false, updated_at = CURRENT_TIMESTAMP WHERE id = :eventId")
     Mono<Integer> unpublishEvent(Long eventId);
 
     @Modifying
