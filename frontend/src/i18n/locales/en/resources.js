@@ -19,6 +19,7 @@ import contact from './contact.json';
 import dev from './dev.json';
 import settings from './settings.json';
 import survey from './survey.json';
+import comment from './comment.json';
 
 const enResources = {
   common,
@@ -40,6 +41,7 @@ const enResources = {
   dev,
   settings,
   survey,
+  comment,
 };
 
 export default enResources;

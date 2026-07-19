@@ -61,6 +61,7 @@ public enum ErrorCode {
     TICKET_WRONG_EVENT("Vé không thuộc sự kiện này", 400),
     TICKET_QR_INVALID("Mã QR không hợp lệ", 400),
     TICKET_QR_EXPIRED("Mã QR đã hết hạn", 400),
+    EVENT_COMMENT_NOT_FOUND("Không tìm thấy bình luận sự kiện", 404),
 
     // Article module
     NEWS_NOT_FOUND("Không tìm thấy tin tức", 404),
@@ -70,6 +71,8 @@ public enum ErrorCode {
     ACHIEVEMENT_NOT_FOUND("Không tìm thấy thành tích", 404),
     ITEM_ALREADY_SAVED("Mục này đã được lưu trước đó", 409),
     SAVED_ITEM_NOT_FOUND("Không tìm thấy mục đã lưu", 404),
+    NEWS_COMMENT_NOT_FOUND("Không tìm thấy bình luận tin tức", 404),
+    ALUMNI_POST_COMMENT_NOT_FOUND("Không tìm thấy bình luận bài viết cựu sinh viên", 404),
 
     // Mentorship module
     MENTOR_PROFILE_NOT_FOUND("Không tìm thấy hồ sơ mentor", 404),
