@@ -7,6 +7,11 @@ import {
   Box,
   Button,
   Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   Paper,
   Stack,
   Step,
@@ -28,6 +33,7 @@ import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useMentorPublicProfile } from '../../hooks/mentorship/useMentorPublicProfile';
 import { useMentorAvailability } from '../../hooks/mentorship/useMentorAvailability';
 import { useBookSession } from '../../hooks/mentorship/useBookSession';
+import { checkBookingConflicts } from '../../utils/api';
 import { formatRating } from '../../utils/numberFormatter';
 import {
   ScrollReveal,
@@ -48,6 +54,9 @@ const MentorshipBookingPage = () => {
   const [activeStep, setActiveStep] = useState(0);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [conflicts, setConflicts] = useState([]);
+  const [conflictOpen, setConflictOpen] = useState(false);
+  const [checkingConflict, setCheckingConflict] = useState(false);
   const { enqueueSnackbar } = useSnackbar();
   const [formValues, setFormValues] = useState({
     sessionType: '',
@@ -64,8 +73,9 @@ const MentorshipBookingPage = () => {
   const handleNext = () => selectedSlot && setActiveStep(1);
   const handleBack = () => setActiveStep(0);
 
-  const handleSubmit = async () => {
+  const proceedBooking = async () => {
     if (!selectedSlot?.availabilityId) return;
+    setConflictOpen(false);
     try {
       await bookSession({
         availabilityId: selectedSlot.availabilityId,
@@ -81,6 +91,26 @@ const MentorshipBookingPage = () => {
     } catch {
       // errorMessage from hook will surface in useEffect
     }
+  };
+
+  // Warn (do not block) if the mentee already has an overlapping session before booking.
+  const handleSubmit = async () => {
+    if (!selectedSlot?.availabilityId) return;
+    setCheckingConflict(true);
+    try {
+      const res = await checkBookingConflicts(selectedSlot.availabilityId);
+      const found = res?.data?.data?.conflicts ?? [];
+      if (found.length > 0) {
+        setConflicts(found);
+        setConflictOpen(true);
+        return;
+      }
+    } catch {
+      // If the conflict check itself fails, fall through and let the user book anyway.
+    } finally {
+      setCheckingConflict(false);
+    }
+    await proceedBooking();
   };
 
   const isLoading = profileQuery.isLoading || availabilityQuery.isLoading;
@@ -176,7 +206,7 @@ const MentorshipBookingPage = () => {
                   onChange={setFormValues}
                   onBack={handleBack}
                   onSubmit={handleSubmit}
-                  submitting={submitting}
+                  submitting={submitting || checkingConflict}
                 />
               </Paper></ScrollRevealItem>
             )}
@@ -257,6 +287,41 @@ const MentorshipBookingPage = () => {
             </Paper>
           </ScrollReveal>
         </Box>
+
+        <Dialog open={conflictOpen} onClose={() => setConflictOpen(false)} maxWidth="xs" fullWidth>
+          <DialogTitle>{t('mentorship:conflict_title', 'Trùng lịch hẹn')}</DialogTitle>
+          <DialogContent>
+            <DialogContentText component="div">
+              {t(
+                'mentorship:conflict_message',
+                'Trong khung giờ này bạn đã có lịch hẹn với:',
+              )}
+              <Box component="ul" sx={{ mt: 1, mb: 0, pl: 2.5 }}>
+                {conflicts.map((c) => (
+                  <li key={c.sessionId}>
+                    <strong>{c.mentorName ?? `Mentor #${c.mentorMemberId}`}</strong>
+                    {' — '}
+                    {dayjs(c.startTime).format('DD/MM/YYYY HH:mm')}
+                    {' - '}
+                    {dayjs(c.endTime).format('HH:mm')}
+                  </li>
+                ))}
+              </Box>
+              {t(
+                'mentorship:conflict_confirm',
+                'Bạn vẫn muốn tiếp tục đặt lịch này chứ?',
+              )}
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setConflictOpen(false)} color="inherit">
+              {t('common:cancel', 'Hủy')}
+            </Button>
+            <Button onClick={proceedBooking} variant="contained" disabled={submitting}>
+              {t('mentorship:conflict_proceed', 'Vẫn đặt lịch')}
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Container>
     </Page>
   );
