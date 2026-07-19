@@ -183,8 +183,9 @@ const PostArticleForm = ({
               <TextField
                 fullWidth
                 label={t('event:registration_start')}
-                type="date"
+                type="datetime-local"
                 name="registrationStartAt"
+                inputProps={{ step: 1 }}
                 InputLabelProps={{ shrink: true }}
                 value={eventData.registrationStartAt}
                 onChange={handleEventInputChange}
@@ -194,8 +195,9 @@ const PostArticleForm = ({
               <TextField
                 fullWidth
                 label={t('event:registration_end')}
-                type="date"
+                type="datetime-local"
                 name="deadline"
+                inputProps={{ step: 1 }}
                 InputLabelProps={{ shrink: true }}
                 value={eventData.deadline}
                 onChange={handleEventInputChange}
@@ -205,10 +207,10 @@ const PostArticleForm = ({
 
           <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
             <Box sx={{ flex: 1 }}>
-              <TextField fullWidth label={t('event:start_date')} type="date" name="startDate" InputLabelProps={{ shrink: true }} value={eventData.startDate} onChange={handleEventInputChange} />
+              <TextField fullWidth label={t('event:start_date')} type="datetime-local" name="startDate" inputProps={{ step: 1 }} InputLabelProps={{ shrink: true }} value={eventData.startDate} onChange={handleEventInputChange} />
             </Box>
             <Box sx={{ flex: 1 }}>
-              <TextField fullWidth label={t('event:end_date')} type="date" name="endDate" InputLabelProps={{ shrink: true }} value={eventData.endDate} onChange={handleEventInputChange} />
+              <TextField fullWidth label={t('event:end_date')} type="datetime-local" name="endDate" inputProps={{ step: 1 }} InputLabelProps={{ shrink: true }} value={eventData.endDate} onChange={handleEventInputChange} />
             </Box>
           </Box>
         </Box>
