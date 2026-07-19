@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from 'react';
 import {
   Box, Button, Chip, TextField, Stack, FormControl, InputLabel, Select, MenuItem,
   IconButton, Typography, Checkbox, FormControlLabel, Divider,
@@ -29,7 +29,20 @@ const emptyDraft = () => ({
   isNew: true,
 });
 
-const AdminEventQuestionSection = ({ eventId }) => {
+const getQuestionValidationError = (drafts = [], t) => {
+  for (const draft of drafts) {
+    if (!draft?.label?.trim()) {
+      return t('event:question_content_required', { defaultValue: 'Vui lòng nhập nội dung câu hỏi.' });
+    }
+    if ((draft.type === 'singleChoice' || draft.type === 'multiChoice')
+      && !(draft.options || []).some((option) => option?.trim())) {
+      return t('event:question_options_required', { defaultValue: 'Vui lòng nhập ít nhất một lựa chọn cho câu hỏi lựa chọn.' });
+    }
+  }
+  return null;
+};
+
+const AdminEventQuestionSection = forwardRef(({ eventId }, ref) => {
   const { t } = useTranslation(['event', 'common']);
   const { data: savedQuestions = [], refetch, isPending } = useEventQuestions(eventId, Boolean(eventId));
   const [drafts, setDrafts] = useState([]);
@@ -61,13 +74,23 @@ const AdminEventQuestionSection = ({ eventId }) => {
     setDrafts(next);
   };
 
-  const handleSaveAll = async () => {
+  const handleSaveAll = useCallback(async () => {
     if (!eventId) return;
+    const validationError = getQuestionValidationError(drafts, t);
+    if (validationError) {
+      throw new Error(validationError);
+    }
     setSaving(true);
     try {
       for (let i = 0; i < drafts.length; i++) {
         const d = drafts[i];
-        const payload = mapQuestionToApi(d, i);
+        const payload = mapQuestionToApi({
+          ...d,
+          label: d.label.trim(),
+          options: d.type === 'shortText'
+            ? null
+            : (d.options || []).map((option) => (option ?? '').trim()).filter(Boolean),
+        }, i);
         if (d.isNew) {
           await eventApi.createEventQuestion(eventId, payload);
         } else {
@@ -84,7 +107,11 @@ const AdminEventQuestionSection = ({ eventId }) => {
     } finally {
       setSaving(false);
     }
-  };
+  }, [drafts, eventId, refetch, savedQuestions, t]);
+
+  useImperativeHandle(ref, () => ({
+    saveQuestions: handleSaveAll,
+  }), [handleSaveAll]);
 
   if (!eventId) {
     return (
@@ -192,16 +219,11 @@ const AdminEventQuestionSection = ({ eventId }) => {
         </Box>
       ))}
 
-      {drafts.length > 0 && (
-        <>
-          <Divider />
-          <Button variant="contained" onClick={handleSaveAll} disabled={saving}>
-            {saving ? t('common:saving') : t('event:save_questions')}
-          </Button>
-        </>
-      )}
+      {drafts.length > 0 && <Divider />}
     </Box>
   );
-};
+});
+
+AdminEventQuestionSection.displayName = 'AdminEventQuestionSection';
 
 export default AdminEventQuestionSection;
