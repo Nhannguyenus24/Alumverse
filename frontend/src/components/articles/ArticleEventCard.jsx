@@ -287,6 +287,7 @@ const ArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
           e?.stopPropagation?.();
           setOpenCancelDialog(false);
         }}
+        onClick={(e) => e.stopPropagation()}
         maxWidth="xs"
         fullWidth
       >

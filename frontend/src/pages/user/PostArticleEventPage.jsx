@@ -1,12 +1,11 @@
 import LoadingSkeleton from '../../components/LoadingSkeleton';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { Box } from '@mui/material';
 import PostArticleForm from '../../components/PostArticleForm';
 import PostArticleShell from '../../components/PostArticleShell';
-import AdminEventQuestionSection from '../../components/admin/AdminEventQuestionSection';
 import useCoverUpload from '../../hooks/useCoverUpload';
 import { useCreateEvent } from '../../hooks/news/useCreateEvent';
 import { fileToCroppedCoverBase64 } from '../../utils/imageUtils';
@@ -14,7 +13,7 @@ import { useNotification } from '../../hooks/useNotification';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { eventApi } from '../../utils/api';
 import useOrganizationStore from '../../stores/organizationStore';
-import { mapQuestionToApi } from '../../hooks/events/useEventQuestions';
+import { useEventQuestions, mapQuestionToApi } from '../../hooks/events/useEventQuestions';
 import { extractMainImageCaption, withMainImageCaption } from '../../utils/articleContentCaption';
 
 const normalizeQuestions = (questions = []) =>
@@ -45,6 +44,34 @@ const getQuestionValidationError = (questions = [], t) => {
 };
 
 const unwrapCreatedEvent = (result) => result?.data?.data ?? result?.data ?? result ?? null;
+
+// Diff the edited question list against what was originally loaded from the
+// server so each row is routed to create/update/delete individually — the
+// backend has no bulk-replace endpoint for event questions.
+const syncQuestions = async (eventId, originalQuestions, currentQuestions) => {
+  const originalIds = new Set(originalQuestions.map((q) => q.id));
+  const cleaned = currentQuestions.filter((q) => q?.label && q.label.trim());
+  const currentIds = new Set(cleaned.map((q) => q.id));
+
+  for (const original of originalQuestions) {
+    if (!currentIds.has(original.id)) {
+      await eventApi.deleteEventQuestion(eventId, original.id);
+    }
+  }
+
+  for (let index = 0; index < cleaned.length; index++) {
+    const q = cleaned[index];
+    const cleanOptions =
+      q.type === 'shortText' ? null : (q.options || []).map((o) => (o ?? '').trim()).filter(Boolean);
+    const payload = mapQuestionToApi({ ...q, label: q.label.trim(), options: cleanOptions }, index);
+
+    if (originalIds.has(q.id)) {
+      await eventApi.updateEventQuestion(eventId, q.id, payload);
+    } else {
+      await eventApi.createEventQuestion(eventId, payload);
+    }
+  }
+};
 
 const toIsoDateTime = (value) => {
   if (!value) return null;
@@ -97,13 +124,19 @@ const PostEventPage = () => {
   const [registrationQuestions, setRegistrationQuestions] = useState([]);
   const [eventData, setEventData] = useState(emptyEventData);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const questionSectionRef = useRef(null);
 
   const { data: existingEvent, isLoading: isLoadingEvent } = useQuery({
     queryKey: ['event', eventId],
     queryFn: () => eventApi.getEventById(eventId),
     enabled: isEditMode,
   });
+
+  const { data: existingQuestions = [], isLoading: isLoadingQuestions } = useEventQuestions(eventId, isEditMode);
+
+  useEffect(() => {
+    if (!isEditMode) return;
+    setRegistrationQuestions(existingQuestions);
+  }, [isEditMode, existingQuestions]);
 
   useEffect(() => {
     if (!existingEvent) return;
@@ -160,9 +193,7 @@ const PostEventPage = () => {
       showError(t('article:main_image_caption_required'));
       return;
     }
-    const questionValidationError = !isEditMode
-      ? getQuestionValidationError(registrationQuestions, t)
-      : null;
+    const questionValidationError = getQuestionValidationError(registrationQuestions, t);
     if (questionValidationError) {
       showError(questionValidationError);
       return;
@@ -174,7 +205,11 @@ const PostEventPage = () => {
 
       if (isEditMode) {
         await eventApi.updateAdminEvent(eventId, payload);
-        await questionSectionRef.current?.saveQuestions?.();
+        try {
+          await syncQuestions(eventId, existingQuestions, registrationQuestions);
+        } catch (qErr) {
+          showError(qErr.response?.data?.message ?? t('post_questions_failed'));
+        }
         showSuccess(t('update_success'));
         navigate(`/admin/events/${eventId}`);
         return;
@@ -201,7 +236,7 @@ const PostEventPage = () => {
     }
   };
 
-  if (isEditMode && isLoadingEvent) {
+  if (isEditMode && (isLoadingEvent || isLoadingQuestions)) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
         <LoadingSkeleton />
@@ -237,17 +272,11 @@ const PostEventPage = () => {
         handleEventInputChange={handleEventInputChange}
         registrationQuestions={registrationQuestions}
         setRegistrationQuestions={setRegistrationQuestions}
-        hideLocalQuestions={isEditMode}
         mainImagePreview={coverCroppedPreview ?? coverPreview}
         mainImageCaption={mainImageCaption}
         setMainImageCaption={setMainImageCaption}
         showSourceUrl={false}
       />
-      {isEditMode && eventId ? (
-        <Box sx={{ mt: 3 }}>
-          <AdminEventQuestionSection ref={questionSectionRef} eventId={eventId} />
-        </Box>
-      ) : null}
     </PostArticleShell>
   );
 };

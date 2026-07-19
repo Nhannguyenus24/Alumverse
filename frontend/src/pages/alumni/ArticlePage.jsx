@@ -47,6 +47,23 @@ import {
   ScrollRevealGroup,
   ScrollRevealItem,
 } from "../../components/animations/ScrollReveal";
+import { useAuth } from "../../hooks/useAuth";
+import CommentSection from "../../components/comments/CommentSection";
+import { useEventComments } from "../../hooks/event/useEventComments";
+import { useCreateEventComment } from "../../hooks/event/useCreateEventComment";
+import { useReplyToEventComment } from "../../hooks/event/useReplyToEventComment";
+import { useUpdateEventComment } from "../../hooks/event/useUpdateEventComment";
+import { useDeleteEventComment } from "../../hooks/event/useDeleteEventComment";
+import { useNewsComments } from "../../hooks/article/useNewsComments";
+import { useCreateNewsComment } from "../../hooks/article/useCreateNewsComment";
+import { useReplyToNewsComment } from "../../hooks/article/useReplyToNewsComment";
+import { useUpdateNewsComment } from "../../hooks/article/useUpdateNewsComment";
+import { useDeleteNewsComment } from "../../hooks/article/useDeleteNewsComment";
+import { useAlumniPostComments } from "../../hooks/article/useAlumniPostComments";
+import { useCreateAlumniPostComment } from "../../hooks/article/useCreateAlumniPostComment";
+import { useReplyToAlumniPostComment } from "../../hooks/article/useReplyToAlumniPostComment";
+import { useUpdateAlumniPostComment } from "../../hooks/article/useUpdateAlumniPostComment";
+import { useDeleteAlumniPostComment } from "../../hooks/article/useDeleteAlumniPostComment";
 
 const isLightInlineBackground = (value) => {
   if (!value) return false;
@@ -561,6 +578,36 @@ const ArticlePage = () => {
     loadErrorShownRef.current = false;
   }, [isPending, isError, article, errorMessage, enqueueSnackbar, t]);
 
+  // Comment hooks must be called unconditionally (before any early return) to
+  // satisfy Rules of Hooks. Each is internally gated via `enabled: !!id`, so
+  // only the hook matching the article's actual channel below fires network
+  // calls; the other two stay idle.
+  const { user } = useAuth();
+  const { canUseBasicActions } = useCanContribute();
+  const currentUserId = user?.id ?? null;
+
+  const eventIdForComments = article?.channel === "event" ? id : null;
+  const newsIdForComments = article?.channel === "news" ? id : null;
+  const alumniPostIdForComments = article?.channel === "alumni" ? id : null;
+
+  const eventComments = useEventComments(eventIdForComments);
+  const { createComment: createEventComment, isPending: creatingEventComment } = useCreateEventComment();
+  const { replyToComment: replyToEventComment } = useReplyToEventComment();
+  const { updateComment: updateEventComment } = useUpdateEventComment();
+  const { deleteComment: deleteEventComment, isPending: deletingEventComment } = useDeleteEventComment();
+
+  const newsComments = useNewsComments(newsIdForComments);
+  const { createComment: createNewsComment, isPending: creatingNewsComment } = useCreateNewsComment();
+  const { replyToComment: replyToNewsComment } = useReplyToNewsComment();
+  const { updateComment: updateNewsComment } = useUpdateNewsComment();
+  const { deleteComment: deleteNewsComment, isPending: deletingNewsComment } = useDeleteNewsComment();
+
+  const alumniPostComments = useAlumniPostComments(alumniPostIdForComments);
+  const { createComment: createAlumniPostComment, isPending: creatingAlumniPostComment } = useCreateAlumniPostComment();
+  const { replyToComment: replyToAlumniPostComment } = useReplyToAlumniPostComment();
+  const { updateComment: updateAlumniPostComment } = useUpdateAlumniPostComment();
+  const { deleteComment: deleteAlumniPostComment, isPending: deletingAlumniPostComment } = useDeleteAlumniPostComment();
+
   if (isPending) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
@@ -579,6 +626,43 @@ const ArticlePage = () => {
 
   const resolvedChannel = article.channel;
   const isEventArticle = resolvedChannel === "event";
+
+  const commentSectionProps =
+    resolvedChannel === "event"
+      ? {
+          comments: eventComments.comments,
+          isLoading: eventComments.isPending,
+          isSubmitting: creatingEventComment,
+          isDeleting: deletingEventComment,
+          onCreate: (content) => createEventComment({ eventId: id, payload: { authorMemberId: currentUserId, content } }),
+          onReply: (commentId, content) => replyToEventComment({ eventId: id, commentId, payload: { authorMemberId: currentUserId, content } }),
+          onUpdate: (commentId, content) => updateEventComment({ eventId: id, commentId, payload: { content } }),
+          onDelete: (commentId) => deleteEventComment({ eventId: id, commentId }),
+        }
+      : resolvedChannel === "news"
+      ? {
+          comments: newsComments.comments,
+          isLoading: newsComments.isPending,
+          isSubmitting: creatingNewsComment,
+          isDeleting: deletingNewsComment,
+          onCreate: (content) => createNewsComment({ newsId: id, payload: { authorMemberId: currentUserId, content } }),
+          onReply: (commentId, content) => replyToNewsComment({ newsId: id, commentId, payload: { authorMemberId: currentUserId, content } }),
+          onUpdate: (commentId, content) => updateNewsComment({ newsId: id, commentId, payload: { content } }),
+          onDelete: (commentId) => deleteNewsComment({ newsId: id, commentId }),
+        }
+      : resolvedChannel === "alumni"
+      ? {
+          comments: alumniPostComments.comments,
+          isLoading: alumniPostComments.isPending,
+          isSubmitting: creatingAlumniPostComment,
+          isDeleting: deletingAlumniPostComment,
+          onCreate: (content) => createAlumniPostComment({ alumniPostId: id, payload: { authorMemberId: currentUserId, content } }),
+          onReply: (commentId, content) => replyToAlumniPostComment({ alumniPostId: id, commentId, payload: { authorMemberId: currentUserId, content } }),
+          onUpdate: (commentId, content) => updateAlumniPostComment({ alumniPostId: id, commentId, payload: { content } }),
+          onDelete: (commentId) => deleteAlumniPostComment({ alumniPostId: id, commentId }),
+        }
+      : null;
+
   const authorName =
     authorProfile?.fullName
     || authorProfile?.name
@@ -814,6 +898,19 @@ const ArticlePage = () => {
                 }}
                 dangerouslySetInnerHTML={{ __html: cleanContent }}
               />
+
+              {commentSectionProps && (
+                <ScrollRevealItem sx={{ mt: { xs: 4, md: 5 } }}>
+                  <CommentSection
+                    {...commentSectionProps}
+                    currentUserId={currentUserId}
+                    currentUserName={user?.fullName || user?.name || ""}
+                    currentUserAvatarUrl={user?.avatarUrl}
+                    isAdmin={isAdmin}
+                    canComment={canUseBasicActions}
+                  />
+                </ScrollRevealItem>
+              )}
             </ScrollRevealGroup>
           </Box>
         </Box>
