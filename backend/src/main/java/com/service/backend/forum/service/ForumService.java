@@ -479,7 +479,7 @@ public class ForumService {
                                             if (Boolean.TRUE.equals(alreadyLiked)) {
                                                 return forumPostReactionRepository.deleteByPostIdAndMemberId(
                                                                 request.getPostId(), memberId)
-                                                        .then(Mono.empty());
+                                                        .then(Mono.<ForumPostReaction>empty());
                                             }
                                             log.info("Creating new like for post ID: {}, member: {}",
                                                     request.getPostId(), memberId);
@@ -537,7 +537,7 @@ public class ForumService {
                                             request.getTopicId(), memberId);
                                     return forumTopicSubscriptionRepository.deleteByTopicIdAndMemberId(
                                             request.getTopicId(), memberId)
-                                            .then(Mono.empty());
+                                            .then(Mono.<ForumTopicSubscription>empty());
                                 }
                                 log.info("Creating new subscription for topic ID: {}, member: {}",
                                         request.getTopicId(), memberId);
