@@ -27,7 +27,6 @@ import HowToRegOutlinedIcon from '@mui/icons-material/HowToRegOutlined';
 import MarkEmailReadIcon from '@mui/icons-material/MarkEmailRead';
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import SendIcon from '@mui/icons-material/Send';
-import DoDisturbAltIcon from '@mui/icons-material/DoDisturbAlt';
 import UndoIcon from '@mui/icons-material/Undo';
 import BlockIcon from '@mui/icons-material/Block';
 import { useOrgNavigate, useOrgPath } from '../../hooks/useOrgNavigate';
@@ -89,6 +88,7 @@ const AdminEventManagePage = () => {
   const [inviteEmails, setInviteEmails] = useState('');
   const [inviting, setInviting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isExportingAnswers, setIsExportingAnswers] = useState(false);
   const [banTarget, setBanTarget] = useState(null);
 
   const { data: event, isLoading: eventLoading, refetch: refetchEvent } = useQuery({
@@ -280,6 +280,45 @@ const AdminEventManagePage = () => {
       enqueueSnackbar(t('admin:export_failed', 'Xuất file thất bại'), { variant: 'error' });
     } finally {
       setIsExporting(false);
+    }
+  };
+
+  const handleExportAnswersExcel = async () => {
+    setIsExportingAnswers(true);
+    try {
+      const response = await eventApi.getTicketsByEvent(eventId, { limit: 100000 });
+      const data = response?.items || [];
+
+      const exportData = data.map((row, index) => {
+        const answers = Array.isArray(row.registrationAnswers) ? row.registrationAnswers : [];
+        const answerByLabel = answers.reduce((acc, answer, answerIndex) => {
+          acc[getAnswerQuestionLabel(answer, answerIndex)] = formatAnswerValue(answer?.value);
+          return acc;
+        }, {});
+
+        const base = {
+          'STT': index + 1,
+          'Email': displayMemberEmail(row),
+        };
+
+        eventQuestions.forEach((question) => {
+          base[question.label] = answerByLabel[question.label] ?? '—';
+        });
+
+        return base;
+      });
+
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Answers');
+
+      XLSX.writeFile(workbook, `Event_${eventId}_Answers.xlsx`);
+      enqueueSnackbar(t('admin:export_success', 'Xuất file thành công'), { variant: 'success' });
+    } catch (err) {
+      console.error(err);
+      enqueueSnackbar(t('admin:export_failed', 'Xuất file thất bại'), { variant: 'error' });
+    } finally {
+      setIsExportingAnswers(false);
     }
   };
 
@@ -489,7 +528,12 @@ const AdminEventManagePage = () => {
                     {cancellable && (
                       <Tooltip title={t('event:tooltip_cancel_ticket')}>
                         <IconButton size="small" color="warning" onClick={() => handleCancelTicket(ticket)}>
-                          <DoDisturbAltIcon fontSize="small" />
+                          <Box
+                            component="img"
+                            src="/icons/icon_cancel_ticket.png"
+                            alt=""
+                            sx={{ width: 20, height: 20 }}
+                          />
                         </IconButton>
                       </Tooltip>
                     )}
@@ -577,21 +621,32 @@ const AdminEventManagePage = () => {
           loading={ticketsLoading}
           emptyMessage={t('admin:event_answers_table_empty')}
           filters={(
-            <TextField
-              select
-              size="small"
-              label={t('admin:col_status')}
-              value={ticketStatus}
-              onChange={(e) => { setTicketStatus(e.target.value); setTicketsPage(0); }}
-              sx={{ minWidth: 180 }}
-            >
-              <MenuItem value="">{t('common:all')}</MenuItem>
-              {['PENDING', 'ISSUED', 'REGISTERED', 'CHECKED_IN', 'CANCELLED'].map((status) => (
-                <MenuItem key={status} value={status}>
-                  {getTicketStatusChip(t, status).label}
-                </MenuItem>
-              ))}
-            </TextField>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <TextField
+                select
+                size="small"
+                label={t('admin:col_status')}
+                value={ticketStatus}
+                onChange={(e) => { setTicketStatus(e.target.value); setTicketsPage(0); }}
+                sx={{ minWidth: 180 }}
+              >
+                <MenuItem value="">{t('common:all')}</MenuItem>
+                {['PENDING', 'ISSUED', 'REGISTERED', 'CHECKED_IN', 'CANCELLED'].map((status) => (
+                  <MenuItem key={status} value={status}>
+                    {getTicketStatusChip(t, status).label}
+                  </MenuItem>
+                ))}
+              </TextField>
+              <Button
+                variant="outlined"
+                startIcon={isExportingAnswers ? <CircularProgress size={20} color="inherit" /> : <FileDownloadOutlinedIcon />}
+                onClick={handleExportAnswersExcel}
+                disabled={isExportingAnswers}
+                sx={{ height: 40 }}
+              >
+                {t('admin:export_excel', 'Export Excel')}
+              </Button>
+            </Stack>
           )}
         />
       )}
