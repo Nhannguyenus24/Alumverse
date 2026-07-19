@@ -26,6 +26,7 @@ public class UpdateEventRequest {
     @Schema(example = "Hội thảo AI 2026 (Cập nhật)")
     private String title;
 
+    @Size(max = 5000)
     @Schema(example = "Cập nhật thông tin sự kiện AI 2026.")
     private String description;
 

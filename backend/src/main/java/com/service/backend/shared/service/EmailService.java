@@ -54,6 +54,20 @@ public class EmailService {
         return dispatch(to, subject, htmlContent, variables);
     }
 
+    public Mono<Void> sendHtmlEmailWithInlineImage(
+            String to,
+            String subject,
+            String templateName,
+            Map<String, Object> variables,
+            String contentId,
+            byte[] imageBytes,
+            String imageMimeType
+    ) {
+        return resolveTemplate(templateName, subject)
+            .flatMap(resolved -> dispatch(to, resolved.subject(), resolved.templateOrContent(), variables,
+                helper -> helper.addInline(contentId, new org.springframework.core.io.ByteArrayResource(imageBytes), imageMimeType)));
+    }
+
     private Mono<ResolvedTemplate> resolveTemplate(String templateName, String subject) {
         ResolvedTemplate fileFallback = new ResolvedTemplate(templateName, subject);
         return emailTemplateRepository.findByTemplateCode(templateName)
@@ -69,6 +83,11 @@ public class EmailService {
     }
 
     private Mono<Void> dispatch(String to, String subject, String templateOrContent, Map<String, Object> variables) {
+        return dispatch(to, subject, templateOrContent, variables, helper -> {});
+    }
+
+    private Mono<Void> dispatch(String to, String subject, String templateOrContent, Map<String, Object> variables,
+                                MimeMessageCustomizer helperCustomizer) {
         return Mono.defer(() -> {
             Timer.Sample sample = Timer.start(meterRegistry);
             return Mono.fromCallable(() -> {
@@ -85,6 +104,7 @@ public class EmailService {
                 // templateOrContent có thể là tên file (resolver classpath) hoặc chuỗi HTML từ DB (string resolver)
                 String htmlContent = templateEngine.process(templateOrContent, context);
                 helper.setText(htmlContent, true);
+                helperCustomizer.customize(helper);
 
                 return message;
             })
@@ -100,4 +120,9 @@ public class EmailService {
 
     /** Kết quả phân giải template: chuỗi truyền vào engine (tên file hoặc HTML) và subject cuối cùng. */
     private record ResolvedTemplate(String templateOrContent, String subject) {}
+
+    @FunctionalInterface
+    private interface MimeMessageCustomizer {
+        void customize(MimeMessageHelper helper) throws MessagingException;
+    }
 }
