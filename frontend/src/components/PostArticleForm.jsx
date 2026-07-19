@@ -34,7 +34,6 @@ const PostArticleForm = ({
   handleEventInputChange,
   registrationQuestions = [], // event
   setRegistrationQuestions,   // event
-  hideLocalQuestions = false,
   showSourceUrl = true,
 }) => {
   const { t } = useTranslation(['article', 'event', 'donation']);
@@ -214,7 +213,6 @@ const PostArticleForm = ({
           </Box>
         </Box>
 
-        {!hideLocalQuestions && (
         <Box
           sx={(theme) => ({
             backgroundColor: alpha(theme.palette.warning.main, theme.palette.mode === 'dark' ? 0.14 : 0.1),
@@ -295,7 +293,6 @@ const PostArticleForm = ({
             </Button>
           </Stack>
         </Box>
-        )}
       </ScrollRevealItem>
       )}
 
