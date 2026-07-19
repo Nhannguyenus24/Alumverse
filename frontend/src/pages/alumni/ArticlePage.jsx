@@ -149,6 +149,47 @@ const normalizeArticleHtml = (html) => {
     });
   });
 
+  container.querySelectorAll("img").forEach((image) => {
+    image.removeAttribute("width");
+    image.removeAttribute("height");
+    image.style.removeProperty("width");
+    image.style.removeProperty("height");
+    image.style.removeProperty("min-width");
+    image.style.removeProperty("max-width");
+    image.style.removeProperty("min-height");
+    image.style.removeProperty("max-height");
+    image.style.removeProperty("object-fit");
+    image.classList.add("ql-content-image");
+    image.style.setProperty("display", "block");
+    image.style.setProperty("width", "auto", "important");
+    image.style.setProperty("height", "auto", "important");
+    image.style.setProperty("max-width", "min(100%, 560px)", "important");
+    image.style.setProperty("max-height", "80vh");
+    image.style.setProperty("object-fit", "contain");
+    image.style.setProperty("margin", "16px auto");
+
+    const imageParagraph = image.closest("p");
+    if (imageParagraph && imageParagraph.textContent.trim() === "") {
+      imageParagraph.classList.add("ql-image-line");
+    }
+  });
+
+  container.querySelectorAll("p").forEach((paragraph) => {
+    const hasOnlyBreaks = Array.from(paragraph.childNodes).every((node) => (
+      node.nodeType === Node.ELEMENT_NODE && node.nodeName === "BR"
+    ));
+    if ((paragraph.textContent ?? "").trim() === "" && hasOnlyBreaks) {
+      paragraph.classList.add("ql-empty-line");
+    }
+  });
+
+  ["left", "center", "right", "justify"].forEach((alignment) => {
+    container.querySelectorAll(`.ql-align-${alignment}`).forEach((element) => {
+      // Keep Quill alignment authoritative even when surrounding page styles differ.
+      element.style.setProperty("text-align", alignment, "important");
+    });
+  });
+
   return container.innerHTML;
 };
 
@@ -669,7 +710,7 @@ const ArticlePage = () => {
 
               {/* Article Content */}
               <ScrollRevealItem
-                sx={(theme) => ({
+                sx={{
                   ...theme.typography.body1,
                   color: "text.primary",
                   fontFamily: theme.typography.fontFamily,
@@ -700,8 +741,20 @@ const ArticlePage = () => {
                   }),
                   "& p": {
                     ...theme.typography.body1,
-                    my: 1.25,
-                    textAlign: "justify",
+                    my: 0,
+                    minHeight: "1.65em",
+                    textAlign: "inherit",
+                  },
+                  "& p.ql-empty-line": {
+                    display: "block",
+                    minHeight: "1.65em",
+                    lineHeight: "1.65em",
+                    my: 0,
+                  },
+                  "& p:has(> br:only-child)": {
+                    minHeight: "1.65em",
+                    lineHeight: "1.65em",
+                    my: 0,
                   },
                   "& h1": { ...theme.typography.h1, mt: 3, mb: 1.5, textAlign: "left" },
                   "& h2": { ...theme.typography.h2, mt: 2.5, mb: 1.25, textAlign: "left" },
@@ -723,21 +776,27 @@ const ArticlePage = () => {
                     lineHeight: theme.typography.h2.lineHeight,
                     fontWeight: theme.typography.h2.fontWeight,
                   },
-                  "& .ql-align-left": { textAlign: "left" },
-                  "& .ql-align-center": { textAlign: "center" },
-                  "& .ql-align-right": { textAlign: "right" },
-                  "& .ql-align-justify": { textAlign: "justify" },
-                  "& img": {
-                    maxWidth: "100%",
-                    height: "auto",
+                  "& .ql-align-left, & [style*='text-align: left' i]": { textAlign: "left !important" },
+                  "& .ql-align-center, & [style*='text-align: center' i]": { textAlign: "center !important" },
+                  "& .ql-align-right, & [style*='text-align: right' i]": { textAlign: "right !important" },
+                  "& .ql-align-justify, & [style*='text-align: justify' i]": { textAlign: "justify !important" },
+                  "& img, & img.ql-content-image": {
+                    display: "block",
+                    maxWidth: "min(100%, 560px) !important",
+                    width: "auto !important",
+                    height: "auto !important",
+                    maxHeight: "80vh",
+                    objectFit: "contain",
+                    mx: "auto",
+                    my: 2,
+                    borderRadius: 2,
                   },
-                  "& img + p, & p:has(img) + p": {
-                    color: "text.secondary",
-                    fontSize: theme.typography.caption.fontSize,
-                    fontStyle: "italic",
-                    textAlign: "center",
-                    mt: 0.75,
-                    mb: 2,
+                  "& p.ql-image-line": {
+                    minHeight: 0,
+                    my: 2,
+                  },
+                  "& p.ql-image-line img": {
+                    my: 0,
                   },
                   "& a": {
                     color: "primary.main",
@@ -754,7 +813,7 @@ const ArticlePage = () => {
                     my: 2,
                     color: "text.secondary",
                   },
-                })}
+                }}
                 dangerouslySetInnerHTML={{ __html: cleanContent }}
               />
             </ScrollRevealGroup>

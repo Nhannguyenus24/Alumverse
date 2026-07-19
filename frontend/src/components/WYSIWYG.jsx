@@ -8,6 +8,18 @@ import { IMAGE_ACCEPT, useUploadImage, validateImageFile } from "../utils/imageU
 
 const Delta = Quill.import("delta");
 
+const normalizeEditorImageElement = (image) => {
+  image.removeAttribute("width");
+  image.removeAttribute("height");
+  image.style.removeProperty("width");
+  image.style.removeProperty("height");
+  image.style.removeProperty("min-width");
+  image.style.removeProperty("max-width");
+  image.style.removeProperty("min-height");
+  image.style.removeProperty("max-height");
+  image.style.removeProperty("object-fit");
+};
+
 const WYSIWYG = ({
   value = "",
   onChange,
@@ -95,6 +107,11 @@ const WYSIWYG = ({
     }
   }, [getQuillEditor, uploadImage]);
 
+  const normalizeEditorImages = useCallback(() => {
+    const editorRoot = quillRef.current?.editor?.root;
+    editorRoot?.querySelectorAll?.("img")?.forEach(normalizeEditorImageElement);
+  }, []);
+
   const modules = useMemo(
     () => ({
       toolbar: {
@@ -158,10 +175,14 @@ const WYSIWYG = ({
         matchVisual: false,
         matchers: [
           [
-            "img[src*='fbcdn.net']",
+            "IMG",
             (node, delta) => {
               const alt = node.getAttribute("alt");
-              return alt ? new Delta().insert(alt) : delta;
+              const src = node.getAttribute("src");
+              if (src?.includes("fbcdn.net") && alt) {
+                return new Delta().insert(alt);
+              }
+              return src ? new Delta().insert({ image: src }) : delta;
             },
           ],
         ],
@@ -187,6 +208,7 @@ const WYSIWYG = ({
         // Defer so Quill finishes applying the change before we rewrite it.
         setTimeout(() => replaceEmbeddedImages(), 0);
       }
+      setTimeout(() => normalizeEditorImages(), 0);
     };
 
     quill.on("text-change", handler);
@@ -197,7 +219,13 @@ const WYSIWYG = ({
         // Editor can be torn down during route/i18n remounts.
       }
     };
-  }, [allowImages, getQuillEditor, replaceEmbeddedImages]);
+  }, [allowImages, getQuillEditor, normalizeEditorImages, replaceEmbeddedImages]);
+
+  useEffect(() => {
+    if (!allowImages) return;
+    const timeoutId = setTimeout(() => normalizeEditorImages(), 0);
+    return () => clearTimeout(timeoutId);
+  }, [allowImages, normalizeEditorImages, value]);
 
   const formats = [
     "header",
@@ -274,6 +302,11 @@ const WYSIWYG = ({
           wordBreak: "normal",
           hyphens: "none",
         },
+        "& .ql-editor p": {
+          minHeight: "1.65em",
+          margin: 0,
+          textAlign: "inherit",
+        },
         "& .ql-editor.ql-blank::before": {
           color: theme.palette.text.disabled,
           fontStyle: "normal",
@@ -287,9 +320,30 @@ const WYSIWYG = ({
         "& .ql-editor h1, & .ql-editor h2, & .ql-editor h3, & .ql-editor h4, & .ql-editor h5, & .ql-editor h6": {
           textAlign: "left",
         },
+        "& .ql-editor .ql-align-left": {
+          textAlign: "left !important",
+        },
+        "& .ql-editor .ql-align-center": {
+          textAlign: "center !important",
+        },
+        "& .ql-editor .ql-align-right": {
+          textAlign: "right !important",
+        },
+        "& .ql-editor .ql-align-justify": {
+          textAlign: "justify !important",
+        },
         "& .ql-editor a": {
           overflowWrap: "normal",
           wordBreak: "normal",
+        },
+        "& .ql-editor img": {
+          display: "block",
+          maxWidth: "min(100%, 560px) !important",
+          width: "auto !important",
+          height: "auto !important",
+          maxHeight: "70vh",
+          objectFit: "contain",
+          margin: "12px auto",
         },
         "& .ql-tooltip": {
           backgroundColor: theme.palette.background.paper,
