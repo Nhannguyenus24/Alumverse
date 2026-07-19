@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { eventApi } from '../../utils/api';
+import useOrganizationStore from '../../stores/organizationStore';
 
 const mapQuestionToUi = (q) => {
   const typeMap = {
@@ -44,12 +45,12 @@ export const formatAnswersForApi = (answers, questions) => {
 };
 
 export const useEventQuestions = (eventId, enabled = true) => {
+  const organizationId = useOrganizationStore((s) => s.organization?.id ?? null);
   return useQuery({
-    queryKey: ['eventQuestions', eventId],
-    queryFn: () => eventApi.getEventQuestions(eventId),
-    enabled: Boolean(eventId) && enabled,
+    queryKey: ['eventQuestions', eventId, organizationId],
+    queryFn: () => eventApi.getEventQuestions(eventId, organizationId),
+    enabled: Boolean(eventId) && Boolean(organizationId) && enabled,
     select: (data) => (Array.isArray(data) ? data.map(mapQuestionToUi) : []),
   });
 };
-
 

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { enqueueSnackbar } from 'notistack';
 import apiClient from '../../utils/axios';
 
 const emptyMetrics = {
@@ -40,12 +41,22 @@ const buildLoginTimeline = (dailyStats) => {
   return result;
 };
 
+let lastLoadErrorToastAt = 0;
+
+const notifyDataLoadError = () => {
+  const now = Date.now();
+  if (now - lastLoadErrorToastAt < 5000) return;
+  lastLoadErrorToastAt = now;
+  enqueueSnackbar('Không tải được dữ liệu tổng quan. Vui lòng thử lại.', { variant: 'error' });
+};
+
 const fetchSafe = async (request, fallbackValue) => {
   try {
     const response = await request();
     const data = response?.data?.data ?? response?.data ?? null;
     return data ?? fallbackValue;
   } catch {
+    notifyDataLoadError();
     return fallbackValue;
   }
 };

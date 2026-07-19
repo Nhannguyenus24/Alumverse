@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { useParams } from "react-router";
 import Page from "../../components/Page";
 import MoneyField from "../../components/MoneyField";
+import VolunteerActivismOutlinedIcon from "@mui/icons-material/VolunteerActivismOutlined";
 import { VIETNAM_PHONE_REGEX } from "../../utils/regexUtils";
 import { fundApi } from "../../utils/api";
 import { useAuth } from "../../hooks/useAuth";
@@ -354,6 +355,8 @@ function DonationContributionForm({ fundDetail }) {
         <ScrollReveal delay={0.32}>
           <Button
             type="submit" fullWidth variant="contained" disabled={isSubmitting}
+            color="accent"
+            startIcon={<VolunteerActivismOutlinedIcon />}
             sx={{ mt: 2.2, height: 46, textTransform: "none", fontWeight: 700 }}
           >
             {isSubmitting ? t('submit_processing') : t('submit_donate')}

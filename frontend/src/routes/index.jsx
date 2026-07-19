@@ -12,6 +12,7 @@ import ProtectedRoute from "./ProtectedRoute";
 import PublicRoute from "./PublicRoute";
 import RequireSlugRoute from "./RequireSlugRoute";
 import FeatureRoute from "./FeatureRoute";
+import PostArticleRouteGuard from "./PostArticleRouteGuard";
 import LoadingScreen from "../components/LoadingScreen";
 import { Loadable, AuthLoadable } from "./loadable";
 import MentorshipFullAccessGate from "../components/mentorship/MentorshipFullAccessGate";
@@ -591,7 +592,9 @@ export const router = createBrowserRouter([
         path: "post",
         element: (
           <ProtectedRoute>
-            <PostArticlePage />
+            <PostArticleRouteGuard channel="news">
+              <PostArticlePage />
+            </PostArticleRouteGuard>
           </ProtectedRoute>
         ),
       },
@@ -599,7 +602,9 @@ export const router = createBrowserRouter([
         path: "post/event",
         element: (
           <ProtectedRoute>
-            <PostArticleEventPage />
+            <PostArticleRouteGuard channel="event">
+              <PostArticleEventPage />
+            </PostArticleRouteGuard>
           </ProtectedRoute>
         ),
       },
@@ -607,7 +612,9 @@ export const router = createBrowserRouter([
         path: "post/event/:id",
         element: (
           <ProtectedRoute>
-            <PostArticleEventPage />
+            <PostArticleRouteGuard channel="event">
+              <PostArticleEventPage />
+            </PostArticleRouteGuard>
           </ProtectedRoute>
         ),
       },
@@ -623,7 +630,9 @@ export const router = createBrowserRouter([
         path: "post/:channel",
         element: (
           <ProtectedRoute>
-            <PostArticleGenericPage />
+            <PostArticleRouteGuard>
+              <PostArticleGenericPage />
+            </PostArticleRouteGuard>
           </ProtectedRoute>
         ),
       },
@@ -925,7 +934,7 @@ export const router = createBrowserRouter([
           {
             path: "audit-logs",
             element: (
-              <ProtectedRoute allowedRoles={["ADMIN", "STAFF"]}>
+              <ProtectedRoute allowedRoles={["ADMIN"]}>
                 <AdminAuditLogsPage />
               </ProtectedRoute>
             ),

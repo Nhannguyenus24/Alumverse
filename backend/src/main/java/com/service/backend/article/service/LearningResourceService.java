@@ -40,7 +40,8 @@ public class LearningResourceService {
                     // A base64 thumbnail is converted to WebP and stored; otherwise fall back to the URL.
                     return SecurityUtils.resolveContentOrganizationId(request.getOrganizationId())
                             .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.BAD_REQUEST, "Organization ID is required to create learning resource")))
-                            .flatMap(orgId -> imageService.uploadBase64IfPresent(request.getThumbnailBase64())
+                            .flatMap(orgId -> SecurityUtils.assertCanSubmitContributorContent(orgId)
+                                    .then(imageService.uploadBase64IfPresent(request.getThumbnailBase64())
                             .defaultIfEmpty("")
                             .flatMap(thumbnailUrl -> {
                                 LearningResource resource = LearningResource.builder()
@@ -68,14 +69,15 @@ public class LearningResourceService {
                                             }
                                         })
                                         .map(LearningResourceResponse::from);
-                            }));
+                            })));
                 });
     }
 
     public Mono<LearningResourceResponse> update(Integer id, UpdateLearningResourceRequest request) {
         return learningResourceRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.LEARNING_RESOURCE_NOT_FOUND, "Learning resource not found with id: " + id)))
-                .flatMap(existing -> imageService.uploadBase64IfPresent(request.getThumbnailBase64())
+                .flatMap(existing -> SecurityUtils.assertCanManageContentOrganization(existing.getOrganizationId())
+                        .then(imageService.uploadBase64IfPresent(request.getThumbnailBase64())
                         .map(Optional::of).defaultIfEmpty(Optional.empty())
                         .flatMap(uploadedThumbnail -> {
                             existing.setTitle(request.getTitle());
@@ -84,7 +86,7 @@ public class LearningResourceService {
                             existing.setDescription(request.getDescription());
                             uploadedThumbnail.ifPresent(newThumbnail -> existing.setThumbnailUrl(newThumbnail.isEmpty() ? null : newThumbnail));
                             return learningResourceRepository.save(existing);
-                        }))
+                        })))
                 .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
                 .map(LearningResourceResponse::from);
     }
@@ -92,7 +94,8 @@ public class LearningResourceService {
     public Mono<Boolean> delete(Integer id) {
         return learningResourceRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.LEARNING_RESOURCE_NOT_FOUND, "Learning resource not found with id: " + id)))
-                .flatMap(existing -> learningResourceRepository.deleteById(id)
+                .flatMap(existing -> SecurityUtils.assertCanManageContentOrganization(existing.getOrganizationId())
+                        .then(learningResourceRepository.deleteById(id))
                         .then(cacheUtils.clear("admin_content_statistics"))
                         .thenReturn(true));
     }
@@ -103,17 +106,28 @@ public class LearningResourceService {
                 .map(LearningResourceResponse::from);
     }
 
+    public Mono<LearningResourceResponse> getPublicById(Integer id, Integer organizationId) {
+        return SecurityUtils.resolvePublicOrganizationId(organizationId)
+                .flatMap(orgId -> learningResourceRepository.findById(id)
+                        .filter(resource -> orgId.equals(resource.getOrganizationId())
+                                && Status.APPROVED.equals(resource.getStatus())))
+                .switchIfEmpty(Mono.error(new ApplicationException(
+                        ErrorCode.LEARNING_RESOURCE_NOT_FOUND, "Approved learning resource not found")))
+                .map(LearningResourceResponse::from);
+    }
+
     public Mono<PaginatedResponse<LearningResourceResponse>> getAll(int page, int limit) {
+        return getAll(page, limit, null);
+    }
+
+    public Mono<PaginatedResponse<LearningResourceResponse>> getAll(int page, int limit, Integer organizationId) {
         int offset = page * limit;
-        return SecurityUtils.getCurrentOrganizationId()
+        return SecurityUtils.resolvePublicOrganizationId(organizationId)
                 .flatMap(orgId -> PaginationHelper.paginate(
                         learningResourceRepository.findApprovedByOrganizationId(orgId, limit, offset).map(LearningResourceResponse::from),
                         learningResourceRepository.countApprovedByOrganizationId(orgId),
                         page, limit))
-                .switchIfEmpty(Mono.defer(() -> PaginationHelper.paginate(
-                        learningResourceRepository.findAllApprovedWithPagination(limit, offset).map(LearningResourceResponse::from),
-                        learningResourceRepository.countAllApproved(),
-                        page, limit)));
+                .switchIfEmpty(Mono.just(PaginatedResponse.of(java.util.List.of(), 0, page, limit)));
     }
 
     public Mono<PaginatedResponse<LearningResourceResponse>> getByType(String type, int page, int limit) {
@@ -135,15 +149,16 @@ public class LearningResourceService {
     }
 
     public Mono<PaginatedResponse<LearningResourceResponse>> search(String keyword, int page, int limit) {
+        return search(keyword, page, limit, null);
+    }
+
+    public Mono<PaginatedResponse<LearningResourceResponse>> search(String keyword, int page, int limit, Integer organizationId) {
         int offset = page * limit;
-        return SecurityUtils.getCurrentOrganizationId()
+        return SecurityUtils.resolvePublicOrganizationId(organizationId)
                 .flatMap(orgId -> PaginationHelper.paginate(
                         learningResourceRepository.searchResources(orgId, keyword, limit, offset).map(LearningResourceResponse::from),
                         learningResourceRepository.countSearchResources(orgId, keyword),
                         page, limit))
-                .switchIfEmpty(Mono.defer(() -> PaginationHelper.paginate(
-                        learningResourceRepository.searchAllApprovedByTitleWithPagination(keyword, limit, offset).map(LearningResourceResponse::from),
-                        learningResourceRepository.countAllApprovedSearchByTitle(keyword),
-                        page, limit)));
+                .switchIfEmpty(Mono.just(PaginatedResponse.of(java.util.List.of(), 0, page, limit)));
     }
 }

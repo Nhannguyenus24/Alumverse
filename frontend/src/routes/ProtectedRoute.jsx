@@ -1,11 +1,13 @@
 import { Navigate, useLocation, useParams } from "react-router";
 import { useAuth } from "../hooks/useAuth";
 import LoadingScreen from "../components/LoadingScreen";
+import useOrganizationStore from "../stores/organizationStore";
 
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   const { isAuthenticated, isLoading, user, mustChangePassword, verificationLevel } = useAuth();
   const location = useLocation();
   const { slug } = useParams();
+  const currentOrganizationId = useOrganizationStore((state) => state.organization?.id ?? null);
 
   const isGlobalAdminRoute = /^\/admin(?:\/|$)/.test(location.pathname);
   const isSlugAdminRoute = /^\/[^/]+\/admin(?:\/|$)/.test(location.pathname);
@@ -48,7 +50,14 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   // STAFF only acts as staff in the organization where the backend grants
   // effective verification level 4. In other orgs they fall back to level 2
   // and cannot access staff admin pages.
-  if (user?.role === 'STAFF' && isAnyAdminRoute && Number(verificationLevel ?? 0) < 4) {
+  const tokenOrganizationId = user?.organizationId ?? null;
+  const staffInCurrentOrganization =
+    isSlugAdminRoute &&
+    currentOrganizationId != null &&
+    tokenOrganizationId != null &&
+    Number(currentOrganizationId) === Number(tokenOrganizationId);
+
+  if (user?.role === 'STAFF' && isAnyAdminRoute && (Number(verificationLevel ?? 0) < 4 || !staffInCurrentOrganization)) {
     return <Navigate to="/unauthorized" replace />;
   }
 

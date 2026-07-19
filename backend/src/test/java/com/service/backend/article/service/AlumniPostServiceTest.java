@@ -36,6 +36,13 @@ class AlumniPostServiceTest {
     @InjectMocks
     private AlumniPostService alumniPostService;
 
+    private static reactor.util.context.Context adminContext() {
+        return org.springframework.security.core.context.ReactiveSecurityContextHolder.withAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                        "1", null,
+                        java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN"))));
+    }
+
     // ─── getById ─────────────────────────────────────────────────────────────
 
     @Nested
@@ -120,6 +127,7 @@ class AlumniPostServiceTest {
         void publish_success() {
             AlumniPost existing = AlumniPost.builder()
                     .id(1)
+                    .organizationId(1)
                     .title("Draft Post")
                     .isHidden(true)
                     .build();
@@ -133,7 +141,8 @@ class AlumniPostServiceTest {
             when(alumniPostRepository.findById(1)).thenReturn(Mono.just(existing), Mono.just(published));
             when(alumniPostRepository.publishAlumniPost(1)).thenReturn(Mono.just(1));
 
-            StepVerifier.create(alumniPostService.publish(1))
+            StepVerifier.create(alumniPostService.publish(1)
+                            .contextWrite(adminContext()))
                     .assertNext(dto -> assertThat(dto.getIsHidden()).isFalse())
                     .verifyComplete();
         }
@@ -150,6 +159,7 @@ class AlumniPostServiceTest {
         void hide_success() {
             AlumniPost existing = AlumniPost.builder()
                     .id(1)
+                    .organizationId(1)
                     .title("Published Post")
                     .isHidden(false)
                     .build();
@@ -163,7 +173,8 @@ class AlumniPostServiceTest {
             when(alumniPostRepository.findById(1)).thenReturn(Mono.just(existing), Mono.just(hidden));
             when(alumniPostRepository.hideAlumniPost(1)).thenReturn(Mono.just(1));
 
-            StepVerifier.create(alumniPostService.hide(1))
+            StepVerifier.create(alumniPostService.hide(1)
+                            .contextWrite(adminContext()))
                     .assertNext(dto -> assertThat(dto.getIsHidden()).isTrue())
                     .verifyComplete();
         }
@@ -180,6 +191,7 @@ class AlumniPostServiceTest {
         void delete_success() {
             AlumniPost post = AlumniPost.builder()
                     .id(1)
+                    .organizationId(1)
                     .title("Post to Delete")
                     .build();
 
@@ -187,7 +199,8 @@ class AlumniPostServiceTest {
             when(alumniPostRepository.deleteById(1)).thenReturn(Mono.empty());
             when(cacheUtils.clear(anyString())).thenReturn(Mono.empty());
 
-            StepVerifier.create(alumniPostService.delete(1))
+            StepVerifier.create(alumniPostService.delete(1)
+                            .contextWrite(adminContext()))
                     .assertNext(result -> assertThat(result).isTrue())
                     .verifyComplete();
         }
@@ -204,6 +217,7 @@ class AlumniPostServiceTest {
         void update_success() {
             AlumniPost existing = AlumniPost.builder()
                     .id(1)
+                    .organizationId(1)
                     .title("Old Title")
                     .content("Old Content")
                     .build();
@@ -223,7 +237,8 @@ class AlumniPostServiceTest {
             when(alumniPostRepository.save(any())).thenReturn(Mono.just(updated));
             when(cacheUtils.clear(anyString())).thenReturn(Mono.empty());
 
-            StepVerifier.create(alumniPostService.update(1, request))
+            StepVerifier.create(alumniPostService.update(1, request)
+                            .contextWrite(adminContext()))
                     .assertNext(dto -> assertThat(dto.getTitle()).isEqualTo("New Title"))
                     .verifyComplete();
         }

@@ -47,7 +47,7 @@ class AuthRepository {
         organizationId: organizationId,
       ),
     );
-    return _persistSession(res);
+    return _persistSession(res, organizationId: organizationId);
   }
 
   Future<AuthSession> loginWithGoogle({
@@ -55,12 +55,12 @@ class AuthRepository {
     required int organizationId,
   }) async {
     final res = await api.loginWithGoogle(idToken, organizationId);
-    return _persistSession(res);
+    return _persistSession(res, organizationId: organizationId);
   }
 
   Future<AuthSession> switchOrganization(int organizationId) async {
     final res = await api.switchOrganization(organizationId);
-    return _persistSession(res);
+    return _persistSession(res, organizationId: organizationId);
   }
 
   Future<void> persistVerificationLevel(int level) =>
@@ -134,12 +134,20 @@ class AuthRepository {
     );
   }
 
-  Future<AuthSession> _persistSession(LoginResponse res) async {
+  Future<AuthSession> _persistSession(
+    LoginResponse res, {
+    int? organizationId,
+  }) async {
     final user = JwtHelper.userFromAccessToken(res.accessToken);
     if (user == null) {
       throw Exception('Invalid access token received from server');
     }
     await storage.writeAccessToken(res.accessToken);
+    final effectiveOrganizationId =
+        organizationId ?? JwtHelper.organizationIdFromToken(res.accessToken);
+    if (effectiveOrganizationId != null) {
+      await storage.writeOrganizationId(effectiveOrganizationId);
+    }
     if (res.verificationLevel != null) {
       await storage.writeVerificationLevel(res.verificationLevel!);
     }

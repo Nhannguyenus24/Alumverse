@@ -8,6 +8,8 @@ import {
 import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
 import ForumOutlinedIcon from '@mui/icons-material/ForumOutlined';
 import GavelOutlinedIcon from '@mui/icons-material/GavelOutlined';
+import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
+import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import PeopleAltOutlinedIcon from '@mui/icons-material/PeopleAltOutlined';
 import MarkChatUnreadOutlinedIcon from '@mui/icons-material/MarkChatUnreadOutlined';
@@ -36,7 +38,7 @@ const AdminDashboardPage = () => {
   const { allUsers } = useAdminUsersContext();
   const { allPosts, statistics } = useAdminForumContext();
   const aggregates = useAdminDashboardAggregates(allUsers, allPosts, organizations);
-  const { setBreadcrumbs } = useOutletContext();
+  const { setBreadcrumbs, adminBase } = useOutletContext();
   const displayName =
     profile?.fullName ||
     profile?.name ||
@@ -282,18 +284,17 @@ const AdminDashboardPage = () => {
               <Stack spacing={1.5}>
                 <Button
                   component={NavLink}
-                  to="/admin/users"
+                  to={isAdmin ? `${adminBase}/users` : `${adminBase}/events`}
                   variant="outlined"
                   fullWidth
-                  startIcon={<GroupsOutlinedIcon />}
+                  startIcon={isAdmin ? <GroupsOutlinedIcon /> : <EventNoteOutlinedIcon />}
                   sx={{ justifyContent: 'flex-start', py: 1.2, fontWeight: 700, textTransform: 'none', borderRadius: 1 }}
-                  disabled={!isAdmin}
                 >
-                  {t('admin:manage_users')}
+                  {isAdmin ? t('admin:manage_users') : t('admin:nav_events')}
                 </Button>
                 <Button
                   component={NavLink}
-                  to="/admin/forum/posts"
+                  to={`${adminBase}/forum/posts`}
                   variant="outlined"
                   fullWidth
                   startIcon={<ForumOutlinedIcon />}
@@ -303,14 +304,13 @@ const AdminDashboardPage = () => {
                 </Button>
                 <Button
                   component={NavLink}
-                  to="/admin/audit-logs"
+                  to={isAdmin ? `${adminBase}/audit-logs` : `${adminBase}/article`}
                   variant="outlined"
                   fullWidth
-                  startIcon={<GavelOutlinedIcon />}
+                  startIcon={isAdmin ? <GavelOutlinedIcon /> : <ArticleOutlinedIcon />}
                   sx={{ justifyContent: 'flex-start', py: 1.2, fontWeight: 700, textTransform: 'none', borderRadius: 1 }}
-                  disabled={!isAdmin}
                 >
-                  {t('admin:view_audit_logs')}
+                  {isAdmin ? t('admin:view_audit_logs') : t('admin:nav_article')}
                 </Button>
               </Stack>
             </Box>

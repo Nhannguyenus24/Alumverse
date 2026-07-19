@@ -53,8 +53,10 @@ public class JobController {
 
     @PublicEndpoint
     @GetMapping("/{id}")
-    public Mono<ResponseEntity<ApiResponse<JobResponse>>> getById(@PathVariable @Min(1) Integer id) {
-        return jobService.getById(id)
+    public Mono<ResponseEntity<ApiResponse<JobResponse>>> getById(
+            @PathVariable @Min(1) Integer id,
+            @RequestParam(required = false) Integer organizationId) {
+        return jobService.getPublicById(id, organizationId)
                 .map(response -> ResponseEntity
                         .ok(new ApiResponse<>("Job retrieved successfully", response)));
     }
@@ -63,8 +65,9 @@ public class JobController {
     @GetMapping
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<JobResponse>>>> getAll(
             @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "10") @Min(1) int limit) {
-        return jobService.getAll(page, limit)
+            @RequestParam(defaultValue = "10") @Min(1) int limit,
+            @RequestParam(required = false) Integer organizationId) {
+        return jobService.getActive(page, limit, organizationId)
                 .map(response -> ResponseEntity
                         .ok(new ApiResponse<>("Jobs retrieved successfully", response)));
     }
@@ -73,8 +76,9 @@ public class JobController {
     @GetMapping("/active")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<JobResponse>>>> getActive(
             @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "10") @Min(1) int limit) {
-        return jobService.getActive(page, limit)
+            @RequestParam(defaultValue = "10") @Min(1) int limit,
+            @RequestParam(required = false) Integer organizationId) {
+        return jobService.getActive(page, limit, organizationId)
                 .map(response -> ResponseEntity
                         .ok(new ApiResponse<>("Active jobs retrieved successfully", response)));
     }
@@ -94,8 +98,9 @@ public class JobController {
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<JobResponse>>>> search(
             @RequestParam @NotBlank String keyword,
             @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "10") @Min(1) int limit) {
-        return jobService.search(keyword, page, limit)
+            @RequestParam(defaultValue = "10") @Min(1) int limit,
+            @RequestParam(required = false) Integer organizationId) {
+        return jobService.search(keyword, page, limit, organizationId)
                 .map(response -> ResponseEntity
                         .ok(new ApiResponse<>("Search results retrieved successfully", response)));
     }

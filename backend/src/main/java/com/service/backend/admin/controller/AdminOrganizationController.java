@@ -45,7 +45,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 @RestController
 @RequestMapping("/api/admin/organizations")
 @Validated
-@PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminOrganizationController {
     
     private final AdminOrganizationService organizationService;
@@ -98,6 +98,7 @@ public class AdminOrganizationController {
     }
 
     @GetMapping("/feedback-statistics")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     public Mono<ResponseEntity<ApiResponse<FeedbackStatisticsDTO>>> getFeedbackStatistics() {
         return organizationService.getFeedbackStatistics()
                 .map(stats -> ResponseEntity.ok(

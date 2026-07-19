@@ -149,21 +149,26 @@ public class ChatService {
         String finalMessageType = messageType != null ? messageType : "TEXT";
         String finalMetadata = metadata != null ? metadata : "null";
 
-        Mono<ChatMessage> insertMessage = chatMessageRepository.insertMessage(
-                groupId,
-                senderMemberId,
-                content,
-                finalMessageType,
-                finalMetadata,
-                now
-        );
+        return chatGroupRepository.findById(groupId)
+                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.RESOURCES_NOT_FOUND, "Chat group not found")))
+                .flatMap(group -> chatGroupMemberRepository.findByGroupIdAndMemberId(groupId, senderMemberId)
+                        .switchIfEmpty(Mono.error(new ApplicationException(
+                                ErrorCode.CHAT_USER_NOT_GROUP_MEMBER,
+                                "Current user is not a member of this chat group")))
+                        .then(Mono.defer(() -> {
+                            Mono<Void> communicationGuard = ChatType.PRIVATE.equals(group.getType())
+                                    ? userBlockService.assertSenderCanSendMessage(senderMemberId, groupId)
+                                    : Mono.empty();
 
-        if (ChatType.PRIVATE.getValue().equals(chatType)) {
-            return userBlockService.assertSenderCanSendMessage(senderMemberId, groupId)
-                    .then(insertMessage);
-        }
-
-        return insertMessage;
+                            return communicationGuard.then(chatMessageRepository.insertMessage(
+                                    groupId,
+                                    senderMemberId,
+                                    content,
+                                    finalMessageType,
+                                    finalMetadata,
+                                    now
+                            ));
+                        })));
     }
 
     public Mono<GroupBlockedMembersContextResponse> getGroupBlockedMembersContext(
@@ -200,10 +205,14 @@ public class ChatService {
                 });
     }
 
-    public Flux<ChatMessageResponse> getMessagesWithSenderInfo(Long groupId, int page, int size) {
+    public Flux<ChatMessageResponse> getMessagesWithSenderInfo(Long groupId, Long currentMemberId, int page, int size) {
         int limit = Math.max(size, 1);
         int offset = Math.max(page, 0) * limit;
-        return chatMessageRepository.findByGroupIdWithSenderInfoAndPagination(groupId, limit, offset);
+        return chatGroupMemberRepository.findByGroupIdAndMemberId(groupId, currentMemberId)
+                .switchIfEmpty(Mono.error(new ApplicationException(
+                        ErrorCode.CHAT_USER_NOT_GROUP_MEMBER,
+                        "Current user is not a member of this chat group")))
+                .thenMany(chatMessageRepository.findByGroupIdWithSenderInfoAndPagination(groupId, limit, offset));
     }
 
     /**
@@ -401,14 +410,18 @@ public class ChatService {
     /**
      * Get chat group metadata including title, created_by, created_at, and members.
      */
-    public Mono<ChatGroupMetadataResponse> getChatGroupMetadata(Long groupId) {
-        if (groupId == null) {
-            return Mono.error(new ApplicationException(ErrorCode.RESOURCES_NOT_FOUND, "Group ID must not be null"));
+    public Mono<ChatGroupMetadataResponse> getChatGroupMetadata(Long groupId, Long currentMemberId) {
+        if (groupId == null || currentMemberId == null) {
+            return Mono.error(new ApplicationException(ErrorCode.RESOURCES_NOT_FOUND, "Group ID and member ID must not be null"));
         }
 
         return chatGroupRepository.findById(groupId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.RESOURCES_NOT_FOUND, "Chat group not found")))
-                .flatMap(group -> chatGroupMemberRepository.findByGroupId(groupId)
+                .flatMap(group -> chatGroupMemberRepository.findByGroupIdAndMemberId(groupId, currentMemberId)
+                        .switchIfEmpty(Mono.error(new ApplicationException(
+                                ErrorCode.CHAT_USER_NOT_GROUP_MEMBER,
+                                "Current user is not a member of this chat group")))
+                        .thenMany(chatGroupMemberRepository.findByGroupId(groupId))
                         .collectList()
                         .map(members -> ChatGroupMetadataResponse.builder()
                                 .id(group.getId())
@@ -420,8 +433,7 @@ public class ChatService {
                                 .updatedAt(group.getUpdatedAt())
                                 .members(members)
                                 .build()
-                        )
-                );
+                        ));
     }
 
     /**
@@ -546,4 +558,3 @@ public class ChatService {
     }
 }
     
-

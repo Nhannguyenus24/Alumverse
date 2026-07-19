@@ -34,7 +34,8 @@ public class AlumniPostService {
                     boolean publishImmediately = "ADMIN".equalsIgnoreCase(role) || "STAFF".equalsIgnoreCase(role);
                     return SecurityUtils.resolveContentOrganizationId(request.getOrganizationId())
                             .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.BAD_REQUEST, "Organization ID is required to create alumni post")))
-                            .flatMap(orgId -> imageService.uploadBase64IfPresent(request.getThumbnailBase64())
+                            .flatMap(orgId -> SecurityUtils.assertCanSubmitContributorContent(orgId)
+                                    .then(imageService.uploadBase64IfPresent(request.getThumbnailBase64())
                             .defaultIfEmpty("")
                             .flatMap(thumbnailUrl -> {
                                 AlumniPost post = AlumniPost.builder()
@@ -62,14 +63,15 @@ public class AlumniPostService {
                                             }
                                         })
                                         .map(AlumniPostResponse::from);
-                            }));
+                            })));
                 });
     }
 
     public Mono<AlumniPostResponse> update(Integer id, UpdateAlumniPostRequest request) {
         return alumniPostRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.ALUMNI_POST_NOT_FOUND, "Alumni post not found with id: " + id)))
-                .flatMap(existing -> imageService.uploadBase64IfPresent(request.getThumbnailBase64())
+                .flatMap(existing -> SecurityUtils.assertCanManageContentOrganization(existing.getOrganizationId())
+                        .then(imageService.uploadBase64IfPresent(request.getThumbnailBase64())
                         .defaultIfEmpty("")
                         .flatMap(thumbnailUrl -> {
                             existing.setTitle(request.getTitle());
@@ -79,7 +81,7 @@ public class AlumniPostService {
                             if (request.getTopic() != null) existing.setTopic(request.getTopic());
                             if (request.getUrl() != null) existing.setUrl(request.getUrl());
                             return alumniPostRepository.save(existing);
-                        }))
+                        })))
                 .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
                 .map(AlumniPostResponse::from);
     }
@@ -87,7 +89,8 @@ public class AlumniPostService {
     public Mono<Boolean> delete(Integer id) {
         return alumniPostRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.ALUMNI_POST_NOT_FOUND, "Alumni post not found with id: " + id)))
-                .flatMap(existing -> alumniPostRepository.deleteById(id)
+                .flatMap(existing -> SecurityUtils.assertCanManageContentOrganization(existing.getOrganizationId())
+                        .then(alumniPostRepository.deleteById(id))
                         .then(cacheUtils.clear("admin_content_statistics"))
                         .thenReturn(true));
     }
@@ -98,9 +101,29 @@ public class AlumniPostService {
                 .map(AlumniPostResponse::from);
     }
 
+    public Mono<AlumniPostResponse> getPublicById(Integer id, Integer organizationId) {
+        return SecurityUtils.resolvePublicOrganizationId(organizationId)
+                .flatMap(orgId -> alumniPostRepository.findById(id)
+                        .filter(post -> orgId.equals(post.getOrganizationId())
+                                && !Boolean.TRUE.equals(post.getIsHidden())))
+                .switchIfEmpty(Mono.error(new ApplicationException(
+                        ErrorCode.ALUMNI_POST_NOT_FOUND, "Published alumni post not found")))
+                .map(AlumniPostResponse::from);
+    }
+
     public Mono<AlumniPostResponse> getBySlug(String slug) {
         return alumniPostRepository.findBySlug(slug)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.ALUMNI_POST_NOT_FOUND, "Alumni post not found with slug: " + slug)))
+                .map(AlumniPostResponse::from);
+    }
+
+    public Mono<AlumniPostResponse> getPublicBySlug(String slug, Integer organizationId) {
+        return SecurityUtils.resolvePublicOrganizationId(organizationId)
+                .flatMap(orgId -> alumniPostRepository.findBySlug(slug)
+                        .filter(post -> orgId.equals(post.getOrganizationId())
+                                && !Boolean.TRUE.equals(post.getIsHidden())))
+                .switchIfEmpty(Mono.error(new ApplicationException(
+                        ErrorCode.ALUMNI_POST_NOT_FOUND, "Published alumni post not found")))
                 .map(AlumniPostResponse::from);
     }
 
@@ -118,48 +141,55 @@ public class AlumniPostService {
     }
 
     public Mono<PaginatedResponse<AlumniPostResponse>> getPublished(int page, int limit) {
+        return getPublished(page, limit, null);
+    }
+
+    public Mono<PaginatedResponse<AlumniPostResponse>> getPublished(int page, int limit, Integer organizationId) {
         int offset = page * limit;
-        return SecurityUtils.getCurrentOrganizationId()
+        return SecurityUtils.resolvePublicOrganizationId(organizationId)
                 .flatMap(orgId -> PaginationHelper.paginate(
                         alumniPostRepository.findPublishedByOrganizationId(orgId, limit, offset).map(AlumniPostResponse::from),
                         alumniPostRepository.countPublishedByOrganizationId(orgId),
                         page, limit))
-                .switchIfEmpty(Mono.defer(() -> PaginationHelper.paginate(
-                        alumniPostRepository.findAll()
-                                .filter(p -> !p.getIsHidden())
-                                .skip(offset)
-                                .take(limit)
-                                .map(AlumniPostResponse::from),
-                        alumniPostRepository.count(),
-                        page, limit)));
+                .switchIfEmpty(Mono.just(PaginatedResponse.of(java.util.List.of(), 0, page, limit)));
     }
 
     public Mono<PaginatedResponse<AlumniPostResponse>> getByAuthorMemberId(Integer authorMemberId, int page, int limit) {
+        return getByAuthorMemberId(authorMemberId, null, page, limit);
+    }
+
+    public Mono<PaginatedResponse<AlumniPostResponse>> getByAuthorMemberId(
+            Integer authorMemberId, Integer organizationId, int page, int limit) {
         int offset = page * limit;
-        return PaginationHelper.paginate(
-                alumniPostRepository.findByAuthorMemberIdWithPagination(authorMemberId, limit, offset).map(AlumniPostResponse::from),
-                alumniPostRepository.countByAuthorMemberId(authorMemberId),
-                page, limit)
-                .doOnSuccess(r -> org.slf4j.LoggerFactory.getLogger(AlumniPostService.class).info("getByAuthorMemberId result: {}", com.service.backend.shared.utils.JsonUtils.toJson(r)));
+        return SecurityUtils.resolvePublicOrganizationId(organizationId)
+                .flatMap(orgId -> PaginationHelper.paginate(
+                        alumniPostRepository.findPublishedByAuthorMemberIdAndOrganizationId(authorMemberId, orgId, limit, offset)
+                                .map(AlumniPostResponse::from),
+                        alumniPostRepository.countPublishedByAuthorMemberIdAndOrganizationId(authorMemberId, orgId),
+                        page, limit))
+                .switchIfEmpty(Mono.just(PaginatedResponse.of(java.util.List.of(), 0, page, limit)));
     }
 
     public Mono<PaginatedResponse<AlumniPostResponse>> search(String keyword, int page, int limit) {
+        return search(keyword, page, limit, null);
+    }
+
+    public Mono<PaginatedResponse<AlumniPostResponse>> search(String keyword, int page, int limit, Integer organizationId) {
         int offset = page * limit;
-        return SecurityUtils.getCurrentOrganizationId()
+        return SecurityUtils.resolvePublicOrganizationId(organizationId)
                 .flatMap(orgId -> PaginationHelper.paginate(
                         alumniPostRepository.searchAlumniPosts(orgId, keyword, limit, offset).map(AlumniPostResponse::from),
                         alumniPostRepository.countSearchAlumniPosts(orgId, keyword),
                         page, limit))
-                .switchIfEmpty(Mono.defer(() -> PaginationHelper.paginate(
-                        alumniPostRepository.searchAllByTitleWithPagination(keyword, limit, offset).map(AlumniPostResponse::from),
-                        alumniPostRepository.countAllSearchByTitle(keyword),
-                        page, limit)));
+                .switchIfEmpty(Mono.just(PaginatedResponse.of(java.util.List.of(), 0, page, limit)));
     }
 
     public Mono<AlumniPostResponse> publish(Integer id) {
         return alumniPostRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.ALUMNI_POST_NOT_FOUND, "Alumni post not found with id: " + id)))
-                .flatMap(existing -> alumniPostRepository.publishAlumniPost(id).then(alumniPostRepository.findById(id)))
+                .flatMap(existing -> SecurityUtils.assertCanManageContentOrganization(existing.getOrganizationId())
+                        .then(alumniPostRepository.publishAlumniPost(id))
+                        .then(alumniPostRepository.findById(id)))
                 .doOnNext(updated -> notificationService.createNotificationAsync(
                         updated.getAuthorMemberId(),
                         "Bài viết đã được duyệt",
@@ -172,7 +202,9 @@ public class AlumniPostService {
     public Mono<AlumniPostResponse> hide(Integer id) {
         return alumniPostRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.ALUMNI_POST_NOT_FOUND, "Alumni post not found with id: " + id)))
-                .flatMap(existing -> alumniPostRepository.hideAlumniPost(id).then(alumniPostRepository.findById(id)))
+                .flatMap(existing -> SecurityUtils.assertCanManageContentOrganization(existing.getOrganizationId())
+                        .then(alumniPostRepository.hideAlumniPost(id))
+                        .then(alumniPostRepository.findById(id)))
                 .doOnNext(updated -> notificationService.createNotificationAsync(
                         updated.getAuthorMemberId(),
                         "Bài viết bị gỡ đăng",

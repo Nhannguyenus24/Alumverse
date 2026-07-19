@@ -9,6 +9,7 @@ import {
   normalizeLearning,
   normalizeNews,
 } from "./normalizeArticle";
+import useOrganizationStore from "../../stores/organizationStore";
 
 const CHANNEL_CONFIG = {
   news: {
@@ -42,20 +43,21 @@ const CHANNEL_CONFIG = {
 };
 
 const fetchArticle = async ({ queryKey }) => {
-  const [, { channel, id }] = queryKey;
+  const [, { channel, id, organizationId }] = queryKey;
   const config = CHANNEL_CONFIG[channel];
   if (!config) throw new Error(`Unknown article channel: ${channel}`);
 
-  const res = await apiClient.get(config.url(id));
+  const res = await apiClient.get(config.url(id), { params: { organizationId } });
   const raw = res?.data?.data ?? null;
   return config.normalize(raw);
 };
 
 export const useArticleById = (channel, id) => {
+  const organizationId = useOrganizationStore((s) => s.organization?.id ?? null);
   const { data, isPending, isError, error } = useQuery({
-    queryKey: ["article", { channel, id }],
+    queryKey: ["article", { channel, id, organizationId }],
     queryFn: fetchArticle,
-    enabled: !!channel && !!id && !!CHANNEL_CONFIG[channel],
+    enabled: !!channel && !!id && !!organizationId && !!CHANNEL_CONFIG[channel],
   });
 
   const errorMessage =

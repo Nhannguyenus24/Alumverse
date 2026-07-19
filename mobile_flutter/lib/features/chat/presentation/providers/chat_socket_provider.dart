@@ -24,13 +24,26 @@ final chatSocketServiceProvider = Provider<ChatSocketService>((ref) {
     }
     // Expired or missing → refresh via the HTTP-only refresh cookie.
     try {
-      final res = await refreshDio.post(ApiEndpoints.authRefresh);
+      final organizationId =
+          await storage.readOrganizationId() ??
+          JwtHelper.organizationIdFromToken(token);
+      final res = await refreshDio.post(
+        ApiEndpoints.authRefresh,
+        queryParameters:
+            organizationId == null ? null : {'organizationId': organizationId},
+      );
       final body = res.data;
       final data =
           body is Map && body['data'] is Map ? body['data'] as Map : body;
       final newToken = (data is Map ? data['accessToken'] : null) as String?;
       if (newToken != null && newToken.isNotEmpty) {
         await storage.writeAccessToken(newToken);
+        final refreshedOrganizationId = JwtHelper.organizationIdFromToken(
+          newToken,
+        );
+        if (refreshedOrganizationId != null) {
+          await storage.writeOrganizationId(refreshedOrganizationId);
+        }
         return newToken;
       }
     } catch (_) {

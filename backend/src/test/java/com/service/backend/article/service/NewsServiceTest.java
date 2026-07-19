@@ -37,6 +37,13 @@ class NewsServiceTest {
     @InjectMocks
     private NewsService newsService;
 
+    private static reactor.util.context.Context adminContext() {
+        return org.springframework.security.core.context.ReactiveSecurityContextHolder.withAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                        "1", null,
+                        java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN"))));
+    }
+
     // ─── getById ─────────────────────────────────────────────────────────────
 
     @Nested
@@ -110,6 +117,7 @@ class NewsServiceTest {
         void publish_success() {
             News existing = News.builder()
                     .id(1)
+                    .organizationId(1)
                     .title("Draft News")
                     .isHidden(true)
                     .build();
@@ -123,7 +131,8 @@ class NewsServiceTest {
             when(newsRepository.findById(1)).thenReturn(Mono.just(existing), Mono.just(published));
             when(newsRepository.publishNews(1)).thenReturn(Mono.just(1));
 
-            StepVerifier.create(newsService.publish(1))
+            StepVerifier.create(newsService.publish(1)
+                            .contextWrite(adminContext()))
                     .assertNext(dto -> assertThat(dto.getIsHidden()).isFalse())
                     .verifyComplete();
         }
@@ -140,6 +149,7 @@ class NewsServiceTest {
         void hide_success() {
             News existing = News.builder()
                     .id(1)
+                    .organizationId(1)
                     .title("Published News")
                     .isHidden(false)
                     .build();
@@ -153,7 +163,8 @@ class NewsServiceTest {
             when(newsRepository.findById(1)).thenReturn(Mono.just(existing), Mono.just(hidden));
             when(newsRepository.hideNews(1)).thenReturn(Mono.just(1));
 
-            StepVerifier.create(newsService.hide(1))
+            StepVerifier.create(newsService.hide(1)
+                            .contextWrite(adminContext()))
                     .assertNext(dto -> assertThat(dto.getIsHidden()).isTrue())
                     .verifyComplete();
         }
@@ -170,6 +181,7 @@ class NewsServiceTest {
         void delete_success() {
             News news = News.builder()
                     .id(1)
+                    .organizationId(1)
                     .title("News to Delete")
                     .build();
 
@@ -177,7 +189,8 @@ class NewsServiceTest {
             when(newsRepository.deleteById(1)).thenReturn(Mono.empty());
             when(cacheUtils.clear(anyString())).thenReturn(Mono.empty());
 
-            StepVerifier.create(newsService.delete(1))
+            StepVerifier.create(newsService.delete(1)
+                            .contextWrite(adminContext()))
                     .assertNext(result -> assertThat(result).isTrue())
                     .verifyComplete();
         }
@@ -194,6 +207,7 @@ class NewsServiceTest {
         void update_success() {
             News existing = News.builder()
                     .id(1)
+                    .organizationId(1)
                     .title("Old Title")
                     .content("Old Content")
                     .build();
@@ -213,7 +227,8 @@ class NewsServiceTest {
             when(newsRepository.save(any())).thenReturn(Mono.just(updated));
             when(cacheUtils.clear(anyString())).thenReturn(Mono.empty());
 
-            StepVerifier.create(newsService.update(1, request))
+            StepVerifier.create(newsService.update(1, request)
+                            .contextWrite(adminContext()))
                     .assertNext(dto -> assertThat(dto.getTitle()).isEqualTo("New Title"))
                     .verifyComplete();
         }

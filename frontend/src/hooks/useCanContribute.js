@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 
 import { useAuth } from './useAuth';
+import useOrganizationStore from '../stores/organizationStore';
 
 /**
  * Central rule for "may this user push / change content?".
@@ -22,14 +23,28 @@ const MIN_CONTRIBUTE_VERIFICATION_LEVEL = 2;
 const ORG_MANAGER_VERIFICATION_LEVEL = 4;
 
 export const useCanContribute = () => {
-  const { isAuthenticated, verificationLevel } = useAuth();
+  const { isAuthenticated, user, verificationLevel } = useAuth();
+  const currentOrganizationId = useOrganizationStore((state) => state.organization?.id ?? null);
 
   return useMemo(() => {
     const level = verificationLevel ?? 0;
-    const isOrgManager = isAuthenticated && level >= ORG_MANAGER_VERIFICATION_LEVEL;
+    const role = String(user?.role ?? '').toUpperCase();
+    const tokenOrganizationId = user?.organizationId ?? null;
+    const isCurrentOrganization =
+      currentOrganizationId != null &&
+      tokenOrganizationId != null &&
+      Number(currentOrganizationId) === Number(tokenOrganizationId);
+    const isAdmin = role === 'ADMIN';
+    const isCurrentOrgStaffManager =
+      role === 'STAFF' &&
+      level >= ORG_MANAGER_VERIFICATION_LEVEL &&
+      isCurrentOrganization;
+    const isOrgManager = isAuthenticated && (isAdmin || isCurrentOrgStaffManager);
     const canUseBasicActions = isAuthenticated;
     const canContribute =
-      isAuthenticated && level >= MIN_CONTRIBUTE_VERIFICATION_LEVEL;
+      isAuthenticated &&
+      (isAdmin || isCurrentOrgStaffManager ||
+        (role === 'USER' && level >= MIN_CONTRIBUTE_VERIFICATION_LEVEL && isCurrentOrganization));
 
     return {
       canUseBasicActions,
@@ -39,5 +54,5 @@ export const useCanContribute = () => {
       isOrgManager,
       verificationLevel: level,
     };
-  }, [isAuthenticated, verificationLevel]);
+  }, [currentOrganizationId, isAuthenticated, user, verificationLevel]);
 };

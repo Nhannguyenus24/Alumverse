@@ -14,6 +14,7 @@ import java.util.Optional;
 import com.service.backend.shared.utils.CacheUtils;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.JsonUtils;
+import com.service.backend.shared.utils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,6 +74,45 @@ public class ForumService {
 
     private static final String FORUM_RECENT_POSTS_CACHE = "forumRecentPosts";
 
+    private Mono<Integer> currentMemberId() {
+        return SecurityUtils.getCurrentUserId()
+                .map(Long::intValue)
+                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.FORBIDDEN)));
+    }
+
+    private Mono<Optional<Integer>> resolveAuthenticatedMemberId(Integer requestedMemberId) {
+        if (requestedMemberId == null) {
+            return Mono.just(Optional.empty());
+        }
+        return SecurityUtils.getCurrentUserId()
+                .map(Long::intValue)
+                .map(currentMemberId -> currentMemberId.equals(requestedMemberId)
+                        ? Optional.of(currentMemberId)
+                        : Optional.<Integer>empty())
+                .defaultIfEmpty(Optional.empty())
+                .onErrorReturn(Optional.empty());
+    }
+
+    private Mono<Void> assertPostOwnerOrManager(ForumPost post) {
+        return forumTopicRepository.findById(post.getTopicId())
+                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.FORUM_TOPIC_NOT_FOUND)))
+                .flatMap(topic -> Mono.zip(
+                                currentMemberId(),
+                                SecurityUtils.canManageContentOrganization(topic.getOrganizationId()))
+                        .flatMap(ctx -> {
+                            Integer memberId = ctx.getT1();
+                            boolean canManage = Boolean.TRUE.equals(ctx.getT2());
+                            boolean ownsPost = post.getAuthorMemberId() != null
+                                    && post.getAuthorMemberId().equals(memberId);
+                            if (ownsPost || canManage) {
+                                return Mono.empty();
+                            }
+                            return Mono.error(new ApplicationException(
+                                    ErrorCode.FORBIDDEN,
+                                    "Bạn không có quyền thao tác bài viết này"));
+                        }));
+    }
+
     // Category methods
     public Flux<ForumCategoryDTO> findAllCategoriesByOrganizationId(Integer organizationId) {
         String cacheKey = "forum_categories_org_" + organizationId;
@@ -87,16 +127,19 @@ public class ForumService {
     }
 
     public Mono<ForumCategoryDTO> createCategory(CreateForumCategoryRequest request) {
-        ForumCategory category = ForumCategory.builder()
-                .parentId(request.getParentId())
-                .organizationId(request.getOrganizationId())
-                .name(request.getName())
-                .description(request.getDescription())
-                .status(Status.ACTIVE.name())
-                .build();
+        return SecurityUtils.assertCanManageContentOrganization(request.getOrganizationId())
+                .then(Mono.defer(() -> {
+                    ForumCategory category = ForumCategory.builder()
+                            .parentId(request.getParentId())
+                            .organizationId(request.getOrganizationId())
+                            .name(request.getName())
+                            .description(request.getDescription())
+                            .status(Status.ACTIVE.name())
+                            .build();
 
-        return forumCategoryRepository.save(category)
-            .flatMap(this::convertToCategoryDTOWithStats)
+                    return forumCategoryRepository.save(category);
+                }))
+                .flatMap(this::convertToCategoryDTOWithStats)
                 .delayUntil(res -> cacheUtils.clear("forum_category_cache"))
                 .doOnSuccess(result -> log.info("createCategory result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error creating forum category: {}", request.getName(), error));
@@ -109,13 +152,16 @@ public class ForumService {
                     return Mono.error(new ApplicationException(ErrorCode.FORUM_CATEGORY_NOT_FOUND));
                 }))
                 .flatMap(category -> {
-                    if (request.getName() != null) {
-                        category.setName(request.getName());
-                    }
-                    if (request.getDescription() != null) {
-                        category.setDescription(request.getDescription());
-                    }
-                    return forumCategoryRepository.save(category);
+                    return SecurityUtils.assertCanManageContentOrganization(category.getOrganizationId())
+                            .then(Mono.defer(() -> {
+                                if (request.getName() != null) {
+                                    category.setName(request.getName());
+                                }
+                                if (request.getDescription() != null) {
+                                    category.setDescription(request.getDescription());
+                                }
+                                return forumCategoryRepository.save(category);
+                            }));
                 })
                 .flatMap(this::convertToCategoryDTOWithStats)
                 .delayUntil(res -> cacheUtils.clear("forum_category_cache"))
@@ -160,24 +206,34 @@ public class ForumService {
     }
 
     public Mono<ForumTopicDTO> createTopic(CreateForumTopicRequest request) {
-        return forumCategoryRepository.findById(request.getCategoryId())
-                .switchIfEmpty(Mono.defer(() -> {
-                    log.error("Category not found with ID: {}", request.getCategoryId());
-                    return Mono.error(new ApplicationException(ErrorCode.FORUM_CATEGORY_NOT_FOUND));
-                }))
-                .flatMap(category -> {
-                    ForumTopic topic = ForumTopic.builder()
-                            .organizationId(request.getOrganizationId())
-                            .title(request.getTitle())
-                            .createdByMemberId(request.getCreatedByMemberId())
-                            .categoryId(request.getCategoryId())
-                            .viewCount(0)
-                            // User-created topics await admin approval before appearing publicly.
-                            .status(Status.PENDING.name())
-                            .build();
+        return currentMemberId().flatMap(memberId ->
+                forumCategoryRepository.findById(request.getCategoryId())
+                        .switchIfEmpty(Mono.defer(() -> {
+                            log.error("Category not found with ID: {}", request.getCategoryId());
+                            return Mono.error(new ApplicationException(ErrorCode.FORUM_CATEGORY_NOT_FOUND));
+                        }))
+                        .flatMap(category -> {
+                            Integer organizationId = category.getOrganizationId();
+                            if (organizationId == null || !organizationId.equals(request.getOrganizationId())) {
+                                return Mono.error(new ApplicationException(
+                                        ErrorCode.BAD_REQUEST,
+                                        "Forum category does not belong to the requested organization"));
+                            }
+                            return SecurityUtils.assertCanSubmitContributorContent(organizationId)
+                                    .then(Mono.defer(() -> {
+                                        ForumTopic topic = ForumTopic.builder()
+                                                .organizationId(organizationId)
+                                                .title(request.getTitle())
+                                                .createdByMemberId(memberId)
+                                                .categoryId(request.getCategoryId())
+                                                .viewCount(0)
+                                                // User-created topics await admin approval before appearing publicly.
+                                                .status(Status.PENDING.name())
+                                                .build();
 
-                    return forumTopicRepository.save(topic);
-                })
+                                        return forumTopicRepository.save(topic);
+                                    }));
+                        }))
                 .flatMap(this::convertToTopicDTOWithPostCount)
                 .delayUntil(res -> cacheUtils.clear("forum_category_cache"))
                 .doOnSuccess(result -> log.info("createTopic result: {}", JsonUtils.toJson(result)))
@@ -191,13 +247,27 @@ public class ForumService {
                     return Mono.error(new ApplicationException(ErrorCode.FORUM_TOPIC_NOT_FOUND));
                 }))
                 .flatMap(topic -> {
-                    if (request.getTitle() != null) {
-                        topic.setTitle(request.getTitle());
-                    }
-                    if (request.getCategoryId() != null) {
-                        topic.setCategoryId(request.getCategoryId());
-                    }
-                    return forumTopicRepository.save(topic);
+                    return SecurityUtils.assertCanManageContentOrganization(topic.getOrganizationId())
+                            .then(Mono.defer(() -> {
+                                if (request.getTitle() != null) {
+                                    topic.setTitle(request.getTitle());
+                                }
+                                if (request.getCategoryId() == null) {
+                                    return forumTopicRepository.save(topic);
+                                }
+                                return forumCategoryRepository.findById(request.getCategoryId())
+                                        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.FORUM_CATEGORY_NOT_FOUND)))
+                                        .flatMap(category -> {
+                                            if (topic.getOrganizationId() == null
+                                                    || !topic.getOrganizationId().equals(category.getOrganizationId())) {
+                                                return Mono.error(new ApplicationException(
+                                                        ErrorCode.BAD_REQUEST,
+                                                        "Forum category does not belong to this topic organization"));
+                                            }
+                                            topic.setCategoryId(request.getCategoryId());
+                                            return forumTopicRepository.save(topic);
+                                        });
+                            }));
                 })
                 .flatMap(this::convertToTopicDTOWithPostCount)
                 .delayUntil(res -> cacheUtils.clear("forum_category_cache"))
@@ -207,7 +277,8 @@ public class ForumService {
     public Mono<Void> deleteTopic(Integer topicId) {
         return forumTopicRepository.findById(topicId)
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_TOPIC_NOT_FOUND))))
-                .flatMap(topic -> cascadeDeleteTopic(topicId))
+                .flatMap(topic -> SecurityUtils.assertCanManageContentOrganization(topic.getOrganizationId())
+                        .then(cascadeDeleteTopic(topicId)))
                 .doOnSuccess(v -> log.info("deleteTopic: topicId={} deleted", topicId))
                 .doOnError(error -> log.error("Error deleting topic ID: {}", topicId, error));
     }
@@ -229,54 +300,54 @@ public class ForumService {
                 })
                 .subscribe();
 
-        if (memberId != null) {
-            forumTopicSubscriptionRepository.updateLastReadAt(topicId, memberId, java.time.LocalDateTime.now())
+        return resolveAuthenticatedMemberId(memberId).flatMap(viewerMemberId -> {
+            viewerMemberId.ifPresent(id -> forumTopicSubscriptionRepository.updateLastReadAt(topicId, id, java.time.LocalDateTime.now())
                     .onErrorResume(error -> {
-                        log.warn("Failed to update last read at for topic ID: {}, member ID: {}", topicId, memberId, error);
+                        log.warn("Failed to update last read at for topic ID: {}, member ID: {}", topicId, id, error);
                         return Mono.empty();
                     })
-                    .subscribe();
-        }
+                    .subscribe());
 
-        long offset = (long) page * size;
+            long offset = (long) page * size;
 
-        Mono<List<ForumPost>> postsMono = forumPostRepository
-                .findByTopicIdWithPagination(topicId, size, offset)
-                .collectList();
+            Mono<List<ForumPost>> postsMono = forumPostRepository
+                    .findByTopicIdWithPagination(topicId, size, offset)
+                    .collectList();
 
-        Mono<Long> countMono = forumPostRepository.countByTopicId(topicId);
+            Mono<Long> countMono = forumPostRepository.countByTopicId(topicId);
 
-        Mono<Set<Integer>> likedPostIdsMono = memberId != null
-                ? forumPostReactionRepository.findLikedPostIdsByTopicAndMember(topicId, memberId)
-                    .collect(Collectors.toSet())
-                : Mono.just(new HashSet<>());
+            Mono<Set<Integer>> likedPostIdsMono = viewerMemberId
+                    .map(id -> forumPostReactionRepository.findLikedPostIdsByTopicAndMember(topicId, id)
+                            .collect(Collectors.toSet()))
+                    .orElseGet(() -> Mono.just(new HashSet<>()));
 
-        return likedPostIdsMono.flatMap(likedPostIds ->
-                PaginationHelper.paginate(
-                        postsMono,
-                        countMono,
-                        page,
-                        size,
-                        posts -> {
-                            Set<Integer> authorIds = posts.stream()
-                                    .map(ForumPost::getAuthorMemberId)
-                                    .filter(java.util.Objects::nonNull)
-                                    .collect(Collectors.toSet());
-                            return userProfileRepository.findByUserIds(authorIds)
-                                    .map(displayMap -> posts.stream()
-                                            .map(post -> {
-                                                ForumPostDTO dto = convertToPostDTO(post, likedPostIds.contains(post.getId()));
-                                                UserDisplayInfo info = post.getAuthorMemberId() != null
-                                                        ? displayMap.get(post.getAuthorMemberId())
-                                                        : null;
-                                                if (info != null) {
-                                                    dto.setAuthorName(info.getFullName());
-                                                    dto.setAuthorAvatarUrl(info.getAvatarUrl());
-                                                }
-                                                return dto;
-                                            })
-                                            .collect(Collectors.toList()));
-                        }))
+            return likedPostIdsMono.flatMap(likedPostIds ->
+                    PaginationHelper.paginate(
+                            postsMono,
+                            countMono,
+                            page,
+                            size,
+                            posts -> {
+                                Set<Integer> authorIds = posts.stream()
+                                        .map(ForumPost::getAuthorMemberId)
+                                        .filter(java.util.Objects::nonNull)
+                                        .collect(Collectors.toSet());
+                                return userProfileRepository.findByUserIds(authorIds)
+                                        .map(displayMap -> posts.stream()
+                                                .map(post -> {
+                                                    ForumPostDTO dto = convertToPostDTO(post, likedPostIds.contains(post.getId()));
+                                                    UserDisplayInfo info = post.getAuthorMemberId() != null
+                                                            ? displayMap.get(post.getAuthorMemberId())
+                                                            : null;
+                                                    if (info != null) {
+                                                        dto.setAuthorName(info.getFullName());
+                                                        dto.setAuthorAvatarUrl(info.getAvatarUrl());
+                                                    }
+                                                    return dto;
+                                                })
+                                                .collect(Collectors.toList()));
+                            }));
+        })
                 .doOnSuccess(result -> log.info("findPostsByTopicId result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error finding forum posts for topic ID: {}", topicId, error));
     }
@@ -287,34 +358,35 @@ public class ForumService {
             return Mono.error(new ApplicationException(ErrorCode.INVALID_TOPIC_ID));
         }
 
-        return forumTopicRepository.findById(request.getTopicId())
-                .switchIfEmpty(Mono.defer(() -> {
-                    log.error("Topic not found with ID: {}", request.getTopicId());
-                    return Mono.error(new ApplicationException(ErrorCode.FORUM_TOPIC_NOT_FOUND));
-                }))
-                .flatMap(topic -> {
-                    // ACTIVE topics accept posts from anyone. A PENDING topic (awaiting admin
-                    // approval) still accepts posts from its own creator so they can add the
-                    // opening post / follow-ups while it is pending. INACTIVE (deactivated)
-                    // topics are closed for everyone.
-                    boolean isActive = Status.ACTIVE.name().equals(topic.getStatus());
-                    boolean isPendingByOwner = Status.PENDING.name().equals(topic.getStatus())
-                            && topic.getCreatedByMemberId() != null
-                            && topic.getCreatedByMemberId().equals(request.getAuthorMemberId());
-                    if (!isActive && !isPendingByOwner) {
-                        return Mono.error(new ApplicationException(ErrorCode.FORUM_TOPIC_LOCKED));
-                    }
-                    ForumPost post = ForumPost.builder()
-                            .topicId(request.getTopicId())
-                            .authorMemberId(request.getAuthorMemberId())
-                            .content(request.getContent())
-                            .answerToPostId(request.getAnswerToPostId())
-                            .isBanned(false)
-                            .isHidden(false)
-                            .build();
+        return currentMemberId().flatMap(memberId ->
+                forumTopicRepository.findById(request.getTopicId())
+                        .switchIfEmpty(Mono.defer(() -> {
+                            log.error("Topic not found with ID: {}", request.getTopicId());
+                            return Mono.error(new ApplicationException(ErrorCode.FORUM_TOPIC_NOT_FOUND));
+                        }))
+                        .flatMap(topic -> SecurityUtils.assertCanSubmitContributorContent(topic.getOrganizationId())
+                                .then(Mono.defer(() -> {
+                                    // ACTIVE topics accept posts from verified members. A PENDING topic
+                                    // still accepts posts from its own creator so they can add the opening
+                                    // post / follow-ups while it is pending. INACTIVE topics are closed.
+                                    boolean isActive = Status.ACTIVE.name().equals(topic.getStatus());
+                                    boolean isPendingByOwner = Status.PENDING.name().equals(topic.getStatus())
+                                            && topic.getCreatedByMemberId() != null
+                                            && topic.getCreatedByMemberId().equals(memberId);
+                                    if (!isActive && !isPendingByOwner) {
+                                        return Mono.error(new ApplicationException(ErrorCode.FORUM_TOPIC_LOCKED));
+                                    }
+                                    ForumPost post = ForumPost.builder()
+                                            .topicId(request.getTopicId())
+                                            .authorMemberId(memberId)
+                                            .content(request.getContent())
+                                            .answerToPostId(request.getAnswerToPostId())
+                                            .isBanned(false)
+                                            .isHidden(false)
+                                            .build();
 
-                    return forumPostRepository.save(post);
-                })
+                                    return forumPostRepository.save(post);
+                                }))))
                 .flatMap(post -> {
                     String cacheKey = String.valueOf(post.getTopicId());
                     LocalDateTime createdAt = post.getCreatedAt() != null
@@ -343,8 +415,11 @@ public class ForumService {
                     return Mono.error(new ApplicationException(ErrorCode.FORUM_POST_NOT_FOUND));
                 }))
                 .flatMap(post -> {
-                    post.setContent(request.getContent());
-                    return forumPostRepository.save(post);
+                    return assertPostOwnerOrManager(post)
+                            .then(Mono.defer(() -> {
+                                post.setContent(request.getContent());
+                                return forumPostRepository.save(post);
+                            }));
                 })
                 .map(this::convertToPostDTO)
                 .doOnSuccess(result -> log.info("updatePost result: {}", JsonUtils.toJson(result)))
@@ -358,54 +433,62 @@ public class ForumService {
                     log.warn("Forum post not found with ID: {}", id);
                     return Mono.error(new ApplicationException(ErrorCode.FORUM_POST_NOT_FOUND));
                 }))
-                .flatMap(post -> forumPostReactionRepository.deleteByPostId(id)
+                .flatMap(post -> assertPostOwnerOrManager(post)
+                        .then(forumPostReactionRepository.deleteByPostId(id))
                         .then(forumPostRepository.deleteById(id)))
                 .doOnSuccess(v -> log.info("deletePost: postId={} deleted", id))
                 .doOnError(error -> log.error("Error deleting forum post ID: {}", id, error));
     }
 
     public Mono<ForumPostReportDTO> reportPost(Integer postId, CreateForumPostReportRequest request) {
-        return forumPostRepository.findById(postId)
+        return currentMemberId().flatMap(reporterMemberId -> forumPostRepository.findById(postId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.FORUM_POST_NOT_FOUND)))
-                .flatMap(post -> {
+                .flatMap(post -> forumTopicRepository.findById(post.getTopicId())
+                        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.FORUM_TOPIC_NOT_FOUND)))
+                        .flatMap(topic -> SecurityUtils.assertCanSubmitContributorContent(topic.getOrganizationId())))
+                .then(Mono.defer(() -> {
                         ForumPostReport report = ForumPostReport.builder()
                             .postId(postId)
-                            .reporterMemberId(request.getReporterMemberId())
+                            .reporterMemberId(reporterMemberId)
                             .reason(request.getReason())
                             .status(Status.PENDING)
                             .build();
                     return forumPostReportRepository.save(report);
-                })
+                }))
                 .map(this::convertToReportDTO)
-                .doOnSuccess(r -> log.info("reportPost result: {}", JsonUtils.toJson(r)));
+                .doOnSuccess(r -> log.info("reportPost result: {}", JsonUtils.toJson(r))));
     }
 
     // ========== REACTION METHODS (LIKE/DISLIKE) ==========
 
     @Transactional
     public Mono<ForumPostReactionDTO> reactToPost(CreateForumPostReactionRequest request) {
-        return forumPostRepository.findById(request.getPostId())
-                .switchIfEmpty(Mono.defer(() -> {
-                    log.error("Post not found with ID: {}", request.getPostId());
-                    return Mono.error(new ApplicationException(ErrorCode.FORUM_POST_NOT_FOUND));
-                }))
-                .flatMap(post -> forumPostReactionRepository.findByPostIdAndMemberId(
-                            request.getPostId(), request.getMemberId())
-                        .hasElement()
-                        .flatMap(alreadyLiked -> {
-                            if (Boolean.TRUE.equals(alreadyLiked)) {
-                                return forumPostReactionRepository.deleteByPostIdAndMemberId(
-                                                request.getPostId(), request.getMemberId())
-                                        .then(Mono.empty());
-                            }
-                            log.info("Creating new like for post ID: {}, member: {}",
-                                    request.getPostId(), request.getMemberId());
-                            ForumPostReaction reaction = ForumPostReaction.builder()
-                                    .postId(request.getPostId())
-                                    .memberId(request.getMemberId())
-                                    .build();
-                            return forumPostReactionRepository.save(reaction);
+        return currentMemberId().flatMap(memberId ->
+                forumPostRepository.findById(request.getPostId())
+                        .switchIfEmpty(Mono.defer(() -> {
+                            log.error("Post not found with ID: {}", request.getPostId());
+                            return Mono.error(new ApplicationException(ErrorCode.FORUM_POST_NOT_FOUND));
                         }))
+                        .flatMap(post -> forumTopicRepository.findById(post.getTopicId())
+                                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.FORUM_TOPIC_NOT_FOUND)))
+                                .flatMap(topic -> SecurityUtils.assertCanSubmitContributorContent(topic.getOrganizationId()))
+                                .then(forumPostReactionRepository.findByPostIdAndMemberId(
+                                            request.getPostId(), memberId)
+                                        .hasElement()
+                                        .flatMap(alreadyLiked -> {
+                                            if (Boolean.TRUE.equals(alreadyLiked)) {
+                                                return forumPostReactionRepository.deleteByPostIdAndMemberId(
+                                                                request.getPostId(), memberId)
+                                                        .then(Mono.empty());
+                                            }
+                                            log.info("Creating new like for post ID: {}, member: {}",
+                                                    request.getPostId(), memberId);
+                                            ForumPostReaction reaction = ForumPostReaction.builder()
+                                                    .postId(request.getPostId())
+                                                    .memberId(memberId)
+                                                    .build();
+                                            return forumPostReactionRepository.save(reaction);
+                                        }))))
                 .map(this::convertToReactionDTO)
                 .doOnSuccess(result -> log.info("reactToPost result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error toggling like for post ID: {}", request.getPostId(), error));
@@ -423,7 +506,12 @@ public class ForumService {
     }
 
     public Mono<ForumPostReactionDTO> getUserReaction(Integer postId, Integer memberId) {
-        return forumPostReactionRepository.findByPostIdAndMemberId(postId, memberId)
+        return currentMemberId().flatMap(currentMemberId -> {
+            if (!currentMemberId.equals(memberId)) {
+                return Mono.error(new ApplicationException(ErrorCode.FORBIDDEN));
+            }
+            return forumPostReactionRepository.findByPostIdAndMemberId(postId, currentMemberId);
+        })
                 .map(this::convertToReactionDTO)
                 .doOnSuccess(result -> log.info("Found user reaction for post ID: {}", postId))
                 .doOnError(error -> log.info("No reaction found for post ID: {} by member: {}", postId, memberId));
@@ -433,39 +521,47 @@ public class ForumService {
 
     @Transactional
     public Mono<ForumTopicSubscriptionDTO> subscribeToTopic(CreateForumTopicSubscriptionRequest request) {
-        return Mono.zip(
-                forumTopicRepository.findById(request.getTopicId())
-                        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.FORUM_TOPIC_NOT_FOUND))),
-                forumTopicSubscriptionRepository.findByTopicIdAndMemberId(request.getTopicId(), request.getMemberId())
-                        .map(Optional::of)
-                        .defaultIfEmpty(Optional.empty())
-        ).flatMap(tuple -> {
-            Optional<ForumTopicSubscription> existingSubscriptionOpt = tuple.getT2();
-            if (existingSubscriptionOpt.isPresent()) {
-                log.info("Removing existing subscription from topic ID: {}, member: {}",
-                        request.getTopicId(), request.getMemberId());
-                return forumTopicSubscriptionRepository.deleteByTopicIdAndMemberId(
-                        request.getTopicId(), request.getMemberId())
-                        .then(Mono.empty());
-            } else {
-                log.info("Creating new subscription for topic ID: {}, member: {}",
-                        request.getTopicId(), request.getMemberId());
-                ForumTopicSubscription subscription = ForumTopicSubscription.builder()
-                        .topicId(request.getTopicId())
-                        .memberId(request.getMemberId())
-                        .build();
-                return forumTopicSubscriptionRepository.save(subscription);
-            }
-        })
+        return currentMemberId().flatMap(memberId -> Mono.zip(
+                        forumTopicRepository.findById(request.getTopicId())
+                                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.FORUM_TOPIC_NOT_FOUND))),
+                        forumTopicSubscriptionRepository.findByTopicIdAndMemberId(request.getTopicId(), memberId)
+                                .map(Optional::of)
+                                .defaultIfEmpty(Optional.empty())
+                ).flatMap(tuple -> {
+                    ForumTopic topic = tuple.getT1();
+                    Optional<ForumTopicSubscription> existingSubscriptionOpt = tuple.getT2();
+                    return SecurityUtils.assertCanSubmitContributorContent(topic.getOrganizationId())
+                            .then(Mono.defer(() -> {
+                                if (existingSubscriptionOpt.isPresent()) {
+                                    log.info("Removing existing subscription from topic ID: {}, member: {}",
+                                            request.getTopicId(), memberId);
+                                    return forumTopicSubscriptionRepository.deleteByTopicIdAndMemberId(
+                                            request.getTopicId(), memberId)
+                                            .then(Mono.empty());
+                                }
+                                log.info("Creating new subscription for topic ID: {}, member: {}",
+                                        request.getTopicId(), memberId);
+                                ForumTopicSubscription subscription = ForumTopicSubscription.builder()
+                                        .topicId(request.getTopicId())
+                                        .memberId(memberId)
+                                        .build();
+                                return forumTopicSubscriptionRepository.save(subscription);
+                            }));
+                }))
                 .map(this::convertToSubscriptionDTO)
                 .doOnSuccess(result -> log.info("subscribeToTopic result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error toggling subscription for topic ID: {}", request.getTopicId(), error));
     }
 
     public Mono<Boolean> isSubscribed(Integer topicId, Integer memberId) {
-        return forumTopicSubscriptionRepository.findByTopicIdAndMemberId(topicId, memberId)
-                .map(s -> true)
-                .defaultIfEmpty(false);
+        return currentMemberId().flatMap(currentMemberId -> {
+            if (!currentMemberId.equals(memberId)) {
+                return Mono.error(new ApplicationException(ErrorCode.FORBIDDEN));
+            }
+            return forumTopicSubscriptionRepository.findByTopicIdAndMemberId(topicId, currentMemberId)
+                    .map(s -> true)
+                    .defaultIfEmpty(false);
+        });
     }
 
     // Helper methods to convert entities to DTOs

@@ -33,6 +33,19 @@ class SecureStorage {
   Future<String?> readOrganizationSlug() =>
       _storage.read(key: StorageKeys.organizationSlug);
 
+  Future<void> writeOrganizationId(int organizationId) =>
+      _storage.write(key: StorageKeys.organizationId, value: '$organizationId');
+
+  Future<int?> readOrganizationId() async {
+    final raw = await _storage.read(key: StorageKeys.organizationId);
+    return raw == null ? null : int.tryParse(raw);
+  }
+
+  Future<void> clearOrganization() async {
+    await _storage.delete(key: StorageKeys.organizationSlug);
+    await _storage.delete(key: StorageKeys.organizationId);
+  }
+
   Future<void> writeMustChangePassword(bool value) =>
       _storage.write(key: StorageKeys.mustChangePassword, value: '$value');
 

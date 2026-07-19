@@ -17,6 +17,8 @@ import com.service.backend.chat.service.ChatService;
 import com.service.backend.chat.service.UserBlockService;
 import com.service.backend.shared.dto.ApiResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
+import com.service.backend.shared.enums.ErrorCode;
+import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.SecurityUtils;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -114,11 +116,9 @@ public class ChatController {
     @PostMapping("/private/create")
     public Mono<ResponseEntity<ApiResponse<ChatGroup>>> createPrivateChat(
             @Valid @RequestBody PrivateChatRequest request) {
-        return SecurityUtils.getCurrentUserId()
-                .flatMap(memberAId -> this.chatService.createNewPrivateChat(memberAId, request.getTargetMemberId()))
-                .map(group -> ResponseEntity
-                        .status(HttpStatus.CREATED)
-                        .body(new ApiResponse<>("Private chat created successfully", group)));
+        return Mono.error(new ApplicationException(
+                ErrorCode.FORBIDDEN,
+                "Private chat must be created through a conversation request and accepted by the target member"));
     }
 
     /*
@@ -129,8 +129,9 @@ public class ChatController {
             @PathVariable("groupId") @Min(1) Long groupId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return this.chatService.getMessagesWithSenderInfo(groupId, page, size)
-                .collectList()
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(memberId -> this.chatService.getMessagesWithSenderInfo(groupId, memberId, page, size)
+                        .collectList())
                 .map(messages -> ResponseEntity
                         .ok(new ApiResponse<>("Messages retrieved successfully", messages)));
     }
@@ -214,7 +215,8 @@ public class ChatController {
     @GetMapping("/groups/{groupId}/info")
     public Mono<ResponseEntity<ApiResponse<ChatGroupMetadataResponse>>> getChatGroupMetadata(
             @PathVariable("groupId") @Min(1) Long groupId) {
-        return this.chatService.getChatGroupMetadata(groupId)
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(memberId -> this.chatService.getChatGroupMetadata(groupId, memberId))
                 .map(metadata -> ResponseEntity
                         .ok(new ApiResponse<>("Chat group metadata retrieved successfully", metadata)));
     }
@@ -273,4 +275,3 @@ public class ChatController {
                         .ok(new ApiResponse<>("Group deleted successfully", null)));
     }
 }
-

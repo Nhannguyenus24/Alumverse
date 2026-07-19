@@ -17,6 +17,16 @@ const fallbackStatistics = {
 };
 
 const fallbackPaginated = { content: [], totalElements: 0, totalPages: 0, number: 0, size: 10 };
+let lastLoadErrorToastAt = 0;
+
+const isCanceled = (err) => err?.name === 'CanceledError' || err?.name === 'AbortError';
+
+const notifyDataLoadError = (message = 'Không tải được dữ liệu. Vui lòng thử lại.') => {
+  const now = Date.now();
+  if (now - lastLoadErrorToastAt < 5000) return;
+  lastLoadErrorToastAt = now;
+  enqueueSnackbar(message, { variant: 'error' });
+};
 
 const normalizePaginated = (payload, fallbackSize = 10) => {
   if (!payload || typeof payload !== 'object') return fallbackPaginated;
@@ -50,9 +60,10 @@ const safeFetch = async (request, fallback) => {
     const data = extractData(await request());
     return data ?? fallback;
   } catch (err) {
-    if (err.name === 'CanceledError' || err.name === 'AbortError') {
+    if (isCanceled(err)) {
       throw err;
     }
+    notifyDataLoadError();
     return fallback;
   }
 };
@@ -181,7 +192,7 @@ const useAdminForumData = (activeOrgId, shouldFetch = true) => {
       const data = await safeFetch(() => api.getBannedPosts(bannedPage, 10, activeOrgId || null, config), fallbackPaginated);
       if (!config.signal.aborted) setBannedPosts(normalizePaginated(data, 10));
     } catch (err) {
-      if (err.name !== 'CanceledError' && err.name !== 'AbortError') {
+      if (!isCanceled(err)) {
         setBannedPosts(fallbackPaginated);
       }
     }
@@ -203,7 +214,7 @@ const useAdminForumData = (activeOrgId, shouldFetch = true) => {
       );
       if (!config.signal.aborted) setYesterdayPosts(normalizePaginated(data, 10));
     } catch (err) {
-      if (err.name !== 'CanceledError' && err.name !== 'AbortError') {
+      if (!isCanceled(err)) {
         setYesterdayPosts(fallbackPaginated);
       }
     }
@@ -220,7 +231,7 @@ const useAdminForumData = (activeOrgId, shouldFetch = true) => {
       const data = await safeFetch(() => api.getPendingReports(reportsPage, 10, activeOrgId || null, config), fallbackPaginated);
       if (!config.signal.aborted) setReports(normalizePaginated(data, 10));
     } catch (err) {
-      if (err.name !== 'CanceledError' && err.name !== 'AbortError') {
+      if (!isCanceled(err)) {
         setReports(fallbackPaginated);
       }
     }
@@ -241,7 +252,7 @@ const useAdminForumData = (activeOrgId, shouldFetch = true) => {
         setAllPosts({ ...paginated, content: normalized });
       }
     } catch (err) {
-      if (err.name !== 'CanceledError' && err.name !== 'AbortError') {
+      if (!isCanceled(err)) {
         setAllPosts(fallbackPaginated);
       }
     }
@@ -273,7 +284,7 @@ const useAdminForumData = (activeOrgId, shouldFetch = true) => {
         setCategoriesLoading(false);
       }
     } catch (err) {
-      if (err.name !== 'CanceledError' && err.name !== 'AbortError') {
+      if (!isCanceled(err)) {
         setCategories([]);
         setCategoriesLoading(false);
       }
@@ -301,7 +312,7 @@ const useAdminForumData = (activeOrgId, shouldFetch = true) => {
         setTopicsLoading(false);
       }
     } catch (err) {
-      if (err.name !== 'CanceledError' && err.name !== 'AbortError') {
+      if (!isCanceled(err)) {
         setTopics(fallbackPaginated);
         setTopicsLoading(false);
       }
