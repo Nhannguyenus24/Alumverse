@@ -25,6 +25,7 @@ import com.service.backend.shared.utils.PaginationHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -301,6 +302,13 @@ public class EventService {
                                                 .guestEmail(confirmed.getEmail())
                                                 .build();
                                         return checkCapacityAndRegister(event, ticket, null)
+                                                .flatMap(saved -> sendTicketEmail(event, saved)
+                                                        .onErrorResume(e -> {
+                                                            log.warn("Failed to send ticket email for event {} ticket {}: {}",
+                                                                    event.getId(), saved.getTicketCode(), e.getMessage());
+                                                            return Mono.empty();
+                                                        })
+                                                        .thenReturn(saved))
                                                 .doOnNext(saved -> notifyRegistration(event, saved));
                                     }));
                 });
@@ -329,6 +337,13 @@ public class EventService {
                                                         .build();
                                                 ticket.setRegistrationAnswersFromObject(answersJson);
                                                 return checkCapacityAndRegister(event, ticket, answersJson)
+                                                        .flatMap(saved -> sendTicketEmail(event, saved)
+                                                                .onErrorResume(e -> {
+                                                                    log.warn("Failed to send ticket email for event {} ticket {}: {}",
+                                                                            event.getId(), saved.getTicketCode(), e.getMessage());
+                                                                    return Mono.empty();
+                                                                })
+                                                                .thenReturn(saved))
                                                         .doOnNext(saved -> notifyRegistration(event, saved));
                                             });
                                 }));
@@ -474,10 +489,9 @@ public class EventService {
                 this.findEventById(eventId)
                         .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId)))
                         .flatMap(event -> this.findIssuedTicketsByEvent(eventId)
-                                .filter(t -> t.getGuestEmail() != null && !t.getGuestEmail().isBlank())
-                                .flatMap(ticket -> sendTicketEmail(event, ticket)
-                                        .thenReturn(1)
-                                        .onErrorReturn(0), BULK_EMAIL_CONCURRENCY)
+                    .flatMap(ticket -> sendTicketEmail(event, ticket)
+                        .map(sent -> sent ? 1 : 0)
+                        .onErrorReturn(0), BULK_EMAIL_CONCURRENCY)
                                 .reduce(0, Integer::sum)
                                 .flatMap(count -> {
                                     EventEmailLog log = EventEmailLog.builder()
@@ -491,20 +505,62 @@ public class EventService {
                                 })));
     }
 
-    private Mono<Void> sendTicketEmail(Event event, EventTicket ticket) {
-        Map<String, Object> vars = Map.of(
-                "eventTitle", event.getTitle(),
-                "eventLocation", event.getLocation() != null ? event.getLocation() : "",
-                "eventStartTime", event.getStartTime() != null ? event.getStartTime().toString() : "",
-                "ticketCode", ticket.getTicketCode(),
-                "guestName", ticket.getGuestName() != null ? ticket.getGuestName() : ""
-        );
-        return emailService.sendHtmlEmail(
-                ticket.getGuestEmail(),
-                "[Alumniverse] Vé tham dự: " + event.getTitle(),
-                "eventTicket",
-                vars
-        );
+    private Mono<Boolean> sendTicketEmail(Event event, EventTicket ticket) {
+        return resolveTicketRecipientEmail(ticket)
+            .flatMap(recipientEmail -> buildTicketLink(event, ticket.getTicketCode())
+                .flatMap(ticketLink -> {
+                    String qrToken = eventQrService.encodeWithPrefix(ticket.getTicketCode(), ticket.getEventId());
+                    Map<String, Object> vars = Map.of(
+                            "eventTitle", event.getTitle(),
+                            "eventLocation", event.getLocation() != null ? event.getLocation() : "",
+                            "eventStartTime", event.getStartTime() != null ? event.getStartTime().toString() : "",
+                            "ticketCode", ticket.getTicketCode(),
+                            "guestName", ticket.getGuestName() != null ? ticket.getGuestName() : "",
+                    "ticketQrImageSrc", eventQrService.toQrCodeDataUri(qrToken),
+                    "ticketLink", ticketLink
+                    );
+                    return emailService.sendHtmlEmail(
+                            recipientEmail,
+                            "[Alumniverse] Vé tham dự: " + event.getTitle(),
+                            "eventTicket",
+                            vars
+                    ).thenReturn(true);
+                }))
+                .switchIfEmpty(Mono.just(false));
+    }
+
+        private Mono<Void> sendTicketCancellationEmail(Event event, EventTicket ticket, String reason) {
+        return resolveTicketRecipientEmail(ticket)
+            .flatMap(recipientEmail -> buildTicketLink(event, ticket.getTicketCode())
+                .flatMap(ticketLink -> {
+                    Map<String, Object> vars = Map.of(
+                        "eventTitle", event.getTitle(),
+                        "eventLocation", event.getLocation() != null ? event.getLocation() : "",
+                        "eventStartTime", event.getStartTime() != null ? event.getStartTime().toString() : "",
+                        "ticketCode", ticket.getTicketCode(),
+                        "cancelReason", reason != null ? reason : "",
+                        "ticketLink", ticketLink
+                    );
+                    return emailService.sendHtmlEmail(
+                        recipientEmail,
+                        "[Alumniverse] Vé đã bị hủy: " + event.getTitle(),
+                        "eventTicketCancelled",
+                        vars
+                    );
+                }));
+        }
+
+    private Mono<String> resolveTicketRecipientEmail(EventTicket ticket) {
+        if (ticket.getGuestEmail() != null && StringUtils.hasText(ticket.getGuestEmail())) {
+            return Mono.just(ticket.getGuestEmail().trim());
+        }
+        if (ticket.getMemberId() == null) {
+            return Mono.empty();
+        }
+        return userProfileRepository.findAttendeeProfileByUserId(ticket.getMemberId().intValue())
+                .map(profile -> profile.email())
+                .filter(StringUtils::hasText)
+                .map(String::trim);
     }
 
     // ─── Step 6: Check-in (event-scoped, QR-encrypted, staff-only) ────────────
@@ -1030,7 +1086,22 @@ public class EventService {
     // ─── Ticket — lifecycle ───────────────────────────────────────────────────
 
     private Mono<EventTicket> cancelTicket(Long ticketId, String reason) {
-        return ticketRepo.cancelTicket(ticketId, reason).then(ticketRepo.findById(ticketId));
+        return ticketRepo.cancelTicket(ticketId, reason)
+            .then(ticketRepo.findById(ticketId))
+            .flatMap(ticket -> {
+                if (ticket.getEventId() == null) {
+                    return Mono.just(ticket);
+                }
+                return this.findEventById(ticket.getEventId())
+                        .flatMap(event -> sendTicketCancellationEmail(event, ticket, reason)
+                                .onErrorResume(e -> {
+                                    log.warn("Failed to send ticket cancellation email for event {} ticket {}: {}",
+                                            event.getId(), ticket.getTicketCode(), e.getMessage());
+                                    return Mono.empty();
+                                })
+                                .thenReturn(ticket))
+                        .switchIfEmpty(Mono.just(ticket));
+            });
     }
 
     private Mono<EventTicket> checkInTicket(Long ticketId) {

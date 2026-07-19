@@ -34,6 +34,7 @@ public class EmailTemplateSeeder implements ApplicationRunner {
             "eventInvitation",
             "eventReminder",
             "eventTicket",
+            "eventTicketCancelled",
             "mentorApplicationReview",
             "donationThankYou");
 

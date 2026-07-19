@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Vé Đã Bị Hủy - Alumniverse</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f5f5; margin: 0; padding: 0; }
+        .container { background-color: white; max-width: 600px; margin: 20px auto; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .header { text-align: center; margin-bottom: 24px; border-bottom: 2px solid #ef5350; padding-bottom: 18px; }
+        .header h1 { color: #333; margin: 0; font-size: 24px; }
+        .header p { color: #666; font-size: 14px; margin: 5px 0 0 0; }
+        .alert { background-color: #ffebee; border-left: 4px solid #ef5350; padding: 14px 16px; border-radius: 4px; font-size: 14px; color: #b71c1c; margin: 15px 0; line-height: 1.6; }
+        .ticket { border: 1px solid #eee; border-radius: 8px; padding: 20px; margin: 20px 0; background-color: #fafafa; }
+        .ticket-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; font-size: 14px; }
+        .ticket-row:last-child { border-bottom: none; }
+        .ticket-label { color: #888; }
+        .ticket-value { color: #333; font-weight: 500; word-break: break-word; }
+        .ticket-button { display: inline-block; margin-top: 16px; padding: 12px 18px; background: #667eea; color: #fff !important; text-decoration: none; border-radius: 999px; font-weight: 600; }
+        .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #999; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><!--#region key="headerTitle" label="Tiêu đề chính" type="text"-->Vé của bạn đã bị hủy<!--#endregion--></h1>
+            <p>Hệ Thống Quản Lý Sinh Viên - Cựu Sinh Viên HCMUS</p>
+        </div>
+
+        <div class="alert"><!--#region key="alert" label="Thông báo hủy vé" type="html"-->
+            QR/mã vé trước đó đã bị vô hiệu hóa và không còn dùng để check-in được nữa.
+        <!--#endregion--></div>
+
+        <div class="ticket">
+            <div class="ticket-row">
+                <span class="ticket-label">Sự kiện</span>
+                <span class="ticket-value" th:text="${eventTitle}">Tên sự kiện</span>
+            </div>
+            <div class="ticket-row">
+                <span class="ticket-label">Mã vé</span>
+                <span class="ticket-value" th:text="${ticketCode}">ABC12345</span>
+            </div>
+            <div class="ticket-row">
+                <span class="ticket-label">Lý do hủy</span>
+                <span class="ticket-value" th:text="${cancelReason}">Lý do</span>
+            </div>
+        </div>
+
+        <a class="ticket-button" th:if="${ticketLink != null}" th:href="${ticketLink}">Xem vé của tôi</a>
+
+        <div class="footer"><!--#region key="footer" label="Chân trang" type="html"-->
+            <p>&copy; 2026 Alumniverse - Hệ Thống Alumni HCMUS. Tất cả quyền được bảo lưu.</p>
+            <p>Email này được gửi tự động. Vui lòng không trả lời trực tiếp.</p>
+        <!--#endregion--></div>
+    </div>
+</body>
+</html>
