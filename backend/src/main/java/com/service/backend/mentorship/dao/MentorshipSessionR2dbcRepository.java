@@ -9,6 +9,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Repository
 public interface MentorshipSessionR2dbcRepository extends R2dbcRepository<MentorshipSession, Integer> {
@@ -70,6 +71,22 @@ public interface MentorshipSessionR2dbcRepository extends R2dbcRepository<Mentor
             "AND (:date IS NULL OR CAST(ma.start_time AS DATE) = :date) " +
             "AND (:mentorName IS NULL OR LOWER(gp.full_name) LIKE LOWER(CONCAT('%', :mentorName, '%')))")
     Mono<Long> countFilterSessionsByMentee(Integer menteeMemberId, LocalDate date, String mentorName);
+
+    // ===================== Overlap check (mentee double-booking) =====================
+
+    @Query("SELECT ms.id AS session_id, ma.mentor_member_id AS mentor_member_id, " +
+            "u.full_name AS mentor_name, ma.start_time AS start_time, ma.end_time AS end_time " +
+            "FROM mentorship_sessions ms " +
+            "JOIN mentor_availabilities ma ON ms.availability_id = ma.id " +
+            "LEFT JOIN organization_members om ON ma.mentor_member_id = om.user_id " +
+            "LEFT JOIN users u ON u.id = om.user_id " +
+            "WHERE ms.mentee_member_id = :menteeMemberId " +
+            "AND ms.status IN ('CONFIRMED','IN_PROGRESS') " +
+            "AND ma.start_time < :endTime AND ma.end_time > :startTime " +
+            "ORDER BY ma.start_time")
+    Flux<SessionConflictProjection> findMenteeOverlapping(Integer menteeMemberId,
+                                                          LocalDateTime startTime,
+                                                          LocalDateTime endTime);
 
     // ===================== Status queries =====================
 
