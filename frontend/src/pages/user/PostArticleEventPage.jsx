@@ -1,5 +1,5 @@
 import LoadingSkeleton from '../../components/LoadingSkeleton';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
@@ -30,6 +30,19 @@ const normalizeQuestions = (questions = []) =>
         index,
       );
     });
+
+const getQuestionValidationError = (questions = [], t) => {
+  for (const q of questions) {
+    if (!q?.label?.trim()) {
+      return t('question_content_required', { defaultValue: 'Vui lòng nhập nội dung câu hỏi.' });
+    }
+    if ((q.type === 'singleChoice' || q.type === 'multiChoice')
+      && !(q.options || []).some((option) => option?.trim())) {
+      return t('question_options_required', { defaultValue: 'Vui lòng nhập ít nhất một lựa chọn cho câu hỏi lựa chọn.' });
+    }
+  }
+  return null;
+};
 
 const unwrapCreatedEvent = (result) => result?.data?.data ?? result?.data ?? result ?? null;
 
@@ -84,6 +97,7 @@ const PostEventPage = () => {
   const [registrationQuestions, setRegistrationQuestions] = useState([]);
   const [eventData, setEventData] = useState(emptyEventData);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const questionSectionRef = useRef(null);
 
   const { data: existingEvent, isLoading: isLoadingEvent } = useQuery({
     queryKey: ['event', eventId],
@@ -146,6 +160,13 @@ const PostEventPage = () => {
       showError(t('article:main_image_caption_required'));
       return;
     }
+    const questionValidationError = !isEditMode
+      ? getQuestionValidationError(registrationQuestions, t)
+      : null;
+    if (questionValidationError) {
+      showError(questionValidationError);
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -153,6 +174,7 @@ const PostEventPage = () => {
 
       if (isEditMode) {
         await eventApi.updateAdminEvent(eventId, payload);
+        await questionSectionRef.current?.saveQuestions?.();
         showSuccess(t('update_success'));
         navigate(`/admin/events/${eventId}`);
         return;
@@ -161,19 +183,19 @@ const PostEventPage = () => {
       const result = unwrapCreatedEvent(await createEvent(payload));
       const questionsPayload = normalizeQuestions(registrationQuestions);
       if (result?.id && questionsPayload.length > 0) {
-        try {
-          for (const q of questionsPayload) {
+        for (const q of questionsPayload) {
+          try {
             await eventApi.createEventQuestion(result.id, q);
+          } catch (qErr) {
+            throw new Error(qErr.response?.data?.message ?? t('post_questions_failed'));
           }
-        } catch (qErr) {
-          showError(qErr.response?.data?.message ?? t('post_questions_failed'));
         }
       }
 
       showSuccess(t('post_success'));
       navigate(result?.id ? `/admin/events/${result.id}` : '/admin/events');
     } catch (err) {
-      showError(err.response?.data?.message ?? (isEditMode ? t('update_failed') : t('post_failed')));
+      showError(err.response?.data?.message ?? err.message ?? (isEditMode ? t('update_failed') : t('post_failed')));
     } finally {
       setIsSubmitting(false);
     }
@@ -223,7 +245,7 @@ const PostEventPage = () => {
       />
       {isEditMode && eventId ? (
         <Box sx={{ mt: 3 }}>
-          <AdminEventQuestionSection eventId={eventId} />
+          <AdminEventQuestionSection ref={questionSectionRef} eventId={eventId} />
         </Box>
       ) : null}
     </PostArticleShell>
