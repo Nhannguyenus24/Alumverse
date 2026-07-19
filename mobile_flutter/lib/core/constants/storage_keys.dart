@@ -9,4 +9,5 @@ class StorageKeys {
   static const String locale = 'locale';
   static const String onboardingDone = 'onboarding_done';
   static const String organizationSlug = 'organization_slug';
+  static const String organizationId = 'organization_id';
 }

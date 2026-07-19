@@ -12,6 +12,7 @@ import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.shared.utils.CacheUtils;
+import com.service.backend.shared.utils.SecurityUtils;
 import com.service.backend.user.service.NotificationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -228,7 +229,8 @@ public class AdminArticleService {
     public Mono<AchievementResponse> updateAchievementStatus(Integer id, Status status) {
         return achievementRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.ACHIEVEMENT_NOT_FOUND, "Achievement not found with id: " + id)))
-                .flatMap(existing -> achievementRepository.updateStatus(id, status)
+                .flatMap(existing -> SecurityUtils.assertCanManageContentOrganization(existing.getOrganizationId())
+                        .then(achievementRepository.updateStatus(id, status))
                         .then(achievementRepository.findById(id)))
                 .delayUntil(updated -> cacheUtils.clear("achievement_cache")
                         .then(cacheUtils.clear("admin_content_statistics")))
@@ -255,7 +257,8 @@ public class AdminArticleService {
     public Mono<LearningResourceResponse> updateLearningResourceStatus(Integer id, Status status) {
         return learningResourceRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.LEARNING_RESOURCE_NOT_FOUND, "Learning resource not found with id: " + id)))
-                .flatMap(existing -> learningResourceRepository.updateStatus(id, status)
+                .flatMap(existing -> SecurityUtils.assertCanManageContentOrganization(existing.getOrganizationId())
+                        .then(learningResourceRepository.updateStatus(id, status))
                         .then(learningResourceRepository.findById(id)))
                 .doOnNext(updated -> {
                     if (Status.APPROVED.equals(status)) {

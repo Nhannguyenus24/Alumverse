@@ -63,6 +63,10 @@ public class JwtUtils {
     }
 
     public String generateAccessToken(User user, Integer organizationId) {
+        return generateAccessToken(user, organizationId, null);
+    }
+
+    public String generateAccessToken(User user, Integer organizationId, Integer verificationLevel) {
         Instant now = Instant.now();
         JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
                 .subject(String.valueOf(user.getId()))
@@ -70,6 +74,7 @@ public class JwtUtils {
                 .claim("role", user.getRole().name())
                 .claim("avatar", user.getAvatarUrl())
                 .claim("organizationId", organizationId)
+                .claim("verificationLevel", verificationLevel)
                 .claim("full_name", user.getFullName())
                 .claim("phone", user.getPhone())
                 .claim("bio", user.getBio())

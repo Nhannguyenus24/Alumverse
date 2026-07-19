@@ -36,9 +36,14 @@ public class AchievementService {
         return SecurityUtils.getCurrentUserId()
                 .flatMap(userId -> SecurityUtils.resolveContentOrganizationId(request.getOrganizationId())
                         .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.BAD_REQUEST, "Organization ID is required to create achievement")))
-                        .flatMap(orgId -> imageService.uploadBase64IfPresent(request.getImageBase64())
+                        .flatMap(orgId -> SecurityUtils.assertCanSubmitContributorContent(orgId)
+                                .then(SecurityUtils.canManageContentOrganization(orgId))
+                                .flatMap(canManage -> imageService.uploadBase64IfPresent(request.getImageBase64())
                                 .defaultIfEmpty("")
                                 .flatMap(imageUrl -> {
+                                    Status initialStatus = canManage
+                                            ? (request.getStatus() != null ? request.getStatus() : Status.PENDING)
+                                            : Status.PENDING;
                                     Achievement achievement = Achievement.builder()
                                             .organizationId(orgId)
                                             .memberId(userId.intValue())
@@ -48,7 +53,7 @@ public class AchievementService {
                                             .imageUrl(imageUrl.isEmpty() ? null : imageUrl)
                                             .awardedDate(request.getAwardedDate() != null ? request.getAwardedDate() : LocalDate.now())
                                             .topic(request.getTopic())
-                                            .status(request.getStatus())
+                                            .status(initialStatus)
                                             .build();
 
                                     return achievementRepository.save(achievement)
@@ -61,57 +66,53 @@ public class AchievementService {
                                                             "Bài viết \"" + saved.getTitle() + "\" đã được gửi. Admin sẽ xem xét trước khi hiển thị công khai.",
                                                             "/honors/achievements"
                                                     );
-                                                }
+                                            }
                                             })
                                             .map(AchievementResponse::from);
-                                })));
+                                }))));
     }
 
     public Mono<AchievementResponse> update(Integer id, UpdateAchievementRequest request) {
-        return Mono.zip(SecurityUtils.getCurrentUserId(), SecurityUtils.getCurrentUserRole())
-                .flatMap(ctx -> achievementRepository.findById(id)
-                        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.ACHIEVEMENT_NOT_FOUND, "Achievement not found with id: " + id)))
-                        .flatMap(existing -> {
-                            Long currentUserId = ctx.getT1();
-                            String role = ctx.getT2();
-                            return canManageAchievement(existing, currentUserId, role)
-                                    .flatMap(allowed -> allowed
-                                            ? imageService.uploadBase64IfPresent(request.getImageBase64())
-                                                    .defaultIfEmpty("")
-                                                    .flatMap(imageUrl -> {
-                                                        existing.setTitle(request.getTitle());
-                                                        existing.setDescription(request.getDescription());
-                                                        existing.setUrl(request.getUrl());
-                                                        existing.setImageUrl(imageUrl.isEmpty() ? existing.getImageUrl() : imageUrl);
-                                                        if (request.getStatus() != null) existing.setStatus(request.getStatus());
-                                                        if (request.getTopic() != null) existing.setTopic(request.getTopic());
-                                                        return achievementRepository.save(existing);
-                                                    })
-                                            : Mono.error(new ApplicationException(ErrorCode.FORBIDDEN)));
-                        }))
+        return achievementRepository.findById(id)
+                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.ACHIEVEMENT_NOT_FOUND, "Achievement not found with id: " + id)))
+                .flatMap(existing -> SecurityUtils.assertCanManageContentOrganization(existing.getOrganizationId())
+                        .then(imageService.uploadBase64IfPresent(request.getImageBase64())
+                                .defaultIfEmpty("")
+                                .flatMap(imageUrl -> {
+                                    existing.setTitle(request.getTitle());
+                                    existing.setDescription(request.getDescription());
+                                    existing.setUrl(request.getUrl());
+                                    existing.setImageUrl(imageUrl.isEmpty() ? existing.getImageUrl() : imageUrl);
+                                    if (request.getStatus() != null) existing.setStatus(request.getStatus());
+                                    if (request.getTopic() != null) existing.setTopic(request.getTopic());
+                                    return achievementRepository.save(existing);
+                                })))
                 .delayUntil(res -> clearAchievementCaches())
                 .map(AchievementResponse::from);
     }
 
     public Mono<Boolean> delete(Integer id) {
-        return Mono.zip(SecurityUtils.getCurrentUserId(), SecurityUtils.getCurrentUserRole())
-                .flatMap(ctx -> achievementRepository.findById(id)
-                        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.ACHIEVEMENT_NOT_FOUND, "Achievement not found with id: " + id)))
-                        .flatMap(existing -> {
-                            Long currentUserId = ctx.getT1();
-                            String role = ctx.getT2();
-                            return canManageAchievement(existing, currentUserId, role)
-                                    .flatMap(allowed -> allowed
-                                            ? achievementRepository.deleteById(id)
-                                                    .then(clearAchievementCaches())
-                                                    .thenReturn(true)
-                                            : Mono.error(new ApplicationException(ErrorCode.FORBIDDEN)));
-                        }));
+        return achievementRepository.findById(id)
+                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.ACHIEVEMENT_NOT_FOUND, "Achievement not found with id: " + id)))
+                .flatMap(existing -> SecurityUtils.assertCanManageContentOrganization(existing.getOrganizationId())
+                        .then(achievementRepository.deleteById(id))
+                        .then(clearAchievementCaches())
+                        .thenReturn(true));
     }
 
     public Mono<AchievementResponse> getById(Integer id) {
         return achievementRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.ACHIEVEMENT_NOT_FOUND, "Achievement not found with id: " + id)))
+                .map(AchievementResponse::from);
+    }
+
+    public Mono<AchievementResponse> getPublicById(Integer id, Integer organizationId) {
+        return SecurityUtils.resolvePublicOrganizationId(organizationId)
+                .flatMap(orgId -> achievementRepository.findById(id)
+                        .filter(achievement -> orgId.equals(achievement.getOrganizationId())
+                                && Status.APPROVED.equals(achievement.getStatus())))
+                .switchIfEmpty(Mono.error(new ApplicationException(
+                        ErrorCode.ACHIEVEMENT_NOT_FOUND, "Approved achievement not found")))
                 .map(AchievementResponse::from);
     }
 
@@ -133,12 +134,27 @@ public class AchievementService {
         );
     }
 
+    public Mono<PaginatedResponse<AchievementResponse>> getPublicByMemberId(
+            Integer memberId, Integer organizationId, int page, int limit) {
+        int offset = page * limit;
+        return SecurityUtils.resolvePublicOrganizationId(organizationId)
+                .flatMap(orgId -> PaginationHelper.paginate(
+                        achievementRepository.findApprovedByMemberIdAndOrganizationId(memberId, orgId, limit, offset)
+                                .map(AchievementResponse::from),
+                        achievementRepository.countApprovedByMemberIdAndOrganizationId(memberId, orgId),
+                        page, limit))
+                .switchIfEmpty(Mono.just(PaginatedResponse.of(java.util.List.of(), 0, page, limit)));
+    }
+
     public Mono<PaginatedResponse<AchievementResponse>> getMyAchievements(int page, int limit) {
         return SecurityUtils.getCurrentUserId()
                 .flatMap(userId -> getByMemberId(userId.intValue(), page, limit));
     }
 
     public Mono<PaginatedResponse<AchievementResponse>> getByStatus(Status status, Integer organizationId, int page, int limit) {
+        if (organizationId == null) {
+            return Mono.just(PaginatedResponse.of(java.util.List.of(), 0, page, limit));
+        }
         String orgKey = organizationId != null ? organizationId.toString() : "all";
         String cacheKey = "status_" + status + "_org_" + orgKey + "_page_" + page + "_limit_" + limit;
         return cacheUtils.getOrCompute("achievement_cache", cacheKey, java.time.Duration.ofMinutes(5), () -> {
@@ -163,24 +179,17 @@ public class AchievementService {
     }
 
     public Mono<PaginatedResponse<AchievementResponse>> search(String keyword, int page, int limit) {
-        int offset = page * limit;
-        return PaginationHelper.paginate(
-                achievementRepository.searchAchievements(keyword, limit, offset).map(AchievementResponse::from),
-                achievementRepository.countSearchAchievements(keyword),
-                page, limit
-        );
+        return search(keyword, page, limit, null);
     }
 
-    private Mono<Boolean> canManageAchievement(Achievement achievement, Long currentUserId, String role) {
-        if ("ADMIN".equalsIgnoreCase(role)) {
-            return Mono.just(true);
-        }
-        if ("STAFF".equalsIgnoreCase(role)) {
-            return SecurityUtils.getCurrentOrganizationId()
-                    .map(orgId -> achievement.getOrganizationId() != null && achievement.getOrganizationId().equals(orgId))
-                    .defaultIfEmpty(false);
-        }
-        return Mono.just(achievement.getMemberId() != null && achievement.getMemberId().equals(currentUserId.intValue()));
+    public Mono<PaginatedResponse<AchievementResponse>> search(String keyword, int page, int limit, Integer organizationId) {
+        int offset = page * limit;
+        return SecurityUtils.resolvePublicOrganizationId(organizationId)
+                .flatMap(orgId -> PaginationHelper.paginate(
+                        achievementRepository.searchByOrganizationAndTitle(orgId, keyword, limit, offset).map(AchievementResponse::from),
+                        achievementRepository.countSearchByOrganizationAndTitle(orgId, keyword),
+                        page, limit))
+                .switchIfEmpty(Mono.just(PaginatedResponse.of(java.util.List.of(), 0, page, limit)));
     }
 
     private Mono<Void> clearAchievementCaches() {

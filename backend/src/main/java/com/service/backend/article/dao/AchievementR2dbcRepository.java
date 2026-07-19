@@ -30,6 +30,12 @@ public interface AchievementR2dbcRepository extends R2dbcRepository<Achievement,
     @Query("SELECT COUNT(*) FROM achievements WHERE member_id = :memberId")
     Mono<Long> countByMemberId(Integer memberId);
 
+    @Query("SELECT * FROM achievements WHERE member_id = :memberId AND organization_id = :organizationId AND status = 'APPROVED' ORDER BY awarded_date DESC LIMIT :limit OFFSET :offset")
+    Flux<Achievement> findApprovedByMemberIdAndOrganizationId(Integer memberId, Integer organizationId, int limit, int offset);
+
+    @Query("SELECT COUNT(*) FROM achievements WHERE member_id = :memberId AND organization_id = :organizationId AND status = 'APPROVED'")
+    Mono<Long> countApprovedByMemberIdAndOrganizationId(Integer memberId, Integer organizationId);
+
     @Query("SELECT COUNT(*) FROM achievements WHERE status = :status")
     Mono<Long> countByStatus(Status status);
 
@@ -72,12 +78,14 @@ public interface AchievementR2dbcRepository extends R2dbcRepository<Achievement,
 
     @Query("SELECT * FROM achievements " +
            "WHERE organization_id = :organizationId " +
+           "AND status = 'APPROVED' " +
            "AND LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
            "ORDER BY awarded_date DESC LIMIT :limit OFFSET :offset")
     Flux<Achievement> searchByOrganizationAndTitle(Integer organizationId, String keyword, int limit, int offset);
 
     @Query("SELECT COUNT(*) FROM achievements " +
            "WHERE organization_id = :organizationId " +
+           "AND status = 'APPROVED' " +
            "AND LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     Mono<Long> countSearchByOrganizationAndTitle(Integer organizationId, String keyword);
 

@@ -71,7 +71,8 @@ public class EventService {
                 .flatMap(ctx -> {
                     Long userId = ctx.getT1();
                     Long orgId = ctx.getT2().longValue();
-                    return imageService.uploadBase64IfPresent(request.getBannerBase64())
+                    return SecurityUtils.assertCanManageContentOrganization(orgId)
+                            .then(imageService.uploadBase64IfPresent(request.getBannerBase64())
                             .defaultIfEmpty("")
                             .flatMap(bannerUrl -> {
                                 Event event = Event.builder()
@@ -90,62 +91,61 @@ public class EventService {
                                         .organizationId(orgId)
                                         .build();
                                 return this.createEvent(event);
-                            });
+                            }));
                 });
     }
 
     public Mono<Event> updateEvent(Long eventId, UpdateEventRequest request) {
-        return Mono.zip(SecurityUtils.getCurrentUserId(), SecurityUtils.hasRole("ADMIN"))
-                .flatMap(ctx -> {
-                    Long currentUserId = ctx.getT1();
-                    boolean isAdmin = ctx.getT2();
-                    return this.findEventById(eventId)
-                            .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId)))
-                            .flatMap(existingEvent -> {
-                                if (!isAdmin && !existingEvent.getCreatorMemberId().equals(currentUserId)) {
-                                    return Mono.error(new ApplicationException(ErrorCode.FORBIDDEN));
-                                }
-                                return imageService.uploadBase64IfPresent(request.getBannerBase64())
-                                        .defaultIfEmpty("")
-                                        .flatMap(bannerUrl -> {
-                                            Event updatedEvent = Event.builder()
-                                                    .title(request.getTitle())
-                                                    .description(request.getDescription())
-                                                    .bannerUrl(bannerUrl.isEmpty() ? existingEvent.getBannerUrl() : bannerUrl)
-                                                    .location(request.getLocation())
-                                                    .startTime(request.getStartTime())
-                                                    .endTime(request.getEndTime())
-                                                    .registrationStartAt(request.getRegistrationStartAt())
-                                                    .registrationEndAt(request.getRegistrationEndAt())
-                                                    .maxCapacity(request.getMaxCapacity())
-                                                    .topic(request.getTopic() != null ? request.getTopic() : existingEvent.getTopic())
-                                                    .requiresCheckIn(request.getRequiresCheckIn() != null ? request.getRequiresCheckIn() : existingEvent.getRequiresCheckIn())
-                                                    .build();
-                                            return this.updateEvent(eventId, updatedEvent);
-                                        });
-                            });
-                });
+        return this.findEventById(eventId)
+                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId)))
+                .flatMap(existingEvent -> SecurityUtils.assertCanManageContentOrganization(existingEvent.getOrganizationId())
+                        .then(imageService.uploadBase64IfPresent(request.getBannerBase64())
+                                .defaultIfEmpty("")
+                                .flatMap(bannerUrl -> {
+                                    Event updatedEvent = Event.builder()
+                                            .title(request.getTitle())
+                                            .description(request.getDescription())
+                                            .bannerUrl(bannerUrl.isEmpty() ? existingEvent.getBannerUrl() : bannerUrl)
+                                            .location(request.getLocation())
+                                            .startTime(request.getStartTime())
+                                            .endTime(request.getEndTime())
+                                            .registrationStartAt(request.getRegistrationStartAt())
+                                            .registrationEndAt(request.getRegistrationEndAt())
+                                            .maxCapacity(request.getMaxCapacity())
+                                            .topic(request.getTopic() != null ? request.getTopic() : existingEvent.getTopic())
+                                            .requiresCheckIn(request.getRequiresCheckIn() != null ? request.getRequiresCheckIn() : existingEvent.getRequiresCheckIn())
+                                            .build();
+                                    return this.updateEvent(eventId, updatedEvent);
+                                })));
     }
 
     public Mono<Boolean> deleteEvent(Long eventId) {
-        return Mono.zip(SecurityUtils.getCurrentUserId(), SecurityUtils.hasRole("ADMIN"))
-                .flatMap(ctx -> {
-                    Long currentUserId = ctx.getT1();
-                    boolean isAdmin = ctx.getT2();
-                    return this.findEventById(eventId)
-                            .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId)))
-                            .flatMap(existingEvent -> {
-                                if (!isAdmin && !existingEvent.getCreatorMemberId().equals(currentUserId)) {
-                                    return Mono.error(new ApplicationException(ErrorCode.FORBIDDEN));
-                                }
-                                return this.daoDeleteEvent(eventId);
-                            });
-                });
+        return this.findEventById(eventId)
+                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId)))
+                .flatMap(existingEvent -> SecurityUtils.assertCanManageContentOrganization(existingEvent.getOrganizationId())
+                        .then(this.daoDeleteEvent(eventId)));
     }
 
     public Mono<Event> getEventById(Long eventId) {
         return this.findEventById(eventId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId)));
+    }
+
+    public Mono<Event> getVisibleEventById(Long eventId, Integer organizationId) {
+        return this.findEventById(eventId)
+                .flatMap(event -> SecurityUtils.canManageContentOrganization(event.getOrganizationId())
+                        .flatMap(canManage -> {
+                            if (Boolean.TRUE.equals(canManage)) {
+                                return Mono.just(event);
+                            }
+                            return SecurityUtils.resolvePublicOrganizationId(organizationId)
+                                    .filter(orgId -> Boolean.TRUE.equals(event.getIsPublished())
+                                            && event.getOrganizationId() != null
+                                            && event.getOrganizationId().equals(orgId.longValue()))
+                                    .map(ignored -> event);
+                        }))
+                .switchIfEmpty(Mono.error(new ApplicationException(
+                        ErrorCode.EVENT_NOT_FOUND, "Published event not found")));
     }
 
     public Mono<PaginatedResponse<Event>> getEventsByOrganization(int page, int limit) {
@@ -156,13 +156,15 @@ public class EventService {
     public Mono<Event> publishEvent(Long eventId) {
         return this.findEventById(eventId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId)))
-                .flatMap(e -> this.daoPublishEvent(eventId));
+                .flatMap(e -> SecurityUtils.assertCanManageContentOrganization(e.getOrganizationId())
+                        .then(this.daoPublishEvent(eventId)));
     }
 
     public Mono<Event> unpublishEvent(Long eventId) {
         return this.findEventById(eventId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId)))
-                .flatMap(e -> this.daoUnpublishEvent(eventId));
+                .flatMap(e -> SecurityUtils.assertCanManageContentOrganization(e.getOrganizationId())
+                        .then(this.daoUnpublishEvent(eventId)));
     }
 
     public Mono<PaginatedResponse<Event>> getUpcomingEvents(Long organizationId, int page, int limit) {
@@ -194,8 +196,7 @@ public class EventService {
     public Mono<EventInterest> addInterest(Long eventId) {
         return SecurityUtils.getCurrentUserId().flatMap(memberId ->
                 Mono.zip(
-                        this.findEventById(eventId)
-                                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId))),
+                        this.getVisibleEventById(eventId, null),
                         this.checkUserInterest(eventId, memberId)
                 ).flatMap(tuple -> {
                     Boolean already = tuple.getT2();
@@ -222,7 +223,8 @@ public class EventService {
     }
 
     public Mono<PaginatedResponse<EventInterestDetailResponse>> getEventInterests(Long eventId, int page, int limit) {
-        return this.findEventInterests(eventId, page, limit)
+        return assertEventInCurrentOrg(eventId)
+                .then(this.findEventInterests(eventId, page, limit))
                 .flatMap(this::mapInterestPageWithMembers);
     }
 
@@ -326,7 +328,9 @@ public class EventService {
                     Event event = tuple.getT1();
                     Boolean already = tuple.getT2();
                     if (already) return Mono.error(new ApplicationException(ErrorCode.TICKET_ALREADY_REGISTERED, "Already registered"));
-                    return validateRegistrationAnswers(eventId, request != null ? request.getAnswers() : null)
+                    return assertEventOpenForRegistration(event)
+                            .then(Mono.defer(() -> validateRegistrationAnswers(
+                                    eventId, request != null ? request.getAnswers() : null)))
                                             .flatMap(answersJson -> {
                                                 EventTicket ticket = EventTicket.builder()
                                                         .eventId(eventId)
@@ -448,8 +452,7 @@ public class EventService {
 
     public Mono<Integer> sendReminderEmails(Long eventId, ReminderEmailRequest request) {
         return SecurityUtils.getCurrentUserId().flatMap(adminId ->
-                this.findEventById(eventId)
-                        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId)))
+                assertEventInCurrentOrg(eventId)
                         .flatMap(event -> {
                             Flux<EventTicket> ticketFlux = request.getTicketIds() != null && !request.getTicketIds().isEmpty()
                                     ? this.findTicketsByIds(request.getTicketIds())
@@ -486,8 +489,7 @@ public class EventService {
 
     public Mono<Integer> sendIssuedTicketEmails(Long eventId) {
         return SecurityUtils.getCurrentUserId().flatMap(adminId ->
-                this.findEventById(eventId)
-                        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId)))
+                assertEventInCurrentOrg(eventId)
                         .flatMap(event -> this.findIssuedTicketsByEvent(eventId)
                     .flatMap(ticket -> sendTicketEmail(event, ticket)
                         .map(sent -> sent ? 1 : 0)
@@ -575,7 +577,7 @@ public class EventService {
      * and that the caller is staff. Returns the holder's profile so staff can verify the person.
      */
     public Mono<EventTicketDetailResponse> checkIn(Long eventId, CheckInRequest request) {
-        return requireStaff()
+        return assertEventInCurrentOrg(eventId)
                 .then(resolveTicketCode(eventId, request))
                 .flatMap(ticketCode -> this.findTicketByCode(ticketCode)
                         .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.TICKET_NOT_FOUND, "Ticket not found")))
@@ -631,20 +633,34 @@ public class EventService {
         if (reason == null || reason.isBlank()) {
             return Mono.error(new ApplicationException(ErrorCode.CANCEL_REASON_REQUIRED, "Cancel reason is required"));
         }
-        return this.findTicketByCode(ticketCode)
-                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.TICKET_NOT_FOUND, "Ticket not found")))
-                .flatMap(ticket -> {
+        return Mono.zip(
+                        SecurityUtils.getCurrentUserId(),
+                        this.findTicketByCode(ticketCode)
+                                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.TICKET_NOT_FOUND, "Ticket not found"))))
+                .flatMap(tuple -> {
+                    Long currentUserId = tuple.getT1();
+                    EventTicket ticket = tuple.getT2();
                     if (ticket.getStatus() == Status.CANCELLED) {
                         return Mono.error(new ApplicationException(ErrorCode.TICKET_ALREADY_CANCELLED, "Ticket already cancelled"));
                     }
-                    return this.cancelTicket(ticket.getId(), reason.trim());
+                    boolean ownsTicket = ticket.getMemberId() != null && ticket.getMemberId().equals(currentUserId);
+                    Mono<Void> permission = ownsTicket ? Mono.<Void>empty() : assertCanManageTicket(ticket);
+                    return permission.then(this.cancelTicket(ticket.getId(), reason.trim()));
                 });
     }
 
     public Mono<EventTicketDetailResponse> getTicketByCode(String ticketCode) {
-        return this.findTicketByCode(ticketCode)
-                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.TICKET_NOT_FOUND, "Ticket not found: " + ticketCode)))
-                .flatMap(this::toDetailWithAttendee);
+        return Mono.zip(
+                        SecurityUtils.getCurrentUserId(),
+                        this.findTicketByCode(ticketCode)
+                                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.TICKET_NOT_FOUND, "Ticket not found: " + ticketCode))))
+                .flatMap(tuple -> {
+                    Long currentUserId = tuple.getT1();
+                    EventTicket ticket = tuple.getT2();
+                    boolean ownsTicket = ticket.getMemberId() != null && ticket.getMemberId().equals(currentUserId);
+                    Mono<Void> permission = ownsTicket ? Mono.<Void>empty() : assertCanManageTicket(ticket);
+                    return permission.then(toDetailWithAttendee(ticket));
+                });
     }
 
     public Mono<PaginatedResponse<EventTicketDetailResponse>> getTicketsByEvent(Long eventId, String status, String keyword, int page, int limit) {
@@ -658,7 +674,9 @@ public class EventService {
                     ? this.findTicketsByEventAndStatus(eventId, status, page, limit)
                     : this.findTicketsByEvent(eventId, page, limit);
         }
-        return ticketsPage.flatMap(this::mapDetailPageWithAttendees);
+        return assertEventInCurrentOrg(eventId)
+                .then(ticketsPage)
+                .flatMap(this::mapDetailPageWithAttendees);
     }
 
     public Mono<PaginatedResponse<EventTicketDetailResponse>> getMyTickets(int page, int limit) {
@@ -747,7 +765,8 @@ public class EventService {
     // ─── Email log queries ────────────────────────────────────────────────────
 
     public Mono<PaginatedResponse<EventEmailLog>> getEmailLogsByEvent(Long eventId, int page, int limit) {
-        return this.findEmailLogsByEvent(eventId, page, limit);
+        return assertEventInCurrentOrg(eventId)
+                .then(this.findEmailLogsByEvent(eventId, page, limit));
     }
 
     private Mono<EventInterestDetailResponse> toInterestDetailWithMember(EventInterest interest) {
@@ -809,7 +828,29 @@ public class EventService {
     public Mono<EventStatisticsResponse> getEventStatistics(Long eventId) {
         return this.findEventById(eventId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId)))
-                .flatMap(e -> this.daoGetEventStatistics(eventId));
+                .flatMap(e -> SecurityUtils.assertCanManageContentOrganization(e.getOrganizationId())
+                        .then(this.daoGetEventStatistics(eventId)));
+    }
+
+    private Mono<Void> assertEventOpenForRegistration(Event event) {
+        LocalDateTime now = LocalDateTime.now();
+        if (!Boolean.TRUE.equals(event.getIsPublished())) {
+            return Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_PUBLISHED));
+        }
+        if (event.getRegistrationStartAt() != null && now.isBefore(event.getRegistrationStartAt())) {
+            return Mono.error(new ApplicationException(ErrorCode.EVENT_REGISTRATION_NOT_OPEN));
+        }
+        if ((event.getRegistrationEndAt() != null && now.isAfter(event.getRegistrationEndAt()))
+                || (event.getStartTime() != null && !now.isBefore(event.getStartTime()))) {
+            return Mono.error(new ApplicationException(ErrorCode.EVENT_REGISTRATION_CLOSED));
+        }
+        return SecurityUtils.getCurrentOrganizationId()
+                .filter(orgId -> event.getOrganizationId() != null
+                        && event.getOrganizationId().equals(orgId.longValue()))
+                .switchIfEmpty(Mono.error(new ApplicationException(
+                        ErrorCode.FORBIDDEN,
+                        "Event does not belong to the current organization")))
+                .then();
     }
 
     // ─── Event questions ──────────────────────────────────────────────────────
@@ -817,6 +858,11 @@ public class EventService {
     public Flux<EventQuestionResponse> getEventQuestions(Long eventId) {
         return this.findEventById(eventId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId)))
+                .thenMany(this.findQuestionsByEvent(eventId).map(EventQuestionResponse::from));
+    }
+
+    public Flux<EventQuestionResponse> getVisibleEventQuestions(Long eventId, Integer organizationId) {
+        return getVisibleEventById(eventId, organizationId)
                 .thenMany(this.findQuestionsByEvent(eventId).map(EventQuestionResponse::from));
     }
 
@@ -867,16 +913,17 @@ public class EventService {
     }
 
     private Mono<Event> assertEventInCurrentOrg(Long eventId) {
-        return Mono.zip(SecurityUtils.getCurrentOrganizationId(), this.findEventById(eventId)
-                        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId))))
-                .flatMap(tuple -> {
-                    Integer orgId = tuple.getT1();
-                    Event event = tuple.getT2();
-                    if (event.getOrganizationId() == null || !event.getOrganizationId().equals(orgId.longValue())) {
-                        return Mono.error(new ApplicationException(ErrorCode.FORBIDDEN, "Event not in current organization"));
-                    }
-                    return Mono.just(event);
-                });
+        return this.findEventById(eventId)
+                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId)))
+                .flatMap(event -> SecurityUtils.assertCanManageContentOrganization(event.getOrganizationId())
+                        .thenReturn(event));
+    }
+
+    private Mono<Void> assertCanManageTicket(EventTicket ticket) {
+        if (ticket.getEventId() == null) {
+            return Mono.error(new ApplicationException(ErrorCode.FORBIDDEN, "Ticket is not linked to an event"));
+        }
+        return assertEventInCurrentOrg(ticket.getEventId()).then();
     }
 
     private void validateQuestionRequest(EventQuestionRequest request) {

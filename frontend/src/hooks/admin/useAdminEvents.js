@@ -1,8 +1,19 @@
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
+import { enqueueSnackbar } from 'notistack';
 import { eventApi, organizationApi } from '../../utils/api';
 
 const fallbackPage = { items: [], totalItem: 0, totalPage: 0, currentPage: 0, pageSize: 10 };
 const fallbackStatistics = null;
+let lastLoadErrorToastAt = 0;
+
+const isCanceled = (err) => err?.name === 'CanceledError' || err?.name === 'AbortError';
+
+const notifyDataLoadError = (message = 'Không tải được dữ liệu sự kiện. Vui lòng thử lại.') => {
+  const now = Date.now();
+  if (now - lastLoadErrorToastAt < 5000) return;
+  lastLoadErrorToastAt = now;
+  enqueueSnackbar(message, { variant: 'error' });
+};
 
 const extractData = (response) => response?.data?.data ?? response?.data ?? response ?? null;
 
@@ -11,9 +22,10 @@ const safeFetch = async (request, fallback) => {
     const data = extractData(await request());
     return data ?? fallback;
   } catch (err) {
-    if (err.name === 'CanceledError' || err.name === 'AbortError') {
+    if (isCanceled(err)) {
       throw err;
     }
+    notifyDataLoadError();
     return fallback;
   }
 };
@@ -44,6 +56,7 @@ const useAdminEvents = (initialOrgId = 'ALL') => {
       const orgs = await organizationApi.getAllOrganizations();
       setOrganizations(Array.isArray(orgs) ? orgs : []);
     } catch {
+      notifyDataLoadError('Không tải được danh sách tổ chức. Vui lòng thử lại.');
       setOrganizations([]);
     }
   }, []);
@@ -92,7 +105,7 @@ const useAdminEvents = (initialOrgId = 'ALL') => {
         setLoading(false);
       }
     } catch (err) {
-      if (err.name !== 'CanceledError' && err.name !== 'AbortError') {
+      if (!isCanceled(err)) {
         setPaged(fallbackPage);
         setLoading(false);
       }

@@ -64,7 +64,12 @@ const useAdminUsersLocal = (stableOrgId, shouldFetch = true) => {
       const items = normalizeList(payload);
       setServerUsers(Array.isArray(items) ? items : []);
       setTotalCount(payload?.totalItem || payload?.totalElements || items.length || 0);
-    } catch {
+    } catch (e) {
+      enqueueSnackbar(
+        e?.response?.data?.message ||
+          i18next.t('admin:users_load_failed', { defaultValue: 'Không tải được danh sách người dùng.' }),
+        { variant: 'error' },
+      );
       setServerUsers([]);
       setTotalCount(0);
     } finally {

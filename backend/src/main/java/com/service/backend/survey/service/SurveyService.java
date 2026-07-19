@@ -64,7 +64,8 @@ public class SurveyService {
                     Long creatorId = tuple.getT1();
                     Long orgId = tuple.getT2().longValue();
                     String questionsJson = JsonUtils.toJson(request.getQuestions());
-                    return formRepo.insertForm(
+                    return SecurityUtils.assertCanManageContentOrganization(orgId)
+                            .then(formRepo.insertForm(
                             orgId,
                             creatorId,
                             request.getTitle(),
@@ -73,7 +74,7 @@ public class SurveyService {
                             request.getStartAt(),
                             request.getDurationMinutes(),
                             SurveyStatus.DRAFT.name(),
-                            request.getAllowMultiple() != null && request.getAllowMultiple());
+                            request.getAllowMultiple() != null && request.getAllowMultiple()));
                 })
                 .flatMap(this::toResponseWithCount)
                 .doOnSuccess(r -> log.info("createSurvey created id={}", r.getId()))
@@ -85,6 +86,8 @@ public class SurveyService {
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.SURVEY_NOT_FOUND,
                         "Survey not found with id: " + id)))
                 .flatMap(existing -> {
+                    return SecurityUtils.assertCanManageContentOrganization(existing.getOrganizationId())
+                            .then(Mono.defer(() -> {
                     if (!SurveyStatus.DRAFT.name().equalsIgnoreCase(existing.getStatus())) {
                         return Mono.error(new ApplicationException(ErrorCode.SURVEY_NOT_EDITABLE));
                     }
@@ -97,6 +100,7 @@ public class SurveyService {
                             request.getStartAt(),
                             request.getDurationMinutes(),
                             request.getAllowMultiple() != null && request.getAllowMultiple());
+                            }));
                 })
                 .flatMap(this::toResponseWithCount)
                 .doOnSuccess(r -> log.info("updateSurvey updated id={}", id))
@@ -107,6 +111,8 @@ public class SurveyService {
         return formRepo.findByIdWithJson(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.SURVEY_NOT_FOUND,
                         "Survey not found with id: " + id)))
+                .flatMap(form -> SecurityUtils.assertCanManageContentOrganization(form.getOrganizationId())
+                        .thenReturn(form))
                 .flatMap(this::toResponseWithCount);
     }
 
@@ -155,7 +161,8 @@ public class SurveyService {
         return formRepo.findByIdWithJson(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.SURVEY_NOT_FOUND,
                         "Survey not found with id: " + id)))
-                .flatMap(form -> formRepo.updateStatusAndStart(id, SurveyStatus.OPEN.name(), LocalDateTime.now())
+                .flatMap(form -> SecurityUtils.assertCanManageContentOrganization(form.getOrganizationId())
+                        .then(formRepo.updateStatusAndStart(id, SurveyStatus.OPEN.name(), LocalDateTime.now()))
                         .then(formRepo.findByIdWithJson(id)))
                 .flatMap(this::toResponseWithCount)
                 .doOnSuccess(r -> log.info("openSurvey id={}", id));
@@ -166,7 +173,8 @@ public class SurveyService {
         return formRepo.findByIdWithJson(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.SURVEY_NOT_FOUND,
                         "Survey not found with id: " + id)))
-                .flatMap(form -> formRepo.updateStatus(id, SurveyStatus.CLOSED.name())
+                .flatMap(form -> SecurityUtils.assertCanManageContentOrganization(form.getOrganizationId())
+                        .then(formRepo.updateStatus(id, SurveyStatus.CLOSED.name()))
                         .then(formRepo.findByIdWithJson(id)))
                 .flatMap(this::toResponseWithCount)
                 .doOnSuccess(r -> log.info("closeSurvey id={}", id));
@@ -176,7 +184,8 @@ public class SurveyService {
         return formRepo.findByIdWithJson(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.SURVEY_NOT_FOUND,
                         "Survey not found with id: " + id)))
-                .flatMap(form -> formRepo.deleteById(id))
+                .flatMap(form -> SecurityUtils.assertCanManageContentOrganization(form.getOrganizationId())
+                        .then(formRepo.deleteById(id)))
                 .doOnSuccess(v -> log.info("deleteSurvey id={}", id));
     }
 
@@ -185,7 +194,8 @@ public class SurveyService {
         return formRepo.findByIdWithJson(formId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.SURVEY_NOT_FOUND,
                         "Survey not found with id: " + formId)))
-                .then(PaginationHelper.paginate(
+                .flatMap(form -> SecurityUtils.assertCanManageContentOrganization(form.getOrganizationId())
+                        .then(PaginationHelper.paginate(
                         submissionRepo.findByFormIdWithMember(formId, size, offset)
                                 .map(p -> SurveySubmissionResponse.builder()
                                         .id(p.getId())
@@ -195,16 +205,17 @@ public class SurveyService {
                                         .memberEmail(p.getMemberEmail())
                                         .answers(JsonUtils.fromJsonToMap(p.getAnswersData()))
                                         .submittedAt(p.getSubmittedAt())
-                                        .build()),
+                                .build()),
                         submissionRepo.countByFormId(formId),
-                        page, size));
+                        page, size)));
     }
 
     public Mono<SurveySummaryResponse> getSummary(Long formId) {
         return formRepo.findByIdWithJson(formId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.SURVEY_NOT_FOUND,
                         "Survey not found with id: " + formId)))
-                .flatMap(form -> submissionRepo.findAllByFormId(formId).collectList()
+                .flatMap(form -> SecurityUtils.assertCanManageContentOrganization(form.getOrganizationId())
+                        .then(submissionRepo.findAllByFormId(formId).collectList())
                         .map(subs -> buildSummary(form, subs)));
     }
 
@@ -246,19 +257,44 @@ public class SurveyService {
     }
 
     public Mono<SurveyResponse> getSurveyForUser(Long formId) {
-        return SecurityUtils.getCurrentUserId()
-                .flatMap(userId -> formRepo.findByIdWithJson(formId)
+        return Mono.zip(SecurityUtils.getCurrentUserId(), SecurityUtils.getCurrentOrganizationId())
+                .flatMap(tuple -> {
+                    Long userId = tuple.getT1();
+                    Long orgId = tuple.getT2().longValue();
+                    return formRepo.findByIdWithJson(formId)
                         .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.SURVEY_NOT_FOUND,
                                 "Survey not found with id: " + formId)))
-                        .flatMap(form -> toResponseForUser(form, userId)));
+                            .flatMap(form -> {
+                                if (!orgId.equals(form.getOrganizationId())) {
+                                    return Mono.error(new ApplicationException(
+                                            ErrorCode.FORBIDDEN,
+                                            "Survey does not belong to the current organization"));
+                                }
+                                if (!isActive(form)) {
+                                    return submissionRepo.countByFormIdAndMemberId(formId, userId)
+                                            .flatMap(count -> count > 0
+                                                    ? toResponseForUser(form, userId)
+                                                    : Mono.error(new ApplicationException(ErrorCode.SURVEY_NOT_OPEN)));
+                                }
+                                return toResponseForUser(form, userId);
+                            });
+                });
     }
 
     public Mono<SurveySubmissionResponse> submitSurvey(Long formId, SubmitSurveyRequest request) {
-        return SecurityUtils.getCurrentUserId()
-                .flatMap(userId -> formRepo.findByIdWithJson(formId)
+        return Mono.zip(SecurityUtils.getCurrentUserId(), SecurityUtils.getCurrentOrganizationId())
+                .flatMap(tuple -> {
+                    Long userId = tuple.getT1();
+                    Long orgId = tuple.getT2().longValue();
+                    return formRepo.findByIdWithJson(formId)
                         .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.SURVEY_NOT_FOUND,
                                 "Survey not found with id: " + formId)))
                         .flatMap(form -> {
+                            if (!orgId.equals(form.getOrganizationId())) {
+                                return Mono.error(new ApplicationException(
+                                        ErrorCode.FORBIDDEN,
+                                        "Survey does not belong to the current organization"));
+                            }
                             if (!isActive(form)) {
                                 return Mono.error(new ApplicationException(ErrorCode.SURVEY_NOT_OPEN));
                             }
@@ -282,13 +318,27 @@ public class SurveyService {
                                                 .submittedAt(sub.getSubmittedAt())
                                                 .build());
                             });
-                        }))
+                        });
+                })
                 .doOnError(e -> log.error("Error submitting survey id={}", formId, e));
     }
 
     public Mono<SurveySubmissionResponse> getMySubmission(Long formId) {
-        return SecurityUtils.getCurrentUserId()
-                .flatMap(userId -> submissionRepo.findLatestByFormIdAndMemberId(formId, userId)
+        return Mono.zip(SecurityUtils.getCurrentUserId(), SecurityUtils.getCurrentOrganizationId())
+                .flatMap(tuple -> {
+                    Long userId = tuple.getT1();
+                    Long orgId = tuple.getT2().longValue();
+                    return formRepo.findByIdWithJson(formId)
+                            .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.SURVEY_NOT_FOUND,
+                                    "Survey not found with id: " + formId)))
+                            .flatMap(form -> {
+                                if (!orgId.equals(form.getOrganizationId())) {
+                                    return Mono.error(new ApplicationException(
+                                            ErrorCode.FORBIDDEN,
+                                            "Survey does not belong to the current organization"));
+                                }
+                                return submissionRepo.findLatestByFormIdAndMemberId(formId, userId);
+                            })
                         .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.SURVEY_NOT_FOUND,
                                 "No submission found for this survey")))
                         .map(sub -> SurveySubmissionResponse.builder()
@@ -297,7 +347,8 @@ public class SurveyService {
                                 .memberId(sub.getMemberId())
                                 .answers(sub.getAnswers())
                                 .submittedAt(sub.getSubmittedAt())
-                                .build()));
+                                .build());
+                });
     }
 
     // ============================ helpers ============================

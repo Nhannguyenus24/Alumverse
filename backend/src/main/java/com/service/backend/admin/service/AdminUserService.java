@@ -13,6 +13,7 @@ import com.service.backend.shared.enums.VerificationLevel;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.utils.CacheUtils;
+import com.service.backend.shared.utils.SecurityUtils;
 import com.service.backend.shared.service.SseService;
 import com.service.backend.user.dao.UserOrganizationMemberRepository;
 import org.slf4j.Logger;
@@ -75,12 +76,15 @@ public class AdminUserService {
         String roleParam = (role != null && !role.equals("ALL")) ? role : null;
         String statusParam = (status != null && !status.equals("ALL")) ? status.toUpperCase() : null;
 
-        return PaginationHelper.paginate(
-                adminUserRepository.findUsersWithFilters(searchParam, roleParam, statusParam, organizationId, size, offset).collectList(),
-                adminUserRepository.countUsersWithFilters(searchParam, roleParam, statusParam, organizationId),
-                page,
-                size,
-                this::enrichUserResponses)
+        return SecurityUtils.getCurrentUserRole()
+                .map(roleName -> "STAFF".equalsIgnoreCase(roleName))
+                .defaultIfEmpty(false)
+                .flatMap(excludeAdmin -> PaginationHelper.paginate(
+                        adminUserRepository.findUsersWithFilters(searchParam, roleParam, statusParam, organizationId, excludeAdmin, size, offset).collectList(),
+                        adminUserRepository.countUsersWithFilters(searchParam, roleParam, statusParam, organizationId, excludeAdmin),
+                        page,
+                        size,
+                        this::enrichUserResponses))
                 .doOnSuccess(r -> logger.info("getAllUsers result: {}", JsonUtils.toJson(r)))
                 .doOnError(error -> logger.error("Error fetching users with filters: {}", error.getMessage()));
     }
@@ -641,7 +645,8 @@ public class AdminUserService {
                 .flatMap(info -> {
                     Integer memberId = info.getMemberId();
                     Integer organizationId = info.getOrganizationId();
-                    return adminUserRepository.reviewVerificationRequest(requestId, Status.valueOf(upperStatus).getValue(), adminNote)
+                    return SecurityUtils.assertCanManageContentOrganization(organizationId)
+                        .then(adminUserRepository.reviewVerificationRequest(requestId, Status.valueOf(upperStatus).getValue(), adminNote))
                         .flatMap(count -> {
                             if (count <= 0) return Mono.just(false);
 
@@ -693,7 +698,8 @@ public class AdminUserService {
         String normalizedType = StringUtils.hasText(requestType) ? requestType.trim().toUpperCase() : "PROOF";
         if ("PEER".equals(normalizedType)) {
             return peerVerificationRepository.findById(requestId)
-                    .flatMap(request -> peerVerificationRepository
+                    .flatMap(request -> SecurityUtils.assertCanManageContentOrganization(request.getOrganizationId())
+                            .then(peerVerificationRepository
                             .markPendingRequestsForTarget(request.getOrganizationId(), request.getTargetMemberId(), Status.NEED_UPDATE)
                             .flatMap(count -> {
                                 if (count == null || count <= 0) {
@@ -707,14 +713,15 @@ public class AdminUserService {
                                                 "Quản trị viên đã mở lại form xác thực. Bạn có thể chọn lại minh chứng hoặc người xác thực đồng nghiệp.",
                                                 "/organization-registration")))
                                         .thenReturn(true);
-                            }))
+                            })))
                     .doOnSuccess(ok -> logger.info("reopenVerificationRequest peer: requestId={}, success={}", requestId, ok))
                     .doOnError(e -> logger.error("Error reopening peer verification request {}", e.getMessage()))
                     .defaultIfEmpty(false);
         }
 
         return adminUserRepository.findVerificationRequestInfoById(requestId)
-                .flatMap(info -> adminUserRepository.markVerificationRequestNeedsUpdate(requestId, adminNote)
+                .flatMap(info -> SecurityUtils.assertCanManageContentOrganization(info.getOrganizationId())
+                        .then(adminUserRepository.markVerificationRequestNeedsUpdate(requestId, adminNote))
                         .flatMap(count -> {
                             if (count == null || count <= 0) {
                                 return Mono.just(false);
@@ -895,6 +902,35 @@ public class AdminUserService {
         })
                 .doOnSuccess(r -> logger.info("getVerificationStatistics completed"))
                 .doOnError(e -> logger.error("Error fetching verification statistics: {}", e.getMessage()));
+    }
+
+    public Mono<Void> assertStaffCanAccessUser(Integer targetUserId) {
+        return SecurityUtils.getCurrentUserRole()
+                .flatMap(role -> {
+                    if (!"STAFF".equalsIgnoreCase(role)) {
+                        return Mono.empty();
+                    }
+                    return adminUserRepository.findById(targetUserId)
+                            .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND)))
+                            .flatMap(target -> {
+                                if (target.getRole() == UserRole.ADMIN) {
+                                    return Mono.error(new ApplicationException(
+                                            ErrorCode.FORBIDDEN,
+                                            "Staff cannot access an administrator account"));
+                                }
+                                return SecurityUtils.getCurrentOrganizationId()
+                                        .flatMap(orgId -> userOrganizationMemberRepository
+                                                .findByOrganizationIdAndUserId(orgId, targetUserId))
+                                        .switchIfEmpty(Mono.error(new ApplicationException(
+                                                ErrorCode.FORBIDDEN,
+                                                "Staff can only access users in the current organization")))
+                                        .then();
+                            });
+                });
+    }
+
+    public Mono<Void> assertStaffCanModifyUser(Integer targetUserId) {
+        return assertStaffCanAccessUser(targetUserId);
     }
 
     /**

@@ -53,16 +53,20 @@ public class AlumniPostController {
 
     @PublicEndpoint
     @GetMapping("/{id}")
-    public Mono<ResponseEntity<ApiResponse<AlumniPostResponse>>> getById(@PathVariable @Min(1) Integer id) {
-        return alumniPostService.getById(id)
+    public Mono<ResponseEntity<ApiResponse<AlumniPostResponse>>> getById(
+            @PathVariable @Min(1) Integer id,
+            @RequestParam(required = false) Integer organizationId) {
+        return alumniPostService.getPublicById(id, organizationId)
                 .map(response -> ResponseEntity
                         .ok(new ApiResponse<>("Alumni post retrieved successfully", response)));
     }
 
     @PublicEndpoint
     @GetMapping("/slug/{slug}")
-    public Mono<ResponseEntity<ApiResponse<AlumniPostResponse>>> getBySlug(@PathVariable @NotBlank String slug) {
-        return alumniPostService.getBySlug(slug)
+    public Mono<ResponseEntity<ApiResponse<AlumniPostResponse>>> getBySlug(
+            @PathVariable @NotBlank String slug,
+            @RequestParam(required = false) Integer organizationId) {
+        return alumniPostService.getPublicBySlug(slug, organizationId)
                 .map(response -> ResponseEntity
                         .ok(new ApiResponse<>("Alumni post retrieved successfully", response)));
     }
@@ -71,8 +75,9 @@ public class AlumniPostController {
     @GetMapping
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<AlumniPostResponse>>>> getAll(
             @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "10") @Min(1) int limit) {
-        return alumniPostService.getAll(page, limit)
+            @RequestParam(defaultValue = "10") @Min(1) int limit,
+            @RequestParam(required = false) Integer organizationId) {
+        return alumniPostService.getPublished(page, limit, organizationId)
                 .map(response -> ResponseEntity
                         .ok(new ApiResponse<>("Alumni posts retrieved successfully", response)));
     }
@@ -81,8 +86,9 @@ public class AlumniPostController {
     @GetMapping("/published")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<AlumniPostResponse>>>> getPublished(
             @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "10") @Min(1) int limit) {
-        return alumniPostService.getPublished(page, limit)
+            @RequestParam(defaultValue = "10") @Min(1) int limit,
+            @RequestParam(required = false) Integer organizationId) {
+        return alumniPostService.getPublished(page, limit, organizationId)
                 .map(response -> ResponseEntity
                         .ok(new ApiResponse<>("Published alumni posts retrieved successfully", response)));
     }
@@ -91,9 +97,10 @@ public class AlumniPostController {
     @GetMapping("/user/{userId}")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<AlumniPostResponse>>>> getByUserId(
             @PathVariable @Min(1) Integer userId,
+            @RequestParam(required = false) Integer organizationId,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int limit) {
-        return alumniPostService.getByAuthorMemberId(userId, page, limit)
+        return alumniPostService.getByAuthorMemberId(userId, organizationId, page, limit)
                 .map(response -> ResponseEntity
                         .ok(new ApiResponse<>("Alumni posts by user retrieved successfully", response)));
     }
@@ -103,8 +110,9 @@ public class AlumniPostController {
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<AlumniPostResponse>>>> search(
             @RequestParam @NotBlank String keyword,
             @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "10") @Min(1) int limit) {
-        return alumniPostService.search(keyword, page, limit)
+            @RequestParam(defaultValue = "10") @Min(1) int limit,
+            @RequestParam(required = false) Integer organizationId) {
+        return alumniPostService.search(keyword, page, limit, organizationId)
                 .map(response -> ResponseEntity
                         .ok(new ApiResponse<>("Search results retrieved successfully", response)));
     }

@@ -33,6 +33,13 @@ class LearningResourceServiceTest {
     @InjectMocks
     private LearningResourceService learningResourceService;
 
+    private static reactor.util.context.Context adminContext() {
+        return org.springframework.security.core.context.ReactiveSecurityContextHolder.withAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                        "1", null,
+                        java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN"))));
+    }
+
     // ─── getById ─────────────────────────────────────────────────────────────
 
     @Nested
@@ -82,6 +89,7 @@ class LearningResourceServiceTest {
         void delete_success() {
             LearningResource resource = LearningResource.builder()
                     .id(1)
+                    .organizationId(1)
                     .title("Java for Beginners")
                     .build();
 
@@ -89,7 +97,8 @@ class LearningResourceServiceTest {
             when(learningResourceRepository.deleteById(1)).thenReturn(Mono.empty());
             when(cacheUtils.clear(anyString())).thenReturn(Mono.empty());
 
-            StepVerifier.create(learningResourceService.delete(1))
+            StepVerifier.create(learningResourceService.delete(1)
+                            .contextWrite(adminContext()))
                     .assertNext(result -> assertThat(result).isTrue())
                     .verifyComplete();
         }
@@ -117,6 +126,7 @@ class LearningResourceServiceTest {
         void update_success() {
             LearningResource existing = LearningResource.builder()
                     .id(1)
+                    .organizationId(1)
                     .title("Old Title")
                     .linkUrl("http://old.com")
                     .type(LearningResourceType.COURSE)
@@ -139,7 +149,8 @@ class LearningResourceServiceTest {
             when(learningResourceRepository.save(any())).thenReturn(Mono.just(updated));
             when(cacheUtils.clear(anyString())).thenReturn(Mono.empty());
 
-            StepVerifier.create(learningResourceService.update(1, request))
+            StepVerifier.create(learningResourceService.update(1, request)
+                            .contextWrite(adminContext()))
                     .assertNext(dto -> {
                         assertThat(dto.getTitle()).isEqualTo("New Title");
                         assertThat(dto.getType()).isEqualTo(LearningResourceType.EBOOK);

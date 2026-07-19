@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { enqueueSnackbar } from 'notistack';
 import apiClient from '../../utils/axios';
 import { useDebounce } from '../useDebounce';
+import useAuthStore from '../../stores/authStore';
 
 const normalizeList = (payload) => {
   if (Array.isArray(payload)) return payload;
@@ -16,6 +18,7 @@ const fetchSafe = async (request, fallbackValue) => {
     const data = response?.data?.data ?? response?.data ?? null;
     return data ?? fallbackValue;
   } catch {
+    enqueueSnackbar('Không tải được dữ liệu tổ chức. Vui lòng thử lại.', { variant: 'error' });
     return fallbackValue;
   }
 };
@@ -66,11 +69,14 @@ const useAdminSystemData = (preferredOrganization = {}) => {
   const loadData = useCallback(async () => {
     setLoading(true);
 
-    const [organizations] = await Promise.all([
-      fetchSafe(() => apiClient.get('/admin/organizations', { params: { page: 0, size: 100 } }), []),
-    ]);
+    const role = useAuthStore.getState().user?.role;
+    const organizations = role === 'STAFF' && preferredOrganization?.slug
+      ? await fetchSafe(() => apiClient.get(`/organizations/${preferredOrganization.slug}`), null)
+      : await fetchSafe(() => apiClient.get('/admin/organizations', { params: { page: 0, size: 100 } }), []);
 
-    const normalizedOrgs = normalizeList(organizations);
+    const normalizedOrgs = role === 'STAFF'
+      ? (organizations ? [organizations] : [])
+      : normalizeList(organizations);
 
     setState({
       organizations: normalizedOrgs,
@@ -78,7 +84,7 @@ const useAdminSystemData = (preferredOrganization = {}) => {
 
     setLoading(false);
    
-  }, []);
+  }, [preferredOrganization?.slug]);
 
   // Run once on mount
   useEffect(() => {

@@ -1,17 +1,20 @@
 import { useQuery } from '@tanstack/react-query';
 import apiClient from '../../utils/axios';
+import useOrganizationStore from '../../stores/organizationStore';
 
-const getUserAlumniPosts = async (userId, page = 0, limit = 10) => {
+const getUserAlumniPosts = async (userId, organizationId, page = 0, limit = 10) => {
   const res = await apiClient.get(`/articles/alumni-posts/user/${userId}`, {
-    params: { page, limit }
+    params: { page, limit, organizationId }
   });
   console.log('getUserAlumniPosts result:', res?.data?.data);
   return res?.data?.data ?? null;
 };
 
-export const useUserAlumniPosts = (userId, page = 0, limit = 10, { enabled = true } = {}) =>
-  useQuery({
-    queryKey: ['userAlumniPosts', userId, page, limit],
-    queryFn: () => getUserAlumniPosts(userId, page, limit),
-    enabled: Boolean(userId) && enabled,
+export const useUserAlumniPosts = (userId, page = 0, limit = 10, { enabled = true } = {}) => {
+  const organizationId = useOrganizationStore((s) => s.organization?.id ?? null);
+  return useQuery({
+    queryKey: ['userAlumniPosts', userId, organizationId, page, limit],
+    queryFn: () => getUserAlumniPosts(userId, organizationId, page, limit),
+    enabled: Boolean(userId) && Boolean(organizationId) && enabled,
   });
+};

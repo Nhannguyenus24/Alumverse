@@ -83,7 +83,8 @@ public class AdminUserController {
     @GetMapping("/{userId}")
     public Mono<ResponseEntity<ApiResponse<UserResponse>>> getUserById(
             @PathVariable Integer userId) {
-        return adminUserService.getUserById(userId)
+        return adminUserService.assertStaffCanAccessUser(userId)
+                .then(adminUserService.getUserById(userId))
                 .map(user -> ResponseEntity.ok(
                         new ApiResponse<>("User fetched successfully", user)))
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND, "User not found")));
@@ -95,7 +96,8 @@ public class AdminUserController {
     @PostMapping("/ban")
     public Mono<ResponseEntity<ApiResponse<Boolean>>> banUser(
             @Valid @RequestBody BanUserRequest request) {
-        return adminUserService.banUser(request.getUserId())
+        return adminUserService.assertStaffCanModifyUser(request.getUserId())
+                .then(adminUserService.banUser(request.getUserId()))
                 .flatMap(success -> {
                     if (success) {
                         return Mono.just(ResponseEntity.ok(
@@ -112,7 +114,8 @@ public class AdminUserController {
     @DeleteMapping
     public Mono<ResponseEntity<ApiResponse<Boolean>>> deleteUser(
             @Valid @RequestBody DeleteUserRequest request) {
-        return adminUserService.deleteUser(request.getUserId(), request.getHardDelete())
+        return adminUserService.assertStaffCanModifyUser(request.getUserId())
+                .then(adminUserService.deleteUser(request.getUserId(), request.getHardDelete()))
                 .flatMap(success -> {
                     if (success) {
                         return Mono.just(ResponseEntity.ok(
@@ -129,7 +132,8 @@ public class AdminUserController {
     @GetMapping("/{userId}/verification-requests")
     public Mono<ResponseEntity<ApiResponse<List<Object>>>> getUserVerificationRequests(
             @PathVariable Integer userId) {
-        return adminUserService.getUserVerificationRequests(userId)
+        return adminUserService.assertStaffCanAccessUser(userId)
+                .thenMany(adminUserService.getUserVerificationRequests(userId))
                 .collectList()
                 .map(requests -> ResponseEntity.ok(
                         new ApiResponse<>("Verification requests fetched successfully", requests)));
@@ -141,7 +145,8 @@ public class AdminUserController {
     @GetMapping("/{userId}/peer-verifications")
     public Mono<ResponseEntity<ApiResponse<List<Object>>>> getPeerVerifications(
             @PathVariable Integer userId) {
-        return adminUserService.getPeerVerifications(userId)
+        return adminUserService.assertStaffCanAccessUser(userId)
+                .thenMany(adminUserService.getPeerVerifications(userId))
                 .collectList()
                 .map(verifications -> ResponseEntity.ok(
                         new ApiResponse<>("Peer verifications fetched successfully", verifications)));
@@ -153,7 +158,8 @@ public class AdminUserController {
     @PostMapping("/unban")
     public Mono<ResponseEntity<ApiResponse<Boolean>>> unbanUser(
             @Valid @RequestBody UnbanUserRequest request) {
-        return adminUserService.unbanUser(request.getUserId())
+        return adminUserService.assertStaffCanModifyUser(request.getUserId())
+                .then(adminUserService.unbanUser(request.getUserId()))
                 .flatMap(success -> {
                     if (success) {
                         return Mono.just(ResponseEntity.ok(
@@ -168,10 +174,16 @@ public class AdminUserController {
      * Update user details (role, status, email, studentId)
      */
     @PutMapping("/{userId}")
+    @PreAuthorize("hasRole('ADMIN') or #request.role == null or #request.role.name() != 'ADMIN'")
     public Mono<ResponseEntity<ApiResponse<UserResponse>>> updateUser(
             @PathVariable Integer userId,
             @Valid @RequestBody UpdateUserRequest request) {
-        return adminUserService.updateUser(userId, request)
+        Mono<Void> organizationPermission = request.getOrganizationId() == null
+                ? Mono.empty()
+                : SecurityUtils.assertCanManageContentOrganization(request.getOrganizationId());
+        return adminUserService.assertStaffCanModifyUser(userId)
+                .then(organizationPermission)
+                .then(adminUserService.updateUser(userId, request))
                 .map(user -> ResponseEntity.ok(
                         new ApiResponse<>("User updated successfully", user)))
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND, "User not found")));
@@ -235,9 +247,11 @@ public class AdminUserController {
      * Add user to organization
      */
     @PostMapping("/organization-member")
+    @PreAuthorize("hasRole('ADMIN') or #request.role == null or !#request.role.equalsIgnoreCase('ADMIN')")
     public Mono<ResponseEntity<ApiResponse<Boolean>>> createOrganizationMember(
             @Valid @RequestBody CreateOrganizationMemberRequest request) {
-        return adminUserService.createOrganizationMember(
+        return SecurityUtils.assertCanManageContentOrganization(request.getOrganizationId())
+                .then(adminUserService.createOrganizationMember(
                         request.getOrganizationId(),
                         request.getUserId(),
                         request.getEmail(),
@@ -255,7 +269,7 @@ public class AdminUserController {
                         request.getDepartment(),
                         request.getVerificationLevel(),
                         request.getIsTrustedVerifier(),
-                        request.getStatus())
+                        request.getStatus()))
                 .flatMap(success -> {
                     if (success) {
                         return Mono.just(ResponseEntity.status(HttpStatus.CREATED)
@@ -267,9 +281,11 @@ public class AdminUserController {
     }
 
     @PostMapping("/organization-members/bulk")
+    @PreAuthorize("hasRole('ADMIN') or #request.members == null or #request.members.?[role != null and role.equalsIgnoreCase('ADMIN')].isEmpty()")
     public Mono<ResponseEntity<ApiResponse<BulkImportResult>>> bulkCreateOrganizationMembers(
             @Valid @RequestBody BulkCreateOrganizationMembersRequest request) {
-        return adminUserService.bulkCreateOrganizationMembers(request)
+        return SecurityUtils.assertCanManageContentOrganization(request.getOrganizationId())
+                .then(adminUserService.bulkCreateOrganizationMembers(request))
                 .map(result -> ResponseEntity.status(HttpStatus.CREATED)
                         .body(new ApiResponse<>("Bulk import completed", result)));
     }
@@ -279,7 +295,9 @@ public class AdminUserController {
             @PathVariable Integer userId,
             @PathVariable Integer organizationId,
             @RequestParam boolean isTrusted) {
-        return adminUserService.updateIsTrustedVerifier(userId, organizationId, isTrusted)
+        return SecurityUtils.assertCanManageContentOrganization(organizationId)
+                .then(adminUserService.assertStaffCanModifyUser(userId))
+                .then(adminUserService.updateIsTrustedVerifier(userId, organizationId, isTrusted))
                 .flatMap(success -> {
                     if (success) {
                         return Mono.just(ResponseEntity.ok(
@@ -293,7 +311,8 @@ public class AdminUserController {
     @GetMapping("/{userId}/activity")
     public Mono<ResponseEntity<ApiResponse<UserActivityResponse>>> getUserActivity(
             @PathVariable Integer userId) {
-        return adminUserService.getUserActivity(userId)
+        return adminUserService.assertStaffCanAccessUser(userId)
+                .then(adminUserService.getUserActivity(userId))
                 .map(activity -> ResponseEntity.ok(
                         new ApiResponse<>("User activity fetched successfully", activity)));
     }
@@ -303,7 +322,8 @@ public class AdminUserController {
             @PathVariable Integer userId,
             @Valid @RequestBody AdminResetPasswordRequest request) {
         return SecurityUtils.getCurrentUserId()
-                .flatMap(adminId -> adminUserService.resetPasswordByAdmin(userId, request, adminId.intValue()))
+                .flatMap(adminId -> adminUserService.assertStaffCanModifyUser(userId)
+                        .then(adminUserService.resetPasswordByAdmin(userId, request, adminId.intValue())))
                 .flatMap(success -> {
                     if (success) {
                         return Mono.just(ResponseEntity.ok(
@@ -314,6 +334,7 @@ public class AdminUserController {
     }
 
     @PostMapping("/admins")
+    @PreAuthorize("hasRole('ADMIN')")
     public Mono<ResponseEntity<ApiResponse<Boolean>>> createAdminAccount(
             @Valid @RequestBody CreateAdminRequest request) {
         return adminUserService.createAdminAccount(request)

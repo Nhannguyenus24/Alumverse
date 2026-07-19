@@ -702,11 +702,13 @@ export const eventApi = {
 		return unwrap(response);
 	},
 
-	async getEventQuestions(eventId) {
+	async getEventQuestions(eventId, organizationId) {
 		// Degrade gracefully: nếu backend lỗi (vd bảng event_questions chưa migrate),
 		// coi như event không có câu hỏi thay vì làm vỡ trang.
 		try {
-			const response = await apiClient.get(`/events/${eventId}/questions`);
+			const response = await apiClient.get(`/events/${eventId}/questions`, {
+				params: organizationId != null ? { organizationId } : undefined,
+			});
 			return unwrap(response);
 		} catch (err) {
 			console.warn('getEventQuestions failed, fallback []', err?.response?.status);

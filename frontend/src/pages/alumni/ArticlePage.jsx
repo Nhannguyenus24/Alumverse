@@ -617,11 +617,23 @@ const ArticlePage = () => {
           <Box ref={contentRef} sx={{ position: "absolute", top: { xs: "54%", sm: "56%", md: "54%" }, left: 0, right: 0, display: "flex", justifyContent: "center", px: { xs: 2, sm: 3 } }}>
             <ScrollRevealGroup stagger={0.09} sx={{ width: "100%", maxWidth: 1200, backgroundColor: contentFrameBg, borderRadius: 2, boxShadow: contentFrameShadow, overflow: "hidden", py: { xs: 5, md: 6 }, px: { xs: 3, sm: 4, md: 6 } }}>
               {/* Breadcrumb */}
-              <ScrollRevealItem sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: { xs: 4, md: 5 } }}>
+              <ScrollRevealItem sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap", mb: { xs: 4, md: 5 } }}>
                 <Button startIcon={<NavigateBeforeIcon />} onClick={() => navigate(-1)} size="small" sx={{ color: "text.secondary", textTransform: "none", pl: 0 }}>
                   {t('back')}
                 </Button>
                 <Box sx={{ flexGrow: 1 }} />
+                {(article.url || article.linkUrl) && (
+                  <Button
+                    variant="outlined"
+                    color="accent"
+                    size="medium"
+                    startIcon={<LinkIcon />}
+                    onClick={() => window.open(article.url || article.linkUrl, '_blank', 'noopener,noreferrer')}
+                    sx={{ textTransform: "none", fontWeight: 700 }}
+                  >
+                    {t('article:visit_link')}
+                  </Button>
+                )}
                 {isAdmin && (
                   <>
                     <Button
@@ -669,23 +681,9 @@ const ArticlePage = () => {
 
               {/* Author + Date */}
               {(authorName || article.updatedAt || article.createdAt || article.publishedAt) && (
-                <ScrollRevealItem><Typography variant="body2" sx={{ textAlign: "center", color: "text.secondary", mb: (article.url || article.linkUrl) ? 2 : { xs: 5, md: 6 } }}>
+                <ScrollRevealItem><Typography variant="body2" sx={{ textAlign: "center", color: "text.secondary", mb: { xs: 5, md: 6 } }}>
                   {[authorName, (article.updatedAt || article.createdAt || article.publishedAt) ? formatDate(article.updatedAt || article.createdAt || article.publishedAt) : null].filter(Boolean).join(" · ")}
                 </Typography></ScrollRevealItem>
-              )}
-
-              {/* URL / External Link */}
-              {(article.url || article.linkUrl) && (
-                <ScrollRevealItem sx={{ display: "flex", justifyContent: "center", mb: { xs: 5, md: 6 } }}>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    startIcon={<LinkIcon />}
-                    onClick={() => window.open(article.url || article.linkUrl, '_blank', 'noopener,noreferrer')}
-                  >
-                    {t('article:visit_link')}
-                  </Button>
-                </ScrollRevealItem>
               )}
 
               {/* HIGHLIGHT */}

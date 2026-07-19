@@ -426,7 +426,7 @@ public class AuthService {
 
     private LoginResponse buildRefreshResponse(User user, Integer organizationId, Integer verificationLevel) {
         return LoginResponse.builder()
-                .accessToken(jwtUtils.generateAccessToken(user, organizationId))
+                .accessToken(jwtUtils.generateAccessToken(user, organizationId, verificationLevel))
                 .verificationLevel(verificationLevel)
                 .build();
     }
@@ -444,12 +444,10 @@ public class AuthService {
         .flatMap(userId -> authRepository.findById(userId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND)))
                 .flatMap(user -> {
-                    String newAccessToken = jwtUtils.generateAccessToken(user, newOrganizationId);
-
                     return getEffectiveVerificationLevel(user, newOrganizationId)
-                            .map(level -> {
-                                return reactor.util.function.Tuples.of(newAccessToken, level);
-                            })
+                            .map(level -> reactor.util.function.Tuples.of(
+                                    jwtUtils.generateAccessToken(user, newOrganizationId, level),
+                                    level))
                             .doOnSuccess(tuple -> {
                                 Integer level = tuple.getT2();
                                 if (level == 0) {

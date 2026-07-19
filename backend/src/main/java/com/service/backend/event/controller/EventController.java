@@ -55,17 +55,22 @@ public class EventController {
     @PublicEndpoint
     @GetMapping("/{eventId}")
     public Mono<ResponseEntity<ApiResponse<Event>>> getEventById(
-            @Parameter(example = "1") @PathVariable @Min(1) Long eventId) {
-        return eventService.getEventById(eventId)
+            @Parameter(example = "1") @PathVariable @Min(1) Long eventId,
+            @RequestParam(required = false) Integer organizationId) {
+        return eventService.getVisibleEventById(eventId, organizationId)
                 .map(e -> ResponseEntity.ok(new ApiResponse<>("Event retrieved successfully", e)));
     }
 
     @PublicEndpoint
     @GetMapping
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<Event>>>> getEvents(
+            @RequestParam(required = false) Long organizationId,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int limit) {
-        return eventService.getEventsByOrganization(page, limit)
+        Mono<PaginatedResponse<Event>> result = organizationId == null
+                ? Mono.just(PaginatedResponse.of(java.util.List.of(), 0, page, limit))
+                : eventService.getUpcomingEvents(organizationId, page, limit);
+        return result
                 .map(e -> ResponseEntity.ok(new ApiResponse<>("Events retrieved successfully", e)));
     }
 
@@ -91,7 +96,7 @@ public class EventController {
             @RequestParam(defaultValue = "10") @Min(1) int limit) {
         Mono<PaginatedResponse<Event>> result = organizationId != null
                 ? eventService.getUpcomingEvents(organizationId, page, limit)
-                : eventService.getUpcomingEvents(page, limit);
+                : Mono.just(PaginatedResponse.of(java.util.List.of(), 0, page, limit));
         return result.map(e -> ResponseEntity.ok(new ApiResponse<>("Upcoming events retrieved successfully", e)));
     }
 
@@ -274,6 +279,7 @@ public class EventController {
     }
 
     @GetMapping("/{eventId}/statistics")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     public Mono<ResponseEntity<ApiResponse<EventStatisticsResponse>>> getEventStatistics(
             @Parameter(example = "1") @PathVariable @Min(1) Long eventId) {
         return eventService.getEventStatistics(eventId)
@@ -285,8 +291,9 @@ public class EventController {
     @PublicEndpoint
     @GetMapping("/{eventId}/questions")
     public Mono<ResponseEntity<ApiResponse<java.util.List<EventQuestionResponse>>>> getEventQuestions(
-            @Parameter(example = "1") @PathVariable @Min(1) Long eventId) {
-        return eventService.getEventQuestions(eventId)
+            @Parameter(example = "1") @PathVariable @Min(1) Long eventId,
+            @RequestParam(required = false) Integer organizationId) {
+        return eventService.getVisibleEventQuestions(eventId, organizationId)
                 .collectList()
                 .map(list -> ResponseEntity.ok(new ApiResponse<>("Event questions retrieved successfully", list)));
     }

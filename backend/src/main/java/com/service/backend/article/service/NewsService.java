@@ -34,7 +34,8 @@ public class NewsService {
                     boolean publishImmediately = "ADMIN".equalsIgnoreCase(role) || "STAFF".equalsIgnoreCase(role);
                     return SecurityUtils.resolveContentOrganizationId(request.getOrganizationId())
                             .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.BAD_REQUEST, "Organization ID is required to create news")))
-                            .flatMap(orgId -> imageService.uploadBase64IfPresent(request.getThumbnailBase64())
+                            .flatMap(orgId -> SecurityUtils.assertCanManageContentOrganization(orgId)
+                                    .then(imageService.uploadBase64IfPresent(request.getThumbnailBase64())
                             .defaultIfEmpty("")
                             .flatMap(thumbnailUrl -> {
                                 News news = News.builder()
@@ -62,14 +63,15 @@ public class NewsService {
                                             }
                                         })
                                         .map(NewsResponse::from);
-                            }));
+                            })));
                 });
     }
 
     public Mono<NewsResponse> update(Integer id, UpdateNewsRequest request) {
         return newsRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.NEWS_NOT_FOUND, "News not found with id: " + id)))
-                .flatMap(existing -> imageService.uploadBase64IfPresent(request.getThumbnailBase64())
+                .flatMap(existing -> SecurityUtils.assertCanManageContentOrganization(existing.getOrganizationId())
+                        .then(imageService.uploadBase64IfPresent(request.getThumbnailBase64())
                         .defaultIfEmpty("")
                         .flatMap(thumbnailUrl -> {
                             existing.setTitle(request.getTitle());
@@ -79,7 +81,7 @@ public class NewsService {
                             if (request.getTopic() != null) existing.setTopic(request.getTopic());
                             if (request.getUrl() != null) existing.setUrl(request.getUrl());
                             return newsRepository.save(existing);
-                        }))
+                        })))
                 .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
                 .map(NewsResponse::from);
     }
@@ -87,7 +89,8 @@ public class NewsService {
     public Mono<Boolean> delete(Integer id) {
         return newsRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.NEWS_NOT_FOUND, "News not found with id: " + id)))
-                .flatMap(existing -> newsRepository.deleteById(id)
+                .flatMap(existing -> SecurityUtils.assertCanManageContentOrganization(existing.getOrganizationId())
+                        .then(newsRepository.deleteById(id))
                         .then(cacheUtils.clear("admin_content_statistics"))
                         .thenReturn(true));
     }
@@ -98,9 +101,29 @@ public class NewsService {
                 .map(NewsResponse::from);
     }
 
+    public Mono<NewsResponse> getPublicById(Integer id, Integer organizationId) {
+        return SecurityUtils.resolvePublicOrganizationId(organizationId)
+                .flatMap(orgId -> newsRepository.findById(id)
+                        .filter(news -> orgId.equals(news.getOrganizationId())
+                                && !Boolean.TRUE.equals(news.getIsHidden())))
+                .switchIfEmpty(Mono.error(new ApplicationException(
+                        ErrorCode.NEWS_NOT_FOUND, "Published news not found")))
+                .map(NewsResponse::from);
+    }
+
     public Mono<NewsResponse> getBySlug(String slug) {
         return newsRepository.findBySlug(slug)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.NEWS_NOT_FOUND, "News not found with slug: " + slug)))
+                .map(NewsResponse::from);
+    }
+
+    public Mono<NewsResponse> getPublicBySlug(String slug, Integer organizationId) {
+        return SecurityUtils.resolvePublicOrganizationId(organizationId)
+                .flatMap(orgId -> newsRepository.findBySlug(slug)
+                        .filter(news -> orgId.equals(news.getOrganizationId())
+                                && !Boolean.TRUE.equals(news.getIsHidden())))
+                .switchIfEmpty(Mono.error(new ApplicationException(
+                        ErrorCode.NEWS_NOT_FOUND, "Published news not found")))
                 .map(NewsResponse::from);
     }
 
@@ -118,35 +141,39 @@ public class NewsService {
     }
 
     public Mono<PaginatedResponse<NewsResponse>> getPublished(int page, int limit) {
+        return getPublished(page, limit, null);
+    }
+
+    public Mono<PaginatedResponse<NewsResponse>> getPublished(int page, int limit, Integer organizationId) {
         int offset = page * limit;
-        return SecurityUtils.getCurrentOrganizationId()
+        return SecurityUtils.resolvePublicOrganizationId(organizationId)
                 .flatMap(orgId -> PaginationHelper.paginate(
                         newsRepository.findPublishedByOrganizationId(orgId, limit, offset).map(NewsResponse::from),
                         newsRepository.countPublishedByOrganizationId(orgId),
                         page, limit))
-                .switchIfEmpty(Mono.defer(() -> PaginationHelper.paginate(
-                        newsRepository.findPublishedWithPagination(limit, offset).map(NewsResponse::from),
-                        newsRepository.count(),
-                        page, limit)));
+                .switchIfEmpty(Mono.just(PaginatedResponse.of(java.util.List.of(), 0, page, limit)));
     }
 
     public Mono<PaginatedResponse<NewsResponse>> search(String keyword, int page, int limit) {
+        return search(keyword, page, limit, null);
+    }
+
+    public Mono<PaginatedResponse<NewsResponse>> search(String keyword, int page, int limit, Integer organizationId) {
         int offset = page * limit;
-        return SecurityUtils.getCurrentOrganizationId()
+        return SecurityUtils.resolvePublicOrganizationId(organizationId)
                 .flatMap(orgId -> PaginationHelper.paginate(
                         newsRepository.searchNews(orgId, keyword, limit, offset).map(NewsResponse::from),
                         newsRepository.countSearchNews(orgId, keyword),
                         page, limit))
-                .switchIfEmpty(Mono.defer(() -> PaginationHelper.paginate(
-                        newsRepository.searchAllByTitleWithPagination(keyword, limit, offset).map(NewsResponse::from),
-                        newsRepository.countAllSearchByTitle(keyword),
-                        page, limit)));
+                .switchIfEmpty(Mono.just(PaginatedResponse.of(java.util.List.of(), 0, page, limit)));
     }
 
     public Mono<NewsResponse> publish(Integer id) {
         return newsRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.NEWS_NOT_FOUND, "News not found with id: " + id)))
-                .flatMap(existing -> newsRepository.publishNews(id).then(newsRepository.findById(id)))
+                .flatMap(existing -> SecurityUtils.assertCanManageContentOrganization(existing.getOrganizationId())
+                        .then(newsRepository.publishNews(id))
+                        .then(newsRepository.findById(id)))
                 .doOnNext(updated -> notificationService.createNotificationAsync(
                         updated.getAuthorMemberId(),
                         "Bài viết đã được duyệt",
@@ -159,7 +186,9 @@ public class NewsService {
     public Mono<NewsResponse> hide(Integer id) {
         return newsRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.NEWS_NOT_FOUND, "News not found with id: " + id)))
-                .flatMap(existing -> newsRepository.hideNews(id).then(newsRepository.findById(id)))
+                .flatMap(existing -> SecurityUtils.assertCanManageContentOrganization(existing.getOrganizationId())
+                        .then(newsRepository.hideNews(id))
+                        .then(newsRepository.findById(id)))
                 .doOnNext(updated -> notificationService.createNotificationAsync(
                         updated.getAuthorMemberId(),
                         "Bài viết bị gỡ đăng",

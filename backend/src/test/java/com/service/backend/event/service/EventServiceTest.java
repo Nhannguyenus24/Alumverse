@@ -54,12 +54,20 @@ class EventServiceTest {
     @InjectMocks
     private EventService eventService;
 
-    /** Reactive security context with ADMIN role — used by update/delete ownership checks. */
+    /** Reactive security context with ADMIN role for event management checks. */
     private static reactor.util.context.Context adminContext() {
         return org.springframework.security.core.context.ReactiveSecurityContextHolder.withAuthentication(
                 new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
                         "1", null,
                         java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN"))));
+    }
+
+    private static reactor.util.context.Context userContext() {
+        var authentication = new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                "1", null,
+                java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_USER")));
+        authentication.setDetails(1);
+        return org.springframework.security.core.context.ReactiveSecurityContextHolder.withAuthentication(authentication);
     }
 
     /** Alias kept for check-in tests that already use this name. */
@@ -107,6 +115,59 @@ class EventServiceTest {
         }
     }
 
+    @Nested
+    @DisplayName("registerForEvent()")
+    class RegisterForEvent {
+
+        @Test
+        @DisplayName("should reject registration for an unpublished event")
+        void registerForEvent_unpublished() {
+            Event event = Event.builder().id(1L).organizationId(1L).isPublished(false).build();
+            when(eventRepo.findById(1L)).thenReturn(Mono.just(event));
+            when(ticketRepo.existsActiveByEventIdAndMemberId(1L, 1L)).thenReturn(Mono.just(false));
+
+            StepVerifier.create(eventService.registerForEvent(1L, null).contextWrite(userContext()))
+                    .expectErrorMatches(error -> error instanceof ApplicationException
+                            && ((ApplicationException) error).getErrorCode() == ErrorCode.EVENT_NOT_PUBLISHED)
+                    .verify();
+        }
+
+        @Test
+        @DisplayName("should reject registration before the registration window")
+        void registerForEvent_notOpen() {
+            Event event = Event.builder()
+                    .id(1L).organizationId(1L).isPublished(true)
+                    .registrationStartAt(LocalDateTime.now().plusHours(1))
+                    .startTime(LocalDateTime.now().plusDays(1))
+                    .build();
+            when(eventRepo.findById(1L)).thenReturn(Mono.just(event));
+            when(ticketRepo.existsActiveByEventIdAndMemberId(1L, 1L)).thenReturn(Mono.just(false));
+
+            StepVerifier.create(eventService.registerForEvent(1L, null).contextWrite(userContext()))
+                    .expectErrorMatches(error -> error instanceof ApplicationException
+                            && ((ApplicationException) error).getErrorCode() == ErrorCode.EVENT_REGISTRATION_NOT_OPEN)
+                    .verify();
+        }
+
+        @Test
+        @DisplayName("should reject registration after the registration window")
+        void registerForEvent_closed() {
+            Event event = Event.builder()
+                    .id(1L).organizationId(1L).isPublished(true)
+                    .registrationStartAt(LocalDateTime.now().minusDays(1))
+                    .registrationEndAt(LocalDateTime.now().minusMinutes(1))
+                    .startTime(LocalDateTime.now().plusHours(1))
+                    .build();
+            when(eventRepo.findById(1L)).thenReturn(Mono.just(event));
+            when(ticketRepo.existsActiveByEventIdAndMemberId(1L, 1L)).thenReturn(Mono.just(false));
+
+            StepVerifier.create(eventService.registerForEvent(1L, null).contextWrite(userContext()))
+                    .expectErrorMatches(error -> error instanceof ApplicationException
+                            && ((ApplicationException) error).getErrorCode() == ErrorCode.EVENT_REGISTRATION_CLOSED)
+                    .verify();
+        }
+    }
+
     // ─── updateEvent ─────────────────────────────────────────────────────────
 
     @Nested
@@ -118,6 +179,7 @@ class EventServiceTest {
         void updateEvent_success() {
             Event existing = Event.builder()
                     .id(1L)
+                    .organizationId(1L)
                     .title("Old Title")
                     .description("Old Desc")
                     .bannerUrl("http://old.jpg")
@@ -168,7 +230,7 @@ class EventServiceTest {
         @Test
         @DisplayName("should delete event successfully")
         void deleteEvent_success() {
-            Event event = Event.builder().id(1L).title("Event to Delete").build();
+            Event event = Event.builder().id(1L).organizationId(1L).title("Event to Delete").build();
 
             when(eventRepo.findById(1L)).thenReturn(Mono.just(event));
             when(eventRepo.deleteById(1L)).thenReturn(Mono.empty());
@@ -201,14 +263,14 @@ class EventServiceTest {
         @Test
         @DisplayName("should publish event successfully")
         void publishEvent_success() {
-            Event event = Event.builder().id(1L).title("Draft Event").build();
+            Event event = Event.builder().id(1L).organizationId(1L).title("Draft Event").build();
             Event publishedEvent = Event.builder().id(1L).title("Draft Event").build();
 
-            when(eventRepo.findById(1L)).thenReturn(Mono.just(event));
+            when(eventRepo.findById(1L)).thenReturn(Mono.just(event), Mono.just(publishedEvent));
             when(eventRepo.publishEvent(1L)).thenReturn(Mono.empty());
-            when(eventRepo.findById(1L)).thenReturn(Mono.just(publishedEvent));
 
-            StepVerifier.create(eventService.publishEvent(1L))
+            StepVerifier.create(eventService.publishEvent(1L)
+                            .contextWrite(adminContext()))
                     .assertNext(e -> assertThat(e.getId()).isEqualTo(1L))
                     .verifyComplete();
         }
@@ -245,7 +307,8 @@ class EventServiceTest {
         void cancelTicket_ticketNotFound() {
             when(ticketRepo.findByTicketCode("INVALID")).thenReturn(Mono.empty());
 
-            StepVerifier.create(eventService.cancelTicket("INVALID", "User requested"))
+            StepVerifier.create(eventService.cancelTicket("INVALID", "User requested")
+                            .contextWrite(userContext()))
                     .expectErrorMatches(err -> err instanceof ApplicationException &&
                             ((ApplicationException) err).getErrorCode() == ErrorCode.TICKET_NOT_FOUND)
                     .verify();
@@ -256,13 +319,15 @@ class EventServiceTest {
         void cancelTicket_alreadyCancelled() {
             EventTicket cancelledTicket = EventTicket.builder()
                     .id(1L)
+                    .memberId(1L)
                     .ticketCode("TICKET-001")
                     .status(Status.CANCELLED)
                     .build();
 
             when(ticketRepo.findByTicketCode("TICKET-001")).thenReturn(Mono.just(cancelledTicket));
 
-            StepVerifier.create(eventService.cancelTicket("TICKET-001", "User requested"))
+            StepVerifier.create(eventService.cancelTicket("TICKET-001", "User requested")
+                            .contextWrite(userContext()))
                     .expectErrorMatches(err -> err instanceof ApplicationException &&
                             ((ApplicationException) err).getErrorCode() == ErrorCode.TICKET_ALREADY_CANCELLED)
                     .verify();
@@ -273,12 +338,14 @@ class EventServiceTest {
         void cancelTicket_success() {
             EventTicket activeTicket = EventTicket.builder()
                     .id(1L)
+                    .memberId(1L)
                     .ticketCode("TICKET-001")
                     .status(Status.ISSUED)
                     .build();
 
             EventTicket cancelledTicket = EventTicket.builder()
                     .id(1L)
+                    .memberId(1L)
                     .ticketCode("TICKET-001")
                     .status(Status.CANCELLED)
                     .build();
@@ -287,7 +354,8 @@ class EventServiceTest {
             when(ticketRepo.cancelTicket(1L, "User requested")).thenReturn(Mono.empty());
             when(ticketRepo.findById(1L)).thenReturn(Mono.just(cancelledTicket));
 
-            StepVerifier.create(eventService.cancelTicket("TICKET-001", "User requested"))
+            StepVerifier.create(eventService.cancelTicket("TICKET-001", "User requested")
+                            .contextWrite(userContext()))
                     .assertNext(t -> assertThat(t.getStatus()).isEqualTo(Status.CANCELLED))
                     .verifyComplete();
         }
@@ -304,13 +372,16 @@ class EventServiceTest {
         void getTicketByCode_success() {
             EventTicket ticket = EventTicket.builder()
                     .id(1L)
+                    .memberId(1L)
                     .ticketCode("TICKET-001")
                     .status(Status.ISSUED)
                     .build();
 
             when(ticketRepo.findByTicketCode("TICKET-001")).thenReturn(Mono.just(ticket));
+            when(userProfileRepository.findAttendeeProfileByUserId(1)).thenReturn(Mono.empty());
 
-            StepVerifier.create(eventService.getTicketByCode("TICKET-001"))
+            StepVerifier.create(eventService.getTicketByCode("TICKET-001")
+                            .contextWrite(userContext()))
                     .assertNext(t -> assertThat(t.getTicketCode()).isEqualTo("TICKET-001"))
                     .verifyComplete();
         }
@@ -320,7 +391,8 @@ class EventServiceTest {
         void getTicketByCode_notFound() {
             when(ticketRepo.findByTicketCode("INVALID")).thenReturn(Mono.empty());
 
-            StepVerifier.create(eventService.getTicketByCode("INVALID"))
+            StepVerifier.create(eventService.getTicketByCode("INVALID")
+                            .contextWrite(userContext()))
                     .expectErrorMatches(err -> err instanceof ApplicationException &&
                             ((ApplicationException) err).getErrorCode() == ErrorCode.TICKET_NOT_FOUND)
                     .verify();
@@ -336,8 +408,12 @@ class EventServiceTest {
         @Test
         @DisplayName("should fail without a staff role")
         void checkIn_forbiddenForNonStaff() {
-            // No security context → no role → gate rejects before any DB access.
-            StepVerifier.create(eventService.checkIn(1L, codeRequest("TICKET-001")))
+            Event event = Event.builder().id(1L).organizationId(1L).title("Test Event").build();
+
+            when(eventRepo.findById(1L)).thenReturn(Mono.just(event));
+
+            StepVerifier.create(eventService.checkIn(1L, codeRequest("TICKET-001"))
+                            .contextWrite(userContext()))
                     .expectErrorMatches(err -> err instanceof ApplicationException &&
                             ((ApplicationException) err).getErrorCode() == ErrorCode.FORBIDDEN)
                     .verify();
@@ -353,6 +429,9 @@ class EventServiceTest {
                     .status(Status.ISSUED)
                     .build();
 
+            Event event = Event.builder().id(1L).organizationId(1L).title("Test Event").build();
+
+            when(eventRepo.findById(1L)).thenReturn(Mono.just(event));
             when(ticketRepo.findByTicketCode("TICKET-001")).thenReturn(Mono.just(ticket));
 
             StepVerifier.create(eventService.checkIn(1L, codeRequest("TICKET-001"))
@@ -372,6 +451,9 @@ class EventServiceTest {
                     .status(Status.CHECKED_IN)
                     .build();
 
+            Event event = Event.builder().id(1L).organizationId(1L).title("Test Event").build();
+
+            when(eventRepo.findById(1L)).thenReturn(Mono.just(event));
             when(ticketRepo.findByTicketCode("TICKET-001")).thenReturn(Mono.just(ticket));
 
             StepVerifier.create(eventService.checkIn(1L, codeRequest("TICKET-001"))
@@ -391,6 +473,9 @@ class EventServiceTest {
                     .status(Status.CANCELLED)
                     .build();
 
+            Event event = Event.builder().id(1L).organizationId(1L).title("Test Event").build();
+
+            when(eventRepo.findById(1L)).thenReturn(Mono.just(event));
             when(ticketRepo.findByTicketCode("TICKET-001")).thenReturn(Mono.just(ticket));
 
             StepVerifier.create(eventService.checkIn(1L, codeRequest("TICKET-001"))
@@ -417,7 +502,7 @@ class EventServiceTest {
                     .status(Status.CHECKED_IN)
                     .build();
 
-            Event event = Event.builder().id(1L).title("Test Event").build();
+            Event event = Event.builder().id(1L).organizationId(1L).title("Test Event").build();
 
             when(ticketRepo.findByTicketCode("TICKET-001")).thenReturn(Mono.just(ticket));
             when(ticketRepo.checkInTicket(eq(1L), any())).thenReturn(Mono.empty());
