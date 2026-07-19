@@ -219,6 +219,7 @@ const PostEventPage = () => {
         mainImagePreview={coverCroppedPreview ?? coverPreview}
         mainImageCaption={mainImageCaption}
         setMainImageCaption={setMainImageCaption}
+        showSourceUrl={false}
       />
       {isEditMode && eventId ? (
         <Box sx={{ mt: 3 }}>
