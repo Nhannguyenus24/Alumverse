@@ -281,6 +281,7 @@ const AdminArticlesPage = () => {
             {
               id: "submitter",
               label: t('admin:col_submitter'),
+              width: 140,
               render: (_, a) => (
                 <Typography variant="body2" sx={{ lineHeight: 1.35, whiteSpace: 'normal', overflowWrap: 'break-word' }}>
                   {submitterOf(a)}

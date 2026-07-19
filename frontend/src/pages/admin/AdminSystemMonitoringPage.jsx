@@ -49,8 +49,9 @@ import dayjs from 'dayjs';
 import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetricTile';
 import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
 
-const PROMETHEUS_URL_RANGE = 'http://168.144.102.181:9090/api/v1/query_range';
-const PROMETHEUS_URL_INSTANT = 'http://168.144.102.181:9090/api/v1/query';
+const PROMETHEUS_BASE = import.meta.env.VITE_PROMETHEUS_URL || 'http://168.144.102.181:9090';
+const PROMETHEUS_URL_RANGE = `${PROMETHEUS_BASE}/api/v1/query_range`;
+const PROMETHEUS_URL_INSTANT = `${PROMETHEUS_BASE}/api/v1/query`;
 
 const QUERIES = {
   requestRate: 'sum(rate(http_endpoint_requests_total[5m]))',
