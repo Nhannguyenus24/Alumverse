@@ -516,17 +516,17 @@ public class EventService {
                             "eventStartTime", event.getStartTime() != null ? event.getStartTime().toString() : "",
                             "ticketCode", ticket.getTicketCode(),
                             "guestName", ticket.getGuestName() != null ? ticket.getGuestName() : "",
-                    "ticketQrContentId", "ticketQr",
-                    "ticketLink", ticketLink
+                            "ticketQrContentId", "ticketQr",
+                            "ticketLink", ticketLink
                     );
-                return emailService.sendHtmlEmailWithInlineImage(
+                    return emailService.sendHtmlEmailWithInlineImage(
                             recipientEmail,
                             "[Alumniverse] Vé tham dự: " + event.getTitle(),
                             "eventTicket",
-                    vars,
-                    "ticketQr",
-                    eventQrService.toQrCodePngBytes(qrToken),
-                    "image/png"
+                            vars,
+                            "ticketQr",
+                            eventQrService.toQrCodePngBytes(qrToken),
+                            "image/png"
                     ).thenReturn(true);
                 }))
                 .switchIfEmpty(Mono.just(false));
