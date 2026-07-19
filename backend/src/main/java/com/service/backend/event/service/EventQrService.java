@@ -8,17 +8,27 @@ import com.nimbusds.jose.crypto.DirectDecrypter;
 import com.nimbusds.jose.crypto.DirectEncrypter;
 import com.nimbusds.jwt.EncryptedJWT;
 import com.nimbusds.jwt.JWTClaimsSet;
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.EncodeHintType;
+import com.google.zxing.WriterException;
+import com.google.zxing.client.j2se.MatrixToImageWriter;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.qrcode.QRCodeWriter;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.ParseException;
 import java.time.Instant;
+import java.util.Base64;
+import java.util.EnumMap;
+import java.util.Map;
 import java.util.Date;
 
 /**
@@ -59,6 +69,26 @@ public class EventQrService {
     /** Encrypt a ticket reference into a compact JWE string and prefix it for the QR. */
     public String encodeWithPrefix(String ticketCode, Long eventId) {
         return QR_PREFIX + encode(ticketCode, eventId);
+    }
+
+    /** Render the QR token as a PNG data URI for embedding in email HTML. */
+    public String toQrCodeDataUri(String token) {
+        return "data:image/png;base64," + Base64.getEncoder().encodeToString(toQrCodePngBytes(token));
+    }
+
+    /** Render the QR token as PNG bytes for attaching as inline email content. */
+    public byte[] toQrCodePngBytes(String token) {
+        try {
+            Map<EncodeHintType, Object> hints = new EnumMap<>(EncodeHintType.class);
+            hints.put(EncodeHintType.MARGIN, 1);
+            BitMatrix matrix = new QRCodeWriter().encode(token, BarcodeFormat.QR_CODE, 320, 320, hints);
+            try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+                MatrixToImageWriter.writeToStream(matrix, "PNG", outputStream);
+                return outputStream.toByteArray();
+            }
+        } catch (WriterException | java.io.IOException e) {
+            throw new ApplicationException(ErrorCode.INTERNAL_SERVER_ERROR, "Failed to generate QR image");
+        }
     }
 
     private String encode(String ticketCode, Long eventId) {
