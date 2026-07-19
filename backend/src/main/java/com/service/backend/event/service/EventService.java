@@ -1088,15 +1088,20 @@ public class EventService {
     private Mono<EventTicket> cancelTicket(Long ticketId, String reason) {
         return ticketRepo.cancelTicket(ticketId, reason)
             .then(ticketRepo.findById(ticketId))
-            .flatMap(ticket -> this.findEventById(ticket.getEventId())
-                .flatMap(event -> sendTicketCancellationEmail(event, ticket, reason)
-                    .onErrorResume(e -> {
-                        log.warn("Failed to send ticket cancellation email for event {} ticket {}: {}",
-                            event.getId(), ticket.getTicketCode(), e.getMessage());
-                        return Mono.empty();
-                    })
-                    .thenReturn(ticket))
-                .switchIfEmpty(Mono.just(ticket)));
+            .flatMap(ticket -> {
+                if (ticket.getEventId() == null) {
+                    return Mono.just(ticket);
+                }
+                return this.findEventById(ticket.getEventId())
+                        .flatMap(event -> sendTicketCancellationEmail(event, ticket, reason)
+                                .onErrorResume(e -> {
+                                    log.warn("Failed to send ticket cancellation email for event {} ticket {}: {}",
+                                            event.getId(), ticket.getTicketCode(), e.getMessage());
+                                    return Mono.empty();
+                                })
+                                .thenReturn(ticket))
+                        .switchIfEmpty(Mono.just(ticket));
+            });
     }
 
     private Mono<EventTicket> checkInTicket(Long ticketId) {
