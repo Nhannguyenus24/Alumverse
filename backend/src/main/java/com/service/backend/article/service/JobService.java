@@ -36,7 +36,8 @@ public class JobService {
                     boolean publishImmediately = "ADMIN".equalsIgnoreCase(role) || "STAFF".equalsIgnoreCase(role);
                     return SecurityUtils.resolveContentOrganizationId(request.getOrganizationId())
                             .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.BAD_REQUEST, "Organization ID is required to create job")))
-                            .flatMap(orgId -> {
+                            .flatMap(orgId -> SecurityUtils.assertCanSubmitContributorContent(orgId)
+                                    .then(Mono.defer(() -> {
                     Job job = Job.builder()
                             .organizationId(orgId)
                             .posterMemberId(userId.intValue())
@@ -67,14 +68,15 @@ public class JobService {
                                 }
                             })
                             .map(JobResponse::from);
-                            });
+                            })));
                 });
     }
 
     public Mono<JobResponse> update(Integer id, UpdateJobRequest request) {
         return jobRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.JOB_NOT_FOUND, "Job not found with id: " + id)))
-                .flatMap(existing -> {
+                .flatMap(existing -> SecurityUtils.assertCanManageContentOrganization(existing.getOrganizationId())
+                        .then(Mono.defer(() -> {
                     existing.setTitle(request.getTitle());
                     existing.setDescription(request.getDescription());
                     existing.setCompanyName(request.getCompanyName());
@@ -86,7 +88,7 @@ public class JobService {
                     existing.setDeadline(request.getDeadline());
                     existing.setIsReferral(request.getIsReferral() != null ? request.getIsReferral() : false);
                     return jobRepository.save(existing);
-                })
+                })))
                 .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
                 .map(JobResponse::from);
     }
@@ -94,7 +96,8 @@ public class JobService {
     public Mono<Boolean> delete(Integer id) {
         return jobRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.JOB_NOT_FOUND, "Job not found with id: " + id)))
-                .flatMap(existing -> jobRepository.deleteById(id)
+                .flatMap(existing -> SecurityUtils.assertCanManageContentOrganization(existing.getOrganizationId())
+                        .then(jobRepository.deleteById(id))
                         .then(cacheUtils.clear("admin_content_statistics"))
                         .thenReturn(true));
     }
@@ -102,6 +105,16 @@ public class JobService {
     public Mono<JobResponse> getById(Integer id) {
         return jobRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.JOB_NOT_FOUND, "Job not found with id: " + id)))
+                .map(JobResponse::from);
+    }
+
+    public Mono<JobResponse> getPublicById(Integer id, Integer organizationId) {
+        return SecurityUtils.resolvePublicOrganizationId(organizationId)
+                .flatMap(orgId -> jobRepository.findById(id)
+                        .filter(job -> orgId.equals(job.getOrganizationId())
+                                && Boolean.TRUE.equals(job.getIsActive())))
+                .switchIfEmpty(Mono.error(new ApplicationException(
+                        ErrorCode.JOB_NOT_FOUND, "Active job not found")))
                 .map(JobResponse::from);
     }
 
@@ -119,16 +132,17 @@ public class JobService {
     }
 
     public Mono<PaginatedResponse<JobResponse>> getActive(int page, int limit) {
+        return getActive(page, limit, null);
+    }
+
+    public Mono<PaginatedResponse<JobResponse>> getActive(int page, int limit, Integer organizationId) {
         int offset = page * limit;
-        return SecurityUtils.getCurrentOrganizationId()
+        return SecurityUtils.resolvePublicOrganizationId(organizationId)
                 .flatMap(orgId -> PaginationHelper.paginate(
                         jobRepository.findActiveByOrganizationId(orgId, limit, offset).map(JobResponse::from),
                         jobRepository.countActiveByOrganizationId(orgId),
                         page, limit))
-                .switchIfEmpty(Mono.defer(() -> PaginationHelper.paginate(
-                        jobRepository.findAllActiveWithPagination(limit, offset).map(JobResponse::from),
-                        jobRepository.countAllActive(),
-                        page, limit)));
+                .switchIfEmpty(Mono.just(PaginatedResponse.of(java.util.List.of(), 0, page, limit)));
     }
 
     public Mono<PaginatedResponse<JobResponse>> getOpenJobs(int page, int limit) {
@@ -146,22 +160,25 @@ public class JobService {
     }
 
     public Mono<PaginatedResponse<JobResponse>> search(String keyword, int page, int limit) {
+        return search(keyword, page, limit, null);
+    }
+
+    public Mono<PaginatedResponse<JobResponse>> search(String keyword, int page, int limit, Integer organizationId) {
         int offset = page * limit;
-        return SecurityUtils.getCurrentOrganizationId()
+        return SecurityUtils.resolvePublicOrganizationId(organizationId)
                 .flatMap(orgId -> PaginationHelper.paginate(
                         jobRepository.searchJobs(orgId, keyword, limit, offset).map(JobResponse::from),
                         jobRepository.countSearchJobs(orgId, keyword),
                         page, limit))
-                .switchIfEmpty(Mono.defer(() -> PaginationHelper.paginate(
-                        jobRepository.searchAllByTitleWithPagination(keyword, limit, offset).map(JobResponse::from),
-                        jobRepository.countAllSearchByTitle(keyword),
-                        page, limit)));
+                .switchIfEmpty(Mono.just(PaginatedResponse.of(java.util.List.of(), 0, page, limit)));
     }
 
     public Mono<JobResponse> activate(Integer id) {
         return jobRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.JOB_NOT_FOUND, "Job not found with id: " + id)))
-                .flatMap(existing -> jobRepository.activateJob(id).then(jobRepository.findById(id)))
+                .flatMap(existing -> SecurityUtils.assertCanManageContentOrganization(existing.getOrganizationId())
+                        .then(jobRepository.activateJob(id))
+                        .then(jobRepository.findById(id)))
                 .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
                 .doOnNext(updated -> notificationService.createNotificationAsync(
                         updated.getPosterMemberId(),
@@ -175,7 +192,9 @@ public class JobService {
     public Mono<JobResponse> deactivate(Integer id) {
         return jobRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.JOB_NOT_FOUND, "Job not found with id: " + id)))
-                .flatMap(existing -> jobRepository.deactivateJob(id).then(jobRepository.findById(id)))
+                .flatMap(existing -> SecurityUtils.assertCanManageContentOrganization(existing.getOrganizationId())
+                        .then(jobRepository.deactivateJob(id))
+                        .then(jobRepository.findById(id)))
                 .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
                 .doOnNext(updated -> notificationService.createNotificationAsync(
                         updated.getPosterMemberId(),

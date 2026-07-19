@@ -525,48 +525,55 @@ public class FundService {
     @Transactional
     public Mono<FundDonations> createFundDonation(CreateFundDonationRequest request) {
         Integer fundId = request.getFundId();
-        Integer donorMemberId = request.getDonorMemberId();
         String resolvedDonorName = (request.getDonorName() != null && !request.getDonorName().trim().isBlank())
                 ? request.getDonorName().trim()
                 : FundDonationConstants.DEFAULT_DONOR_DISPLAY_NAME;
 
-        // khi guest ko dang nhap ma donate thi field donorMemberId la null
-        if (donorMemberId == null) {
-            FundDonations donation = FundDonations.builder()
-                    .fundId(fundId)
-                    .donorMemberId(null)
-                    .donorName(resolvedDonorName)
-                    .amount(request.getAmount())
-                    .address(request.getAddress())
-                    .phone(request.getPhone())
-                    .email(request.getEmail())
-                    .message(request.getMessage())
-                    .status(Status.PENDING)
-                    .createdAt(LocalDateTime.now())
-                    .build();
-            return fundDonationsRepository.save(donation);
-        }
+        return SecurityUtils.getCurrentUserId()
+                .map(Long::intValue)
+                .map(Optional::of)
+                .defaultIfEmpty(Optional.empty())
+                .flatMap(currentMemberId -> {
+                    Integer donorMemberId = currentMemberId.orElse(null);
 
-        // neu donor member id ma ton tai trong body thi kiem tra su ton tai trong table user
-        return userRepository.findById(donorMemberId)
-                .switchIfEmpty(Mono.error(new ApplicationException(
-                        ErrorCode.USER_NOT_FOUND,
-                        "User not found with id: " + donorMemberId
-                )))
-                .flatMap(user -> {
-                    FundDonations donation = FundDonations.builder()
-                            .fundId(fundId)
-                            .donorMemberId(donorMemberId)
-                            .donorName(resolvedDonorName)
-                            .amount(request.getAmount())
-                            .address(request.getAddress())
-                            .phone(request.getPhone())
-                            .email(request.getEmail())
-                            .message(request.getMessage())
-                            .status(Status.PENDING)
-                            .createdAt(LocalDateTime.now())
-                            .build();
-                    return fundDonationsRepository.save(donation);
+                    // Public donation: no valid logged-in user means anonymous donation.
+                    if (donorMemberId == null) {
+                        FundDonations donation = FundDonations.builder()
+                                .fundId(fundId)
+                                .donorMemberId(null)
+                                .donorName(resolvedDonorName)
+                                .amount(request.getAmount())
+                                .address(request.getAddress())
+                                .phone(request.getPhone())
+                                .email(request.getEmail())
+                                .message(request.getMessage())
+                                .status(Status.PENDING)
+                                .createdAt(LocalDateTime.now())
+                                .build();
+                        return fundDonationsRepository.save(donation);
+                    }
+
+                    // Ignore donor_member_id from the client; bind donations to the token user.
+                    return userRepository.findById(donorMemberId)
+                            .switchIfEmpty(Mono.error(new ApplicationException(
+                                    ErrorCode.USER_NOT_FOUND,
+                                    "User not found with id: " + donorMemberId
+                            )))
+                            .flatMap(user -> {
+                                FundDonations donation = FundDonations.builder()
+                                        .fundId(fundId)
+                                        .donorMemberId(donorMemberId)
+                                        .donorName(resolvedDonorName)
+                                        .amount(request.getAmount())
+                                        .address(request.getAddress())
+                                        .phone(request.getPhone())
+                                        .email(request.getEmail())
+                                        .message(request.getMessage())
+                                        .status(Status.PENDING)
+                                        .createdAt(LocalDateTime.now())
+                                        .build();
+                                return fundDonationsRepository.save(donation);
+                            });
                 });
     }
 

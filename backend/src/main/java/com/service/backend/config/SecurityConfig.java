@@ -105,16 +105,26 @@ public class SecurityConfig {
                         String userRole = (String) claims.getClaim("role");
                         Object orgIdClaim = claims.getClaim("organizationId");
                         Integer organizationId = orgIdClaim instanceof Number ? ((Number) orgIdClaim).intValue() : null;
+                        Object verificationLevelClaim = claims.getClaim("verificationLevel");
+                        Integer verificationLevel = verificationLevelClaim instanceof Number
+                                ? ((Number) verificationLevelClaim).intValue()
+                                : null;
 
                         if (userRole == null) {
                             if (isPublic) return chain.filter(exchange);
                             return Mono.error(new RuntimeException("Invalid token: missing user ID or role"));
                         }
 
+                        List<SimpleGrantedAuthority> authorities = new ArrayList<>();
+                        authorities.add(new SimpleGrantedAuthority("ROLE_" + userRole));
+                        if (verificationLevel != null) {
+                            authorities.add(new SimpleGrantedAuthority("VERIFICATION_LEVEL_" + verificationLevel));
+                        }
+
                         UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
                                 String.valueOf(userId),
                                 null,
-                                List.of(new SimpleGrantedAuthority("ROLE_" + userRole)));
+                                authorities);
                         auth.setDetails(organizationId);
 
                         // Stash the resolved identity into exchange attributes so downstream

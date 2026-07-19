@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 
 import '../constants/api_endpoints.dart';
 import '../storage/secure_storage.dart';
+import '../utils/jwt_helper.dart';
 
 /// Attaches the bearer access token and, on a 401, transparently refreshes it
 /// once using the refresh-token cookie, then retries the original request.
@@ -109,13 +110,24 @@ class AuthInterceptor extends Interceptor {
   /// Calls `/auth/refresh` (refresh token comes from the cookie jar), persists
   /// and returns the new access token, or null on failure.
   Future<String?> _refresh() async {
-    final res = await refreshDio.post(ApiEndpoints.authRefresh);
+    final organizationId =
+        await _storage.readOrganizationId() ??
+        JwtHelper.organizationIdFromToken(await _storage.readAccessToken());
+    final res = await refreshDio.post(
+      ApiEndpoints.authRefresh,
+      queryParameters:
+          organizationId == null ? null : {'organizationId': organizationId},
+    );
     final body = res.data;
     final data =
         body is Map && body['data'] is Map ? body['data'] as Map : body;
     final token = (data is Map ? data['accessToken'] : null) as String?;
     if (token == null || token.isEmpty) return null;
     await _storage.writeAccessToken(token);
+    final refreshedOrganizationId = JwtHelper.organizationIdFromToken(token);
+    if (refreshedOrganizationId != null) {
+      await _storage.writeOrganizationId(refreshedOrganizationId);
+    }
     final verificationLevel = data is Map ? data['verificationLevel'] : null;
     if (verificationLevel is num) {
       await _storage.writeVerificationLevel(verificationLevel.toInt());

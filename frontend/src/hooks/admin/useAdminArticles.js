@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { enqueueSnackbar } from 'notistack';
 import apiClient from '../../utils/axios';
 
 const ENDPOINT_BY_CHANNEL = {
@@ -12,6 +13,14 @@ const ENDPOINT_BY_CHANNEL = {
 const fallbackPage = { items: [], totalItem: 0, totalPage: 0, currentPage: 0, pageSize: 10 };
 const ALL_CHANNELS = Object.keys(ENDPOINT_BY_CHANNEL);
 const ALL_CHANNEL_FETCH_LIMIT = 1000;
+let lastLoadErrorToastAt = 0;
+
+const notifyDataLoadError = () => {
+  const now = Date.now();
+  if (now - lastLoadErrorToastAt < 5000) return;
+  lastLoadErrorToastAt = now;
+  enqueueSnackbar('Không tải được dữ liệu bài viết. Vui lòng thử lại.', { variant: 'error' });
+};
 
 const extractData = (response) => response?.data?.data ?? response?.data ?? null;
 
@@ -20,6 +29,7 @@ const safeFetch = async (request, fallback) => {
     const data = extractData(await request());
     return data ?? fallback;
   } catch {
+    notifyDataLoadError();
     return fallback;
   }
 };

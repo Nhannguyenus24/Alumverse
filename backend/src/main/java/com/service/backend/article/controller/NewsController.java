@@ -53,16 +53,20 @@ public class NewsController {
 
     @PublicEndpoint
     @GetMapping("/{id}")
-    public Mono<ResponseEntity<ApiResponse<NewsResponse>>> getById(@PathVariable @Min(1) Integer id) {
-        return newsService.getById(id)
+    public Mono<ResponseEntity<ApiResponse<NewsResponse>>> getById(
+            @PathVariable @Min(1) Integer id,
+            @RequestParam(required = false) Integer organizationId) {
+        return newsService.getPublicById(id, organizationId)
                 .map(response -> ResponseEntity
                         .ok(new ApiResponse<>("News retrieved successfully", response)));
     }
 
     @PublicEndpoint
     @GetMapping("/slug/{slug}")
-    public Mono<ResponseEntity<ApiResponse<NewsResponse>>> getBySlug(@PathVariable @NotBlank String slug) {
-        return newsService.getBySlug(slug)
+    public Mono<ResponseEntity<ApiResponse<NewsResponse>>> getBySlug(
+            @PathVariable @NotBlank String slug,
+            @RequestParam(required = false) Integer organizationId) {
+        return newsService.getPublicBySlug(slug, organizationId)
                 .map(response -> ResponseEntity
                         .ok(new ApiResponse<>("News retrieved successfully", response)));
     }
@@ -71,8 +75,9 @@ public class NewsController {
     @GetMapping
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<NewsResponse>>>> getAll(
             @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "10") @Min(1) int limit) {
-        return newsService.getAll(page, limit)
+            @RequestParam(defaultValue = "10") @Min(1) int limit,
+            @RequestParam(required = false) Integer organizationId) {
+        return newsService.getPublished(page, limit, organizationId)
                 .map(response -> ResponseEntity
                         .ok(new ApiResponse<>("News retrieved successfully", response)));
     }
@@ -81,8 +86,9 @@ public class NewsController {
     @GetMapping("/published")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<NewsResponse>>>> getPublished(
             @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "10") @Min(1) int limit) {
-        return newsService.getPublished(page, limit)
+            @RequestParam(defaultValue = "10") @Min(1) int limit,
+            @RequestParam(required = false) Integer organizationId) {
+        return newsService.getPublished(page, limit, organizationId)
                 .map(response -> ResponseEntity
                         .ok(new ApiResponse<>("Published news retrieved successfully", response)));
     }
@@ -92,8 +98,9 @@ public class NewsController {
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<NewsResponse>>>> search(
             @RequestParam @NotBlank String keyword,
             @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "10") @Min(1) int limit) {
-        return newsService.search(keyword, page, limit)
+            @RequestParam(defaultValue = "10") @Min(1) int limit,
+            @RequestParam(required = false) Integer organizationId) {
+        return newsService.search(keyword, page, limit, organizationId)
                 .map(response -> ResponseEntity
                         .ok(new ApiResponse<>("Search results retrieved successfully", response)));
     }

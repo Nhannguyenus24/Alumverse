@@ -74,6 +74,12 @@ class FundServiceTest {
         return ReactiveSecurityContextHolder.withAuthentication(token);
     }
 
+    private static Context userContext(Integer userId) {
+        UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(
+                String.valueOf(userId), null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
+        return ReactiveSecurityContextHolder.withAuthentication(token);
+    }
+
     // ─── getFundDetail ────────────────────────────────────────────────────────
 
     @Nested
@@ -360,7 +366,7 @@ class FundServiceTest {
 
             CreateFundDonationRequest request = CreateFundDonationRequest.builder()
                     .fundId(1)
-                    .donorMemberId(5)
+                    .donorMemberId(99)
                     .donorName("Alice")
                     .amount(new BigDecimal("500000"))
                     .build();
@@ -377,7 +383,7 @@ class FundServiceTest {
             when(userRepository.findById(5)).thenReturn(Mono.just(user));
             when(fundDonationsRepository.save(any())).thenReturn(Mono.just(savedDonation));
 
-            StepVerifier.create(fundService.createFundDonation(request))
+            StepVerifier.create(fundService.createFundDonation(request).contextWrite(userContext(5)))
                     .assertNext(d -> {
                         assertThat(d.getDonorName()).isEqualTo("Alice");
                         assertThat(d.getDonorMemberId()).isEqualTo(5);
@@ -390,13 +396,13 @@ class FundServiceTest {
         void createFundDonation_donorNotFound() {
             CreateFundDonationRequest request = CreateFundDonationRequest.builder()
                     .fundId(1)
-                    .donorMemberId(99)
+                    .donorMemberId(5)
                     .amount(new BigDecimal("100000"))
                     .build();
 
             when(userRepository.findById(99)).thenReturn(Mono.empty());
 
-            StepVerifier.create(fundService.createFundDonation(request))
+            StepVerifier.create(fundService.createFundDonation(request).contextWrite(userContext(99)))
                     .expectErrorMatches(err -> err instanceof ApplicationException &&
                             ((ApplicationException) err).getErrorCode() == ErrorCode.USER_NOT_FOUND)
                     .verify();

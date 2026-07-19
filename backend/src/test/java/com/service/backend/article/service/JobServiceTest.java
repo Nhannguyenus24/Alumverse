@@ -36,6 +36,13 @@ class JobServiceTest {
     @InjectMocks
     private JobService jobService;
 
+    private static reactor.util.context.Context adminContext() {
+        return org.springframework.security.core.context.ReactiveSecurityContextHolder.withAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                        "1", null,
+                        java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN"))));
+    }
+
     // ─── getById ─────────────────────────────────────────────────────────────
 
     @Nested
@@ -86,22 +93,24 @@ class JobServiceTest {
         void activate_success() {
             Job job = Job.builder()
                     .id(1)
+                    .organizationId(1)
                     .title("Software Engineer")
                     .isActive(false)
                     .build();
 
             Job activated = Job.builder()
                     .id(1)
+                    .organizationId(1)
                     .title("Software Engineer")
                     .isActive(true)
                     .build();
 
-            when(jobRepository.findById(1)).thenReturn(Mono.just(job));
+            when(jobRepository.findById(1)).thenReturn(Mono.just(job), Mono.just(activated));
             when(jobRepository.activateJob(1)).thenReturn(Mono.just(1));
-            when(jobRepository.findById(1)).thenReturn(Mono.just(activated));
             when(cacheUtils.clear(anyString())).thenReturn(Mono.empty());
 
-            StepVerifier.create(jobService.activate(1))
+            StepVerifier.create(jobService.activate(1)
+                            .contextWrite(adminContext()))
                     .assertNext(dto -> assertThat(dto.getIsActive()).isTrue())
                     .verifyComplete();
         }
@@ -129,22 +138,24 @@ class JobServiceTest {
         void deactivate_success() {
             Job job = Job.builder()
                     .id(1)
+                    .organizationId(1)
                     .title("Software Engineer")
                     .isActive(true)
                     .build();
 
             Job deactivated = Job.builder()
                     .id(1)
+                    .organizationId(1)
                     .title("Software Engineer")
                     .isActive(false)
                     .build();
 
-            when(jobRepository.findById(1)).thenReturn(Mono.just(job));
+            when(jobRepository.findById(1)).thenReturn(Mono.just(job), Mono.just(deactivated));
             when(jobRepository.deactivateJob(1)).thenReturn(Mono.just(1));
-            when(jobRepository.findById(1)).thenReturn(Mono.just(deactivated));
             when(cacheUtils.clear(anyString())).thenReturn(Mono.empty());
 
-            StepVerifier.create(jobService.deactivate(1))
+            StepVerifier.create(jobService.deactivate(1)
+                            .contextWrite(adminContext()))
                     .assertNext(dto -> assertThat(dto.getIsActive()).isFalse())
                     .verifyComplete();
         }
@@ -170,13 +181,14 @@ class JobServiceTest {
         @Test
         @DisplayName("should delete job successfully")
         void delete_success() {
-            Job job = Job.builder().id(1).title("Engineer").build();
+            Job job = Job.builder().id(1).organizationId(1).title("Engineer").build();
 
             when(jobRepository.findById(1)).thenReturn(Mono.just(job));
             when(jobRepository.deleteById(1)).thenReturn(Mono.empty());
             when(cacheUtils.clear(anyString())).thenReturn(Mono.empty());
 
-            StepVerifier.create(jobService.delete(1))
+            StepVerifier.create(jobService.delete(1)
+                            .contextWrite(adminContext()))
                     .assertNext(result -> assertThat(result).isTrue())
                     .verifyComplete();
         }
@@ -204,6 +216,7 @@ class JobServiceTest {
         void update_success() {
             Job existing = Job.builder()
                     .id(1)
+                    .organizationId(1)
                     .title("Old Title")
                     .companyName("Old Corp")
                     .type(JobType.FULL_TIME)
@@ -224,7 +237,8 @@ class JobServiceTest {
             when(jobRepository.save(any())).thenReturn(Mono.just(updated));
             when(cacheUtils.clear(anyString())).thenReturn(Mono.empty());
 
-            StepVerifier.create(jobService.update(1, request))
+            StepVerifier.create(jobService.update(1, request)
+                            .contextWrite(adminContext()))
                     .assertNext(dto -> assertThat(dto.getTitle()).isEqualTo("New Title"))
                     .verifyComplete();
         }

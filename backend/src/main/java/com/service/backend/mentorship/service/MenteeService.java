@@ -429,9 +429,18 @@ public class MenteeService {
     }
 
     public Mono<MentorshipSessionResponse> getSessionById(Integer sessionId) {
-        return sessionRepository.findById(sessionId)
-                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.SESSION_NOT_FOUND, "Session not found with id: " + sessionId)))
-                .flatMap(this::enrich);
+        return currentMemberId().flatMap(memberId ->
+                sessionRepository.findById(sessionId)
+                        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.SESSION_NOT_FOUND, "Session not found with id: " + sessionId)))
+                        .flatMap(session -> {
+                            if (!memberId.equals(session.getMenteeMemberId())) {
+                                return Mono.error(new ApplicationException(
+                                        ErrorCode.FORBIDDEN,
+                                        "Bạn không có quyền xem buổi mentoring này"));
+                            }
+                            return Mono.just(session);
+                        })
+                        .flatMap(this::enrich));
     }
 
     @Transactional
@@ -600,7 +609,6 @@ public class MenteeService {
                                     && !Status.EXPIRED.equals(session.getStatus())) {
                                 return Mono.error(new ApplicationException(ErrorCode.REPORT_NOT_ALLOWED_STATUS));
                             }
-                            boolean isMentee = reporterMemberId.equals(session.getMenteeMemberId());
                             return reportRepository
                                     .existsBySessionIdAndReporterMemberId(sessionId, reporterMemberId)
                                     .flatMap(exists -> {
@@ -609,6 +617,13 @@ public class MenteeService {
                                         }
                                         return availabilityRepository.findById(session.getAvailabilityId())
                                                 .flatMap(avail -> {
+                                                    boolean isMentee = reporterMemberId.equals(session.getMenteeMemberId());
+                                                    boolean isMentor = reporterMemberId.equals(avail.getMentorMemberId());
+                                                    if (!isMentee && !isMentor) {
+                                                        return Mono.error(new ApplicationException(
+                                                                ErrorCode.FORBIDDEN,
+                                                                "Bạn không có quyền báo cáo buổi mentoring này"));
+                                                    }
                                                     Integer reportedMemberId = isMentee
                                                             ? avail.getMentorMemberId()
                                                             : session.getMenteeMemberId();

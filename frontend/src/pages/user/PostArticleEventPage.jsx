@@ -152,7 +152,7 @@ const PostEventPage = () => {
       const payload = await buildPayload();
 
       if (isEditMode) {
-        await eventApi.updateEvent(eventId, payload);
+        await eventApi.updateAdminEvent(eventId, payload);
         showSuccess(t('update_success'));
         navigate(`/admin/events/${eventId}`);
         return;

@@ -37,12 +37,11 @@ class AchievementServiceTest {
     @InjectMocks
     private AchievementService achievementService;
 
-    /** Security context: user id=1, ROLE_USER — matches memberId(1) set on test achievements. */
-    private static reactor.util.context.Context userContext() {
+    private static reactor.util.context.Context adminContext() {
         return org.springframework.security.core.context.ReactiveSecurityContextHolder.withAuthentication(
                 new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
                         "1", null,
-                        java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_USER"))));
+                        java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN"))));
     }
 
     // ─── getById ─────────────────────────────────────────────────────────────
@@ -95,6 +94,7 @@ class AchievementServiceTest {
         void delete_success() {
             Achievement achievement = Achievement.builder()
                     .id(1)
+                    .organizationId(1)
                     .memberId(1)
                     .title("Best Alumnus")
                     .build();
@@ -104,7 +104,7 @@ class AchievementServiceTest {
             when(cacheUtils.clear(anyString())).thenReturn(Mono.empty());
 
             StepVerifier.create(achievementService.delete(1)
-                            .contextWrite(userContext()))
+                            .contextWrite(adminContext()))
                     .assertNext(result -> assertThat(result).isTrue())
                     .verifyComplete();
         }
@@ -115,7 +115,7 @@ class AchievementServiceTest {
             when(achievementRepository.findById(99)).thenReturn(Mono.empty());
 
             StepVerifier.create(achievementService.delete(99)
-                            .contextWrite(userContext()))
+                            .contextWrite(adminContext()))
                     .expectErrorMatches(err -> err instanceof ApplicationException &&
                             ((ApplicationException) err).getErrorCode() == ErrorCode.ACHIEVEMENT_NOT_FOUND)
                     .verify();
@@ -133,6 +133,7 @@ class AchievementServiceTest {
         void update_success() {
             Achievement existing = Achievement.builder()
                     .id(1)
+                    .organizationId(1)
                     .memberId(1)
                     .title("Old Title")
                     .description("Old Desc")
@@ -154,7 +155,7 @@ class AchievementServiceTest {
             when(cacheUtils.clear(anyString())).thenReturn(Mono.empty());
 
             StepVerifier.create(achievementService.update(1, request)
-                            .contextWrite(userContext()))
+                            .contextWrite(adminContext()))
                     .assertNext(dto -> assertThat(dto.getTitle()).isEqualTo("New Title"))
                     .verifyComplete();
         }
@@ -168,7 +169,7 @@ class AchievementServiceTest {
             when(achievementRepository.findById(99)).thenReturn(Mono.empty());
 
             StepVerifier.create(achievementService.update(99, request)
-                            .contextWrite(userContext()))
+                            .contextWrite(adminContext()))
                     .expectErrorMatches(err -> err instanceof ApplicationException &&
                             ((ApplicationException) err).getErrorCode() == ErrorCode.ACHIEVEMENT_NOT_FOUND)
                     .verify();

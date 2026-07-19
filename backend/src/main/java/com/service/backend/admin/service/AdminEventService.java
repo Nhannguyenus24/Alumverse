@@ -14,6 +14,7 @@ import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.service.ImageService;
 import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.utils.PaginationHelper;
+import com.service.backend.shared.utils.SecurityUtils;
 import com.service.backend.user.service.NotificationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -140,7 +141,8 @@ public class AdminEventService {
         return eventRepo.findById(eventId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND,
                         "Event not found with id: " + eventId)))
-                .flatMap(existing -> imageService.uploadBase64IfPresent(request.getBannerBase64())
+                .flatMap(existing -> SecurityUtils.assertCanManageContentOrganization(existing.getOrganizationId())
+                        .then(imageService.uploadBase64IfPresent(request.getBannerBase64())
                         .defaultIfEmpty("")
                         .flatMap(bannerUrl -> {
                             existing.setTitle(request.getTitle());
@@ -153,7 +155,7 @@ public class AdminEventService {
                             existing.setRegistrationEndAt(request.getRegistrationEndAt());
                             existing.setMaxCapacity(request.getMaxCapacity());
                             return eventRepo.save(existing);
-                        }))
+                        })))
                 .doOnSuccess(e -> log.info("updateEvent result: {}", JsonUtils.toJson(e)))
                 .doOnError(error -> log.error("Error updating event ID: {}", eventId, error));
     }
@@ -162,7 +164,8 @@ public class AdminEventService {
         return eventRepo.findById(eventId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND,
                         "Event not found with id: " + eventId)))
-                .flatMap(event -> eventRepo.deleteById(eventId))
+                .flatMap(event -> SecurityUtils.assertCanManageContentOrganization(event.getOrganizationId())
+                        .then(eventRepo.deleteById(eventId)))
                 .doOnSuccess(v -> log.info("deleteEvent: eventId={} deleted", eventId))
                 .doOnError(error -> log.error("Error deleting event ID: {}", eventId, error));
     }
@@ -171,7 +174,9 @@ public class AdminEventService {
         return eventRepo.findById(eventId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND,
                         "Event not found with id: " + eventId)))
-                .flatMap(event -> eventRepo.publishEvent(eventId).then(eventRepo.findById(eventId)))
+                .flatMap(event -> SecurityUtils.assertCanManageContentOrganization(event.getOrganizationId())
+                        .then(eventRepo.publishEvent(eventId))
+                        .then(eventRepo.findById(eventId)))
                 .doOnSuccess(e -> log.info("publishEvent result: {}", JsonUtils.toJson(e)));
     }
 
@@ -179,7 +184,9 @@ public class AdminEventService {
         return eventRepo.findById(eventId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND,
                         "Event not found with id: " + eventId)))
-                .flatMap(event -> eventRepo.unpublishEvent(eventId).then(eventRepo.findById(eventId)))
+                .flatMap(event -> SecurityUtils.assertCanManageContentOrganization(event.getOrganizationId())
+                        .then(eventRepo.unpublishEvent(eventId))
+                        .then(eventRepo.findById(eventId)))
                 .doOnSuccess(e -> log.info("unpublishEvent result: {}", JsonUtils.toJson(e)));
     }
 
@@ -187,13 +194,14 @@ public class AdminEventService {
         return eventRepo.findById(eventId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND,
                         "Event not found with id: " + eventId)))
-                .flatMap(event -> {
+                .flatMap(event -> SecurityUtils.assertCanManageContentOrganization(event.getOrganizationId())
+                        .then(Mono.defer(() -> {
                     int offset = page * size;
                     return PaginationHelper.paginate(
                             ticketRepo.findByEventIdWithPagination(eventId, size, offset),
                             ticketRepo.countByEventId(eventId),
                             page, size);
-                })
+                })))
                 .doOnSuccess(r -> log.info("getTicketsByEvent result: {}", JsonUtils.toJson(r)));
     }
 
@@ -206,7 +214,9 @@ public class AdminEventService {
                         return Mono.error(new ApplicationException(ErrorCode.TICKET_ALREADY_CANCELLED,
                                 "Ticket already cancelled"));
                     }
-                    return ticketRepo.cancelTicket(ticket.getId(), "Cancelled by admin").then(ticketRepo.findById(ticket.getId()));
+                    return assertCanManageTicket(ticket)
+                            .then(ticketRepo.cancelTicket(ticket.getId(), "Cancelled by admin"))
+                            .then(ticketRepo.findById(ticket.getId()));
                 })
                 .doOnSuccess(t -> {
                     notifyTicketHolder(t, "Vé sự kiện đã bị huỷ",
@@ -225,7 +235,8 @@ public class AdminEventService {
                     }
                     boolean wasUsed = "USED".equals(ticket.getStatus().toString())
                             || "CHECKED_IN".equals(ticket.getStatus().toString());
-                    return ticketRepo.undoTicket(ticket.getId())
+                    return assertCanManageTicket(ticket)
+                            .then(ticketRepo.undoTicket(ticket.getId()))
                             .then(ticketRepo.findById(ticket.getId()))
                             .doOnSuccess(t -> notifyTicketHolder(t, "Vé sự kiện đã được khôi phục",
                                     wasUsed
@@ -244,7 +255,9 @@ public class AdminEventService {
                         return Mono.error(new ApplicationException(ErrorCode.TICKET_ALREADY_CANCELLED,
                                 "Ticket already banned"));
                     }
-                    return ticketRepo.banTicket(ticket.getId(), "Banned due to signs of fraud").then(ticketRepo.findById(ticket.getId()));
+                    return assertCanManageTicket(ticket)
+                            .then(ticketRepo.banTicket(ticket.getId(), "Banned due to signs of fraud"))
+                            .then(ticketRepo.findById(ticket.getId()));
                 })
                 .doOnSuccess(t -> {
                     notifyTicketHolder(t, "Vé sự kiện đã bị khoá",
@@ -256,13 +269,14 @@ public class AdminEventService {
         return eventRepo.findById(eventId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND,
                         "Event not found with id: " + eventId)))
-                .flatMap(event -> {
+                .flatMap(event -> SecurityUtils.assertCanManageContentOrganization(event.getOrganizationId())
+                        .then(Mono.defer(() -> {
                     int offset = page * size;
                     return PaginationHelper.paginate(
                             interestRepo.findByEventIdWithPagination(eventId, size, offset),
                             interestRepo.countByEventId(eventId),
                             page, size);
-                })
+                })))
                 .doOnSuccess(r -> log.info("getInterestsByEvent result: {}", JsonUtils.toJson(r)));
     }
 
@@ -321,6 +335,16 @@ public class AdminEventService {
                 })
                 .doOnSuccess(s -> log.info("getEventStatistics result: {}", JsonUtils.toJson(s)))
                 .doOnError(error -> log.error("Error fetching event statistics", error));
+    }
+
+    private Mono<Void> assertCanManageTicket(EventTicket ticket) {
+        if (ticket.getEventId() == null) {
+            return Mono.error(new ApplicationException(ErrorCode.FORBIDDEN, "Ticket is not linked to an event"));
+        }
+        return eventRepo.findById(ticket.getEventId())
+                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND,
+                        "Event not found with id: " + ticket.getEventId())))
+                .flatMap(event -> SecurityUtils.assertCanManageContentOrganization(event.getOrganizationId()));
     }
 
 

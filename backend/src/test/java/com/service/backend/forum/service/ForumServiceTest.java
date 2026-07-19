@@ -41,6 +41,26 @@ class ForumServiceTest {
     @InjectMocks
     private ForumService forumService;
 
+    private static reactor.util.context.Context adminContext() {
+        var token = new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                "1", null,
+                java.util.List.of(
+                        new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN"),
+                        new org.springframework.security.core.authority.SimpleGrantedAuthority("VERIFICATION_LEVEL_4")));
+        token.setDetails(1);
+        return org.springframework.security.core.context.ReactiveSecurityContextHolder.withAuthentication(token);
+    }
+
+    private static reactor.util.context.Context userContext(Integer userId) {
+        var token = new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                String.valueOf(userId), null,
+                java.util.List.of(
+                        new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_USER"),
+                        new org.springframework.security.core.authority.SimpleGrantedAuthority("VERIFICATION_LEVEL_2")));
+        token.setDetails(1);
+        return org.springframework.security.core.context.ReactiveSecurityContextHolder.withAuthentication(token);
+    }
+
     // ─── findCategoryById ─────────────────────────────────────────────────────
 
     @Nested
@@ -103,7 +123,7 @@ class ForumServiceTest {
             when(forumCategoryRepository.save(any())).thenReturn(Mono.just(saved));
             when(cacheUtils.clear("forum_category_cache")).thenReturn(Mono.empty());
 
-            StepVerifier.create(forumService.createCategory(request))
+            StepVerifier.create(forumService.createCategory(request).contextWrite(adminContext()))
                     .assertNext(dto -> {
                         assertThat(dto.getName()).isEqualTo("Tech");
                         assertThat(dto.getStatus()).isEqualTo("ACTIVE");
@@ -125,6 +145,7 @@ class ForumServiceTest {
                     .id(1)
                     .name("Old Name")
                     .description("Old Desc")
+                    .organizationId(1)
                     .status("ACTIVE")
                     .parentId(null)
                     .build();
@@ -136,6 +157,7 @@ class ForumServiceTest {
                     .id(1)
                     .name("New Name")
                     .description("Old Desc")
+                    .organizationId(1)
                     .status("ACTIVE")
                     .parentId(null)
                     .build();
@@ -144,7 +166,7 @@ class ForumServiceTest {
             when(forumCategoryRepository.save(any())).thenReturn(Mono.just(updated));
             when(cacheUtils.clear("forum_category_cache")).thenReturn(Mono.empty());
 
-            StepVerifier.create(forumService.updateCategory(1, request))
+            StepVerifier.create(forumService.updateCategory(1, request).contextWrite(adminContext()))
                     .assertNext(dto -> assertThat(dto.getName()).isEqualTo("New Name"))
                     .verifyComplete();
         }
@@ -173,7 +195,7 @@ class ForumServiceTest {
         @Test
         @DisplayName("should create topic successfully")
         void createTopic_success() {
-            ForumCategory category = ForumCategory.builder().id(1).name("General").build();
+            ForumCategory category = ForumCategory.builder().id(1).name("General").organizationId(1).build();
             CreateForumTopicRequest request = new CreateForumTopicRequest();
             request.setCategoryId(1);
             request.setTitle("My Topic");
@@ -183,6 +205,8 @@ class ForumServiceTest {
             ForumTopic savedTopic = ForumTopic.builder()
                     .id(1)
                     .title("My Topic")
+                    .organizationId(1)
+                    .createdByMemberId(5)
                     .categoryId(1)
                     .status(Status.PENDING.name())
                     .createdAt(LocalDateTime.now())
@@ -191,9 +215,10 @@ class ForumServiceTest {
             when(forumCategoryRepository.findById(1)).thenReturn(Mono.just(category));
             when(forumTopicRepository.save(any())).thenReturn(Mono.just(savedTopic));
             when(forumPostRepository.countByTopicId(1)).thenReturn(Mono.just(0L));
+            when(userProfileRepository.findDisplayInfoByUserId(5)).thenReturn(Mono.empty());
             when(cacheUtils.clear("forum_category_cache")).thenReturn(Mono.empty());
 
-            StepVerifier.create(forumService.createTopic(request))
+            StepVerifier.create(forumService.createTopic(request).contextWrite(userContext(5)))
                     .assertNext(dto -> {
                         assertThat(dto.getTitle()).isEqualTo("My Topic");
                         assertThat(dto.getStatus()).isEqualTo(Status.PENDING.name());
@@ -207,10 +232,11 @@ class ForumServiceTest {
             CreateForumTopicRequest request = new CreateForumTopicRequest();
             request.setCategoryId(99);
             request.setTitle("My Topic");
+            request.setOrganizationId(1);
 
             when(forumCategoryRepository.findById(99)).thenReturn(Mono.empty());
 
-            StepVerifier.create(forumService.createTopic(request))
+            StepVerifier.create(forumService.createTopic(request).contextWrite(userContext(5)))
                     .expectErrorMatches(err -> err instanceof ApplicationException &&
                             ((ApplicationException) err).getErrorCode() == ErrorCode.FORUM_CATEGORY_NOT_FOUND)
                     .verify();
@@ -245,7 +271,7 @@ class ForumServiceTest {
 
             when(forumTopicRepository.findById(99)).thenReturn(Mono.empty());
 
-            StepVerifier.create(forumService.createPost(request))
+            StepVerifier.create(forumService.createPost(request).contextWrite(userContext(5)))
                     .expectErrorMatches(err -> err instanceof ApplicationException &&
                             ((ApplicationException) err).getErrorCode() == ErrorCode.FORUM_TOPIC_NOT_FOUND)
                     .verify();
@@ -257,6 +283,7 @@ class ForumServiceTest {
             ForumTopic lockedTopic = ForumTopic.builder()
                     .id(1)
                     .title("Locked Topic")
+                    .organizationId(1)
                     .status(Status.INACTIVE.name())
                     .createdByMemberId(10)
                     .build();
@@ -268,7 +295,7 @@ class ForumServiceTest {
 
             when(forumTopicRepository.findById(1)).thenReturn(Mono.just(lockedTopic));
 
-            StepVerifier.create(forumService.createPost(request))
+            StepVerifier.create(forumService.createPost(request).contextWrite(userContext(5)))
                     .expectErrorMatches(err -> err instanceof ApplicationException &&
                             ((ApplicationException) err).getErrorCode() == ErrorCode.FORUM_TOPIC_LOCKED)
                     .verify();
@@ -280,6 +307,7 @@ class ForumServiceTest {
             ForumTopic activeTopic = ForumTopic.builder()
                     .id(1)
                     .title("Active Topic")
+                    .organizationId(1)
                     .status(Status.ACTIVE.name())
                     .createdByMemberId(10)
                     .build();
@@ -303,7 +331,7 @@ class ForumServiceTest {
             when(forumPostRepository.save(any())).thenReturn(Mono.just(savedPost));
             when(cacheUtils.putWithTtl(anyString(), anyString(), any(), any())).thenReturn(Mono.empty());
 
-            StepVerifier.create(forumService.createPost(request))
+            StepVerifier.create(forumService.createPost(request).contextWrite(userContext(5)))
                     .assertNext(dto -> {
                         assertThat(dto.getContent()).isEqualTo("Hello World");
                         assertThat(dto.getTopicId()).isEqualTo(1);
@@ -339,9 +367,10 @@ class ForumServiceTest {
             request.setContent("New Content");
 
             when(forumPostRepository.findById(1)).thenReturn(Mono.just(existingPost));
+            when(forumTopicRepository.findById(1)).thenReturn(Mono.just(ForumTopic.builder().id(1).organizationId(1).build()));
             when(forumPostRepository.save(any())).thenReturn(Mono.just(updatedPost));
 
-            StepVerifier.create(forumService.updatePost(1, request))
+            StepVerifier.create(forumService.updatePost(1, request).contextWrite(userContext(5)))
                     .assertNext(dto -> assertThat(dto.getContent()).isEqualTo("New Content"))
                     .verifyComplete();
         }
@@ -370,13 +399,14 @@ class ForumServiceTest {
         @Test
         @DisplayName("should delete post successfully")
         void deletePost_success() {
-            ForumPost post = ForumPost.builder().id(1).topicId(1).build();
+            ForumPost post = ForumPost.builder().id(1).topicId(1).authorMemberId(5).build();
 
             when(forumPostRepository.findById(1)).thenReturn(Mono.just(post));
+            when(forumTopicRepository.findById(1)).thenReturn(Mono.just(ForumTopic.builder().id(1).organizationId(1).build()));
             when(forumPostReactionRepository.deleteByPostId(1)).thenReturn(Mono.empty());
             when(forumPostRepository.deleteById(1)).thenReturn(Mono.empty());
 
-            StepVerifier.create(forumService.deletePost(1))
+            StepVerifier.create(forumService.deletePost(1).contextWrite(userContext(5)))
                     .verifyComplete();
         }
 
@@ -422,7 +452,7 @@ class ForumServiceTest {
 
             when(forumTopicSubscriptionRepository.findByTopicIdAndMemberId(1, 1)).thenReturn(Mono.just(sub));
 
-            StepVerifier.create(forumService.isSubscribed(1, 1))
+            StepVerifier.create(forumService.isSubscribed(1, 1).contextWrite(userContext(1)))
                     .assertNext(result -> assertThat(result).isTrue())
                     .verifyComplete();
         }
@@ -432,7 +462,7 @@ class ForumServiceTest {
         void isSubscribed_false() {
             when(forumTopicSubscriptionRepository.findByTopicIdAndMemberId(1, 99)).thenReturn(Mono.empty());
 
-            StepVerifier.create(forumService.isSubscribed(1, 99))
+            StepVerifier.create(forumService.isSubscribed(1, 99).contextWrite(userContext(99)))
                     .assertNext(result -> assertThat(result).isFalse())
                     .verifyComplete();
         }

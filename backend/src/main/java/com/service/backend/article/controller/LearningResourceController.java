@@ -53,8 +53,10 @@ public class LearningResourceController {
 
     @PublicEndpoint
     @GetMapping("/{id}")
-    public Mono<ResponseEntity<ApiResponse<LearningResourceResponse>>> getById(@PathVariable @Min(1) Integer id) {
-        return learningResourceService.getById(id)
+    public Mono<ResponseEntity<ApiResponse<LearningResourceResponse>>> getById(
+            @PathVariable @Min(1) Integer id,
+            @RequestParam(required = false) Integer organizationId) {
+        return learningResourceService.getPublicById(id, organizationId)
                 .map(response -> ResponseEntity
                         .ok(new ApiResponse<>("Learning resource retrieved successfully", response)));
     }
@@ -63,8 +65,9 @@ public class LearningResourceController {
     @GetMapping
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<LearningResourceResponse>>>> getAll(
             @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "10") @Min(1) int limit) {
-        return learningResourceService.getAll(page, limit)
+            @RequestParam(defaultValue = "10") @Min(1) int limit,
+            @RequestParam(required = false) Integer organizationId) {
+        return learningResourceService.getAll(page, limit, organizationId)
                 .map(response -> ResponseEntity
                         .ok(new ApiResponse<>("Learning resources retrieved successfully", response)));
     }
@@ -85,8 +88,9 @@ public class LearningResourceController {
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<LearningResourceResponse>>>> search(
             @RequestParam @NotBlank String keyword,
             @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "10") @Min(1) int limit) {
-        return learningResourceService.search(keyword, page, limit)
+            @RequestParam(defaultValue = "10") @Min(1) int limit,
+            @RequestParam(required = false) Integer organizationId) {
+        return learningResourceService.search(keyword, page, limit, organizationId)
                 .map(response -> ResponseEntity
                         .ok(new ApiResponse<>("Search results retrieved successfully", response)));
     }

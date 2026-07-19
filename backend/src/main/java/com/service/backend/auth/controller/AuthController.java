@@ -326,7 +326,7 @@ public class AuthController {
 
         if (user.getRole() == UserRole.ADMIN) {
             // For admin login, generate token with null orgId
-            String accessToken = jwtUtils.generateAccessToken(user, null);
+            String accessToken = jwtUtils.generateAccessToken(user, null, 4);
             String refreshToken = jwtUtils.generateRefreshToken(user.getId(), refreshTokenExpirationMs);
 
             ResponseCookie refreshTokenCookie = buildRefreshTokenCookie(refreshToken, refreshTokenExpirationMs);
@@ -348,7 +348,7 @@ public class AuthController {
 
         return authService.getEffectiveVerificationLevel(user, organizationId)
                 .map(level -> {
-                    String accessToken = jwtUtils.generateAccessToken(user, organizationId);
+                    String accessToken = jwtUtils.generateAccessToken(user, organizationId, level);
                     String refreshToken = jwtUtils.generateRefreshToken(user.getId(), refreshTokenExpirationMs);
                     ResponseCookie refreshTokenCookie = buildRefreshTokenCookie(refreshToken, refreshTokenExpirationMs);
 

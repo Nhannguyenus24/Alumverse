@@ -33,7 +33,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 @RestController
 @RequestMapping("/api/admin/audit")
 @Validated
-@PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+@PreAuthorize("hasRole('ADMIN')")
 public class AuditController {
 
     private final AuditService auditService;
@@ -76,6 +76,7 @@ public class AuditController {
      * Get aggregated login stats: breakdown by method and daily counts for last 30 days
      */
     @GetMapping("/login-history/stats")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     public Mono<ResponseEntity<ApiResponse<Map<String, Object>>>> getLoginStats() {
         return auditService.getLoginStats()
                 .map(data -> ResponseEntity.ok(
@@ -86,6 +87,7 @@ public class AuditController {
      * Get users with logins from more than 3 distinct IPs in the last 7 days
      */
     @GetMapping("/login-history/suspicious")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     public Mono<ResponseEntity<ApiResponse<List<SuspiciousLoginInfo>>>> getSuspiciousLogins() {
         return auditService.getSuspiciousLogins()
                 .map(data -> ResponseEntity.ok(

@@ -229,7 +229,6 @@ export default function DonationArticlePage() {
                       fundDetail={fundDetail}
                       action={!isAdmin ? (
                       <Button
-                        fullWidth={false}
                         variant="contained"
                         color={isClosed ? "secondary" : "accent"}
                         startIcon={isClosed ? <EventBusyOutlinedIcon /> : <VolunteerActivismOutlinedIcon />}
@@ -238,10 +237,10 @@ export default function DonationArticlePage() {
                         sx={{
                           textTransform: "none",
                           fontWeight: 700,
-                          px: { xs: 2.5, sm: 4 },
+                          alignSelf: { xs: "flex-start", sm: "auto" },
+                          px: 2.5,
                           py: 1.1,
-                          minWidth: { xs: "100%", sm: 220 },
-                          maxWidth: { sm: 280 },
+                          minWidth: 160,
                           cursor: isClosed ? "not-allowed" : "pointer",
                           ...(isClosed && {
                             color: "#fff",

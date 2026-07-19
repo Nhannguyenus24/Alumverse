@@ -54,8 +54,10 @@ public class AchievementController {
 
     @PublicEndpoint
     @GetMapping("/{id}")
-    public Mono<ResponseEntity<ApiResponse<AchievementResponse>>> getById(@PathVariable @Min(1) Integer id) {
-        return achievementService.getById(id)
+    public Mono<ResponseEntity<ApiResponse<AchievementResponse>>> getById(
+            @PathVariable @Min(1) Integer id,
+            @RequestParam(required = false) Integer organizationId) {
+        return achievementService.getPublicById(id, organizationId)
                 .map(response -> ResponseEntity
                         .ok(new ApiResponse<>("Achievement retrieved successfully", response)));
     }
@@ -64,8 +66,9 @@ public class AchievementController {
     @GetMapping
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<AchievementResponse>>>> getAll(
             @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "10") @Min(1) int limit) {
-        return achievementService.getAll(page, limit)
+            @RequestParam(defaultValue = "10") @Min(1) int limit,
+            @RequestParam(required = false) Integer organizationId) {
+        return achievementService.getByStatus(Status.APPROVED, organizationId, page, limit)
                 .map(response -> ResponseEntity
                         .ok(new ApiResponse<>("Achievements retrieved successfully", response)));
     }
@@ -74,9 +77,10 @@ public class AchievementController {
     @GetMapping("/member/{memberId}")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<AchievementResponse>>>> getByMemberId(
             @PathVariable @Min(1) Integer memberId,
+            @RequestParam(required = false) Integer organizationId,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int limit) {
-        return achievementService.getByMemberId(memberId, page, limit)
+        return achievementService.getPublicByMemberId(memberId, organizationId, page, limit)
                 .map(response -> ResponseEntity
                         .ok(new ApiResponse<>("Achievements retrieved successfully", response)));
     }
@@ -98,6 +102,11 @@ public class AchievementController {
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int limit) {
         Status achievementStatus = Status.valueOf(status.toUpperCase());
+        if (achievementStatus != Status.APPROVED) {
+            return Mono.error(new com.service.backend.shared.exception.ApplicationException(
+                    com.service.backend.shared.enums.ErrorCode.FORBIDDEN,
+                    "Only approved achievements are publicly available"));
+        }
         return achievementService.getByStatus(achievementStatus, organizationId, page, limit)
                 .map(response -> ResponseEntity
                         .ok(new ApiResponse<>("Achievements by status retrieved successfully", response)));
@@ -108,8 +117,9 @@ public class AchievementController {
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<AchievementResponse>>>> search(
             @RequestParam @NotBlank String keyword,
             @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "10") @Min(1) int limit) {
-        return achievementService.search(keyword, page, limit)
+            @RequestParam(defaultValue = "10") @Min(1) int limit,
+            @RequestParam(required = false) Integer organizationId) {
+        return achievementService.search(keyword, page, limit, organizationId)
                 .map(response -> ResponseEntity
                         .ok(new ApiResponse<>("Search results retrieved successfully", response)));
     }

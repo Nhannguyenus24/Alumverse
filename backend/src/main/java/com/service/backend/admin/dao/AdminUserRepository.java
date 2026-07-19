@@ -477,6 +477,7 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
               )
           )
           AND (CAST(:organizationId AS INTEGER) IS NULL OR om.organization_id = :organizationId)
+          AND (:excludeAdmin = FALSE OR CAST(u.role AS TEXT) <> 'ADMIN')
         ORDER BY u.created_at DESC
         LIMIT :limit OFFSET :offset
         """)
@@ -485,6 +486,7 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
         @Param("role") String role,
         @Param("status") String status,
         @Param("organizationId") Integer organizationId,
+        @Param("excludeAdmin") boolean excludeAdmin,
         @Param("limit") int limit,
         @Param("offset") int offset
     );
@@ -522,12 +524,14 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
               )
           )
           AND (CAST(:organizationId AS INTEGER) IS NULL OR om.organization_id = :organizationId)
+          AND (:excludeAdmin = FALSE OR CAST(u.role AS TEXT) <> 'ADMIN')
         """)
     Mono<Long> countUsersWithFilters(
         @Param("search") String search,
         @Param("role") String role,
         @Param("status") String status,
-        @Param("organizationId") Integer organizationId
+        @Param("organizationId") Integer organizationId,
+        @Param("excludeAdmin") boolean excludeAdmin
     );
 
     @Query("SELECT CAST(created_at AS DATE) AS date, COUNT(*) AS count " +

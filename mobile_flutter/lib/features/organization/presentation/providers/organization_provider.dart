@@ -29,6 +29,7 @@ class OrganizationNotifier extends AsyncNotifier<Organization?> {
           .read(organizationRepositoryProvider)
           .getOrganizationBySlug(slug);
       await storage.writeOrganizationSlug(slug);
+      await storage.writeOrganizationId(org.id);
       return org;
     } catch (_) {
       return null;
@@ -41,13 +42,15 @@ class OrganizationNotifier extends AsyncNotifier<Organization?> {
       final org = await ref
           .read(organizationRepositoryProvider)
           .getOrganizationBySlug(slug);
-      await ref.read(secureStorageProvider).writeOrganizationSlug(slug);
+      final storage = ref.read(secureStorageProvider);
+      await storage.writeOrganizationSlug(slug);
+      await storage.writeOrganizationId(org.id);
       return org;
     });
   }
 
   void reset() {
-    ref.read(secureStorageProvider).writeOrganizationSlug('');
+    ref.read(secureStorageProvider).clearOrganization();
     state = const AsyncData(null);
   }
 }
