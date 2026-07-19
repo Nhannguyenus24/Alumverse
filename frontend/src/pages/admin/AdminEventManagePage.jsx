@@ -393,7 +393,17 @@ const AdminEventManagePage = () => {
           </Box>
         </Stack>
 
-        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+        <Stack
+          direction="row"
+          spacing={1}
+          flexWrap="wrap"
+          useFlexGap
+          sx={{
+            ml: { sm: 'auto' },
+            justifyContent: { xs: 'flex-start', sm: 'flex-end' },
+            width: { xs: '100%', sm: 'auto' },
+          }}
+        >
           <Button color="secondary" variant="outlined" startIcon={<EditOutlinedIcon />} onClick={() => orgNavigate(`/post/event/${eventId}`)}>
             {t('common:edit')}
           </Button>

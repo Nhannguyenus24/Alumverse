@@ -23,7 +23,6 @@ import { useAuth } from "../../hooks/useAuth";
 import { useCanContribute } from "../../hooks/useCanContribute";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
 const ARTICLE_IMG_FALLBACK = "https://placehold.co/1200x720/eef3ff/0f3a7a?text=Fund";
-const ARTICLE_IMAGE_ASPECT_RATIO = "16 / 9";
 const DESCRIPTION_MAX_HEIGHT = { xs: 360, md: 480 };
 
 const descriptionContentSx = {
@@ -31,18 +30,42 @@ const descriptionContentSx = {
   color: "text.primary",
   "& p": { mb: 2, textAlign: "justify" },
   "& img": {
-    width: "100%",
-    aspectRatio: ARTICLE_IMAGE_ASPECT_RATIO,
-    objectFit: "cover",
-    borderRadius: 2,
     display: "block",
-    mb: 2,
+    maxWidth: "min(100%, 640px) !important",
+    width: "auto !important",
+    height: "auto !important",
+    maxHeight: "80vh",
+    objectFit: "contain",
+    borderRadius: 2,
+    mx: "auto",
+    my: 2,
   },
 };
 
 const sanitizeDonationContent = (html) => (
   DOMPurify.sanitize(html || "").replace(/&amp;nbsp;|&nbsp;|&#160;|\u00a0/gi, " ")
 );
+
+const normalizeDonationContent = (html) => {
+  if (!html || typeof document === "undefined") return html;
+
+  const container = document.createElement("div");
+  container.innerHTML = html;
+
+  container.querySelectorAll("img").forEach((image) => {
+    image.removeAttribute("width");
+    image.removeAttribute("height");
+    image.style.removeProperty("width");
+    image.style.removeProperty("height");
+    image.style.removeProperty("min-width");
+    image.style.removeProperty("max-width");
+    image.style.removeProperty("min-height");
+    image.style.removeProperty("max-height");
+    image.style.removeProperty("object-fit");
+  });
+
+  return container.innerHTML;
+};
 
 export default function DonationArticlePage() {
   const { t } = useTranslation('donation');
@@ -79,7 +102,7 @@ export default function DonationArticlePage() {
 
   const handleDonate = () => { navigate(`/donations/${id}/contribute`); };
 
-  const cleanDescription = fundDetail?.descriptionFull ? sanitizeDonationContent(fundDetail.descriptionFull) : "";
+  const cleanDescription = fundDetail?.descriptionFull ? normalizeDonationContent(sanitizeDonationContent(fundDetail.descriptionFull)) : "";
 
   const now = dayjs();
   const startTime = fundDetail?.timeStarted ? dayjs(fundDetail.timeStarted) : null;
