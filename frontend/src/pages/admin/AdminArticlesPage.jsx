@@ -228,19 +228,13 @@ const AdminArticlesPage = () => {
         <Stack alignItems="center" sx={{ py: 4 }}><CircularProgress size={28} /></Stack>
       ) : (
         <AdminDataTable
+          compactTable
           columns={[
-            {
-              id: "id",
-              label: "ID",
-              width: 64,
-              minWidth: 64,
-              headerSx: { whiteSpace: 'nowrap' },
-              cellSx: { whiteSpace: 'nowrap' },
-              render: (_, a) => idOf(a),
-            },
+            { id: "id", label: "ID", width: 56, render: (_, a) => idOf(a) },
             {
               id: "title",
               label: t('admin:col_title'),
+              width: '28%',
               render: (_, a) => (
                 <Typography
                   variant="body2"
@@ -258,23 +252,14 @@ const AdminArticlesPage = () => {
             {
               id: "channel",
               label: t('admin:col_channel_type'),
-              width: 160,
-              minWidth: 160,
-              headerSx: { whiteSpace: 'nowrap' },
+              width: 140,
               render: (value, a) => (
                 <Chip
                   size="small"
                   color="primary"
                   variant="outlined"
                   label={getAdminArticleChannelLabel(t, value || channelOf(a, channel))}
-                  sx={{
-                    fontWeight: 700,
-                    maxWidth: 'none',
-                    '& .MuiChip-label': {
-                      overflow: 'visible',
-                      textOverflow: 'clip',
-                    },
-                  }}
+                  sx={{ fontWeight: 700 }}
                 />
               ),
             },
@@ -291,11 +276,13 @@ const AdminArticlesPage = () => {
             {
               id: "createdAt",
               label: t('admin:col_created_at'),
+              width: 118,
               render: (_, a) => renderCompactDateTime(createdOf(a)),
             },
             {
               id: "updatedAt",
               label: t('admin:col_updated_at_short'),
+              width: 118,
               render: (_, a) => renderCompactDateTime(updatedOf(a)),
             },
             {
@@ -313,12 +300,11 @@ const AdminArticlesPage = () => {
             {
               id: "actions",
               label: t('admin:col_actions'),
-              width: 172,
-              minWidth: 172,
+              width: 178,
               align: "right",
               render: (_, a) => (
                 <Box
-                  sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5, ml: 'auto' }}
+                  sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5, width: 172, ml: 'auto' }}
                   onClick={(e) => e.stopPropagation()}
                 >
                   <ActionSlot>

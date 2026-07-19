@@ -73,13 +73,18 @@ public class EventQrService {
 
     /** Render the QR token as a PNG data URI for embedding in email HTML. */
     public String toQrCodeDataUri(String token) {
+        return "data:image/png;base64," + Base64.getEncoder().encodeToString(toQrCodePngBytes(token));
+    }
+
+    /** Render the QR token as PNG bytes for attaching as inline email content. */
+    public byte[] toQrCodePngBytes(String token) {
         try {
             Map<EncodeHintType, Object> hints = new EnumMap<>(EncodeHintType.class);
             hints.put(EncodeHintType.MARGIN, 1);
             BitMatrix matrix = new QRCodeWriter().encode(token, BarcodeFormat.QR_CODE, 320, 320, hints);
             try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
                 MatrixToImageWriter.writeToStream(matrix, "PNG", outputStream);
-                return "data:image/png;base64," + Base64.getEncoder().encodeToString(outputStream.toByteArray());
+                return outputStream.toByteArray();
             }
         } catch (WriterException | java.io.IOException e) {
             throw new ApplicationException(ErrorCode.INTERNAL_SERVER_ERROR, "Failed to generate QR image");
