@@ -50,6 +50,7 @@ const AdminDataTable = ({
   renderExpandableRow,
   getRowId,
   loading = false,
+  compactTable = false,
 }) => {
   const { t } = useTranslation(['common', 'admin']);
   const theme = useTheme();
@@ -145,11 +146,14 @@ const AdminDataTable = ({
       </Box>
 
       {/* Table Content */}
-      <TableContainer sx={{ maxHeight: 600 }}>
+      <TableContainer sx={{ maxHeight: 600, overflowX: compactTable ? 'hidden' : 'auto' }}>
         <Table
           stickyHeader
           size="medium"
           sx={{
+            width: '100%',
+            minWidth: compactTable ? 0 : undefined,
+            tableLayout: compactTable ? 'fixed' : 'auto',
             borderCollapse: 'separate',
             borderSpacing: 0,
             '& .MuiTableCell-stickyHeader': {
@@ -180,7 +184,7 @@ const AdminDataTable = ({
                   align={column.align || 'left'}
                   sx={{
                     width: column.width,
-                    minWidth: column.minWidth || column.width,
+                    minWidth: compactTable ? 0 : (column.minWidth || column.width),
                     maxWidth: column.maxWidth,
                     bgcolor: tableHeadBg,
                     backgroundColor: `${tableHeadBg} !important`,
@@ -190,8 +194,10 @@ const AdminDataTable = ({
                     py: 2,
                     textTransform: 'uppercase',
                     letterSpacing: 0.5,
-                    whiteSpace: 'nowrap',
+                    whiteSpace: compactTable ? 'normal' : 'nowrap',
+                    overflowWrap: 'break-word',
                     border: 0,
+                    ...column.headerSx,
                   }}
                 >
                   {column.label}
@@ -249,8 +255,11 @@ const AdminDataTable = ({
                               py: 2,
                               fontSize: 14,
                               width: column.width,
-                              minWidth: column.minWidth || column.width,
+                              minWidth: compactTable ? 0 : (column.minWidth || column.width),
                               maxWidth: column.maxWidth,
+                              overflowWrap: 'break-word',
+                              wordBreak: 'normal',
+                              ...column.cellSx,
                             }}
                           >
                             {column.render ? column.render(value, row) : (value || '—')}

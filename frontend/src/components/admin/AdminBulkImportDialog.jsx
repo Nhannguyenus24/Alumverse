@@ -62,11 +62,11 @@ const VALID_STATUSES = ['ACTIVE', 'INACTIVE', 'BANNED'];
 const VALID_GRADUATION = ['STUDYING', 'GRADUATED', 'DROPPED'];
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const validateRow = (row, idx, t) => {
+const validateRow = (row, idx, t, validRoles = VALID_ROLES) => {
   const errors = [];
   if (!row.email || !EMAIL_RE.test(row.email.trim())) errors.push(t('bulk_err_email_invalid'));
   if (!row.fullName || !row.fullName.trim()) errors.push(t('bulk_err_fullname_required'));
-  if (row.role && !VALID_ROLES.includes(row.role.toUpperCase())) errors.push(t('bulk_err_role_invalid', { options: VALID_ROLES.join('/') }));
+  if (row.role && !validRoles.includes(row.role.toUpperCase())) errors.push(t('bulk_err_role_invalid', { options: validRoles.join('/') }));
   if (row.status && !VALID_STATUSES.includes(row.status.toUpperCase())) errors.push(t('bulk_err_status_invalid', { options: VALID_STATUSES.join('/') }));
   if (row.graduationStatus && !VALID_GRADUATION.includes(row.graduationStatus.toUpperCase())) errors.push(t('bulk_err_graduation_invalid', { options: VALID_GRADUATION.join('/') }));
   if (row.graduatedYear && !/^\d{4}$/.test(String(row.graduatedYear).trim())) errors.push(t('bulk_err_graduated_year'));
@@ -85,7 +85,7 @@ const statusIcon = (s) => {
 };
 
 // ── Main component ─────────────────────────────────────────────────────────────
-const AdminBulkImportDialog = ({ open, onClose, organizationOptions = [], onBulkImport }) => {
+const AdminBulkImportDialog = ({ open, onClose, organizationOptions = [], onBulkImport, canAssignAdmin = false }) => {
   const theme = useTheme();
   const { t } = useTranslation(['admin', 'common']);
   const fileRef = useRef(null);
@@ -98,6 +98,7 @@ const AdminBulkImportDialog = ({ open, onClose, organizationOptions = [], onBulk
   const [selectedOrgId, setSelectedOrgId] = useState(
     organizationOptions.length > 0 ? Number(organizationOptions[0].id) : ''
   );
+  const validRoles = canAssignAdmin ? VALID_ROLES : VALID_ROLES.filter((role) => role !== 'ADMIN');
 
   const reset = () => {
     setRows([]);
@@ -139,7 +140,7 @@ const AdminBulkImportDialog = ({ open, onClose, organizationOptions = [], onBulk
           status: String(r.status || 'ACTIVE').trim().toUpperCase(),
           _importStatus: 'PENDING',
           _importReason: '',
-        }, i, t));
+        }, i, t, validRoles));
 
         setRows(parsed);
         setFileName(file.name);
@@ -252,7 +253,7 @@ const AdminBulkImportDialog = ({ open, onClose, organizationOptions = [], onBulk
             <Alert severity="info" sx={{ width: '100%', maxWidth: 600 }}>
               <Typography variant="body2" component="div">
                 <strong>{t('bulk_required_columns')}</strong> email, fullName<br />
-                <strong>{t('bulk_optional_columns')}</strong> studentId, role ({t('bulk_default_user')}), password, program, major, graduatedYear, graduationStatus (STUDYING/GRADUATED/DROPPED), verificationLevel (0/1/2/3/4), status ({t('bulk_default_active')})
+                <strong>{t('bulk_optional_columns')}</strong> studentId, role ({validRoles.join('/')}), password, program, major, graduatedYear, graduationStatus (STUDYING/GRADUATED/DROPPED), verificationLevel (0/1/2/3/4), status ({t('bulk_default_active')})
               </Typography>
             </Alert>
           </Box>

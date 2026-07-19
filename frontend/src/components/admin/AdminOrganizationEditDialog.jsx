@@ -157,11 +157,11 @@ useEffect(() => {
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Slug (Alias)"
+                label={t('admin:organization_slug_label')}
                 name="slug"
                 value={formData.slug}
                 onChange={handleChange}
-                placeholder="hcmus"
+                placeholder={t('admin:organization_slug_placeholder')}
                 helperText={t('admin:slug_helper_text')}
               />
             </Grid>
@@ -188,28 +188,28 @@ useEffect(() => {
           <Stack spacing={2}>
             <TextField
               fullWidth
-              label="Contact Phone"
+              label={t('admin:organization_contact_phone')}
               name="contactPhone"
               value={formData.contactPhone}
               onChange={handleChange}
-              placeholder="e.g. +84 123 456 789"
+              placeholder={t('admin:organization_contact_phone_placeholder')}
             />
             <TextField
               fullWidth
-              label="Contact Email"
+              label={t('admin:organization_contact_email')}
               name="contactEmail"
               type="email"
               value={formData.contactEmail}
               onChange={handleChange}
-              placeholder="e.g. contact@hcmus.edu.vn"
+              placeholder={t('admin:organization_contact_email_placeholder')}
             />
             <TextField
               fullWidth
-              label="Department Name"
+              label={t('admin:organization_department_name')}
               name="departmentName"
               value={formData.departmentName}
               onChange={handleChange}
-              placeholder="e.g. Information Technology"
+              placeholder={t('admin:organization_department_name_placeholder')}
             />
           </Stack>
         </Box>
