@@ -145,7 +145,7 @@ const ACCOUNT_STATUS_OPTIONS = [
   'DISABLED',
 ];
 
-const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organizationOptions = [] }) => {
+const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organizationOptions = [], canAssignAdmin = false }) => {
   const { t } = useTranslation(['admin', 'common', 'profile']);
   const { enqueueSnackbar } = useSnackbar();
   const firstOrganizationId = useMemo(
@@ -160,6 +160,10 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
   const isEditMode = mode === 'edit';
   const isMembershipReadOnly = false;
   const isProfileReadOnly = false;
+  const roleOptions = useMemo(
+    () => USER_ROLES.filter((role) => canAssignAdmin || role !== 'ADMIN'),
+    [canAssignAdmin],
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -267,6 +271,11 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
     const next = {};
     if (!form.email.trim()) next.email = t('admin:error_email_required');
     if (!form.fullName.trim()) next.fullName = t('admin:error_full_name_required');
+    if (!canAssignAdmin && String(form.role || '').toUpperCase() === 'ADMIN') {
+      next.role = t('admin:staff_cannot_assign_admin', {
+        defaultValue: 'STAFF cannot create or assign ADMIN accounts.',
+      });
+    }
     if (form.password && form.password.length < 8) next.password = t('admin:error_password_min_length');
     form.academicRows.forEach((row, index) => {
       if (row.graduatedYear && !/^\d{4}$/.test(String(row.graduatedYear).trim())) {
@@ -467,10 +476,15 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
             label={t('admin:role_label')}
             value={form.role}
             onChange={handleChange('role')}
+            error={!!errors.role}
+            helperText={errors.role}
             fullWidth
             slotProps={slotProps}
           >
-            {USER_ROLES.map((r) => <MenuItem key={r} value={r}>{t(`admin:role.${r}`, { defaultValue: r })}</MenuItem>)}
+            {!canAssignAdmin && String(form.role || '').toUpperCase() === 'ADMIN' && (
+              <MenuItem value="ADMIN" disabled>{t('admin:role.ADMIN', { defaultValue: 'ADMIN' })}</MenuItem>
+            )}
+            {roleOptions.map((r) => <MenuItem key={r} value={r}>{t(`admin:role.${r}`, { defaultValue: r })}</MenuItem>)}
           </TextField>
           <TextField
             select

@@ -43,6 +43,7 @@ import { USER_ROLES } from '../../constants/adminDefaultUsers';
 import { useAdminUsersContext } from '../../stores/AdminStore';
 import { adminOrganizationApi } from '../../utils/api';
 import { formatDateTime } from '../../utils/dateFormatter';
+import { useAuth } from '../../hooks/useAuth';
 
 const USER_STATUS_FILTERS = [
   'ACTIVE',
@@ -116,6 +117,12 @@ const AdminUsersListPage = () => {
   } = useAdminUsersContext();
 
   const { setBreadcrumbs, adminBase } = useOutletContext();
+  const { user: currentUser } = useAuth();
+  const canAssignAdmin = String(currentUser?.role ?? '').toUpperCase() === 'ADMIN';
+  const visibleUserRoles = useMemo(
+    () => USER_ROLES.filter((role) => canAssignAdmin || role !== 'ADMIN'),
+    [canAssignAdmin],
+  );
   // The store's mutations already show their own success/error snackbars and
   // throw on failure. We use run() only for its pending flag + re-entrancy lock
   // (drops spam-clicks) + overlay; swallow the store's throw so run() doesn't
@@ -294,7 +301,7 @@ const AdminUsersListPage = () => {
         sx={{ minWidth: 120 }}
       >
         <MenuItem value="ALL">{t('admin:filter_all')}</MenuItem>
-        {USER_ROLES.map((r) => <MenuItem key={r} value={r}>{roleLabel(r)}</MenuItem>)}
+        {visibleUserRoles.map((r) => <MenuItem key={r} value={r}>{roleLabel(r)}</MenuItem>)}
       </TextField>
       <TextField
         select
@@ -448,6 +455,7 @@ const AdminUsersListPage = () => {
         onClose={() => setBulkImportOpen(false)}
         organizationOptions={organizationOptions}
         onBulkImport={bulkImportUsers}
+        canAssignAdmin={canAssignAdmin}
       />
 
       <AdminUserFormDialog
@@ -455,6 +463,7 @@ const AdminUsersListPage = () => {
         mode={userFormMode}
         user={editingUser}
         organizationOptions={organizationOptions}
+        canAssignAdmin={canAssignAdmin}
         onClose={() => setUserFormOpen(false)}
         onSubmit={async (payload) => {
           if (userFormMode === 'create') await createUser(payload);

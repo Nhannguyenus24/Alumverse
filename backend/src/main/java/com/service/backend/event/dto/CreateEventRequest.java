@@ -25,7 +25,6 @@ public class CreateEventRequest {
     @Schema(example = "Hội thảo AI 2026")
     private String title;
 
-    @Size(max = 5000)
     @Schema(example = "Sự kiện chia sẻ về trí tuệ nhân tạo và ứng dụng thực tiễn năm 2026.")
     private String description;
 
