@@ -587,7 +587,15 @@
   "upload_image_base64_hint": "Tải ảnh lên để chuyển đổi sang Base64",
   "organization_name": "Tên tổ chức",
   "organization_name_placeholder": "Ví dụ: Trường Đại học Khoa học Tự nhiên",
+  "organization_slug_label": "Slug (bí danh)",
+  "organization_slug_placeholder": "Ví dụ: hcmus",
   "slug_helper_text": "Dùng cho đường dẫn URL",
+  "organization_contact_phone": "Số điện thoại liên hệ",
+  "organization_contact_phone_placeholder": "Ví dụ: +84 123 456 789",
+  "organization_contact_email": "Email liên hệ",
+  "organization_contact_email_placeholder": "Ví dụ: contact@hcmus.edu.vn",
+  "organization_department_name": "Tên khoa / đơn vị",
+  "organization_department_name_placeholder": "Ví dụ: Khoa Công nghệ Thông tin",
   "create_organization": "Tạo tổ chức",
   "verification_section_title": "Xác minh tài khoản",
   "verification_section_subtitle": "Trạng thái yêu cầu xác minh alumni và xác minh đồng nghiệp.",
@@ -1568,5 +1576,5 @@
     "heap_mb": "Heap (MB)",
     "gc_pause_ms": "Dừng GC (ms)"
   },
-  "edit_article_breadcrumb": "S?a b?i vi?t"
+  "edit_article_breadcrumb": "Sửa bài viết"
 }

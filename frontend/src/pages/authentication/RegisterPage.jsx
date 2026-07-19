@@ -1,12 +1,14 @@
-import { useState, useRef, useMemo } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Box, Typography, Button, Popper, Paper } from '@mui/material';
+import { GoogleLogin } from '@react-oauth/google';
+import { Box, Typography, Button, Popper, Paper, Divider } from '@mui/material';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link } from 'react-router';
+import { Link, useNavigate as useRouterNavigate } from 'react-router';
 import { useSnackbar } from 'notistack';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
+import GoogleIcon from '@mui/icons-material/Google';
 import Page from '../../components/Page';
 import { ScrollRevealFields } from '../../components/animations/ScrollReveal';
 import Input from '../../components/Input';
@@ -32,15 +34,26 @@ const PasswordRequirementItem = ({ label, met }) => (
 const RegisterPage = () => {
   const { t } = useTranslation(['auth', 'common']);
   const navigate = useOrgNavigate();
+  const routerNavigate = useRouterNavigate();
   const toOrgPath = useOrgPath();
   const { enqueueSnackbar } = useSnackbar();
-  const { register: registerUser, forgotPassword, isSubmitting: loading, setError } = useAuth();
+  const { register: registerUser, loginWithGoogle, isSubmitting: loading, setError } = useAuth();
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
   const [passwordValue, setPasswordValue] = useState('');
   const organizationId = useOrganizationStore((state) => state.organization?.id);
   const [showRequirements, setShowRequirements] = useState(false);
   const passwordRef = useRef(null);
+  const googleButtonContainerRef = useRef(null);
+  const [googleButtonWidth, setGoogleButtonWidth] = useState(null);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const thirdPartyControlSx = theme.palette.mode === 'dark'
+    ? {
+        filter: 'invert(0.9) hue-rotate(180deg)',
+        borderRadius: 1,
+        overflow: 'hidden',
+      }
+    : undefined;
 
   const passwordRequirements = {
     length: passwordValue.length >= 8,
@@ -51,6 +64,25 @@ const RegisterPage = () => {
   };
 
   const registerSchema = useMemo(() => getRegisterSchema(t), [t]);
+
+  useEffect(() => {
+    const container = googleButtonContainerRef.current;
+    if (!container) return undefined;
+
+    const updateGoogleButtonWidth = () => {
+      const nextWidth = Math.floor(container.getBoundingClientRect().width);
+      if (nextWidth > 0) {
+        setGoogleButtonWidth(Math.max(200, Math.min(400, nextWidth)));
+      }
+    };
+
+    updateGoogleButtonWidth();
+
+    const resizeObserver = new ResizeObserver(updateGoogleButtonWidth);
+    resizeObserver.observe(container);
+
+    return () => resizeObserver.disconnect();
+  }, []);
 
   const {
     register,
@@ -87,6 +119,44 @@ const RegisterPage = () => {
     } else if (result?.error) {
       enqueueSnackbar(result.error, { variant: 'error' });
     }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    const idToken = credentialResponse?.credential;
+    if (!idToken) {
+      enqueueSnackbar(t('auth:login_google_token_error'), { variant: 'error' });
+      return;
+    }
+
+    setError(null);
+    const result = await loginWithGoogle(idToken, false);
+    if (result?.ok) {
+      enqueueSnackbar(t('auth:login_google_success'), { variant: 'success' });
+
+      if (result?.data?.verificationLevel === 0) {
+        navigate('/organization-registration', { replace: true });
+        return;
+      }
+
+      if (result?.data?.user?.role === 'STAFF') {
+        navigate('/admin', { replace: true });
+        return;
+      }
+
+      if (result?.data?.user?.role === 'ADMIN') {
+        routerNavigate('/admin', { replace: true });
+        return;
+      }
+
+      navigate('/', { replace: true });
+      return;
+    }
+
+    enqueueSnackbar(result?.error ?? t('auth:login_google_failed'), { variant: 'error' });
+  };
+
+  const handleGoogleError = () => {
+    enqueueSnackbar(t('auth:login_google_failed'), { variant: 'error' });
   };
 
   return (
@@ -220,6 +290,51 @@ const RegisterPage = () => {
         >
           {loading ? t('auth:processing') : t('auth:continue')}
         </Button>
+
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+          <Divider sx={{ flex: 1 }} />
+          <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
+            {t('auth:or_continue_with')}
+          </Typography>
+          <Divider sx={{ flex: 1 }} />
+        </Box>
+
+        {googleClientId ? (
+          <Box ref={googleButtonContainerRef} sx={{ width: '100%' }}>
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                width: '100%',
+                ...thirdPartyControlSx,
+              }}
+            >
+              {googleButtonWidth != null && (
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={handleGoogleError}
+                  useOneTap={false}
+                  size="large"
+                  text="signin_with"
+                  locale="vi"
+                  width={`${googleButtonWidth}`}
+                />
+              )}
+            </Box>
+          </Box>
+        ) : (
+          <Button
+            type="button"
+            variant="outlined"
+            fullWidth
+            size="large"
+            startIcon={<GoogleIcon />}
+            disabled
+            sx={{ textTransform: 'none', borderColor: 'divider' }}
+          >
+            {t('auth:login_google_not_configured')}
+          </Button>
+        )}
 
         <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ mt: 1 }}>
           {t('auth:have_account_prompt')}{' '}

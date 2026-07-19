@@ -64,11 +64,29 @@ const visibilityStatusOf = (article) => {
   if (state === 'hidden') return 'HIDDEN';
   return 'UNSUPPORTED';
 };
-const renderCompactDateTime = (value) => (
-  <Typography variant="body2" noWrap sx={{ fontSize: 13 }}>
-    {formatDateTime(value)}
-  </Typography>
-);
+const renderCompactDateTime = (value) => {
+  const formatted = formatDateTime(value);
+  if (!formatted || formatted === '--') {
+    return (
+      <Typography variant="body2" sx={{ fontSize: 13 }}>
+        --
+      </Typography>
+    );
+  }
+  const [date, time] = formatted.split(' ');
+  return (
+    <Stack spacing={0.25} sx={{ minWidth: 0 }}>
+      <Typography variant="body2" sx={{ fontSize: 13, lineHeight: 1.3, whiteSpace: 'normal' }}>
+        {date}
+      </Typography>
+      {time && (
+        <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.25 }}>
+          {time}
+        </Typography>
+      )}
+    </Stack>
+  );
+};
 
 const ActionSlot = ({ children }) => (
   <Box sx={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -210,21 +228,21 @@ const AdminArticlesPage = () => {
         <Stack alignItems="center" sx={{ py: 4 }}><CircularProgress size={28} /></Stack>
       ) : (
         <AdminDataTable
+          compactTable
           columns={[
-            { id: "id", label: "ID", render: (_, a) => idOf(a) },
+            { id: "id", label: "ID", width: 56, render: (_, a) => idOf(a) },
             {
               id: "title",
               label: t('admin:col_title'),
-              width: '34%',
-              minWidth: 320,
+              width: '28%',
               render: (_, a) => (
                 <Typography
                   variant="body2"
                   sx={{
-                    maxWidth: 520,
                     whiteSpace: 'normal',
                     overflowWrap: 'break-word',
                     wordBreak: 'normal',
+                    lineHeight: 1.35,
                   }}
                 >
                   {titleOf(a)}
@@ -234,6 +252,7 @@ const AdminArticlesPage = () => {
             {
               id: "channel",
               label: t('admin:col_channel_type'),
+              width: 140,
               render: (value, a) => (
                 <Chip
                   size="small"
@@ -247,8 +266,9 @@ const AdminArticlesPage = () => {
             {
               id: "submitter",
               label: t('admin:col_submitter'),
+              width: 140,
               render: (_, a) => (
-                <Typography variant="body2" noWrap sx={{ maxWidth: 180 }}>
+                <Typography variant="body2" sx={{ lineHeight: 1.35, whiteSpace: 'normal', overflowWrap: 'break-word' }}>
                   {submitterOf(a)}
                 </Typography>
               ),
@@ -256,22 +276,19 @@ const AdminArticlesPage = () => {
             {
               id: "createdAt",
               label: t('admin:col_created_at'),
-              width: 132,
-              minWidth: 132,
-              maxWidth: 132,
+              width: 118,
               render: (_, a) => renderCompactDateTime(createdOf(a)),
             },
             {
               id: "updatedAt",
               label: t('admin:col_updated_at_short'),
-              width: 132,
-              minWidth: 132,
-              maxWidth: 132,
+              width: 118,
               render: (_, a) => renderCompactDateTime(updatedOf(a)),
             },
             {
               id: "visibility",
               label: t('admin:col_status'),
+              width: 140,
               render: (_, a) => (
                 <AdminStatusChip
                   status={visibilityStatusOf(a)}
@@ -283,6 +300,7 @@ const AdminArticlesPage = () => {
             {
               id: "actions",
               label: t('admin:col_actions'),
+              width: 178,
               align: "right",
               render: (_, a) => (
                 <Box

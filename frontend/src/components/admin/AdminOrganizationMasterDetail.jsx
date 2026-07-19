@@ -115,6 +115,7 @@ const AdminOrganizationMasterDetail = ({
   onRefresh,
   onRefreshIntroduction,
   onPromoteOrganization,
+  staffView = false,
 }) => {
   const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
@@ -348,24 +349,28 @@ const AdminOrganizationMasterDetail = ({
             <Typography variant="h5" sx={{ color: 'primary.main' }}>
               {t('admin:org_list_title', { count: filteredOrganizations.length })}
             </Typography>
-            <SearchBar
-              value={orgSearch}
-              onChange={setOrgSearch}
-              placeholder={t('admin:org_search_placeholder')}
-              size="small"
-              fullWidth
-            />
-            <TextField
-              select
-              size="small"
-              fullWidth
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <MenuItem value="ALL">{t('admin:filter_status_all')}</MenuItem>
-              <MenuItem value="ACTIVE">{t('admin:filter_status_active')}</MenuItem>
-              <MenuItem value="INACTIVE">{t('admin:filter_status_inactive')}</MenuItem>
-            </TextField>
+            {!staffView && (
+              <>
+                <SearchBar
+                  value={orgSearch}
+                  onChange={setOrgSearch}
+                  placeholder={t('admin:org_search_placeholder')}
+                  size="small"
+                  fullWidth
+                />
+                <TextField
+                  select
+                  size="small"
+                  fullWidth
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                >
+                  <MenuItem value="ALL">{t('admin:filter_status_all')}</MenuItem>
+                  <MenuItem value="ACTIVE">{t('admin:filter_status_active')}</MenuItem>
+                  <MenuItem value="INACTIVE">{t('admin:filter_status_inactive')}</MenuItem>
+                </TextField>
+              </>
+            )}
           </Stack>
         </Box>
 
@@ -377,7 +382,11 @@ const AdminOrganizationMasterDetail = ({
                 <ListItemButton
                   key={org.id}
                   selected={isSelected}
-                  onClick={() => onSelectOrganizationId(org.id)}
+                  onClick={() => {
+                    if (!staffView) {
+                      onSelectOrganizationId(org.id);
+                    }
+                  }}
                   sx={{
                     px: 2,
                     py: 1.5,
@@ -484,14 +493,16 @@ const AdminOrganizationMasterDetail = ({
                     >
                       {t('admin:org_open_site_btn')}
                     </Button>
-                    <IconButton 
-                      size="small" 
-                      color="error"
-                      onClick={() => onDeleteOrganization(selectedOrg.id)} 
-                      sx={{ border: 1, borderColor: 'error.lighter', borderRadius: 1.5 }}
-                    >
-                      <DeleteOutlineIcon fontSize="small" />
-                    </IconButton>
+                    {!staffView && (
+                      <IconButton 
+                        size="small" 
+                        color="error"
+                        onClick={() => onDeleteOrganization(selectedOrg.id)} 
+                        sx={{ border: 1, borderColor: 'error.lighter', borderRadius: 1.5 }}
+                      >
+                        <DeleteOutlineIcon fontSize="small" />
+                      </IconButton>
+                    )}
                     <IconButton size="small" onClick={onRefresh} sx={{ border: 1, borderColor: 'divider', borderRadius: 1.5 }}>
                       <RefreshOutlinedIcon fontSize="small" />
                     </IconButton>

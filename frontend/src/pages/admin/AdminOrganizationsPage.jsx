@@ -16,6 +16,8 @@ import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetri
 import ActionOverlay from '../../components/ActionOverlay';
 import { useAsyncAction } from '../../hooks/useAsyncAction';
 import { useAdminSystemContext } from '../../stores/AdminStore';
+import { useAuth } from '../../hooks/useAuth';
+import useOrganizationStore from '../../stores/organizationStore';
 
 const ORG_LOCAL_TOUCH_KEY = 'admin-organizations-local-touch';
 
@@ -74,8 +76,12 @@ const AdminOrganizationsPage = () => {
    const [introduction, setIntroduction] = useState(null);
   const { setBreadcrumbs } = useOutletContext();
   const { activeOrgId } = useAdminSystemContext();
+  const { user } = useAuth();
+  const currentOrganization = useOrganizationStore((state) => state.organization);
   const previousActiveOrgIdRef = useRef(null);
   const localTouchRef = useRef(readLocalTouchMap());
+  const isStaffView = user?.role === 'STAFF';
+  const staffOrganizationId = currentOrganization?.id ?? activeOrgId ?? user?.organizationId ?? null;
   
   useEffect(() => {
     setBreadcrumbs?.([{ label: t('nav_organizations'), active: true }]);
@@ -88,6 +94,23 @@ const AdminOrganizationsPage = () => {
   const loadOrganizations = useCallback(async () => {
     setLoading(true);
     try {
+      if (isStaffView) {
+        if (!staffOrganizationId) {
+          setOrganizations([]);
+          return;
+        }
+
+        const row = await adminOrganizationApi.getOrganizationById(staffOrganizationId);
+        const merged = withDefaults({
+          ...currentOrganization,
+          ...row,
+          _localTouchedAt: localTouchRef.current[String(staffOrganizationId)] || null,
+        });
+        setOrganizations([merged]);
+        setSelectedOrganizationId(merged.id);
+        return;
+      }
+
       const rows = await adminOrganizationApi.getOrganizations({ page: 0, size: 100 });
       const touchMap = localTouchRef.current;
       setOrganizations(Array.isArray(rows)
@@ -102,7 +125,7 @@ const AdminOrganizationsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [enqueueSnackbar]);
+  }, [currentOrganization, enqueueSnackbar, isStaffView, staffOrganizationId, t]);
 
   useEffect(() => { loadOrganizations(); }, [loadOrganizations]);
 
@@ -149,6 +172,7 @@ const AdminOrganizationsPage = () => {
   const handleUpdateOrganization = useCallback(async (orgId, payload) => {
     const targetId = orgId || editTarget?.id;
     if (!targetId) return;
+    if (isStaffView && String(targetId) !== String(staffOrganizationId)) return;
 
     const parseIfNeeded = (val) => {
       if (Array.isArray(val)) return val;
@@ -195,9 +219,10 @@ const AdminOrganizationsPage = () => {
         enqueueSnackbar(error?.response?.data?.message || t('org_update_error'), { variant: 'error' });
       }
     });
-  }, [editTarget, enqueueSnackbar, run, t]);
+  }, [editTarget, enqueueSnackbar, isStaffView, run, staffOrganizationId, t]);
 
   const handleDeleteOrganization = useCallback(async (orgId) => {
+    if (isStaffView) return;
     if (!window.confirm(t('org_delete_confirm'))) return;
     // run() provides the pending flag + re-entrancy lock + overlay; the handler
     // already shows its own snackbar, so swallow to avoid a duplicate one.
@@ -210,10 +235,11 @@ const AdminOrganizationsPage = () => {
         enqueueSnackbar(error?.response?.data?.message || t('org_delete_error'), { variant: 'error' });
       }
     });
-  }, [enqueueSnackbar, run, t]);
+  }, [enqueueSnackbar, isStaffView, run, t]);
 
   const handleUpdateIntroduction = useCallback(async (payload) => {
     if (!selectedOrganizationId) return;
+    if (isStaffView && String(selectedOrganizationId) !== String(staffOrganizationId)) return;
     await run(async () => {
       try {
         const updated = await adminOrganizationApi.upsertIntroduction(selectedOrganizationId, payload);
@@ -224,7 +250,7 @@ const AdminOrganizationsPage = () => {
         enqueueSnackbar(error?.response?.data?.message || t('org_intro_update_error'), { variant: 'error' });
       }
     });
-  }, [selectedOrganizationId, introduction, enqueueSnackbar, run, t]);
+  }, [selectedOrganizationId, introduction, enqueueSnackbar, isStaffView, run, staffOrganizationId, t]);
 
   const handlePromoteOrganization = useCallback((orgId) => {
     const touchedAt = new Date().toISOString();
@@ -252,6 +278,7 @@ const AdminOrganizationsPage = () => {
   }, [organizations]);
 
   const handleCreateOrganization = useCallback(async (payload) => {
+    if (isStaffView) return;
     await run(async () => {
       try {
         const created = await adminOrganizationApi.createOrganization(payload);
@@ -274,7 +301,7 @@ const AdminOrganizationsPage = () => {
         enqueueSnackbar(error?.response?.data?.message || t('org_create_error'), { variant: 'error' });
       }
     });
-  }, [enqueueSnackbar, run, t]);
+  }, [enqueueSnackbar, isStaffView, run, t]);
 
   if (loading && organizations.length === 0) {
     return (
@@ -301,49 +328,54 @@ const AdminOrganizationsPage = () => {
             {t('org_page_subtitle')}
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          disabled={pending}
-          onClick={() => { setEditTarget(null); setEditDialogOpen(true); }}
-          sx={{ borderRadius: 1, fontWeight: 700, textTransform: 'none' }}
-        >
-          {t('org_add_btn')}
-        </Button>
+        {!isStaffView && (
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            disabled={pending}
+            onClick={() => { setEditTarget(null); setEditDialogOpen(true); }}
+            sx={{ borderRadius: 1, fontWeight: 700, textTransform: 'none' }}
+          >
+            {t('org_add_btn')}
+          </Button>
+        )}
       </Box>
 
-      <Box
-        sx={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: 3,
-          mb: 4,
-          '& > *': {
-            flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 0' },
-          },
-        }}
-      >
-        <AdminDashboardMetricTile
-          label={t('metric_total_orgs')}
-          value={stats.total}
-          icon={<BusinessIcon />}
-        />
-        <AdminDashboardMetricTile
-          label={t('metric_active_orgs')}
-          value={stats.active}
-          icon={<CheckCircleIcon />}
-          valueColor="success.main"
-        />
-        <AdminDashboardMetricTile
-          label={t('org_metric_suspended')}
-          value={stats.inactive}
-          icon={<ErrorIcon />}
-          valueColor="error.main"
-        />
-      </Box>
+      {!isStaffView && (
+        <Box
+          sx={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 3,
+            mb: 4,
+            '& > *': {
+              flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 0' },
+            },
+          }}
+        >
+          <AdminDashboardMetricTile
+            label={t('metric_total_orgs')}
+            value={stats.total}
+            icon={<BusinessIcon />}
+          />
+          <AdminDashboardMetricTile
+            label={t('metric_active_orgs')}
+            value={stats.active}
+            icon={<CheckCircleIcon />}
+            valueColor="success.main"
+          />
+          <AdminDashboardMetricTile
+            label={t('org_metric_suspended')}
+            value={stats.inactive}
+            icon={<ErrorIcon />}
+            valueColor="error.main"
+          />
+        </Box>
+      )}
 
       <AdminOrganizationMasterDetail
         organizations={organizations}
+        staffView={isStaffView}
         selectedOrganizationId={selectedOrganizationId}
         onSelectOrganizationId={setSelectedOrganizationId}
         selectedOrganization={selectedOrganization}
