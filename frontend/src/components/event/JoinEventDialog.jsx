@@ -78,7 +78,13 @@ const JoinEventDialog = ({
   const hasQuestions = questions.length > 0;
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+      onClick={(e) => e.stopPropagation()}
+    >
       <DialogTitle fontWeight={700}>{t('event:confirm_join_title')}</DialogTitle>
 
       <DialogContent>
