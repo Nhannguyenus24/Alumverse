@@ -1227,6 +1227,12 @@ const mentorshipApi = {
 		return apiClient.post(`${BASE_MENTEE}/sessions/book`, payload);
 	},
 
+	checkBookingConflicts(availabilityId) {
+		return apiClient.get(`${BASE_MENTEE}/sessions/check-conflict`, {
+			params: { availabilityId },
+		});
+	},
+
 	getMyMenteeSessions(params = {}) {
 		return apiClient.get(`${BASE_MENTEE}/sessions`, { params });
 	},
@@ -1366,6 +1372,7 @@ export const {
 	getMentorAvailableSlots,
 	getMentorFeedbacks,
 	bookSession,
+	checkBookingConflicts,
 	getMyMenteeSessions,
 	cancelSession,
 	respondReschedule,

@@ -131,6 +131,14 @@ public class MenteeController {
                         .body(new ApiResponse<>("Session booked successfully", response)));
     }
 
+    @GetMapping("/sessions/check-conflict")
+    public Mono<ResponseEntity<ApiResponse<SessionConflictResponse>>> checkBookingConflicts(
+            @RequestParam @Min(1) Integer availabilityId) {
+        return menteeService.checkBookingConflicts(availabilityId)
+                .map(response -> ResponseEntity
+                        .ok(new ApiResponse<>("Conflict check completed", response)));
+    }
+
     @GetMapping("/sessions")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<MentorshipSessionResponse>>>> getMySessions(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,

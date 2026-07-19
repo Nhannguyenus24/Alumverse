@@ -383,6 +383,27 @@ public class MenteeService {
                                 .flatMap(this::enrich)));
     }
 
+    public Mono<SessionConflictResponse> checkBookingConflicts(Integer availabilityId) {
+        return currentMemberId().flatMap(memberId ->
+                availabilityRepository.findById(availabilityId)
+                        .switchIfEmpty(Mono.error(new ApplicationException(
+                                ErrorCode.AVAILABILITY_NOT_FOUND, "Lịch trống không tồn tại")))
+                        .flatMap(availability -> sessionRepository.findMenteeOverlapping(
+                                        memberId, availability.getStartTime(), availability.getEndTime())
+                                .map(c -> SessionConflictResponse.Conflict.builder()
+                                        .sessionId(c.getSessionId())
+                                        .mentorMemberId(c.getMentorMemberId())
+                                        .mentorName(c.getMentorName())
+                                        .startTime(c.getStartTime())
+                                        .endTime(c.getEndTime())
+                                        .build())
+                                .collectList()
+                                .map(list -> SessionConflictResponse.builder()
+                                        .hasConflict(!list.isEmpty())
+                                        .conflicts(list)
+                                        .build())));
+    }
+
 
     public Mono<PaginatedResponse<MentorshipSessionResponse>> getMySessions(int page, int limit) {
         int offset = page * limit;
