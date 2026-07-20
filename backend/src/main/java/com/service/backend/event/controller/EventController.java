@@ -278,8 +278,8 @@ public class EventController {
                 .map(t -> ResponseEntity.ok(new ApiResponse<>("My tickets retrieved successfully", t)));
     }
 
+    @PublicEndpoint
     @GetMapping("/{eventId}/statistics")
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     public Mono<ResponseEntity<ApiResponse<EventStatisticsResponse>>> getEventStatistics(
             @Parameter(example = "1") @PathVariable @Min(1) Long eventId) {
         return eventService.getEventStatistics(eventId)

@@ -1,0 +1,60 @@
+@startuml
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 15
+skinparam dpi 150
+skinparam shadowing false
+skinparam nodesep 12
+skinparam ranksep 26
+skinparam wrapWidth 260
+skinparam ArrowColor #4A5568
+skinparam usecase {
+  BackgroundColor #EAF3FB
+  BorderColor #2B6CB0
+  FontSize 15
+}
+skinparam actor {
+  BackgroundColor #FFFFFF
+  BorderColor #2B3A55
+  FontSize 15
+}
+skinparam rectangle {
+  BorderColor #2B3A55
+  FontStyle bold
+  FontSize 16
+}
+skinparam package {
+  BackgroundColor #F7FAFC
+  BorderColor #A0AEC0
+  FontSize 14
+  FontStyle italic
+}
+
+left to right direction
+actor "Khách vãng lai" as AC
+rectangle "Hệ thống AlumVerse 2026" {
+  package "Nội dung công khai và tài khoản" {
+    usecase "Xem tin tức của đơn vị" as U0
+    usecase "Xem bài viết cựu sinh viên tiêu biểu" as U1
+    usecase "Xem vinh danh thành tích" as U2
+    usecase "Xem danh sách sự kiện sắp diễn ra" as U3
+    usecase "Xem giới thiệu chương trình và ngành đào tạo" as U4
+    usecase "Chọn đơn vị để truy cập" as U5
+    usecase "Đăng ký tài khoản" as U6
+    usecase "Kích hoạt tài khoản bằng mã OTP" as U7
+    usecase "Đăng nhập và duy trì phiên" as U8
+    usecase "Xác minh chống bot" as U9
+    usecase "Khôi phục mật khẩu qua email" as U10
+  }
+}
+AC --> U0
+AC --> U1
+AC --> U2
+AC --> U3
+AC --> U4
+AC --> U5
+AC --> U6
+AC --> U8
+AC --> U10
+U6 ..> U7 : <<include>>
+U8 ..> U9 : <<include>>
+@enduml
