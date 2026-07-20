@@ -20,6 +20,7 @@ import dev from './dev.json';
 import settings from './settings.json';
 import survey from './survey.json';
 import comment from './comment.json';
+import errors from './errors.json';
 
 const enResources = {
   common,
@@ -42,6 +43,7 @@ const enResources = {
   settings,
   survey,
   comment,
+  errors,
 };
 
 export default enResources;

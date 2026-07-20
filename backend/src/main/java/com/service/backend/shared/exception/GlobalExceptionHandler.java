@@ -34,21 +34,28 @@ public class GlobalExceptionHandler {
         this.meterRegistry = meterRegistry;
     }
 
+    /**
+     * Build an error response that always carries a stable {@code errorCode}. The frontend maps
+     * this code to a localized message (see errors i18n namespace) and only falls back to
+     * {@code message} when no translation key exists — so every error path must set a code.
+     */
+    private Mono<ResponseEntity<?>> buildError(int status, String errorCode, String message, Object data) {
+        ApiResponse<Object> response = new ApiResponse<>(message, data);
+        response.setErrorCode(errorCode);
+        return Mono.just(ResponseEntity.status(status).body(response));
+    }
+
     @ExceptionHandler(WebExchangeBindException.class)
     public Mono<ResponseEntity<?>> handleValidationException(WebExchangeBindException ex) {
         meterRegistry.counter("api.errors.count", "error_code", "VALIDATION_FAILED").increment();
-        
+
         Map<String, String> errors = new HashMap<>();
         ex.getBindingResult().getAllErrors().forEach(error -> {
             String fieldName = ((FieldError) error).getField();
             String errorMessage = error.getDefaultMessage();
             errors.put(fieldName, errorMessage);
         });
-        return Mono.just(
-                ResponseEntity
-                        .status(400)
-                        .body(new ApiResponse<>("Validation failed", errors))
-        );
+        return buildError(400, "VALIDATION_FAILED", "Validation failed", errors);
     }
 
     @ExceptionHandler(ApplicationException.class)
@@ -70,11 +77,7 @@ public class GlobalExceptionHandler {
     public Mono<ResponseEntity<?>> handleIllegalArgumentException(IllegalArgumentException ex) {
         meterRegistry.counter("api.errors.count", "error_code", "BAD_REQUEST").increment();
 
-        return Mono.just(
-                ResponseEntity
-                        .status(400)
-                        .body(new ApiResponse<>(ex.getMessage(), null))
-        );
+        return buildError(400, "BAD_REQUEST", ex.getMessage(), null);
     }
 
     @ExceptionHandler(NoResourceFoundException.class)
@@ -82,12 +85,8 @@ public class GlobalExceptionHandler {
         log.warn("Resource not found: {}", ex.getMessage());
         
         meterRegistry.counter("api.errors.count", "error_code", "NOT_FOUND").increment();
-        
-        return Mono.just(
-                ResponseEntity
-                        .status(404)
-                        .body(new ApiResponse<>("Not found", ex.getMessage()))
-        );
+
+        return buildError(404, "NOT_FOUND", "Not found", ex.getMessage());
     }
 
     /**
@@ -101,11 +100,7 @@ public class GlobalExceptionHandler {
 
         meterRegistry.counter("api.errors.count", "error_code", "FORBIDDEN").increment();
 
-        return Mono.just(
-                ResponseEntity
-                        .status(403)
-                        .body(new ApiResponse<>("Bạn không có quyền thực hiện thao tác này", null))
-        );
+        return buildError(403, "FORBIDDEN", "Bạn không có quyền thực hiện thao tác này", null);
     }
 
     /**
@@ -126,11 +121,7 @@ public class GlobalExceptionHandler {
 
         meterRegistry.counter("api.errors.count", "error_code", "HTTP_" + status).increment();
 
-        return Mono.just(
-                ResponseEntity
-                        .status(status)
-                        .body(new ApiResponse<>(ex.getReason(), null))
-        );
+        return buildError(status, "HTTP_" + status, ex.getReason(), null);
     }
 
     @ExceptionHandler(Exception.class)
@@ -138,11 +129,7 @@ public class GlobalExceptionHandler {
         log.error("Unhandled exception occurred: {}", ex.getMessage(), ex);
         
         meterRegistry.counter("api.errors.count", "error_code", "INTERNAL_SERVER_ERROR").increment();
-        
-        return Mono.just(
-                ResponseEntity
-                        .status(500)
-                        .body(new ApiResponse<>("Internal server error", ex.getMessage()))
-        );
+
+        return buildError(500, "INTERNAL_SERVER_ERROR", "Internal server error", ex.getMessage());
     }
 }
