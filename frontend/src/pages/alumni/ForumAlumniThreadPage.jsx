@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import DOMPurify from "dompurify";
 import { useTranslation } from "react-i18next";
 import { useLocation, useParams } from "react-router";
 import {
@@ -55,7 +56,7 @@ import EditPostDialog from "../../components/forum/EditPostDialog";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import WYSIWYG from "../../components/WYSIWYG";
 import { formatDateTime } from "../../utils/dateFormatter";
-import { toPlainText } from "../../utils/stringUtils";
+import { toPlainText, normalizeNbsp } from "../../utils/stringUtils";
 import ReportPostDialog from "../../components/forum/ReportPostDialog";
 import {
   ScrollReveal,
@@ -221,10 +222,10 @@ const ForumReply = ({
             px: 0,
             py: 0,
             lineHeight: 1.7,
-            "&.ql-editor": { p: 0 },
-            "& p": { my: 0.75 },
+            "&.ql-editor": { p: 0, overflowWrap: "normal", wordBreak: "normal", hyphens: "none" },
+            "& p": { m: 0, "&:not(:last-child)": { mb: "1em" } },
           }}
-          dangerouslySetInnerHTML={{ __html: reply.content || "" }}
+          dangerouslySetInnerHTML={{ __html: normalizeNbsp(DOMPurify.sanitize(reply.content || "")) }}
         />
         <Box
           sx={{
