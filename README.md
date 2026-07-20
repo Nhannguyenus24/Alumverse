@@ -42,13 +42,17 @@ Before running the project, you must provide your own credentials and URLs. Repl
 - `YOUR_GOOGLE_CLIENT_ID`: Google OAuth2 Client ID.
 - `YOUR_IMAGE_BASE_URL`: Base URL for fetching images.
 
+### Nginx (Production only)
+- `YOUR_DOMAIN`: If deploying to production, replace all occurrences of `YOUR_DOMAIN` in `nginx.prod.conf` with your actual domain name and ensure you have valid SSL certificates in the `/etc/letsencrypt/live/YOUR_DOMAIN/` directory.
+
 ## Setup Instructions
 
-### 1. Database Configuration
-The database (PostgreSQL) can be started using Docker Compose from the root of the project:
+### 1. Database & Nginx Configuration
+The database (PostgreSQL) and Nginx can be started using Docker Compose from the root of the project:
 ```bash
-docker-compose up -d db
+docker-compose up -d
 ```
+*Note: By default, `docker-compose.yml` mounts `nginx.conf` for local development. If you are deploying to production, rename or copy `nginx.prod.conf` to `nginx.conf` before starting Docker.*
 
 ### 2. Backend (Java Spring Boot)
 Navigate to the `backend` directory and run the application:
