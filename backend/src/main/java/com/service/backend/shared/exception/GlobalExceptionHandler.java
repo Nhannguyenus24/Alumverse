@@ -51,9 +51,14 @@ public class GlobalExceptionHandler {
 
         Map<String, String> errors = new HashMap<>();
         ex.getBindingResult().getAllErrors().forEach(error -> {
-            String fieldName = ((FieldError) error).getField();
+            String key;
+            if (error instanceof FieldError fieldError) {
+                key = fieldError.getField();
+            } else {
+                key = error.getObjectName();
+            }
             String errorMessage = error.getDefaultMessage();
-            errors.put(fieldName, errorMessage);
+            errors.put(key, errorMessage);
         });
         return buildError(400, "VALIDATION_FAILED", "Validation failed", errors);
     }
@@ -130,6 +135,6 @@ public class GlobalExceptionHandler {
         
         meterRegistry.counter("api.errors.count", "error_code", "INTERNAL_SERVER_ERROR").increment();
 
-        return buildError(500, "INTERNAL_SERVER_ERROR", "Internal server error", ex.getMessage());
+        return buildError(500, "INTERNAL_SERVER_ERROR", "Internal server error", null);
     }
 }
