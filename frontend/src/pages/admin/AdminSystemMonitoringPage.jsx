@@ -43,6 +43,7 @@ import ErrorOutlineOutlinedIcon from '@mui/icons-material/ErrorOutlineOutlined';
 import SpeedOutlinedIcon from '@mui/icons-material/SpeedOutlined';
 import TimerOutlinedIcon from '@mui/icons-material/TimerOutlined';
 import AccessTimeOutlinedIcon from '@mui/icons-material/AccessTimeOutlined';
+import PeopleAltOutlinedIcon from '@mui/icons-material/PeopleAltOutlined';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 import dayjs from 'dayjs';
@@ -101,7 +102,14 @@ const QUERIES = {
   // --- SSE (real-time push) metrics ---
   sseActiveConnections: 'sum(sse_active_connections)',
   sseActiveUsers: 'sum(sse_active_users)',
-  sseEventsRate: 'sum(rate(sse_events_sent_total[5m]))'
+  sseEventsRate: 'sum(rate(sse_events_sent_total[5m]))',
+
+  // --- AI (LLM) latency metrics ---
+  aiLatencyAvg: '(sum(rate(ai_generate_time_seconds_sum[5m])) / sum(rate(ai_generate_time_seconds_count[5m]))) * 1000',
+  aiLatencyP50: 'histogram_quantile(0.50, sum(rate(ai_generate_time_seconds_bucket[5m])) by (le)) * 1000',
+  aiLatencyP95: 'histogram_quantile(0.95, sum(rate(ai_generate_time_seconds_bucket[5m])) by (le)) * 1000',
+  aiLatencyP99: 'histogram_quantile(0.99, sum(rate(ai_generate_time_seconds_bucket[5m])) by (le)) * 1000',
+  aiCallRate: 'sum(rate(ai_generate_count_total[5m]))'
 };
 
 const buildHuePalette = (count, { baseHue = 210, saturation = 68, lightness = 55 } = {}) => {
@@ -144,14 +152,6 @@ const monitoringMetricGridSx = {
   '& > *': {
     minWidth: 0,
     height: '100%',
-  },
-};
-
-const monitoringMetricPairGridSx = {
-  ...monitoringMetricGridSx,
-  gridTemplateColumns: {
-    xs: '1fr',
-    md: 'repeat(2, minmax(0, 1fr))',
   },
 };
 
@@ -290,10 +290,11 @@ const AdminSystemMonitoringPage = () => {
   const [chartData, setChartData] = useState([]);
   const [endpointStats, setEndpointStats] = useState([]);
   const [exceptionStats, setExceptionStats] = useState([]);
-  const [summaryStats, setSummaryStats] = useState({ totalRequests: 0, totalErrors: 0, errorRate: 0, avgLatency: 0, uptimeSeconds: 0 });
+  const [summaryStats, setSummaryStats] = useState({ totalRequests: 0, totalErrors: 0, errorRate: 0, avgLatency: 0, uptimeSeconds: 0, onlineUsers: 0 });
   const [availableErrorCodes, setAvailableErrorCodes] = useState([]);
   const [availableStatusCodes, setAvailableStatusCodes] = useState([]);
   const [availableSseEvents, setAvailableSseEvents] = useState([]);
+  const [availableEmailTemplates, setAvailableEmailTemplates] = useState([]);
   const [isolatedSeries, setIsolatedSeries] = useState({});
   const [error, setError] = useState(null);
 
@@ -400,10 +401,17 @@ const AdminSystemMonitoringPage = () => {
         totalErrorsRes,
         currentAvgLatencyRes,
         uptimeRes,
+        onlineUsersRes,
         sseActiveConnectionsData,
         sseActiveUsersData,
         sseEventsRateData,
-        sseEventsByTypeRes
+        sseEventsByTypeRes,
+        aiLatAvgData,
+        aiLatP50Data,
+        aiLatP95Data,
+        aiLatP99Data,
+        aiCallRateData,
+        emailByTemplateRes
       ] = await Promise.all([
         fetchPrometheusRange(QUERIES.requestRate, start, end, step),
         fetchPrometheusRange(QUERIES.errorRate, start, end, step),
@@ -451,10 +459,17 @@ const AdminSystemMonitoringPage = () => {
         fetchPrometheusInstant(`sum(http_endpoint_errors_total)`, end),
         fetchPrometheusInstant(`sum(rate(http_endpoint_latency_seconds_sum[5m])) / sum(rate(http_endpoint_latency_seconds_count[5m])) * 1000`, end),
         fetchPrometheusInstant(`process_uptime_seconds`, end),
+        fetchPrometheusInstant(QUERIES.sseActiveUsers, end),
         fetchPrometheusRange(QUERIES.sseActiveConnections, start, end, step),
         fetchPrometheusRange(QUERIES.sseActiveUsers, start, end, step),
         fetchPrometheusRange(QUERIES.sseEventsRate, start, end, step),
-        fetchPrometheusRangeMultiple(`sum by (event) (rate(sse_events_sent_total[5m]))`, start, end, step)
+        fetchPrometheusRangeMultiple(`sum by (event) (rate(sse_events_sent_total[5m]))`, start, end, step),
+        fetchPrometheusRange(QUERIES.aiLatencyAvg, start, end, step),
+        fetchPrometheusRange(QUERIES.aiLatencyP50, start, end, step),
+        fetchPrometheusRange(QUERIES.aiLatencyP95, start, end, step),
+        fetchPrometheusRange(QUERIES.aiLatencyP99, start, end, step),
+        fetchPrometheusRange(QUERIES.aiCallRate, start, end, step),
+        fetchPrometheusRangeMultiple(`sum by (template) (rate(email_send_count_total[5m]))`, start, end, step)
       ]);
 
       // Merge time-series data
@@ -517,6 +532,12 @@ const AdminSystemMonitoringPage = () => {
       processSeries(sseActiveConnectionsData, 'sseActiveConnections');
       processSeries(sseActiveUsersData, 'sseActiveUsers');
       processSeries(sseEventsRateData, 'sseEventsRate');
+      // AI (LLM) latency metrics
+      processSeries(aiLatAvgData, 'aiLatAvg');
+      processSeries(aiLatP50Data, 'aiLatP50');
+      processSeries(aiLatP95Data, 'aiLatP95');
+      processSeries(aiLatP99Data, 'aiLatP99');
+      processSeries(aiCallRateData, 'aiCallRate');
 
       const errorCodesSet = new Set();
       if (exceptionTimeSeriesRes) {
@@ -579,6 +600,27 @@ const AdminSystemMonitoringPage = () => {
       }
       setAvailableSseEvents(Array.from(sseEventsSet));
 
+      // Email sends broken down by template code (OTP_EMAIL_TEMPLATE, eventReminder, raw, ...)
+      const emailTemplatesSet = new Set();
+      if (emailByTemplateRes) {
+        emailByTemplateRes.forEach(seriesObj => {
+          const templateName = seriesObj.metric.template || 'UNKNOWN';
+          const key = `email_tpl_${templateName}`;
+          emailTemplatesSet.add(templateName);
+
+          seriesObj.values.forEach(([timestamp, value]) => {
+            const t = parseInt(timestamp, 10);
+            if (!mergedMap.has(t)) {
+              mergedMap.set(t, { time: t, timeFormatted: dayjs(t * 1000).format(formatString) });
+            }
+            let numVal = parseFloat(value);
+            if (isNaN(numVal)) numVal = 0;
+            mergedMap.get(t)[key] = numVal;
+          });
+        });
+      }
+      setAvailableEmailTemplates(Array.from(emailTemplatesSet));
+
       const mergedArray = Array.from(mergedMap.values()).sort((a, b) => a.time - b.time);
       setChartData(mergedArray);
 
@@ -622,13 +664,15 @@ const AdminSystemMonitoringPage = () => {
       const totalErr = totalErrorsRes.length > 0 ? parseFloat(totalErrorsRes[0].value[1]) : 0;
       const curAvgLat = currentAvgLatencyRes.length > 0 ? parseFloat(currentAvgLatencyRes[0].value[1]) : 0;
       const uptimeSec = uptimeRes.length > 0 ? parseFloat(uptimeRes[0].value[1]) : 0;
+      const onlineUsersNow = onlineUsersRes.length > 0 ? parseFloat(onlineUsersRes[0].value[1]) : 0;
 
       setSummaryStats({
         totalRequests: totalReq,
         totalErrors: totalErr,
         errorRate: totalReq > 0 ? (totalErr / totalReq) * 100 : 0,
         avgLatency: curAvgLat,
-        uptimeSeconds: uptimeSec
+        uptimeSeconds: uptimeSec,
+        onlineUsers: Number.isFinite(onlineUsersNow) ? onlineUsersNow : 0
       });
 
     } catch (err) {
@@ -766,6 +810,12 @@ const AdminSystemMonitoringPage = () => {
             <Stack spacing={3}>
               <Box sx={monitoringMetricGridSx}>
                 <AdminDashboardMetricTile
+                  label={t('admin:system_monitoring.online_users_now', 'Online Users Now')}
+                  value={Math.round(summaryStats.onlineUsers).toLocaleString()}
+                  icon={<PeopleAltOutlinedIcon />}
+                  sx={{ flex: 'unset', borderRadius: 2.5 }}
+                />
+                <AdminDashboardMetricTile
                   label={t('admin:system_monitoring.total_requests_all_time')}
                   value={summaryStats.totalRequests.toLocaleString()}
                   icon={<QueryStatsOutlinedIcon />}
@@ -777,14 +827,14 @@ const AdminSystemMonitoringPage = () => {
                   icon={<TimerOutlinedIcon />}
                   sx={{ flex: 'unset', borderRadius: 2.5 }}
                 />
+              </Box>
+              <Box sx={monitoringMetricGridSx}>
                 <AdminDashboardMetricTile
                   label={t('admin:system_monitoring.uptime')}
                   value={formatUptime(summaryStats.uptimeSeconds)}
                   icon={<AccessTimeOutlinedIcon />}
                   sx={{ flex: 'unset', borderRadius: 2.5 }}
                 />
-              </Box>
-              <Box sx={monitoringMetricPairGridSx}>
                 <AdminDashboardMetricTile
                   label={t('admin:system_monitoring.total_errors_all_time')}
                   value={summaryStats.totalErrors.toLocaleString()}
@@ -1310,6 +1360,69 @@ const AdminSystemMonitoringPage = () => {
                             type="monotone"
                             dataKey={dataKey}
                             name={eventName}
+                            stackId="1"
+                            stroke={color}
+                            fill={color}
+                            fillOpacity={0.6}
+                            hide={isIsolated && isIsolated !== dataKey}
+                          />
+                        );
+                      })}
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </Box>
+              </AdminSectionPanel>
+
+              {/* AI Service Latency (LLM generate calls) */}
+              <AdminSectionPanel
+                title={t('admin:system_monitoring.ai_latency', 'AI Service Latency (ms)')}
+                subtitle={t('admin:system_monitoring.ai_latency_desc', 'Latency of LLM generate calls (moderation, extraction, insights, vision)')}
+                sx={monitoringPanelSx}
+              >
+                <Box sx={monitoringChartBoxSx}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData}>
+                      <CartesianGrid {...gridProps} />
+                      <XAxis dataKey="timeFormatted" minTickGap={30} {...axisProps} />
+                      <YAxis {...axisProps} width={45} />
+                      <RechartsTooltip content={renderTooltip} />
+                      <Legend onClick={(e) => handleLegendClick('aiLatency', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
+                      <Line type="monotone" dot={false} dataKey="aiLatAvg" name={t("admin:system_monitoring.avg_latency")} stroke={theme.palette.success.main} strokeWidth={2.5} hide={isolatedSeries['aiLatency'] && isolatedSeries['aiLatency'] !== 'aiLatAvg'} />
+                      <Line type="monotone" dot={false} dataKey="aiLatP50" name={t("admin:system_monitoring.p50_latency")} stroke={theme.palette.info.main} strokeWidth={2.5} hide={isolatedSeries['aiLatency'] && isolatedSeries['aiLatency'] !== 'aiLatP50'} />
+                      <Line type="monotone" dot={false} dataKey="aiLatP95" name={t("admin:system_monitoring.p95_latency")} stroke={theme.palette.secondary.main} strokeWidth={2.5} hide={isolatedSeries['aiLatency'] && isolatedSeries['aiLatency'] !== 'aiLatP95'} />
+                      <Line type="monotone" dot={false} dataKey="aiLatP99" name={t("admin:system_monitoring.p99_latency")} stroke={theme.palette.warning.main} strokeWidth={2.5} hide={isolatedSeries['aiLatency'] && isolatedSeries['aiLatency'] !== 'aiLatP99'} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Box>
+              </AdminSectionPanel>
+
+              {/* Email Sends by Template (per-template counter rate) */}
+              <AdminSectionPanel
+                title={t('admin:system_monitoring.email_by_template', 'Email Sends by Template (/s)')}
+                subtitle={t('admin:system_monitoring.email_by_template_desc', 'Rate of emails sent, broken down by template code')}
+                sx={monitoringPanelSx}
+              >
+                <Box sx={monitoringChartBoxSx}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={chartData}>{renderDefs()}
+                      <CartesianGrid {...gridProps} />
+                      <XAxis dataKey="timeFormatted" minTickGap={30} {...axisProps} />
+                      <YAxis {...axisProps} width={45} />
+                      <RechartsTooltip content={renderTooltip} />
+                      <Legend onClick={(e) => handleLegendClick('emailTemplates', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
+                      {availableEmailTemplates.length === 0 && (
+                        <Area type="monotone" dataKey="__none__" name={t("admin:system_monitoring.no_data")} stroke={theme.palette.success.main} fill="url(#area-success)" strokeWidth={2.5} />
+                      )}
+                      {availableEmailTemplates.map((templateName, idx) => {
+                        const dataKey = `email_tpl_${templateName}`;
+                        const isIsolated = isolatedSeries['emailTemplates'];
+                        const color = chartColors[idx % chartColors.length];
+                        return (
+                          <Area
+                            key={templateName}
+                            type="monotone"
+                            dataKey={dataKey}
+                            name={templateName}
                             stackId="1"
                             stroke={color}
                             fill={color}
