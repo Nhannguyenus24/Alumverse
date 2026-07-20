@@ -1,0 +1,30 @@
+=== HƯỚNG DẪN CÀI ĐẶT ===
+
+1. YÊU CẦU CÔNG CỤ VÀ MÔI TRƯỜNG PHÁT TRIỂN:
+- Node.js (phiên bản LTS mới nhất): Dùng để phát triển và chạy Frontend.
+- Java 17 (JDK 17): Dùng để phát triển và chạy Backend (Spring Boot).
+- Docker & Docker Compose: Dùng để chạy cơ sở dữ liệu (PostgreSQL), Nginx và các dịch vụ hạ tầng (Prometheus).
+- Flutter SDK: Dùng để phát triển ứng dụng Mobile.
+
+2. CẤU HÌNH MÔI TRƯỜNG (.env & properties):
+- Frontend: 
+  + Vào thư mục 'frontend'.
+  + Tạo hoặc copy file '.env', điền các thông số: VITE_API_BASE_URL, VITE_WS_CHAT_URL, VITE_GOOGLE_CLIENT_ID, VITE_RECAPTCHA_SITE_KEY.
+- Backend: 
+  + Vào thư mục 'backend/src/main/resources/'.
+  + Mở file 'application.properties', điền/kiểm tra các thông số: spring.r2dbc.* (kết nối DB), spring.flyway.*, jwt.secret, google.oauth.client-id, gemini.api.key.
+
+3. HƯỚNG DẪN CÀI ĐẶT THƯ VIỆN:
+* Frontend (ReactJS/Vite):
+  - Mở terminal.
+  - Di chuyển vào thư mục frontend: cd frontend
+  - Chạy lệnh cài đặt các package npm: npm i --legacy-peer-deps
+
+* Backend (Spring Boot/Maven):
+  - Các thư viện được quản lý tự động bởi Maven.
+  - Không cần cài đặt thủ công, Maven sẽ tự động tải thư viện khi bạn biên dịch hoặc chạy dự án.
+
+* Mobile (Flutter):
+  - Mở terminal.
+  - Di chuyển vào thư mục mobile_flutter: cd mobile_flutter
+  - Chạy lệnh cài thư viện: flutter pub get
