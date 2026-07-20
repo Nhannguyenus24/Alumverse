@@ -130,6 +130,7 @@ class NewsServiceTest {
 
             when(newsRepository.findById(1)).thenReturn(Mono.just(existing), Mono.just(published));
             when(newsRepository.publishNews(1)).thenReturn(Mono.just(1));
+            when(cacheUtils.clear(anyString())).thenReturn(Mono.empty());
 
             StepVerifier.create(newsService.publish(1)
                             .contextWrite(adminContext()))
@@ -162,6 +163,7 @@ class NewsServiceTest {
 
             when(newsRepository.findById(1)).thenReturn(Mono.just(existing), Mono.just(hidden));
             when(newsRepository.hideNews(1)).thenReturn(Mono.just(1));
+            when(cacheUtils.clear(anyString())).thenReturn(Mono.empty());
 
             StepVerifier.create(newsService.hide(1)
                             .contextWrite(adminContext()))

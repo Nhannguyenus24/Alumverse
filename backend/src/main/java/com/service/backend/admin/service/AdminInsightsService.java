@@ -8,6 +8,7 @@ import com.service.backend.admin.dto.FunnelStatsDTO;
 import com.service.backend.admin.dto.PlatformStatsDTO;
 import com.service.backend.admin.dto.StatPoint;
 import com.service.backend.shared.projection.KeyCountProjection;
+import com.service.backend.shared.utils.CacheNames;
 import com.service.backend.shared.utils.CacheUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -65,7 +66,7 @@ public class AdminInsightsService {
     // ----------------------------- funnels -----------------------------
 
     public Mono<FunnelStatsDTO> getFunnels() {
-        return cacheUtils.getOrCompute("admin:funnels", "global", TTL, this::computeFunnels);
+        return cacheUtils.getOrCompute(CacheNames.ADMIN_FUNNELS, "global", TTL, this::computeFunnels);
     }
 
     private Mono<FunnelStatsDTO> computeFunnels() {
@@ -150,7 +151,7 @@ public class AdminInsightsService {
     // ----------------------------- cohort ------------------------------
 
     public Mono<CohortStatsDTO> getCohorts() {
-        return cacheUtils.getOrCompute("admin:cohorts", "global", TTL, this::computeCohorts);
+        return cacheUtils.getOrCompute(CacheNames.ADMIN_COHORTS, "global", TTL, this::computeCohorts);
     }
 
     private Mono<CohortStatsDTO> computeCohorts() {
@@ -174,7 +175,7 @@ public class AdminInsightsService {
     // --------------------------- engagement ----------------------------
 
     public Mono<EngagementStatsDTO> getEngagement() {
-        return cacheUtils.getOrCompute("admin:engagement", "global", TTL, this::computeEngagement);
+        return cacheUtils.getOrCompute(CacheNames.ADMIN_ENGAGEMENT, "global", TTL, this::computeEngagement);
     }
 
     private Mono<EngagementStatsDTO> computeEngagement() {
@@ -210,7 +211,7 @@ public class AdminInsightsService {
     // ---------------------------- platform -----------------------------
 
     public Mono<PlatformStatsDTO> getPlatform() {
-        return cacheUtils.getOrCompute("admin:platform", "global", TTL, this::computePlatform);
+        return cacheUtils.getOrCompute(CacheNames.ADMIN_PLATFORM, "global", TTL, this::computePlatform);
     }
 
     private Mono<PlatformStatsDTO> computePlatform() {

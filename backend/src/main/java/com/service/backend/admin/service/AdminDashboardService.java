@@ -9,6 +9,7 @@ import com.service.backend.fundraising.dao.FundDonationsR2dbcRepository;
 import com.service.backend.admin.dto.DashboardMetricsDTO;
 import com.service.backend.admin.dto.ActivityItemDTO;
 import com.service.backend.shared.entity.User;
+import com.service.backend.shared.utils.CacheNames;
 import com.service.backend.shared.utils.CacheUtils;
 import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.dto.PaginatedResponse;
@@ -83,7 +84,7 @@ public class AdminDashboardService {
                     .doOnSuccess(dto -> log.info("getMetrics result: {}", JsonUtils.toJson(dto)));
         };
 
-        return cacheUtils.getOrCompute("admin:metrics", "global", Duration.ofMinutes(5), supplier);
+        return cacheUtils.getOrCompute(CacheNames.ADMIN_METRICS, "global", Duration.ofMinutes(5), supplier);
     }
 
     public Mono<PaginatedResponse<ActivityItemDTO>> getActivities(Integer organizationId, int page, int size) {
@@ -102,9 +103,9 @@ public class AdminDashboardService {
             total = adminAuditLogRepository.countAdminActionLogs(null, null, null);
         }
 
-        String cacheKey = (organizationId == null ? "global" : "org:" + organizationId) + ":page:" + page + ":size:" + size;
+        // Activities are read straight from the audit log. No read path ever consulted the previous
+        // "admin:activities" cache (write-only dead cache), so it has been removed to avoid the overhead.
         return PaginationHelper.paginate(enrichActivityActors(items), total, page, size)
-                .flatMap(m -> cacheUtils.putWithTtl("admin:activities", cacheKey, m, Duration.ofMinutes(1)).thenReturn(m))
                 .doOnSuccess(r -> log.info("getActivities result: {}", JsonUtils.toJson(r)));
     }
 

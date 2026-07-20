@@ -12,6 +12,7 @@ import com.service.backend.shared.enums.Status;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.shared.utils.SecurityUtils;
+import com.service.backend.shared.utils.CacheNames;
 import com.service.backend.shared.utils.CacheUtils;
 import com.service.backend.shared.service.ImageService;
 import com.service.backend.user.service.NotificationService;
@@ -19,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -26,10 +28,23 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class LearningResourceService {
 
+    private static final Duration LIST_TTL = Duration.ofMinutes(5);
+
     private final LearningResourceR2dbcRepository learningResourceRepository;
     private final CacheUtils cacheUtils;
     private final ImageService imageService;
     private final NotificationService notificationService;
+
+    /**
+     * Clears the learning-resource list cache and the admin content-statistics cache. Called by every
+     * write that changes what the lists (getAll/getByType/search) or the content counts return:
+     * create/update/delete. The admin status change (AdminArticleService.updateLearningResourceStatus)
+     * clears the same {@link CacheNames#LEARNING_RESOURCE} namespace directly.
+     */
+    private Mono<Void> evictLearningResourceCaches() {
+        return cacheUtils.clear(CacheNames.LEARNING_RESOURCE)
+                .then(cacheUtils.clear(CacheNames.ADMIN_CONTENT_STATISTICS));
+    }
 
     public Mono<LearningResourceResponse> create(CreateLearningResourceRequest request) {
         return Mono.zip(SecurityUtils.getCurrentUserId(), SecurityUtils.getCurrentUserRole())
@@ -57,7 +72,7 @@ public class LearningResourceService {
                                         .build();
 
                                 return learningResourceRepository.save(resource)
-                                        .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
+                                        .delayUntil(res -> evictLearningResourceCaches())
                                         .doOnNext(saved -> {
                                             if (!publishImmediately) {
                                                 notificationService.createNotificationAsync(
@@ -87,7 +102,7 @@ public class LearningResourceService {
                             uploadedThumbnail.ifPresent(newThumbnail -> existing.setThumbnailUrl(newThumbnail.isEmpty() ? null : newThumbnail));
                             return learningResourceRepository.save(existing);
                         })))
-                .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
+                .delayUntil(res -> evictLearningResourceCaches())
                 .map(LearningResourceResponse::from);
     }
 
@@ -96,7 +111,7 @@ public class LearningResourceService {
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.LEARNING_RESOURCE_NOT_FOUND, "Learning resource not found with id: " + id)))
                 .flatMap(existing -> SecurityUtils.assertCanManageContentOrganization(existing.getOrganizationId())
                         .then(learningResourceRepository.deleteById(id))
-                        .then(cacheUtils.clear("admin_content_statistics"))
+                        .then(evictLearningResourceCaches())
                         .thenReturn(true));
     }
 
@@ -123,10 +138,11 @@ public class LearningResourceService {
     public Mono<PaginatedResponse<LearningResourceResponse>> getAll(int page, int limit, Integer organizationId) {
         int offset = page * limit;
         return SecurityUtils.resolvePublicOrganizationId(organizationId)
-                .flatMap(orgId -> PaginationHelper.paginate(
-                        learningResourceRepository.findApprovedByOrganizationId(orgId, limit, offset).map(LearningResourceResponse::from),
-                        learningResourceRepository.countApprovedByOrganizationId(orgId),
-                        page, limit))
+                .flatMap(orgId -> cacheUtils.getOrCompute(CacheNames.LEARNING_RESOURCE,
+                        "all_org_" + orgId + "_p" + page + "_l" + limit, LIST_TTL, () -> PaginationHelper.paginate(
+                                learningResourceRepository.findApprovedByOrganizationId(orgId, limit, offset).map(LearningResourceResponse::from),
+                                learningResourceRepository.countApprovedByOrganizationId(orgId),
+                                page, limit)))
                 .switchIfEmpty(Mono.just(PaginatedResponse.of(java.util.List.of(), 0, page, limit)));
     }
 
@@ -134,18 +150,20 @@ public class LearningResourceService {
         int offset = page * limit;
         LearningResourceType resourceType = LearningResourceType.valueOf(type.toUpperCase());
         return SecurityUtils.getCurrentOrganizationId()
-                .flatMap(orgId -> PaginationHelper.paginate(
-                        learningResourceRepository.findByType(orgId, resourceType, limit, offset).map(LearningResourceResponse::from),
-                        learningResourceRepository.countByType(orgId, resourceType),
-                        page, limit))
-                .switchIfEmpty(Mono.defer(() -> PaginationHelper.paginate(
-                        learningResourceRepository.findAll()
-                                .filter(r -> r.getType() == resourceType && Status.APPROVED.equals(r.getStatus()))
-                                .skip(offset)
-                                .take(limit)
-                                .map(LearningResourceResponse::from),
-                        learningResourceRepository.countAllApproved(),
-                        page, limit)));
+                .flatMap(orgId -> cacheUtils.getOrCompute(CacheNames.LEARNING_RESOURCE,
+                        "type_" + resourceType + "_org_" + orgId + "_p" + page + "_l" + limit, LIST_TTL, () -> PaginationHelper.paginate(
+                                learningResourceRepository.findByType(orgId, resourceType, limit, offset).map(LearningResourceResponse::from),
+                                learningResourceRepository.countByType(orgId, resourceType),
+                                page, limit)))
+                .switchIfEmpty(Mono.defer(() -> cacheUtils.getOrCompute(CacheNames.LEARNING_RESOURCE,
+                        "type_" + resourceType + "_global_p" + page + "_l" + limit, LIST_TTL, () -> PaginationHelper.paginate(
+                                learningResourceRepository.findAll()
+                                        .filter(r -> r.getType() == resourceType && Status.APPROVED.equals(r.getStatus()))
+                                        .skip(offset)
+                                        .take(limit)
+                                        .map(LearningResourceResponse::from),
+                                learningResourceRepository.countAllApproved(),
+                                page, limit))));
     }
 
     public Mono<PaginatedResponse<LearningResourceResponse>> search(String keyword, int page, int limit) {
@@ -155,10 +173,11 @@ public class LearningResourceService {
     public Mono<PaginatedResponse<LearningResourceResponse>> search(String keyword, int page, int limit, Integer organizationId) {
         int offset = page * limit;
         return SecurityUtils.resolvePublicOrganizationId(organizationId)
-                .flatMap(orgId -> PaginationHelper.paginate(
-                        learningResourceRepository.searchResources(orgId, keyword, limit, offset).map(LearningResourceResponse::from),
-                        learningResourceRepository.countSearchResources(orgId, keyword),
-                        page, limit))
+                .flatMap(orgId -> cacheUtils.getOrCompute(CacheNames.LEARNING_RESOURCE,
+                        "search_org_" + orgId + "_kw_" + keyword + "_p" + page + "_l" + limit, LIST_TTL, () -> PaginationHelper.paginate(
+                                learningResourceRepository.searchResources(orgId, keyword, limit, offset).map(LearningResourceResponse::from),
+                                learningResourceRepository.countSearchResources(orgId, keyword),
+                                page, limit)))
                 .switchIfEmpty(Mono.just(PaginatedResponse.of(java.util.List.of(), 0, page, limit)));
     }
 }

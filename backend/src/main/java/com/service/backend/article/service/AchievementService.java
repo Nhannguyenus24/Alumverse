@@ -13,6 +13,7 @@ import com.service.backend.shared.service.ImageService;
 import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.shared.utils.SecurityUtils;
+import com.service.backend.shared.utils.CacheNames;
 import com.service.backend.shared.utils.CacheUtils;
 import com.service.backend.user.service.NotificationService;
 import lombok.RequiredArgsConstructor;
@@ -157,7 +158,7 @@ public class AchievementService {
         }
         String orgKey = organizationId.toString();
         String cacheKey = "status_" + status + "_org_" + orgKey + "_page_" + page + "_limit_" + limit;
-        return cacheUtils.getOrCompute("achievement_cache", cacheKey, java.time.Duration.ofMinutes(5), () -> {
+        return cacheUtils.getOrCompute(CacheNames.ACHIEVEMENT, cacheKey, java.time.Duration.ofMinutes(5), () -> {
             int offset = page * limit;
             return PaginationHelper.paginate(
                     achievementRepository.findDetailsByStatusAndOrganizationId(status, organizationId, limit, offset)
@@ -184,7 +185,7 @@ public class AchievementService {
     }
 
     private Mono<Void> clearAchievementCaches() {
-        return cacheUtils.clear("admin_content_statistics")
-                .then(cacheUtils.clear("achievement_cache"));
+        return cacheUtils.clear(CacheNames.ADMIN_CONTENT_STATISTICS)
+                .then(cacheUtils.clear(CacheNames.ACHIEVEMENT));
     }
 }

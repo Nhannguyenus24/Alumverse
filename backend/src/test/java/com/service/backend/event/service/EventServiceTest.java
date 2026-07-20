@@ -17,6 +17,7 @@ import com.service.backend.shared.service.EmailService;
 import com.service.backend.shared.service.ImageService;
 import com.service.backend.shared.utils.CacheUtils;
 import com.service.backend.user.service.NotificationService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -53,6 +54,12 @@ class EventServiceTest {
 
     @InjectMocks
     private EventService eventService;
+
+    @BeforeEach
+    void stubCacheEviction() {
+        // Writes now evict the event cache via cacheUtils.clear(...); stub it so reactive chains complete.
+        lenient().when(cacheUtils.clear(anyString())).thenReturn(Mono.empty());
+    }
 
     /** Reactive security context with ADMIN role for event management checks. */
     private static reactor.util.context.Context adminContext() {

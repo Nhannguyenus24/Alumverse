@@ -29,7 +29,6 @@ public class JwtUtils {
     private static final JWSHeader JWT_HEADER = new JWSHeader(JWSAlgorithm.HS256);
 
     private final long accessTokenExpirationMs;
-    private final long refreshTokenExpirationMs;
     private final JWSSigner signer;
     private final JWSVerifier verifier;
 
@@ -50,9 +49,8 @@ public class JwtUtils {
      */
     private final ConcurrentHashMap<String, Boolean> revokedJtis = new ConcurrentHashMap<>();
 
-    public JwtUtils(String jwtSecret, long accessTokenExpirationMs, long refreshTokenExpirationMs) {
+    public JwtUtils(String jwtSecret, long accessTokenExpirationMs) {
         this.accessTokenExpirationMs = accessTokenExpirationMs;
-        this.refreshTokenExpirationMs = refreshTokenExpirationMs;
         try {
             byte[] secretKeyBytes = jwtSecret.getBytes();
             this.signer = new MACSigner(secretKeyBytes);
@@ -60,10 +58,6 @@ public class JwtUtils {
         } catch (JOSEException e) {
             throw new ApplicationException(ErrorCode.ERROR_SIGNING_JWT_TOKEN, "Failed to initialize JWT signer/verifier");
         }
-    }
-
-    public String generateAccessToken(User user, Integer organizationId) {
-        return generateAccessToken(user, organizationId, null);
     }
 
     public String generateAccessToken(User user, Integer organizationId, Integer verificationLevel) {
@@ -86,9 +80,6 @@ public class JwtUtils {
         return signAndSerialize(claimsSet);
     }
 
-    public String generateRefreshToken(Integer userId) {
-        return generateRefreshToken(userId, refreshTokenExpirationMs);
-    }
 
     /**
      * Refresh tokens carry the user identity only — never the organization. The active

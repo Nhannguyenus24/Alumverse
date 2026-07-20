@@ -5,6 +5,8 @@ import com.service.backend.fundraising.dao.FundR2dbcRepository;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.enums.Status;
 import com.service.backend.shared.exception.ApplicationException;
+import com.service.backend.shared.utils.CacheNames;
+import com.service.backend.shared.utils.CacheUtils;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -24,6 +26,7 @@ public class SepayWebhookService {
 
     private final FundDonationsR2dbcRepository fundDonationsRepository;
     private final FundR2dbcRepository fundRepository;
+    private final CacheUtils cacheUtils;
 
     @Value("${sepay.api-key}")
     private String sepayApiKey;
@@ -52,7 +55,9 @@ public class SepayWebhookService {
                     return fundDonationsRepository.save(existing)
                             .flatMap(saved -> fundRepository
                                     .incrementDonorCountAndAmount(saved.getFundId(), saved.getAmount())
-                                    .thenReturn(saved));
+                                    .thenReturn(saved))
+                            // Donation now counts toward the aggregated fund stats — invalidate the cache.
+                            .delayUntil(saved -> cacheUtils.clear(CacheNames.FUND_STATISTICS));
                 })
                 .thenReturn(Map.of("success", true));
     }

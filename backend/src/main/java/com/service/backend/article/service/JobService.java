@@ -10,6 +10,7 @@ import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.shared.utils.SecurityUtils;
+import com.service.backend.shared.utils.CacheNames;
 import com.service.backend.shared.utils.CacheUtils;
 import com.service.backend.user.service.NotificationService;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 import com.service.backend.shared.enums.JobType;
 import reactor.core.publisher.Mono;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -24,9 +26,21 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class JobService {
 
+    private static final Duration LIST_TTL = Duration.ofMinutes(5);
+
     private final JobR2dbcRepository jobRepository;
     private final CacheUtils cacheUtils;
     private final NotificationService notificationService;
+
+    /**
+     * Clears the job list cache and the admin content-statistics cache. Called by every write that
+     * changes what the job lists (getAll/getActive/getOpenJobs/search) or the content counts return:
+     * create/update/delete/activate/deactivate.
+     */
+    private Mono<Void> evictJobCaches() {
+        return cacheUtils.clear(CacheNames.JOB)
+                .then(cacheUtils.clear(CacheNames.ADMIN_CONTENT_STATISTICS));
+    }
 
     public Mono<JobResponse> create(CreateJobRequest request) {
         return Mono.zip(SecurityUtils.getCurrentUserId(), SecurityUtils.getCurrentUserRole())
@@ -56,7 +70,7 @@ public class JobService {
                             .build();
 
                     return jobRepository.save(job)
-                            .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
+                            .delayUntil(res -> evictJobCaches())
                             .doOnNext(saved -> {
                                 if (!publishImmediately) {
                                     notificationService.createNotificationAsync(
@@ -89,7 +103,7 @@ public class JobService {
                     existing.setIsReferral(request.getIsReferral() != null ? request.getIsReferral() : false);
                     return jobRepository.save(existing);
                 })))
-                .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
+                .delayUntil(res -> evictJobCaches())
                 .map(JobResponse::from);
     }
 
@@ -98,7 +112,7 @@ public class JobService {
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.JOB_NOT_FOUND, "Job not found with id: " + id)))
                 .flatMap(existing -> SecurityUtils.assertCanManageContentOrganization(existing.getOrganizationId())
                         .then(jobRepository.deleteById(id))
-                        .then(cacheUtils.clear("admin_content_statistics"))
+                        .then(evictJobCaches())
                         .thenReturn(true));
     }
 
@@ -121,23 +135,26 @@ public class JobService {
     public Mono<PaginatedResponse<JobResponse>> getAll(int page, int limit) {
         int offset = page * limit;
         return SecurityUtils.getCurrentOrganizationId()
-                .flatMap(orgId -> PaginationHelper.paginate(
-                        jobRepository.findByOrganizationIdWithPagination(orgId, limit, offset).map(JobResponse::from),
-                        jobRepository.countByOrganizationId(orgId),
-                        page, limit))
-                .switchIfEmpty(Mono.defer(() -> PaginationHelper.paginate(
-                        jobRepository.findAllWithPagination(limit, offset).map(JobResponse::from),
-                        jobRepository.count(),
-                        page, limit)));
+                .flatMap(orgId -> cacheUtils.getOrCompute(CacheNames.JOB,
+                        "all_org_" + orgId + "_p" + page + "_l" + limit, LIST_TTL, () -> PaginationHelper.paginate(
+                                jobRepository.findByOrganizationIdWithPagination(orgId, limit, offset).map(JobResponse::from),
+                                jobRepository.countByOrganizationId(orgId),
+                                page, limit)))
+                .switchIfEmpty(Mono.defer(() -> cacheUtils.getOrCompute(CacheNames.JOB,
+                        "all_global_p" + page + "_l" + limit, LIST_TTL, () -> PaginationHelper.paginate(
+                                jobRepository.findAllWithPagination(limit, offset).map(JobResponse::from),
+                                jobRepository.count(),
+                                page, limit))));
     }
 
     public Mono<PaginatedResponse<JobResponse>> getActive(int page, int limit, Integer organizationId) {
         int offset = page * limit;
         return SecurityUtils.resolvePublicOrganizationId(organizationId)
-                .flatMap(orgId -> PaginationHelper.paginate(
-                        jobRepository.findActiveByOrganizationId(orgId, limit, offset).map(JobResponse::from),
-                        jobRepository.countActiveByOrganizationId(orgId),
-                        page, limit))
+                .flatMap(orgId -> cacheUtils.getOrCompute(CacheNames.JOB,
+                        "active_org_" + orgId + "_p" + page + "_l" + limit, LIST_TTL, () -> PaginationHelper.paginate(
+                                jobRepository.findActiveByOrganizationId(orgId, limit, offset).map(JobResponse::from),
+                                jobRepository.countActiveByOrganizationId(orgId),
+                                page, limit)))
                 .switchIfEmpty(Mono.just(PaginatedResponse.of(java.util.List.of(), 0, page, limit)));
     }
 
@@ -145,14 +162,16 @@ public class JobService {
         int offset = page * limit;
         LocalDate today = LocalDate.now();
         return SecurityUtils.getCurrentOrganizationId()
-                .flatMap(orgId -> PaginationHelper.paginate(
-                        jobRepository.findOpenJobs(orgId, today, limit, offset).map(JobResponse::from),
-                        jobRepository.countOpenJobs(orgId, today),
-                        page, limit))
-                .switchIfEmpty(Mono.defer(() -> PaginationHelper.paginate(
-                        jobRepository.findAllOpenJobsWithPagination(today, limit, offset).map(JobResponse::from),
-                        jobRepository.countAllOpenJobs(today),
-                        page, limit)));
+                .flatMap(orgId -> cacheUtils.getOrCompute(CacheNames.JOB,
+                        "open_org_" + orgId + "_" + today + "_p" + page + "_l" + limit, LIST_TTL, () -> PaginationHelper.paginate(
+                                jobRepository.findOpenJobs(orgId, today, limit, offset).map(JobResponse::from),
+                                jobRepository.countOpenJobs(orgId, today),
+                                page, limit)))
+                .switchIfEmpty(Mono.defer(() -> cacheUtils.getOrCompute(CacheNames.JOB,
+                        "open_global_" + today + "_p" + page + "_l" + limit, LIST_TTL, () -> PaginationHelper.paginate(
+                                jobRepository.findAllOpenJobsWithPagination(today, limit, offset).map(JobResponse::from),
+                                jobRepository.countAllOpenJobs(today),
+                                page, limit))));
     }
 
     public Mono<PaginatedResponse<JobResponse>> search(String keyword, int page, int limit) {
@@ -162,10 +181,11 @@ public class JobService {
     public Mono<PaginatedResponse<JobResponse>> search(String keyword, int page, int limit, Integer organizationId) {
         int offset = page * limit;
         return SecurityUtils.resolvePublicOrganizationId(organizationId)
-                .flatMap(orgId -> PaginationHelper.paginate(
-                        jobRepository.searchJobs(orgId, keyword, limit, offset).map(JobResponse::from),
-                        jobRepository.countSearchJobs(orgId, keyword),
-                        page, limit))
+                .flatMap(orgId -> cacheUtils.getOrCompute(CacheNames.JOB,
+                        "search_org_" + orgId + "_kw_" + keyword + "_p" + page + "_l" + limit, LIST_TTL, () -> PaginationHelper.paginate(
+                                jobRepository.searchJobs(orgId, keyword, limit, offset).map(JobResponse::from),
+                                jobRepository.countSearchJobs(orgId, keyword),
+                                page, limit)))
                 .switchIfEmpty(Mono.just(PaginatedResponse.of(java.util.List.of(), 0, page, limit)));
     }
 
@@ -175,7 +195,7 @@ public class JobService {
                 .flatMap(existing -> SecurityUtils.assertCanManageContentOrganization(existing.getOrganizationId())
                         .then(jobRepository.activateJob(id))
                         .then(jobRepository.findById(id)))
-                .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
+                .delayUntil(res -> evictJobCaches())
                 .doOnNext(updated -> notificationService.createNotificationAsync(
                         updated.getPosterMemberId(),
                         "Cơ hội việc làm đã được duyệt",
@@ -191,7 +211,7 @@ public class JobService {
                 .flatMap(existing -> SecurityUtils.assertCanManageContentOrganization(existing.getOrganizationId())
                         .then(jobRepository.deactivateJob(id))
                         .then(jobRepository.findById(id)))
-                .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
+                .delayUntil(res -> evictJobCaches())
                 .doOnNext(updated -> notificationService.createNotificationAsync(
                         updated.getPosterMemberId(),
                         "Cơ hội việc làm bị gỡ đăng",

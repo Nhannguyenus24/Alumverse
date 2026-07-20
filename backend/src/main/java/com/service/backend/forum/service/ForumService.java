@@ -11,6 +11,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.Optional;
 
+import com.service.backend.shared.utils.CacheNames;
 import com.service.backend.shared.utils.CacheUtils;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.JsonUtils;
@@ -72,8 +73,6 @@ public class ForumService {
     private final UserProfileRepository userProfileRepository;
     private final CacheUtils cacheUtils;
 
-    private static final String FORUM_RECENT_POSTS_CACHE = "forumRecentPosts";
-
     private Mono<Integer> currentMemberId() {
         return SecurityUtils.getCurrentUserId()
                 .map(Long::intValue)
@@ -116,7 +115,7 @@ public class ForumService {
     // Category methods
     public Flux<ForumCategoryDTO> findAllCategoriesByOrganizationId(Integer organizationId) {
         String cacheKey = "forum_categories_org_" + organizationId;
-        return cacheUtils.getOrCompute("forum_category_cache", cacheKey, Duration.ofDays(1), () ->
+        return cacheUtils.getOrCompute(CacheNames.FORUM_CATEGORY, cacheKey, Duration.ofDays(1), () ->
                 forumCategoryRepository.findByOrganizationIdAndStatus(organizationId, Status.ACTIVE.name())
                         .collectList()
                         .flatMap(this::convertCategoriesWithStats)
@@ -140,7 +139,7 @@ public class ForumService {
                     return forumCategoryRepository.save(category);
                 }))
                 .flatMap(this::convertToCategoryDTOWithStats)
-                .delayUntil(res -> cacheUtils.clear("forum_category_cache"))
+                .delayUntil(res -> cacheUtils.clear(CacheNames.FORUM_CATEGORY))
                 .doOnSuccess(result -> log.info("createCategory result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error creating forum category: {}", request.getName(), error));
     }
@@ -162,7 +161,7 @@ public class ForumService {
                             return forumCategoryRepository.save(category);
                         })))
                 .flatMap(this::convertToCategoryDTOWithStats)
-                .delayUntil(res -> cacheUtils.clear("forum_category_cache"))
+                .delayUntil(res -> cacheUtils.clear(CacheNames.FORUM_CATEGORY))
                 .doOnSuccess(result -> log.info("updateCategory result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error updating forum category ID: {}", id, error));
     }
@@ -233,7 +232,7 @@ public class ForumService {
                                     }));
                         }))
                 .flatMap(this::convertToTopicDTOWithPostCount)
-                .delayUntil(res -> cacheUtils.clear("forum_category_cache"))
+                .delayUntil(res -> cacheUtils.clear(CacheNames.FORUM_CATEGORY))
                 .doOnSuccess(result -> log.info("createTopic result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error creating forum topic: {}", request.getTitle(), error));
     }
@@ -266,7 +265,7 @@ public class ForumService {
                                     });
                         })))
                 .flatMap(this::convertToTopicDTOWithPostCount)
-                .delayUntil(res -> cacheUtils.clear("forum_category_cache"))
+                .delayUntil(res -> cacheUtils.clear(CacheNames.FORUM_CATEGORY))
                 .doOnSuccess(result -> log.info("updateTopic result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error updating forum topic ID: {}", id, error));
     }
@@ -275,6 +274,9 @@ public class ForumService {
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_TOPIC_NOT_FOUND))))
                 .flatMap(topic -> SecurityUtils.assertCanManageContentOrganization(topic.getOrganizationId())
                         .then(cascadeDeleteTopic(topicId)))
+                // Deleting a topic changes the category's topic/participant counts shown in the cached
+                // category list — evict it, matching createTopic/updateTopic.
+                .then(cacheUtils.clear(CacheNames.FORUM_CATEGORY))
                 .doOnSuccess(v -> log.info("deleteTopic: topicId={} deleted", topicId))
                 .doOnError(error -> log.error("Error deleting topic ID: {}", topicId, error));
     }
@@ -387,7 +389,7 @@ public class ForumService {
                     String cacheKey = String.valueOf(post.getTopicId());
                     LocalDateTime createdAt = post.getCreatedAt() != null
                             ? post.getCreatedAt() : LocalDateTime.now();
-                    return cacheUtils.putWithTtl(FORUM_RECENT_POSTS_CACHE, cacheKey, createdAt, Duration.ofHours(4))
+                    return cacheUtils.putWithTtl(CacheNames.FORUM_RECENT_POSTS, cacheKey, createdAt, Duration.ofHours(4))
                             .thenReturn(post);
                 })
                 .map(this::convertToPostDTO)

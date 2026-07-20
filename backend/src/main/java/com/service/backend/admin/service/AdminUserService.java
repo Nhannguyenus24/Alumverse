@@ -1,5 +1,6 @@
 package com.service.backend.admin.service;
 
+import com.service.backend.shared.utils.*;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Map;
@@ -11,9 +12,6 @@ import com.service.backend.shared.enums.Status;
 import com.service.backend.shared.enums.UserRole;
 import com.service.backend.shared.enums.VerificationLevel;
 import com.service.backend.shared.exception.ApplicationException;
-import com.service.backend.shared.utils.JsonUtils;
-import com.service.backend.shared.utils.CacheUtils;
-import com.service.backend.shared.utils.SecurityUtils;
 import com.service.backend.shared.service.SseService;
 import com.service.backend.user.dao.UserOrganizationMemberRepository;
 import org.slf4j.Logger;
@@ -34,7 +32,6 @@ import com.service.backend.admin.dto.UserResponse;
 import com.service.backend.admin.dto.VerificationRequestResponse;
 import com.service.backend.admin.dto.VerificationStatisticsDTO;
 import com.service.backend.shared.dto.PaginatedResponse;
-import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.admin.dao.AdminUserRepository;
 import com.service.backend.shared.entity.User;
 import com.service.backend.shared.entity.AdminAuditLog;
@@ -56,7 +53,6 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class AdminUserService {
     private static final Logger logger = LoggerFactory.getLogger(AdminUserService.class);
-    private static final String ORG_CACHE = "organization_cache";
 
     private final AdminUserRepository adminUserRepository;
     private final AdminAuditLogRepository adminAuditLogRepository;
@@ -77,7 +73,7 @@ public class AdminUserService {
         String statusParam = (status != null && !status.equals("ALL")) ? status.toUpperCase() : null;
 
         return SecurityUtils.getCurrentUserRole()
-                .map(roleName -> "STAFF".equalsIgnoreCase(roleName))
+                .map("STAFF"::equalsIgnoreCase)
                 .defaultIfEmpty(false)
                 .flatMap(excludeAdmin -> PaginationHelper.paginate(
                         adminUserRepository.findUsersWithFilters(searchParam, roleParam, statusParam, organizationId, excludeAdmin, size, offset).collectList(),
@@ -264,7 +260,7 @@ public class AdminUserService {
                         upperStatus))
                 .map(count -> count > 0)
                 .delayUntil(success -> success && trustedVerifier
-                        ? cacheUtils.evict(ORG_CACHE, "trustedVerifiers:" + organizationId)
+                        ? cacheUtils.evict(CacheNames.ORGANIZATION, "trustedVerifiers:" + organizationId)
                         : Mono.empty())
                 .doOnSuccess(success -> logger.info("createOrganizationMember: userId={}, organizationId={}, success={}", actualUserId, organizationId, success))
                 .doOnError(error -> logger.error("Error adding user {} to organization {}: {}", actualUserId, organizationId, error.getMessage()))
@@ -503,7 +499,7 @@ public class AdminUserService {
                         request.getVerificationLevel(),
                         request.getIsTrustedVerifier()))
                 .delayUntil(count -> request.getOrganizationId() != null && request.getIsTrustedVerifier() != null
-                        ? cacheUtils.evict(ORG_CACHE, "trustedVerifiers:" + request.getOrganizationId())
+                        ? cacheUtils.evict(CacheNames.ORGANIZATION, "trustedVerifiers:" + request.getOrganizationId())
                         : Mono.empty())
                 .then();
     }
@@ -834,7 +830,7 @@ public class AdminUserService {
         return adminUserRepository.updateIsTrustedVerifier(userId, organizationId, isTrusted)
                 .map(count -> count > 0)
                 .delayUntil(success -> success
-                        ? cacheUtils.evict(ORG_CACHE, "trustedVerifiers:" + organizationId)
+                        ? cacheUtils.evict(CacheNames.ORGANIZATION, "trustedVerifiers:" + organizationId)
                         : Mono.empty())
                 .doOnSuccess(success -> {
                     if (success) {

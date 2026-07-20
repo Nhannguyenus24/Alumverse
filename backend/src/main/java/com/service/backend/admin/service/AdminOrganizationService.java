@@ -41,7 +41,7 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class AdminOrganizationService {
     private static final Logger logger = LoggerFactory.getLogger(AdminOrganizationService.class);
-    private static final String ORG_CACHE = "organization_cache";
+    private static final String ORG_CACHE = com.service.backend.shared.utils.CacheNames.ORGANIZATION;
 
     private final OrganizationRepository organizationRepository;
     private final SchoolFeedbackRepository schoolFeedbackRepository;
