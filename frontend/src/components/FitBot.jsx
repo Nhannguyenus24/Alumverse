@@ -290,7 +290,7 @@ const SUGGESTION_KEYS = [
 
 // SSE response handler using fetch
 const streamSSEResponse = async (userMessage, onChunk, onComplete, onError, signal) => {
-  const apiEndpoint = '/fitbot-api/api/stream-query';
+  const apiEndpoint = `${import.meta.env.VITE_FITBOT_API_URL || '/fitbot-api'}/api/stream-query`;
   
   try {
     const requestBody = {

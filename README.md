@@ -34,6 +34,7 @@ Before running the project, you must provide your own credentials and URLs. Repl
 - `YOUR_GOOGLE_CLIENT_ID`: Google OAuth2 Client ID.
 - `YOUR_RECAPTCHA_SITE_KEY`: Google reCAPTCHA Site Key.
 - `YOUR_PROMETHEUS_URL`: URL for Prometheus metrics.
+- `YOUR_FITBOT_API_URL`: API URL for FitBot services.
 
 ### Mobile (`mobile_flutter/lib/core/config/env.dart`)
 - `YOUR_API_BASE_URL`: Base URL of your backend API.

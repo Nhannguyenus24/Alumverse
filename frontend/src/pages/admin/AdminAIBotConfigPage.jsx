@@ -18,7 +18,7 @@ import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
 import { useSnackbar } from 'notistack';
 import { AdminAiProvidersContent } from './AdminAiProvidersPage';
 
-const FITBOT_API_URL = '/fitbot-api';
+const FITBOT_API_URL = import.meta.env.VITE_FITBOT_API_URL || '/fitbot-api';
 
 const AdminAIBotConfigPage = () => {
   const { t } = useTranslation('admin');
