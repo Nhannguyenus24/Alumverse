@@ -26,7 +26,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.ParseException;
 import java.time.Instant;
-import java.util.Base64;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Date;
@@ -69,11 +68,6 @@ public class EventQrService {
     /** Encrypt a ticket reference into a compact JWE string and prefix it for the QR. */
     public String encodeWithPrefix(String ticketCode, Long eventId) {
         return QR_PREFIX + encode(ticketCode, eventId);
-    }
-
-    /** Render the QR token as a PNG data URI for embedding in email HTML. */
-    public String toQrCodeDataUri(String token) {
-        return "data:image/png;base64," + Base64.getEncoder().encodeToString(toQrCodePngBytes(token));
     }
 
     /** Render the QR token as PNG bytes for attaching as inline email content. */

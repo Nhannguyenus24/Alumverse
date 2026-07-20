@@ -8,7 +8,6 @@ import org.springframework.stereotype.Repository;
 
 import com.service.backend.shared.entity.User;
 
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Repository
@@ -75,13 +74,6 @@ public interface AuthRepository extends R2dbcRepository<User, Integer> {
             @Param("passwordHash") String passwordHash,
             @Param("avatarUrl") String avatarUrl,
             @Param("fullName") String fullName);
-    
-    /**
-     * Get organization IDs for a user from organization_members table
-     * Returns empty Flux if user is not a member of any organization
-     */
-    @Query("SELECT om.organization_id FROM organization_members om WHERE om.user_id = :userId")
-    Flux<Integer> getOrganizationIdByUserId(@Param("userId") Integer userId);
 
     /**
      * Create a default organization_members record when a user registers under an organization

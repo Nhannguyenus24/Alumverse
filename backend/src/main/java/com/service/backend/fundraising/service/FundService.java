@@ -702,7 +702,7 @@ public class FundService {
                     return SecurityUtils.getCurrentUserRole()
                             .filter(role -> "ADMIN".equalsIgnoreCase(role) || "STAFF".equalsIgnoreCase(role))
                             .flatMap(role -> doGetDonationsByFund(fundId, page, limit, searchBy, keyword, onlySuccess))
-                            .switchIfEmpty(Mono.just(PaginatedResponse.<FundDonationListItemResponse>of(List.of(), 0, page, limit)));
+                            .switchIfEmpty(Mono.just(PaginatedResponse.of(List.of(), 0, page, limit)));
                 });
     }
 

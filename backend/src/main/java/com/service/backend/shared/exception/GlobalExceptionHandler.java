@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.support.WebExchangeBindException;
 import org.springframework.web.reactive.resource.NoResourceFoundException;
+import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
 
 import java.util.HashMap;
@@ -104,6 +105,31 @@ public class GlobalExceptionHandler {
                 ResponseEntity
                         .status(403)
                         .body(new ApiResponse<>("Bạn không có quyền thực hiện thao tác này", null))
+        );
+    }
+
+    /**
+     * Ngoại lệ mang sẵn HTTP status (VD: {@code SseController} trả 401 khi token SSE hết hạn).
+     * Không để rơi xuống handler chung — vì handler chung sẽ log ERROR kèm stacktrace và trả 500,
+     * gây spam log khi {@code EventSource} tự reconnect liên tục. Ở đây chỉ log gọn theo mức status
+     * và trả đúng status gốc.
+     */
+    @ExceptionHandler(ResponseStatusException.class)
+    public Mono<ResponseEntity<?>> handleResponseStatusException(ResponseStatusException ex) {
+        int status = ex.getStatusCode().value();
+
+        if (ex.getStatusCode().is5xxServerError()) {
+            log.error("Response status error {}: {}", status, ex.getReason(), ex);
+        } else {
+            log.debug("Response status {}: {}", status, ex.getReason());
+        }
+
+        meterRegistry.counter("api.errors.count", "error_code", "HTTP_" + status).increment();
+
+        return Mono.just(
+                ResponseEntity
+                        .status(status)
+                        .body(new ApiResponse<>(ex.getReason(), null))
         );
     }
 

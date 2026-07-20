@@ -104,7 +104,13 @@ const QUERIES = {
   sseEventsRate: 'sum(rate(sse_events_sent_total[5m]))'
 };
 
-const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#d32f2f', '#1976d2', '#388e3c', '#fbc02d', '#7b1fa2', '#c2185b'];
+const buildHuePalette = (count, { baseHue = 210, saturation = 68, lightness = 55 } = {}) => {
+  const n = Math.max(count, 1);
+  return Array.from({ length: n }, (_, i) => {
+    const hue = Math.round((baseHue + (360 / n) * i) % 360);
+    return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+  });
+};
 
 
 const adminTableContainerSx = {
@@ -243,6 +249,20 @@ const AdminSystemMonitoringPage = () => {
   const theme = useTheme();
   const { t } = useTranslation(['admin']);
   const { enqueueSnackbar } = useSnackbar();
+
+  const chartColors = useMemo(() => buildHuePalette(20, { lightness: theme.palette.mode === 'dark' ? 60 : 52 }), [theme.palette.mode]);
+  const axisProps = useMemo(() => ({ tick: { fill: theme.palette.text.secondary, fontSize: 12, fontWeight: 600 }, axisLine: false, tickLine: false, tickMargin: 12 }), [theme.palette.text.secondary]);
+  const gridProps = useMemo(() => ({ strokeDasharray: "4 4", stroke: theme.palette.divider, vertical: false }), [theme.palette.divider]);
+
+  const renderDefs = () => (
+    <defs>
+      <linearGradient id="area-primary" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={theme.palette.primary.main} stopOpacity={0.45} /><stop offset="60%" stopColor={theme.palette.primary.main} stopOpacity={0.12} /><stop offset="95%" stopColor={theme.palette.primary.main} stopOpacity={0} /></linearGradient>
+      <linearGradient id="area-error" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={theme.palette.error.main} stopOpacity={0.45} /><stop offset="60%" stopColor={theme.palette.error.main} stopOpacity={0.12} /><stop offset="95%" stopColor={theme.palette.error.main} stopOpacity={0} /></linearGradient>
+      <linearGradient id="area-success" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={theme.palette.success.main} stopOpacity={0.45} /><stop offset="60%" stopColor={theme.palette.success.main} stopOpacity={0.12} /><stop offset="95%" stopColor={theme.palette.success.main} stopOpacity={0} /></linearGradient>
+      <linearGradient id="area-info" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={theme.palette.info.main} stopOpacity={0.45} /><stop offset="60%" stopColor={theme.palette.info.main} stopOpacity={0.12} /><stop offset="95%" stopColor={theme.palette.info.main} stopOpacity={0} /></linearGradient>
+      <linearGradient id="area-secondary" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={theme.palette.secondary.main} stopOpacity={0.45} /><stop offset="60%" stopColor={theme.palette.secondary.main} stopOpacity={0.12} /><stop offset="95%" stopColor={theme.palette.secondary.main} stopOpacity={0} /></linearGradient>
+    </defs>
+  );
 
   const TIME_RANGES = useMemo(() => [
     { label: t('admin:system_monitoring.last_1h'), value: 1 },
@@ -439,7 +459,7 @@ const AdminSystemMonitoringPage = () => {
 
       // Merge time-series data
       const mergedMap = new Map();
-      const formatString = rangeSeconds > 86400 ? 'MM/DD HH:mm' : (step < 60 ? 'HH:mm:ss' : 'HH:mm');
+      const formatString = rangeSeconds > 86400 ? 'MM/DD HH:mm' : 'HH:mm';
 
       const processSeries = (series, key) => {
         series.forEach(([timestamp, value]) => {
@@ -852,13 +872,13 @@ const AdminSystemMonitoringPage = () => {
               >
                 <Box sx={monitoringChartBoxSx}>
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="timeFormatted" minTickGap={30} />
-                      <YAxis />
+                    <AreaChart data={chartData}>{renderDefs()}
+                      <CartesianGrid {...gridProps} />
+                      <XAxis dataKey="timeFormatted" minTickGap={30} {...axisProps} />
+                      <YAxis {...axisProps} width={45} />
                       <RechartsTooltip content={renderTooltip} />
                       <Legend />
-                      <Area type="monotone" dataKey="reqRate" name={t("admin:system_monitoring.total_requests")} stroke={theme.palette.primary.main} fill={theme.palette.primary.light} fillOpacity={0.3} />
+                      <Area type="monotone" dataKey="reqRate" name={t("admin:system_monitoring.total_requests")} stroke={theme.palette.primary.main} fill="url(#area-primary)" strokeWidth={2.5} />
                     </AreaChart>
                   </ResponsiveContainer>
                 </Box>
@@ -873,15 +893,15 @@ const AdminSystemMonitoringPage = () => {
                 <Box sx={monitoringChartBoxSx}>
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="timeFormatted" minTickGap={30} />
-                      <YAxis />
+                      <CartesianGrid {...gridProps} />
+                      <XAxis dataKey="timeFormatted" minTickGap={30} {...axisProps} />
+                      <YAxis {...axisProps} width={45} />
                       <RechartsTooltip content={renderTooltip} />
                       <Legend onClick={(e) => handleLegendClick('latency', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
-                      <Line type="monotone" dot={false} dataKey="latAvg" name={t("admin:system_monitoring.avg_latency")} stroke={theme.palette.success.main} strokeWidth={2} hide={isolatedSeries['latency'] && isolatedSeries['latency'] !== 'latAvg'} />
-                      <Line type="monotone" dot={false} dataKey="latP50" name={t("admin:system_monitoring.p50_latency")} stroke={theme.palette.info.main} strokeWidth={2} hide={isolatedSeries['latency'] && isolatedSeries['latency'] !== 'latP50'} />
-                      <Line type="monotone" dot={false} dataKey="latP95" name={t("admin:system_monitoring.p95_latency")} stroke={theme.palette.secondary.main} strokeWidth={2} hide={isolatedSeries['latency'] && isolatedSeries['latency'] !== 'latP95'} />
-                      <Line type="monotone" dot={false} dataKey="latP99" name={t("admin:system_monitoring.p99_latency")} stroke={theme.palette.warning.main} strokeWidth={2} hide={isolatedSeries['latency'] && isolatedSeries['latency'] !== 'latP99'} />
+                      <Line type="monotone" dot={false} dataKey="latAvg" name={t("admin:system_monitoring.avg_latency")} stroke={theme.palette.success.main} strokeWidth={2.5} hide={isolatedSeries['latency'] && isolatedSeries['latency'] !== 'latAvg'} />
+                      <Line type="monotone" dot={false} dataKey="latP50" name={t("admin:system_monitoring.p50_latency")} stroke={theme.palette.info.main} strokeWidth={2.5} hide={isolatedSeries['latency'] && isolatedSeries['latency'] !== 'latP50'} />
+                      <Line type="monotone" dot={false} dataKey="latP95" name={t("admin:system_monitoring.p95_latency")} stroke={theme.palette.secondary.main} strokeWidth={2.5} hide={isolatedSeries['latency'] && isolatedSeries['latency'] !== 'latP95'} />
+                      <Line type="monotone" dot={false} dataKey="latP99" name={t("admin:system_monitoring.p99_latency")} stroke={theme.palette.warning.main} strokeWidth={2.5} hide={isolatedSeries['latency'] && isolatedSeries['latency'] !== 'latP99'} />
                     </LineChart>
                   </ResponsiveContainer>
                 </Box>
@@ -895,13 +915,13 @@ const AdminSystemMonitoringPage = () => {
               >
                 <Box sx={monitoringChartBoxSx}>
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="timeFormatted" minTickGap={30} />
-                      <YAxis />
+                    <AreaChart data={chartData}>{renderDefs()}
+                      <CartesianGrid {...gridProps} />
+                      <XAxis dataKey="timeFormatted" minTickGap={30} {...axisProps} />
+                      <YAxis {...axisProps} width={45} />
                       <RechartsTooltip content={renderTooltip} />
                       <Legend />
-                      <Area type="monotone" dataKey="errRate" name={t("admin:system_monitoring.http_errors")} stroke={theme.palette.error.main} fill={theme.palette.error.light} fillOpacity={0.3} />
+                      <Area type="monotone" dataKey="errRate" name={t("admin:system_monitoring.http_errors")} stroke={theme.palette.error.main} fill="url(#area-error)" strokeWidth={2.5} />
                     </AreaChart>
                   </ResponsiveContainer>
                 </Box>
@@ -916,16 +936,16 @@ const AdminSystemMonitoringPage = () => {
                 >
                   <Box sx={monitoringChartBoxSx}>
                     <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={chartData}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                        <XAxis dataKey="timeFormatted" minTickGap={30} />
-                        <YAxis />
+                      <AreaChart data={chartData}>{renderDefs()}
+                        <CartesianGrid {...gridProps} />
+                        <XAxis dataKey="timeFormatted" minTickGap={30} {...axisProps} />
+                        <YAxis {...axisProps} width={45} />
                         <RechartsTooltip content={renderTooltip} />
                         <Legend onClick={(e) => handleLegendClick('status', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
                         {availableStatusCodes.map((code, idx) => {
                           const dataKey = `status_${code}`;
                           const isIsolated = isolatedSeries['status'];
-                          let color = COLORS[idx % COLORS.length];
+                          let color = chartColors[idx % chartColors.length];
                           if (code.startsWith('2')) color = theme.palette.success.main;
                           else if (code.startsWith('3')) color = theme.palette.info.main;
                           else if (code.startsWith('4')) color = theme.palette.warning.main;
@@ -960,10 +980,10 @@ const AdminSystemMonitoringPage = () => {
                 >
                   <Box sx={monitoringChartBoxSx}>
                     <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={chartData}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                        <XAxis dataKey="timeFormatted" minTickGap={30} />
-                        <YAxis />
+                      <AreaChart data={chartData}>{renderDefs()}
+                        <CartesianGrid {...gridProps} />
+                        <XAxis dataKey="timeFormatted" minTickGap={30} {...axisProps} />
+                        <YAxis {...axisProps} width={45} />
                         <RechartsTooltip content={renderTooltip} />
                         <Legend onClick={(e) => handleLegendClick('exceptions', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
                         {availableErrorCodes.map((code, idx) => {
@@ -976,8 +996,8 @@ const AdminSystemMonitoringPage = () => {
                               dataKey={dataKey} 
                               name={code} 
                               stackId="1"
-                              stroke={COLORS[idx % COLORS.length]} 
-                              fill={COLORS[idx % COLORS.length]} 
+                              stroke={chartColors[idx % chartColors.length]} 
+                              fill={chartColors[idx % chartColors.length]} 
                               fillOpacity={0.6} 
                               hide={isIsolated && isIsolated !== dataKey}
                             />
@@ -998,13 +1018,13 @@ const AdminSystemMonitoringPage = () => {
                 <Box sx={monitoringChartBoxSx}>
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="timeFormatted" minTickGap={30} />
-                      <YAxis domain={[0, 100]} />
+                      <CartesianGrid {...gridProps} />
+                      <XAxis dataKey="timeFormatted" minTickGap={30} {...axisProps} />
+                      <YAxis domain={[0, 100]} {...axisProps} width={45} />
                       <RechartsTooltip content={renderTooltip} />
                       <Legend onClick={(e) => handleLegendClick('cpu', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
-                      <Line type="monotone" dot={false} dataKey="cpuSys" name={t("admin:system_monitoring.system_cpu")} stroke="#8884d8" strokeWidth={2} hide={isolatedSeries['cpu'] && isolatedSeries['cpu'] !== 'cpuSys'} />
-                      <Line type="monotone" dot={false} dataKey="cpuProc" name={t("admin:system_monitoring.jvm_cpu")} stroke="#82ca9d" strokeWidth={2} hide={isolatedSeries['cpu'] && isolatedSeries['cpu'] !== 'cpuProc'} />
+                      <Line type="monotone" dot={false} dataKey="cpuSys" name={t("admin:system_monitoring.system_cpu")} stroke={chartColors[0]} strokeWidth={2.5} hide={isolatedSeries['cpu'] && isolatedSeries['cpu'] !== 'cpuSys'} />
+                      <Line type="monotone" dot={false} dataKey="cpuProc" name={t("admin:system_monitoring.jvm_cpu")} stroke={chartColors[1]} strokeWidth={2.5} hide={isolatedSeries['cpu'] && isolatedSeries['cpu'] !== 'cpuProc'} />
                     </LineChart>
                   </ResponsiveContainer>
                 </Box>
@@ -1019,13 +1039,13 @@ const AdminSystemMonitoringPage = () => {
                 <Box sx={monitoringChartBoxSx}>
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="timeFormatted" minTickGap={30} />
-                      <YAxis />
+                      <CartesianGrid {...gridProps} />
+                      <XAxis dataKey="timeFormatted" minTickGap={30} {...axisProps} />
+                      <YAxis {...axisProps} width={45} />
                       <RechartsTooltip content={renderTooltip} />
                       <Legend onClick={(e) => handleLegendClick('memory', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
-                      <Line type="monotone" dot={false} dataKey="memHeap" name={t("admin:system_monitoring.jvm_heap_used")} stroke="#ff7300" strokeWidth={2} hide={isolatedSeries['memory'] && isolatedSeries['memory'] !== 'memHeap'} />
-                      <Line type="monotone" dot={false} dataKey="memNonHeap" name={t("admin:system_monitoring.jvm_nonheap_used")} stroke="#0288d1" strokeWidth={2} hide={isolatedSeries['memory'] && isolatedSeries['memory'] !== 'memNonHeap'} />
+                      <Line type="monotone" dot={false} dataKey="memHeap" name={t("admin:system_monitoring.jvm_heap_used")} stroke={chartColors[3]} strokeWidth={2.5} hide={isolatedSeries['memory'] && isolatedSeries['memory'] !== 'memHeap'} />
+                      <Line type="monotone" dot={false} dataKey="memNonHeap" name={t("admin:system_monitoring.jvm_nonheap_used")} stroke={chartColors[4]} strokeWidth={2.5} hide={isolatedSeries['memory'] && isolatedSeries['memory'] !== 'memNonHeap'} />
                     </LineChart>
                   </ResponsiveContainer>
                 </Box>
@@ -1040,12 +1060,12 @@ const AdminSystemMonitoringPage = () => {
                 <Box sx={monitoringChartBoxSx}>
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="timeFormatted" minTickGap={30} />
-                      <YAxis />
+                      <CartesianGrid {...gridProps} />
+                      <XAxis dataKey="timeFormatted" minTickGap={30} {...axisProps} />
+                      <YAxis {...axisProps} width={45} />
                       <RechartsTooltip content={renderTooltip} />
                       <Legend />
-                      <Line type="monotone" dot={false} dataKey="gcPause" name={t("admin:system_monitoring.gc_pause_time")} stroke="#9c27b0" strokeWidth={2} />
+                      <Line type="monotone" dot={false} dataKey="gcPause" name={t("admin:system_monitoring.gc_pause_time")} stroke={chartColors[5]} strokeWidth={2.5} />
                     </LineChart>
                   </ResponsiveContainer>
                 </Box>
@@ -1060,12 +1080,12 @@ const AdminSystemMonitoringPage = () => {
                 <Box sx={monitoringChartBoxSx}>
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="timeFormatted" minTickGap={30} />
-                      <YAxis />
+                      <CartesianGrid {...gridProps} />
+                      <XAxis dataKey="timeFormatted" minTickGap={30} {...axisProps} />
+                      <YAxis {...axisProps} width={45} />
                       <RechartsTooltip content={renderTooltip} />
                       <Legend />
-                      <Line type="monotone" dot={false} dataKey="gcCount" name={t("admin:system_monitoring.gc_collections")} stroke="#7b1fa2" strokeWidth={2} />
+                      <Line type="monotone" dot={false} dataKey="gcCount" name={t("admin:system_monitoring.gc_collections")} stroke={chartColors[6]} strokeWidth={2.5} />
                     </LineChart>
                   </ResponsiveContainer>
                 </Box>
@@ -1080,14 +1100,14 @@ const AdminSystemMonitoringPage = () => {
                 <Box sx={monitoringChartBoxSx}>
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="timeFormatted" minTickGap={30} />
-                      <YAxis domain={[0, 100]} />
+                      <CartesianGrid {...gridProps} />
+                      <XAxis dataKey="timeFormatted" minTickGap={30} {...axisProps} />
+                      <YAxis domain={[0, 100]} {...axisProps} width={45} />
                       <RechartsTooltip content={renderTooltip} />
                       <Legend onClick={(e) => handleLegendClick('util', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
-                      <Line type="monotone" dot={false} dataKey="heapUtil" name={t("admin:system_monitoring.heap_utilization")} stroke={theme.palette.error.main} strokeWidth={2} hide={isolatedSeries['util'] && isolatedSeries['util'] !== 'heapUtil'} />
-                      <Line type="monotone" dot={false} dataKey="fdUsage" name={t("admin:system_monitoring.fd_usage")} stroke={theme.palette.warning.main} strokeWidth={2} hide={isolatedSeries['util'] && isolatedSeries['util'] !== 'fdUsage'} />
-                      <Line type="monotone" dot={false} dataKey="dbSaturation" name={t("admin:system_monitoring.db_saturation")} stroke={theme.palette.info.main} strokeWidth={2} hide={isolatedSeries['util'] && isolatedSeries['util'] !== 'dbSaturation'} />
+                      <Line type="monotone" dot={false} dataKey="heapUtil" name={t("admin:system_monitoring.heap_utilization")} stroke={theme.palette.error.main} strokeWidth={2.5} hide={isolatedSeries['util'] && isolatedSeries['util'] !== 'heapUtil'} />
+                      <Line type="monotone" dot={false} dataKey="fdUsage" name={t("admin:system_monitoring.fd_usage")} stroke={theme.palette.warning.main} strokeWidth={2.5} hide={isolatedSeries['util'] && isolatedSeries['util'] !== 'fdUsage'} />
+                      <Line type="monotone" dot={false} dataKey="dbSaturation" name={t("admin:system_monitoring.db_saturation")} stroke={theme.palette.info.main} strokeWidth={2.5} hide={isolatedSeries['util'] && isolatedSeries['util'] !== 'dbSaturation'} />
                     </LineChart>
                   </ResponsiveContainer>
                 </Box>
@@ -1102,12 +1122,12 @@ const AdminSystemMonitoringPage = () => {
                 <Box sx={monitoringChartBoxSx}>
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="timeFormatted" minTickGap={30} />
-                      <YAxis />
+                      <CartesianGrid {...gridProps} />
+                      <XAxis dataKey="timeFormatted" minTickGap={30} {...axisProps} />
+                      <YAxis {...axisProps} width={45} />
                       <RechartsTooltip content={renderTooltip} />
                       <Legend onClick={(e) => handleLegendClick('load', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
-                      <Line type="monotone" dot={false} dataKey="systemLoad" name={t("admin:system_monitoring.load_1m")} stroke={theme.palette.primary.main} strokeWidth={2} hide={isolatedSeries['load'] && isolatedSeries['load'] !== 'systemLoad'} />
+                      <Line type="monotone" dot={false} dataKey="systemLoad" name={t("admin:system_monitoring.load_1m")} stroke={theme.palette.primary.main} strokeWidth={2.5} hide={isolatedSeries['load'] && isolatedSeries['load'] !== 'systemLoad'} />
                       <Line type="monotone" dot={false} dataKey="cpuCount" name={t("admin:system_monitoring.cpu_count")} stroke={theme.palette.text.secondary} strokeWidth={1} strokeDasharray="4 4" hide={isolatedSeries['load'] && isolatedSeries['load'] !== 'cpuCount'} />
                     </LineChart>
                   </ResponsiveContainer>
@@ -1122,10 +1142,10 @@ const AdminSystemMonitoringPage = () => {
               >
                 <Box sx={monitoringChartBoxSx}>
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="timeFormatted" minTickGap={30} />
-                      <YAxis />
+                    <AreaChart data={chartData}>{renderDefs()}
+                      <CartesianGrid {...gridProps} />
+                      <XAxis dataKey="timeFormatted" minTickGap={30} {...axisProps} />
+                      <YAxis {...axisProps} width={45} />
                       <RechartsTooltip content={renderTooltip} />
                       <Legend onClick={(e) => handleLegendClick('logs', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
                       <Area type="monotone" dataKey="logWarns" name={t("admin:system_monitoring.log_warn")} stackId="1" stroke={theme.palette.warning.main} fill={theme.palette.warning.light} fillOpacity={0.5} hide={isolatedSeries['logs'] && isolatedSeries['logs'] !== 'logWarns'} />
@@ -1144,15 +1164,15 @@ const AdminSystemMonitoringPage = () => {
                 <Box sx={monitoringChartBoxSx}>
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="timeFormatted" minTickGap={30} />
-                      <YAxis />
+                      <CartesianGrid {...gridProps} />
+                      <XAxis dataKey="timeFormatted" minTickGap={30} {...axisProps} />
+                      <YAxis {...axisProps} width={45} />
                       <RechartsTooltip content={renderTooltip} />
                       <Legend onClick={(e) => handleLegendClick('io', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
-                      <Line type="monotone" dot={false} dataKey="emailLat" name={t("admin:system_monitoring.email_latency")} stroke="#8884d8" strokeWidth={2} hide={isolatedSeries['io'] && isolatedSeries['io'] !== 'emailLat'} />
-                      <Line type="monotone" dot={false} dataKey="ocrLat" name={t("admin:system_monitoring.ocr_latency")} stroke="#82ca9d" strokeWidth={2} hide={isolatedSeries['io'] && isolatedSeries['io'] !== 'ocrLat'} />
-                      <Line type="monotone" dot={false} dataKey="imageLat" name={t("admin:system_monitoring.image_latency")} stroke="#ffc658" strokeWidth={2} hide={isolatedSeries['io'] && isolatedSeries['io'] !== 'imageLat'} />
-                      <Line type="monotone" dot={false} dataKey="fileUploadLat" name={t("admin:system_monitoring.file_upload_latency")} stroke="#ff7300" strokeWidth={2} hide={isolatedSeries['io'] && isolatedSeries['io'] !== 'fileUploadLat'} />
+                      <Line type="monotone" dot={false} dataKey="emailLat" name={t("admin:system_monitoring.email_latency")} stroke={chartColors[0]} strokeWidth={2.5} hide={isolatedSeries['io'] && isolatedSeries['io'] !== 'emailLat'} />
+                      <Line type="monotone" dot={false} dataKey="ocrLat" name={t("admin:system_monitoring.ocr_latency")} stroke={chartColors[1]} strokeWidth={2.5} hide={isolatedSeries['io'] && isolatedSeries['io'] !== 'ocrLat'} />
+                      <Line type="monotone" dot={false} dataKey="imageLat" name={t("admin:system_monitoring.image_latency")} stroke={chartColors[2]} strokeWidth={2.5} hide={isolatedSeries['io'] && isolatedSeries['io'] !== 'imageLat'} />
+                      <Line type="monotone" dot={false} dataKey="fileUploadLat" name={t("admin:system_monitoring.file_upload_latency")} stroke={chartColors[3]} strokeWidth={2.5} hide={isolatedSeries['io'] && isolatedSeries['io'] !== 'fileUploadLat'} />
                     </LineChart>
                   </ResponsiveContainer>
                 </Box>
@@ -1166,13 +1186,13 @@ const AdminSystemMonitoringPage = () => {
               >
                 <Box sx={monitoringChartBoxSx}>
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="timeFormatted" minTickGap={30} />
-                      <YAxis />
+                    <AreaChart data={chartData}>{renderDefs()}
+                      <CartesianGrid {...gridProps} />
+                      <XAxis dataKey="timeFormatted" minTickGap={30} {...axisProps} />
+                      <YAxis {...axisProps} width={45} />
                       <RechartsTooltip content={renderTooltip} />
                       <Legend />
-                      <Area type="monotone" dataKey="storageSize" name={t("admin:system_monitoring.storage_size_mb")} stroke={theme.palette.success.main} fill={theme.palette.success.light} fillOpacity={0.3} />
+                      <Area type="monotone" dataKey="storageSize" name={t("admin:system_monitoring.storage_size_mb")} stroke={theme.palette.success.main} fill="url(#area-success)" strokeWidth={2.5} />
                     </AreaChart>
                   </ResponsiveContainer>
                 </Box>
@@ -1187,15 +1207,15 @@ const AdminSystemMonitoringPage = () => {
                 <Box sx={monitoringChartBoxSx}>
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="timeFormatted" minTickGap={30} />
-                      <YAxis />
+                      <CartesianGrid {...gridProps} />
+                      <XAxis dataKey="timeFormatted" minTickGap={30} {...axisProps} />
+                      <YAxis {...axisProps} width={45} />
                       <RechartsTooltip content={renderTooltip} />
                       <Legend onClick={(e) => handleLegendClick('auth', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
-                      <Line type="monotone" dot={false} dataKey="authLoginSuccess" name={t("admin:system_monitoring.login_success")} stroke={theme.palette.success.main} strokeWidth={2} hide={isolatedSeries['auth'] && isolatedSeries['auth'] !== 'authLoginSuccess'} />
-                      <Line type="monotone" dot={false} dataKey="authLoginFailure" name={t("admin:system_monitoring.login_failure")} stroke={theme.palette.error.main} strokeWidth={2} hide={isolatedSeries['auth'] && isolatedSeries['auth'] !== 'authLoginFailure'} />
-                      <Line type="monotone" dot={false} dataKey="authRefreshSuccess" name={t("admin:system_monitoring.refresh_success")} stroke={theme.palette.info.main} strokeWidth={2} hide={isolatedSeries['auth'] && isolatedSeries['auth'] !== 'authRefreshSuccess'} />
-                      <Line type="monotone" dot={false} dataKey="authRefreshFailure" name={t("admin:system_monitoring.refresh_failure")} stroke={theme.palette.warning.main} strokeWidth={2} hide={isolatedSeries['auth'] && isolatedSeries['auth'] !== 'authRefreshFailure'} />
+                      <Line type="monotone" dot={false} dataKey="authLoginSuccess" name={t("admin:system_monitoring.login_success")} stroke={theme.palette.success.main} strokeWidth={2.5} hide={isolatedSeries['auth'] && isolatedSeries['auth'] !== 'authLoginSuccess'} />
+                      <Line type="monotone" dot={false} dataKey="authLoginFailure" name={t("admin:system_monitoring.login_failure")} stroke={theme.palette.error.main} strokeWidth={2.5} hide={isolatedSeries['auth'] && isolatedSeries['auth'] !== 'authLoginFailure'} />
+                      <Line type="monotone" dot={false} dataKey="authRefreshSuccess" name={t("admin:system_monitoring.refresh_success")} stroke={theme.palette.info.main} strokeWidth={2.5} hide={isolatedSeries['auth'] && isolatedSeries['auth'] !== 'authRefreshSuccess'} />
+                      <Line type="monotone" dot={false} dataKey="authRefreshFailure" name={t("admin:system_monitoring.refresh_failure")} stroke={theme.palette.warning.main} strokeWidth={2.5} hide={isolatedSeries['auth'] && isolatedSeries['auth'] !== 'authRefreshFailure'} />
                     </LineChart>
                   </ResponsiveContainer>
                 </Box>
@@ -1209,13 +1229,13 @@ const AdminSystemMonitoringPage = () => {
               >
                 <Box sx={monitoringChartBoxSx}>
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="timeFormatted" minTickGap={30} />
-                      <YAxis />
+                    <AreaChart data={chartData}>{renderDefs()}
+                      <CartesianGrid {...gridProps} />
+                      <XAxis dataKey="timeFormatted" minTickGap={30} {...axisProps} />
+                      <YAxis {...axisProps} width={45} />
                       <RechartsTooltip content={renderTooltip} />
                       <Legend />
-                      <Area type="monotone" dataKey="rateLimitRejected" name={t("admin:system_monitoring.ratelimit_rejected")} stroke={theme.palette.error.main} fill={theme.palette.error.light} fillOpacity={0.4} />
+                      <Area type="monotone" dataKey="rateLimitRejected" name={t("admin:system_monitoring.ratelimit_rejected")} stroke={theme.palette.error.main} fill="url(#area-error)" strokeWidth={2.5} />
                     </AreaChart>
                   </ResponsiveContainer>
                 </Box>
@@ -1229,14 +1249,14 @@ const AdminSystemMonitoringPage = () => {
               >
                 <Box sx={monitoringChartBoxSx}>
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="timeFormatted" minTickGap={30} />
-                      <YAxis />
+                    <AreaChart data={chartData}>{renderDefs()}
+                      <CartesianGrid {...gridProps} />
+                      <XAxis dataKey="timeFormatted" minTickGap={30} {...axisProps} />
+                      <YAxis {...axisProps} width={45} />
                       <RechartsTooltip content={renderTooltip} />
                       <Legend onClick={(e) => handleLegendClick('ws', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
-                      <Area type="monotone" dataKey="wsActiveSessions" name={t("admin:system_monitoring.ws_sessions")} stroke={theme.palette.primary.main} fill={theme.palette.primary.light} fillOpacity={0.4} hide={isolatedSeries['ws'] && isolatedSeries['ws'] !== 'wsActiveSessions'} />
-                      <Area type="monotone" dataKey="wsActiveGroups" name={t("admin:system_monitoring.ws_groups")} stroke={theme.palette.secondary.main} fill={theme.palette.secondary.light} fillOpacity={0.4} hide={isolatedSeries['ws'] && isolatedSeries['ws'] !== 'wsActiveGroups'} />
+                      <Area type="monotone" dataKey="wsActiveSessions" name={t("admin:system_monitoring.ws_sessions")} stroke={theme.palette.primary.main} fill="url(#area-primary)" strokeWidth={2.5} hide={isolatedSeries['ws'] && isolatedSeries['ws'] !== 'wsActiveSessions'} />
+                      <Area type="monotone" dataKey="wsActiveGroups" name={t("admin:system_monitoring.ws_groups")} stroke={theme.palette.secondary.main} fill="url(#area-secondary)" strokeWidth={2.5} hide={isolatedSeries['ws'] && isolatedSeries['ws'] !== 'wsActiveGroups'} />
                     </AreaChart>
                   </ResponsiveContainer>
                 </Box>
@@ -1250,14 +1270,14 @@ const AdminSystemMonitoringPage = () => {
               >
                 <Box sx={monitoringChartBoxSx}>
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="timeFormatted" minTickGap={30} />
-                      <YAxis allowDecimals={false} />
+                    <AreaChart data={chartData}>{renderDefs()}
+                      <CartesianGrid {...gridProps} />
+                      <XAxis dataKey="timeFormatted" minTickGap={30} {...axisProps} />
+                      <YAxis allowDecimals={false} {...axisProps} width={45} />
                       <RechartsTooltip content={renderTooltip} />
                       <Legend onClick={(e) => handleLegendClick('sse', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
-                      <Area type="monotone" dataKey="sseActiveConnections" name={t("admin:system_monitoring.sse_active_connections", "Active Connections")} stroke={theme.palette.primary.main} fill={theme.palette.primary.light} fillOpacity={0.4} hide={isolatedSeries['sse'] && isolatedSeries['sse'] !== 'sseActiveConnections'} />
-                      <Area type="monotone" dataKey="sseActiveUsers" name={t("admin:system_monitoring.sse_active_users", "Active Users")} stroke={theme.palette.info.main} fill={theme.palette.info.light} fillOpacity={0.4} hide={isolatedSeries['sse'] && isolatedSeries['sse'] !== 'sseActiveUsers'} />
+                      <Area type="monotone" dataKey="sseActiveConnections" name={t("admin:system_monitoring.sse_active_connections", "Active Connections")} stroke={theme.palette.primary.main} fill="url(#area-primary)" strokeWidth={2.5} hide={isolatedSeries['sse'] && isolatedSeries['sse'] !== 'sseActiveConnections'} />
+                      <Area type="monotone" dataKey="sseActiveUsers" name={t("admin:system_monitoring.sse_active_users", "Active Users")} stroke={theme.palette.info.main} fill="url(#area-info)" strokeWidth={2.5} hide={isolatedSeries['sse'] && isolatedSeries['sse'] !== 'sseActiveUsers'} />
                     </AreaChart>
                   </ResponsiveContainer>
                 </Box>
@@ -1271,19 +1291,19 @@ const AdminSystemMonitoringPage = () => {
               >
                 <Box sx={monitoringChartBoxSx}>
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="timeFormatted" minTickGap={30} />
-                      <YAxis />
+                    <AreaChart data={chartData}>{renderDefs()}
+                      <CartesianGrid {...gridProps} />
+                      <XAxis dataKey="timeFormatted" minTickGap={30} {...axisProps} />
+                      <YAxis {...axisProps} width={45} />
                       <RechartsTooltip content={renderTooltip} />
                       <Legend onClick={(e) => handleLegendClick('sseEvents', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
                       {availableSseEvents.length === 0 && (
-                        <Area type="monotone" dataKey="sseEventsRate" name={t("admin:system_monitoring.sse_events_total", "Events/s")} stroke={theme.palette.success.main} fill={theme.palette.success.light} fillOpacity={0.4} />
+                        <Area type="monotone" dataKey="sseEventsRate" name={t("admin:system_monitoring.sse_events_total", "Events/s")} stroke={theme.palette.success.main} fill="url(#area-success)" strokeWidth={2.5} />
                       )}
                       {availableSseEvents.map((eventName, idx) => {
                         const dataKey = `sse_evt_${eventName}`;
                         const isIsolated = isolatedSeries['sseEvents'];
-                        const color = COLORS[idx % COLORS.length];
+                        const color = chartColors[idx % chartColors.length];
                         return (
                           <Area
                             key={eventName}
@@ -1311,14 +1331,14 @@ const AdminSystemMonitoringPage = () => {
                 <Box sx={{ height: 300 }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="timeFormatted" minTickGap={30} />
-                      <YAxis />
+                      <CartesianGrid {...gridProps} />
+                      <XAxis dataKey="timeFormatted" minTickGap={30} {...axisProps} />
+                      <YAxis {...axisProps} width={45} />
                       <RechartsTooltip content={renderTooltip} />
                       <Legend onClick={(e) => handleLegendClick('threads', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
-                      <Line type="monotone" dot={false} dataKey="threadsCurrent" name={t("admin:system_monitoring.threads_current", "Current Threads")} stroke={theme.palette.info.main} strokeWidth={2} hide={isolatedSeries['threads'] && isolatedSeries['threads'] !== 'threadsCurrent'} />
-                      <Line type="monotone" dot={false} dataKey="threadsDaemon" name={t("admin:system_monitoring.threads_daemon", "Daemon Threads")} stroke={theme.palette.secondary.main} strokeWidth={2} hide={isolatedSeries['threads'] && isolatedSeries['threads'] !== 'threadsDaemon'} />
-                      <Line type="monotone" dot={false} dataKey="threadsPeak" name={t("admin:system_monitoring.threads_peak", "Peak Threads")} stroke={theme.palette.error.main} strokeWidth={2} hide={isolatedSeries['threads'] && isolatedSeries['threads'] !== 'threadsPeak'} />
+                      <Line type="monotone" dot={false} dataKey="threadsCurrent" name={t("admin:system_monitoring.threads_current", "Current Threads")} stroke={theme.palette.info.main} strokeWidth={2.5} hide={isolatedSeries['threads'] && isolatedSeries['threads'] !== 'threadsCurrent'} />
+                      <Line type="monotone" dot={false} dataKey="threadsDaemon" name={t("admin:system_monitoring.threads_daemon", "Daemon Threads")} stroke={theme.palette.secondary.main} strokeWidth={2.5} hide={isolatedSeries['threads'] && isolatedSeries['threads'] !== 'threadsDaemon'} />
+                      <Line type="monotone" dot={false} dataKey="threadsPeak" name={t("admin:system_monitoring.threads_peak", "Peak Threads")} stroke={theme.palette.error.main} strokeWidth={2.5} hide={isolatedSeries['threads'] && isolatedSeries['threads'] !== 'threadsPeak'} />
                     </LineChart>
                   </ResponsiveContainer>
                 </Box>
@@ -1331,10 +1351,10 @@ const AdminSystemMonitoringPage = () => {
                 <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2, color: 'primary.main' }}>{t('admin:system_monitoring.db_connections', 'Database Connections (R2DBC)')}</Typography>
                 <Box sx={{ height: 300 }}>
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="timeFormatted" minTickGap={30} />
-                      <YAxis />
+                    <AreaChart data={chartData}>{renderDefs()}
+                      <CartesianGrid {...gridProps} />
+                      <XAxis dataKey="timeFormatted" minTickGap={30} {...axisProps} />
+                      <YAxis {...axisProps} width={45} />
                       <RechartsTooltip content={renderTooltip} />
                       <Legend onClick={(e) => handleLegendClick('db', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
                       <Area type="monotone" dataKey="dbActive" name={t("admin:system_monitoring.db_active", "Active")} stackId="1" stroke={theme.palette.success.main} fill={theme.palette.success.light} fillOpacity={0.6} hide={isolatedSeries['db'] && isolatedSeries['db'] !== 'dbActive'} />

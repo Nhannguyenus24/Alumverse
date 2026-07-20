@@ -90,7 +90,7 @@ public class UserBlockService {
     private Mono<Void> assertTargetActive(Long targetMemberId) {
         return userBlockRepository.existsActiveUserById(targetMemberId)
                 .flatMap(active -> active
-                        ? Mono.<Void>empty()
+                        ? Mono.empty()
                         : Mono.error(new ApplicationException(
                                 ErrorCode.USER_NOT_FOUND,
                                 "Target member is not active")));

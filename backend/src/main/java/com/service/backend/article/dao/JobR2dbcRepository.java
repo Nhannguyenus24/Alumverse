@@ -60,9 +60,6 @@ public interface JobR2dbcRepository extends R2dbcRepository<Job, Integer> {
     @Query("SELECT COUNT(*) FROM jobs WHERE created_at >= :since")
     Mono<Long> countSince(java.time.LocalDateTime since);
 
-    @Query("SELECT * FROM jobs WHERE is_active = true ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
-    Flux<Job> findAllActiveWithPagination(int limit, int offset);
-
     @Query("SELECT * FROM jobs WHERE is_active = true AND (deadline IS NULL OR deadline >= :today) ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
     Flux<Job> findAllOpenJobsWithPagination(LocalDate today, int limit, int offset);
 

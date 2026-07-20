@@ -101,7 +101,7 @@ public class ForumService {
                                 SecurityUtils.canManageContentOrganization(topic.getOrganizationId()))
                         .flatMap(ctx -> {
                             Integer memberId = ctx.getT1();
-                            boolean canManage = Boolean.TRUE.equals(ctx.getT2());
+                            boolean canManage = ctx.getT2();
                             boolean ownsPost = post.getAuthorMemberId() != null
                                     && post.getAuthorMemberId().equals(memberId);
                             if (ownsPost || canManage) {
@@ -151,18 +151,16 @@ public class ForumService {
                     log.warn("Forum category not found with ID: {}", id);
                     return Mono.error(new ApplicationException(ErrorCode.FORUM_CATEGORY_NOT_FOUND));
                 }))
-                .flatMap(category -> {
-                    return SecurityUtils.assertCanManageContentOrganization(category.getOrganizationId())
-                            .then(Mono.defer(() -> {
-                                if (request.getName() != null) {
-                                    category.setName(request.getName());
-                                }
-                                if (request.getDescription() != null) {
-                                    category.setDescription(request.getDescription());
-                                }
-                                return forumCategoryRepository.save(category);
-                            }));
-                })
+                .flatMap(category -> SecurityUtils.assertCanManageContentOrganization(category.getOrganizationId())
+                        .then(Mono.defer(() -> {
+                            if (request.getName() != null) {
+                                category.setName(request.getName());
+                            }
+                            if (request.getDescription() != null) {
+                                category.setDescription(request.getDescription());
+                            }
+                            return forumCategoryRepository.save(category);
+                        })))
                 .flatMap(this::convertToCategoryDTOWithStats)
                 .delayUntil(res -> cacheUtils.clear("forum_category_cache"))
                 .doOnSuccess(result -> log.info("updateCategory result: {}", JsonUtils.toJson(result)))
@@ -246,29 +244,27 @@ public class ForumService {
                     log.warn("Forum topic not found with ID: {}", id);
                     return Mono.error(new ApplicationException(ErrorCode.FORUM_TOPIC_NOT_FOUND));
                 }))
-                .flatMap(topic -> {
-                    return SecurityUtils.assertCanManageContentOrganization(topic.getOrganizationId())
-                            .then(Mono.defer(() -> {
-                                if (request.getTitle() != null) {
-                                    topic.setTitle(request.getTitle());
-                                }
-                                if (request.getCategoryId() == null) {
-                                    return forumTopicRepository.save(topic);
-                                }
-                                return forumCategoryRepository.findById(request.getCategoryId())
-                                        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.FORUM_CATEGORY_NOT_FOUND)))
-                                        .flatMap(category -> {
-                                            if (topic.getOrganizationId() == null
-                                                    || !topic.getOrganizationId().equals(category.getOrganizationId())) {
-                                                return Mono.error(new ApplicationException(
-                                                        ErrorCode.BAD_REQUEST,
-                                                        "Forum category does not belong to this topic organization"));
-                                            }
-                                            topic.setCategoryId(request.getCategoryId());
-                                            return forumTopicRepository.save(topic);
-                                        });
-                            }));
-                })
+                .flatMap(topic -> SecurityUtils.assertCanManageContentOrganization(topic.getOrganizationId())
+                        .then(Mono.defer(() -> {
+                            if (request.getTitle() != null) {
+                                topic.setTitle(request.getTitle());
+                            }
+                            if (request.getCategoryId() == null) {
+                                return forumTopicRepository.save(topic);
+                            }
+                            return forumCategoryRepository.findById(request.getCategoryId())
+                                    .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.FORUM_CATEGORY_NOT_FOUND)))
+                                    .flatMap(category -> {
+                                        if (topic.getOrganizationId() == null
+                                                || !topic.getOrganizationId().equals(category.getOrganizationId())) {
+                                            return Mono.error(new ApplicationException(
+                                                    ErrorCode.BAD_REQUEST,
+                                                    "Forum category does not belong to this topic organization"));
+                                        }
+                                        topic.setCategoryId(request.getCategoryId());
+                                        return forumTopicRepository.save(topic);
+                                    });
+                        })))
                 .flatMap(this::convertToTopicDTOWithPostCount)
                 .delayUntil(res -> cacheUtils.clear("forum_category_cache"))
                 .doOnSuccess(result -> log.info("updateTopic result: {}", JsonUtils.toJson(result)))
@@ -414,13 +410,11 @@ public class ForumService {
                     log.warn("Forum post not found with ID: {}", id);
                     return Mono.error(new ApplicationException(ErrorCode.FORUM_POST_NOT_FOUND));
                 }))
-                .flatMap(post -> {
-                    return assertPostOwnerOrManager(post)
-                            .then(Mono.defer(() -> {
-                                post.setContent(request.getContent());
-                                return forumPostRepository.save(post);
-                            }));
-                })
+                .flatMap(post -> assertPostOwnerOrManager(post)
+                        .then(Mono.defer(() -> {
+                            post.setContent(request.getContent());
+                            return forumPostRepository.save(post);
+                        })))
                 .map(this::convertToPostDTO)
                 .doOnSuccess(result -> log.info("updatePost result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error updating forum post ID: {}", id, error));
@@ -479,7 +473,7 @@ public class ForumService {
                                             if (Boolean.TRUE.equals(alreadyLiked)) {
                                                 return forumPostReactionRepository.deleteByPostIdAndMemberId(
                                                                 request.getPostId(), memberId)
-                                                        .then(Mono.<ForumPostReaction>empty());
+                                                        .then(Mono.empty());
                                             }
                                             log.info("Creating new like for post ID: {}, member: {}",
                                                     request.getPostId(), memberId);
@@ -537,7 +531,7 @@ public class ForumService {
                                             request.getTopicId(), memberId);
                                     return forumTopicSubscriptionRepository.deleteByTopicIdAndMemberId(
                                             request.getTopicId(), memberId)
-                                            .then(Mono.<ForumTopicSubscription>empty());
+                                            .then(Mono.empty());
                                 }
                                 log.info("Creating new subscription for topic ID: {}, member: {}",
                                         request.getTopicId(), memberId);

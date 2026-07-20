@@ -22,7 +22,4 @@ public interface AlumniPostCommentRepository extends R2dbcRepository<AlumniPostC
 
     @Query("SELECT COUNT(*) FROM alumni_post_comments WHERE alumni_post_id = :alumniPostId AND is_hidden = false")
     Mono<Long> countByAlumniPostId(@Param("alumniPostId") Integer alumniPostId);
-
-    @Query("DELETE FROM alumni_post_comments WHERE alumni_post_id = :alumniPostId")
-    Mono<Void> deleteByAlumniPostId(@Param("alumniPostId") Integer alumniPostId);
 }

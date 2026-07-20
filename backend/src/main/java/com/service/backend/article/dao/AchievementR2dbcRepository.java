@@ -62,12 +62,6 @@ public interface AchievementR2dbcRepository extends R2dbcRepository<Achievement,
            "ORDER BY a.awarded_date DESC LIMIT :limit OFFSET :offset")
     Flux<AchievementDetailDTO> findDetailsByStatusAndOrganizationId(Status status, Integer organizationId, int limit, int offset);
 
-    @Query("SELECT * FROM achievements WHERE (LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(description) LIKE LOWER(CONCAT('%', :keyword, '%'))) ORDER BY awarded_date DESC LIMIT :limit OFFSET :offset")
-    Flux<Achievement> searchAchievements(String keyword, int limit, int offset);
-
-    @Query("SELECT COUNT(*) FROM achievements WHERE (LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(description) LIKE LOWER(CONCAT('%', :keyword, '%')))")
-    Mono<Long> countSearchAchievements(String keyword);
-
     @Query("SELECT * FROM achievements " +
            "WHERE organization_id = :organizationId " +
            "ORDER BY awarded_date DESC LIMIT :limit OFFSET :offset")

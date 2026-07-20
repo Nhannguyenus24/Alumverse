@@ -12,9 +12,6 @@ import java.util.Collection;
 @Repository
 public interface SessionFeedbackR2dbcRepository extends R2dbcRepository<SessionFeedback, Integer> {
 
-    @Query("SELECT * FROM session_feedbacks WHERE session_id = :sessionId")
-    Mono<SessionFeedback> findBySessionId(Integer sessionId);
-
     @Query("SELECT * FROM session_feedbacks WHERE session_id IN (:sessionIds)")
     Flux<SessionFeedback> findBySessionIds(Collection<Integer> sessionIds);
 

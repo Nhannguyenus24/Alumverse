@@ -22,7 +22,4 @@ public interface EventCommentRepository extends R2dbcRepository<EventComment, In
 
     @Query("SELECT COUNT(*) FROM event_comments WHERE event_id = :eventId AND is_hidden = false")
     Mono<Long> countByEventId(@Param("eventId") Long eventId);
-
-    @Query("DELETE FROM event_comments WHERE event_id = :eventId")
-    Mono<Void> deleteByEventId(@Param("eventId") Long eventId);
 }

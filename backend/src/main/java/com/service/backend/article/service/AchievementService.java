@@ -155,24 +155,15 @@ public class AchievementService {
         if (organizationId == null) {
             return Mono.just(PaginatedResponse.of(java.util.List.of(), 0, page, limit));
         }
-        String orgKey = organizationId != null ? organizationId.toString() : "all";
+        String orgKey = organizationId.toString();
         String cacheKey = "status_" + status + "_org_" + orgKey + "_page_" + page + "_limit_" + limit;
         return cacheUtils.getOrCompute("achievement_cache", cacheKey, java.time.Duration.ofMinutes(5), () -> {
             int offset = page * limit;
-            if (organizationId != null) {
-                return PaginationHelper.paginate(
-                        achievementRepository.findDetailsByStatusAndOrganizationId(status, organizationId, limit, offset)
-                                .doOnNext(item -> log.info("Fetched achievement with status {} and org {}: {}", status, organizationId, JsonUtils.toJson(item)))
-                                .map(AchievementResponse::from),
-                        achievementRepository.countByStatusAndOrganizationId(status, organizationId),
-                        page, limit
-                );
-            }
             return PaginationHelper.paginate(
-                    achievementRepository.findDetailsByStatus(status, limit, offset)
-                            .doOnNext(item -> log.info("Fetched achievement with status {}: {}", status, JsonUtils.toJson(item)))
+                    achievementRepository.findDetailsByStatusAndOrganizationId(status, organizationId, limit, offset)
+                            .doOnNext(item -> log.info("Fetched achievement with status {} and org {}: {}", status, organizationId, JsonUtils.toJson(item)))
                             .map(AchievementResponse::from),
-                    achievementRepository.countByStatus(status),
+                    achievementRepository.countByStatusAndOrganizationId(status, organizationId),
                     page, limit
             );
         });

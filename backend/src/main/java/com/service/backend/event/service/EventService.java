@@ -148,10 +148,6 @@ public class EventService {
                         ErrorCode.EVENT_NOT_FOUND, "Published event not found")));
     }
 
-    public Mono<PaginatedResponse<Event>> getEventsByOrganization(int page, int limit) {
-        return SecurityUtils.getCurrentOrganizationId()
-                .flatMap(orgId -> this.findEventsByOrganization(orgId.longValue(), page, limit));
-    }
 
     public Mono<Event> publishEvent(Long eventId) {
         return this.findEventById(eventId)
@@ -172,14 +168,6 @@ public class EventService {
         return cacheUtils.getOrCompute("event_cache", cacheKey, java.time.Duration.ofMinutes(5), () ->
                 this.findUpcomingEvents(organizationId, page, limit)
                         .doOnNext(res -> log.info("Fetched {} upcoming events for organization {}: {}", res.getItems().size(), organizationId, JsonUtils.toJson(res.getItems())))
-        );
-    }
-
-    public Mono<PaginatedResponse<Event>> getUpcomingEvents(int page, int limit) {
-        String cacheKey = "upcoming_events_global_page_" + page + "_limit_" + limit;
-        return cacheUtils.getOrCompute("event_cache", cacheKey, java.time.Duration.ofMinutes(5), () ->
-                this.findUpcomingEvents(page, limit)
-                        .doOnNext(res -> log.info("Fetched {} upcoming events globally: {}", res.getItems().size(), JsonUtils.toJson(res.getItems())))
         );
     }
 
@@ -563,7 +551,7 @@ public class EventService {
             return Mono.empty();
         }
         return userProfileRepository.findAttendeeProfileByUserId(ticket.getMemberId().intValue())
-                .map(profile -> profile.email())
+                .map(UserProfileRepository.AttendeeProfile::email)
                 .filter(StringUtils::hasText)
                 .map(String::trim);
     }
@@ -618,15 +606,6 @@ public class EventService {
         return Mono.error(new ApplicationException(ErrorCode.TICKET_QR_INVALID, "Missing QR token or ticket code"));
     }
 
-    private Mono<Void> requireStaff() {
-        return SecurityUtils.getCurrentUserRole()
-                .filter(role -> role.equalsIgnoreCase("ADMIN")
-                        || role.equalsIgnoreCase("STAFF")
-                        || role.equalsIgnoreCase("MODERATOR"))
-                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.FORBIDDEN, "Only staff can check in tickets")))
-                .then();
-    }
-
     // ─── Ticket queries ───────────────────────────────────────────────────────
 
     public Mono<EventTicket> cancelTicket(String ticketCode, String reason) {
@@ -644,7 +623,7 @@ public class EventService {
                         return Mono.error(new ApplicationException(ErrorCode.TICKET_ALREADY_CANCELLED, "Ticket already cancelled"));
                     }
                     boolean ownsTicket = ticket.getMemberId() != null && ticket.getMemberId().equals(currentUserId);
-                    Mono<Void> permission = ownsTicket ? Mono.<Void>empty() : assertCanManageTicket(ticket);
+                    Mono<Void> permission = ownsTicket ? Mono.empty() : assertCanManageTicket(ticket);
                     return permission.then(this.cancelTicket(ticket.getId(), reason.trim()));
                 });
     }
@@ -658,7 +637,7 @@ public class EventService {
                     Long currentUserId = tuple.getT1();
                     EventTicket ticket = tuple.getT2();
                     boolean ownsTicket = ticket.getMemberId() != null && ticket.getMemberId().equals(currentUserId);
-                    Mono<Void> permission = ownsTicket ? Mono.<Void>empty() : assertCanManageTicket(ticket);
+                    Mono<Void> permission = ownsTicket ? Mono.empty() : assertCanManageTicket(ticket);
                     return permission.then(toDetailWithAttendee(ticket));
                 });
     }
@@ -855,12 +834,6 @@ public class EventService {
 
     // ─── Event questions ──────────────────────────────────────────────────────
 
-    public Flux<EventQuestionResponse> getEventQuestions(Long eventId) {
-        return this.findEventById(eventId)
-                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId)))
-                .thenMany(this.findQuestionsByEvent(eventId).map(EventQuestionResponse::from));
-    }
-
     public Flux<EventQuestionResponse> getVisibleEventQuestions(Long eventId, Integer organizationId) {
         return getVisibleEventById(eventId, organizationId)
                 .thenMany(this.findQuestionsByEvent(eventId).map(EventQuestionResponse::from));
@@ -1012,16 +985,6 @@ public class EventService {
         return eventRepo.findById(eventId);
     }
 
-    private Mono<PaginatedResponse<Event>> findEventsByOrganization(Long organizationId, int page, int limit) {
-        int offset = page * limit;
-        return PaginationHelper.paginate(
-                eventRepo.findByOrganizationIdWithPagination(organizationId, limit, offset).collectList(),
-                eventRepo.countByOrganizationId(organizationId),
-                page,
-                limit
-        );
-    }
-
     // ─── Publishing ───────────────────────────────────────────────────────────
 
     private Mono<Event> daoPublishEvent(Long eventId) {
@@ -1040,17 +1003,6 @@ public class EventService {
         return PaginationHelper.paginate(
                 eventRepo.findUpcomingEvents(organizationId, now, limit, offset).collectList(),
                 eventRepo.countUpcomingEvents(organizationId, now),
-                page,
-                limit
-        );
-    }
-
-    private Mono<PaginatedResponse<Event>> findUpcomingEvents(int page, int limit) {
-        int offset = page * limit;
-        LocalDateTime now = LocalDateTime.now();
-        return PaginationHelper.paginate(
-                eventRepo.findAllUpcomingEvents(now, limit, offset).collectList(),
-                eventRepo.countAllUpcomingEvents(now),
                 page,
                 limit
         );

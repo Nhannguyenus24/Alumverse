@@ -2,7 +2,10 @@ import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import i18next from 'i18next';
 
-import apiClient from '../utils/axios';
+import apiClient, {
+  refreshSessionAccessToken,
+  syncAuthStoreFromAccessToken,
+} from '../utils/axios';
 import useAuthStore from '../stores/authStore';
 import useOrganizationStore from '../stores/organizationStore';
 import useChatUnreadStore from '../stores/chatUnreadStore';
@@ -61,6 +64,12 @@ export const useServerSentEvents = ({ onNotify } = {}) => {
 
     const source = new EventSource(resolveSseUrl(token));
 
+    // Chỉ cho phép refresh MỘT lần cho mỗi instance kết nối này. Khi backend trả 401
+    // (token hết hạn), EventSource chuyển sang CLOSED và KHÔNG tự reconnect nữa, nên
+    // ta phải chủ động refresh: thành công sẽ đổi authStore.token → effect chạy lại và
+    // mở kết nối mới bằng token còn hạn (đồng thời cấp cho instance mới một lượt refresh).
+    let didAttemptRefresh = false;
+
     const handleFeatureToggled = (event) => {
       const data = parseEvent(event);
       if (!data) return;
@@ -111,10 +120,23 @@ export const useServerSentEvents = ({ onNotify } = {}) => {
     source.addEventListener('new-message', handleNewMessage);
     source.addEventListener('verification-ocr-ready', handleVerificationOcrReady);
     source.onerror = () => {
-      // EventSource reconnects automatically; log only for diagnostics.
-      if (source.readyState === EventSource.CLOSED) {
-        console.warn('SSE connection closed');
-      }
+      // readyState CONNECTING nghĩa là EventSource đang tự reconnect (mất mạng tạm thời,
+      // proxy timeout...) — token vẫn còn hạn, cứ để nó tự lo, không làm gì.
+      if (source.readyState !== EventSource.CLOSED) return;
+
+      // CLOSED = server từ chối (thường là 401 token hết hạn) và sẽ không reconnect.
+      // Chủ động refresh đúng một lần rồi để effect mở lại kết nối; thất bại thì thôi
+      // (real API 401 qua axios interceptor sẽ lo việc logout).
+      if (didAttemptRefresh) return;
+      didAttemptRefresh = true;
+
+      refreshSessionAccessToken()
+        .then((data) => {
+          syncAuthStoreFromAccessToken(data);
+        })
+        .catch(() => {
+          console.warn('SSE connection closed; token refresh failed');
+        });
     };
 
     return () => {

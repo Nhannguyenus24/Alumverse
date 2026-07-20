@@ -443,20 +443,18 @@ public class AuthService {
         .onErrorMap(e -> new ApplicationException(ErrorCode.INVALID_REFRESH_TOKEN, e))
         .flatMap(userId -> authRepository.findById(userId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND)))
-                .flatMap(user -> {
-                    return getEffectiveVerificationLevel(user, newOrganizationId)
-                            .map(level -> reactor.util.function.Tuples.of(
-                                    jwtUtils.generateAccessToken(user, newOrganizationId, level),
-                                    level))
-                            .doOnSuccess(tuple -> {
-                                Integer level = tuple.getT2();
-                                if (level == 0) {
-                                    logger.info("switchOrganization: userId={} switched to organizationId={} as GUEST (not a member, verificationLevel=0)", userId, newOrganizationId);
-                                } else {
-                                    logger.info("switchOrganization: userId={} switched to organizationId={} as MEMBER (verificationLevel={})", userId, newOrganizationId, level);
-                                }
-                            });
-                }));
+                .flatMap(user -> getEffectiveVerificationLevel(user, newOrganizationId)
+                        .map(level -> reactor.util.function.Tuples.of(
+                                jwtUtils.generateAccessToken(user, newOrganizationId, level),
+                                level))
+                        .doOnSuccess(tuple -> {
+                            Integer level = tuple.getT2();
+                            if (level == 0) {
+                                logger.info("switchOrganization: userId={} switched to organizationId={} as GUEST (not a member, verificationLevel=0)", userId, newOrganizationId);
+                            } else {
+                                logger.info("switchOrganization: userId={} switched to organizationId={} as MEMBER (verificationLevel={})", userId, newOrganizationId, level);
+                            }
+                        })));
     }
 
     private Mono<GoogleTokenInfo> verifyGoogleToken(String idTokenString) {

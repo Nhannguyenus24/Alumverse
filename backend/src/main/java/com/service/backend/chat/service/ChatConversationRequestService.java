@@ -15,7 +15,6 @@ import com.service.backend.shared.entity.ChatConversationRequest;
 import com.service.backend.shared.entity.ChatGroup;
 import com.service.backend.shared.entity.ChatGroupMember;
 import com.service.backend.shared.entity.ChatMessage;
-import com.service.backend.shared.entity.OrganizationMember;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.enums.ConversationRequestStatus;
 import com.service.backend.user.dao.UserOrganizationMemberRepository;
@@ -229,7 +228,7 @@ public class ChatConversationRequestService {
     private Mono<Void> assertTargetActive(Long targetMemberId) {
         return chatConversationRequestRepository.existsActiveUserById(targetMemberId)
                 .flatMap(active -> active
-                        ? Mono.<Void>empty()
+                        ? Mono.empty()
                         : Mono.error(new ApplicationException(
                                 ErrorCode.USER_NOT_FOUND,
                                 "Target member is not active")));
@@ -247,7 +246,7 @@ public class ChatConversationRequestService {
                         ErrorCode.CONVERSATION_REQUEST_ORGANIZATION_CONTEXT_REQUIRED)))
                 .flatMap(organizationId -> isVerifiedInOrganization(targetMemberId, organizationId))
                 .flatMap(verified -> verified
-                        ? Mono.<Void>empty()
+                        ? Mono.empty()
                         : Mono.error(new ApplicationException(ErrorCode.CONVERSATION_REQUEST_TARGET_NOT_VERIFIED)));
     }
 

@@ -22,7 +22,4 @@ public interface NewsCommentRepository extends R2dbcRepository<NewsComment, Inte
 
     @Query("SELECT COUNT(*) FROM news_comments WHERE news_id = :newsId AND is_hidden = false")
     Mono<Long> countByNewsId(@Param("newsId") Integer newsId);
-
-    @Query("DELETE FROM news_comments WHERE news_id = :newsId")
-    Mono<Void> deleteByNewsId(@Param("newsId") Integer newsId);
 }

@@ -64,18 +64,6 @@ public class ChatService {
         return chatGroupRepository.findPrivateChatBetweenMembers(memberAId, memberBId);
     }
 
-    public Mono<ChatGroup> createNewPrivateChat(Long memberAId, Long memberBId) {
-        if (memberAId == null || memberBId == null) {
-            return Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND, "Member IDs must not be null"));
-        }
-
-        if (memberAId.equals(memberBId)) {
-            return Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND, "Cannot create private chat with yourself"));
-        }
-
-        return createPrivateChat(memberAId, memberBId);
-    }
-
     public Mono<PaginatedResponse<PrivateChatListItemResponse>> getListPrivateChatsWithSummary(
             Long memberId, String text, int page, int size) {
         if (memberId == null) {
@@ -100,43 +88,12 @@ public class ChatService {
                 .zipWith(chatGroupRepository.countGroupChats(memberId, text))
                 .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size));
     }
-    private Mono<ChatGroup> createPrivateChat(Long memberAId, Long memberBId) {
-        ChatGroup newGroup = ChatGroup.builder()
-                .type(ChatType.PRIVATE)
-                .title(null)
-                .createdBy(memberAId)
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
-                .build();
-
-        return chatGroupRepository.save(newGroup)
-                .flatMap(savedGroup -> {
-                        ChatGroupMember memberA = ChatGroupMember.builder()
-                            .groupId(savedGroup.getId())
-                            .memberId(memberAId)
-                            .role(ChatRole.MEMBER)
-                            .joinedAt(LocalDateTime.now())
-                            .build();
-
-                        ChatGroupMember memberB = ChatGroupMember.builder()
-                            .groupId(savedGroup.getId())
-                            .memberId(memberBId)
-                            .role(ChatRole.MEMBER)
-                            .joinedAt(LocalDateTime.now())
-                            .build();
-
-                    return chatGroupMemberRepository.saveAll(Flux.just(memberA, memberB))
-                            .then(Mono.just(savedGroup));
-                });
-    }
-
 
     public Mono<ChatMessage> sendMessage(Long groupId,
                                          Long senderMemberId,
                                          String content,
                                          String messageType,
-                                         String metadata,
-                                         String chatType) {
+                                         String metadata) {
         if (groupId == null || senderMemberId == null) {
             return Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND, "Group ID and sender ID must not be null"));
         }
