@@ -15,12 +15,9 @@ public class AppConfig {
     @Value("${jwt.expiration_access}")
     private long accessTokenExpirationMs;
 
-    @Value("${jwt.expiration_refresh}")
-    private long refreshTokenExpirationMs;
-
     @Bean
     public JwtUtils jwtUtils() {
-        return new JwtUtils(jwtSecret, accessTokenExpirationMs, refreshTokenExpirationMs);
+        return new JwtUtils(jwtSecret, accessTokenExpirationMs);
     }
 
     @Bean

@@ -6,6 +6,7 @@ import com.service.backend.article.dao.AlumniPostR2dbcRepository;
 import com.service.backend.article.dao.JobR2dbcRepository;
 import com.service.backend.article.dao.LearningResourceR2dbcRepository;
 import com.service.backend.article.dao.NewsR2dbcRepository;
+import com.service.backend.shared.utils.CacheNames;
 import com.service.backend.shared.utils.CacheUtils;
 import lombok.RequiredArgsConstructor;
 import java.time.Duration;
@@ -30,7 +31,7 @@ public class AdminContentService {
     private final CacheUtils cacheUtils;
 
     public Mono<ContentStatisticsDTO> getStatistics() {
-        return cacheUtils.getOrCompute("admin_content_statistics", "all", Duration.ofDays(1), () -> {
+        return cacheUtils.getOrCompute(CacheNames.ADMIN_CONTENT_STATISTICS, "all", Duration.ofDays(1), () -> {
             LocalDateTime weekAgo = LocalDateTime.now().minusDays(7);
         LocalDateTime monthAgo = LocalDateTime.now().minusDays(30);
 

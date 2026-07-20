@@ -4,6 +4,7 @@ import com.service.backend.fundraising.dao.FundDonationsR2dbcRepository;
 import com.service.backend.fundraising.dao.FundR2dbcRepository;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
+import com.service.backend.shared.utils.CacheUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -28,12 +29,13 @@ class SepayWebhookServiceTest {
 
     @Mock private FundDonationsR2dbcRepository fundDonationsRepository;
     @Mock private FundR2dbcRepository fundRepository;
+    @Mock private CacheUtils cacheUtils;
 
     private SepayWebhookService sepayWebhookService;
 
     @BeforeEach
     void setUp() {
-        sepayWebhookService = new SepayWebhookService(fundDonationsRepository, fundRepository);
+        sepayWebhookService = new SepayWebhookService(fundDonationsRepository, fundRepository, cacheUtils);
         ReflectionTestUtils.setField(sepayWebhookService, "sepayApiKey", "test-api-key");
     }
 
@@ -94,10 +96,14 @@ class SepayWebhookServiceTest {
                             .build())
             );
             when(fundRepository.incrementDonorCountAndAmount(any(), any())).thenReturn(Mono.just(1));
+            when(cacheUtils.clear(anyString())).thenReturn(Mono.empty());
 
             StepVerifier.create(sepayWebhookService.processWebhook("Apikey test-api-key", body))
                     .assertNext(result -> assertThat(result.get("success")).isTrue())
                     .verifyComplete();
+
+            // Marking the donation SUCCESS must invalidate the fund-statistics cache.
+            verify(cacheUtils).clear(com.service.backend.shared.utils.CacheNames.FUND_STATISTICS);
         }
     }
 }

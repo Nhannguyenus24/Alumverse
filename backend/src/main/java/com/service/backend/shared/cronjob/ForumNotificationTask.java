@@ -1,5 +1,6 @@
 package com.service.backend.shared.cronjob;
 
+import com.service.backend.shared.utils.CacheNames;
 import com.service.backend.shared.utils.CacheUtils;
 import com.service.backend.forum.dao.ForumTopicRepository;
 import com.service.backend.forum.dao.ForumTopicSubscriptionRepository;
@@ -30,13 +31,11 @@ public class ForumNotificationTask {
     private final NotificationService notificationService;
     private final CacheUtils cacheUtils;
 
-    private static final String FORUM_RECENT_POSTS_CACHE = "forumRecentPosts";
-
     @Scheduled(cron = "0 0 */12 * * *")
     public void sendForumNotifications() {
         log.warn("Starting ForumNotificationTask...");
 
-        cacheUtils.getKeys(FORUM_RECENT_POSTS_CACHE)
+        cacheUtils.getKeys(CacheNames.FORUM_RECENT_POSTS)
                 .flatMapMany(keys -> {
                     // Keys are now plain topicIds (no postId suffix)
                     Set<Integer> activeTopicIds = keys.stream()

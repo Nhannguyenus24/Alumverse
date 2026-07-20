@@ -14,6 +14,7 @@ import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.enums.QuestionType;
 import com.service.backend.shared.enums.Status;
 import com.service.backend.organization.dao.OrganizationRepository;
+import com.service.backend.shared.utils.CacheNames;
 import com.service.backend.shared.utils.CacheUtils;
 import com.service.backend.user.service.NotificationService;
 import com.service.backend.shared.exception.ApplicationException;
@@ -165,18 +166,31 @@ public class EventService {
 
     public Mono<PaginatedResponse<Event>> getUpcomingEvents(Long organizationId, int page, int limit) {
         String cacheKey = "upcoming_events_org_" + organizationId + "_page_" + page + "_limit_" + limit;
-        return cacheUtils.getOrCompute("event_cache", cacheKey, java.time.Duration.ofMinutes(5), () ->
+        return cacheUtils.getOrCompute(CacheNames.EVENT, cacheKey, java.time.Duration.ofMinutes(5), () ->
                 this.findUpcomingEvents(organizationId, page, limit)
                         .doOnNext(res -> log.info("Fetched {} upcoming events for organization {}: {}", res.getItems().size(), organizationId, JsonUtils.toJson(res.getItems())))
         );
     }
 
     public Mono<PaginatedResponse<Event>> getPastEvents(Long organizationId, int page, int limit) {
-        return this.findPastEvents(organizationId, page, limit);
+        String cacheKey = "past_events_org_" + organizationId + "_page_" + page + "_limit_" + limit;
+        return cacheUtils.getOrCompute(CacheNames.EVENT, cacheKey, java.time.Duration.ofMinutes(5), () ->
+                this.findPastEvents(organizationId, page, limit));
     }
 
     public Mono<PaginatedResponse<Event>> searchEvents(Long organizationId, String keyword, int page, int limit) {
-        return this.daoSearchEvents(organizationId, keyword, page, limit);
+        String cacheKey = "search_events_org_" + organizationId + "_kw_" + keyword + "_page_" + page + "_limit_" + limit;
+        return cacheUtils.getOrCompute(CacheNames.EVENT, cacheKey, java.time.Duration.ofMinutes(5), () ->
+                this.daoSearchEvents(organizationId, keyword, page, limit));
+    }
+
+    /**
+     * Clears the whole {@link CacheNames#EVENT} namespace. Called by every write that can change
+     * what upcoming/past/search event lists return. Paginated/filtered keys mean we cannot target a
+     * single key, so we clear the namespace (safe over-eviction, same pattern as ForumService).
+     */
+    private Mono<Void> evictEventCaches() {
+        return cacheUtils.clear(CacheNames.EVENT);
     }
 
     // ─── Interest ─────────────────────────────────────────────────────────────
@@ -957,7 +971,8 @@ public class EventService {
         eventData.setCreatedAt(LocalDateTime.now());
         eventData.setIsPublished(false);
         eventData.setInterestedCount(0);
-        return eventRepo.save(eventData);
+        return eventRepo.save(eventData)
+                .delayUntil(e -> evictEventCaches());
     }
 
     private Mono<Event> updateEvent(Long eventId, Event eventData) {
@@ -974,11 +989,14 @@ public class EventService {
                     existing.setMaxCapacity(eventData.getMaxCapacity());
                     if (eventData.getTopic() != null) existing.setTopic(eventData.getTopic());
                     return eventRepo.save(existing);
-                });
+                })
+                .delayUntil(e -> evictEventCaches());
     }
 
     private Mono<Boolean> daoDeleteEvent(Long eventId) {
-        return eventRepo.deleteById(eventId).thenReturn(true);
+        return eventRepo.deleteById(eventId)
+                .then(evictEventCaches())
+                .thenReturn(true);
     }
 
     private Mono<Event> findEventById(Long eventId) {
@@ -988,11 +1006,13 @@ public class EventService {
     // ─── Publishing ───────────────────────────────────────────────────────────
 
     private Mono<Event> daoPublishEvent(Long eventId) {
-        return eventRepo.publishEvent(eventId).then(eventRepo.findById(eventId));
+        return eventRepo.publishEvent(eventId).then(eventRepo.findById(eventId))
+                .delayUntil(e -> evictEventCaches());
     }
 
     private Mono<Event> daoUnpublishEvent(Long eventId) {
-        return eventRepo.unpublishEvent(eventId).then(eventRepo.findById(eventId));
+        return eventRepo.unpublishEvent(eventId).then(eventRepo.findById(eventId))
+                .delayUntil(e -> evictEventCaches());
     }
 
     // ─── Search & Filter ──────────────────────────────────────────────────────
@@ -1038,12 +1058,14 @@ public class EventService {
                 .createdAt(LocalDateTime.now())
                 .build();
         return interestRepo.save(interest)
-                .flatMap(saved -> eventRepo.incrementInterestedCount(eventId).thenReturn(saved));
+                .flatMap(saved -> eventRepo.incrementInterestedCount(eventId).thenReturn(saved))
+                .delayUntil(saved -> evictEventCaches());
     }
 
     private Mono<Boolean> removeEventInterest(Long eventId, Long memberId) {
         return interestRepo.deleteByEventIdAndMemberId(eventId, memberId)
                 .then(eventRepo.decrementInterestedCount(eventId))
+                .then(evictEventCaches())
                 .thenReturn(true);
     }
 

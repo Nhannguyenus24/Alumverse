@@ -12,6 +12,8 @@ import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.service.ImageService;
+import com.service.backend.shared.utils.CacheNames;
+import com.service.backend.shared.utils.CacheUtils;
 import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.shared.utils.SecurityUtils;
@@ -39,17 +41,25 @@ public class AdminEventService {
     private final EventInterestR2dbcRepository interestRepo;
     private final ImageService imageService;
     private final NotificationService notificationService;
+    private final CacheUtils cacheUtils;
 
     public AdminEventService(EventR2dbcRepository eventRepo,
                              EventTicketR2dbcRepository ticketRepo,
                              EventInterestR2dbcRepository interestRepo,
                              ImageService imageService,
-                             NotificationService notificationService) {
+                             NotificationService notificationService,
+                             CacheUtils cacheUtils) {
         this.eventRepo = eventRepo;
         this.ticketRepo = ticketRepo;
         this.interestRepo = interestRepo;
         this.imageService = imageService;
         this.notificationService = notificationService;
+        this.cacheUtils = cacheUtils;
+    }
+
+    /** Clears the shared {@link CacheNames#EVENT} namespace populated by EventService list reads. */
+    private Mono<Void> evictEventCaches() {
+        return cacheUtils.clear(CacheNames.EVENT);
     }
 
     /**
@@ -156,6 +166,7 @@ public class AdminEventService {
                             existing.setMaxCapacity(request.getMaxCapacity());
                             return eventRepo.save(existing);
                         })))
+                .delayUntil(e -> evictEventCaches())
                 .doOnSuccess(e -> log.info("updateEvent result: {}", JsonUtils.toJson(e)))
                 .doOnError(error -> log.error("Error updating event ID: {}", eventId, error));
     }
@@ -166,6 +177,7 @@ public class AdminEventService {
                         "Event not found with id: " + eventId)))
                 .flatMap(event -> SecurityUtils.assertCanManageContentOrganization(event.getOrganizationId())
                         .then(eventRepo.deleteById(eventId)))
+                .then(evictEventCaches())
                 .doOnSuccess(v -> log.info("deleteEvent: eventId={} deleted", eventId))
                 .doOnError(error -> log.error("Error deleting event ID: {}", eventId, error));
     }
@@ -177,6 +189,7 @@ public class AdminEventService {
                 .flatMap(event -> SecurityUtils.assertCanManageContentOrganization(event.getOrganizationId())
                         .then(eventRepo.publishEvent(eventId))
                         .then(eventRepo.findById(eventId)))
+                .delayUntil(e -> evictEventCaches())
                 .doOnSuccess(e -> log.info("publishEvent result: {}", JsonUtils.toJson(e)));
     }
 
@@ -187,6 +200,7 @@ public class AdminEventService {
                 .flatMap(event -> SecurityUtils.assertCanManageContentOrganization(event.getOrganizationId())
                         .then(eventRepo.unpublishEvent(eventId))
                         .then(eventRepo.findById(eventId)))
+                .delayUntil(e -> evictEventCaches())
                 .doOnSuccess(e -> log.info("unpublishEvent result: {}", JsonUtils.toJson(e)));
     }
 
@@ -218,6 +232,7 @@ public class AdminEventService {
                             .then(ticketRepo.cancelTicket(ticket.getId(), "Cancelled by admin"))
                             .then(ticketRepo.findById(ticket.getId()));
                 })
+                .delayUntil(t -> evictEventCaches())
                 .doOnSuccess(t -> notifyTicketHolder(t, "Vé sự kiện đã bị huỷ",
                         "Vé của bạn cho \"%s\" đã bị quản trị viên huỷ."));
     }
@@ -241,6 +256,7 @@ public class AdminEventService {
                                             ? "Trạng thái check-in của bạn cho \"%s\" đã được quản trị viên hoàn tác. Vé của bạn hiện đã hợp lệ trở lại."
                                             : "Vé của bạn cho \"%s\" đã được quản trị viên khôi phục."));
                 })
+                .delayUntil(t -> evictEventCaches())
                 .doOnSuccess(t -> log.info("undoTicket result: {}", JsonUtils.toJson(t)));
     }
 
@@ -257,6 +273,7 @@ public class AdminEventService {
                             .then(ticketRepo.banTicket(ticket.getId(), "Banned due to signs of fraud"))
                             .then(ticketRepo.findById(ticket.getId()));
                 })
+                .delayUntil(t -> evictEventCaches())
                 .doOnSuccess(t -> notifyTicketHolder(t, "Vé sự kiện đã bị khoá",
                         "Vé của bạn cho \"%s\" đã bị khoá do có dấu hiệu gian lận."));
     }

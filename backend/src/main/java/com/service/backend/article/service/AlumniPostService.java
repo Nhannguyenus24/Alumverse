@@ -11,20 +11,35 @@ import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.service.ImageService;
 import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.shared.utils.SecurityUtils;
+import com.service.backend.shared.utils.CacheNames;
 import com.service.backend.shared.utils.CacheUtils;
 import com.service.backend.user.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
+import java.time.Duration;
+
 @Service
 @RequiredArgsConstructor
 public class AlumniPostService {
+
+    private static final Duration LIST_TTL = Duration.ofMinutes(5);
 
     private final AlumniPostR2dbcRepository alumniPostRepository;
     private final ImageService imageService;
     private final CacheUtils cacheUtils;
     private final NotificationService notificationService;
+
+    /**
+     * Clears the alumni-post list cache and the admin content-statistics cache. Called by every write
+     * that changes what the lists (getAll/getPublished/getByAuthorMemberId/search) or the content counts
+     * return: create/update/delete/publish/hide.
+     */
+    private Mono<Void> evictAlumniPostCaches() {
+        return cacheUtils.clear(CacheNames.ALUMNI_POST)
+                .then(cacheUtils.clear(CacheNames.ADMIN_CONTENT_STATISTICS));
+    }
 
     public Mono<AlumniPostResponse> create(CreateAlumniPostRequest request) {
         return Mono.zip(SecurityUtils.getCurrentUserId(), SecurityUtils.getCurrentUserRole())
@@ -51,7 +66,7 @@ public class AlumniPostService {
                                         .build();
 
                                 return alumniPostRepository.save(post)
-                                        .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
+                                        .delayUntil(res -> evictAlumniPostCaches())
                                         .doOnNext(saved -> {
                                             if (!publishImmediately) {
                                                 notificationService.createNotificationAsync(
@@ -82,7 +97,7 @@ public class AlumniPostService {
                             if (request.getUrl() != null) existing.setUrl(request.getUrl());
                             return alumniPostRepository.save(existing);
                         })))
-                .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
+                .delayUntil(res -> evictAlumniPostCaches())
                 .map(AlumniPostResponse::from);
     }
 
@@ -91,7 +106,7 @@ public class AlumniPostService {
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.ALUMNI_POST_NOT_FOUND, "Alumni post not found with id: " + id)))
                 .flatMap(existing -> SecurityUtils.assertCanManageContentOrganization(existing.getOrganizationId())
                         .then(alumniPostRepository.deleteById(id))
-                        .then(cacheUtils.clear("admin_content_statistics"))
+                        .then(evictAlumniPostCaches())
                         .thenReturn(true));
     }
 
@@ -130,23 +145,26 @@ public class AlumniPostService {
     public Mono<PaginatedResponse<AlumniPostResponse>> getAll(int page, int limit) {
         int offset = page * limit;
         return SecurityUtils.getCurrentOrganizationId()
-                .flatMap(orgId -> PaginationHelper.paginate(
-                        alumniPostRepository.findByOrganizationIdWithPagination(orgId, limit, offset).map(AlumniPostResponse::from),
-                        alumniPostRepository.countByOrganizationId(orgId),
-                        page, limit))
-                .switchIfEmpty(Mono.defer(() -> PaginationHelper.paginate(
-                        alumniPostRepository.findAllWithPagination(limit, offset).map(AlumniPostResponse::from),
-                        alumniPostRepository.count(),
-                        page, limit)));
+                .flatMap(orgId -> cacheUtils.getOrCompute(CacheNames.ALUMNI_POST,
+                        "all_org_" + orgId + "_p" + page + "_l" + limit, LIST_TTL, () -> PaginationHelper.paginate(
+                                alumniPostRepository.findByOrganizationIdWithPagination(orgId, limit, offset).map(AlumniPostResponse::from),
+                                alumniPostRepository.countByOrganizationId(orgId),
+                                page, limit)))
+                .switchIfEmpty(Mono.defer(() -> cacheUtils.getOrCompute(CacheNames.ALUMNI_POST,
+                        "all_global_p" + page + "_l" + limit, LIST_TTL, () -> PaginationHelper.paginate(
+                                alumniPostRepository.findAllWithPagination(limit, offset).map(AlumniPostResponse::from),
+                                alumniPostRepository.count(),
+                                page, limit))));
     }
 
     public Mono<PaginatedResponse<AlumniPostResponse>> getPublished(int page, int limit, Integer organizationId) {
         int offset = page * limit;
         return SecurityUtils.resolvePublicOrganizationId(organizationId)
-                .flatMap(orgId -> PaginationHelper.paginate(
-                        alumniPostRepository.findPublishedByOrganizationId(orgId, limit, offset).map(AlumniPostResponse::from),
-                        alumniPostRepository.countPublishedByOrganizationId(orgId),
-                        page, limit))
+                .flatMap(orgId -> cacheUtils.getOrCompute(CacheNames.ALUMNI_POST,
+                        "published_org_" + orgId + "_p" + page + "_l" + limit, LIST_TTL, () -> PaginationHelper.paginate(
+                                alumniPostRepository.findPublishedByOrganizationId(orgId, limit, offset).map(AlumniPostResponse::from),
+                                alumniPostRepository.countPublishedByOrganizationId(orgId),
+                                page, limit)))
                 .switchIfEmpty(Mono.just(PaginatedResponse.of(java.util.List.of(), 0, page, limit)));
     }
 
@@ -154,11 +172,12 @@ public class AlumniPostService {
             Integer authorMemberId, Integer organizationId, int page, int limit) {
         int offset = page * limit;
         return SecurityUtils.resolvePublicOrganizationId(organizationId)
-                .flatMap(orgId -> PaginationHelper.paginate(
-                        alumniPostRepository.findPublishedByAuthorMemberIdAndOrganizationId(authorMemberId, orgId, limit, offset)
-                                .map(AlumniPostResponse::from),
-                        alumniPostRepository.countPublishedByAuthorMemberIdAndOrganizationId(authorMemberId, orgId),
-                        page, limit))
+                .flatMap(orgId -> cacheUtils.getOrCompute(CacheNames.ALUMNI_POST,
+                        "author_" + authorMemberId + "_org_" + orgId + "_p" + page + "_l" + limit, LIST_TTL, () -> PaginationHelper.paginate(
+                                alumniPostRepository.findPublishedByAuthorMemberIdAndOrganizationId(authorMemberId, orgId, limit, offset)
+                                        .map(AlumniPostResponse::from),
+                                alumniPostRepository.countPublishedByAuthorMemberIdAndOrganizationId(authorMemberId, orgId),
+                                page, limit)))
                 .switchIfEmpty(Mono.just(PaginatedResponse.of(java.util.List.of(), 0, page, limit)));
     }
 
@@ -169,10 +188,11 @@ public class AlumniPostService {
     public Mono<PaginatedResponse<AlumniPostResponse>> search(String keyword, int page, int limit, Integer organizationId) {
         int offset = page * limit;
         return SecurityUtils.resolvePublicOrganizationId(organizationId)
-                .flatMap(orgId -> PaginationHelper.paginate(
-                        alumniPostRepository.searchAlumniPosts(orgId, keyword, limit, offset).map(AlumniPostResponse::from),
-                        alumniPostRepository.countSearchAlumniPosts(orgId, keyword),
-                        page, limit))
+                .flatMap(orgId -> cacheUtils.getOrCompute(CacheNames.ALUMNI_POST,
+                        "search_org_" + orgId + "_kw_" + keyword + "_p" + page + "_l" + limit, LIST_TTL, () -> PaginationHelper.paginate(
+                                alumniPostRepository.searchAlumniPosts(orgId, keyword, limit, offset).map(AlumniPostResponse::from),
+                                alumniPostRepository.countSearchAlumniPosts(orgId, keyword),
+                                page, limit)))
                 .switchIfEmpty(Mono.just(PaginatedResponse.of(java.util.List.of(), 0, page, limit)));
     }
 
@@ -182,6 +202,7 @@ public class AlumniPostService {
                 .flatMap(existing -> SecurityUtils.assertCanManageContentOrganization(existing.getOrganizationId())
                         .then(alumniPostRepository.publishAlumniPost(id))
                         .then(alumniPostRepository.findById(id)))
+                .delayUntil(updated -> evictAlumniPostCaches())
                 .doOnNext(updated -> notificationService.createNotificationAsync(
                         updated.getAuthorMemberId(),
                         "Bài viết đã được duyệt",
@@ -197,6 +218,7 @@ public class AlumniPostService {
                 .flatMap(existing -> SecurityUtils.assertCanManageContentOrganization(existing.getOrganizationId())
                         .then(alumniPostRepository.hideAlumniPost(id))
                         .then(alumniPostRepository.findById(id)))
+                .delayUntil(updated -> evictAlumniPostCaches())
                 .doOnNext(updated -> notificationService.createNotificationAsync(
                         updated.getAuthorMemberId(),
                         "Bài viết bị gỡ đăng",

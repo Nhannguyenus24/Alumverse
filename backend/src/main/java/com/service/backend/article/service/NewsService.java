@@ -11,20 +11,35 @@ import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.service.ImageService;
 import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.shared.utils.SecurityUtils;
+import com.service.backend.shared.utils.CacheNames;
 import com.service.backend.shared.utils.CacheUtils;
 import com.service.backend.user.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
+import java.time.Duration;
+
 @Service
 @RequiredArgsConstructor
 public class NewsService {
+
+    private static final Duration LIST_TTL = Duration.ofMinutes(5);
 
     private final NewsR2dbcRepository newsRepository;
     private final ImageService imageService;
     private final CacheUtils cacheUtils;
     private final NotificationService notificationService;
+
+    /**
+     * Clears the news list cache and the admin content-statistics cache. Called by every write that
+     * changes what the news lists (getAll/getPublished/search) or the content counts return:
+     * create/update/delete/publish/hide.
+     */
+    private Mono<Void> evictNewsCaches() {
+        return cacheUtils.clear(CacheNames.NEWS)
+                .then(cacheUtils.clear(CacheNames.ADMIN_CONTENT_STATISTICS));
+    }
 
     public Mono<NewsResponse> create(CreateNewsRequest request) {
         return Mono.zip(SecurityUtils.getCurrentUserId(), SecurityUtils.getCurrentUserRole())
@@ -51,7 +66,7 @@ public class NewsService {
                                         .build();
 
                                 return newsRepository.save(news)
-                                        .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
+                                        .delayUntil(res -> evictNewsCaches())
                                         .doOnNext(saved -> {
                                             if (!publishImmediately) {
                                                 notificationService.createNotificationAsync(
@@ -82,7 +97,7 @@ public class NewsService {
                             if (request.getUrl() != null) existing.setUrl(request.getUrl());
                             return newsRepository.save(existing);
                         })))
-                .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
+                .delayUntil(res -> evictNewsCaches())
                 .map(NewsResponse::from);
     }
 
@@ -91,7 +106,7 @@ public class NewsService {
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.NEWS_NOT_FOUND, "News not found with id: " + id)))
                 .flatMap(existing -> SecurityUtils.assertCanManageContentOrganization(existing.getOrganizationId())
                         .then(newsRepository.deleteById(id))
-                        .then(cacheUtils.clear("admin_content_statistics"))
+                        .then(evictNewsCaches())
                         .thenReturn(true));
     }
 
@@ -130,23 +145,26 @@ public class NewsService {
     public Mono<PaginatedResponse<NewsResponse>> getAll(int page, int limit) {
         int offset = page * limit;
         return SecurityUtils.getCurrentOrganizationId()
-                .flatMap(orgId -> PaginationHelper.paginate(
-                        newsRepository.findByOrganizationIdWithPagination(orgId, limit, offset).map(NewsResponse::from),
-                        newsRepository.countByOrganizationId(orgId),
-                        page, limit))
-                .switchIfEmpty(Mono.defer(() -> PaginationHelper.paginate(
-                        newsRepository.findAllWithPagination(limit, offset).map(NewsResponse::from),
-                        newsRepository.count(),
-                        page, limit)));
+                .flatMap(orgId -> cacheUtils.getOrCompute(CacheNames.NEWS,
+                        "all_org_" + orgId + "_p" + page + "_l" + limit, LIST_TTL, () -> PaginationHelper.paginate(
+                                newsRepository.findByOrganizationIdWithPagination(orgId, limit, offset).map(NewsResponse::from),
+                                newsRepository.countByOrganizationId(orgId),
+                                page, limit)))
+                .switchIfEmpty(Mono.defer(() -> cacheUtils.getOrCompute(CacheNames.NEWS,
+                        "all_global_p" + page + "_l" + limit, LIST_TTL, () -> PaginationHelper.paginate(
+                                newsRepository.findAllWithPagination(limit, offset).map(NewsResponse::from),
+                                newsRepository.count(),
+                                page, limit))));
     }
 
     public Mono<PaginatedResponse<NewsResponse>> getPublished(int page, int limit, Integer organizationId) {
         int offset = page * limit;
         return SecurityUtils.resolvePublicOrganizationId(organizationId)
-                .flatMap(orgId -> PaginationHelper.paginate(
-                        newsRepository.findPublishedByOrganizationId(orgId, limit, offset).map(NewsResponse::from),
-                        newsRepository.countPublishedByOrganizationId(orgId),
-                        page, limit))
+                .flatMap(orgId -> cacheUtils.getOrCompute(CacheNames.NEWS,
+                        "published_org_" + orgId + "_p" + page + "_l" + limit, LIST_TTL, () -> PaginationHelper.paginate(
+                                newsRepository.findPublishedByOrganizationId(orgId, limit, offset).map(NewsResponse::from),
+                                newsRepository.countPublishedByOrganizationId(orgId),
+                                page, limit)))
                 .switchIfEmpty(Mono.just(PaginatedResponse.of(java.util.List.of(), 0, page, limit)));
     }
 
@@ -157,10 +175,11 @@ public class NewsService {
     public Mono<PaginatedResponse<NewsResponse>> search(String keyword, int page, int limit, Integer organizationId) {
         int offset = page * limit;
         return SecurityUtils.resolvePublicOrganizationId(organizationId)
-                .flatMap(orgId -> PaginationHelper.paginate(
-                        newsRepository.searchNews(orgId, keyword, limit, offset).map(NewsResponse::from),
-                        newsRepository.countSearchNews(orgId, keyword),
-                        page, limit))
+                .flatMap(orgId -> cacheUtils.getOrCompute(CacheNames.NEWS,
+                        "search_org_" + orgId + "_kw_" + keyword + "_p" + page + "_l" + limit, LIST_TTL, () -> PaginationHelper.paginate(
+                                newsRepository.searchNews(orgId, keyword, limit, offset).map(NewsResponse::from),
+                                newsRepository.countSearchNews(orgId, keyword),
+                                page, limit)))
                 .switchIfEmpty(Mono.just(PaginatedResponse.of(java.util.List.of(), 0, page, limit)));
     }
 
@@ -170,6 +189,7 @@ public class NewsService {
                 .flatMap(existing -> SecurityUtils.assertCanManageContentOrganization(existing.getOrganizationId())
                         .then(newsRepository.publishNews(id))
                         .then(newsRepository.findById(id)))
+                .delayUntil(updated -> evictNewsCaches())
                 .doOnNext(updated -> notificationService.createNotificationAsync(
                         updated.getAuthorMemberId(),
                         "Bài viết đã được duyệt",
@@ -185,6 +205,7 @@ public class NewsService {
                 .flatMap(existing -> SecurityUtils.assertCanManageContentOrganization(existing.getOrganizationId())
                         .then(newsRepository.hideNews(id))
                         .then(newsRepository.findById(id)))
+                .delayUntil(updated -> evictNewsCaches())
                 .doOnNext(updated -> notificationService.createNotificationAsync(
                         updated.getAuthorMemberId(),
                         "Bài viết bị gỡ đăng",

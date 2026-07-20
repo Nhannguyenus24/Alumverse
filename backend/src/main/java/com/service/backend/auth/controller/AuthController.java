@@ -3,8 +3,6 @@ package com.service.backend.auth.controller;
 import java.time.Duration;
 
 import com.service.backend.shared.enums.UserRole;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
@@ -52,7 +50,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 @RequestMapping("/api/auth")
 @Validated
 public class AuthController {
-    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
     private final AuthService authService;
     private final JwtUtils jwtUtils;
@@ -198,9 +195,6 @@ public class AuthController {
             @RequestParam(value = "organizationId", required = false) Integer organizationId,
             @CookieValue(value = "refreshToken", required = false) String refreshToken) {
 
-        logger.info("/auth/refresh called — organizationId: {}, refreshToken cookie present: {}",
-                organizationId, org.springframework.util.StringUtils.hasText(refreshToken));
-
         return authService.refreshAccessToken(refreshToken, organizationId)
                 .map(loginResponse -> ResponseEntity.ok(
                         new ApiResponse<>("Access token refreshed successfully", loginResponse)));
@@ -218,7 +212,6 @@ public class AuthController {
             @CookieValue(value = "refreshToken", required = false) String refreshToken) {
 
         return authService.switchOrganization(refreshToken, organizationId)
-                .doOnError(err -> logger.warn("/auth/switch-organization/{} failed: {}", organizationId, err.getMessage()))
                 .map(tuple -> {
                     String newAccessToken = tuple.getT1();
                     Integer verificationLevel = tuple.getT2();

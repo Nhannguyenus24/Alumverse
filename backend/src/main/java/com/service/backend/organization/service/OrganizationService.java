@@ -14,6 +14,7 @@ import com.service.backend.organization.dao.OrganizationRepository;
 import com.service.backend.organization.dao.SchoolFeedbackRepository;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
+import com.service.backend.shared.utils.CacheNames;
 import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.utils.CacheUtils;
 import lombok.RequiredArgsConstructor;
@@ -29,14 +30,13 @@ import java.time.Duration;
 public class OrganizationService {
 
     private static final Logger logger = LoggerFactory.getLogger(OrganizationService.class);
-    private static final String ORG_CACHE = "organization_cache";
     private final OrganizationRepository organizationRepository;
     private final SchoolFeedbackRepository schoolFeedbackRepository;
     private final OrganizationIntroductionRepository introductionRepository;
     private final CacheUtils cacheUtils;
 
     public Mono<Organization> getOrganizationById(Integer id) {
-        return cacheUtils.getOrCompute(ORG_CACHE, "id:" + id, Duration.ofDays(1), () -> {
+        return cacheUtils.getOrCompute(CacheNames.ORGANIZATION, "id:" + id, Duration.ofDays(1), () -> {
                 logger.info("Fetching organization with id: {}", id);
                 return organizationRepository.findById(id)
                         .doOnNext(org -> logger.info("Organization found with id: {}, name: {}", id, org.getName()))
@@ -52,7 +52,7 @@ public class OrganizationService {
     }
 
     public Mono<Organization> getOrganizationBySlug(String slug) {
-        return cacheUtils.getOrCompute(ORG_CACHE, "slug:" + slug, Duration.ofDays(1), () -> {
+        return cacheUtils.getOrCompute(CacheNames.ORGANIZATION, "slug:" + slug, Duration.ofDays(1), () -> {
                 logger.info("Fetching organization with slug: {}", slug);
                 return organizationRepository.findBySlug(slug)
                         .doOnNext(org -> logger.info("Organization found with slug: {}, name: {}", slug, org.getName()))
@@ -68,7 +68,7 @@ public class OrganizationService {
     }
 
     public Flux<Organization> getAllOrganizations() {
-        return cacheUtils.getOrCompute(ORG_CACHE, "all", Duration.ofDays(1), () ->
+        return cacheUtils.getOrCompute(CacheNames.ORGANIZATION, "all", Duration.ofDays(1), () ->
                  organizationRepository.findAll()
                         .doOnNext(org -> logger.info("Retrieved organization: id={}, name={}", org.getId(), org.getName()))
                         .collectList()
@@ -78,7 +78,7 @@ public class OrganizationService {
     }
 
     public Mono<OrganizationIntroductionResponse> getIntroduction(Integer orgaId) {
-        return cacheUtils.getOrCompute(ORG_CACHE, "intro:" + orgaId, Duration.ofDays(1), () -> introductionRepository.findByOrgaId(orgaId)
+        return cacheUtils.getOrCompute(CacheNames.ORGANIZATION, "intro:" + orgaId, Duration.ofDays(1), () -> introductionRepository.findByOrgaId(orgaId)
                 .map(this::toResponse)
                 .switchIfEmpty(Mono.just(OrganizationIntroductionResponse.builder()
                         .orgaId(orgaId)
@@ -168,7 +168,7 @@ public class OrganizationService {
     }
 
     public Flux<TrustedVerifierResponse> getTrustedVerifiers(Integer organizationId) {
-        return cacheUtils.getOrCompute(ORG_CACHE, "trustedVerifiers:" + organizationId, Duration.ofDays(1), () -> {
+        return cacheUtils.getOrCompute(CacheNames.ORGANIZATION, "trustedVerifiers:" + organizationId, Duration.ofDays(1), () -> {
                 logger.info("Fetching trusted verifiers for organization id: {}", organizationId);
                 return organizationRepository.findTrustedVerifiersByOrganizationId(organizationId)
                         .collectList()

@@ -1,6 +1,7 @@
 package com.service.backend.auth.service;
 
 import com.nimbusds.jwt.JWTClaimsSet;
+import com.service.backend.shared.utils.CacheNames;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.dao.DataIntegrityViolationException;
 import java.security.SecureRandom;
@@ -46,7 +47,6 @@ public class AuthService {
     private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
     private static final Duration OTP_TTL = Duration.ofMinutes(5);
     private static final String GOOGLE_LOGIN_METHOD = "GOOGLE";
-    private static final String OTP_CACHE_KEY = "otp_verification";
     private static final String OTP_EMAIL_SUBJECT = "Email Verification - OTP Code";
     private static final String OTP_EMAIL_TEMPLATE = "otpVerification";
     private static final String OTP_CACHE_OTP_FIELD = "otp";
@@ -184,7 +184,7 @@ public class AuthService {
     }
 
     public Mono<Void> resetPasswordWithOtp(String email, String otp, String newPassword) {
-        return cacheUtils.get(OTP_CACHE_KEY, email)
+        return cacheUtils.get(CacheNames.OTP_VERIFICATION, email)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.OTP_EXPIRED_NOT_FOUND)))
                 .flatMap(cachedData -> {
                     @SuppressWarnings("unchecked")
@@ -200,7 +200,7 @@ public class AuthService {
                     return Mono.fromCallable(() -> passwordEncoder.encode(newPassword))
                             .subscribeOn(Schedulers.boundedElastic())
                             .flatMap(hashedPassword -> authRepository.updatePasswordById(userId, hashedPassword))
-                            .then(cacheUtils.evict(OTP_CACHE_KEY, email));
+                            .then(cacheUtils.evict(CacheNames.OTP_VERIFICATION, email));
                 })
                 .doOnSuccess(v -> logger.info("resetPasswordWithOtp: password reset for email={}", email))
                 .doOnError(error -> logger.error("Password reset failed for email: {}", error.getMessage()));
@@ -254,7 +254,7 @@ public class AuthService {
                     cacheData.put(OTP_CACHE_OTP_FIELD, otp);
                     cacheData.put(OTP_CACHE_USER_ID_FIELD, user.getId());
 
-                    return cacheUtils.putWithTtl(OTP_CACHE_KEY, email, cacheData, OTP_TTL)
+                    return cacheUtils.putWithTtl(CacheNames.OTP_VERIFICATION, email, cacheData, OTP_TTL)
                             .then(Mono.defer(() -> {
                                 Map<String, Object> variables = new HashMap<>();
                                 variables.put(OTP_CACHE_OTP_FIELD, otp);
@@ -273,7 +273,7 @@ public class AuthService {
     }
 
     public Mono<Void> verifyOtpAndActivate(String email, String otp) {
-        return cacheUtils.get(OTP_CACHE_KEY, email)
+        return cacheUtils.get(CacheNames.OTP_VERIFICATION, email)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.OTP_EXPIRED_NOT_FOUND)))
                 .flatMap(cachedData -> {
                     @SuppressWarnings("unchecked")
@@ -289,7 +289,7 @@ public class AuthService {
                     logger.info("OTP verified for email: {}", email);
 
                     return authRepository.activateUserById(userId)
-                            .then(cacheUtils.evict(OTP_CACHE_KEY, email));
+                            .then(cacheUtils.evict(CacheNames.OTP_VERIFICATION, email));
                 })
                 .doOnSuccess(v -> logger.info("verifyOtpAndActivate: email={} activated", email))
                 .doOnError(error -> logger.error("OTP verification failed for email: {}", error.getMessage()));
@@ -305,7 +305,7 @@ public class AuthService {
                     cacheData.put(OTP_CACHE_OTP_FIELD, otp);
                     cacheData.put(OTP_CACHE_USER_ID_FIELD, user.getId());
                     
-                    return cacheUtils.putWithTtl("change_email_old", email, cacheData, OTP_TTL)
+                    return cacheUtils.putWithTtl(com.service.backend.shared.utils.CacheNames.CHANGE_EMAIL_OLD, email, cacheData, OTP_TTL)
                             .then(Mono.defer(() -> {
                                 Map<String, Object> variables = new HashMap<>();
                                 variables.put(OTP_CACHE_OTP_FIELD, otp);
@@ -319,7 +319,7 @@ public class AuthService {
     public Mono<Void> verifyChangeEmailOtpOld(Integer userId, String otp) {
         return authRepository.findById(userId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND)))
-                .flatMap(user -> cacheUtils.get("change_email_old", user.getEmail())
+                .flatMap(user -> cacheUtils.get(com.service.backend.shared.utils.CacheNames.CHANGE_EMAIL_OLD, user.getEmail())
                         .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.OTP_EXPIRED_NOT_FOUND)))
                         .flatMap(cachedData -> {
                             @SuppressWarnings("unchecked")
@@ -328,14 +328,14 @@ public class AuthService {
                             if (!cachedOtp.equals(otp)) {
                                 return Mono.error(new ApplicationException(ErrorCode.INVALID_OTP));
                             }
-                            return cacheUtils.putWithTtl("change_email_verified", String.valueOf(userId), "true", Duration.ofMinutes(15))
-                                    .then(cacheUtils.evict("change_email_old", user.getEmail()))
+                            return cacheUtils.putWithTtl(com.service.backend.shared.utils.CacheNames.CHANGE_EMAIL_VERIFIED, String.valueOf(userId), "true", Duration.ofMinutes(15))
+                                    .then(cacheUtils.evict(com.service.backend.shared.utils.CacheNames.CHANGE_EMAIL_OLD, user.getEmail()))
                                     .doOnSuccess(v -> logger.info("verifyChangeEmailOtpOld: Old email verified for user={}", userId));
                         }));
     }
 
     public Mono<Void> requestChangeEmailOtpNew(Integer userId, String newEmail) {
-        return cacheUtils.get("change_email_verified", String.valueOf(userId))
+        return cacheUtils.get(com.service.backend.shared.utils.CacheNames.CHANGE_EMAIL_VERIFIED, String.valueOf(userId))
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.FORBIDDEN)))
                 .flatMap(verified -> {
                     String otp = String.format("%0" + OTP_LENGTH + "d", secureRandom.nextInt(OTP_MAX_VALUE));
@@ -344,7 +344,7 @@ public class AuthService {
                     cacheData.put(OTP_CACHE_USER_ID_FIELD, userId);
                     cacheData.put("newEmail", newEmail);
                     
-                    return cacheUtils.putWithTtl("change_email_new", String.valueOf(userId), cacheData, OTP_TTL)
+                    return cacheUtils.putWithTtl(com.service.backend.shared.utils.CacheNames.CHANGE_EMAIL_NEW, String.valueOf(userId), cacheData, OTP_TTL)
                             .then(Mono.defer(() -> {
                                 Map<String, Object> variables = new HashMap<>();
                                 variables.put(OTP_CACHE_OTP_FIELD, otp);
@@ -356,7 +356,7 @@ public class AuthService {
     }
 
     public Mono<Void> verifyChangeEmailOtpNew(Integer userId, String newEmail, String otp) {
-        return cacheUtils.get("change_email_new", String.valueOf(userId))
+        return cacheUtils.get(com.service.backend.shared.utils.CacheNames.CHANGE_EMAIL_NEW, String.valueOf(userId))
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.OTP_EXPIRED_NOT_FOUND)))
                 .flatMap(cachedData -> {
                     @SuppressWarnings("unchecked")
@@ -370,8 +370,8 @@ public class AuthService {
                         return Mono.error(new ApplicationException(ErrorCode.BAD_REQUEST));
                     }
                     return authRepository.updateEmailById(userId, newEmail)
-                            .then(cacheUtils.evict("change_email_new", String.valueOf(userId)))
-                            .then(cacheUtils.evict("change_email_verified", String.valueOf(userId)))
+                            .then(cacheUtils.evict(com.service.backend.shared.utils.CacheNames.CHANGE_EMAIL_NEW, String.valueOf(userId)))
+                            .then(cacheUtils.evict(com.service.backend.shared.utils.CacheNames.CHANGE_EMAIL_VERIFIED, String.valueOf(userId)))
                             .onErrorResume(DataIntegrityViolationException.class, e -> {
                                 logger.warn("Email already exists: {}", newEmail);
                                 return Mono.error(new ApplicationException(ErrorCode.EMAIL_ALREADY_EXISTS));

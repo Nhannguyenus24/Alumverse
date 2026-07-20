@@ -11,6 +11,7 @@ import com.service.backend.shared.enums.Status;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.utils.PaginationHelper;
+import com.service.backend.shared.utils.CacheNames;
 import com.service.backend.shared.utils.CacheUtils;
 import com.service.backend.shared.utils.SecurityUtils;
 import com.service.backend.user.service.NotificationService;
@@ -232,8 +233,8 @@ public class AdminArticleService {
                 .flatMap(existing -> SecurityUtils.assertCanManageContentOrganization(existing.getOrganizationId())
                         .then(achievementRepository.updateStatus(id, status))
                         .then(achievementRepository.findById(id)))
-                .delayUntil(updated -> cacheUtils.clear("achievement_cache")
-                        .then(cacheUtils.clear("admin_content_statistics")))
+                .delayUntil(updated -> cacheUtils.clear(CacheNames.ACHIEVEMENT)
+                        .then(cacheUtils.clear(CacheNames.ADMIN_CONTENT_STATISTICS)))
                 .doOnNext(updated -> {
                     if (Status.APPROVED.equals(status)) {
                         notificationService.createNotificationAsync(
@@ -260,6 +261,10 @@ public class AdminArticleService {
                 .flatMap(existing -> SecurityUtils.assertCanManageContentOrganization(existing.getOrganizationId())
                         .then(learningResourceRepository.updateStatus(id, status))
                         .then(learningResourceRepository.findById(id)))
+                // A status change moves the resource into/out of the APPROVED lists — evict the list cache
+                // (and content stats) so getAll/getByType/search reflect it immediately.
+                .delayUntil(updated -> cacheUtils.clear(CacheNames.LEARNING_RESOURCE)
+                        .then(cacheUtils.clear(CacheNames.ADMIN_CONTENT_STATISTICS)))
                 .doOnNext(updated -> {
                     if (Status.APPROVED.equals(status)) {
                         notificationService.createNotificationAsync(

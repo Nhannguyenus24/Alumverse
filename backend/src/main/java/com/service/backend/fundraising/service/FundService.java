@@ -29,6 +29,7 @@ import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.service.ImageService;
 import com.service.backend.shared.service.FileUploadService;
+import com.service.backend.shared.utils.CacheNames;
 import com.service.backend.shared.utils.CacheUtils;
 import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.utils.SecurityUtils;
@@ -118,8 +119,18 @@ public class FundService {
                                             .timeEnded(request.getTimeEnded())
                                             .build();
 
-                                    return fundR2dbcRepository.save(fund);
+                                    return fundR2dbcRepository.save(fund)
+                            .delayUntil(saved -> evictFundStatistics());
                                 })));
+    }
+
+    /**
+     * Clears {@link CacheNames#FUND_STATISTICS}. Called by every write that changes the aggregated
+     * fund/donation stats: fund creation, fund closing, and the SePay webhook marking a donation SUCCESS
+     * (see {@code SepayWebhookService.processWebhook}).
+     */
+    private Mono<Void> evictFundStatistics() {
+        return cacheUtils.clear(CacheNames.FUND_STATISTICS);
     }
 
     public Mono<FundReceivingInfos> createFundReceivingInfos(CreateFundReceivingInfosRequest request) {
@@ -143,13 +154,13 @@ public class FundService {
                                             "Fund receiving info already exists for bankName + accountNumber"));
                                 }
                                 return fundReceivingInfosRepository.save(fundReceivingInfos)
-                                        .delayUntil(res -> cacheUtils.clear("fund_receiving_infos"));
+                                        .delayUntil(res -> cacheUtils.clear(CacheNames.FUND_RECEIVING_INFOS));
                             });
                 }));
     }
 
     public Flux<FundReceivingInfos> getActiveFundReceivingInfos() {
-        return cacheUtils.getOrCompute("fund_receiving_infos", "active", Duration.ofDays(1), () ->
+        return cacheUtils.getOrCompute(CacheNames.FUND_RECEIVING_INFOS, "active", Duration.ofDays(1), () ->
                 fundReceivingInfosRepository.findAllActive()
                         .collectList()
         ).flatMapMany(Flux::fromIterable);
@@ -519,7 +530,8 @@ public class FundService {
                 .flatMap(existing -> {
                     existing.setTimeEnded(LocalDateTime.now());
                     return fundR2dbcRepository.save(existing);
-                });
+                })
+                .delayUntil(saved -> evictFundStatistics());
     }
 
     @Transactional
@@ -671,7 +683,7 @@ public class FundService {
     }
 
     private Mono<List<BankInfoDto>> getSupportedBanks() {
-        String cacheName = "fund-banks";
+        String cacheName = CacheNames.FUND_BANKS;
         String cacheKey = "banks-json-supported";
         return cacheUtils.getOrCompute(cacheName, cacheKey, Duration.ofHours(24), () -> {
             BanksPayloadDto payload = JsonUtils.fromResource("banks.json", BanksPayloadDto.class);
@@ -784,7 +796,7 @@ public class FundService {
     }
 
     public Mono<FundStatisticsResponse> getFundStatistics() {
-        return cacheUtils.getOrCompute("fund_statistics", "all", Duration.ofMinutes(5), () -> {
+        return cacheUtils.getOrCompute(CacheNames.FUND_STATISTICS, "all", Duration.ofMinutes(5), () -> {
             LocalDateTime now = LocalDateTime.now();
             LocalDateTime startOfMonth = LocalDate.now().withDayOfMonth(1).atStartOfDay();
             LocalDateTime endOfMonth = startOfMonth.plusMonths(1);

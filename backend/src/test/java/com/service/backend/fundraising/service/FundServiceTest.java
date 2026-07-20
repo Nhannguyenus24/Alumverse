@@ -58,6 +58,8 @@ class FundServiceTest {
         // Set @Value fields
         ReflectionTestUtils.setField(fundService, "sepayQrImgUrl", "https://img.vietqr.io/image/");
         ReflectionTestUtils.setField(fundService, "vietQrTemplate", "compact2");
+        // createFund/closeFund now evict the fund-statistics cache; stub so reactive chains complete.
+        lenient().when(cacheUtils.clear(anyString())).thenReturn(Mono.empty());
     }
 
     private static Context staffContext(Integer organizationId) {

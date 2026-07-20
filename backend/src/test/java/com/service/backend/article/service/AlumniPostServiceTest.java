@@ -140,6 +140,7 @@ class AlumniPostServiceTest {
 
             when(alumniPostRepository.findById(1)).thenReturn(Mono.just(existing), Mono.just(published));
             when(alumniPostRepository.publishAlumniPost(1)).thenReturn(Mono.just(1));
+            when(cacheUtils.clear(anyString())).thenReturn(Mono.empty());
 
             StepVerifier.create(alumniPostService.publish(1)
                             .contextWrite(adminContext()))
@@ -172,6 +173,7 @@ class AlumniPostServiceTest {
 
             when(alumniPostRepository.findById(1)).thenReturn(Mono.just(existing), Mono.just(hidden));
             when(alumniPostRepository.hideAlumniPost(1)).thenReturn(Mono.just(1));
+            when(cacheUtils.clear(anyString())).thenReturn(Mono.empty());
 
             StepVerifier.create(alumniPostService.hide(1)
                             .contextWrite(adminContext()))

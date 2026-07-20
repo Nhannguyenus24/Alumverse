@@ -38,6 +38,7 @@ import com.service.backend.shared.enums.Status;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.exception.ApplicationException;
+import com.service.backend.shared.utils.CacheNames;
 import com.service.backend.shared.utils.CacheUtils;
 import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.utils.PaginationHelper;
@@ -109,7 +110,7 @@ public class AdminForumService {
                                             .thenReturn(saved));
                         }))
                 .flatMap(this::convertToPostDTO)
-                .delayUntil(r -> cacheUtils.clear("forum_category_cache"))
+                .delayUntil(r -> cacheUtils.clear(CacheNames.FORUM_CATEGORY))
                 .doOnSuccess(result -> log.info("banForumPost result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error banning forum post ID: {}", postId, error));
     }
@@ -126,7 +127,7 @@ public class AdminForumService {
                                             .thenReturn(saved));
                         }))
                 .flatMap(this::convertToPostDTO)
-                .delayUntil(r -> cacheUtils.clear("forum_category_cache"))
+                .delayUntil(r -> cacheUtils.clear(CacheNames.FORUM_CATEGORY))
                 .doOnSuccess(result -> log.info("unbanForumPost result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error unbanning forum post ID: {}", postId, error));
     }
@@ -135,7 +136,7 @@ public class AdminForumService {
         return forumPostRepository.findById(postId)
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_POST_NOT_FOUND))))
                 .flatMap(post -> forumPostRepository.deleteById(postId))
-                .then(cacheUtils.clear("forum_category_cache"))
+                .then(cacheUtils.clear(CacheNames.FORUM_CATEGORY))
                 .doOnSuccess(v -> log.info("deleteForumPost: postId={} deleted", postId))
                 .doOnError(error -> log.error("Error deleting forum post ID: {}", postId, error));
     }
@@ -237,7 +238,7 @@ public class AdminForumService {
                     }));
                 })
                 .map(this::convertToReportDTO)
-                .delayUntil(r -> cacheUtils.clear("forum_category_cache"))
+                .delayUntil(r -> cacheUtils.clear(CacheNames.FORUM_CATEGORY))
                 .doOnSuccess(r -> log.info("reviewReport result: {}", JsonUtils.toJson(r)));
     }
 
@@ -254,7 +255,7 @@ public class AdminForumService {
                                     String.valueOf(before), String.valueOf(hidden)).thenReturn(saved));
                 })
                 .flatMap(this::convertToPostDTO)
-                .delayUntil(r -> cacheUtils.clear("forum_category_cache"))
+                .delayUntil(r -> cacheUtils.clear(CacheNames.FORUM_CATEGORY))
                 .doOnSuccess(r -> log.info("updatePostVisibility result: {}", JsonUtils.toJson(r)));
     }
 
@@ -288,7 +289,7 @@ public class AdminForumService {
                                     before, newStatus).thenReturn(saved));
                 })
                 .flatMap(this::convertToTopicDTOWithPostCount)
-                .delayUntil(r -> cacheUtils.clear("forum_category_cache"))
+                .delayUntil(r -> cacheUtils.clear(CacheNames.FORUM_CATEGORY))
                 .doOnSuccess(r -> log.info("updateTopicStatus result: {}", JsonUtils.toJson(r)));
     }
 
@@ -311,7 +312,7 @@ public class AdminForumService {
                                     before, newStatus).thenReturn(saved));
                 })
                 .map(this::convertToCategoryDTO)
-                .delayUntil(r -> cacheUtils.clear("forum_category_cache"))
+                .delayUntil(r -> cacheUtils.clear(CacheNames.FORUM_CATEGORY))
                 .doOnSuccess(r -> log.info("updateCategoryStatus result: {}", JsonUtils.toJson(r)));
     }
 
@@ -322,7 +323,7 @@ public class AdminForumService {
         return forumTopicRepository.findById(topicId)
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_TOPIC_NOT_FOUND))))
                 .flatMap(topic -> cascadeDeleteTopic(topicId))
-                .then(cacheUtils.clear("forum_category_cache"))
+                .then(cacheUtils.clear(CacheNames.FORUM_CATEGORY))
                 .doOnSuccess(v -> log.info("deleteForumTopic: topicId={} deleted", topicId))
                 .doOnError(error -> log.error("Error deleting forum topic ID: {}", topicId, error));
     }
@@ -371,7 +372,7 @@ public class AdminForumService {
 
         return forumCategoryRepository.save(category)
                 .map(this::convertToCategoryDTO)
-                .delayUntil(r -> cacheUtils.clear("forum_category_cache"))
+                .delayUntil(r -> cacheUtils.clear(CacheNames.FORUM_CATEGORY))
                 .doOnSuccess(result -> log.info("createCategory result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error creating forum category: {}", name, error));
     }
@@ -388,7 +389,7 @@ public class AdminForumService {
                     return forumCategoryRepository.save(category);
                 })
                 .map(this::convertToCategoryDTO)
-                .delayUntil(r -> cacheUtils.clear("forum_category_cache"))
+                .delayUntil(r -> cacheUtils.clear(CacheNames.FORUM_CATEGORY))
                 .doOnSuccess(result -> log.info("updateCategory result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error updating category ID: {}", categoryId, error));
     }
@@ -403,7 +404,7 @@ public class AdminForumService {
         return forumCategoryRepository.findById(categoryId)
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_CATEGORY_NOT_FOUND))))
                 .flatMap(category -> cascadeDeleteCategory(categoryId))
-                .then(cacheUtils.clear("forum_category_cache"))
+                .then(cacheUtils.clear(CacheNames.FORUM_CATEGORY))
                 .doOnSuccess(v -> log.info("deleteCategory: categoryId={} deleted (cascade)", categoryId))
                 .doOnError(error -> log.error("Error deleting category ID: {}", categoryId, error));
     }
@@ -476,7 +477,7 @@ public class AdminForumService {
                     return forumTopicRepository.save(topic);
                 })
                 .flatMap(this::convertToTopicDTOWithPostCount)
-                .delayUntil(r -> cacheUtils.clear("forum_category_cache"))
+                .delayUntil(r -> cacheUtils.clear(CacheNames.FORUM_CATEGORY))
                 .doOnSuccess(result -> log.info("createTopic result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error creating forum topic: {}", title, error));
     }
@@ -492,7 +493,7 @@ public class AdminForumService {
                     return forumTopicRepository.save(topic);
                 })
                 .flatMap(this::convertToTopicDTOWithPostCount)
-                .delayUntil(r -> cacheUtils.clear("forum_category_cache"))
+                .delayUntil(r -> cacheUtils.clear(CacheNames.FORUM_CATEGORY))
                 .doOnSuccess(result -> log.info("updateTopic result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error updating topic ID: {}", topicId, error));
     }
