@@ -2,6 +2,9 @@ import { useMemo, useCallback } from 'react';
 import { Box, Stack, TextField, Typography, MenuItem, Grid, Button, FormControlLabel, Checkbox } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
+import dayjs from 'dayjs';
+import { LocalizationProvider, DateTimePicker } from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import WYSIWYG from './WYSIWYG';
 import Input from './Input';
 import Dropdown from './Dropdown';
@@ -11,6 +14,10 @@ import {
   ScrollRevealGroup,
   ScrollRevealItem,
 } from './animations/ScrollReveal';
+
+const DATETIME_LOCAL_FORMAT = 'YYYY-MM-DDTHH:mm:ss';
+
+const toDayjsValue = (value) => (value ? dayjs(value) : null);
 
 const CAPTION_REQUIRED_CHANNELS = new Set(['news', 'alumni', 'achievement', 'job', 'learning', 'event']);
 
@@ -175,44 +182,56 @@ const PostArticleForm = ({
             <Input label={t('event:location')} placeholder={t('event:location_placeholder')} name="location" value={eventData.location} onChange={handleEventInputChange} />
           </Box>
 
-          <Box sx={{ display: 'flex', gap: 2, mb: 3, flexDirection: { xs: 'column', sm: 'row' } }}>
-            <Box sx={{ flex: 1 }}>
-              <Input label={t('event:max_participants')} type="number" name="maxParticipants" value={eventData.maxParticipants} onChange={handleEventInputChange} />
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <Box sx={{ display: 'flex', gap: 2, mb: 3, flexDirection: { xs: 'column', sm: 'row' } }}>
+              <Box sx={{ flex: 1 }}>
+                <Input label={t('event:max_participants')} type="number" name="maxParticipants" value={eventData.maxParticipants} onChange={handleEventInputChange} />
+              </Box>
+              <Box sx={{ flex: 1 }}>
+                <DateTimePicker
+                  label={t('event:registration_start')}
+                  ampm
+                  format="DD/MM/YYYY hh:mm A"
+                  value={toDayjsValue(eventData.registrationStartAt)}
+                  onChange={(newValue) => handleEventInputChange({ target: { name: 'registrationStartAt', value: newValue?.isValid() ? newValue.format(DATETIME_LOCAL_FORMAT) : '' } })}
+                  slotProps={{ textField: { fullWidth: true } }}
+                />
+              </Box>
+              <Box sx={{ flex: 1 }}>
+                <DateTimePicker
+                  label={t('event:registration_end')}
+                  ampm
+                  format="DD/MM/YYYY hh:mm A"
+                  value={toDayjsValue(eventData.deadline)}
+                  onChange={(newValue) => handleEventInputChange({ target: { name: 'deadline', value: newValue?.isValid() ? newValue.format(DATETIME_LOCAL_FORMAT) : '' } })}
+                  slotProps={{ textField: { fullWidth: true } }}
+                />
+              </Box>
             </Box>
-            <Box sx={{ flex: 1 }}>
-              <TextField
-                fullWidth
-                label={t('event:registration_start')}
-                type="datetime-local"
-                name="registrationStartAt"
-                inputProps={{ step: 1 }}
-                InputLabelProps={{ shrink: true }}
-                value={eventData.registrationStartAt}
-                onChange={handleEventInputChange}
-              />
-            </Box>
-            <Box sx={{ flex: 1 }}>
-              <TextField
-                fullWidth
-                label={t('event:registration_end')}
-                type="datetime-local"
-                name="deadline"
-                inputProps={{ step: 1 }}
-                InputLabelProps={{ shrink: true }}
-                value={eventData.deadline}
-                onChange={handleEventInputChange}
-              />
-            </Box>
-          </Box>
 
-          <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
-            <Box sx={{ flex: 1 }}>
-              <TextField fullWidth label={t('event:start_date')} type="datetime-local" name="startDate" inputProps={{ step: 1 }} InputLabelProps={{ shrink: true }} value={eventData.startDate} onChange={handleEventInputChange} />
+            <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+              <Box sx={{ flex: 1 }}>
+                <DateTimePicker
+                  label={t('event:start_date')}
+                  ampm
+                  format="DD/MM/YYYY hh:mm A"
+                  value={toDayjsValue(eventData.startDate)}
+                  onChange={(newValue) => handleEventInputChange({ target: { name: 'startDate', value: newValue?.isValid() ? newValue.format(DATETIME_LOCAL_FORMAT) : '' } })}
+                  slotProps={{ textField: { fullWidth: true } }}
+                />
+              </Box>
+              <Box sx={{ flex: 1 }}>
+                <DateTimePicker
+                  label={t('event:end_date')}
+                  ampm
+                  format="DD/MM/YYYY hh:mm A"
+                  value={toDayjsValue(eventData.endDate)}
+                  onChange={(newValue) => handleEventInputChange({ target: { name: 'endDate', value: newValue?.isValid() ? newValue.format(DATETIME_LOCAL_FORMAT) : '' } })}
+                  slotProps={{ textField: { fullWidth: true } }}
+                />
+              </Box>
             </Box>
-            <Box sx={{ flex: 1 }}>
-              <TextField fullWidth label={t('event:end_date')} type="datetime-local" name="endDate" inputProps={{ step: 1 }} InputLabelProps={{ shrink: true }} value={eventData.endDate} onChange={handleEventInputChange} />
-            </Box>
-          </Box>
+          </LocalizationProvider>
         </Box>
 
         <Box

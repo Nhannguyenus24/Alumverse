@@ -13,8 +13,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CreateAlumniPostCommentRequest {
 
-    @NotNull(message = "Alumni post ID is required")
-    @Min(value = 1, message = "Alumni post ID must be greater than 0")
     private Integer alumniPostId;
 
     @NotNull(message = "Author member ID is required")

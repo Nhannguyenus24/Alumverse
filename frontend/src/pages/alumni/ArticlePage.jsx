@@ -698,7 +698,7 @@ const ArticlePage = () => {
           {/* Hero banner */}
           <ScrollReveal direction="none" duration={0.82} amount={0.05} sx={{ position: "absolute", inset: 0, top: "-1px", backgroundColor: "primary.dark", backgroundImage: article.thumbnailUrl ? `url(${article.thumbnailUrl})` : "none", backgroundSize: "cover", backgroundPosition: "center", backgroundRepeat: "no-repeat" }} />
           {/* Main content frame */}
-          <Box ref={contentRef} sx={{ position: "absolute", top: { xs: "54%", sm: "56%", md: "54%" }, left: 0, right: 0, display: "flex", justifyContent: "center", px: { xs: 2, sm: 3 } }}>
+          <Box ref={contentRef} sx={{ position: "absolute", top: { xs: "54%", sm: "56%", md: "54%" }, left: 0, right: 0, display: "flex", flexDirection: "column", alignItems: "center", px: { xs: 2, sm: 3 } }}>
             <ScrollRevealGroup stagger={0.09} sx={{ width: "100%", maxWidth: 1200, backgroundColor: contentFrameBg, borderRadius: 2, boxShadow: contentFrameShadow, overflow: "hidden", py: { xs: 5, md: 6 }, px: { xs: 3, sm: 4, md: 6 } }}>
               {/* Breadcrumb */}
               <ScrollRevealItem sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap", mb: { xs: 4, md: 5 } }}>
@@ -898,20 +898,21 @@ const ArticlePage = () => {
                 }}
                 dangerouslySetInnerHTML={{ __html: cleanContent }}
               />
-
-              {commentSectionProps && (
-                <ScrollRevealItem sx={{ mt: { xs: 4, md: 5 } }}>
-                  <CommentSection
-                    {...commentSectionProps}
-                    currentUserId={currentUserId}
-                    currentUserName={user?.fullName || user?.name || ""}
-                    currentUserAvatarUrl={user?.avatarUrl}
-                    isAdmin={isAdmin}
-                    canComment={canUseBasicActions}
-                  />
-                </ScrollRevealItem>
-              )}
             </ScrollRevealGroup>
+
+            {commentSectionProps && (
+              <ScrollReveal sx={{ width: "100%", maxWidth: 1200, mx: "auto", mt: { xs: 3, md: 4 } }}>
+                <CommentSection
+                  {...commentSectionProps}
+                  currentUserId={currentUserId}
+                  currentUserName={user?.fullName || user?.name || ""}
+                  currentUserAvatarUrl={user?.avatarUrl}
+                  isAdmin={isAdmin}
+                  canComment={canUseBasicActions}
+                  sx={{ boxShadow: contentFrameShadow }}
+                />
+              </ScrollReveal>
+            )}
           </Box>
         </Box>
 

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Box, Button, CircularProgress, Divider, Stack, Typography } from "@mui/material";
+import { Box, Button, CircularProgress, Divider, Paper, Stack, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import CommentItem from "./CommentItem";
 import CommentForm from "./CommentForm";
@@ -25,6 +25,7 @@ const CommentSection = ({
   onReply,
   onUpdate,
   onDelete,
+  sx,
 }) => {
   const { t } = useTranslation(["comment"]);
   const [replyTarget, setReplyTarget] = useState(null);
@@ -53,7 +54,16 @@ const CommentSection = ({
   };
 
   return (
-    <Box>
+    <Paper
+      variant="outlined"
+      sx={{
+        p: { xs: 2.5, sm: 3.5 },
+        bgcolor: "background.paper",
+        borderColor: "divider",
+        borderRadius: 2,
+        ...sx,
+      }}
+    >
       <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
         {t("comment:title")}
       </Typography>
@@ -120,7 +130,7 @@ const CommentSection = ({
           </Button>
         </Box>
       )}
-    </Box>
+    </Paper>
   );
 };
 
