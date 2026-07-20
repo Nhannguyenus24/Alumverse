@@ -135,6 +135,6 @@ public class GlobalExceptionHandler {
         
         meterRegistry.counter("api.errors.count", "error_code", "INTERNAL_SERVER_ERROR").increment();
 
-        return buildError(500, "INTERNAL_SERVER_ERROR", "Internal server error", ex.getMessage());
+        return buildError(500, "INTERNAL_SERVER_ERROR", "Internal server error", null);
     }
 }
