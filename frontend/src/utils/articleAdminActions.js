@@ -58,7 +58,7 @@ export const getArticleVisibilityState = (article) => {
   }
   if (article.channel === 'achievement' || article.channel === 'learning') {
     if (article.status === 'APPROVED') return 'published';
-    if (article.status === 'REJECTED') return 'rejected';
+    if (article.status === 'REJECTED') return 'hidden';
     return 'hidden';
   }
   return 'published';

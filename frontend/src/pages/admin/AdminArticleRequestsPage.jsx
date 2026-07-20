@@ -33,6 +33,12 @@ import {
   toggleArticleVisibility,
 } from '../../utils/articleAdminActions';
 
+const ActionSlot = ({ children }) => (
+  <Box sx={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+    {children}
+  </Box>
+);
+
 const titleOf = (a) => a.title || a.name || a.position || '-';
 const idOf = (a) => a.id;
 const createdOf = (a) => a.createdAt || a.created_at || null;
@@ -218,44 +224,54 @@ const AdminArticleRequestsPage = () => {
               align: 'right',
               render: (_, a) => (
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }} onClick={(e) => e.stopPropagation()}>
-                  <Tooltip title={t('view_public_page')}>
-                    <IconButton size="small" sx={{ color: 'primary.main' }} onClick={() => openView(a)}>
-                      <VisibilityOutlinedIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                  {(a.url || a.linkUrl) && (
-                    <Tooltip title={t('view_original_link')}>
-                      <IconButton
-                        size="small"
-                        sx={{ color: 'info.main' }}
-                        onClick={() => window.open(a.url || a.linkUrl, '_blank', 'noopener,noreferrer')}
-                      >
-                        <LinkIcon fontSize="small" />
+                  <ActionSlot>
+                    <Tooltip title={t('view_public_page')}>
+                      <IconButton size="small" sx={{ color: 'primary.main' }} onClick={() => openView(a)}>
+                        <VisibilityOutlinedIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
-                  )}
-                  <Tooltip title={t('action_edit')}>
-                    <IconButton size="small" sx={{ color: 'secondary.main' }} onClick={() => openEdit(a)}>
-                      <EditOutlinedIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title={t('action_publish')}>
-                    <span>
-                      <IconButton
-                        size="small"
-                        sx={{ color: 'success.main' }}
-                        disabled={!canToggleArticleVisibility(a) || approvingId === `${a.channel}-${idOf(a)}`}
-                        onClick={() => handleApprove(a)}
-                      >
-                        <CheckCircleOutlineIcon fontSize="small" />
+                  </ActionSlot>
+                  <ActionSlot>
+                    {(a.url || a.linkUrl) && (
+                      <Tooltip title={t('view_original_link')}>
+                        <IconButton
+                          size="small"
+                          sx={{ color: 'info.main' }}
+                          onClick={() => window.open(a.url || a.linkUrl, '_blank', 'noopener,noreferrer')}
+                        >
+                          <LinkIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                  </ActionSlot>
+                  <ActionSlot>
+                    <Tooltip title={t('action_edit')}>
+                      <IconButton size="small" sx={{ color: 'secondary.main' }} onClick={() => openEdit(a)}>
+                        <EditOutlinedIcon fontSize="small" />
                       </IconButton>
-                    </span>
-                  </Tooltip>
-                  <Tooltip title={t('action_delete_reject')}>
-                    <IconButton size="small" sx={{ color: 'error.main' }} onClick={() => setDeleteTarget(a)}>
-                      <DeleteOutlineIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
+                    </Tooltip>
+                  </ActionSlot>
+                  <ActionSlot>
+                    <Tooltip title={t('action_publish')}>
+                      <span>
+                        <IconButton
+                          size="small"
+                          sx={{ color: 'success.main' }}
+                          disabled={!canToggleArticleVisibility(a) || approvingId === `${a.channel}-${idOf(a)}`}
+                          onClick={() => handleApprove(a)}
+                        >
+                          <CheckCircleOutlineIcon fontSize="small" />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+                  </ActionSlot>
+                  <ActionSlot>
+                    <Tooltip title={t('action_delete_reject')}>
+                      <IconButton size="small" sx={{ color: 'error.main' }} onClick={() => setDeleteTarget(a)}>
+                        <DeleteOutlineIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </ActionSlot>
                 </Box>
               ),
             },
