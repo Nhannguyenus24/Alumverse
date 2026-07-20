@@ -828,8 +828,7 @@ public class EventService {
     public Mono<EventStatisticsResponse> getEventStatistics(Long eventId) {
         return this.findEventById(eventId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId)))
-                .flatMap(e -> SecurityUtils.assertCanManageContentOrganization(e.getOrganizationId())
-                        .then(this.daoGetEventStatistics(eventId)));
+                .flatMap(e -> this.daoGetEventStatistics(eventId));
     }
 
     private Mono<Void> assertEventOpenForRegistration(Event event) {
