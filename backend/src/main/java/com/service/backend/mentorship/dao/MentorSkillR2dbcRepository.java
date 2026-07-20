@@ -13,6 +13,9 @@ public interface MentorSkillR2dbcRepository extends R2dbcRepository<MentorSkill,
     @Query("SELECT * FROM mentor_skills WHERE mentor_member_id = :mentorMemberId ORDER BY display_order ASC")
     Flux<MentorSkill> findByMentorMemberIdOrderByDisplayOrder(Integer mentorMemberId);
 
+    @Query("SELECT * FROM mentor_skills WHERE mentor_member_id IN (:mentorMemberIds) ORDER BY mentor_member_id ASC, display_order ASC")
+    Flux<MentorSkill> findByMentorMemberIdsOrderByDisplayOrder(java.util.Collection<Integer> mentorMemberIds);
+
     @Modifying
     @Query("DELETE FROM mentor_skills WHERE mentor_member_id = :mentorMemberId")
     Mono<Void> deleteByMentorMemberId(Integer mentorMemberId);

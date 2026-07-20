@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -52,8 +53,17 @@ public class AdminAiProviderService {
 
     public Mono<List<AiProviderResponse>> getAll() {
         return providerRepo.findAllByOrderByPriorityAscIdAsc()
-                .concatMap(this::toResponse)
-                .collectList();
+                .collectList()
+                .flatMap(providers -> {
+                    if (providers.isEmpty()) return Mono.just(List.of());
+                    List<Integer> providerIds = providers.stream().map(AiProvider::getId).toList();
+                    // One query for all models instead of one per provider, then group in memory.
+                    return modelRepo.findByProviderIdInOrderByPriorityAscIdAsc(providerIds)
+                            .collectMultimap(AiModel::getProviderId)
+                            .map(modelsByProvider -> providers.stream()
+                                    .map(p -> buildResponse(p, modelsByProvider.getOrDefault(p.getId(), List.of())))
+                                    .collect(Collectors.toList()));
+                });
     }
 
     public Mono<AiProviderResponse> getById(Integer id) {
@@ -161,36 +171,41 @@ public class AdminAiProviderService {
 
     private Mono<AiProviderResponse> toResponse(AiProvider p) {
         return modelRepo.findByProviderIdOrderByPriorityAscIdAsc(p.getId())
+                .collectList()
+                .map(models -> buildResponse(p, models));
+    }
+
+    /** Build the provider response from already-loaded models (no DB access). */
+    private AiProviderResponse buildResponse(AiProvider p, Collection<AiModel> models) {
+        List<AiModelDto> modelDtos = models.stream()
                 .map(m -> AiModelDto.builder()
                         .id(m.getId())
                         .modelName(m.getModelName())
                         .priority(m.getPriority())
                         .enabled(m.getEnabled())
                         .build())
-                .collectList()
-                .map(models -> {
-                    boolean hasKey = p.getApiKeyEnc() != null && !p.getApiKeyEnc().isBlank();
-                    String masked = "";
-                    if (hasKey) {
-                        try {
-                            masked = cipher.mask(cipher.decrypt(p.getApiKeyEnc()));
-                        } catch (RuntimeException e) {
-                            masked = "••••";
-                            log.warn("Cannot decrypt key for provider '{}' to mask.", p.getName());
-                        }
-                    }
-                    return AiProviderResponse.builder()
-                            .id(p.getId())
-                            .name(p.getName())
-                            .providerType(p.getProviderType())
-                            .baseUrl(p.getBaseUrl())
-                            .apiKeyMasked(masked)
-                            .hasApiKey(hasKey)
-                            .enabled(p.getEnabled())
-                            .priority(p.getPriority())
-                            .models(models)
-                            .build();
-                });
+                .collect(Collectors.toList());
+        boolean hasKey = p.getApiKeyEnc() != null && !p.getApiKeyEnc().isBlank();
+        String masked = "";
+        if (hasKey) {
+            try {
+                masked = cipher.mask(cipher.decrypt(p.getApiKeyEnc()));
+            } catch (RuntimeException e) {
+                masked = "••••";
+                log.warn("Cannot decrypt key for provider '{}' to mask.", p.getName());
+            }
+        }
+        return AiProviderResponse.builder()
+                .id(p.getId())
+                .name(p.getName())
+                .providerType(p.getProviderType())
+                .baseUrl(p.getBaseUrl())
+                .apiKeyMasked(masked)
+                .hasApiKey(hasKey)
+                .enabled(p.getEnabled())
+                .priority(p.getPriority())
+                .models(modelDtos)
+                .build();
     }
 
     private String normalizeType(String type) {

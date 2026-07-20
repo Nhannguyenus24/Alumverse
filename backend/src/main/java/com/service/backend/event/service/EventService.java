@@ -260,13 +260,31 @@ public class EventService {
                                                 .expiresAt(LocalDateTime.now().plusDays(7))
                                                 .build();
 
-                                        return this.createInvitation(invitation)
-                                                .flatMap(inv -> sendInvitationEmail(event, inv)
-                                                        .then(notifyInvitation(event, inv)))
-                                                .thenReturn(1);
+                                        return this.createInvitation(invitation);
                                     });
                                 }, BULK_EMAIL_CONCURRENCY)
-                                .reduce(0, Integer::sum)));
+                                .collectList()
+                                // Response chỉ cần số lời mời đã tạo. Việc gửi email + notification
+                                // (SMTP round-trip cho từng người) chạy nền, không chặn admin.
+                                .doOnNext(created -> sendInvitationsAsync(event, created))
+                                .map(List::size)));
+    }
+
+    /**
+     * Gửi email mời + tạo notification bất đồng bộ cho danh sách lời mời, giới hạn số lượng
+     * gửi đồng thời bằng {@link #BULK_EMAIL_CONCURRENCY} để không làm quá tải SMTP. Lỗi được log
+     * và nuốt vì đây là công việc best-effort, không ảnh hưởng kết quả tạo lời mời.
+     */
+    private void sendInvitationsAsync(Event event, List<EventInvitation> invitations) {
+        Flux.fromIterable(invitations)
+                .flatMap(inv -> sendInvitationEmail(event, inv)
+                        .then(notifyInvitation(event, inv))
+                        .onErrorResume(e -> {
+                            log.warn("Failed to send invitation for event {} invitation {}: {}",
+                                    event.getId(), inv.getId(), e.getMessage());
+                            return Mono.empty();
+                        }), BULK_EMAIL_CONCURRENCY)
+                .subscribe();
     }
 
     private Mono<Void> sendInvitationEmail(Event event, EventInvitation invitation) {
@@ -306,14 +324,10 @@ public class EventService {
                                                 .guestEmail(confirmed.getEmail())
                                                 .build();
                                         return checkCapacityAndRegister(event, ticket, null)
-                                                .flatMap(saved -> sendTicketEmail(event, saved)
-                                                        .onErrorResume(e -> {
-                                                            log.warn("Failed to send ticket email for event {} ticket {}: {}",
-                                                                    event.getId(), saved.getTicketCode(), e.getMessage());
-                                                            return Mono.empty();
-                                                        })
-                                                        .thenReturn(saved))
-                                                .doOnNext(saved -> notifyRegistration(event, saved));
+                                                .doOnNext(saved -> {
+                                                    sendTicketEmailAsync(event, saved);
+                                                    notifyRegistration(event, saved);
+                                                });
                                     }));
                 });
     }
@@ -343,14 +357,13 @@ public class EventService {
                                                         .build();
                                                 ticket.setRegistrationAnswersFromObject(answersJson);
                                                 return checkCapacityAndRegister(event, ticket, answersJson)
-                                                        .flatMap(saved -> sendTicketEmail(event, saved)
-                                                                .onErrorResume(e -> {
-                                                                    log.warn("Failed to send ticket email for event {} ticket {}: {}",
-                                                                            event.getId(), saved.getTicketCode(), e.getMessage());
-                                                                    return Mono.empty();
-                                                                })
-                                                                .thenReturn(saved))
-                                                        .doOnNext(saved -> notifyRegistration(event, saved));
+                                                        .doOnNext(saved -> {
+                                                            // Gửi email & tạo notification bất đồng bộ (fire-and-forget).
+                                                            // Email không bắt buộc cho việc đăng ký thành công, không cần
+                                                            // chờ SMTP round-trip (vài giây) trước khi trả response.
+                                                            sendTicketEmailAsync(event, saved);
+                                                            notifyRegistration(event, saved);
+                                                        });
                                             });
                                 }));
     }
@@ -507,6 +520,18 @@ public class EventService {
                                             .build();
                                     return this.saveEmailLog(log).thenReturn(count);
                                 })));
+    }
+
+    /**
+     * Gửi email vé bất đồng bộ, không chặn luồng gọi. Lỗi được log và nuốt vì email
+     * không phải điều kiện thành công của việc đăng ký.
+     */
+    private void sendTicketEmailAsync(Event event, EventTicket ticket) {
+        sendTicketEmail(event, ticket)
+                .subscribe(
+                        sent -> {},
+                        e -> log.warn("Failed to send ticket email for event {} ticket {}: {}",
+                                event.getId(), ticket.getTicketCode(), e.getMessage()));
     }
 
     private Mono<Boolean> sendTicketEmail(Event event, EventTicket ticket) {
@@ -717,34 +742,67 @@ public class EventService {
                 .defaultIfEmpty(builder);
     }
 
+    /** Build a ticket detail from pre-loaded maps (no per-row DB calls). */
+    private EventTicketDetailResponse buildTicketDetail(EventTicket ticket, Map<Long, Event> events,
+                                                        Map<Integer, UserProfileRepository.AttendeeProfile> profiles) {
+        EventTicketDetailResponse.EventTicketDetailResponseBuilder builder = EventTicketDetailResponse.fromTicket(ticket)
+                .qrToken(eventQrService.encodeWithPrefix(ticket.getTicketCode(), ticket.getEventId()));
+        if (ticket.getEventId() != null) {
+            Event event = events.get(ticket.getEventId());
+            if (event != null && event.getTitle() != null) builder.eventTitle(event.getTitle());
+        }
+        if (ticket.getMemberId() != null) {
+            UserProfileRepository.AttendeeProfile profile = profiles.get(ticket.getMemberId().intValue());
+            if (profile != null) {
+                builder.attendeeName(profile.fullName())
+                        .attendeeEmail(profile.email())
+                        .attendeeAvatarUrl(profile.avatarUrl());
+            }
+        }
+        return builder.build();
+    }
+
     private Mono<PaginatedResponse<EventTicketDetailResponse>> mapDetailPage(PaginatedResponse<EventTicket> page) {
-        return Flux.fromIterable(page.getItems())
-                .concatMap(this::toDetail)
-                .collectList()
-                .map(items -> PaginatedResponse.<EventTicketDetailResponse>builder()
-                        .items(items)
-                        .currentPage(page.getCurrentPage())
-                        .pageSize(page.getPageSize())
-                        .totalPage(page.getTotalPage())
-                        .totalItem(page.getTotalItem())
-                        .hasNext(page.getHasNext())
-                        .hasPrevious(page.getHasPrevious())
-                        .build());
+        Set<Long> eventIds = new HashSet<>();
+        for (EventTicket t : page.getItems()) {
+            if (t.getEventId() != null) eventIds.add(t.getEventId());
+        }
+        return eventsById(eventIds)
+                .map(events -> withItems(page, page.getItems().stream()
+                        .map(t -> buildTicketDetail(t, events, Map.of()))
+                        .toList()));
     }
 
     private Mono<PaginatedResponse<EventTicketDetailResponse>> mapDetailPageWithAttendees(PaginatedResponse<EventTicket> page) {
-        return Flux.fromIterable(page.getItems())
-                .concatMap(this::toDetailWithAttendee)
-                .collectList()
-                .map(items -> PaginatedResponse.<EventTicketDetailResponse>builder()
-                        .items(items)
-                        .currentPage(page.getCurrentPage())
-                        .pageSize(page.getPageSize())
-                        .totalPage(page.getTotalPage())
-                        .totalItem(page.getTotalItem())
-                        .hasNext(page.getHasNext())
-                        .hasPrevious(page.getHasPrevious())
-                        .build());
+        Set<Long> eventIds = new HashSet<>();
+        Set<Integer> memberIds = new HashSet<>();
+        for (EventTicket t : page.getItems()) {
+            if (t.getEventId() != null) eventIds.add(t.getEventId());
+            if (t.getMemberId() != null) memberIds.add(t.getMemberId().intValue());
+        }
+        return Mono.zip(eventsById(eventIds), userProfileRepository.findAttendeeProfilesByUserIds(memberIds))
+                .map(tuple -> withItems(page, page.getItems().stream()
+                        .map(t -> buildTicketDetail(t, tuple.getT1(), tuple.getT2()))
+                        .toList()));
+    }
+
+    /** Batch-load events by id in one query; empty set short-circuits without hitting the DB. */
+    private Mono<Map<Long, Event>> eventsById(Set<Long> eventIds) {
+        if (eventIds.isEmpty()) return Mono.just(Map.of());
+        return eventRepo.findAllById(eventIds).collectMap(Event::getId, e -> e);
+    }
+
+    /** Rebuild a paginated response with new items, carrying over the paging metadata. */
+    private <T> PaginatedResponse<T> withItems(PaginatedResponse<?> page, List<T> items) {
+        return PaginatedResponse.<T>builder()
+                .items(items)
+                .currentPage(page.getCurrentPage())
+                .pageSize(page.getPageSize())
+                .totalPage(page.getTotalPage())
+                .totalItem(page.getTotalItem())
+                .hasNext(page.getHasNext())
+                .hasPrevious(page.getHasPrevious())
+                .build();
     }
 
     // ─── Invitation queries ───────────────────────────────────────────────────
@@ -762,58 +820,54 @@ public class EventService {
                 .then(this.findEmailLogsByEvent(eventId, page, limit));
     }
 
-    private Mono<EventInterestDetailResponse> toInterestDetailWithMember(EventInterest interest) {
+    private EventInterestDetailResponse buildInterestDetail(EventInterest interest,
+                                                            Map<Integer, UserProfileRepository.AttendeeProfile> profiles) {
         EventInterestDetailResponse.EventInterestDetailResponseBuilder builder = EventInterestDetailResponse.fromInterest(interest);
-        if (interest.getMemberId() == null) return Mono.just(builder.build());
-        return userProfileRepository.findAttendeeProfileByUserId(interest.getMemberId().intValue())
-                .map(profile -> builder
-                        .memberName(profile.fullName())
+        if (interest.getMemberId() != null) {
+            UserProfileRepository.AttendeeProfile profile = profiles.get(interest.getMemberId().intValue());
+            if (profile != null) {
+                builder.memberName(profile.fullName())
                         .memberEmail(profile.email())
-                        .memberAvatarUrl(profile.avatarUrl())
-                        .build())
-                .defaultIfEmpty(builder.build());
+                        .memberAvatarUrl(profile.avatarUrl());
+            }
+        }
+        return builder.build();
     }
 
     private Mono<PaginatedResponse<EventInterestDetailResponse>> mapInterestPageWithMembers(PaginatedResponse<EventInterest> page) {
-        return Flux.fromIterable(page.getItems())
-                .concatMap(this::toInterestDetailWithMember)
-                .collectList()
-                .map(items -> PaginatedResponse.<EventInterestDetailResponse>builder()
-                        .items(items)
-                        .currentPage(page.getCurrentPage())
-                        .pageSize(page.getPageSize())
-                        .totalPage(page.getTotalPage())
-                        .totalItem(page.getTotalItem())
-                        .hasNext(page.getHasNext())
-                        .hasPrevious(page.getHasPrevious())
-                        .build());
+        Set<Integer> memberIds = new HashSet<>();
+        for (EventInterest i : page.getItems()) {
+            if (i.getMemberId() != null) memberIds.add(i.getMemberId().intValue());
+        }
+        return userProfileRepository.findAttendeeProfilesByUserIds(memberIds)
+                .map(profiles -> withItems(page, page.getItems().stream()
+                        .map(i -> buildInterestDetail(i, profiles))
+                        .toList()));
     }
 
-    private Mono<EventInvitationDetailResponse> toInvitationDetailWithMember(EventInvitation invitation) {
+    private EventInvitationDetailResponse buildInvitationDetail(EventInvitation invitation,
+                                                                Map<Integer, UserProfileRepository.AttendeeProfile> profiles) {
         EventInvitationDetailResponse.EventInvitationDetailResponseBuilder builder = EventInvitationDetailResponse.fromInvitation(invitation);
-        if (invitation.getMemberId() == null) return Mono.just(builder.build());
-        return userProfileRepository.findAttendeeProfileByUserId(invitation.getMemberId().intValue())
-                .map(profile -> builder
-                        .memberName(profile.fullName())
+        if (invitation.getMemberId() != null) {
+            UserProfileRepository.AttendeeProfile profile = profiles.get(invitation.getMemberId().intValue());
+            if (profile != null) {
+                builder.memberName(profile.fullName())
                         .memberEmail(profile.email())
-                        .memberAvatarUrl(profile.avatarUrl())
-                        .build())
-                .defaultIfEmpty(builder.build());
+                        .memberAvatarUrl(profile.avatarUrl());
+            }
+        }
+        return builder.build();
     }
 
     private Mono<PaginatedResponse<EventInvitationDetailResponse>> mapInvitationPageWithMembers(PaginatedResponse<EventInvitation> page) {
-        return Flux.fromIterable(page.getItems())
-                .concatMap(this::toInvitationDetailWithMember)
-                .collectList()
-                .map(items -> PaginatedResponse.<EventInvitationDetailResponse>builder()
-                        .items(items)
-                        .currentPage(page.getCurrentPage())
-                        .pageSize(page.getPageSize())
-                        .totalPage(page.getTotalPage())
-                        .totalItem(page.getTotalItem())
-                        .hasNext(page.getHasNext())
-                        .hasPrevious(page.getHasPrevious())
-                        .build());
+        Set<Integer> memberIds = new HashSet<>();
+        for (EventInvitation inv : page.getItems()) {
+            if (inv.getMemberId() != null) memberIds.add(inv.getMemberId().intValue());
+        }
+        return userProfileRepository.findAttendeeProfilesByUserIds(memberIds)
+                .map(profiles -> withItems(page, page.getItems().stream()
+                        .map(inv -> buildInvitationDetail(inv, profiles))
+                        .toList()));
     }
 
     // ─── Statistics ───────────────────────────────────────────────────────────
@@ -1112,20 +1166,21 @@ public class EventService {
     private Mono<EventTicket> cancelTicket(Long ticketId, String reason) {
         return ticketRepo.cancelTicket(ticketId, reason)
             .then(ticketRepo.findById(ticketId))
-            .flatMap(ticket -> {
-                if (ticket.getEventId() == null) {
-                    return Mono.just(ticket);
+            .doOnNext(ticket -> {
+                // Email hủy vé là best-effort: gửi nền, không chặn response.
+                if (ticket.getEventId() != null) {
+                    sendTicketCancellationEmailAsync(ticket, reason);
                 }
-                return this.findEventById(ticket.getEventId())
-                        .flatMap(event -> sendTicketCancellationEmail(event, ticket, reason)
-                                .onErrorResume(e -> {
-                                    log.warn("Failed to send ticket cancellation email for event {} ticket {}: {}",
-                                            event.getId(), ticket.getTicketCode(), e.getMessage());
-                                    return Mono.empty();
-                                })
-                                .thenReturn(ticket))
-                        .switchIfEmpty(Mono.just(ticket));
             });
+    }
+
+    private void sendTicketCancellationEmailAsync(EventTicket ticket, String reason) {
+        this.findEventById(ticket.getEventId())
+                .flatMap(event -> sendTicketCancellationEmail(event, ticket, reason))
+                .subscribe(
+                        v -> {},
+                        e -> log.warn("Failed to send ticket cancellation email for event {} ticket {}: {}",
+                                ticket.getEventId(), ticket.getTicketCode(), e.getMessage()));
     }
 
     private Mono<EventTicket> checkInTicket(Long ticketId) {
@@ -1291,15 +1346,16 @@ public class EventService {
 
     private Mono<Boolean> reorderQuestions(Long eventId, java.util.List<Integer> questionIds) {
         if (questionIds == null || questionIds.isEmpty()) return Mono.just(true);
-        return Flux.fromIterable(questionIds)
-                .index()
-                .flatMap(tuple -> questionRepo.findById(tuple.getT2())
-                        .filter(q -> eventId.equals(q.getEventId()))
-                        .flatMap(q -> {
-                            q.setOrderIndex(tuple.getT1().intValue());
-                            return questionRepo.save(q);
-                        }))
-                .then(Mono.just(true));
+        Map<Integer, Integer> orderByQuestionId = new HashMap<>();
+        for (int i = 0; i < questionIds.size(); i++) {
+            orderByQuestionId.put(questionIds.get(i), i);
+        }
+        // Load all questions in one IN query, keep only those owned by this event, then persist in one batch.
+        return questionRepo.findAllById(questionIds)
+                .filter(q -> eventId.equals(q.getEventId()))
+                .doOnNext(q -> q.setOrderIndex(orderByQuestionId.get(q.getId())))
+                .collectList()
+                .flatMap(questions -> questionRepo.saveAll(questions).then(Mono.just(true)));
     }
 
 }

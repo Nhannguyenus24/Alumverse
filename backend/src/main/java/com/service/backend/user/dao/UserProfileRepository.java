@@ -68,6 +68,16 @@ public interface UserProfileRepository extends R2dbcRepository<User, Integer> {
     @Query("SELECT id, full_name, email, avatar_url FROM users WHERE id = :userId")
     Mono<AttendeeProfile> findAttendeeProfileByUserId(@Param("userId") Integer userId);
 
+    @Query("SELECT id, full_name, email, avatar_url FROM users WHERE id IN (:userIds)")
+    Flux<AttendeeProfile> streamAttendeeProfilesByUserIds(@Param("userIds") Collection<Integer> userIds);
+
+    /** Batch variant of {@link #findAttendeeProfileByUserId} — one IN query instead of N findById calls. */
+    default Mono<Map<Integer, AttendeeProfile>> findAttendeeProfilesByUserIds(Collection<Integer> userIds) {
+        if (userIds == null || userIds.isEmpty()) return Mono.just(Map.of());
+        return streamAttendeeProfilesByUserIds(userIds.stream().distinct().toList())
+                .collectMap(AttendeeProfile::id, p -> p);
+    }
+
     @Query("SELECT id, full_name, email, avatar_url FROM users WHERE LOWER(email) = LOWER(:email) LIMIT 1")
     Mono<AttendeeProfile> findAttendeeProfileByEmail(@Param("email") String email);
 

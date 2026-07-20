@@ -1,6 +1,7 @@
 package com.service.backend.survey.dao;
 
 import com.service.backend.shared.entity.SurveySubmission;
+import com.service.backend.shared.dto.LongIdCountDTO;
 import com.service.backend.survey.projection.SurveySubmissionProjection;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -8,6 +9,8 @@ import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.util.Collection;
 
 /**
  * {@code answers_data} is JSONB; reads project it with {@code answers_data::text} and
@@ -44,6 +47,12 @@ public interface SurveySubmissionR2dbcRepository extends R2dbcRepository<SurveyS
 
     @Query("SELECT COUNT(*) FROM survey_submissions WHERE form_id = :formId AND member_id = :memberId")
     Mono<Long> countByFormIdAndMemberId(@Param("formId") Long formId, @Param("memberId") Long memberId);
+
+    @Query("SELECT form_id as id, COUNT(*) as count FROM survey_submissions WHERE form_id IN (:formIds) GROUP BY form_id")
+    Flux<LongIdCountDTO> countByFormIds(@Param("formIds") Collection<Long> formIds);
+
+    @Query("SELECT DISTINCT form_id FROM survey_submissions WHERE form_id IN (:formIds) AND member_id = :memberId")
+    Flux<Long> findSubmittedFormIdsByMember(@Param("formIds") Collection<Long> formIds, @Param("memberId") Long memberId);
 
     @Query("SELECT " + COLUMNS + " FROM survey_submissions WHERE form_id = :formId AND member_id = :memberId "
             + "ORDER BY submitted_at DESC LIMIT 1")

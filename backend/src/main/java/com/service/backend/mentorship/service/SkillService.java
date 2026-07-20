@@ -13,6 +13,8 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +45,31 @@ public class SkillService {
                 .flatMap(this::resolveOrdered);
     }
 
+    /**
+     * Batch variant of {@link #getMentorSkills}: resolves the ordered skill tags for many mentors
+     * using two queries total (mentor_skills IN, then skills IN) instead of 2 queries per mentor.
+     */
+    public Mono<Map<Integer, List<SkillResponse>>> getMentorSkills(Collection<Integer> mentorMemberIds) {
+        if (mentorMemberIds == null || mentorMemberIds.isEmpty()) return Mono.just(Map.of());
+        return mentorSkillRepository.findByMentorMemberIdsOrderByDisplayOrder(mentorMemberIds.stream().distinct().toList())
+                .collectList()
+                .flatMap(mentorSkills -> {
+                    if (mentorSkills.isEmpty()) return Mono.just(Map.of());
+                    List<Integer> skillIds = mentorSkills.stream().map(MentorSkill::getSkillId).distinct().toList();
+                    return skillRepository.findByIds(skillIds).collectMap(Skill::getId)
+                            .map(byId -> {
+                                Map<Integer, List<SkillResponse>> result = new LinkedHashMap<>();
+                                for (MentorSkill ms : mentorSkills) {
+                                    Skill skill = byId.get(ms.getSkillId());
+                                    if (skill == null) continue;
+                                    result.computeIfAbsent(ms.getMentorMemberId(), k -> new ArrayList<>())
+                                            .add(SkillResponse.from(skill));
+                                }
+                                return result;
+                            });
+                });
+    }
+
     private Mono<List<SkillResponse>> resolveOrdered(List<MentorSkill> mentorSkills) {
         if (mentorSkills.isEmpty()) return Mono.just(List.of());
         List<Integer> ids = mentorSkills.stream().map(MentorSkill::getSkillId).toList();
@@ -65,26 +92,50 @@ public class SkillService {
         if (deduped.isEmpty()) {
             return mentorSkillRepository.deleteByMentorMemberId(mentorMemberId);
         }
-        return Flux.fromIterable(deduped)
-                .concatMap(this::getOrCreateByName)
-                .collectList()
-                .flatMap(skills -> mentorSkillRepository.deleteByMentorMemberId(mentorMemberId)
-                        .thenMany(Flux.range(0, skills.size())
-                                .concatMap(i -> mentorSkillRepository.save(MentorSkill.builder()
-                                        .mentorMemberId(mentorMemberId)
-                                        .skillId(skills.get(i).getId())
-                                        .displayOrder(i)
-                                        .build())))
-                        .then());
+        return getOrCreateByNames(deduped)
+                .flatMap(byLowerName -> {
+                    // Rebuild the skill list in the caller-provided priority order.
+                    List<MentorSkill> toInsert = new ArrayList<>();
+                    int order = 0;
+                    for (String name : deduped) {
+                        Skill skill = byLowerName.get(name.trim().toLowerCase());
+                        if (skill == null) continue;
+                        toInsert.add(MentorSkill.builder()
+                                .mentorMemberId(mentorMemberId)
+                                .skillId(skill.getId())
+                                .displayOrder(order++)
+                                .build());
+                    }
+                    return mentorSkillRepository.deleteByMentorMemberId(mentorMemberId)
+                            .thenMany(mentorSkillRepository.saveAll(toInsert))
+                            .then();
+                });
     }
 
-    private Mono<Skill> getOrCreateByName(String name) {
-        String trimmed = name.trim();
-        return skillRepository.findByNameIgnoreCase(trimmed)
-                .switchIfEmpty(Mono.defer(() -> skillRepository.save(Skill.builder()
-                        .name(trimmed)
-                        .createdAt(LocalDateTime.now())
-                        .build())));
+    /**
+     * Resolves the given (trimmed, de-duped) names to {@link Skill} rows keyed by lower-cased name,
+     * creating any names not yet in the catalog. Uses one IN query instead of one lookup per name.
+     */
+    private Mono<Map<String, Skill>> getOrCreateByNames(List<String> names) {
+        List<String> lowerNames = names.stream().map(n -> n.trim().toLowerCase()).toList();
+        return skillRepository.findByNamesIgnoreCase(lowerNames)
+                .collectMap(s -> s.getName().trim().toLowerCase(), s -> s)
+                .flatMap(existing -> {
+                    List<String> missing = names.stream()
+                            .filter(n -> !existing.containsKey(n.trim().toLowerCase()))
+                            .toList();
+                    if (missing.isEmpty()) return Mono.just(existing);
+                    List<Skill> newSkills = missing.stream()
+                            .map(n -> Skill.builder().name(n.trim()).createdAt(LocalDateTime.now()).build())
+                            .toList();
+                    return skillRepository.saveAll(newSkills)
+                            .collectList()
+                            .map(created -> {
+                                Map<String, Skill> all = new LinkedHashMap<>(existing);
+                                for (Skill s : created) all.put(s.getName().trim().toLowerCase(), s);
+                                return all;
+                            });
+                });
     }
 
     private static List<String> dedupePreservingOrder(List<String> names) {
