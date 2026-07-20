@@ -49,7 +49,7 @@ import dayjs from 'dayjs';
 import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetricTile';
 import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
 
-const PROMETHEUS_BASE = import.meta.env.VITE_PROMETHEUS_URL || 'http://168.144.102.181:9090';
+const PROMETHEUS_BASE = import.meta.env.VITE_PROMETHEUS_URL || '';
 const PROMETHEUS_URL_RANGE = `${PROMETHEUS_BASE}/api/v1/query_range`;
 const PROMETHEUS_URL_INSTANT = `${PROMETHEUS_BASE}/api/v1/query`;
 
