@@ -13,8 +13,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CreateNewsCommentRequest {
 
-    @NotNull(message = "News ID is required")
-    @Min(value = 1, message = "News ID must be greater than 0")
     private Integer newsId;
 
     @NotNull(message = "Author member ID is required")

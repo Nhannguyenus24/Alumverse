@@ -104,10 +104,10 @@ export const formatChatDateSeparator = (value, t = null) => {
 };
 
 export const formatDateRange = (start, end, fallback = '') => {
-  const from = formatDate(start);
+  const from = formatDateTime(start);
   if (!from || from === "--") return fallback;
   if (!end) return from;
-  const to = formatDate(end);
+  const to = formatDateTime(end);
   if (to === "--") return from;
   return `${from} - ${to}`;
 };

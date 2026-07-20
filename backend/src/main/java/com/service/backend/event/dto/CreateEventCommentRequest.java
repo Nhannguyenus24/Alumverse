@@ -13,8 +13,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CreateEventCommentRequest {
 
-    @NotNull(message = "Event ID is required")
-    @Min(value = 1, message = "Event ID must be greater than 0")
     private Long eventId;
 
     @NotNull(message = "Author member ID is required")
