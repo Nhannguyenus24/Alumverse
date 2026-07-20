@@ -218,10 +218,8 @@ public class AdminEventService {
                             .then(ticketRepo.cancelTicket(ticket.getId(), "Cancelled by admin"))
                             .then(ticketRepo.findById(ticket.getId()));
                 })
-                .doOnSuccess(t -> {
-                    notifyTicketHolder(t, "Vé sự kiện đã bị huỷ",
-                            "Vé của bạn cho \"%s\" đã bị quản trị viên huỷ.");
-                });
+                .doOnSuccess(t -> notifyTicketHolder(t, "Vé sự kiện đã bị huỷ",
+                        "Vé của bạn cho \"%s\" đã bị quản trị viên huỷ."));
     }
 
     public Mono<EventTicket> undoTicket(String ticketCode) {
@@ -259,10 +257,8 @@ public class AdminEventService {
                             .then(ticketRepo.banTicket(ticket.getId(), "Banned due to signs of fraud"))
                             .then(ticketRepo.findById(ticket.getId()));
                 })
-                .doOnSuccess(t -> {
-                    notifyTicketHolder(t, "Vé sự kiện đã bị khoá",
-                            "Vé của bạn cho \"%s\" đã bị khoá do có dấu hiệu gian lận.");
-                });
+                .doOnSuccess(t -> notifyTicketHolder(t, "Vé sự kiện đã bị khoá",
+                        "Vé của bạn cho \"%s\" đã bị khoá do có dấu hiệu gian lận."));
     }
 
     public Mono<PaginatedResponse<EventInterest>> getInterestsByEvent(Long eventId, int page, int size) {

@@ -131,10 +131,6 @@ public class JobService {
                         page, limit)));
     }
 
-    public Mono<PaginatedResponse<JobResponse>> getActive(int page, int limit) {
-        return getActive(page, limit, null);
-    }
-
     public Mono<PaginatedResponse<JobResponse>> getActive(int page, int limit, Integer organizationId) {
         int offset = page * limit;
         return SecurityUtils.resolvePublicOrganizationId(organizationId)

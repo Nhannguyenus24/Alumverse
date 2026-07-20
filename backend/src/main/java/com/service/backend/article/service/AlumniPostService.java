@@ -140,10 +140,6 @@ public class AlumniPostService {
                         page, limit)));
     }
 
-    public Mono<PaginatedResponse<AlumniPostResponse>> getPublished(int page, int limit) {
-        return getPublished(page, limit, null);
-    }
-
     public Mono<PaginatedResponse<AlumniPostResponse>> getPublished(int page, int limit, Integer organizationId) {
         int offset = page * limit;
         return SecurityUtils.resolvePublicOrganizationId(organizationId)
@@ -152,10 +148,6 @@ public class AlumniPostService {
                         alumniPostRepository.countPublishedByOrganizationId(orgId),
                         page, limit))
                 .switchIfEmpty(Mono.just(PaginatedResponse.of(java.util.List.of(), 0, page, limit)));
-    }
-
-    public Mono<PaginatedResponse<AlumniPostResponse>> getByAuthorMemberId(Integer authorMemberId, int page, int limit) {
-        return getByAuthorMemberId(authorMemberId, null, page, limit);
     }
 
     public Mono<PaginatedResponse<AlumniPostResponse>> getByAuthorMemberId(

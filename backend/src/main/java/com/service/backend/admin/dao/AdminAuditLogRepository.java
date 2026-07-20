@@ -93,18 +93,6 @@ public interface AdminAuditLogRepository extends R2dbcRepository<AdminAuditLog, 
             @Param("latencyMs") Long latencyMs,
             @Param("status") String status);
 
-    @Modifying
-    @Query("""
-            INSERT INTO admin_audit_logs
-                (admin_user_id, target_user_id, action, created_at)
-            VALUES
-                (:adminUserId, :targetUserId, :action, CURRENT_TIMESTAMP)
-            """)
-    Mono<Integer> insertAuditLogLegacy(
-            @Param("adminUserId") Integer adminUserId,
-            @Param("targetUserId") Integer targetUserId,
-            @Param("action") String action);
-
     @Query("SELECT * FROM admin_audit_logs WHERE target_user_id = :userId ORDER BY created_at DESC LIMIT :limit")
     Flux<AdminAuditLog> findRecentByTargetUserId(@Param("userId") Integer userId, @Param("limit") int limit);
 

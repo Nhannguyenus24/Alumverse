@@ -340,7 +340,6 @@ public class AdminMentorshipService {
             case "SUSPENDED", "SUSPEND" -> "SUSPENDED";
             case "BANNED", "BAN" -> "BANNED";
             case "WARNING", "WARN" -> "WARNING";
-            case "DISMISS" -> "NONE";
             default -> "NONE";
         };
     }

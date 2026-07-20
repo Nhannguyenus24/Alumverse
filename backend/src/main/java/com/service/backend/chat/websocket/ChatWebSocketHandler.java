@@ -110,7 +110,7 @@ public class ChatWebSocketHandler implements WebSocketHandler {
 
         try {
             com.nimbusds.jwt.JWTClaimsSet claims = jwtUtils.validateToken(token);
-            Integer userId = Integer.valueOf(claims.getSubject());
+            Integer userId = Integer.parseInt(claims.getSubject());
             Long memberId = userId.longValue();
             return Mono.just(memberId);
         } catch (Exception e) {
@@ -181,9 +181,8 @@ public class ChatWebSocketHandler implements WebSocketHandler {
         String content = json.get("content").asText();
         String messageType = json.has("messageType") ? json.get("messageType").asText() : "TEXT";
         String metadata = json.has("metadata") ? json.get("metadata").toString() : null;
-        String chatType = json.has("chatType") ? json.get("chatType").asText() : null;
 
-        return chatService.sendMessage(groupId, memberId, content, messageType, metadata, chatType)
+        return chatService.sendMessage(groupId, memberId, content, messageType, metadata)
                 .flatMap(savedMessage -> userProfileRepository
                         .findDisplayInfoByUserId(savedMessage.getSenderMemberId().intValue()) // N + 1 query cho nay ne, co thoi gian thi sua
                         .defaultIfEmpty(UserDisplayInfo.builder()

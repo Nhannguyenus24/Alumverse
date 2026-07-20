@@ -28,12 +28,6 @@ public interface LearningResourceR2dbcRepository extends R2dbcRepository<Learnin
     @Query("SELECT COUNT(*) FROM learning_resources WHERE LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     Mono<Long> countAllSearchByTitle(String keyword);
 
-    @Query("SELECT * FROM learning_resources WHERE status = 'APPROVED' AND (LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(description) LIKE LOWER(CONCAT('%', :keyword, '%'))) ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
-    Flux<LearningResource> searchAllApprovedByTitleWithPagination(String keyword, int limit, int offset);
-
-    @Query("SELECT COUNT(*) FROM learning_resources WHERE status = 'APPROVED' AND (LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(description) LIKE LOWER(CONCAT('%', :keyword, '%')))")
-    Mono<Long> countAllApprovedSearchByTitle(String keyword);
-
     @Query("SELECT * FROM learning_resources WHERE organization_id = :organizationId AND type = :type AND status = 'APPROVED' ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
     Flux<LearningResource> findByType(Integer organizationId, LearningResourceType type, int limit, int offset);
 
@@ -51,9 +45,6 @@ public interface LearningResourceR2dbcRepository extends R2dbcRepository<Learnin
 
     @Query("SELECT COUNT(*) FROM learning_resources WHERE organization_id = :organizationId AND status = 'APPROVED'")
     Mono<Long> countApprovedByOrganizationId(Integer organizationId);
-
-    @Query("SELECT * FROM learning_resources WHERE status = 'APPROVED' ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
-    Flux<LearningResource> findAllApprovedWithPagination(int limit, int offset);
 
     @Query("SELECT COUNT(*) FROM learning_resources WHERE status = 'APPROVED'")
     Mono<Long> countAllApproved();

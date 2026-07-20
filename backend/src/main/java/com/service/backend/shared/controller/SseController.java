@@ -58,7 +58,7 @@ public class SseController {
             Object orgIdClaim = claims.getClaim("organizationId");
             organizationId = orgIdClaim instanceof Number number ? number.intValue() : null;
         } catch (Exception e) {
-            log.warn("Rejected SSE connection with invalid token: {}", e.getMessage());
+            log.debug("Rejected SSE connection with invalid token: {}", e.getMessage());
             return Flux.error(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid or expired token"));
         }
         return sseService.connect(userId, organizationId);

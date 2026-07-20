@@ -80,10 +80,6 @@ public class MentorshipAccessService {
                 });
     }
 
-    public Mono<Void> requireEmailVerifiedForMentorBrowse() {
-        return requireEmailVerifiedForMentorBrowse(null);
-    }
-
     public Mono<Void> requireEmailVerifiedForMentorBrowse(Integer organizationId) {
         return isGlobalMentorshipReviewerRole()
                 .flatMap(isReviewer -> isReviewer
@@ -95,17 +91,9 @@ public class MentorshipAccessService {
         return requireMinVerificationLevel(MIN_ORG_VERIFIED_LEVEL);
     }
 
-    public Mono<Boolean> isOrgVerifiedForMentorship() {
-        return isOrgVerifiedForMentorship(null);
-    }
-
     public Mono<Boolean> isOrgVerifiedForMentorship(Integer organizationId) {
         return getVerificationLevel(organizationId)
                 .map(level -> level != null && level >= MIN_ORG_VERIFIED_LEVEL);
-    }
-
-    public Mono<Boolean> canViewFullMentorBrowse() {
-        return canViewFullMentorBrowse(null);
     }
 
     public Mono<Boolean> canViewFullMentorBrowse(Integer organizationId) {

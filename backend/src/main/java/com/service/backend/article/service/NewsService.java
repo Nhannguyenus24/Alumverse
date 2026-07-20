@@ -140,10 +140,6 @@ public class NewsService {
                         page, limit)));
     }
 
-    public Mono<PaginatedResponse<NewsResponse>> getPublished(int page, int limit) {
-        return getPublished(page, limit, null);
-    }
-
     public Mono<PaginatedResponse<NewsResponse>> getPublished(int page, int limit, Integer organizationId) {
         int offset = page * limit;
         return SecurityUtils.resolvePublicOrganizationId(organizationId)
