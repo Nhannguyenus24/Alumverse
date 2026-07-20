@@ -17,6 +17,7 @@ import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../hooks/useAuth";
+import { useNotification } from "../hooks/useNotification";
 import { useCanContribute } from "../hooks/useCanContribute";
 import { useOrgNavigate, useOrgPath } from '../hooks/useOrgNavigate';
 import useOrganizationStore from "../stores/organizationStore";
@@ -65,6 +66,7 @@ const AccountMenu = ({
 
   const open = Boolean(anchorEl);
   const { logout, verificationLevel, user } = useAuth();
+  const { showSuccess } = useNotification();
   const { isOrgManager } = useCanContribute();
   const toOrgPath = useOrgPath();
   const organization = useOrganizationStore((state) => state.organization);
@@ -86,8 +88,9 @@ const AccountMenu = ({
   const handleLogout = useCallback(async () => {
     handleItemClick();
     await logout();
+    showSuccess(t("common:logout_success"));
     navigate("/");
-  }, [handleItemClick, logout, navigate]);
+  }, [handleItemClick, logout, showSuccess, t, navigate]);
 
   const resolvedAvatarUrl = !avatarLoadFailed && avatarUrl ? resolveMediaUrl(avatarUrl) : undefined;
   const avatarImgProps = useMemo(() => ({
