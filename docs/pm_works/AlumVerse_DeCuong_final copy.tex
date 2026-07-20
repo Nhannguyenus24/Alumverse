@@ -1,0 +1,363 @@
+% =====================================================================
+% ĐỀ CƯƠNG THỰC TẬP DỰ ÁN TỐT NGHIỆP - AlumVerse 2026 (bản chỉnh scope)
+% ---------------------------------------------------------------------
+% COMPILER KHUYẾN NGHỊ: LuaLaTeX  (menu Overleaf: Menu > Compiler > LuaLaTeX)
+%   - LuaLaTeX/XeLaTeX đều chạy được vì dùng fontspec + polyglossia.
+%   - KHÔNG dùng pdfLaTeX (sẽ lỗi fontspec).
+% FONT: mặc định dùng "TeX Gyre Termes" (bản thay thế miễn phí, cùng
+%   kích thước với Times New Roman) để biên dịch KHÔNG LỖI ngay trên Overleaf.
+%   Nếu cần đúng "Times New Roman": tải 4 tệp .ttf (Regular/Bold/Italic/
+%   BoldItalic) lên project Overleaf rồi bỏ chú thích dòng \setmainfont bên dưới.
+% =====================================================================
+\documentclass[12pt,a4paper]{article}
+
+% -------- Font & Tiếng Việt (theo quy định HCMUS/FIT) --------
+\usepackage{fontspec}
+\usepackage{polyglossia}
+\setmainlanguage{vietnamese}
+\setotherlanguage{english}
+% Mặc định: TeX Gyre Termes (chạy sẵn trên Overleaf, tương thích Times New Roman)
+\setmainfont{TeX Gyre Termes}
+% Nếu đã upload font Times New Roman lên Overleaf, dùng dòng dưới thay cho dòng trên:
+% \setmainfont{Times New Roman}
+
+% -------- Layout --------
+\usepackage{geometry}
+\geometry{a4paper, left=3cm, right=2cm, top=3.5cm, bottom=3.5cm}
+
+% ==================== PACKAGES & CẤU HÌNH ====================
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{framed}
+\usepackage{enumitem}
+\usepackage{longtable}
+\usepackage{url}
+\def\UrlBreaks{\do\/\do-\do\_\do\.\do\&\do\?\do\=}
+\usepackage[hidelinks]{hyperref}
+
+% -------- Khoảng cách đoạn văn --------
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt}
+\renewcommand{\baselinestretch}{1.5}
+
+% -------- Kích thước chữ cho heading --------
+\makeatletter
+\renewcommand{\large}{\fontsize{14pt}{17pt}\selectfont}
+\renewcommand{\Large}{\fontsize{17pt}{21pt}\selectfont}
+\renewcommand{\LARGE}{\fontsize{20pt}{25pt}\selectfont}
+\makeatother
+
+% ====================== CẤU HÌNH HEADING ======================
+\titleformat{\section}
+  {\Large\bfseries}
+  {\thesection.}
+  {0.6em}
+  {}
+\titleformat{\subsection}
+  {\large\bfseries}
+  {\thesubsection}
+  {0.6em}
+  {}
+\titlespacing*{\section}{0pt}{0pt}{6pt}
+\titlespacing*{\subsection}{0pt}{0pt}{5pt}
+
+\graphicspath{{./Pictures/}}
+
+\begin{document}
+
+% ================= TRANG BÌA =================
+\begin{titlepage}
+\begin{center}
+\begin{minipage}{0.4\textwidth}
+\includegraphics[width=6.5cm]{logo_fit.png}
+\end{minipage}
+\begin{minipage}{0.55\textwidth}
+\begin{center}
+{\normalsize\textbf{TRƯỜNG ĐẠI HỌC KHOA HỌC TỰ NHIÊN}}\\
+{\normalsize\textbf{KHOA CÔNG NGHỆ THÔNG TIN}}
+\end{center}
+\end{minipage}
+
+\vspace{1cm}
+{\Large\bfseries
+ĐỀ CƯƠNG THỰC TẬP DỰ ÁN TỐT NGHIỆP
+}
+
+\vspace{1cm}
+{\LARGE\bfseries
+ALUMVERSE: CẢI TIẾN HỆ THỐNG KẾT NỐI SINH VIÊN VÀ CỰU SINH VIÊN TRƯỜNG ĐH KHOA HỌC TỰ NHIÊN, ĐHQG-HCM
+}
+
+\vspace{0.4cm}
+{\large \bfseries\textit{(AlumVerse: Refactoring and Enhancing the Student -- Alumni System \\for Ho Chi Minh City University of Science, VNU-HCM)}}
+
+\vspace{0.5cm}
+\begin{flushleft}
+\setcounter{section}{0}
+\section{Thông tin chung}
+\vspace{-6pt}
+\textbf{Người hướng dẫn:}\\
+-- ThS. Hồ Tuấn Thanh\\
+-- ThS. Nguyễn Lê Hoàng Dũng
+
+\textbf{Nhóm sinh viên thực hiện:}\\
+22127151 - Lâm Tiến Huy\\
+22127240 - Trần Tiến Lợi\\
+22127290 - Nguyễn Thị Thu Ngân\\
+22127306 - Nguyễn Trọng Nhân\\
+22127442 - Trần Đức Tùng\\
+22127408 - Kha Vĩnh Thuận
+
+\textbf{Loại đề tài:} Ứng dụng
+
+\textbf{Thời gian thực hiện:} Từ 01/2026 đến 08/2026
+\end{flushleft}
+\vfill
+\begin{center}
+TP. Hồ Chí Minh, 2026
+\end{center}
+\end{center}
+\end{titlepage}
+
+% ========== HEADER & FOOTER ==========
+\pagestyle{fancy}
+\fancyhf{}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+
+% ========== 2. NỘI DUNG CHÍNH ==========
+\section{Nội dung chính}
+\vspace{-6pt}
+
+% ---------- 2.1. GIỚI THIỆU ĐỀ TÀI ----------
+\subsection{Giới thiệu đề tài}
+\vspace{-4pt}
+Mạng lưới cựu sinh viên (alumni) là nguồn lực chiến lược, đóng vai trò quan trọng trong việc nâng cao uy tín và chất lượng đào tạo của các cơ sở giáo dục đại học. Theo các nghiên cứu về vai trò của cựu sinh viên \hyperref[ref:obeng]{[1]}, \hyperref[ref:unisel]{[2]}, alumni không chỉ là hình mẫu truyền cảm hứng cho sinh viên mà còn là cầu nối trong việc tư vấn nghề nghiệp, cung cấp cơ hội việc làm và hỗ trợ nguồn lực tài chính, chuyên môn cho nhà trường.
+
+\textbf{Thách thức từ thực trạng:} \\
+Mặc dù đóng vai trò quan trọng, việc duy trì sự kết nối giữa nhà trường và cựu sinh viên tại Việt Nam nói chung, và tại Trường Đại học Khoa học Tự nhiên (HCMUS) nói riêng, vẫn còn nhiều hạn chế. Qua phân tích dữ liệu từ các fanpage trên nền tảng mạng xã hội Facebook, nhóm thực hiện nhận thấy tỉ lệ tương tác của cộng đồng cựu sinh viên hiện nay rất thấp, dao động từ 0,009\% đến 0,33\% (xem Bảng \ref{tab:engagement}).
+\vspace{-8pt}
+\begin{table}[H]
+\centering
+\small
+\caption{\textit{Thống kê tỉ lệ tương tác ước lượng trên nền tảng mạng xã hội alumni
+(Nguồn: Số liệu tự tổng hợp tính đến tháng 01/2026)}}
+\label{tab:engagement}
+\vspace{0,2cm}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{p{6.8cm} r r r}
+\toprule
+\textbf{Trường / Nhóm} & \textbf{Số thành viên} & \textbf{Tương tác trung bình} & \textbf{Tỉ lệ tương tác} \\
+\midrule
+Cựu SV \& SV ĐH Sư Phạm Kỹ Thuật & 138.000 & $\approx$ 5--18 & $\approx$ 0,009--0,013\% \\
+UEH Alumni & 9.600 & $\approx$ 12+ & $\approx$ 0,12\% \\
+Cựu SV ĐH Luật & 6.100 & $\approx$ 8 & $\approx$ 0,13\% \\
+Cựu SV Trường Kiến (UAH) & 15.000 & $\approx$ 23 & $\approx$ 0,15\% \\
+Cựu SV Khoa KH\&CN Vật liệu -- HCMUS (MSTA) & 2.700 & $\approx$ 9 & $\approx$ 0,33\% \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+\vspace{-8pt}
+\textbf{Vấn đề nghiên cứu:} \\
+Hệ thống kết nối cũ AlumVerse 2024 {\hyperref[ref:alumverse]{[3]}} gặp phải hạn chế tương tự các trang fanpage kể trên. Thay vì khai thác giá trị cốt lõi của alumni, hệ thống tập trung vào mô hình mạng xã hội thuần túy (xem Hình~\ref{fig:ucase}). Việc lặp lại hướng tiếp cận "mô phỏng mạng xã hội" vốn đã bị chiếm lĩnh bởi các nền tảng lớn khiến ứng dụng thiếu đi điểm nổi bật riêng và giá trị thực tiễn đặc thù, dẫn đến việc không thể phát huy vai trò của alumni như lý thuyết đã đề cập. Ngoài ra, hệ thống cũ còn mang nợ kỹ thuật và thiếu khả năng triển khai đa đơn vị.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{ucase.png}
+    \caption{\textit{Mô hình use case theo hướng mạng xã hội của hệ thống AlumVerse 2024}}
+    \label{fig:ucase}
+\end{figure}
+\vspace{-10pt}
+\textbf{Nhu cầu của các nhóm người dùng:} \\
+Bên cạnh việc khai thác giá trị của alumni, một hệ thống hiệu quả còn phải đáp ứng nhu cầu khác nhau của ba nhóm người dùng. Về phía nhà trường, các đơn vị quản lý cấp trường và cấp khoa cần quản lý dữ liệu sinh viên, cựu sinh viên một cách có hệ thống và thống kê tỉ lệ việc làm của sinh viên tốt nghiệp để phục vụ công tác báo cáo theo quy định của Bộ Giáo dục và Đào tạo \hyperref[ref:moet]{[4]}. Về phía cựu sinh viên, họ có nhu cầu kết nối lại với bạn bè cũ, tham gia sự kiện gắn kết, tìm kiếm cơ hội việc làm và học tập suốt đời. Về phía sinh viên, nhu cầu nổi bật là được hỏi đáp, định hướng nghề nghiệp và được cố vấn, một hình thức đã được nhiều nghiên cứu ghi nhận là có tác động tích cực đến quá trình chuyển tiếp từ học tập sang làm việc \hyperref[ref:nabi]{[5]}.
+
+\textbf{Ý tưởng giải quyết:}\\
+AlumVerse đề xuất thay đổi tư duy sản phẩm: chuyển dịch từ kết nối xã hội đơn thuần sang nền tảng tạo dựng giá trị thực tế, thực hiện theo hai hướng song song:
+\vspace{-6pt}
+\begin{itemize}
+    \item \textbf{Cải tiến nghiệp vụ (Enhancing):} tập trung vào cố vấn (Mentorship) có cấu trúc, diễn đàn nghề nghiệp, cổng cơ hội học tập và việc làm (Learning Hub \& Jobs), quản lý sự kiện, gây quỹ minh bạch có đối soát tự động, xác minh cựu sinh viên, vinh danh thành tích và trợ lý ảo.
+    \item \textbf{Tái thiết kế kỹ thuật (Refactoring):} xây dựng lại hệ thống theo kiến trúc Modular Monolith kết hợp Layered trên nền Spring WebFlux, kèm bộ công cụ đa đơn vị (multi-tenant) để mỗi Khoa tại HCMUS có một cổng kết nối riêng.
+\end{itemize}
+\vspace{-4pt}
+\textbf{Ý nghĩa thực tiễn:} \\
+AlumVerse hướng tới một hệ thống có khả năng vận hành thực tế, cung cấp kênh kết nối thực chất giữa các thế hệ sinh viên HCMUS, đồng thời cung cấp khung tính năng có khả năng tái sử dụng cao cho nhiều đơn vị thành viên.
+
+% ---------- 2.2. MỤC TIÊU ĐỀ TÀI ----------
+\subsection{Mục tiêu đề tài}
+\vspace{-4pt}
+\textbf{Mục tiêu chính:}
+\vspace{-8pt}
+\begin{itemize}
+    \item Tái thiết kế hệ thống để xử lý nợ kỹ thuật: xuất phát từ khái niệm nợ kỹ thuật \hyperref[ref:cunningham]{[6]}, \hyperref[ref:fowler]{[7]}, nhóm không sửa đổi trên mã nguồn cũ mà phát triển mới hoàn toàn, kế thừa kết quả phân tích và thiết kế của AlumVerse 2024 \hyperref[ref:alumverse]{[3]}, chuyển từ kiến trúc Microservices \hyperref[ref:microservices]{[8]} sang Modular Monolith kết hợp Layered \hyperref[ref:poeaa]{[9]} để hệ thống dễ bảo trì, mở rộng và tiết kiệm chi phí vận hành.
+    \item Tối ưu hóa hiệu năng và khả năng chịu tải: áp dụng mô hình lập trình phản ứng (Reactive Programming) theo tiêu chuẩn The Reactive Manifesto \hyperref[ref:reactive]{[10]} để xây dựng hệ thống xử lý bất đồng bộ, tối ưu hóa tài nguyên phần cứng.
+    \item Xây dựng nền tảng hướng giá trị: dịch chuyển trọng tâm từ mô hình mạng xã hội đơn thuần sang các giá trị cốt lõi về nghề nghiệp và cố vấn, đáp ứng đúng vai trò của alumni trong sự phát triển của nhà trường \hyperref[ref:obeng]{[1]}, \hyperref[ref:unisel]{[2]}.
+    \item Sẵn sàng triển khai thực tế: xây dựng hệ thống đạt tiêu chuẩn vận hành trên cả nền tảng web và ứng dụng di động, hỗ trợ cơ chế đa đơn vị để triển khai linh hoạt cho các Khoa và Bộ môn thuộc HCMUS.
+\end{itemize}
+\textbf{Mục tiêu cụ thể:}
+\vspace{-8pt}
+\begin{itemize}
+    \item Phân tích và Thiết kế: xác định nợ kỹ thuật của phiên bản 2024 \hyperref[ref:alumverse]{[3]}; thiết kế kiến trúc Modular Monolith kết hợp Layered \hyperref[ref:poeaa]{[9]} và mô hình dữ liệu đa đơn vị (multi-tenant) cô lập theo tổ chức \hyperref[ref:multitenant]{[11]}.
+    \item Phát triển Backend: hiện thực hóa hệ thống API sử dụng Spring WebFlux và R2DBC để đảm bảo luồng dữ liệu không bị nghẽn.
+    \item Phát triển Frontend: xây dựng giao diện Web Responsive bằng React 19 và hệ sinh thái hiện đại (Zustand, React Query, Vite, Material UI), đảm bảo trải nghiệm người dùng tối ưu trên nhiều thiết bị.
+    \item Phát triển ứng dụng di động bằng Flutter, dùng chung một tầng API với web nhằm tăng tính tiện dụng và khả năng tương tác tức thời thông qua hệ thống thông báo trong ứng dụng.
+    \item Triển khai nghiệp vụ:
+    \begin{itemize}
+        \item Hệ thống Mentorship: quy trình đăng ký, ghép cặp, đặt lịch, theo dõi tiến độ và phản hồi sau cố vấn.
+        \item Diễn đàn nghề nghiệp và quản lý sự kiện chuyên sâu (vé điện tử, điểm danh).
+        \item Hệ thống tin nhắn thời gian thực và quản lý nội dung đa kênh (tin tức, việc làm, học liệu, vinh danh).
+        \item Gây quỹ minh bạch có đối soát tự động qua webhook của cổng thanh toán; xác minh cựu sinh viên.
+    \end{itemize}
+    \item Ứng dụng trí tuệ nhân tạo: tích hợp mô hình ngôn ngữ (LangChain4j kết hợp Gemini) cho các tác vụ trích xuất kỹ năng cố vấn, trích xuất CV, OCR giấy tờ, kiểm duyệt nội dung, tự động gắn thẻ diễn đàn và trợ lý ảo hỏi đáp.
+    \item Bảo mật và Kiểm thử: triển khai cơ chế xác thực đa lớp (JWT, RBAC, OTP, reCAPTCHA); kiểm thử đơn vị và kiểm thử tích hợp để đảm bảo tính ổn định.
+\end{itemize}
+\textbf{Kiến thức và kỹ năng đạt được:}
+\vspace{-8pt}
+\begin{itemize}
+    \item Tư duy thiết kế hệ thống: thành thạo xây dựng kiến trúc Multi-tenant để cô lập dữ liệu; áp dụng Layered Architecture kết hợp nguyên lý SOLID và các Design Pattern giúp hệ thống dễ bảo trì \hyperref[ref:poeaa]{[9]}.
+    \item Nâng cao tư duy lập trình: nắm vững lập trình hướng sự kiện qua Project Reactor (Mono/Flux); kết hợp R2DBC với PostgreSQL để loại bỏ các điểm nghẽn kết nối truyền thống, tăng đáng kể throughput của hệ thống \hyperref[ref:reactive]{[10]}.
+    \item Bảo mật hệ thống: làm chủ vòng đời xác thực hiện đại với JWT (Access/Refresh Token); triển khai phân quyền theo vai trò (RBAC) và các cơ chế BCrypt, OTP, reCAPTCHA.
+    \item Ứng dụng AI thực tế: tích hợp mô hình ngôn ngữ vào luồng nghiệp vụ theo từng tác vụ có đầu ra cấu trúc, kèm cơ chế dự phòng khi mô hình không sẵn sàng.
+    \item Kinh nghiệm nghiệp vụ thực tế: trực tiếp giải quyết các bài toán kỹ thuật như giao tiếp hai chiều bằng WebSocket, đối soát idempotent cho webhook thanh toán, xử lý tranh chấp (race condition) khi đặt lịch cố vấn, và thiết kế bộ công cụ quản trị linh hoạt cho mô hình đa tổ chức.
+\end{itemize}
+\vspace{-8pt}
+
+% ---------- 2.3. PHẠM VI CỦA ĐỀ TÀI ----------
+\subsection{Phạm vi của đề tài}
+\vspace{-4pt}
+\textbf{Đối tượng nghiên cứu và thực hiện:}
+\vspace{-4pt}
+\begin{itemize}
+    \item Hệ thống AlumVerse HCMUS 2024 \hyperref[ref:alumverse]{[3]}: phân tích thiết kế và nợ kỹ thuật để đưa ra phương án tái thiết kế \hyperref[ref:fowler]{[7]}. Nhóm kế thừa kết quả phân tích, thiết kế và cấu trúc cơ sở dữ liệu của phiên bản cũ, không kế thừa mã nguồn.
+    \item Người dùng: sinh viên, cựu sinh viên và quản trị viên (Admin cấp trường và Admin cấp đơn vị/Khoa).
+    \item Dữ liệu:
+    \begin{itemize}
+        \item Thông tin định danh và hồ sơ năng lực: dữ liệu tài khoản, thông tin cá nhân đã xác thực, lịch sử học tập, quá trình công tác, kỹ năng chuyên môn và thành tựu của cựu sinh viên.
+        \item Nội dung tương tác cộng đồng: bài viết, bình luận, phản hồi và dữ liệu tương tác trên diễn đàn nghề nghiệp; thông tin chia sẻ tài nguyên và thảo luận chuyên môn.
+        \item Quản lý hoạt động và sự kiện: thông tin sự kiện, dữ liệu đăng ký tham dự, hệ thống vé điện tử và lịch sử điểm danh.
+        \item Hồ sơ cố vấn chuyên môn: dữ liệu kết nối giữa người hướng dẫn và người được hướng dẫn, lộ trình cố vấn, lịch hẹn trực tuyến và các đánh giá phản hồi.
+        \item Thông tin nghề nghiệp và tin tức: cơ hội việc làm, yêu cầu tuyển dụng, bài viết học thuật, tin tức giáo dục và vinh danh thành viên tiêu biểu.
+        \item Trao đổi thời gian thực: lịch sử tin nhắn cá nhân và nhóm, tệp đính kèm và dữ liệu trạng thái hoạt động của người dùng.
+        \item Cấu hình đa đơn vị: tùy chỉnh giao diện (màu sắc, biểu tượng), cấu hình tên miền phụ, phân quyền quản trị riêng biệt và các thiết lập đặc thù cho từng Khoa/Bộ môn.
+    \end{itemize}
+\end{itemize}
+\textbf{Giới hạn kỹ thuật và triển khai:}
+\vspace{-4pt}
+\begin{itemize}
+    \item Kiến trúc Multi-tenant: cung cấp khung tính năng chung hỗ trợ nhiều đơn vị trong HCMUS ở mức chia sẻ cơ sở dữ liệu, phân tách dữ liệu theo cột định danh tổ chức (\texttt{organization\_id}) và nhận diện qua subdomain (ví dụ \texttt{fit.alumverse.hcmus.edu.vn}).
+    \item Hình thức: ứng dụng Web Responsive và ứng dụng di động Flutter dùng chung một tầng API.
+    \item Đơn vị triển khai: Khoa Công nghệ Thông tin là đơn vị thử nghiệm đầu tiên trước khi mở rộng cho toàn trường.
+    \item Ngoài phạm vi: vận hành production ở quy mô toàn trường, tách riêng dịch vụ hoặc cơ sở dữ liệu cho từng đơn vị, và chuẩn hóa phân quyền ở mức phương thức.
+\end{itemize}
+
+% ---------- 2.4. CÁCH TIẾP CẬN DỰ KIẾN ----------
+\subsection{Cách tiếp cận dự kiến}
+\vspace{-4pt}
+Dự án áp dụng mô hình phát triển phần mềm linh hoạt (Agile/Scrum), quản lý mã nguồn bằng Git và theo dõi tiến độ bằng danh mục tính năng trên Google Sheets, kết hợp với các nguyên lý thiết kế bền vững:
+\vspace{-4pt}
+\begin{itemize}
+    \item Phân tích và Thiết kế: tổ chức mã nguồn theo Modular Monolith kết hợp Layered \hyperref[ref:poeaa]{[9]}, tách bạch trách nhiệm giữa các tầng để hệ thống dễ kiểm thử và bảo trì.
+    \item Phát triển hệ thống: ứng dụng mô hình Reactive Programming \hyperref[ref:reactive]{[10]} với Spring WebFlux và R2DBC để giải quyết các bài toán về hiệu năng và xử lý dữ liệu bất đồng bộ.
+    \item Đảm bảo chất lượng: triển khai kiểm thử đa tầng (Unit, Integration Test) với kiểm thử tự động cho tầng nghiệp vụ, tích hợp và triển khai liên tục (CI/CD), cùng giám sát vận hành.
+\end{itemize}
+
+% ---------- 2.5. KẾT QUẢ THỰC HIỆN DỰ KIẾN ----------
+\subsection{Kết quả thực hiện dự kiến của đề tài}
+\vspace{-4pt}
+\begin{itemize}
+    \item Hệ thống vận hành thực tế: website và ứng dụng di động hoàn chỉnh, hoạt động ổn định, phục vụ nhu cầu kết nối của sinh viên và cựu sinh viên.
+    \item Mã nguồn và Tài liệu kỹ thuật: repository tổ chức theo các module kiến trúc hiện đại, kèm tài liệu hướng dẫn vận hành và danh mục tính năng.
+    \item Báo cáo đo lường định lượng, thu thập qua vận hành thử nghiệm hoặc thử nghiệm chấp nhận (UAT) với một nhóm người dùng:
+    \begin{itemize}
+        \item Chỉ số tăng trưởng: số lượng người dùng đăng ký và xác thực thành công.
+        \item Chỉ số nghiệp vụ (value-driven): tần suất thảo luận trên Forum, số ca Mentorship được kết nối thành công, tỉ lệ tham gia sự kiện và thời gian xử lý một giao dịch gây quỹ.
+        \item Chỉ số kỹ thuật: thời gian phản hồi (p50, p95) và khả năng chịu tải, đo bằng công cụ kiểm thử tải trên một tiêu chuẩn phần cứng cố định.
+    \end{itemize}
+\end{itemize}
+
+% ---------- 2.6. KẾ HOẠCH THỰC HIỆN ----------
+\subsection{Kế hoạch thực hiện}
+\vspace{-4pt}
+Kế hoạch triển khai dự án AlumVerse được chia thành các giai đoạn cụ thể từ tháng 01 đến tháng 08/2026 (xem Bảng \ref{tab:plan}):
+\vspace{4pt}
+\setlength{\LTpre}{0pt}
+\setlength{\LTpost}{0pt}
+\begin{longtable}{
+|>{\centering\arraybackslash}p{0.07\textwidth}
+|>{\raggedright\arraybackslash}p{0.18\textwidth}
+|>{\raggedright\arraybackslash}p{0.48\textwidth}
+|>{\raggedright\arraybackslash}p{0.16\textwidth}|
+}
+\caption{\textit{Kế hoạch thực hiện dự án AlumVerse}}
+\label{tab:plan} \\
+\hline
+\textbf{Tháng} & \centering\textbf{Mục tiêu trọng tâm} & \centering\textbf{Nội dung công việc chi tiết} & \centering\textbf{Phụ trách chính} \tabularnewline \hline
+\endfirsthead
+\hline
+\textbf{Tháng} & \centering\textbf{Mục tiêu trọng tâm} & \centering\textbf{Nội dung công việc chi tiết} & \centering\textbf{Phụ trách chính} \tabularnewline \hline
+\endhead
+\multirow{2}{*}{\textbf{T01}} & \multirow{2}{=}{Khảo sát và Phân tích} & Phân tích hệ thống cũ, xác định nợ kỹ thuật và chốt yêu cầu nghiệp vụ. & Thu Ngân, Tiến Huy \tabularnewline \cline{3-4}
+ & & Khảo sát nhu cầu người dùng và tổng hợp dữ liệu thực trạng. & Cả nhóm \tabularnewline \hline
+\multirow{3}{*}{\textbf{T02}} & \multirow{3}{=}{Thiết kế hệ thống} & Thiết kế sơ đồ thực thể (ERD) và kiến trúc đa đơn vị. & Đức Tùng, Thu Ngân, Tiến Lợi \tabularnewline \cline{3-4}
+ & & Thiết kế giao diện ứng dụng Web và Di động (Figma). & Tiến Huy, Tiến Lợi \tabularnewline \cline{3-4}
+ & & Đặc tả giao diện lập trình (API) và kịch bản Trợ lý ảo. & Trọng Nhân, Vĩnh Thuận \tabularnewline \hline
+\multirow{3}{*}{\textbf{T03}} & \multirow{3}{=}{Xây dựng nền tảng} & Hoàn thiện báo cáo đề cương và các biểu mẫu tài liệu dự án. & Thu Ngân \tabularnewline \cline{3-4}
+ & & Thiết lập máy chủ Xác thực, phân quyền (RBAC) và cấu hình bảo mật. & Đức Tùng, Trọng Nhân \tabularnewline \cline{3-4}
+ & & Cấu hình ứng dụng React và xây dựng luồng Đăng ký, Đăng nhập. & Tiến Lợi, Tiến Huy \tabularnewline \hline
+\multirow{3}{*}{\textbf{T04}} & \multirow{3}{=}{Phát triển tính năng cốt lõi} & Triển khai luồng nghiệp vụ Diễn đàn, Sự kiện và Tin tức. & Trọng Nhân, Vĩnh Thuận, Thu Ngân \tabularnewline \cline{3-4}
+ & & Xây dựng hệ thống Tin nhắn và Kho lưu trữ bài viết học thuật. & Tiến Lợi, Đức Tùng \tabularnewline \cline{3-4}
+ & & Đồng bộ hóa dữ liệu thời gian thực giữa Web và Di động. & Trọng Nhân, Tiến Huy, Đức Tùng \tabularnewline \hline
+\multirow{3}{*}{\textbf{T05}} & \multirow{3}{=}{Phát triển tính năng nâng cao} & Triển khai hệ thống Cố vấn: ghép cặp, đặt lịch và theo dõi tiến độ. & Vĩnh Thuận, Tiến Huy \tabularnewline \cline{3-4}
+ & & Phát triển Trợ lý ảo và tính năng Gây quỹ có đối soát tự động. & Trọng Nhân, Đức Tùng \tabularnewline \cline{3-4}
+ & & Xây dựng trang Quản trị hệ thống và Quản lý đơn vị thành viên. & Tiến Lợi, Đức Tùng \tabularnewline \hline
+\multirow{2}{*}{\textbf{T06}} & \multirow{2}{=}{Hoàn thiện đa nền tảng và Tích hợp} & Hoàn thiện ứng dụng di động Flutter và hệ thống thông báo. & Trọng Nhân, Vĩnh Thuận \tabularnewline \cline{3-4}
+ & & Kiểm thử tích hợp, thiết lập CI/CD và giám sát vận hành. & Đức Tùng, Tiến Lợi \tabularnewline \hline
+\multirow{3}{*}{\textbf{T07}} & \multirow{3}{=}{Vận hành và Đo lường} & Triển khai hệ thống lên môi trường thực tế và tổ chức thử nghiệm chấp nhận (UAT). & Tiến Lợi, Vĩnh Thuận \tabularnewline \cline{3-4}
+ & & Thu thập chỉ số nghiệp vụ, chỉ số kỹ thuật và kiểm thử tải. & Thu Ngân, Trọng Nhân \tabularnewline \cline{3-4}
+ & & Hiệu chỉnh mã nguồn, tối ưu hiệu năng và sửa lỗi hệ thống. & Đức Tùng, Tiến Huy \tabularnewline \hline
+\multirow{3}{*}{\textbf{T08}} & \multirow{3}{=}{Trau chuốt và Bảo vệ} & Cải tiến tính năng theo phản hồi người dùng thu được từ đợt UAT. & Cả nhóm \tabularnewline \cline{3-4}
+ & & Trau chuốt báo cáo đồ án và chuẩn bị poster. & Thu Ngân, Tiến Huy \tabularnewline \cline{3-4}
+ & & Tổng duyệt và bảo vệ trước hội đồng. & Cả nhóm \tabularnewline \hline
+\end{longtable}
+\pagebreak
+
+% ---------- 2.7. TÀI LIỆU THAM KHẢO ----------
+\subsection{Tài liệu tham khảo}
+\begin{enumerate}[label={[\arabic*]}]
+\item \label{ref:obeng} D. Obeng-Ofori and H. O. Kwarteng, ``Enhancing the Role of Alumni in the Growth of Higher Education Institutions,'' \textit{International Journal of Multidisciplinary Studies and Innovative Research}, vol. 4, pp. 40--48, 2021. doi: 10.21681/IJMSIR-1.3.831.049173-20201.
+\item \label{ref:unisel} UniSel Alumni, ``Role of Alumni in University Development,'' 2015. [Online]. Available: \url{https://uniselalumni.wixsite.com/uniselalumniconnect/single-post/2015/10/15/role-of-alumni-in-university-development}. [Accessed: Jan.~22, 2026].
+\item \label{ref:alumverse} Nhóm phát triển AlumVerse 2024, ``AlumVerse -- Hệ thống kết nối sinh viên và cựu sinh viên HCMUS,'' 2024. [Online]. Available: \url{https://alumverse.vercel.app/}. [Accessed: Jan.~10, 2026].
+\item \label{ref:moet} Bộ Giáo dục và Đào tạo, \textit{Công văn số 3943/BGDĐT-GDĐH ngày 31/8/2018 về khảo sát, công khai và báo cáo tình hình việc làm của sinh viên tốt nghiệp}, 2018.
+\item \label{ref:nabi} G. Nabi, A. Walmsley, M. Mir, and S. Osman, ``The impact of mentoring in higher education on student career development: a systematic review and research agenda,'' \textit{Studies in Higher Education}, vol. 50, no. 4, pp. 739--755, 2024.
+\item \label{ref:cunningham} W. Cunningham, ``The WyCash Portfolio Management System,'' in \textit{Addendum to the Proceedings of OOPSLA '92}, Vancouver, Canada, 1992.
+\item \label{ref:fowler} M. Fowler, \textit{Refactoring: Improving the Design of Existing Code}, 2nd ed. Boston, MA: Addison-Wesley Professional, 2018.
+\item \label{ref:microservices} J. Lewis and M. Fowler, ``Microservices: a definition of this new architectural term,'' 2014. [Online]. Available: \url{https://martinfowler.com/articles/microservices.html}. [Accessed: Jan.~20, 2026].
+\item \label{ref:poeaa} M. Fowler, \textit{Patterns of Enterprise Application Architecture}. Boston, MA: Addison-Wesley, 2002.
+\item \label{ref:reactive} J. Bonér, D. Farley, R. Kuhn, and M. Thompson, ``The Reactive Manifesto,'' v2.0, 2014. [Online]. Available: \url{https://www.reactivemanifesto.org/}. [Accessed: Mar.~12, 2026].
+\item \label{ref:multitenant} F. Chong, G. Carraro, and R. Wolter, ``Multi-Tenant Data Architecture,'' Microsoft Corporation, 2006. [Online]. Available: \url{https://learn.microsoft.com/en-us/archive/blogs/gianpaolo/multi-tenant-data-architecture-whitepaper}. [Accessed: Jul.~05, 2026].
+\end{enumerate}
+\pagebreak
+
+% ========== XÁC NHẬN ==========
+\hfill\textbf{TP. Hồ Chí Minh, ngày \ldots\ tháng \ldots\ năm 2026}
+\begin{center}
+\begin{tabular}[t]{>{\centering\arraybackslash}p{0.45\textwidth}
+                  >{\centering\arraybackslash}p{0.45\textwidth}}
+\textbf{XÁC NHẬN}\\
+\textbf{CỦA NGƯỜI HƯỚNG DẪN}
+&
+\textbf{NHÓM SINH VIÊN THỰC HIỆN}
+\\
+(Ký và ghi rõ họ tên)
+&
+(Ký và ghi rõ họ tên)
+\\[2.5cm]
+\end{tabular}
+\end{center}
+
+\end{document}

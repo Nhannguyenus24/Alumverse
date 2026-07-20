@@ -1,0 +1,67 @@
+@startuml
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 15
+skinparam dpi 150
+skinparam shadowing false
+skinparam nodesep 12
+skinparam ranksep 26
+skinparam wrapWidth 260
+skinparam ArrowColor #4A5568
+skinparam usecase {
+  BackgroundColor #EAF3FB
+  BorderColor #2B6CB0
+  FontSize 15
+}
+skinparam actor {
+  BackgroundColor #FFFFFF
+  BorderColor #2B3A55
+  FontSize 15
+}
+skinparam rectangle {
+  BorderColor #2B3A55
+  FontStyle bold
+  FontSize 16
+}
+skinparam package {
+  BackgroundColor #F7FAFC
+  BorderColor #A0AEC0
+  FontSize 14
+  FontStyle italic
+}
+
+left to right direction
+actor "Sinh viên" as PA
+actor "Cựu sinh viên" as AC
+PA <|-- AC
+rectangle "Hệ thống AlumVerse 2026" {
+  package "Use case bổ sung của Cựu sinh viên" {
+    usecase "Đăng ký và khai báo hồ sơ người cố vấn" as U0
+    usecase "Nhận gợi ý thẻ kỹ năng bằng AI" as U1
+    usecase "Tự động điền hồ sơ từ tệp CV" as U2
+    usecase "Khai báo và quản lý khung giờ rảnh" as U3
+    usecase "Duyệt, dời lịch hoặc hủy buổi cố vấn" as U4
+    usecase "Gắn liên kết phòng họp trực tuyến" as U5
+    usecase "Đăng tin tuyển dụng" as U6
+    usecase "Chia sẻ học liệu cho cộng đồng" as U7
+    usecase "Gửi bài viết cựu sinh viên tiêu biểu" as U8
+    usecase "Gửi thành tích để vinh danh" as U9
+    usecase "Gửi bài chờ kiểm duyệt" as U10
+    usecase "Xác minh chéo cho cựu sinh viên khác" as U11
+  }
+}
+AC --> U0
+AC --> U3
+AC --> U4
+AC --> U5
+AC --> U6
+AC --> U7
+AC --> U8
+AC --> U9
+AC --> U11
+U0 ..> U1 : <<extend>>
+U0 ..> U2 : <<extend>>
+U6 ..> U10 : <<include>>
+U7 ..> U10 : <<include>>
+U8 ..> U10 : <<include>>
+U9 ..> U10 : <<include>>
+@enduml
