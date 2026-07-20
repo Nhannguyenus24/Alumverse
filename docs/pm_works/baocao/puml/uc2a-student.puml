@@ -1,0 +1,56 @@
+@startuml
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 15
+skinparam dpi 150
+skinparam shadowing false
+skinparam nodesep 12
+skinparam ranksep 26
+skinparam wrapWidth 260
+skinparam ArrowColor #4A5568
+skinparam usecase {
+  BackgroundColor #EAF3FB
+  BorderColor #2B6CB0
+  FontSize 15
+}
+skinparam actor {
+  BackgroundColor #FFFFFF
+  BorderColor #2B3A55
+  FontSize 15
+}
+skinparam rectangle {
+  BorderColor #2B3A55
+  FontStyle bold
+  FontSize 16
+}
+skinparam package {
+  BackgroundColor #F7FAFC
+  BorderColor #A0AEC0
+  FontSize 14
+  FontStyle italic
+}
+
+left to right direction
+actor "Khách vãng lai" as PA
+actor "Sinh viên" as AC
+PA <|-- AC
+rectangle "Hệ thống AlumVerse 2026" {
+  package "Hồ sơ, xác minh và thiết lập cá nhân" {
+    usecase "Quản lý hồ sơ cá nhân và nghề nghiệp" as U0
+    usecase "Xem hồ sơ công khai của thành viên khác" as U1
+    usecase "Thiết lập cá nhân và tùy chọn thông báo" as U2
+    usecase "Đổi email có xác thực hai đầu" as U3
+    usecase "Nộp minh chứng xác minh tài khoản" as U4
+    usecase "Gửi yêu cầu cập nhật thông tin học vấn" as U5
+    usecase "Xem nhật ký đăng nhập" as U6
+    usecase "Xem trung tâm thông báo và nhận thông báo đẩy" as U7
+  }
+}
+AC --> U0
+AC --> U1
+AC --> U2
+AC --> U3
+AC --> U4
+AC --> U5
+AC --> U6
+AC --> U7
+@enduml
