@@ -16,6 +16,7 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import ReplyOutlinedIcon from "@mui/icons-material/ReplyOutlined";
 import ConfirmDialog from "../ConfirmDialog";
 import { formatDateTime } from "../../utils/dateFormatter";
+import { normalizeNbsp } from "../../utils/stringUtils";
 
 const getAvatarInitial = (name) => {
   const trimmed = typeof name === "string" ? name.trim() : "";
@@ -62,7 +63,7 @@ const CommentItem = ({
     setConfirmDeleteOpen(false);
   };
 
-  const sanitizedContent = DOMPurify.sanitize(comment.content || "");
+  const sanitizedContent = normalizeNbsp(DOMPurify.sanitize(comment.content || ""));
 
   return (
     <Stack direction="row" spacing={1.5} sx={{ alignItems: "flex-start" }}>
@@ -117,7 +118,16 @@ const CommentItem = ({
         ) : (
           <Box
             className="ql-editor"
-            sx={{ p: 0, mt: 0.5, "& p": { m: 0 } }}
+            sx={{
+              p: 0,
+              mt: 0.5,
+              "&.ql-editor": {
+                overflowWrap: "normal",
+                wordBreak: "normal",
+                hyphens: "none",
+              },
+              "& p": { m: 0, "&:not(:last-child)": { mb: "1em" } },
+            }}
             dangerouslySetInnerHTML={{ __html: sanitizedContent }}
           />
         )}

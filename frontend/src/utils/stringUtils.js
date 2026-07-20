@@ -24,6 +24,14 @@ export const stringifyJson = (value, fallback = '-') => {
   }
 };
 
+const NBSP_CODE_POINT = 160;
+const NBSP_CHAR = String.fromCharCode(NBSP_CODE_POINT);
+
+export const normalizeNbsp = (html) =>
+  typeof html === "string"
+    ? html.split(NBSP_CHAR).join(" ").replace(/&nbsp;/g, " ")
+    : html;
+
 export const toPlainText = (value) => {
   if (value == null) return '';
   const withoutTags = String(value).replace(/<[^>]*>/g, '');
