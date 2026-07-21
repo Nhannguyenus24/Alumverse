@@ -15,6 +15,9 @@ public interface SkillR2dbcRepository extends R2dbcRepository<Skill, Integer> {
     @Query("SELECT * FROM skills WHERE LOWER(name) = LOWER(:name)")
     Mono<Skill> findByNameIgnoreCase(String name);
 
+    @Query("SELECT * FROM skills WHERE LOWER(name) IN (:lowerNames)")
+    Flux<Skill> findByNamesIgnoreCase(Collection<String> lowerNames);
+
     @Query("SELECT * FROM skills WHERE id IN (:ids)")
     Flux<Skill> findByIds(Collection<Integer> ids);
 

@@ -1,5 +1,6 @@
 package com.service.backend.survey.service;
 
+import com.service.backend.shared.dto.LongIdCountDTO;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.entity.SurveyForm;
 import com.service.backend.shared.entity.SurveySubmission;
@@ -150,10 +151,20 @@ public class SurveyService {
             total = formRepo.countAllForms();
         }
 
-        return PaginationHelper.paginate(items, total, page, size,
-                forms -> Flux.fromIterable(forms)
-                        .concatMap(this::toResponseWithCount)
-                        .collectList());
+        return PaginationHelper.paginate(items, total, page, size, this::attachSubmissionCounts);
+    }
+
+    /** Enrich a page of forms with submission counts using one batched GROUP BY query. */
+    private Mono<List<SurveyResponse>> attachSubmissionCounts(List<SurveyForm> forms) {
+        if (forms.isEmpty()) return Mono.just(List.of());
+        List<Long> formIds = forms.stream().map(SurveyForm::getId).toList();
+        return submissionRepo.countByFormIds(formIds)
+                .collectMap(LongIdCountDTO::getId, LongIdCountDTO::getCount)
+                .map(countByForm -> forms.stream().map(form -> {
+                    SurveyResponse r = toResponse(form);
+                    r.setSubmissionCount(countByForm.getOrDefault(form.getId(), 0L));
+                    return r;
+                }).toList());
     }
 
     /** Open (or reopen) a survey: begins the active window now. */
@@ -251,9 +262,22 @@ public class SurveyService {
                     Long userId = tuple.getT1();
                     Long orgId = tuple.getT2().longValue();
                     return formRepo.findActiveByOrganization(orgId, LocalDateTime.now())
-                            .concatMap(form -> toResponseForUser(form, userId))
-                            .collectList();
+                            .collectList()
+                            .flatMap(forms -> attachHasSubmitted(forms, userId));
                 });
+    }
+
+    /** Mark each active form with whether the user has submitted, using one batched query. */
+    private Mono<List<SurveyResponse>> attachHasSubmitted(List<SurveyForm> forms, Long userId) {
+        if (forms.isEmpty()) return Mono.just(List.of());
+        List<Long> formIds = forms.stream().map(SurveyForm::getId).toList();
+        return submissionRepo.findSubmittedFormIdsByMember(formIds, userId)
+                .collect(java.util.stream.Collectors.toSet())
+                .map(submittedIds -> forms.stream().map(form -> {
+                    SurveyResponse r = toResponse(form);
+                    r.setHasSubmitted(submittedIds.contains(form.getId()));
+                    return r;
+                }).toList());
     }
 
     public Mono<SurveyResponse> getSurveyForUser(Long formId) {

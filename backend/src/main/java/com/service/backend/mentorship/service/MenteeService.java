@@ -6,6 +6,7 @@ import com.service.backend.mentorship.dto.*;
 import com.service.backend.shared.entity.MentorshipReport;
 import com.service.backend.shared.entity.MenteeProfile;
 import com.service.backend.shared.entity.MentorshipSession;
+import com.service.backend.shared.entity.MentorAvailability;
 import com.service.backend.shared.enums.MentorshipSessionType;
 import com.service.backend.shared.enums.Status;
 import com.service.backend.shared.entity.SessionFeedback;
@@ -27,6 +28,7 @@ import reactor.core.publisher.Mono;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -89,21 +91,44 @@ public class MenteeService {
         return enrichAll(List.of(session)).map(list -> list.get(0));
     }
 
+    /**
+     * Enrich a single session when its availability is already loaded — skips the redundant
+     * availability re-fetch {@link #enrich(MentorshipSession)} would do. Only safe when the slot's
+     * mentorMemberId/startTime/endTime are unchanged by the caller (e.g. status-only updates).
+     */
+    private Mono<MentorshipSessionResponse> enrich(MentorshipSession session, MentorAvailability availability) {
+        List<MentorshipSessionResponse> list = new ArrayList<>(1);
+        list.add(availability != null
+                ? MentorshipSessionResponse.from(session, availability)
+                : MentorshipSessionResponse.from(session));
+        return attachUserDisplay(list)
+                .flatMap(this::attachFeedbackState)
+                .map(l -> l.get(0));
+    }
+
     private Mono<List<MentorshipSessionResponse>> enrichAll(List<MentorshipSession> sessions) {
         if (sessions.isEmpty()) return Mono.just(List.of());
 
-        // 1. Build base responses, lookup availability for each session (sequential, O(n) reads).
-        return Flux.fromIterable(sessions)
-                .concatMap(s -> {
-                    if (s.getAvailabilityId() == null) {
-                        return Mono.just(MentorshipSessionResponse.from(s));
+        // Batch-load all referenced availabilities in a single query instead of one findById per session.
+        Set<Integer> availabilityIds = new HashSet<>();
+        for (MentorshipSession s : sessions) {
+            if (s.getAvailabilityId() != null) availabilityIds.add(s.getAvailabilityId());
+        }
+
+        Mono<Map<Integer, MentorAvailability>> availabilitiesMono = availabilityIds.isEmpty()
+                ? Mono.just(Map.of())
+                : availabilityRepository.findAllById(availabilityIds).collectMap(MentorAvailability::getId);
+
+        return availabilitiesMono.flatMap(availMap -> {
+                    List<MentorshipSessionResponse> list = new ArrayList<>(sessions.size());
+                    for (MentorshipSession s : sessions) {
+                        MentorAvailability av = s.getAvailabilityId() != null ? availMap.get(s.getAvailabilityId()) : null;
+                        list.add(av != null
+                                ? MentorshipSessionResponse.from(s, av)
+                                : MentorshipSessionResponse.from(s));
                     }
-                    return availabilityRepository.findById(s.getAvailabilityId())
-                            .map(av -> MentorshipSessionResponse.from(s, av))
-                            .defaultIfEmpty(MentorshipSessionResponse.from(s));
+                    return attachUserDisplay(list);
                 })
-                .collectList()
-                .flatMap(this::attachUserDisplay)
                 .flatMap(this::attachFeedbackState);
     }
 
@@ -170,12 +195,14 @@ public class MenteeService {
                     mm.forEach((k, v) -> out.put(k, new java.util.ArrayList<>(v)));
                     return out;
                 });
-        Mono<Map<Integer, java.util.List<String>>> tagsMono = Flux.fromIterable(ids)
-                .flatMap(memberId -> skillService.getMentorSkills(memberId)
-                        .map(skills -> Map.entry(memberId, skills.stream()
-                                .map(SkillResponse::getName)
-                                .toList())))
-                .collectMap(Map.Entry::getKey, Map.Entry::getValue);
+        Mono<Map<Integer, java.util.List<String>>> tagsMono = skillService.getMentorSkills(ids)
+                .map(byMember -> {
+                    java.util.HashMap<Integer, java.util.List<String>> out = new java.util.HashMap<>();
+                    byMember.forEach((memberId, skills) -> out.put(memberId, skills.stream()
+                            .map(SkillResponse::getName)
+                            .toList()));
+                    return out;
+                });
 
         return Mono.zip(displayMono, topicsMono, tagsMono).map(tuple -> {
             Map<Integer, UserDisplayInfo> dmap = tuple.getT1();
@@ -377,10 +404,10 @@ public class MenteeService {
                                                                 availability.getMentorMemberId(),
                                                                 "Lịch hẹn mới",
                                                                 message,
-                                                                "/mentorship/my-bookings"));
+                                                                "/mentorship/my-bookings"))
+                                                .flatMap(saved -> enrich(saved, availability));
                                             }));
-                                })
-                                .flatMap(this::enrich)));
+                                })));
     }
 
     public Mono<SessionConflictResponse> checkBookingConflicts(Integer availabilityId) {
@@ -465,10 +492,10 @@ public class MenteeService {
                                             avail.getMentorMemberId(),
                                             "Lịch hẹn bị hủy",
                                             "Người được cố vấn đã hủy một buổi hẹn với bạn. Khung giờ tương ứng đã được mở lại.",
-                                            "/mentorship/dashboard")))
-                                    .then(sessionRepository.findById(sessionId));
-                        })
-                        .flatMap(this::enrich));
+                                            "/mentorship/dashboard"))
+                                    .then(sessionRepository.findById(sessionId))
+                                    .flatMap(fresh -> enrich(fresh, avail)));
+                        }));
     }
 
     @Transactional

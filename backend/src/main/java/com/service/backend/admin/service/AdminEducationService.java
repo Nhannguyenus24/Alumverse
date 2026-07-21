@@ -1,8 +1,10 @@
 package com.service.backend.admin.service;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,12 +56,25 @@ public class AdminEducationService {
             countMono = educationChangeRequestRepository.countByOrganizationId(organizationId);
         }
 
-        Flux<EducationChangeRequestAdminDTO> enrichedFlux = requestFlux
-                .flatMap(request -> userOrganizationMemberRepository.findIdentityByMemberId(request.getMemberId())
-                        .map(identity -> toAdminDTO(request, identity.studentId(), identity.fullName()))
-                        .defaultIfEmpty(toAdminDTO(request, null, null)));
+        return PaginationHelper.paginate(requestFlux, countMono, page, size, this::enrichRequests);
+    }
 
-        return PaginationHelper.paginate(enrichedFlux, countMono, page, size);
+    /** Attach student id + full name to a page of requests using one batched identity query. */
+    private Mono<List<EducationChangeRequestAdminDTO>> enrichRequests(List<EducationChangeRequest> requests) {
+        if (requests.isEmpty()) return Mono.just(List.of());
+        Set<Integer> memberIds = new HashSet<>();
+        for (EducationChangeRequest r : requests) {
+            if (r.getMemberId() != null) memberIds.add(r.getMemberId());
+        }
+        return userOrganizationMemberRepository.findIdentitiesByMemberIds(memberIds)
+                .collectMap(UserOrganizationMemberRepository.MemberIdentity::memberId, i -> i)
+                .map(byMember -> requests.stream().map(request -> {
+                    UserOrganizationMemberRepository.MemberIdentity identity =
+                            request.getMemberId() != null ? byMember.get(request.getMemberId()) : null;
+                    return identity != null
+                            ? toAdminDTO(request, identity.studentId(), identity.fullName())
+                            : toAdminDTO(request, null, null);
+                }).toList());
     }
 
     public Mono<Boolean> reviewRequest(Integer requestId, ReviewEducationChangeRequestDTO dto, Integer adminUserId) {

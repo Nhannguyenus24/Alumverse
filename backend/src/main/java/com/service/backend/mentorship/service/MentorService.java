@@ -73,6 +73,20 @@ public class MentorService {
         return enrichAll(List.of(session)).map(list -> list.get(0));
     }
 
+    /**
+     * Enrich a single session when its availability is already loaded — skips the redundant
+     * availability re-fetch that {@link #enrich(MentorshipSession)} would perform. The response
+     * only reads mentorMemberId/startTime/endTime from availability, none of which change during
+     * the session mutations that use this.
+     */
+    private Mono<MentorshipSessionResponse> enrich(MentorshipSession session, MentorAvailability availability) {
+        List<MentorshipSessionResponse> list = new ArrayList<>(1);
+        list.add(availability != null
+                ? MentorshipSessionResponse.from(session, availability)
+                : MentorshipSessionResponse.from(session));
+        return attachUserDisplay(list).map(l -> l.get(0));
+    }
+
     private Mono<List<MentorshipSessionResponse>> enrichAll(List<MentorshipSession> sessions) {
         if (sessions.isEmpty()) return Mono.just(List.of());
 
@@ -448,10 +462,10 @@ public class MentorService {
                                                 "Lịch hẹn bị hủy",
                                                 "Cố vấn đã hủy một buổi hẹn với bạn. Bạn có thể chọn một cố vấn hoặc khung giờ khác phù hợp hơn.",
                                                 "/mentorship/my-bookings"))
-                                        .then(sessionRepository.findById(sessionId));
+                                        .then(sessionRepository.findById(sessionId))
+                                        .flatMap(fresh -> enrich(fresh, avail));
                                     });
-                        })
-                        .flatMap(this::enrich));
+                        }));
     }
 
     @Transactional
@@ -504,10 +518,10 @@ public class MentorService {
                                                         "Cố vấn đề nghị dời lịch hẹn",
                                                         "Cố vấn đề xuất một khung giờ mới cho buổi hẹn. Vui lòng xem và phản hồi đồng ý hoặc từ chối.",
                                                         "/mentorship/my-bookings"))
-                                                .then(sessionRepository.findById(sessionId));
+                                                .then(sessionRepository.findById(sessionId))
+                                                .flatMap(fresh -> enrich(fresh, avail));
                                     });
-                        })
-                        .flatMap(this::enrich));
+                        }));
     }
 
     @Transactional
@@ -546,9 +560,9 @@ public class MentorService {
                                                     "Buổi cố vấn đã hoàn tất",
                                                     "Buổi cố vấn của bạn đã hoàn thành. Hãy dành chút thời gian để lại đánh giá cho cố vấn nhé!",
                                                     "/mentorship/my-bookings"))
-                                            .then(sessionRepository.findById(sessionId));
-                                }))
-                        .flatMap(this::enrich));
+                                            .then(sessionRepository.findById(sessionId))
+                                            .flatMap(fresh -> enrich(fresh, avail));
+                                })));
     }
 
     @Transactional
@@ -573,9 +587,9 @@ public class MentorService {
                                                     "Đã có link tham gia buổi mentoring",
                                                     "Cố vấn đã thêm link tham gia cho buổi hẹn của bạn. Hãy kiểm tra chi tiết buổi hẹn.",
                                                     "/mentorship/my-bookings"))
-                                            .then(sessionRepository.findById(sessionId));
-                                }))
-                        .flatMap(this::enrich));
+                                            .then(sessionRepository.findById(sessionId))
+                                            .flatMap(fresh -> enrich(fresh, avail));
+                                })));
     }
 
     // ===================== FEEDBACKS (Mentor view) =====================

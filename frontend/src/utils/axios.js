@@ -1,4 +1,7 @@
 import axios from 'axios';
+// The configured i18next singleton (initialized in ../i18n). Imported from
+// 'i18next' directly to avoid a circular dependency with the i18n entry module.
+import i18n from 'i18next';
 import useAuthStore from '../stores/authStore';
 import useOrganizationStore from '../stores/organizationStore';
 import { userFromAccessToken } from './jwt';
@@ -35,6 +38,30 @@ const RATE_LIMIT_MAX_RETRIES = 2;
 const SAFE_RETRY_METHODS = new Set(['get', 'head', 'options']);
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Localize a failed response in-place using the backend's stable `errorCode`.
+ *
+ * The backend returns a machine-readable `errorCode` on every error (see the
+ * Java GlobalExceptionHandler) plus a fallback `message`. We translate the code
+ * via the `errors` i18n namespace and overwrite `data.message` so the ~200 call
+ * sites that already render `error.response.data.message` show text in the
+ * user's current language with zero per-site changes. When a code has no
+ * translation key, `defaultValue` preserves the backend's original message.
+ */
+const localizeApiError = (error) => {
+  const data = error?.response?.data;
+  if (!data || typeof data !== 'object') return;
+
+  const code = data.errorCode;
+  if (!code) return;
+
+  const fallback = typeof data.message === 'string' && data.message
+    ? data.message
+    : i18n.t('UNKNOWN', { ns: 'errors' });
+
+  data.message = i18n.t(code, { ns: 'errors', defaultValue: fallback });
+};
 
 const getRetryAfterMs = (error, attempt) => {
   const retryAfter = error.response?.headers?.['retry-after'];
@@ -200,6 +227,10 @@ apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+
+    // Translate the backend errorCode into the user's language before the error
+    // propagates to any call site (which renders error.response.data.message).
+    localizeApiError(error);
 
     if (shouldRetryRateLimitedRequest(error, originalRequest)) {
       const attempt = originalRequest._rateLimitRetries || 0;

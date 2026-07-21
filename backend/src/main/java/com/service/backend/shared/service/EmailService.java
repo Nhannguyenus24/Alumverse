@@ -18,6 +18,7 @@ import com.service.backend.shared.dao.EmailTemplateR2dbcRepository;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.SignalType;
 import reactor.core.scheduler.Schedulers;
 
 import io.micrometer.core.instrument.MeterRegistry;
@@ -47,11 +48,11 @@ public class EmailService {
 
     public Mono<Void> sendHtmlEmail(String to, String subject, String templateName, Map<String, Object> variables) {
         return resolveTemplate(templateName, subject)
-                .flatMap(resolved -> dispatch(to, resolved.subject(), resolved.templateOrContent(), variables));
+                .flatMap(resolved -> dispatch(to, resolved.subject(), templateName, resolved.templateOrContent(), variables));
     }
 
     public Mono<Void> sendRawHtmlEmail(String to, String subject, String htmlContent, Map<String, Object> variables) {
-        return dispatch(to, subject, htmlContent, variables);
+        return dispatch(to, subject, "raw", htmlContent, variables);
     }
 
     public Mono<Void> sendHtmlEmailWithInlineImage(
@@ -64,7 +65,7 @@ public class EmailService {
             String imageMimeType
     ) {
         return resolveTemplate(templateName, subject)
-            .flatMap(resolved -> dispatch(to, resolved.subject(), resolved.templateOrContent(), variables,
+            .flatMap(resolved -> dispatch(to, resolved.subject(), templateName, resolved.templateOrContent(), variables,
                 helper -> helper.addInline(contentId, new org.springframework.core.io.ByteArrayResource(imageBytes), imageMimeType)));
     }
 
@@ -82,11 +83,11 @@ public class EmailService {
                 });
     }
 
-    private Mono<Void> dispatch(String to, String subject, String templateOrContent, Map<String, Object> variables) {
-        return dispatch(to, subject, templateOrContent, variables, helper -> {});
+    private Mono<Void> dispatch(String to, String subject, String template, String templateOrContent, Map<String, Object> variables) {
+        return dispatch(to, subject, template, templateOrContent, variables, helper -> {});
     }
 
-    private Mono<Void> dispatch(String to, String subject, String templateOrContent, Map<String, Object> variables,
+    private Mono<Void> dispatch(String to, String subject, String template, String templateOrContent, Map<String, Object> variables,
                                 MimeMessageCustomizer helperCustomizer) {
         return Mono.defer(() -> {
             Timer.Sample sample = Timer.start(meterRegistry);
@@ -114,7 +115,17 @@ public class EmailService {
             .doOnError(e -> log.error("Failed to send email to: {}. Error: {}", to, e.getMessage(), e))
             .onErrorMap(MessagingException.class, e -> new RuntimeException("Failed to send email", e))
             .then()
-            .doFinally(sig -> sample.stop(meterRegistry.timer("email.send.time")));
+            .doFinally(sig -> {
+                String outcome = sig == SignalType.ON_ERROR ? "error" : "success";
+                sample.stop(Timer.builder("email.send.time")
+                        .description("Email send latency")
+                        .tag("template", template)
+                        .tag("outcome", outcome)
+                        .publishPercentiles(0.5, 0.95, 0.99)
+                        .publishPercentileHistogram(true)
+                        .register(meterRegistry));
+                meterRegistry.counter("email.send.count", "template", template, "outcome", outcome).increment();
+            });
         });
     }
 

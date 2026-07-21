@@ -15,12 +15,18 @@ import com.service.backend.shared.utils.CacheNames;
 import com.service.backend.shared.utils.CacheUtils;
 import com.service.backend.shared.utils.SecurityUtils;
 import com.service.backend.user.service.NotificationService;
+import com.service.backend.shared.entity.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 @Service
 public class AdminArticleService {
@@ -60,60 +66,48 @@ public class AdminArticleService {
     public Mono<PaginatedResponse<NewsResponse>> getAllNews(Integer organizationId, String keyword, int page, int limit) {
         int offset = page * limit;
         if (organizationId != null) {
-            return PaginationHelper.paginate(
-                    newsRepository.findByOrganizationIdWithPagination(organizationId, limit, offset)
-                            .map(NewsResponse::from)
-                            .flatMap(response -> attachSubmissionMetadata(response, response.getAuthorMemberId(), NewsResponse::setSubmitterName, NewsResponse::setSubmitterRole, NewsResponse::setUserSubmitted)),
-                    newsRepository.countByOrganizationId(organizationId),
-                    page, limit
+            return paginateWithSubmitter(
+                    newsRepository.findByOrganizationIdWithPagination(organizationId, limit, offset).map(NewsResponse::from),
+                    newsRepository.countByOrganizationId(organizationId), page, limit,
+                    NewsResponse::getAuthorMemberId, NewsResponse::setSubmitterName, NewsResponse::setSubmitterRole, NewsResponse::setUserSubmitted
             ).doOnSuccess(r -> log.info("getAllNews (org={}) result: {}", organizationId, JsonUtils.toJson(r)));
         }
         if (keyword != null && !keyword.trim().isEmpty()) {
             String kw = keyword.trim();
-            return PaginationHelper.paginate(
-                    newsRepository.searchAllByTitleWithPagination(kw, limit, offset)
-                            .map(NewsResponse::from)
-                            .flatMap(response -> attachSubmissionMetadata(response, response.getAuthorMemberId(), NewsResponse::setSubmitterName, NewsResponse::setSubmitterRole, NewsResponse::setUserSubmitted)),
-                    newsRepository.countAllSearchByTitle(kw),
-                    page, limit
+            return paginateWithSubmitter(
+                    newsRepository.searchAllByTitleWithPagination(kw, limit, offset).map(NewsResponse::from),
+                    newsRepository.countAllSearchByTitle(kw), page, limit,
+                    NewsResponse::getAuthorMemberId, NewsResponse::setSubmitterName, NewsResponse::setSubmitterRole, NewsResponse::setUserSubmitted
             ).doOnSuccess(r -> log.info("searchAllNews result: {}", JsonUtils.toJson(r)));
         }
-        return PaginationHelper.paginate(
-                newsRepository.findAllWithPagination(limit, offset)
-                        .map(NewsResponse::from)
-                        .flatMap(response -> attachSubmissionMetadata(response, response.getAuthorMemberId(), NewsResponse::setSubmitterName, NewsResponse::setSubmitterRole, NewsResponse::setUserSubmitted)),
-                newsRepository.count(),
-                page, limit
+        return paginateWithSubmitter(
+                newsRepository.findAllWithPagination(limit, offset).map(NewsResponse::from),
+                newsRepository.count(), page, limit,
+                NewsResponse::getAuthorMemberId, NewsResponse::setSubmitterName, NewsResponse::setSubmitterRole, NewsResponse::setUserSubmitted
         ).doOnSuccess(r -> log.info("getAllNews result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<PaginatedResponse<AlumniPostResponse>> getAllAlumniPosts(Integer organizationId, String keyword, int page, int limit) {
         int offset = page * limit;
         if (organizationId != null) {
-            return PaginationHelper.paginate(
-                    alumniPostRepository.findByOrganizationIdWithPagination(organizationId, limit, offset)
-                            .map(AlumniPostResponse::from)
-                            .flatMap(response -> attachSubmissionMetadata(response, response.getAuthorMemberId(), AlumniPostResponse::setSubmitterName, AlumniPostResponse::setSubmitterRole, AlumniPostResponse::setUserSubmitted)),
-                    alumniPostRepository.countByOrganizationId(organizationId),
-                    page, limit
+            return paginateWithSubmitter(
+                    alumniPostRepository.findByOrganizationIdWithPagination(organizationId, limit, offset).map(AlumniPostResponse::from),
+                    alumniPostRepository.countByOrganizationId(organizationId), page, limit,
+                    AlumniPostResponse::getAuthorMemberId, AlumniPostResponse::setSubmitterName, AlumniPostResponse::setSubmitterRole, AlumniPostResponse::setUserSubmitted
             ).doOnSuccess(r -> log.info("getAllAlumniPosts (org={}) result: {}", organizationId, JsonUtils.toJson(r)));
         }
         if (keyword != null && !keyword.trim().isEmpty()) {
             String kw = keyword.trim();
-            return PaginationHelper.paginate(
-                    alumniPostRepository.searchAllByTitleWithPagination(kw, limit, offset)
-                            .map(AlumniPostResponse::from)
-                            .flatMap(response -> attachSubmissionMetadata(response, response.getAuthorMemberId(), AlumniPostResponse::setSubmitterName, AlumniPostResponse::setSubmitterRole, AlumniPostResponse::setUserSubmitted)),
-                    alumniPostRepository.countAllSearchByTitle(kw),
-                    page, limit
+            return paginateWithSubmitter(
+                    alumniPostRepository.searchAllByTitleWithPagination(kw, limit, offset).map(AlumniPostResponse::from),
+                    alumniPostRepository.countAllSearchByTitle(kw), page, limit,
+                    AlumniPostResponse::getAuthorMemberId, AlumniPostResponse::setSubmitterName, AlumniPostResponse::setSubmitterRole, AlumniPostResponse::setUserSubmitted
             ).doOnSuccess(r -> log.info("searchAllAlumniPosts result: {}", JsonUtils.toJson(r)));
         }
-        return PaginationHelper.paginate(
-                alumniPostRepository.findAllWithPagination(limit, offset)
-                        .map(AlumniPostResponse::from)
-                        .flatMap(response -> attachSubmissionMetadata(response, response.getAuthorMemberId(), AlumniPostResponse::setSubmitterName, AlumniPostResponse::setSubmitterRole, AlumniPostResponse::setUserSubmitted)),
-                alumniPostRepository.count(),
-                page, limit
+        return paginateWithSubmitter(
+                alumniPostRepository.findAllWithPagination(limit, offset).map(AlumniPostResponse::from),
+                alumniPostRepository.count(), page, limit,
+                AlumniPostResponse::getAuthorMemberId, AlumniPostResponse::setSubmitterName, AlumniPostResponse::setSubmitterRole, AlumniPostResponse::setUserSubmitted
         ).doOnSuccess(r -> log.info("getAllAlumniPosts result: {}", JsonUtils.toJson(r)));
     }
 
@@ -122,98 +116,78 @@ public class AdminArticleService {
         if (organizationId != null) {
             if (keyword != null && !keyword.trim().isEmpty()) {
                 String kw = keyword.trim();
-                return PaginationHelper.paginate(
-                        achievementRepository.searchByOrganizationAndTitle(organizationId, kw, limit, offset)
-                                .map(AchievementResponse::from)
-                                .flatMap(response -> attachSubmissionMetadata(response, response.getMemberId(), AchievementResponse::setSubmitterName, AchievementResponse::setSubmitterRole, AchievementResponse::setUserSubmitted)),
-                        achievementRepository.countSearchByOrganizationAndTitle(organizationId, kw),
-                        page, limit
+                return paginateWithSubmitter(
+                        achievementRepository.searchByOrganizationAndTitle(organizationId, kw, limit, offset).map(AchievementResponse::from),
+                        achievementRepository.countSearchByOrganizationAndTitle(organizationId, kw), page, limit,
+                        AchievementResponse::getMemberId, AchievementResponse::setSubmitterName, AchievementResponse::setSubmitterRole, AchievementResponse::setUserSubmitted
                 ).doOnSuccess(r -> log.info("searchAchievements (org={}) result: {}", organizationId, JsonUtils.toJson(r)));
             }
-            return PaginationHelper.paginate(
-                    achievementRepository.findByOrganizationIdWithPagination(organizationId, limit, offset)
-                            .map(AchievementResponse::from)
-                            .flatMap(response -> attachSubmissionMetadata(response, response.getMemberId(), AchievementResponse::setSubmitterName, AchievementResponse::setSubmitterRole, AchievementResponse::setUserSubmitted)),
-                    achievementRepository.countByOrganizationId(organizationId),
-                    page, limit
+            return paginateWithSubmitter(
+                    achievementRepository.findByOrganizationIdWithPagination(organizationId, limit, offset).map(AchievementResponse::from),
+                    achievementRepository.countByOrganizationId(organizationId), page, limit,
+                    AchievementResponse::getMemberId, AchievementResponse::setSubmitterName, AchievementResponse::setSubmitterRole, AchievementResponse::setUserSubmitted
             ).doOnSuccess(r -> log.info("getAllAchievements (org={}) result: {}", organizationId, JsonUtils.toJson(r)));
         }
         if (keyword != null && !keyword.trim().isEmpty()) {
             String kw = keyword.trim();
-            return PaginationHelper.paginate(
-                    achievementRepository.searchAllByTitleWithPagination(kw, limit, offset)
-                            .map(AchievementResponse::from)
-                            .flatMap(response -> attachSubmissionMetadata(response, response.getMemberId(), AchievementResponse::setSubmitterName, AchievementResponse::setSubmitterRole, AchievementResponse::setUserSubmitted)),
-                    achievementRepository.countAllSearchByTitle(kw),
-                    page, limit
+            return paginateWithSubmitter(
+                    achievementRepository.searchAllByTitleWithPagination(kw, limit, offset).map(AchievementResponse::from),
+                    achievementRepository.countAllSearchByTitle(kw), page, limit,
+                    AchievementResponse::getMemberId, AchievementResponse::setSubmitterName, AchievementResponse::setSubmitterRole, AchievementResponse::setUserSubmitted
             ).doOnSuccess(r -> log.info("searchAllAchievements result: {}", JsonUtils.toJson(r)));
         }
-        return PaginationHelper.paginate(
-                achievementRepository.findAllWithPagination(limit, offset)
-                        .map(AchievementResponse::from)
-                        .flatMap(response -> attachSubmissionMetadata(response, response.getMemberId(), AchievementResponse::setSubmitterName, AchievementResponse::setSubmitterRole, AchievementResponse::setUserSubmitted)),
-                achievementRepository.count(),
-                page, limit
+        return paginateWithSubmitter(
+                achievementRepository.findAllWithPagination(limit, offset).map(AchievementResponse::from),
+                achievementRepository.count(), page, limit,
+                AchievementResponse::getMemberId, AchievementResponse::setSubmitterName, AchievementResponse::setSubmitterRole, AchievementResponse::setUserSubmitted
         ).doOnSuccess(r -> log.info("getAllAchievements result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<PaginatedResponse<JobResponse>> getAllJobs(Integer organizationId, String keyword, int page, int limit) {
         int offset = page * limit;
         if (organizationId != null) {
-            return PaginationHelper.paginate(
-                    jobRepository.findByOrganizationIdWithPagination(organizationId, limit, offset)
-                            .map(JobResponse::from)
-                            .flatMap(response -> attachSubmissionMetadata(response, response.getPosterMemberId(), JobResponse::setSubmitterName, JobResponse::setSubmitterRole, JobResponse::setUserSubmitted)),
-                    jobRepository.countByOrganizationId(organizationId),
-                    page, limit
+            return paginateWithSubmitter(
+                    jobRepository.findByOrganizationIdWithPagination(organizationId, limit, offset).map(JobResponse::from),
+                    jobRepository.countByOrganizationId(organizationId), page, limit,
+                    JobResponse::getPosterMemberId, JobResponse::setSubmitterName, JobResponse::setSubmitterRole, JobResponse::setUserSubmitted
             ).doOnSuccess(r -> log.info("getAllJobs (org={}) result: {}", organizationId, JsonUtils.toJson(r)));
         }
         if (keyword != null && !keyword.trim().isEmpty()) {
             String kw = keyword.trim();
-            return PaginationHelper.paginate(
-                    jobRepository.searchAllByTitleWithPagination(kw, limit, offset)
-                            .map(JobResponse::from)
-                            .flatMap(response -> attachSubmissionMetadata(response, response.getPosterMemberId(), JobResponse::setSubmitterName, JobResponse::setSubmitterRole, JobResponse::setUserSubmitted)),
-                    jobRepository.countAllSearchByTitle(kw),
-                    page, limit
+            return paginateWithSubmitter(
+                    jobRepository.searchAllByTitleWithPagination(kw, limit, offset).map(JobResponse::from),
+                    jobRepository.countAllSearchByTitle(kw), page, limit,
+                    JobResponse::getPosterMemberId, JobResponse::setSubmitterName, JobResponse::setSubmitterRole, JobResponse::setUserSubmitted
             ).doOnSuccess(r -> log.info("searchAllJobs result: {}", JsonUtils.toJson(r)));
         }
-        return PaginationHelper.paginate(
-                jobRepository.findAllWithPagination(limit, offset)
-                        .map(JobResponse::from)
-                        .flatMap(response -> attachSubmissionMetadata(response, response.getPosterMemberId(), JobResponse::setSubmitterName, JobResponse::setSubmitterRole, JobResponse::setUserSubmitted)),
-                jobRepository.count(),
-                page, limit
+        return paginateWithSubmitter(
+                jobRepository.findAllWithPagination(limit, offset).map(JobResponse::from),
+                jobRepository.count(), page, limit,
+                JobResponse::getPosterMemberId, JobResponse::setSubmitterName, JobResponse::setSubmitterRole, JobResponse::setUserSubmitted
         ).doOnSuccess(r -> log.info("getAllJobs result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<PaginatedResponse<LearningResourceResponse>> getAllLearningResources(Integer organizationId, String keyword, int page, int limit) {
         int offset = page * limit;
         if (organizationId != null) {
-            return PaginationHelper.paginate(
-                    learningResourceRepository.findByOrganizationIdWithPagination(organizationId, limit, offset)
-                            .map(LearningResourceResponse::from)
-                            .flatMap(response -> attachSubmissionMetadata(response, response.getUploaderMemberId(), LearningResourceResponse::setSubmitterName, LearningResourceResponse::setSubmitterRole, LearningResourceResponse::setUserSubmitted)),
-                    learningResourceRepository.countByOrganizationId(organizationId),
-                    page, limit
+            return paginateWithSubmitter(
+                    learningResourceRepository.findByOrganizationIdWithPagination(organizationId, limit, offset).map(LearningResourceResponse::from),
+                    learningResourceRepository.countByOrganizationId(organizationId), page, limit,
+                    LearningResourceResponse::getUploaderMemberId, LearningResourceResponse::setSubmitterName, LearningResourceResponse::setSubmitterRole, LearningResourceResponse::setUserSubmitted
             ).doOnSuccess(r -> log.info("getAllLearningResources (org={}) result: {}", organizationId, JsonUtils.toJson(r)));
         }
         if (keyword != null && !keyword.trim().isEmpty()) {
             String kw = keyword.trim();
-            return PaginationHelper.paginate(
-                    learningResourceRepository.searchAllByTitleWithPagination(kw, limit, offset)
-                            .map(LearningResourceResponse::from)
-                            .flatMap(response -> attachSubmissionMetadata(response, response.getUploaderMemberId(), LearningResourceResponse::setSubmitterName, LearningResourceResponse::setSubmitterRole, LearningResourceResponse::setUserSubmitted)),
-                    learningResourceRepository.countAllSearchByTitle(kw),
-                    page, limit
+            return paginateWithSubmitter(
+                    learningResourceRepository.searchAllByTitleWithPagination(kw, limit, offset).map(LearningResourceResponse::from),
+                    learningResourceRepository.countAllSearchByTitle(kw), page, limit,
+                    LearningResourceResponse::getUploaderMemberId, LearningResourceResponse::setSubmitterName, LearningResourceResponse::setSubmitterRole, LearningResourceResponse::setUserSubmitted
             ).doOnSuccess(r -> log.info("searchAllLearningResources result: {}", JsonUtils.toJson(r)));
         }
-        return PaginationHelper.paginate(
-                learningResourceRepository.findAllWithPagination(limit, offset)
-                        .map(LearningResourceResponse::from)
-                        .flatMap(response -> attachSubmissionMetadata(response, response.getUploaderMemberId(), LearningResourceResponse::setSubmitterName, LearningResourceResponse::setSubmitterRole, LearningResourceResponse::setUserSubmitted)),
-                learningResourceRepository.count(),
-                page, limit
+        return paginateWithSubmitter(
+                learningResourceRepository.findAllWithPagination(limit, offset).map(LearningResourceResponse::from),
+                learningResourceRepository.count(), page, limit,
+                LearningResourceResponse::getUploaderMemberId, LearningResourceResponse::setSubmitterName, LearningResourceResponse::setSubmitterRole, LearningResourceResponse::setUserSubmitted
         ).doOnSuccess(r -> log.info("getAllLearningResources result: {}", JsonUtils.toJson(r)));
     }
 
@@ -285,30 +259,58 @@ public class AdminArticleService {
                 .map(LearningResourceResponse::from);
     }
 
-    private <T> Mono<T> attachSubmissionMetadata(
-            T response,
-            Integer submitterId,
+    /**
+     * Paginate a page of responses and enrich each with its submitter's name/role in a single
+     * batched user lookup (one {@code findAllById} instead of one {@code findById} per row).
+     */
+    private <T> Mono<PaginatedResponse<T>> paginateWithSubmitter(
+            Flux<T> items,
+            Mono<Long> total,
+            int page,
+            int limit,
+            Function<T, Integer> idGetter,
             BiConsumer<T, String> nameSetter,
             BiConsumer<T, String> roleSetter,
             BiConsumer<T, Boolean> submittedSetter
     ) {
-        if (submitterId == null) {
-            submittedSetter.accept(response, false);
-            return Mono.just(response);
-        }
+        return PaginationHelper.paginate(items, total, page, limit,
+                list -> attachSubmissionMetadataBatch(list, idGetter, nameSetter, roleSetter, submittedSetter));
+    }
 
-        return adminUserRepository.findById(submitterId)
-                .map(user -> {
-                    String role = user.getRole() != null ? user.getRole().getValue() : null;
-                    nameSetter.accept(response, user.getFullName() != null && !user.getFullName().isBlank() ? user.getFullName() : user.getEmail());
-                    roleSetter.accept(response, role);
-                    submittedSetter.accept(response, isUserSubmittedRole(role));
-                    return response;
-                })
-                .switchIfEmpty(Mono.fromSupplier(() -> {
-                    submittedSetter.accept(response, false);
-                    return response;
-                }));
+    private <T> Mono<List<T>> attachSubmissionMetadataBatch(
+            List<T> responses,
+            Function<T, Integer> idGetter,
+            BiConsumer<T, String> nameSetter,
+            BiConsumer<T, String> roleSetter,
+            BiConsumer<T, Boolean> submittedSetter
+    ) {
+        Set<Integer> ids = new HashSet<>();
+        for (T r : responses) {
+            Integer id = idGetter.apply(r);
+            if (id != null) ids.add(id);
+        }
+        if (ids.isEmpty()) {
+            responses.forEach(r -> submittedSetter.accept(r, false));
+            return Mono.just(responses);
+        }
+        return adminUserRepository.findAllById(ids)
+                .collectMap(User::getId, u -> u)
+                .map(byId -> {
+                    for (T r : responses) {
+                        Integer id = idGetter.apply(r);
+                        User user = id != null ? byId.get(id) : null;
+                        if (user != null) {
+                            String role = user.getRole() != null ? user.getRole().getValue() : null;
+                            nameSetter.accept(r, user.getFullName() != null && !user.getFullName().isBlank()
+                                    ? user.getFullName() : user.getEmail());
+                            roleSetter.accept(r, role);
+                            submittedSetter.accept(r, isUserSubmittedRole(role));
+                        } else {
+                            submittedSetter.accept(r, false);
+                        }
+                    }
+                    return responses;
+                });
     }
 
     private boolean isUserSubmittedRole(String role) {

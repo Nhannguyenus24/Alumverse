@@ -121,4 +121,23 @@ public interface FundR2dbcRepository extends R2dbcRepository<Funds, Long> {
     @Modifying
     @Query("UPDATE funds SET donor_count = donor_count + 1, current_amount = current_amount + :amount WHERE id = :fundId")
     Mono<Integer> incrementDonorCountAndAmount(Integer fundId, BigDecimal amount);
+
+    /**
+     * Fetch a fund together with its receiving info in a single LEFT JOIN. Empty result ⇒ fund
+     * missing; {@code fundReceivingInfoId} null ⇒ not configured; {@code riId} null ⇒ configured id
+     * points at a missing row. Replaces the previous fund-then-receiving-info two-query lookup.
+     */
+    @Query("""
+            SELECT f.id AS fund_id,
+                   f.fund_receiving_info_id AS fund_receiving_info_id,
+                   ri.id AS ri_id,
+                   ri.account_number AS ri_account_number,
+                   ri.account_name AS ri_account_name,
+                   ri.bank_name AS ri_bank_name,
+                   ri.is_active AS ri_is_active
+            FROM funds f
+            LEFT JOIN fund_receiving_infos ri ON ri.id = f.fund_receiving_info_id
+            WHERE f.id = :fundId
+            """)
+    Mono<com.service.backend.fundraising.dto.FundReceivingInfoLookup> findReceivingInfoLookupByFundId(Long fundId);
 }
