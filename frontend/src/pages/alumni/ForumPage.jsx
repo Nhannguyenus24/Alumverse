@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useOrganization } from "../../hooks/useOrganization";
 import { useNotification } from "../../hooks/useNotification";
 import { useCanContribute } from "../../hooks/useCanContribute";
-import { useOrgNavigate } from "../../hooks/useOrgNavigate";
+import { useOrgNavigate, useOrgPath } from "../../hooks/useOrgNavigate";
 import ForumFilterPanel from "../../components/forum/ForumFilterPanel";
 import ForumSection from "../../components/forum/ForumSection";
 import AlumniContentLayout from "../../layouts/AlumniContentLayout";
@@ -22,6 +22,13 @@ const ForumPage = () => {
   const notification = useNotification();
   const { isOrgManager } = useCanContribute();
   const isAdmin = isOrgManager;
+  const toOrgPath = useOrgPath();
+
+  const handleAuthorClick = (memberId) => {
+    if (!memberId) return;
+    const url = `${window.location.origin}${toOrgPath(`/profile/${memberId}`)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
 
   const organizationId = organization?.id ?? null;
 
@@ -160,6 +167,7 @@ const ForumPage = () => {
             title={section.title}
             boards={boardsForSection(section)}
             onBoardClick={handleBoardClick}
+            onAuthorClick={handleAuthorClick}
           />
         ))
       )}

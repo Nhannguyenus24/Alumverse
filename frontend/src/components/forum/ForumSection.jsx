@@ -3,7 +3,7 @@ import ChatBubbleOutlineOutlinedIcon from '@mui/icons-material/ChatBubbleOutline
 import ForumBoardRow from './ForumBoardRow';
 import { ScrollReveal, getStaggerDelay } from '../animations/ScrollReveal';
 
-const ForumSection = ({ title, boards = [], onBoardClick }) => {
+const ForumSection = ({ title, boards = [], onBoardClick, onAuthorClick }) => {
   return (
     <ScrollReveal>
     <Paper
@@ -56,6 +56,7 @@ const ForumSection = ({ title, boards = [], onBoardClick }) => {
               <ForumBoardRow
                 board={b}
                 onClick={onBoardClick ? () => onBoardClick(b) : undefined}
+                onAuthorClick={onAuthorClick}
               />
             </Box>
           </ScrollReveal>

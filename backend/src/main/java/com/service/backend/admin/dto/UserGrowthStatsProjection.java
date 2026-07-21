@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserGrowthStatsProjection {
+    private Long newUsersToday;
     private Long newUsers7Days;
     private Long newUsers30Days;
     private Long activeUsers;

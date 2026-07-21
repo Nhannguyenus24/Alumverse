@@ -11,6 +11,7 @@ const fetchSafe = async (request, fallback) => {
 };
 
 const emptyStats = {
+  newUsersToday: 0,
   newUsersLast7Days: 0,
   newUsersLast30Days: 0,
   totalActiveUsers: 0,
