@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import LinkIcon from '@mui/icons-material/Link';
+import { getFeaturedTitleFontSize } from '../../utils/text';
 
 const FeaturedArticleCard = ({
   article,
@@ -31,7 +32,9 @@ const FeaturedArticleCard = ({
       <Box
         sx={{
           width: { xs: '100%', md: '45%' },
-          height: { xs: 200, md: 250 },
+          height: { xs: 200, md: 'auto' },
+          minHeight: { xs: 200, md: 250 },
+          alignSelf: { md: 'stretch' },
           borderRadius: 2,
           overflow: 'hidden',
           flexShrink: 0,
@@ -58,6 +61,7 @@ const FeaturedArticleCard = ({
           display: 'flex',
           flexDirection: 'column',
           minWidth: 0,
+          minHeight: { md: 250 },
         }}
       >
         {/* TITLE + ARROW */}
@@ -73,13 +77,10 @@ const FeaturedArticleCard = ({
             fontWeight={700}
             sx={{
               flex: 1,
-              fontSize: { xs: '1.4rem', md: '2rem' },
-              display: '-webkit-box',
-              overflow: 'hidden',
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical',
+              fontSize: getFeaturedTitleFontSize(article.title),
               color: hovered ? 'primary.main' : 'text.primary',
               transition: 'color 0.2s ease',
+              wordBreak: 'break-word',
             }}
           >
             {article.title}
@@ -105,7 +106,7 @@ const FeaturedArticleCard = ({
           sx={{
             mt: 2,
             display: '-webkit-box',
-            WebkitLineClamp: 3,
+            WebkitLineClamp: (article.title || '').length > 75 ? 2 : 3,
             WebkitBoxOrient: 'vertical',
             overflow: 'hidden',
           }}
@@ -113,62 +114,70 @@ const FeaturedArticleCard = ({
           {article.description}
         </Typography>
 
+        {/* BOTTOM SECTION */}
         <Box
           sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
             mt: 'auto',
             pt: 2.5,
+            display: 'flex',
+            flexDirection: 'column',
             gap: 2,
-            flexWrap: 'wrap',
           }}
         >
-          <Typography
-            variant="caption"
-            color="text.secondary"
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 2,
+              flexWrap: 'wrap',
+            }}
           >
-            {article.date}
-          </Typography>
-          {article.url && (
-            <Button
-              size="small"
-              variant="text"
-              color="primary"
-              endIcon={<LinkIcon />}
-              onClick={(e) => {
-                e.stopPropagation();
-                window.open(article.url, '_blank', 'noopener,noreferrer');
-              }}
-              sx={{ textTransform: 'none', fontWeight: 600, minWidth: 'auto', p: 0.5 }}
+            <Typography
+              variant="caption"
+              color="text.secondary"
             >
-              {t('common:link', 'Link')}
-            </Button>
+              {article.date}
+            </Typography>
+            {article.url && (
+              <Button
+                size="small"
+                variant="text"
+                color="primary"
+                endIcon={<LinkIcon />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.open(article.url, '_blank', 'noopener,noreferrer');
+                }}
+                sx={{ textTransform: 'none', fontWeight: 600, minWidth: 'auto', p: 0.5 }}
+              >
+                {t('common:link', 'Link')}
+              </Button>
+            )}
+          </Box>
+
+          {/* ACTION BUTTONS */}
+          {isAdmin && (
+            <Stack direction="row" spacing={1}>
+              <Button
+                fullWidth
+                variant="outlined"
+                color="secondary"
+                startIcon={<EditOutlinedIcon />}
+                sx={{
+                  textTransform: 'none',
+                  fontWeight: 600,
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit?.();
+                }}
+              >
+                {t('common:edit')}
+              </Button>
+            </Stack>
           )}
         </Box>
-
-        {/* ACTION BUTTONS */}
-        {isAdmin && (
-          <Stack direction="row" spacing={1} sx={{ mt: 3 }}>
-            <Button
-              fullWidth
-              variant="outlined"
-              color="secondary"
-              startIcon={<EditOutlinedIcon />}
-              sx={{
-                textTransform: 'none',
-                fontWeight: 600,
-              }}
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit?.();
-              }}
-            >
-              {t('common:edit')}
-            </Button>
-
-          </Stack>
-        )}
       </Box>
     </Box>
   );

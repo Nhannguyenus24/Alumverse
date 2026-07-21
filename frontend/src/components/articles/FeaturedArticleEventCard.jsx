@@ -25,6 +25,8 @@ import { findCancelableTicketForEvent, getEventRegisteredState } from '../../uti
 import { useCanContribute } from '../../hooks/useCanContribute';
 import { ContributeGuardTooltip } from '../ContributeGuard';
 
+import { getFeaturedTitleFontSize } from '../../utils/text';
+
 const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
   const { t } = useTranslation(['common', 'event']);
   const { enqueueSnackbar } = useSnackbar();
@@ -166,7 +168,9 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
       <Box
         sx={{
           width: { xs: '100%', md: '45%' },
-          height: { xs: 200, md: 250 },
+          height: { xs: 200, md: 'auto' },
+          minHeight: { xs: 200, md: 260 },
+          alignSelf: { md: 'stretch' },
           borderRadius: 2,
           overflow: 'hidden',
           flexShrink: 0,
@@ -187,25 +191,22 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
       </Box>
 
       {/* CONTENT */}
-      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: { md: 260 } }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
           <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 600 }}>
             {article.date}
           </Typography>
 
-          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5, my: 0.5 }}>
             <Typography
               variant="h2"
               fontWeight={700}
               sx={{
                 flex: 1,
-                fontSize: { xs: '1.4rem', md: '2rem' },
-                display: '-webkit-box',
-                overflow: 'hidden',
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: 'vertical',
+                fontSize: getFeaturedTitleFontSize(article.title),
                 color: hovered ? 'primary.main' : 'text.primary',
                 transition: 'color 0.2s ease',
+                wordBreak: 'break-word',
               }}
             >
               {article.title}
@@ -223,7 +224,7 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
             />
           </Box>
 
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.5 }}>
             {article.organizer || t('event:organizer_fallback')}
           </Typography>
 
@@ -234,65 +235,68 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
 
         <Typography
           sx={{
-            mt: 1,
+            mt: 2,
             display: '-webkit-box',
-            WebkitLineClamp: 3,
+            WebkitLineClamp: (article.title || '').length > 75 ? 2 : 3,
             WebkitBoxOrient: 'vertical',
             overflow: 'hidden',
+            lineHeight: 1.6,
           }}
         >
           {article.description}
         </Typography>
 
         {/* ACTION BUTTONS */}
-        {isAdmin ? (
-          <Stack direction="row" spacing={1} sx={{ mt: 'auto' }}>
-            <Button
-              fullWidth
-              variant="outlined"
-              color="secondary"
-              startIcon={<EditOutlinedIcon />}
-              sx={{ textTransform: 'none', fontWeight: 600 }}
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit?.();
-              }}
-            >
-              {t('common:edit')}
-            </Button>
-          </Stack>
-        ) : (
-          <Stack direction="row" spacing={1} sx={{ mt: 'auto' }}>
-            <ContributeGuardTooltip required="basic" sx={{ flex: 1, opacity: canUseBasicActions ? 1 : 0.58, filter: canUseBasicActions ? 'none' : 'grayscale(0.25)' }}>
+        <Box sx={{ mt: 'auto', pt: 2 }}>
+          {isAdmin ? (
+            <Stack direction="row" spacing={1}>
               <Button
                 fullWidth
-                variant={isInterested ? 'outlined' : 'contained'}
-                color="primary"
-                disabled={loadingInterest || !canUseBasicActions}
-                startIcon={isInterested ? <FavoriteIcon /> : <FavoriteBorderIcon />}
-                onClick={handleInterest}
+                variant="outlined"
+                color="secondary"
+                startIcon={<EditOutlinedIcon />}
+                sx={{ textTransform: 'none', fontWeight: 600 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit?.();
+                }}
               >
-                {isInterested ? t('event:unmark_interested') : t('event:mark_interested')}
+                {t('common:edit')}
               </Button>
-            </ContributeGuardTooltip>
+            </Stack>
+          ) : (
+            <Stack direction="row" spacing={1}>
+              <ContributeGuardTooltip required="basic" sx={{ flex: 1, opacity: canUseBasicActions ? 1 : 0.58, filter: canUseBasicActions ? 'none' : 'grayscale(0.25)' }}>
+                <Button
+                  fullWidth
+                  variant={isInterested ? 'outlined' : 'contained'}
+                  color="primary"
+                  disabled={loadingInterest || !canUseBasicActions}
+                  startIcon={isInterested ? <FavoriteIcon /> : <FavoriteBorderIcon />}
+                  onClick={handleInterest}
+                >
+                  {isInterested ? t('event:unmark_interested') : t('event:mark_interested')}
+                </Button>
+              </ContributeGuardTooltip>
 
-            <ContributeGuardTooltip required="basic" sx={{ flex: 1, opacity: canUseBasicActions ? 1 : 0.58, filter: canUseBasicActions ? 'none' : 'grayscale(0.25)' }}>
-              <Button
-                fullWidth
-                variant={isJoined && !isTicketUsed ? 'outlined' : 'contained'}
-                color={isJoined ? (isTicketUsed ? 'success' : 'error') : 'accent'}
-                disabled={loadingJoin || checkingRegistration || !canUseBasicActions || (!isJoined && isRegistrationClosed) || isTicketBanned}
-                sx={isTicketUsed ? { pointerEvents: 'none' } : undefined}
-                startIcon={isJoined ? (isTicketUsed ? <EventAvailableOutlinedIcon /> : <CancelOutlinedIcon />) : <EventAvailableOutlinedIcon />}
-                onClick={handleJoinClick}
-              >
-                {isJoined
-                  ? (isTicketBanned ? t('event:ticket_status_banned') : isTicketUsed ? t('event:status_used') : t('event:cancel_ticket'))
-                  : (isRegistrationClosed ? t('event:registration_closed') : t('event:join'))}
-              </Button>
-            </ContributeGuardTooltip>
-          </Stack>
-        )}
+              <ContributeGuardTooltip required="basic" sx={{ flex: 1, opacity: canUseBasicActions ? 1 : 0.58, filter: canUseBasicActions ? 'none' : 'grayscale(0.25)' }}>
+                <Button
+                  fullWidth
+                  variant={isJoined && !isTicketUsed ? 'outlined' : 'contained'}
+                  color={isJoined ? (isTicketUsed ? 'success' : 'error') : 'accent'}
+                  disabled={loadingJoin || checkingRegistration || !canUseBasicActions || (!isJoined && isRegistrationClosed) || isTicketBanned}
+                  sx={isTicketUsed ? { pointerEvents: 'none' } : undefined}
+                  startIcon={isJoined ? (isTicketUsed ? <EventAvailableOutlinedIcon /> : <CancelOutlinedIcon />) : <EventAvailableOutlinedIcon />}
+                  onClick={handleJoinClick}
+                >
+                  {isJoined
+                    ? (isTicketBanned ? t('event:ticket_status_banned') : isTicketUsed ? t('event:status_used') : t('event:cancel_ticket'))
+                    : (isRegistrationClosed ? t('event:registration_closed') : t('event:join'))}
+                </Button>
+              </ContributeGuardTooltip>
+            </Stack>
+          )}
+        </Box>
       </Box>
 
       <JoinEventDialog

@@ -125,12 +125,12 @@ const AdminManualMemberDialog = ({ open, onClose, member, onConfirm, title }) =>
 
           <TextField
             fullWidth
-            label="Email"
+            label={t('common:email', 'Email')}
             name="email"
             value={formData.email}
             onChange={handleChange}
             size="small"
-            placeholder="nguyenvana@hcmus.edu.vn"
+            placeholder={t('admin:manual_member_email_placeholder', 'nguyenvana@hcmus.edu.vn')}
           />
 
           <TextField

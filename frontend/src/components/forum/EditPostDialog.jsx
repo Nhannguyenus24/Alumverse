@@ -11,6 +11,7 @@ import {
 import { useNotification } from '../../hooks/useNotification';
 import WYSIWYG from '../WYSIWYG';
 import { useTranslation } from 'react-i18next';
+import { prepareRichTextForEdit, hasRichTextContent } from '../../utils/stringUtils';
 
 const EditPostDialog = ({
   open,
@@ -26,14 +27,9 @@ const EditPostDialog = ({
   const { showError } = useNotification();
   const wasErrorRef = useRef(false);
 
-  const stripHtml = useCallback((value) => {
-    if (value == null) return '';
-    return String(value).replace(/<[^>]*>/g, '').trim();
-  }, []);
-
   useEffect(() => {
     if (open && post?.content) {
-      const timer = setTimeout(() => setEditContent(post.content), 0);
+      const timer = setTimeout(() => setEditContent(prepareRichTextForEdit(post.content)), 0);
       return () => clearTimeout(timer);
     }
   }, [open, post?.content]);
@@ -52,12 +48,11 @@ const EditPostDialog = ({
   }, [isPending, onClose]);
 
   const handleSave = useCallback(async () => {
-    const trimmedContent = stripHtml(editContent);
-    if (!trimmedContent) {
+    if (!hasRichTextContent(editContent)) {
       return;
     }
     await onSave(editContent);
-  }, [editContent, onSave, stripHtml]);
+  }, [editContent, onSave]);
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
@@ -81,7 +76,7 @@ const EditPostDialog = ({
           variant="contained"
           disabled={
             isPending ||
-            !stripHtml(editContent) ||
+            !hasRichTextContent(editContent) ||
             editContent === (post?.content ?? '')
           }
           startIcon={isPending ? <CircularProgress size={20} /> : undefined}

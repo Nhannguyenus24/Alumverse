@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { Box } from '@mui/material';
+import { Box, Button, Typography } from '@mui/material';
 import PostArticleForm from '../../components/PostArticleForm';
 import PostArticleShell from '../../components/PostArticleShell';
 import useCoverUpload from '../../hooks/useCoverUpload';
@@ -135,13 +135,22 @@ const PostEventPage = () => {
 
   const { data: existingQuestions = [], isLoading: isLoadingQuestions } = useEventQuestions(eventId, isEditMode);
 
+  const existingOrgId = existingEvent?.organizationId ?? existingEvent?.organization_id ?? existingEvent?.organization?.id;
+  const isOrgMismatch = Boolean(
+    isEditMode &&
+    existingEvent &&
+    organizationId &&
+    existingOrgId &&
+    String(existingOrgId) !== String(organizationId)
+  );
+
   useEffect(() => {
     if (!isEditMode) return;
     setRegistrationQuestions(existingQuestions);
   }, [isEditMode, existingQuestions]);
 
   useEffect(() => {
-    if (!existingEvent) return;
+    if (!existingEvent || isOrgMismatch) return;
     const parsedContent = extractMainImageCaption(existingEvent.description || '');
     setTitle(existingEvent.title || '');
     setContent(parsedContent.content);
@@ -158,7 +167,7 @@ const PostEventPage = () => {
     if (existingEvent.bannerUrl) {
       setCoverPreview(existingEvent.bannerUrl);
     }
-  }, [existingEvent, setCoverPreview]);
+  }, [existingEvent, setCoverPreview, isOrgMismatch]);
 
   const handleEventInputChange = (e) => {
     const { name, value } = e.target;
@@ -167,6 +176,7 @@ const PostEventPage = () => {
 
   const buildPayload = async () => {
     const bannerBase64 = coverFile ? await fileToCroppedCoverBase64(coverFile, coverPositionY) : null;
+    const targetOrgId = isEditMode && existingOrgId ? existingOrgId : organizationId;
     return {
       title: title.trim(),
       description: withMainImageCaption(content.trim(), mainImageCaption),
@@ -178,11 +188,15 @@ const PostEventPage = () => {
       registrationStartAt: toIsoDateTime(eventData.registrationStartAt),
       registrationEndAt: toIsoDateTime(eventData.deadline),
       maxCapacity: eventData.maxParticipants ? Number(eventData.maxParticipants) : null,
-      organizationId: organizationId != null ? Number(organizationId) : null,
+      organizationId: targetOrgId != null ? Number(targetOrgId) : null,
     };
   };
 
   const handleSubmit = async () => {
+    if (isOrgMismatch) {
+      showError(t('event_not_in_org_desc', { defaultValue: 'Sự kiện này thuộc về một tổ chức khác và không thể chỉnh sửa từ đường dẫn này.' }));
+      return;
+    }
     if (!title.trim() || !content.trim() || content === '<p><br></p>') {
       showError(t('error_title_content_required'));
       return;
@@ -242,6 +256,23 @@ const PostEventPage = () => {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
         <LoadingSkeleton />
+      </Box>
+    );
+  }
+
+  if (isEditMode && isOrgMismatch) {
+    return (
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', py: 10, px: 3, textAlign: 'center' }}>
+        <Box sx={{ fontSize: 48, mb: 2 }}>⚠️</Box>
+        <Typography variant="h5" color="error.main" fontWeight={800} sx={{ mb: 1 }}>
+          {t('event_not_in_org_title', { defaultValue: 'Sự kiện không thuộc về tổ chức này' })}
+        </Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ mb: 3, maxWidth: 500 }}>
+          {t('event_not_in_org_desc', { defaultValue: 'Sự kiện này thuộc về một tổ chức khác và không thể chỉnh sửa từ đường dẫn này.' })}
+        </Typography>
+        <Button variant="outlined" onClick={() => navigate('/admin/events')}>
+          {t('back_to_events', { defaultValue: 'Quay lại danh sách sự kiện' })}
+        </Button>
       </Box>
     );
   }

@@ -53,9 +53,48 @@ const pickPreferredOrganizationId = (organizations, preferred) => {
   return organizations[0].id;
 };
 
+const ORG_LOCAL_TOUCH_KEY = 'admin-organizations-local-touch';
+
+const readLocalTouchMap = () => {
+  if (typeof window === 'undefined') return {};
+  try {
+    return JSON.parse(window.sessionStorage.getItem(ORG_LOCAL_TOUCH_KEY) || '{}') || {};
+  } catch {
+    return {};
+  }
+};
+
+export const touchOrganizationInStorage = (orgId) => {
+  if (typeof window === 'undefined' || !orgId) return;
+  try {
+    const map = readLocalTouchMap();
+    map[String(orgId)] = new Date().toISOString();
+    window.sessionStorage.setItem(ORG_LOCAL_TOUCH_KEY, JSON.stringify(map));
+  } catch {
+    // ignore
+  }
+};
+
+const getOrganizationSortTime = (org, touchMap) => {
+  const localTime = touchMap[String(org.id)];
+  const val = localTime || org.updatedAt || org.updated_at || org.createdAt || org.created_at;
+  const time = val ? new Date(val).getTime() : 0;
+  return Number.isFinite(time) ? time : 0;
+};
+
+export const sortOrganizationsByRecent = (organizations, touchMap = readLocalTouchMap()) => {
+  return [...organizations].sort((a, b) => {
+    const recentDiff = getOrganizationSortTime(b, touchMap) - getOrganizationSortTime(a, touchMap);
+    if (recentDiff !== 0) {
+      return recentDiff;
+    }
+    return Number(a.id || 0) - Number(b.id || 0);
+  });
+};
+
 const useAdminSystemData = (preferredOrganization = {}) => {
   const [loading, setLoading] = useState(true);
-  const [activeOrgId, setActiveOrgId] = useState(null);
+  const [activeOrgId, setActiveOrgIdState] = useState(null);
 
   // stableOrgId: debounced 350ms — used by all data hooks as query param.
   // Prevents API storms when user rapidly switches orgs (only fires after
@@ -65,6 +104,19 @@ const useAdminSystemData = (preferredOrganization = {}) => {
   const [state, setState] = useState({
     organizations: [],
   });
+
+  const setActiveOrgId = useCallback((id) => {
+    if (id) {
+      touchOrganizationInStorage(id);
+      setActiveOrgIdState(id);
+      setState((prev) => ({
+        ...prev,
+        organizations: sortOrganizationsByRecent(prev.organizations),
+      }));
+    } else {
+      setActiveOrgIdState(id);
+    }
+  }, []);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -78,8 +130,11 @@ const useAdminSystemData = (preferredOrganization = {}) => {
       ? (organizations ? [organizations] : [])
       : normalizeList(organizations);
 
+    const touchMap = readLocalTouchMap();
+    const sortedOrgs = role === 'STAFF' ? normalizedOrgs : sortOrganizationsByRecent(normalizedOrgs, touchMap);
+
     setState({
-      organizations: normalizedOrgs,
+      organizations: sortedOrgs,
     });
 
     setLoading(false);
@@ -112,7 +167,7 @@ const useAdminSystemData = (preferredOrganization = {}) => {
     activeOrganization,
     reload: loadData,
     ...state,
-  }), [loading, activeOrgId, stableOrgId, activeOrganization, loadData, state]);
+  }), [loading, activeOrgId, stableOrgId, activeOrganization, loadData, state, setActiveOrgId]);
 };
 
 export default useAdminSystemData;

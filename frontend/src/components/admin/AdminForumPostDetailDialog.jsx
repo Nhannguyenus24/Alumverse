@@ -12,6 +12,7 @@ import {
 import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { useTranslation } from 'react-i18next';
+import { normalizeRichTextHtml } from '../../utils/stringUtils';
 
 const formatDate = (value) => {
   if (!value) return '-';
@@ -90,10 +91,29 @@ const AdminForumPostDetailDialog = ({
               sx={{
                 mt: 0.5,
                 typography: 'body2',
-                '& img': { maxWidth: '100%', height: 'auto' },
-                '& p': { m: 0, mb: 1 }
+                overflowWrap: 'break-word',
+                wordBreak: 'break-word',
+                '& img, & img.rich-content-image, & img.ql-content-image': {
+                  display: 'block',
+                  maxWidth: 'min(100%, 520px) !important',
+                  width: 'auto !important',
+                  height: 'auto !important',
+                  maxHeight: '560px !important',
+                  objectFit: 'contain',
+                  mx: 'auto',
+                  my: 1.5,
+                  borderRadius: 2,
+                },
+                '& p': { m: 0, mb: 1, textAlign: 'justify', minHeight: '1.25em' },
+                '& .ql-size-small': { fontSize: '0.85em' },
+                '& .ql-size-large': { fontSize: '1.25em' },
+                '& .ql-size-huge': { fontSize: '1.6em' },
+                '& .ql-align-left, & [style*="text-align: left" i]': { textAlign: 'left !important' },
+                '& .ql-align-center, & [style*="text-align: center" i]': { textAlign: 'center !important' },
+                '& .ql-align-right, & [style*="text-align: right" i]': { textAlign: 'right !important' },
+                '& .ql-align-justify, & [style*="text-align: justify" i]': { textAlign: 'justify !important' },
               }}
-              dangerouslySetInnerHTML={{ __html: post.content }}
+              dangerouslySetInnerHTML={{ __html: normalizeRichTextHtml(post.content) }}
             />
           ) : (
             <Typography variant="body2" sx={{ mt: 0.5 }}>-</Typography>

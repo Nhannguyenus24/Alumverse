@@ -86,50 +86,52 @@ const ArticleCard = ({ article, isAdmin = false, onEdit, stretch = true }) => {
           {article.description}
         </Typography>
 
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 'auto' }}>
-          <Typography variant="caption" color="text.secondary">
-            {article.date}
-          </Typography>
-          {article.url && (
-            <Button
-              size="small"
-              variant="text"
-              color="primary"
-              endIcon={<LinkIcon />}
-              onClick={(e) => {
-                e.stopPropagation();
-                window.open(article.url, '_blank', 'noopener,noreferrer');
-              }}
-              sx={{ textTransform: 'none', fontWeight: 600, minWidth: 'auto', p: 0.5 }}
-            >
-              {t('common:link', 'Link')}
-            </Button>
+        {/* BOTTOM SECTION */}
+        <Box sx={{ mt: 'auto', pt: 1, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="caption" color="text.secondary">
+              {article.date}
+            </Typography>
+            {article.url && (
+              <Button
+                size="small"
+                variant="text"
+                color="primary"
+                endIcon={<LinkIcon />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.open(article.url, '_blank', 'noopener,noreferrer');
+                }}
+                sx={{ textTransform: 'none', fontWeight: 600, minWidth: 'auto', p: 0.5 }}
+              >
+                {t('common:link', 'Link')}
+              </Button>
+            )}
+          </Box>
+
+          {/* ACTION BUTTONS */}
+          {isAdmin && (
+            <Stack direction="row" spacing={1}>
+              {/* EDIT BUTTON */}
+              <Button
+                fullWidth
+                variant="outlined"
+                color="secondary"
+                startIcon={<EditOutlinedIcon />}
+                sx={{
+                  textTransform: 'none',
+                  fontWeight: 600,
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit?.();
+                }}
+              >
+                {t('common:edit')}
+              </Button>
+            </Stack>
           )}
         </Box>
-
-        {/* ACTION BUTTONS */}
-        {isAdmin && (
-          <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
-            {/* EDIT BUTTON */}
-            <Button
-              fullWidth
-              variant="outlined"
-              color="secondary"
-              startIcon={<EditOutlinedIcon />}
-              sx={{
-                textTransform: 'none',
-                fontWeight: 600,
-              }}
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit?.();
-              }}
-            >
-              {t('common:edit')}
-            </Button>
-
-          </Stack>
-        )}
       </Box>
     </Box>
   );

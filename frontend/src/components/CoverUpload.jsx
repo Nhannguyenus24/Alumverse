@@ -75,8 +75,8 @@ const CoverUpload = ({
             px: { xs: 1.25, sm: 1.75 },
             py: 0.75,
             borderRadius: 1,
-            backgroundColor: 'rgba(255, 255, 255, 0.9)',
-            color: 'grey.900',
+            backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(30, 41, 59, 0.9)' : 'rgba(255, 255, 255, 0.9)',
+            color: 'text.primary',
             boxShadow: 2,
             pointerEvents: 'none',
             zIndex: 1,
@@ -105,10 +105,10 @@ const CoverUpload = ({
         onPointerMove={(event) => event.stopPropagation()}
         onPointerUp={(event) => event.stopPropagation()}
         sx={{
-          backgroundColor: 'rgba(255, 255, 255, 0.9)',
-          color: 'grey.900',
-          borderColor: 'rgba(0, 0, 0, 0.22)',
-          '&:hover': { backgroundColor: '#fff', borderColor: 'primary.main' },
+          backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(30, 41, 59, 0.9)' : 'rgba(255, 255, 255, 0.9)',
+          color: 'text.primary',
+          borderColor: 'divider',
+          '&:hover': { backgroundColor: 'background.paper', borderColor: 'primary.main' },
           textTransform: 'none',
           fontWeight: 600,
           position: 'absolute',

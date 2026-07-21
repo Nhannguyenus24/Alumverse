@@ -8,6 +8,8 @@ export const normalizeNews = (data) => {
   return {
     id: data.id,
     channel: "news",
+    organizationId: data.organizationId ?? data.organization_id ?? data.organization?.id ?? null,
+    organizationSlug: data.organizationSlug ?? data.organization_slug ?? data.organization?.slug ?? null,
     title: data.title,
     content: data.content,
     thumbnailUrl: resolveMediaUrl(data.thumbnailUrl),
@@ -28,6 +30,8 @@ export const normalizeAlumniPost = (data) => {
   return {
     id: data.id,
     channel: "alumni",
+    organizationId: data.organizationId ?? data.organization_id ?? data.organization?.id ?? null,
+    organizationSlug: data.organizationSlug ?? data.organization_slug ?? data.organization?.slug ?? null,
     title: data.title,
     content: data.content,
     thumbnailUrl: resolveMediaUrl(data.thumbnailUrl),
@@ -48,6 +52,8 @@ export const normalizeEvent = (data) => {
   return {
     id: data.id,
     channel: "event",
+    organizationId: data.organizationId ?? data.organization_id ?? data.organization?.id ?? null,
+    organizationSlug: data.organizationSlug ?? data.organization_slug ?? data.organization?.slug ?? null,
     title: data.title,
     content: data.description,
     thumbnailUrl: resolveMediaUrl(data.bannerUrl),
@@ -77,6 +83,8 @@ export const normalizeJob = (data) => {
   return {
     id: data.id,
     channel: "job",
+    organizationId: data.organizationId ?? data.organization_id ?? data.organization?.id ?? null,
+    organizationSlug: data.organizationSlug ?? data.organization_slug ?? data.organization?.slug ?? null,
     title: data.title,
     content: data.description,
     thumbnailUrl: resolveMediaUrl(data.url),
@@ -104,7 +112,8 @@ export const normalizeAchievement = (data) => {
   return {
     id: data.id,
     channel: "achievement",
-    organizationId: data.organizationId ?? data.organization_id,
+    organizationId: data.organizationId ?? data.organization_id ?? data.organization?.id ?? null,
+    organizationSlug: data.organizationSlug ?? data.organization_slug ?? data.organization?.slug ?? null,
     title: data.title,
     content: data.description,
     thumbnailUrl: resolveMediaUrl(data.imageUrl),
@@ -131,6 +140,8 @@ export const normalizeLearning = (data) => {
   return {
     id: data.id,
     channel: "learning",
+    organizationId: data.organizationId ?? data.organization_id ?? data.organization?.id ?? null,
+    organizationSlug: data.organizationSlug ?? data.organization_slug ?? data.organization?.slug ?? null,
     title: data.title,
     content: data.description,
     thumbnailUrl: resolveMediaUrl(data.thumbnailUrl),
@@ -150,6 +161,8 @@ export const normalizeFund = (data) => {
   return {
     id: data.id,
     channel: "donation",
+    organizationId: data.organizationId ?? data.organization_id ?? data.organization?.id ?? null,
+    organizationSlug: data.organizationSlug ?? data.organization_slug ?? data.organization?.slug ?? null,
     title: data.name,
     content: data.descriptionFull,
     thumbnailUrl: resolveMediaUrl(data.logoUrl),

@@ -313,7 +313,8 @@ public class AdminOrganizationService {
             return Mono.just(List.of());
         }
         return Flux.fromIterable(base64Images)
-                .flatMapSequential(imageService::uploadBase64IfPresent)
+                .flatMapSequential(img -> imageService.uploadBase64IfPresent(img).defaultIfEmpty(img != null ? img : ""))
+                .filter(s -> !s.isBlank())
                 .collectList();
     }
 

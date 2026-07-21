@@ -62,7 +62,7 @@
   "notif_email": "Cho phép thông báo qua email",
   "notif_push": "Cho phép thông báo đẩy",
   "advisor_section": "Thông tin cố vấn học tập",
-  "advisor_no_advisor": "Chưa có cố vấn được gán. Vui lòng liên hệ với bộ phận quản lý sinh viên để được gán cố vấn.",
+  "advisor_no_advisor": "Bạn chưa có cố vấn học tập. Vui lòng liên hệ với bộ phận quản lý sinh viên để được hỗ trợ.",
   "advisor_contact_title": "Thông tin liên hệ",
   "verification_section": "Quản lý xác thực đồng nghiệp",
   "verification_desc": "Đây là danh sách các yêu cầu xác thực đồng nghiệp đang chờ bạn xử lý.",

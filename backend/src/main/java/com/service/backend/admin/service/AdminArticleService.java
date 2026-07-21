@@ -217,7 +217,7 @@ public class AdminArticleService {
                                 "Bài viết \"" + updated.getTitle() + "\" đã được duyệt và hiển thị công khai.",
                                 "/honors/achievements"
                         );
-                    } else if (Status.REJECTED.equals(status)) {
+                    } else if (Status.PENDING.equals(status)) {
                         notificationService.createNotificationAsync(
                                 updated.getMemberId(),
                                 "Bài vinh danh bị từ chối",
@@ -247,7 +247,7 @@ public class AdminArticleService {
                                 "Bài viết \"" + updated.getTitle() + "\" đã được duyệt và hiển thị công khai.",
                                 "/development/academics"
                         );
-                    } else if (Status.REJECTED.equals(status)) {
+                    } else if (Status.PENDING.equals(status)) {
                         notificationService.createNotificationAsync(
                                 updated.getUploaderMemberId(),
                                 "Cơ hội học tập bị gỡ đăng",

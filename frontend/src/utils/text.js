@@ -12,3 +12,14 @@ export function normalizePreviewText(text) {
     .replace(/\s+/g, " ")
     .trim();
 }
+
+export function getFeaturedTitleFontSize(text) {
+  const len = normalizePreviewText(text).length;
+  if (len > 80) {
+    return { xs: "1.1rem", sm: "1.2rem", md: "1.3rem" };
+  }
+  if (len > 45) {
+    return { xs: "1.2rem", sm: "1.35rem", md: "1.48rem" };
+  }
+  return { xs: "1.3rem", sm: "1.5rem", md: "1.68rem" };
+}

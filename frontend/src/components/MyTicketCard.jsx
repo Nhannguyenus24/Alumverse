@@ -174,7 +174,7 @@ const MyTicketCard = ({ ticket, onCancelled, highlighted = false }) => {
 
             {/* QR generated client-side (self-hosted) — the code never leaves
                 the app to a third-party QR service. */}
-            <Box sx={{ p: 1.5, bgcolor: "#fff", borderRadius: 2, border: "1px solid #e0e0e0" }}>
+            <Box sx={{ p: 1.5, bgcolor: "common.white", borderRadius: 2, border: "1px solid", borderColor: "divider" }}>
               <QRCodeSVG value={qrData} size={220} level="M" />
             </Box>
 
