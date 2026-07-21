@@ -6,12 +6,16 @@ import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.Collection;
+
 @Repository
 public interface AiModelR2dbcRepository extends R2dbcRepository<AiModel, Integer> {
 
     Flux<AiModel> findByProviderIdAndEnabledTrueOrderByPriorityAscIdAsc(Integer providerId);
 
     Flux<AiModel> findByProviderIdOrderByPriorityAscIdAsc(Integer providerId);
+
+    Flux<AiModel> findByProviderIdInOrderByPriorityAscIdAsc(Collection<Integer> providerIds);
 
     Mono<Void> deleteByProviderId(Integer providerId);
 }

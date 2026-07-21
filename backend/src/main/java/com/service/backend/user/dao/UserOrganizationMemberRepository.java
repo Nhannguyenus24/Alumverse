@@ -69,6 +69,14 @@ public interface UserOrganizationMemberRepository extends R2dbcRepository<Organi
             """)
     Mono<MemberIdentity> findIdentityByMemberId(@Param("memberId") Integer memberId);
 
+    @Query("""
+            SELECT om.id AS member_id, om.student_id, u.full_name
+            FROM organization_members om
+            LEFT JOIN users u ON u.id = om.user_id
+            WHERE om.id IN (:memberIds)
+            """)
+    Flux<MemberIdentity> findIdentitiesByMemberIds(@Param("memberIds") Collection<Integer> memberIds);
+
     @Modifying
     @Query("""
             INSERT INTO organization_members (

@@ -194,12 +194,45 @@ public class ForumService {
     public Mono<PaginatedResponse<ForumTopicDTO>> findTopicsByCategoryId(Integer categoryId, String keyword, int page, int size) {
         long offset = (long) page * size;
         return PaginationHelper.paginate(
-                forumTopicRepository.findActiveByCategoryIdWithPagination(categoryId, keyword, size, offset)
-                        .concatMap(this::convertToTopicDTOWithPostCount),
+                forumTopicRepository.findActiveByCategoryIdWithPagination(categoryId, keyword, size, offset),
                 forumTopicRepository.countActiveByCategoryId(categoryId, keyword),
-                page, size)
+                page, size,
+                this::enrichTopicsWithPostCount)
                 .doOnSuccess(result -> log.info("findTopicsByCategoryId with keyword {} result: {}", keyword,  JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error finding forum topics for category ID: {}", categoryId, error));
+    }
+
+    /**
+     * Enrich a page of topics with post counts + author display info using two batched queries
+     * (post counts via {@code countByTopicIds}, authors via {@code findByUserIds}) instead of the
+     * two-queries-per-topic {@link #convertToTopicDTOWithPostCount}.
+     */
+    private Mono<List<ForumTopicDTO>> enrichTopicsWithPostCount(List<ForumTopic> topics) {
+        if (topics.isEmpty()) return Mono.just(List.of());
+        Set<Integer> topicIds = new HashSet<>();
+        Set<Integer> authorIds = new HashSet<>();
+        for (ForumTopic t : topics) {
+            topicIds.add(t.getId());
+            if (t.getCreatedByMemberId() != null) authorIds.add(t.getCreatedByMemberId());
+        }
+        Mono<Map<Integer, Long>> countsMono = forumPostRepository.countByTopicIds(topicIds)
+                .collectMap(IdCountDTO::getId, IdCountDTO::getCount);
+        return Mono.zip(countsMono, userProfileRepository.findByUserIds(authorIds))
+                .map(tuple -> {
+                    Map<Integer, Long> counts = tuple.getT1();
+                    Map<Integer, UserDisplayInfo> displays = tuple.getT2();
+                    return topics.stream().map(topic -> {
+                        ForumTopicDTO dto = convertToTopicDTO(topic, counts.getOrDefault(topic.getId(), 0L));
+                        UserDisplayInfo info = topic.getCreatedByMemberId() != null
+                                ? displays.get(topic.getCreatedByMemberId())
+                                : null;
+                        if (info != null) {
+                            dto.setAuthorName(info.getFullName());
+                            dto.setAuthorAvatarUrl(info.getAvatarUrl());
+                        }
+                        return dto;
+                    }).collect(Collectors.toList());
+                });
     }
 
     public Mono<ForumTopicDTO> createTopic(CreateForumTopicRequest request) {

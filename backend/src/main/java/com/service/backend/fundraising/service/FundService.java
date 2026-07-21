@@ -620,23 +620,31 @@ public class FundService {
     }
 
     private Mono<FundReceivingInfos> getFundReceivingInfoByFundId(Integer fundId) {
-        return fundR2dbcRepository.findById(fundId.longValue())
+        // Single LEFT JOIN instead of fund-then-receiving-info (two serial round trips → one).
+        return fundR2dbcRepository.findReceivingInfoLookupByFundId(fundId.longValue())
                 .switchIfEmpty(Mono.error(new ApplicationException(
                         ErrorCode.FUND_NOT_FOUND,
                         "Fund not found with id: " + fundId)))
-                .flatMap(fund -> {
-                    Integer receivingInfoId = fund.getFundReceivingInfoId();
-                    if (receivingInfoId == null) {
+                .flatMap(lookup -> {
+                    if (lookup.getFundReceivingInfoId() == null) {
                         return Mono.error(new ApplicationException(
                                 ErrorCode.FUND_RECEIVING_INFO_NOT_FOUND,
                                 "Fund receiving info not configured for fund id: " + fundId
                         ));
                     }
-                    return fundReceivingInfosRepository.findById(receivingInfoId)
-                            .switchIfEmpty(Mono.error(new ApplicationException(
-                                    ErrorCode.FUND_RECEIVING_INFO_NOT_FOUND,
-                                    "Fund receiving info not found with id: " + receivingInfoId
-                            )));
+                    if (lookup.getRiId() == null) {
+                        return Mono.error(new ApplicationException(
+                                ErrorCode.FUND_RECEIVING_INFO_NOT_FOUND,
+                                "Fund receiving info not found with id: " + lookup.getFundReceivingInfoId()
+                        ));
+                    }
+                    return Mono.just(FundReceivingInfos.builder()
+                            .id(lookup.getRiId())
+                            .accountNumber(lookup.getRiAccountNumber())
+                            .accountName(lookup.getRiAccountName())
+                            .bankName(lookup.getRiBankName())
+                            .isActive(Boolean.TRUE.equals(lookup.getRiIsActive()))
+                            .build());
                 });
     }
 
