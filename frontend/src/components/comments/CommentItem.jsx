@@ -7,7 +7,6 @@ import {
   Menu,
   MenuItem,
   Stack,
-  TextField,
   Typography,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
@@ -15,8 +14,9 @@ import DOMPurify from "dompurify";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import ReplyOutlinedIcon from "@mui/icons-material/ReplyOutlined";
 import ConfirmDialog from "../ConfirmDialog";
+import WYSIWYG from "../WYSIWYG";
 import { formatDateTime } from "../../utils/dateFormatter";
-import { normalizeNbsp } from "../../utils/stringUtils";
+import { normalizeNbsp, toPlainText } from "../../utils/stringUtils";
 
 const getAvatarInitial = (name) => {
   const trimmed = typeof name === "string" ? name.trim() : "";
@@ -52,9 +52,8 @@ const CommentItem = ({
   };
 
   const handleSaveEdit = async () => {
-    const trimmed = editValue.trim();
-    if (!trimmed) return;
-    await onUpdate?.(comment.id, trimmed);
+    if (!toPlainText(editValue)) return;
+    await onUpdate?.(comment.id, editValue);
     setIsEditing(false);
   };
 
@@ -99,14 +98,13 @@ const CommentItem = ({
 
         {isEditing ? (
           <Box sx={{ mt: 0.5 }}>
-            <TextField
-              fullWidth
-              multiline
-              minRows={2}
+            <WYSIWYG
               value={editValue}
-              onChange={(e) => setEditValue(e.target.value)}
+              onChange={setEditValue}
+              allowImages={false}
+              height={140}
             />
-            <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+            <Stack direction="row" spacing={1} justifyContent="flex-end" sx={{ mt: 1 }}>
               <Button size="small" variant="contained" onClick={handleSaveEdit}>
                 {t("comment:save")}
               </Button>

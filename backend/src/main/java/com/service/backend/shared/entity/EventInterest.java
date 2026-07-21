@@ -30,4 +30,8 @@ public class EventInterest {
     @CreatedDate
     @Column("created_at")
     private LocalDateTime createdAt;
+
+    @Builder.Default
+    @Column("reminder_sent")
+    private boolean reminderSent = false;
 }

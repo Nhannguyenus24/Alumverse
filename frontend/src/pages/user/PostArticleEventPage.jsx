@@ -77,7 +77,7 @@ const toIsoDateTime = (value) => {
   if (!value) return null;
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return null;
-  return d.toISOString();
+  return value.length === 16 ? `${value}:00` : value;
 };
 
 const toDateInput = (iso) => {

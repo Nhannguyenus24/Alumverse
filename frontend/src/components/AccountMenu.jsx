@@ -256,7 +256,7 @@ const AccountMenu = ({
           onClick={handleItemClick}
         >
           <FavoriteBorderIcon fontSize="small" />
-          <Typography variant="body2">{t('article:saved_articles')}</Typography>
+          <Typography variant="body2">{t('article:interests')}</Typography>
         </MenuItem>
 
         {isAdmin && (

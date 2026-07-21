@@ -48,6 +48,9 @@ public class EventTicketDetailResponse {
     private String attendeeEmail;
     private String attendeeAvatarUrl;
 
+    /** True when this is the owner's most recent ticket for the event — only that one can be undone/banned. */
+    private Boolean latestForOwner;
+
     public static EventTicketDetailResponseBuilder fromTicket(EventTicket t) {
         return EventTicketDetailResponse.builder()
                 .id(t.getId())

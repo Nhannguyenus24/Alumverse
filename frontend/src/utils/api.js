@@ -692,8 +692,8 @@ export const eventApi = {
 		return unwrap(response);
 	},
 
-	async adminBanTicketByCode(ticketCode) {
-		const response = await apiClient.post(`/admin/events/tickets/${ticketCode}/ban`);
+	async adminBanTicketByCode(ticketCode, reason) {
+		const response = await apiClient.post(`/admin/events/tickets/${ticketCode}/ban`, { reason });
 		return unwrap(response);
 	},
 
@@ -748,6 +748,11 @@ export const eventApi = {
 
 	async getInterestsByEvent(eventId, params = {}) {
 		const response = await apiClient.get(`/events/${eventId}/interests`, { params });
+		return unwrap(response);
+	},
+
+	async getMyInterestedEvents(params = {}) {
+		const response = await apiClient.get('/events/my-interests', { params });
 		return unwrap(response);
 	},
 };

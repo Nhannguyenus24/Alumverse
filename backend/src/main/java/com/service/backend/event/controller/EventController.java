@@ -123,6 +123,14 @@ public class EventController {
 
     // ─── Interest ─────────────────────────────────────────────────────────────
 
+    @GetMapping("/my-interests")
+    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<Event>>>> getMyInterestedEvents(
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "10") @Min(1) int limit) {
+        return eventService.getMyInterestedEvents(page, limit)
+                .map(e -> ResponseEntity.ok(new ApiResponse<>("Interested events retrieved successfully", e)));
+    }
+
     @PostMapping("/{eventId}/interest")
     public Mono<ResponseEntity<ApiResponse<EventInterest>>> addInterest(
             @Parameter(example = "1") @PathVariable @Min(1) Long eventId) {

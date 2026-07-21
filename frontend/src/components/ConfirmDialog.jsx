@@ -5,6 +5,7 @@ import {
 	DialogContentText,
 	DialogActions,
 	Button,
+	TextField,
 } from "@mui/material";
 
 const ConfirmDialog = ({
@@ -17,6 +18,9 @@ const ConfirmDialog = ({
 	onCancel,
 	confirmColor = "primary",
 	loading = false,
+	reasonLabel,
+	reasonValue,
+	onReasonChange,
 }) => {
 	const handleConfirm = () => {
 		if (onConfirm) {
@@ -30,6 +34,9 @@ const ConfirmDialog = ({
 		}
 	};
 
+	const reasonRequired = Boolean(reasonLabel);
+	const reasonBlank = reasonRequired && !reasonValue?.trim();
+
 	return (
 		<Dialog
 			open={open}
@@ -42,6 +49,21 @@ const ConfirmDialog = ({
 				<DialogContentText id="confirm-dialog-description">
 					{message}
 				</DialogContentText>
+				{reasonRequired && (
+					<TextField
+						autoFocus
+						required
+						fullWidth
+						multiline
+						minRows={2}
+						margin="dense"
+						label={reasonLabel}
+						value={reasonValue ?? ""}
+						onChange={(e) => onReasonChange?.(e.target.value)}
+						error={reasonBlank}
+						disabled={loading}
+					/>
+				)}
 			</DialogContent>
 			<DialogActions>
 				<Button variant="outlined"
@@ -54,7 +76,7 @@ const ConfirmDialog = ({
 					onClick={handleConfirm}
 					color={confirmColor}
 					variant="contained"
-					disabled={loading}
+					disabled={loading || reasonBlank}
 				>
 					{confirmText}
 				</Button>

@@ -54,7 +54,6 @@
             </div>
             <p style="color: #555; margin-bottom: 12px;"><!--#region key="checkinLabel" label="Nhãn mã check-in" type="text"-->Mã check-in của bạn:<!--#endregion--></p>
             <div class="ticket-code" th:text="${ticketCode}">ABC12345</div>
-            <a class="ticket-button" th:if="${ticketLink != null}" th:href="${ticketLink}">Mở vé của tôi</a>
             <p><!--#region key="checkinHint" label="Hướng dẫn check-in" type="text"-->Xuất trình mã này tại cổng để check-in<!--#endregion--></p>
         </div>
 

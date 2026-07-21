@@ -134,5 +134,8 @@
   "verification_required_alert": "Chỉ cựu sinh viên đã được xác minh (mức xác minh 2) mới có thể sử dụng tính năng này. Vui lòng xác minh tình trạng cựu sinh viên để tiếp tục.",
   "sse_verification_approved": "Yêu cầu xác thực của bạn đã được duyệt.",
   "sse_verification_rejected": "Yêu cầu xác thực của bạn đã bị từ chối.",
-  "sse_account_banned": "Tài khoản của bạn đã bị khóa."
+  "sse_account_banned": "Tài khoản của bạn đã bị khóa.",
+  "sse_event_reminder": "Một sự kiện bạn quan tâm sắp hết hạn đăng ký.",
+  "sse_ticket_cancelled": "Vé sự kiện của bạn đã bị huỷ.",
+  "sse_ticket_banned": "Vé sự kiện của bạn đã bị cấm tham gia."
 }

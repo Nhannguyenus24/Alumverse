@@ -53,7 +53,7 @@ export const VERIFICATION_OCR_READY_EVENT = 'alumverse:verification-ocr-ready';
 export const useServerSentEvents = ({ onNotify } = {}) => {
   const token = useAuthStore((state) => state.token);
   const queryClient = useQueryClient();
-  const { showError, showSuccess, showWarning } = useNotification();
+  const { showError, showSuccess, showWarning, showInfo } = useNotification();
 
   // Keep onNotify in a ref so changing it never tears down the SSE connection.
   const onNotifyRef = useRef(onNotify);
@@ -106,6 +106,13 @@ export const useServerSentEvents = ({ onNotify } = {}) => {
       onNotifyRef.current?.();
     };
 
+    const handleEventReminder = (event) => {
+      const data = parseEvent(event);
+      if (!data) return;
+      showInfo(data.message || i18next.t('common:sse_event_reminder'));
+      onNotifyRef.current?.();
+    };
+
     // Chỉ màn hình duyệt xác thực quan tâm sự kiện này, mà kết nối SSE thì dùng chung cả app,
     // nên phát lại thành DOM event để trang nào cần thì tự lắng nghe.
     const handleVerificationOcrReady = (event) => {
@@ -114,11 +121,24 @@ export const useServerSentEvents = ({ onNotify } = {}) => {
       window.dispatchEvent(new CustomEvent(VERIFICATION_OCR_READY_EVENT, { detail: data }));
     };
 
+    const handleTicketStatusUpdated = (event) => {
+      const data = parseEvent(event);
+      if (!data) return;
+      if (data.status === 'CANCELLED') {
+        showWarning(data.message || i18next.t('common:sse_ticket_cancelled'));
+      } else if (data.status === 'BANNED') {
+        showError(data.message || i18next.t('common:sse_ticket_banned'));
+      }
+      onNotifyRef.current?.();
+    };
+
     source.addEventListener('feature-toggled', handleFeatureToggled);
     source.addEventListener('verification-updated', handleVerificationUpdated);
     source.addEventListener('user-banned', handleUserBanned);
     source.addEventListener('new-message', handleNewMessage);
     source.addEventListener('verification-ocr-ready', handleVerificationOcrReady);
+    source.addEventListener('event-reminder', handleEventReminder);
+    source.addEventListener('ticket-status-updated', handleTicketStatusUpdated);
     source.onerror = () => {
       // readyState CONNECTING nghĩa là EventSource đang tự reconnect (mất mạng tạm thời,
       // proxy timeout...) — token vẫn còn hạn, cứ để nó tự lo, không làm gì.
@@ -145,7 +165,9 @@ export const useServerSentEvents = ({ onNotify } = {}) => {
       source.removeEventListener('user-banned', handleUserBanned);
       source.removeEventListener('new-message', handleNewMessage);
       source.removeEventListener('verification-ocr-ready', handleVerificationOcrReady);
+      source.removeEventListener('event-reminder', handleEventReminder);
+      source.removeEventListener('ticket-status-updated', handleTicketStatusUpdated);
       source.close();
     };
-  }, [token, queryClient, showError, showSuccess, showWarning]);
+  }, [token, queryClient, showError, showSuccess, showWarning, showInfo]);
 };
