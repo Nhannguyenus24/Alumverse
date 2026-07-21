@@ -125,33 +125,8 @@ const isAuthWhitelistedURL = (url = '') => {
  * Logs the user out and redirects to login
  */
 const forceLogout = () => {
-  // Capture slug from organization store BEFORE reset clears it
-  const storeSlug = useOrganizationStore.getState().currentSlug;
-
-  useAuthStore.getState().reset();
-
-  // Don't redirect if already on a login page to avoid loops
-  if (window.location.pathname.includes('/auth/login')) {
-    return;
-  }
-
-  const currentPath = `${window.location.pathname}${window.location.search}`;
-
-  // JWT user object has no organizationSlug; fall back to first path segment
-  // only if it doesn't look like a reserved top-level route
-  const RESERVED = ['admin', '404', 'unauthorized', '500', 'maintenance'];
-  let slug = storeSlug ?? null;
-  if (!slug) {
-    const firstSegment = window.location.pathname.split('/').filter(Boolean)[0];
-    slug = firstSegment && !RESERVED.includes(firstSegment) ? firstSegment : null;
-  }
-
-  const loginPath = slug
-    ? `/${slug}/auth/login?reason=login_required&from=${encodeURIComponent(currentPath)}`
-    : `/404`;
-
-  console.warn('Session expired or invalid. Redirecting to login...');
-  window.location.href = loginPath;
+  console.warn('Session expired or invalid. Setting sessionExpired flag...');
+  useAuthStore.getState().setSessionExpired(true);
 };
 
 /**
