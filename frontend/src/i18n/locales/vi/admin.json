@@ -979,6 +979,7 @@
   "fund_phase_ended": "Đã kết thúc",
   "fund_phase_active": "Đang chạy",
   "fund_donations_load_error": "Không thể tải danh sách lượt quyên góp.",
+  "export_select_status_title": "Chọn trạng thái vé để export",
   "fund_export_empty": "Không có dữ liệu để xuất.",
   "fund_export_success": "Đã xuất file CSV.",
   "fund_export_failed": "Không thể xuất danh sách quyên góp.",

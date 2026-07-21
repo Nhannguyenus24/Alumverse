@@ -339,10 +339,13 @@ public class EventService {
                 Mono.zip(
                         this.findEventById(eventId)
                                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId))),
-                        this.hasRegistered(eventId, memberId)
+                        this.hasRegistered(eventId, memberId),
+                        ticketRepo.existsBannedByEventIdAndMemberId(eventId, memberId)
                 ).flatMap(tuple -> {
                     Event event = tuple.getT1();
                     Boolean already = tuple.getT2();
+                    Boolean banned = tuple.getT3();
+                    if (banned) return Mono.error(new ApplicationException(ErrorCode.EVENT_REGISTRATION_BANNED, "Banned from event: " + eventId));
                     if (already) return Mono.error(new ApplicationException(ErrorCode.TICKET_ALREADY_REGISTERED, "Already registered"));
                     return assertEventOpenForRegistration(event)
                             .then(Mono.defer(() -> validateRegistrationAnswers(
@@ -605,24 +608,29 @@ public class EventService {
      */
     public Mono<EventTicketDetailResponse> checkIn(Long eventId, CheckInRequest request) {
         return assertEventInCurrentOrg(eventId)
-                .then(resolveTicketCode(eventId, request))
-                .flatMap(ticketCode -> this.findTicketByCode(ticketCode)
-                        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.TICKET_NOT_FOUND, "Ticket not found")))
-                        .flatMap(ticket -> {
-                            if (!eventId.equals(ticket.getEventId())) {
-                                return Mono.error(new ApplicationException(ErrorCode.TICKET_WRONG_EVENT, "Ticket does not belong to this event"));
-                            }
-                            if (ticket.getStatus() == Status.CANCELLED || ticket.getStatus() == Status.EXPIRED) {
-                                return Mono.error(new ApplicationException(ErrorCode.TICKET_ALREADY_CANCELLED, "Ticket is cancelled or expired"));
-                            }
-                            if (ticket.getStatus() == Status.CHECKED_IN || ticket.getStatus() == Status.USED) {
-                                return Mono.error(new ApplicationException(ErrorCode.TICKET_ALREADY_CHECKED_IN, "Ticket already checked in"));
-                            }
-                            if (ticket.getStatus() != Status.ISSUED && ticket.getStatus() != Status.ACTIVE) {
-                                return Mono.error(new ApplicationException(ErrorCode.TICKET_NOT_ACTIVE, "Ticket is not valid for check-in"));
-                            }
-                            return this.checkInTicket(ticket.getId());
-                        }))
+                .flatMap(event -> resolveTicketCode(eventId, request)
+                        .flatMap(ticketCode -> this.findTicketByCode(ticketCode)
+                                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.TICKET_NOT_FOUND, "Ticket not found")))
+                                .flatMap(ticket -> {
+                                    if (!eventId.equals(ticket.getEventId())) {
+                                        return Mono.error(new ApplicationException(ErrorCode.TICKET_WRONG_EVENT, "Ticket does not belong to this event"));
+                                    }
+                                    boolean eventEnded = event.getEndTime() != null && event.getEndTime().isBefore(LocalDateTime.now());
+                                    if (eventEnded && ticket.getStatus() == Status.ISSUED) {
+                                        return ticketRepo.expireTicket(ticket.getId())
+                                                .then(Mono.error(new ApplicationException(ErrorCode.TICKET_EXPIRED, "Ticket has expired")));
+                                    }
+                                    if (ticket.getStatus() == Status.CANCELLED || ticket.getStatus() == Status.EXPIRED) {
+                                        return Mono.error(new ApplicationException(ErrorCode.TICKET_ALREADY_CANCELLED, "Ticket is cancelled or expired"));
+                                    }
+                                    if (ticket.getStatus() == Status.CHECKED_IN || ticket.getStatus() == Status.USED) {
+                                        return Mono.error(new ApplicationException(ErrorCode.TICKET_ALREADY_CHECKED_IN, "Ticket already checked in"));
+                                    }
+                                    if (ticket.getStatus() != Status.ISSUED && ticket.getStatus() != Status.ACTIVE) {
+                                        return Mono.error(new ApplicationException(ErrorCode.TICKET_NOT_ACTIVE, "Ticket is not valid for check-in"));
+                                    }
+                                    return this.checkInTicket(ticket.getId());
+                                })))
                 .flatMap(this::toDetailWithAttendee);
     }
 

@@ -108,14 +108,14 @@ public interface EventR2dbcRepository extends R2dbcRepository<Event, Long> {
     @Query("SELECT e.id as event_id, e.organization_id as organization_id, e.title as title, e.location as location, e.start_time as start_time, e.end_time as end_time, e.interested_count as interested_count, e.is_published as is_published, " +
            "COUNT(t.id) as registered_count " +
            "FROM events e " +
-           "LEFT JOIN event_tickets t ON t.event_id = e.id AND t.status IN ('REGISTERED', 'CHECKED_IN') " +
+           "LEFT JOIN event_tickets t ON t.event_id = e.id AND t.status IN ('ISSUED', 'ACTIVE', 'USED', 'CHECKED_IN') " +
            "GROUP BY e.id " +
            "ORDER BY registered_count DESC, e.created_at DESC " +
            "LIMIT :limit")
     Flux<EventStatisticsDTO.EventSummary> findTopEventsByRegistrationSummary(@Param("limit") int limit);
 
     @Query("SELECT e.id as event_id, e.organization_id as organization_id, e.title as title, e.location as location, e.start_time as start_time, e.end_time as end_time, e.interested_count as interested_count, e.is_published as is_published, " +
-           "(SELECT COUNT(t.id) FROM event_tickets t WHERE t.event_id = e.id AND t.status IN ('REGISTERED', 'CHECKED_IN')) as registered_count " +
+           "(SELECT COUNT(t.id) FROM event_tickets t WHERE t.event_id = e.id AND t.status IN ('ISSUED', 'ACTIVE', 'USED', 'CHECKED_IN')) as registered_count " +
            "FROM events e ORDER BY e.interested_count DESC, e.created_at DESC LIMIT :limit")
     Flux<EventStatisticsDTO.EventSummary> findTopEventsByInterestSummary(@Param("limit") int limit);
 
@@ -165,8 +165,8 @@ public interface EventR2dbcRepository extends R2dbcRepository<Event, Long> {
     @Query("""
         SELECT
             COUNT(*) AS total_tickets,
-            SUM(CASE WHEN status = 'REGISTERED' THEN 1 ELSE 0 END) AS registered_tickets,
-            SUM(CASE WHEN status = 'CHECKED_IN' THEN 1 ELSE 0 END) AS checked_in_tickets,
+            SUM(CASE WHEN status IN ('ISSUED', 'ACTIVE', 'REGISTERED') THEN 1 ELSE 0 END) AS registered_tickets,
+            SUM(CASE WHEN status IN ('USED', 'CHECKED_IN') THEN 1 ELSE 0 END) AS checked_in_tickets,
             SUM(CASE WHEN status = 'CANCELLED' THEN 1 ELSE 0 END) AS cancelled_tickets
         FROM event_tickets
     """)

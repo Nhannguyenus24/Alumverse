@@ -58,6 +58,7 @@ export const normalizeEvent = (data) => {
     organizer: data.organizer ?? null,
     eventDate: data.startTime,
     eventEndDate: data.endTime,
+    registrationEndAt: data.registrationEndAt ?? data.registration_end_at,
     location: data.location,
     interestedCount: data.interestedCount ?? 0,
     joinedCount: data.joinedCount ?? 0,

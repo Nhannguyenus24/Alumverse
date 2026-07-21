@@ -44,6 +44,20 @@ public interface EventTicketR2dbcRepository extends R2dbcRepository<EventTicket,
     @Query("UPDATE event_tickets SET status = 'USED', checked_in_at = :checkedInAt WHERE id = :ticketId")
     Mono<Integer> checkInTicket(Long ticketId, LocalDateTime checkedInAt);
 
+    @Modifying
+    @Query("UPDATE event_tickets SET status = 'EXPIRED' WHERE id = :ticketId")
+    Mono<Integer> expireTicket(Long ticketId);
+
+    @Modifying
+    @Query("""
+            UPDATE event_tickets et SET status = 'EXPIRED'
+            FROM events e
+            WHERE et.event_id = e.id
+              AND et.status = 'ISSUED'
+              AND e.end_time < :now
+            """)
+    Mono<Integer> expireIssuedTicketsForEndedEvents(LocalDateTime now);
+
     @Query("""
             SELECT EXISTS(
                 SELECT 1 FROM event_tickets
@@ -52,6 +66,14 @@ public interface EventTicketR2dbcRepository extends R2dbcRepository<EventTicket,
             )
             """)
     Mono<Boolean> existsActiveByEventIdAndMemberId(Long eventId, Long memberId);
+
+    @Query("""
+            SELECT EXISTS(
+                SELECT 1 FROM event_tickets
+                WHERE event_id = :eventId AND member_id = :memberId AND status = 'BANNED'
+            )
+            """)
+    Mono<Boolean> existsBannedByEventIdAndMemberId(Long eventId, Long memberId);
 
     @Query("SELECT * FROM event_tickets WHERE event_id = :eventId AND status = :status ORDER BY registered_at DESC LIMIT :limit OFFSET :offset")
     Flux<EventTicket> findByEventIdAndStatusWithPagination(Long eventId, String status, int limit, int offset);
