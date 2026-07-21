@@ -84,25 +84,25 @@ const QUERIES = {
   heapUtilPct: 'sum(jvm_memory_used_bytes{area="heap"}) / sum(jvm_memory_max_bytes{area="heap"}) * 100',
   systemLoad: 'system_load_average_1m',
   cpuCount: 'system_cpu_count',
-  logErrors: 'sum(rate(logback_events_total{level="error"}[5m]))',
-  logWarns: 'sum(rate(logback_events_total{level="warn"}[5m]))',
+  logErrors: 'sum(increase(logback_events_total{level="error"}[5m]))',
+  logWarns: 'sum(increase(logback_events_total{level="warn"}[5m]))',
   gcCount: 'sum(rate(jvm_gc_pause_seconds_count[5m]))',
   fdUsagePct: 'process_files_open_files / process_max_file_descriptors * 100',
   dbSaturationPct: 'sum(r2dbc_pool_acquired_connections) / sum(r2dbc_pool_max_allocated_connections) * 100',
 
   // --- Tier 3: newly added backend metrics ---
-  authLoginSuccess: 'sum(rate(auth_login_total{result="success"}[5m]))',
-  authLoginFailure: 'sum(rate(auth_login_total{result="failure"}[5m]))',
-  authRefreshSuccess: 'sum(rate(auth_token_refresh_total{result="success"}[5m]))',
-  authRefreshFailure: 'sum(rate(auth_token_refresh_total{result="failure"}[5m]))',
-  rateLimitRejected: 'sum(rate(ratelimit_rejected_total[5m]))',
+  authLoginSuccess: 'sum(increase(auth_login_total{result="success"}[5m]))',
+  authLoginFailure: 'sum(increase(auth_login_total{result="failure"}[5m]))',
+  authRefreshSuccess: 'sum(increase(auth_token_refresh_total{result="success"}[5m]))',
+  authRefreshFailure: 'sum(increase(auth_token_refresh_total{result="failure"}[5m]))',
+  rateLimitRejected: 'sum(increase(ratelimit_rejected_total[5m]))',
   wsActiveSessions: 'sum(chat_websocket_active_sessions)',
   wsActiveGroups: 'sum(chat_websocket_active_groups)',
 
   // --- SSE (real-time push) metrics ---
   sseActiveConnections: 'sum(sse_active_connections)',
   sseActiveUsers: 'sum(sse_active_users)',
-  sseEventsRate: 'sum(sse_events_sent_total)',
+  sseEventsRate: 'sum(increase(sse_events_sent_total[5m]))',
 
   // --- AI (LLM) latency metrics ---
   aiLatencyAvg: '(sum(rate(ai_generate_time_seconds_sum[5m])) / sum(rate(ai_generate_time_seconds_count[5m]))) * 1000',
@@ -483,13 +483,13 @@ const AdminSystemMonitoringPage = () => {
         fetchPrometheusRange(QUERIES.sseActiveConnections, start, end, step),
         fetchPrometheusRange(QUERIES.sseActiveUsers, start, end, step),
         fetchPrometheusRange(QUERIES.sseEventsRate, start, end, step),
-        fetchPrometheusRangeMultiple(`sum by (event) (sse_events_sent_total)`, start, end, step),
+        fetchPrometheusRangeMultiple(`sum by (event) (increase(sse_events_sent_total[5m]))`, start, end, step),
         fetchPrometheusRange(QUERIES.aiLatencyAvg, start, end, step),
         fetchPrometheusRange(QUERIES.aiLatencyP50, start, end, step),
         fetchPrometheusRange(QUERIES.aiLatencyP95, start, end, step),
         fetchPrometheusRange(QUERIES.aiLatencyP99, start, end, step),
         fetchPrometheusRange(QUERIES.aiCallRate, start, end, step),
-        fetchPrometheusRangeMultiple(`sum by (template) (rate(email_send_count_total[5m]))`, start, end, step)
+        fetchPrometheusRangeMultiple(`sum by (template) (increase(email_send_count_total[5m]))`, start, end, step)
       ]);
 
       // Merge time-series data
@@ -1417,8 +1417,8 @@ const AdminSystemMonitoringPage = () => {
 
               {/* Email Sends by Template (per-template counter rate) */}
               <AdminSectionPanel
-                title={t('admin:system_monitoring.email_by_template', 'Email Sends by Template (/s)')}
-                subtitle={t('admin:system_monitoring.email_by_template_desc', 'Rate of emails sent, broken down by template code')}
+                title={t('admin:system_monitoring.email_by_template', 'Email Sends by Template')}
+                subtitle={t('admin:system_monitoring.email_by_template_desc', 'Count of emails sent, broken down by template code')}
                 sx={monitoringPanelSx}
               >
                 <Box sx={monitoringChartBoxSx}>
