@@ -41,6 +41,7 @@ import { useAsyncAction } from '../../hooks/useAsyncAction';
 import { formatAccountStatusLabel } from '../../constants/adminStatusDisplay';
 import { USER_ROLES } from '../../constants/adminDefaultUsers';
 import { useAdminUsersContext } from '../../stores/AdminStore';
+import useAdminUserGrowthStats from '../../hooks/admin/useAdminUserGrowthStats';
 import { adminOrganizationApi } from '../../utils/api';
 import { formatDateTime } from '../../utils/dateFormatter';
 import { useAuth } from '../../hooks/useAuth';
@@ -317,12 +318,13 @@ const AdminUsersListPage = () => {
     </Stack>
   );
 
-  const [now] = useState(() => Date.now());
+  const { stats: growthStats } = useAdminUserGrowthStats();
+  
   const stats = {
     total: filteredCount,
-    active: users.filter(u => u.status === 'ACTIVE').length,
-    banned: users.filter(u => u.status === 'BANNED').length,
-    newToday: users.filter(u => new Date(u.createdAt) > new Date(now - 24 * 60 * 60 * 1000)).length,
+    active: growthStats.totalActiveUsers,
+    banned: growthStats.totalBannedUsers,
+    newToday: growthStats.newUsersToday,
   };
 
   return (

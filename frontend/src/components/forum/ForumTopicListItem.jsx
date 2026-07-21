@@ -8,7 +8,7 @@ const getInitial = (name) => {
   return trimmed ? trimmed.charAt(0).toUpperCase() : '';
 };
 
-const ForumTopicListItem = ({ topic, onClick }) => {
+const ForumTopicListItem = ({ topic, onClick, onAuthorClick }) => {
   const { t } = useTranslation(['forum']);
   const authorName = topic.authorName?.trim() || `${t('forum:member_prefix')}${topic.createdByMemberId ?? '—'}`;
   return (
@@ -94,18 +94,39 @@ const ForumTopicListItem = ({ topic, onClick }) => {
           <Avatar
             src={topic.authorAvatarUrl || undefined}
             alt={authorName}
+            onClick={(e) => {
+              if (onAuthorClick && topic.createdByMemberId) {
+                e.stopPropagation();
+                onAuthorClick(topic.createdByMemberId);
+              }
+            }}
             sx={{
               width: 32,
               height: 32,
               bgcolor: 'primary.main',
               color: 'primary.contrastText',
               flexShrink: 0,
+              cursor: onAuthorClick && topic.createdByMemberId ? 'pointer' : 'default',
             }}
           >
             {getInitial(authorName) || <PersonIcon sx={{ fontSize: 18 }} />}
           </Avatar>
           <Box sx={{ textAlign: 'left', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 0.4 }}>
-            <Typography variant="body2" fontWeight={600} sx={{ lineHeight: 1.15 }}>
+            <Typography
+              variant="body2"
+              fontWeight={600}
+              onClick={(e) => {
+                if (onAuthorClick && topic.createdByMemberId) {
+                  e.stopPropagation();
+                  onAuthorClick(topic.createdByMemberId);
+                }
+              }}
+              sx={{
+                lineHeight: 1.15,
+                cursor: onAuthorClick && topic.createdByMemberId ? 'pointer' : 'default',
+                '&:hover': onAuthorClick && topic.createdByMemberId ? { textDecoration: 'underline' } : {},
+              }}
+            >
               {authorName}
             </Typography>
             <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.1 }}>

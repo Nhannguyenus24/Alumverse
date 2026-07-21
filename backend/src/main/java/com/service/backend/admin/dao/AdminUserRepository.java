@@ -543,6 +543,7 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
 
     @Query("""
         SELECT
+            SUM(CASE WHEN created_at >= :today THEN 1 ELSE 0 END) AS new_users_today,
             SUM(CASE WHEN created_at >= :sevenDaysAgo THEN 1 ELSE 0 END) AS new_users7_days,
             SUM(CASE WHEN created_at >= :thirtyDaysAgo THEN 1 ELSE 0 END) AS new_users30_days,
             SUM(CASE WHEN "status" = 'ACTIVE' THEN 1 ELSE 0 END) AS active_users,
@@ -551,6 +552,7 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
         FROM users
     """)
     Mono<com.service.backend.admin.dto.UserGrowthStatsProjection> getAggregatedUserGrowthStats(
+        @Param("today") LocalDateTime today,
         @Param("sevenDaysAgo") LocalDateTime sevenDaysAgo,
         @Param("thirtyDaysAgo") LocalDateTime thirtyDaysAgo
     );

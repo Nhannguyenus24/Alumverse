@@ -178,11 +178,14 @@ const ForumReply = ({
         <Typography
           variant="body2"
           fontWeight={600}
+          onClick={handleOpenProfile}
           sx={{
             maxWidth: 104,
             textAlign: "center",
             lineHeight: 1.28,
             overflowWrap: "anywhere",
+            cursor: reply.authorMemberId ? "pointer" : "default",
+            "&:hover": reply.authorMemberId ? { textDecoration: "underline" } : {},
           }}
         >
           {reply.authorName}
@@ -1438,7 +1441,12 @@ const ForumAlumniThreadPage = () => {
                     <Typography
                       variant="body2"
                       fontWeight={600}
-                      sx={{ lineHeight: 1.2 }}
+                      onClick={() => openProfileInNewTab(thread.authorMemberId)}
+                      sx={{
+                        lineHeight: 1.2,
+                        cursor: thread.authorMemberId ? "pointer" : "default",
+                        "&:hover": thread.authorMemberId ? { textDecoration: "underline" } : {},
+                      }}
                     >
                       {thread.authorName}
                     </Typography>
