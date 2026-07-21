@@ -24,6 +24,8 @@ import { extractMainImageCaption, withMainImageCaption } from '../../utils/artic
 import { useNotification } from '../../hooks/useNotification';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
+import useOrganizationStore from '../../stores/organizationStore';
+
 const getChannelLabels = (t) => ({
   news: t('admin:channel_news'),
   alumni: t('admin:channel_alumni'),
@@ -51,6 +53,15 @@ const AdminEditArticlePage = () => {
   const { showSuccess, showError } = useNotification();
   const { article, isPending: isLoading } = useArticleById(channel, id);
   const { updateArticle, isPending: isSaving } = useUpdateArticle(channel);
+  const currentOrgId = useOrganizationStore((s) => s.organization?.id ?? null);
+
+  const articleOrgId = article?.organizationId ?? article?.organization_id;
+  const isOrgMismatch = Boolean(
+    article &&
+    currentOrgId &&
+    articleOrgId &&
+    String(articleOrgId) !== String(currentOrgId)
+  );
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -63,7 +74,7 @@ const AdminEditArticlePage = () => {
   const [mainImageCaption, setMainImageCaption] = useState('');
 
   useEffect(() => {
-    if (!article) return;
+    if (!article || isOrgMismatch) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setTitle(article.title ?? '');
     const parsedContent = extractMainImageCaption(articleContent(article));
@@ -72,15 +83,15 @@ const AdminEditArticlePage = () => {
     setCoverPreview(articleThumbnail(article));
     setTopic(article.topic ?? article.type ?? '');
     setUrl(article.url || article.linkUrl || '');
-  }, [article]);
+  }, [article, isOrgMismatch]);
 
   useEffect(() => {
-    if (!article) return;
+    if (!article || isOrgMismatch) return;
     setBreadcrumbs?.([
       { label: t('admin:articles'), path: `${adminBase}/articles` },
       { label: t('admin:edit_article_breadcrumb'), active: true },
     ]);
-  }, [article, setBreadcrumbs, t, adminBase]);
+  }, [article, setBreadcrumbs, t, adminBase, isOrgMismatch]);
 
   useEffect(() => {
     if (!coverFile) {
@@ -112,6 +123,10 @@ const AdminEditArticlePage = () => {
   };
 
   const handleSubmit = async () => {
+    if (isOrgMismatch) {
+      showError(t('admin:article_not_in_org_desc', 'Nội dung này thuộc về một tổ chức khác và không thể chỉnh sửa từ đường dẫn hiện tại.'));
+      return;
+    }
     if (!title.trim() || !content.trim() || content === '<p><br></p>') {
       showError(t('admin:edit_article_missing_fields'));
       return;
@@ -159,6 +174,22 @@ const AdminEditArticlePage = () => {
     return (
       <Stack alignItems="center" sx={{ py: 8 }}>
         <LoadingSkeleton />
+      </Stack>
+    );
+  }
+
+  if (isOrgMismatch) {
+    return (
+      <Stack alignItems="center" spacing={2} sx={{ py: 8, textAlign: 'center' }}>
+        <Typography variant="h5" color="error.main" fontWeight={800}>
+          {t('admin:article_not_in_org_title', 'Bài viết/Sự kiện không thuộc về tổ chức này')}
+        </Typography>
+        <Typography color="text.secondary">
+          {t('admin:article_not_in_org_desc', 'Nội dung này thuộc về một tổ chức khác và không thể chỉnh sửa từ đường dẫn hiện tại.')}
+        </Typography>
+        <Button variant="outlined" onClick={() => navigate(`${adminBase}/articles`)}>
+          {t('admin:back_to_article_list', 'Quay lại danh sách')}
+        </Button>
       </Stack>
     );
   }

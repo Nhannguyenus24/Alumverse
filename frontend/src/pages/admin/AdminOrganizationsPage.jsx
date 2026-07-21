@@ -75,7 +75,7 @@ const AdminOrganizationsPage = () => {
   const [selectedOrganizationId, setSelectedOrganizationId] = useState(null);
    const [introduction, setIntroduction] = useState(null);
   const { setBreadcrumbs } = useOutletContext();
-  const { activeOrgId } = useAdminSystemContext();
+  const { activeOrgId, setActiveOrgId } = useAdminSystemContext();
   const { user } = useAuth();
   const currentOrganization = useOrganizationStore((state) => state.organization);
   const previousActiveOrgIdRef = useRef(null);
@@ -213,19 +213,18 @@ const AdminOrganizationsPage = () => {
           });
           return sortOrganizationsByRecent([updatedItem, ...prev.filter((item) => item.id !== targetId)]);
         });
+        setActiveOrgId?.(targetId);
         setEditDialogOpen(false);
         enqueueSnackbar(t('org_update_success'), { variant: 'success' });
       } catch (error) {
         enqueueSnackbar(error?.response?.data?.message || t('org_update_error'), { variant: 'error' });
       }
     });
-  }, [editTarget, enqueueSnackbar, isStaffView, run, staffOrganizationId, t]);
+  }, [editTarget, enqueueSnackbar, isStaffView, run, staffOrganizationId, t, setActiveOrgId]);
 
   const handleDeleteOrganization = useCallback(async (orgId) => {
     if (isStaffView) return;
     if (!window.confirm(t('org_delete_confirm'))) return;
-    // run() provides the pending flag + re-entrancy lock + overlay; the handler
-    // already shows its own snackbar, so swallow to avoid a duplicate one.
     await run(async () => {
       try {
         await adminOrganizationApi.deleteOrganization(orgId);
@@ -244,13 +243,20 @@ const AdminOrganizationsPage = () => {
       try {
         const updated = await adminOrganizationApi.upsertIntroduction(selectedOrganizationId, payload);
         setIntroduction(updated || { ...introduction, ...payload });
+        const touchedAt = new Date().toISOString();
+        localTouchRef.current = {
+          ...localTouchRef.current,
+          [String(selectedOrganizationId)]: touchedAt,
+        };
+        writeLocalTouchMap(localTouchRef.current);
+        setActiveOrgId?.(selectedOrganizationId);
         setIntroDialogOpen(false);
         enqueueSnackbar(t('org_intro_update_success'), { variant: 'success' });
       } catch (error) {
         enqueueSnackbar(error?.response?.data?.message || t('org_intro_update_error'), { variant: 'error' });
       }
     });
-  }, [selectedOrganizationId, introduction, enqueueSnackbar, isStaffView, run, staffOrganizationId, t]);
+  }, [selectedOrganizationId, introduction, enqueueSnackbar, isStaffView, run, staffOrganizationId, t, setActiveOrgId]);
 
   const handlePromoteOrganization = useCallback((orgId) => {
     const touchedAt = new Date().toISOString();

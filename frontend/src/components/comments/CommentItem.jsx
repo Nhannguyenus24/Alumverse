@@ -10,13 +10,14 @@ import {
   Typography,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import DOMPurify from "dompurify";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import ReplyOutlinedIcon from "@mui/icons-material/ReplyOutlined";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import ConfirmDialog from "../ConfirmDialog";
 import WYSIWYG from "../WYSIWYG";
 import { formatDateTime } from "../../utils/dateFormatter";
-import { normalizeNbsp, toPlainText } from "../../utils/stringUtils";
+import { normalizeRichTextHtml, prepareRichTextForEdit, toPlainText, hasRichTextContent } from "../../utils/stringUtils";
 
 const getAvatarInitial = (name) => {
   const trimmed = typeof name === "string" ? name.trim() : "";
@@ -46,13 +47,13 @@ const CommentItem = ({
   const handleMenuClose = () => setAnchorEl(null);
 
   const handleStartEdit = () => {
-    setEditValue(comment.content || "");
+    setEditValue(prepareRichTextForEdit(comment.content || ""));
     setIsEditing(true);
     handleMenuClose();
   };
 
   const handleSaveEdit = async () => {
-    if (!toPlainText(editValue)) return;
+    if (!hasRichTextContent(editValue)) return;
     await onUpdate?.(comment.id, editValue);
     setIsEditing(false);
   };
@@ -62,46 +63,55 @@ const CommentItem = ({
     setConfirmDeleteOpen(false);
   };
 
-  const sanitizedContent = normalizeNbsp(DOMPurify.sanitize(comment.content || ""));
+  const sanitizedContent = normalizeRichTextHtml(comment.content || "");
 
   return (
-    <Stack direction="row" spacing={1.5} sx={{ alignItems: "flex-start" }}>
-      <Avatar src={comment.authorAvatarUrl} sx={{ width: 40, height: 40, flexShrink: 0 }}>
-        {getAvatarInitial(comment.authorName)}
-      </Avatar>
-      <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Stack direction="row" alignItems="center" justifyContent="space-between">
-          <Typography variant="subtitle2" fontWeight={700}>
-            {comment.authorName || t("common:anonymous", "Ẩn danh")}
-          </Typography>
-          {(canEdit || canDelete) && (
-            <>
-              <IconButton size="small" onClick={handleMenuOpen}>
-                <MoreVertIcon fontSize="small" />
-              </IconButton>
-              <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
-                {canEdit && <MenuItem onClick={handleStartEdit}>{t("comment:edit")}</MenuItem>}
-                {canDelete && (
-                  <MenuItem
-                    onClick={() => {
-                      handleMenuClose();
-                      setConfirmDeleteOpen(true);
-                    }}
-                  >
-                    {t("comment:delete")}
-                  </MenuItem>
-                )}
-              </Menu>
-            </>
-          )}
-        </Stack>
+    <Box sx={{ width: "100%" }}>
+      {/* Top Header Row: Avatar + Author Name (vertically centered) + 3 dots menu button */}
+      <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 0.5 }}>
+        <Avatar src={comment.authorAvatarUrl} sx={{ width: 40, height: 40, flexShrink: 0 }}>
+          {getAvatarInitial(comment.authorName)}
+        </Avatar>
+        <Typography variant="subtitle2" fontWeight={700} sx={{ flex: 1, minWidth: 0 }}>
+          {comment.authorName || t("common:anonymous", "Ẩn danh")}
+        </Typography>
+        {(canEdit || canDelete) && (
+          <>
+            <IconButton size="small" onClick={handleMenuOpen}>
+              <MoreVertIcon fontSize="small" />
+            </IconButton>
+            <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
+              {canEdit && (
+                <MenuItem onClick={handleStartEdit}>
+                  <EditOutlinedIcon fontSize="small" sx={{ mr: 1 }} />
+                  {t("comment:edit")}
+                </MenuItem>
+              )}
+              {canDelete && (
+                <MenuItem
+                  onClick={() => {
+                    handleMenuClose();
+                    setConfirmDeleteOpen(true);
+                  }}
+                  sx={{ color: "error.main" }}
+                >
+                  <DeleteOutlineIcon fontSize="small" sx={{ mr: 1, color: "error.main" }} />
+                  {t("comment:delete")}
+                </MenuItem>
+              )}
+            </Menu>
+          </>
+        )}
+      </Stack>
 
+      {/* Body & Bottom Actions: offset by 52px (40px avatar + 12px gap) so text starts right under the name */}
+      <Box sx={{ pl: "52px" }}>
         {isEditing ? (
           <Box sx={{ mt: 0.5 }}>
             <WYSIWYG
               value={editValue}
               onChange={setEditValue}
-              allowImages={false}
+              allowImages={true}
               height={140}
             />
             <Stack direction="row" spacing={1} justifyContent="flex-end" sx={{ mt: 1 }}>
@@ -117,20 +127,53 @@ const CommentItem = ({
           <Box
             className="ql-editor"
             sx={{
-              p: 0,
+              p: "0 !important",
               mt: 0.5,
+              lineHeight: 1.6,
               "&.ql-editor": {
-                overflowWrap: "normal",
-                wordBreak: "normal",
-                hyphens: "none",
+                p: "0 !important",
+                padding: "0 !important",
+                overflowWrap: "break-word",
+                wordBreak: "break-word",
+                hyphens: "auto",
               },
-              "& p": { m: 0, "&:not(:last-child)": { mb: "1em" } },
+              "& p": {
+                m: 0,
+                textAlign: "justify",
+                minHeight: "1.5em",
+                "&:not(:last-child)": { mb: "0.5em" },
+              },
+              "& p.ql-empty-line, & p:has(> br:only-child)": {
+                display: "block",
+                minHeight: "1.5em",
+                lineHeight: "1.5em",
+                my: 0,
+              },
+              "& img, & img.rich-content-image, & img.ql-content-image": {
+                display: "block",
+                maxWidth: "min(100%, 520px) !important",
+                width: "auto !important",
+                height: "auto !important",
+                maxHeight: "560px !important",
+                objectFit: "contain",
+                mx: "auto",
+                my: 1.5,
+                borderRadius: 2,
+              },
+              "& .ql-size-small": { fontSize: "0.85em" },
+              "& .ql-size-large": { fontSize: "1.25em" },
+              "& .ql-size-huge": { fontSize: "1.6em" },
+              "& .ql-align-left, & [style*='text-align: left' i]": { textAlign: "left !important" },
+              "& .ql-align-center, & [style*='text-align: center' i]": { textAlign: "center !important" },
+              "& .ql-align-right, & [style*='text-align: right' i]": { textAlign: "right !important" },
+              "& .ql-align-justify, & [style*='text-align: justify' i]": { textAlign: "justify !important" },
             }}
             dangerouslySetInnerHTML={{ __html: sanitizedContent }}
           />
         )}
 
-        <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mt: 0.5 }}>
+        {/* Bottom Actions: Timestamp & Reply button aligned right */}
+        <Stack direction="row" alignItems="center" justifyContent="flex-end" spacing={1.5} sx={{ mt: 1 }}>
           <Typography variant="caption" color="text.secondary">
             {comment.createdAt ? formatDateTime(comment.createdAt) : ""}
           </Typography>
@@ -151,12 +194,14 @@ const CommentItem = ({
         open={confirmDeleteOpen}
         title={t("comment:delete_confirm_title")}
         message={t("comment:delete_confirm_message")}
+        confirmText={t("comment:delete")}
+        cancelText={t("common:cancel")}
         onConfirm={handleConfirmDelete}
         onCancel={() => setConfirmDeleteOpen(false)}
         confirmColor="error"
         loading={isDeleting}
       />
-    </Stack>
+    </Box>
   );
 };
 

@@ -311,6 +311,9 @@ const WYSIWYG = ({
           color: theme.palette.text.disabled,
           fontStyle: "normal",
         },
+        "& .ql-editor:has(img)::before, & .ql-editor:has(p img)::before, & .ql-editor:has(.rich-content-image)::before": {
+          display: "none !important",
+        },
         "& .ql-editor *": {
           fontFamily: "Nunito, sans-serif !important",
           overflowWrap: "normal",

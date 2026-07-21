@@ -209,7 +209,7 @@ const Notification = ({ headerTextColor = "text.primary" }) => {
         </Box>
 
         {/* Tabs */}
-        <Box sx={{ borderBottom: "1px solid #e0e0e0", pb: 2, px: 1, display: "flex", gap: 1 }}>
+        <Box sx={{ borderBottom: "1px solid", borderColor: "divider", pb: 2, px: 1, display: "flex", gap: 1 }}>
           <Button
             variant={activeTab === 0 ? "contained" : "outlined"}
             color="primary"
@@ -249,14 +249,14 @@ const Notification = ({ headerTextColor = "text.primary" }) => {
               width: "6px",
             },
             "&::-webkit-scrollbar-track": {
-              background: "#f1f1f1",
+              background: (theme) => theme.palette.action.hover,
             },
             "&::-webkit-scrollbar-thumb": {
-              background: "#888",
+              background: (theme) => theme.palette.action.focus,
               borderRadius: "3px",
             },
             "&::-webkit-scrollbar-thumb:hover": {
-              background: "#555",
+              background: (theme) => theme.palette.action.active,
             },
           }}
         >
@@ -272,8 +272,9 @@ const Notification = ({ headerTextColor = "text.primary" }) => {
                   p: 2,
                   borderBottom:
                     index < filteredNotifications.length - 1
-                      ? "1px solid #f0f0f0"
+                      ? "1px solid"
                       : "none",
+                  borderColor: "divider",
                   bgcolor: !notification.isRead
                     ? "action.hover"
                     : "background.paper",

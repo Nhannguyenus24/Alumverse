@@ -19,6 +19,7 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { useSnackbar } from "notistack";
 import { IMAGE_ACCEPT, useUploadImage, validateImageFile } from "../../utils/imageUtils";
 import WYSIWYG from "../WYSIWYG";
+import { prepareRichTextForEdit } from "../../utils/stringUtils";
 
 const AdminOrganizationIntroductionDialog = ({
   open,
@@ -65,7 +66,7 @@ const AdminOrganizationIntroductionDialog = ({
     const timer = setTimeout(() => {
       if (introduction) {
         setFormData({
-          content: introduction.content || "",
+          content: prepareRichTextForEdit(introduction.content || ""),
           vision: introduction.vision || "",
           mission: introduction.mission || "",
           coreValues: introduction.coreValues || "",
@@ -93,11 +94,32 @@ const AdminOrganizationIntroductionDialog = ({
 
   const handleSubmit = () => {
     const payload = {
-      ...formData,
-      images: formData.images.split(",").map(s => s.trim()).filter(Boolean),
-      // Keep existing leaders and teamMembers
-      leaders: introduction?.leaders || [],
-      teamMembers: introduction?.teamMembers || [],
+      content: formData.content || "",
+      vision: formData.vision || "",
+      mission: formData.mission || "",
+      coreValues: formData.coreValues || "",
+      bannerUrl: formData.bannerUrl?.trim() || null,
+      images: formData.images
+        ? formData.images.split(",").map((s) => s.trim()).filter(Boolean)
+        : [],
+      leaders: (introduction?.leaders || [])
+        .filter((m) => m && typeof m.name === 'string' && m.name.trim() !== '')
+        .map((m) => ({
+          name: m.name.trim(),
+          positions: m.positions || '',
+          email: m.email || '',
+          image: m.image || '',
+          content: m.content || '',
+        })),
+      teamMembers: (introduction?.teamMembers || [])
+        .filter((m) => m && typeof m.name === 'string' && m.name.trim() !== '')
+        .map((m) => ({
+          name: m.name.trim(),
+          positions: m.positions || '',
+          email: m.email || '',
+          image: m.image || '',
+          content: m.content || '',
+        })),
       leadersContent: introduction?.leadersContent || "",
       teamMembersContent: introduction?.teamMembersContent || "",
     };
@@ -112,7 +134,7 @@ const AdminOrganizationIntroductionDialog = ({
       maxWidth="md"
       PaperProps={{ sx: { borderRadius: 3 } }}
     >
-      <DialogTitle sx={{ p: 3, pb: 2 }}>
+      <DialogTitle component="div" sx={{ p: 3, pb: 2 }}>
         <Typography
           variant="h5"
           sx={{ fontWeight: 800, color: "primary.main" }}
@@ -202,14 +224,26 @@ const AdminOrganizationIntroductionDialog = ({
                   />
                   <IconButton 
                     size="small" 
-                    sx={{ position: 'absolute', top: -8, right: -8, bgcolor: 'error.main', color: 'white', '&:hover': { bgcolor: 'error.dark' } }}
+                    sx={{ 
+                      position: 'absolute', 
+                      top: -6, 
+                      right: -6, 
+                      width: 22, 
+                      height: 22, 
+                      p: 0, 
+                      borderRadius: '50%', 
+                      bgcolor: 'error.main', 
+                      color: 'common.white', 
+                      '&:hover': { bgcolor: 'error.dark' },
+                      zIndex: 1,
+                    }}
                     onClick={() => {
                       const list = formData.images.split(",").filter(Boolean);
                       list.splice(idx, 1);
                       setFormData(prev => ({ ...prev, images: list.join(",") }));
                     }}
                   >
-                    <Box sx={{ fontSize: 12 }}>×</Box>
+                    <Box component="span" sx={{ fontSize: 14, fontWeight: 700, lineHeight: 1 }}>×</Box>
                   </IconButton>
                 </Box>
               ))}
@@ -241,18 +275,18 @@ const AdminOrganizationIntroductionDialog = ({
               />
             </Button>
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-              {t("admin:org_intro_gallery_multi_hint")}
+              {t("admin:org_intro_gallery_min4_hint")}
             </Typography>
           </Box>
 
           <Divider>
             <Typography variant="caption" color="text.disabled" fontWeight={700}>
-              {t("admin:org_intro_vmv_divider")}
+              {t("admin:org_intro_core_builder")}
             </Typography>
           </Divider>
 
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={4}>
+          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2, width: '100%' }}>
+            <Box sx={{ flex: 1 }}>
               <TextField
                 fullWidth
                 label={t("admin:org_intro_vision")}
@@ -260,11 +294,18 @@ const AdminOrganizationIntroductionDialog = ({
                 value={formData.vision}
                 onChange={handleChange}
                 multiline
-                rows={4}
+                rows={7}
                 placeholder={t("admin:org_intro_vision_placeholder")}
+                sx={{
+                  '& .MuiInputBase-input': {
+                    fontSize: '0.95rem',
+                    lineHeight: 1.6,
+                    overflowY: 'auto !important',
+                  },
+                }}
               />
-            </Grid>
-            <Grid item xs={12} md={4}>
+            </Box>
+            <Box sx={{ flex: 1 }}>
               <TextField
                 fullWidth
                 label={t("admin:org_intro_mission")}
@@ -272,11 +313,18 @@ const AdminOrganizationIntroductionDialog = ({
                 value={formData.mission}
                 onChange={handleChange}
                 multiline
-                rows={4}
+                rows={7}
                 placeholder={t("admin:org_intro_mission_placeholder")}
+                sx={{
+                  '& .MuiInputBase-input': {
+                    fontSize: '0.95rem',
+                    lineHeight: 1.6,
+                    overflowY: 'auto !important',
+                  },
+                }}
               />
-            </Grid>
-            <Grid item xs={12} md={4}>
+            </Box>
+            <Box sx={{ flex: 1 }}>
               <TextField
                 fullWidth
                 label={t("admin:org_intro_core_values")}
@@ -284,11 +332,18 @@ const AdminOrganizationIntroductionDialog = ({
                 value={formData.coreValues}
                 onChange={handleChange}
                 multiline
-                rows={4}
+                rows={7}
                 placeholder={t("admin:org_intro_core_values_placeholder")}
+                sx={{
+                  '& .MuiInputBase-input': {
+                    fontSize: '0.95rem',
+                    lineHeight: 1.6,
+                    overflowY: 'auto !important',
+                  },
+                }}
               />
-            </Grid>
-          </Grid>
+            </Box>
+          </Box>
         </Box>
       </DialogContent>
       <DialogActions sx={{ p: 3, pt: 2, bgcolor: "action.hover" }}>

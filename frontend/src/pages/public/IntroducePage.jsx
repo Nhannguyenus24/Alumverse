@@ -21,6 +21,7 @@ import {
   ScrollRevealItem,
   getStaggerDelay,
 } from "../../components/animations/ScrollReveal";
+import { normalizeRichTextHtml } from "../../utils/stringUtils";
 
 const BANNER_IMG = "/home_page/home_page.png";
 
@@ -99,17 +100,39 @@ const IntroducePage = () => {
 
   const renderHTML = (html) => {
     if (!html) return null;
+    const cleanHtml = normalizeRichTextHtml(html);
     return (
       <ScrollReveal
         sx={{
-          "& img": { maxWidth: "100%", height: "auto", borderRadius: 1, my: 2 },
-          "& p": { mb: 2, textAlign: "justify", lineHeight: 1.8 },
+          lineHeight: 1.6,
+          "& img, & img.rich-content-image, & img.ql-content-image": {
+            display: "block",
+            maxWidth: "min(100%, 520px) !important",
+            width: "auto !important",
+            height: "auto !important",
+            maxHeight: "560px !important",
+            objectFit: "contain",
+            borderRadius: 2,
+            mx: "auto",
+            my: 2,
+          },
+          "& p": { m: 0, textAlign: "justify", minHeight: "1.5em", "&:not(:last-child)": { mb: "0.5em" } },
+          "& p.ql-empty-line, & p:has(> br:only-child)": { display: "block", minHeight: "1.5em", lineHeight: "1.5em", my: 0 },
           "& h1, & h2, & h3, & h4, & h5, & h6": { color: "primary.main", mb: 2, mt: 3 },
           "& ul, & ol": { mb: 2, pl: 4 },
           "& li": { mb: 1 },
+          "& .ql-size-small": { fontSize: "0.85em" },
+          "& .ql-size-large": { fontSize: "1.25em" },
+          "& .ql-size-huge": { fontSize: "1.6em" },
+          "& .ql-align-left": { textAlign: "left !important" },
+          "& .ql-align-center": { textAlign: "center !important" },
+          "& .ql-align-right": { textAlign: "right !important" },
+          "& .ql-align-justify": { textAlign: "justify !important" },
           color: "text.primary",
+          overflowWrap: "break-word",
+          wordBreak: "break-word",
         }}
-        dangerouslySetInnerHTML={{ __html: html }}
+        dangerouslySetInnerHTML={{ __html: cleanHtml }}
       />
     );
   };
@@ -152,70 +175,70 @@ const IntroducePage = () => {
 
       {(introduction?.vision || introduction?.mission || introduction?.coreValues) && (
         <Box sx={{ mt: 6 }}>
-<ScrollRevealGroup
-  stagger={0.09}
-  sx={{ display: "flex", flexDirection: "column", gap: 3 }}
->
-  {introduction?.vision && (
-    <ScrollRevealItem sx={{ flex: 1 }}>
-      <Typography
-        variant="h6"
-        color="primary"
-        fontWeight={700}
-        gutterBottom
-        sx={{ display: "flex", alignItems: "center", gap: 1 }}
-      >
-        {t('intro_vision')}
-      </Typography>
-      <Typography
-        variant="body2"
-        sx={{ lineHeight: 1.7, color: "text.secondary" }}
-      >
-        {introduction.vision}
-      </Typography>
-    </ScrollRevealItem>
-  )}
+          <ScrollRevealGroup
+            stagger={0.09}
+            sx={{ display: "flex", flexDirection: "column", gap: 4 }}
+          >
+            {introduction?.vision && (
+              <ScrollRevealItem sx={{ flex: 1 }}>
+                <Typography
+                  variant="h5"
+                  color="primary.main"
+                  fontWeight={800}
+                  gutterBottom
+                  sx={{ display: "flex", alignItems: "center", gap: 1, fontSize: "1.25rem", mb: 1.5 }}
+                >
+                  {t('intro_vision')}
+                </Typography>
+                <Typography
+                  variant="body1"
+                  sx={{ lineHeight: 1.6, color: "text.primary", textAlign: "justify", fontSize: "1rem" }}
+                >
+                  {introduction.vision}
+                </Typography>
+              </ScrollRevealItem>
+            )}
 
-  {introduction?.mission && (
-    <ScrollRevealItem sx={{ flex: 1 }}>
-      <Typography
-        variant="h6"
-        color="primary"
-        fontWeight={700}
-        gutterBottom
-        sx={{ display: "flex", alignItems: "center", gap: 1 }}
-      >
-        {t('intro_mission')}
-      </Typography>
-      <Typography
-        variant="body2"
-        sx={{ lineHeight: 1.7, color: "text.secondary" }}
-      >
-        {introduction.mission}
-      </Typography>
-    </ScrollRevealItem>
-  )}
+            {introduction?.mission && (
+              <ScrollRevealItem sx={{ flex: 1 }}>
+                <Typography
+                  variant="h5"
+                  color="primary.main"
+                  fontWeight={800}
+                  gutterBottom
+                  sx={{ display: "flex", alignItems: "center", gap: 1, fontSize: "1.25rem", mb: 1.5 }}
+                >
+                  {t('intro_mission')}
+                </Typography>
+                <Typography
+                  variant="body1"
+                  sx={{ lineHeight: 1.6, color: "text.primary", textAlign: "justify", fontSize: "1rem" }}
+                >
+                  {introduction.mission}
+                </Typography>
+              </ScrollRevealItem>
+            )}
 
-  {introduction?.coreValues && (
-    <ScrollRevealItem sx={{ flex: 1 }}>
-      <Typography
-        variant="h6"
-        color="primary"
-        fontWeight={700}
-        gutterBottom
-        sx={{ display: "flex", alignItems: "center", gap: 1 }}
-      >
-        {t('intro_core_values')}
-      </Typography>
-      <Typography
-        variant="body2"
-        sx={{ lineHeight: 1.7, color: "text.secondary" }}
-      >
-        {introduction.coreValues}
-      </Typography>
-    </ScrollRevealItem>
-  )}
-</ScrollRevealGroup>
+            {introduction?.coreValues && (
+              <ScrollRevealItem sx={{ flex: 1 }}>
+                <Typography
+                  variant="h5"
+                  color="primary.main"
+                  fontWeight={800}
+                  gutterBottom
+                  sx={{ display: "flex", alignItems: "center", gap: 1, fontSize: "1.25rem", mb: 1.5 }}
+                >
+                  {t('intro_core_values')}
+                </Typography>
+                <Typography
+                  variant="body1"
+                  sx={{ lineHeight: 1.6, color: "text.primary", textAlign: "justify", fontSize: "1rem" }}
+                >
+                  {introduction.coreValues}
+                </Typography>
+              </ScrollRevealItem>
+            )}
+          </ScrollRevealGroup>
         </Box>
       )}
     </Box>
@@ -243,41 +266,41 @@ const IntroducePage = () => {
                     transition: 'all 0.3s',
                   }}
                 >
-                <Box sx={{ width: 100, height: 100, flexShrink: 0 }}>
-                  <Box
-                    component="img"
-                    src={leader.image || "/default_avatar.png"}
-                    alt={leader.name}
-                    sx={{
-                      width: '100%',
-                      height: '100%',
-                      borderRadius: 2,
-                      objectFit: "cover",
-                      border: '1px solid',
-                      borderColor: 'grey.200'
-                    }}
-                  />
-                </Box>
-                <Box sx={{ flex: 1 }}>
-                  <Typography variant="subtitle1" fontWeight={700} color="primary.main">
-                    {leader.name}
-                  </Typography>
-                  {leader.positions && (
-                    <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600, mt: 0.5 }}>
-                      {leader.positions}
+                  <Box sx={{ width: 100, height: 100, flexShrink: 0 }}>
+                    <Box
+                      component="img"
+                      src={leader.image || "/default_avatar.png"}
+                      alt={leader.name}
+                      sx={{
+                        width: '100%',
+                        height: '100%',
+                        borderRadius: 2,
+                        objectFit: "cover",
+                        border: '1px solid',
+                        borderColor: 'grey.200'
+                      }}
+                    />
+                  </Box>
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="subtitle1" fontWeight={700} color="primary.main">
+                      {leader.name}
                     </Typography>
-                  )}
-                  {leader.email && (
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                      {leader.email}
-                    </Typography>
-                  )}
-                  {leader.content && (
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                      {leader.content}
-                    </Typography>
-                  )}
-                </Box>
+                    {leader.positions && (
+                      <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600, mt: 0.5 }}>
+                        {leader.positions}
+                      </Typography>
+                    )}
+                    {leader.email && (
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                        {leader.email}
+                      </Typography>
+                    )}
+                    {leader.content && (
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                        {leader.content}
+                      </Typography>
+                    )}
+                  </Box>
                 </Paper>
               </ScrollReveal>
             ))}
@@ -310,41 +333,41 @@ const IntroducePage = () => {
                     '&:hover': { boxShadow: 4 }
                   }}
                 >
-                <Box sx={{ width: 100, height: 100, flexShrink: 0 }}>
-                  <Box
-                    component="img"
-                    src={member.image || "/default_avatar.png"}
-                    alt={member.name}
-                    sx={{
-                      width: '100%',
-                      height: '100%',
-                      borderRadius: 2,
-                      objectFit: "cover",
-                      border: '1px solid',
-                      borderColor: 'grey.200'
-                    }}
-                  />
-                </Box>
-                <Box sx={{ flex: 1 }}>
-                  <Typography variant="subtitle1" fontWeight={700} color="primary.main">
-                    {member.name}
-                  </Typography>
-                  {member.positions && (
-                    <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
-                      {member.positions}
+                  <Box sx={{ width: 100, height: 100, flexShrink: 0 }}>
+                    <Box
+                      component="img"
+                      src={member.image || "/default_avatar.png"}
+                      alt={member.name}
+                      sx={{
+                        width: '100%',
+                        height: '100%',
+                        borderRadius: 2,
+                        objectFit: "cover",
+                        border: '1px solid',
+                        borderColor: 'grey.200'
+                      }}
+                    />
+                  </Box>
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="subtitle1" fontWeight={700} color="primary.main">
+                      {member.name}
                     </Typography>
-                  )}
-                  {member.email && (
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                      {member.email}
-                    </Typography>
-                  )}
-                  {member.content && (
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                      {member.content}
-                    </Typography>
-                  )}
-                </Box>
+                    {member.positions && (
+                      <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+                        {member.positions}
+                      </Typography>
+                    )}
+                    {member.email && (
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                        {member.email}
+                      </Typography>
+                    )}
+                    {member.content && (
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                        {member.content}
+                      </Typography>
+                    )}
+                  </Box>
                 </Paper>
               </ScrollReveal>
             ))}
@@ -367,6 +390,7 @@ const IntroducePage = () => {
 
   return (
     <Page
+      key={location.pathname}
       title={config.title}
       meta={
         <meta
@@ -387,7 +411,7 @@ const IntroducePage = () => {
             minHeight: { xs: 300, sm: 380, md: 480 },
           }}
         >
-          {/* Hero banner */}
+          {/* Top Hero Banner - NO DARK OVERLAY LAYER */}
           <ScrollReveal
             direction="none"
             duration={0.8}
@@ -400,12 +424,6 @@ const IntroducePage = () => {
               backgroundSize: "cover",
               backgroundPosition: "center",
               backgroundRepeat: "no-repeat",
-              "&::after": {
-                content: '""',
-                position: "absolute",
-                inset: 0,
-                backgroundColor: "rgba(0,0,0,0.3)",
-              },
             }}
           />
 
@@ -435,48 +453,69 @@ const IntroducePage = () => {
                 px: { xs: 3, sm: 4, md: 6 },
               }}
             >
+              {/* Title */}
+              <ScrollRevealItem>
+                <Typography
+                  variant="h1"
+                  component="h1"
+                  fontWeight={800}
+                  color="primary.main"
+                  textAlign="center"
+                  sx={{
+                    mb: { xs: 3, md: 4 },
+                    fontSize: { xs: "1.65rem", md: "2.1rem" },
+                    lineHeight: 1.22,
+                    overflowWrap: "break-word",
+                    wordBreak: "normal",
+                  }}
+                >
+                  {config.title}
+                </Typography>
+              </ScrollRevealItem>
 
-            <ScrollRevealItem>
-            <Typography
-              variant="h1"
-              component="h1"
-              fontWeight={800}
-              color="primary.main"
-              textAlign="center"
-              sx={{
-                mb: { xs: 4, md: 5 },
-                fontSize: { xs: "1.65rem", md: "2.1rem" },
-                lineHeight: 1.22,
-                overflowWrap: "break-word",
-                wordBreak: "normal",
-              }}
-            >
-              {config.title}
-            </Typography>
-            </ScrollRevealItem>
+              {/* Full-width cover image directly under title */}
+              {!loading && (introduction?.bannerUrl || BANNER_IMG) && (
+                <ScrollRevealItem>
+                  <Box
+                    component="img"
+                    src={introduction?.bannerUrl || BANNER_IMG}
+                    alt={config.title}
+                    sx={{
+                      width: "100%",
+                      maxHeight: { xs: 260, sm: 360, md: 440 },
+                      objectFit: "cover",
+                      borderRadius: 2,
+                      mb: { xs: 4, md: 5 },
+                      boxShadow: "0 4px 20px rgba(0,0,0,0.06)",
+                      display: "block",
+                    }}
+                  />
+                </ScrollRevealItem>
+              )}
 
-            <ScrollRevealItem>
-            {loading ? (
-              <Box sx={{ display: "flex", justifyContent: "center", py: 15 }}>
-                <CircularProgress size={60} thickness={4} />
-              </Box>
-            ) : (
-              <Box sx={{ minHeight: 400 }}>
-                {!introduction ? (
-                  <Stack alignItems="center" spacing={2} sx={{ py: 10 }}>
-                    <Typography variant="h5" color="text.secondary">
-                      {t('intro_empty_title')}
-                    </Typography>
-                    <Typography variant="body1" color="text.secondary" textAlign="center">
-                      {t('intro_empty_desc')}
-                    </Typography>
-                  </Stack>
+              {/* Article content */}
+              <ScrollRevealItem>
+                {loading ? (
+                  <Box sx={{ display: "flex", justifyContent: "center", py: 15 }}>
+                    <CircularProgress size={60} thickness={4} />
+                  </Box>
                 ) : (
-                  renderContent()
+                  <Box sx={{ minHeight: 400 }}>
+                    {!introduction ? (
+                      <Stack alignItems="center" spacing={2} sx={{ py: 10 }}>
+                        <Typography variant="h5" color="text.secondary">
+                          {t('intro_empty_title')}
+                        </Typography>
+                        <Typography variant="body1" color="text.secondary" textAlign="center">
+                          {t('intro_empty_desc')}
+                        </Typography>
+                      </Stack>
+                    ) : (
+                      renderContent()
+                    )}
+                  </Box>
                 )}
-              </Box>
-            )}
-            </ScrollRevealItem>
+              </ScrollRevealItem>
             </ScrollRevealGroup>
           </Box>
         </Box>

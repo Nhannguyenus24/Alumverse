@@ -30,7 +30,7 @@
   "title_placeholder": "Tiêu đề bài viết",
   "content_placeholder": "Bắt đầu viết nội dung tại đây...",
   "source_url_label": "Link minh chứng (URL)",
-  "source_url_helper": "Đường dẫn để chứng minh nội dung bài viết là thật (không bắt buộc).",
+  "source_url_helper": "Đường dẫn trích dẫn nguồn hoặc minh chứng cho bài viết (không bắt buộc).",
   "main_image_caption_label": "Chú thích ảnh chính",
   "main_image_caption_helper": "Chú thích này sẽ hiển thị ngay dưới ảnh chính của bài viết.",
   "main_image_caption_required": "Vui lòng nhập chú thích cho ảnh chính.",

@@ -119,7 +119,7 @@ public class AdminArticleController {
     @Operation(summary = "Reject an achievement article request")
     @PostMapping("/achievements/{id}/reject")
     public Mono<ResponseEntity<ApiResponse<AchievementResponse>>> rejectAchievement(@PathVariable @Min(1) Integer id) {
-        return adminArticleService.updateAchievementStatus(id, Status.REJECTED)
+        return adminArticleService.updateAchievementStatus(id, Status.PENDING)
                 .map(response -> ResponseEntity.ok(new ApiResponse<>("Achievement rejected successfully", response)));
     }
 
@@ -133,7 +133,7 @@ public class AdminArticleController {
     @Operation(summary = "Reject a learning resource article request")
     @PostMapping("/learning-resources/{id}/reject")
     public Mono<ResponseEntity<ApiResponse<LearningResourceResponse>>> rejectLearningResource(@PathVariable @Min(1) Integer id) {
-        return adminArticleService.updateLearningResourceStatus(id, Status.REJECTED)
+        return adminArticleService.updateLearningResourceStatus(id, Status.PENDING)
                 .map(response -> ResponseEntity.ok(new ApiResponse<>("Learning resource rejected successfully", response)));
     }
 

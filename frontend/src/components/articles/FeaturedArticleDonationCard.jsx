@@ -8,7 +8,7 @@ import VolunteerActivismOutlinedIcon from "@mui/icons-material/VolunteerActivism
 import { useState } from "react";
 import dayjs from "dayjs";
 import { useTranslation } from "react-i18next";
-import { normalizePreviewText, truncateText } from "../../utils/text";
+import { normalizePreviewText, truncateText, getFeaturedTitleFontSize } from "../../utils/text";
 import { formatCurrency } from "../../utils/numberFormatter";
 import { formatDate } from "../../utils/dateFormatter";
 
@@ -96,7 +96,7 @@ const FeaturedArticleDonationCard = ({ campaign, article, onNavigate, onEdit, on
         }}
       >
         {/* INFO BLOCK */}
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 0.7 }}>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
           {/* DATE */}
           <Typography variant="caption" sx={{ color: "primary.main", fontWeight: 700 }}>
             {`${startedAt} - ${endedAt}`}
@@ -108,6 +108,7 @@ const FeaturedArticleDonationCard = ({ campaign, article, onNavigate, onEdit, on
               display: "flex",
               alignItems: "flex-start",
               gap: 0.5,
+              my: 0.5,
             }}
           >
             <Typography
@@ -116,7 +117,7 @@ const FeaturedArticleDonationCard = ({ campaign, article, onNavigate, onEdit, on
               sx={{
                 flex: 1,
 
-                fontSize: { xs: "1.5rem", md: "2rem" },
+                fontSize: getFeaturedTitleFontSize(data?.name || data?.title),
 
                 color: hovered
                   ? "primary.main"
@@ -124,10 +125,7 @@ const FeaturedArticleDonationCard = ({ campaign, article, onNavigate, onEdit, on
 
                 transition: "color 0.2s ease",
 
-                overflow: "hidden",
-                display: "-webkit-box",
-                WebkitLineClamp: 3,
-                WebkitBoxOrient: "vertical",
+                wordBreak: "break-word",
               }}
             >
               {normalizePreviewText(data?.name || data?.title)}
@@ -152,7 +150,7 @@ const FeaturedArticleDonationCard = ({ campaign, article, onNavigate, onEdit, on
           </Box>
 
           {/* ORGANIZER */}
-          <Typography variant="body2" color="text.secondary" sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <Typography variant="body2" color="text.secondary" sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", lineHeight: 1.5 }}>
             {data?.managerName || data?.organizer || t('donation:organizer_fallback')}
           </Typography>
 
@@ -166,12 +164,13 @@ const FeaturedArticleDonationCard = ({ campaign, article, onNavigate, onEdit, on
         {/* DESCRIPTION */}
         <Typography
           sx={{
-            mt: 1,
+            mt: 1.8,
 
             display: "-webkit-box",
-            WebkitLineClamp: 3,
+            WebkitLineClamp: (data?.name || data?.title || "").length > 75 ? 2 : 3,
             WebkitBoxOrient: "vertical",
             overflow: "hidden",
+            lineHeight: 1.6,
           }}
         >
           {truncateText(

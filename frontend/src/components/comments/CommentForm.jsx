@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import CloseIcon from "@mui/icons-material/Close";
 import WYSIWYG from "../WYSIWYG";
 import { ContributeGuardTooltip } from "../ContributeGuard";
-import { toPlainText } from "../../utils/stringUtils";
+import { hasRichTextContent } from "../../utils/stringUtils";
 
 const getAvatarInitial = (name) => {
   const trimmed = typeof name === "string" ? name.trim() : "";
@@ -23,7 +23,7 @@ const CommentForm = ({
   const { t } = useTranslation(["comment"]);
   const [content, setContent] = useState("");
 
-  const isEmpty = !toPlainText(content ?? "");
+  const isEmpty = !hasRichTextContent(content ?? "");
 
   const handleSubmit = async () => {
     if (isEmpty || isSubmitting || !canComment) return;
@@ -51,7 +51,7 @@ const CommentForm = ({
             <WYSIWYG
               value={content}
               onChange={setContent}
-              allowImages={false}
+              allowImages={true}
               readOnly={!canComment}
               height={140}
               placeholder={
