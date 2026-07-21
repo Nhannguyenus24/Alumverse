@@ -25,6 +25,7 @@ export const toEventCardShape = (event) => {
     participants: event.joinedCount ?? 0,
     interested: event.interestedCount ?? 0,
     isRegistered: event.isRegistered ?? event.registered ?? event.hasRegistered ?? false,
+    registrationEndAt: event.registrationEndAt,
     description,
     image: event.thumbnailUrl ?? "/placeholder-image.png",
   };

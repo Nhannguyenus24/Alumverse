@@ -132,6 +132,7 @@ class EventServiceTest {
             Event event = Event.builder().id(1L).organizationId(1L).isPublished(false).build();
             when(eventRepo.findById(1L)).thenReturn(Mono.just(event));
             when(ticketRepo.existsActiveByEventIdAndMemberId(1L, 1L)).thenReturn(Mono.just(false));
+            when(ticketRepo.existsBannedByEventIdAndMemberId(1L, 1L)).thenReturn(Mono.just(false));
 
             StepVerifier.create(eventService.registerForEvent(1L, null).contextWrite(userContext()))
                     .expectErrorMatches(error -> error instanceof ApplicationException
@@ -149,6 +150,7 @@ class EventServiceTest {
                     .build();
             when(eventRepo.findById(1L)).thenReturn(Mono.just(event));
             when(ticketRepo.existsActiveByEventIdAndMemberId(1L, 1L)).thenReturn(Mono.just(false));
+            when(ticketRepo.existsBannedByEventIdAndMemberId(1L, 1L)).thenReturn(Mono.just(false));
 
             StepVerifier.create(eventService.registerForEvent(1L, null).contextWrite(userContext()))
                     .expectErrorMatches(error -> error instanceof ApplicationException
@@ -167,6 +169,7 @@ class EventServiceTest {
                     .build();
             when(eventRepo.findById(1L)).thenReturn(Mono.just(event));
             when(ticketRepo.existsActiveByEventIdAndMemberId(1L, 1L)).thenReturn(Mono.just(false));
+            when(ticketRepo.existsBannedByEventIdAndMemberId(1L, 1L)).thenReturn(Mono.just(false));
 
             StepVerifier.create(eventService.registerForEvent(1L, null).contextWrite(userContext()))
                     .expectErrorMatches(error -> error instanceof ApplicationException

@@ -339,10 +339,13 @@ public class EventService {
                 Mono.zip(
                         this.findEventById(eventId)
                                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId))),
-                        this.hasRegistered(eventId, memberId)
+                        this.hasRegistered(eventId, memberId),
+                        ticketRepo.existsBannedByEventIdAndMemberId(eventId, memberId)
                 ).flatMap(tuple -> {
                     Event event = tuple.getT1();
                     Boolean already = tuple.getT2();
+                    Boolean banned = tuple.getT3();
+                    if (banned) return Mono.error(new ApplicationException(ErrorCode.EVENT_REGISTRATION_BANNED, "Banned from event: " + eventId));
                     if (already) return Mono.error(new ApplicationException(ErrorCode.TICKET_ALREADY_REGISTERED, "Already registered"));
                     return assertEventOpenForRegistration(event)
                             .then(Mono.defer(() -> validateRegistrationAnswers(
@@ -605,24 +608,29 @@ public class EventService {
      */
     public Mono<EventTicketDetailResponse> checkIn(Long eventId, CheckInRequest request) {
         return assertEventInCurrentOrg(eventId)
-                .then(resolveTicketCode(eventId, request))
-                .flatMap(ticketCode -> this.findTicketByCode(ticketCode)
-                        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.TICKET_NOT_FOUND, "Ticket not found")))
-                        .flatMap(ticket -> {
-                            if (!eventId.equals(ticket.getEventId())) {
-                                return Mono.error(new ApplicationException(ErrorCode.TICKET_WRONG_EVENT, "Ticket does not belong to this event"));
-                            }
-                            if (ticket.getStatus() == Status.CANCELLED || ticket.getStatus() == Status.EXPIRED) {
-                                return Mono.error(new ApplicationException(ErrorCode.TICKET_ALREADY_CANCELLED, "Ticket is cancelled or expired"));
-                            }
-                            if (ticket.getStatus() == Status.CHECKED_IN || ticket.getStatus() == Status.USED) {
-                                return Mono.error(new ApplicationException(ErrorCode.TICKET_ALREADY_CHECKED_IN, "Ticket already checked in"));
-                            }
-                            if (ticket.getStatus() != Status.ISSUED && ticket.getStatus() != Status.ACTIVE) {
-                                return Mono.error(new ApplicationException(ErrorCode.TICKET_NOT_ACTIVE, "Ticket is not valid for check-in"));
-                            }
-                            return this.checkInTicket(ticket.getId());
-                        }))
+                .flatMap(event -> resolveTicketCode(eventId, request)
+                        .flatMap(ticketCode -> this.findTicketByCode(ticketCode)
+                                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.TICKET_NOT_FOUND, "Ticket not found")))
+                                .flatMap(ticket -> {
+                                    if (!eventId.equals(ticket.getEventId())) {
+                                        return Mono.error(new ApplicationException(ErrorCode.TICKET_WRONG_EVENT, "Ticket does not belong to this event"));
+                                    }
+                                    boolean eventEnded = event.getEndTime() != null && event.getEndTime().isBefore(LocalDateTime.now());
+                                    if (eventEnded && ticket.getStatus() == Status.ISSUED) {
+                                        return ticketRepo.expireTicket(ticket.getId())
+                                                .then(Mono.error(new ApplicationException(ErrorCode.TICKET_EXPIRED, "Ticket has expired")));
+                                    }
+                                    if (ticket.getStatus() == Status.CANCELLED || ticket.getStatus() == Status.EXPIRED) {
+                                        return Mono.error(new ApplicationException(ErrorCode.TICKET_ALREADY_CANCELLED, "Ticket is cancelled or expired"));
+                                    }
+                                    if (ticket.getStatus() == Status.CHECKED_IN || ticket.getStatus() == Status.USED) {
+                                        return Mono.error(new ApplicationException(ErrorCode.TICKET_ALREADY_CHECKED_IN, "Ticket already checked in"));
+                                    }
+                                    if (ticket.getStatus() != Status.ISSUED && ticket.getStatus() != Status.ACTIVE) {
+                                        return Mono.error(new ApplicationException(ErrorCode.TICKET_NOT_ACTIVE, "Ticket is not valid for check-in"));
+                                    }
+                                    return this.checkInTicket(ticket.getId());
+                                })))
                 .flatMap(this::toDetailWithAttendee);
     }
 
@@ -694,13 +702,22 @@ public class EventService {
         }
         return assertEventInCurrentOrg(eventId)
                 .then(ticketsPage)
-                .flatMap(this::mapDetailPageWithAttendees);
+                .flatMap(ticketPage -> mapDetailPageWithAttendees(ticketPage, eventId));
     }
 
     public Mono<PaginatedResponse<EventTicketDetailResponse>> getMyTickets(int page, int limit) {
         return SecurityUtils.getCurrentUserId()
                 .flatMap(memberId -> this.findTicketsByMember(memberId, page, limit))
                 .flatMap(this::mapDetailPage);
+    }
+
+    public Mono<PaginatedResponse<Event>> getMyInterestedEvents(int page, int limit) {
+        int offset = page * limit;
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(memberId -> interestRepo.findInterestedEventsByMember(memberId, limit, offset)
+                        .collectList()
+                        .zipWith(interestRepo.countByMemberId(memberId))
+                        .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit)));
     }
 
     // ─── Ticket response mapping (qrToken + attendee enrichment) ──────────────
@@ -745,8 +762,17 @@ public class EventService {
     /** Build a ticket detail from pre-loaded maps (no per-row DB calls). */
     private EventTicketDetailResponse buildTicketDetail(EventTicket ticket, Map<Long, Event> events,
                                                         Map<Integer, UserProfileRepository.AttendeeProfile> profiles) {
+        return buildTicketDetail(ticket, events, profiles, null);
+    }
+
+    private EventTicketDetailResponse buildTicketDetail(EventTicket ticket, Map<Long, Event> events,
+                                                        Map<Integer, UserProfileRepository.AttendeeProfile> profiles,
+                                                        Set<Long> latestTicketIds) {
         EventTicketDetailResponse.EventTicketDetailResponseBuilder builder = EventTicketDetailResponse.fromTicket(ticket)
                 .qrToken(eventQrService.encodeWithPrefix(ticket.getTicketCode(), ticket.getEventId()));
+        if (latestTicketIds != null) {
+            builder.latestForOwner(latestTicketIds.contains(ticket.getId()));
+        }
         if (ticket.getEventId() != null) {
             Event event = events.get(ticket.getEventId());
             if (event != null && event.getTitle() != null) builder.eventTitle(event.getTitle());
@@ -773,16 +799,19 @@ public class EventService {
                         .toList()));
     }
 
-    private Mono<PaginatedResponse<EventTicketDetailResponse>> mapDetailPageWithAttendees(PaginatedResponse<EventTicket> page) {
+    private Mono<PaginatedResponse<EventTicketDetailResponse>> mapDetailPageWithAttendees(PaginatedResponse<EventTicket> page, Long eventId) {
         Set<Long> eventIds = new HashSet<>();
         Set<Integer> memberIds = new HashSet<>();
         for (EventTicket t : page.getItems()) {
             if (t.getEventId() != null) eventIds.add(t.getEventId());
             if (t.getMemberId() != null) memberIds.add(t.getMemberId().intValue());
         }
-        return Mono.zip(eventsById(eventIds), userProfileRepository.findAttendeeProfilesByUserIds(memberIds))
+        Mono<Set<Long>> latestIds = ticketRepo.findLatestTicketPerOwner(eventId)
+                .map(EventTicket::getId)
+                .collect(java.util.stream.Collectors.toSet());
+        return Mono.zip(eventsById(eventIds), userProfileRepository.findAttendeeProfilesByUserIds(memberIds), latestIds)
                 .map(tuple -> withItems(page, page.getItems().stream()
-                        .map(t -> buildTicketDetail(t, tuple.getT1(), tuple.getT2()))
+                        .map(t -> buildTicketDetail(t, tuple.getT1(), tuple.getT2(), tuple.getT3()))
                         .toList()));
     }
 

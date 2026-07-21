@@ -134,5 +134,8 @@
   "verification_required_alert": "Only verified alumni (verification level 2) can use this feature. Please verify your alumni status to continue.",
   "sse_verification_approved": "Your verification request has been approved.",
   "sse_verification_rejected": "Your verification request has been rejected.",
-  "sse_account_banned": "Your account has been banned."
+  "sse_account_banned": "Your account has been banned.",
+  "sse_event_reminder": "An event you're interested in is closing registration soon.",
+  "sse_ticket_cancelled": "Your event ticket has been cancelled.",
+  "sse_ticket_banned": "Your event ticket has been banned."
 }

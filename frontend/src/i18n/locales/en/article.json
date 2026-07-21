@@ -1,6 +1,9 @@
 {
   "title": "Article",
   "saved_articles": "Saved Articles",
+  "interests": "Interests",
+  "saved_tab_posts": "Posts",
+  "saved_tab_events": "Events",
   "my_articles": "My Articles",
   "create_article": "Create Article",
   "edit_article": "Edit Article",

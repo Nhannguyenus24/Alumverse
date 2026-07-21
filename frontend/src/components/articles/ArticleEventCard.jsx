@@ -31,6 +31,7 @@ const ArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
   const { canUseBasicActions } = useCanContribute();
   const [isInterested, setIsInterested] = useState(false);
   const [isJoined, setIsJoined] = useState(() => getEventRegisteredState(article));
+  const [ticketStatus, setTicketStatus] = useState(null);
   const [loadingInterest, setLoadingInterest] = useState(false);
   const [loadingJoin, setLoadingJoin] = useState(false);
   const [checkingRegistration, setCheckingRegistration] = useState(false);
@@ -46,6 +47,7 @@ const ArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
       setIsInterested(false);
       setIsJoined(getEventRegisteredState(article));
       setCheckingRegistration(false);
+      setTicketStatus(null);
       return;
     }
     eventApi.checkInterest(article.id)
@@ -56,6 +58,13 @@ const ArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
       .then((res) => setIsJoined(getEventRegisteredState(res)))
       .catch(() => {})
       .finally(() => setCheckingRegistration(false));
+    eventApi.getMyTickets({ page: 0, limit: 100 })
+      .then((ticketsPage) => {
+        const tickets = ticketsPage?.items ?? ticketsPage?.content ?? ticketsPage?.data ?? [];
+        const ticket = tickets.find((t) => Number(t?.eventId) === Number(article.id));
+        setTicketStatus(ticket?.status ?? null);
+      })
+      .catch(() => {});
   }, [article, article?.id, canUseBasicActions, isAdmin]);
 
   const handleInterest = async (e) => {
@@ -77,13 +86,19 @@ const ArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
     }
   };
 
+  const isTicketUsed = ["USED", "CHECKED_IN"].includes(String(ticketStatus ?? "").toUpperCase());
+  const isTicketBanned = String(ticketStatus ?? "").toUpperCase() === "BANNED";
+  const isRegistrationClosed = Boolean(article?.registrationEndAt) && new Date() > new Date(article.registrationEndAt);
+
   const handleJoinClick = (e) => {
     e.stopPropagation();
     if (loadingJoin || checkingRegistration || !canUseBasicActions) return;
     if (isJoined) {
+      if (isTicketUsed || isTicketBanned) return;
       setOpenCancelDialog(true);
       return;
     }
+    if (isRegistrationClosed) return;
     setOpenJoinDialog(true);
   };
 
@@ -261,13 +276,16 @@ const ArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
           <ContributeGuardTooltip required="basic" sx={{ flex: 1, opacity: canUseBasicActions ? 1 : 0.58, filter: canUseBasicActions ? 'none' : 'grayscale(0.25)' }}>
             <Button
               fullWidth
-              variant={isJoined ? 'outlined' : 'contained'}
-              color={isJoined ? 'error' : 'accent'}
-              disabled={loadingJoin || checkingRegistration || !canUseBasicActions}
-              startIcon={isJoined ? <CancelOutlinedIcon /> : <EventAvailableOutlinedIcon />}
+              variant={isJoined && !isTicketUsed ? 'outlined' : 'contained'}
+              color={isJoined ? (isTicketUsed ? 'success' : 'error') : 'accent'}
+              disabled={loadingJoin || checkingRegistration || !canUseBasicActions || (!isJoined && isRegistrationClosed) || isTicketBanned}
+              sx={isTicketUsed ? { pointerEvents: 'none' } : undefined}
+              startIcon={isJoined ? (isTicketUsed ? <EventAvailableOutlinedIcon /> : <CancelOutlinedIcon />) : <EventAvailableOutlinedIcon />}
               onClick={handleJoinClick}
             >
-              {isJoined ? t('event:cancel_ticket') : t('event:join')}
+              {isJoined
+                ? (isTicketBanned ? t('event:ticket_status_banned') : isTicketUsed ? t('event:status_used') : t('event:cancel_ticket'))
+                : (isRegistrationClosed ? t('event:registration_closed') : t('event:join'))}
             </Button>
           </ContributeGuardTooltip>
         </Stack>

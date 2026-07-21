@@ -210,8 +210,15 @@ const normalizeArticleHtml = (html) => {
   return container.innerHTML;
 };
 
-/** Heart toggle to save ("quan tâm") an article. itemType is fixed to NEWS. */
-const SaveArticleButton = ({ itemId }) => {
+/** Maps an article's display channel to the itemType used by the saved-items API. */
+const SAVE_ITEM_TYPE_BY_CHANNEL = {
+  news: "NEWS",
+  alumni: "ALUMNI_POST",
+};
+
+/** Heart toggle to save ("quan tâm") an article or alumni post via the generic saved-items
+ * bookmark table. Events don't use this — they have their own interest button on ArticleHighlightCard. */
+const SaveArticleButton = ({ itemId, itemType }) => {
   const { enqueueSnackbar } = useSnackbar();
   const { t } = useTranslation(['common', 'article']);
   const { canContribute, isAuthenticated } = useCanContribute();
@@ -225,23 +232,22 @@ const SaveArticleButton = ({ itemId }) => {
     }
 
     let active = true;
-    savedItemApi
-      .check("NEWS", itemId)
+    savedItemApi.check(itemType, itemId)
       .then((v) => { if (active) setSaved(Boolean(v)); })
       .catch(() => {});
     return () => { active = false; };
-  }, [isAuthenticated, itemId]);
+  }, [isAuthenticated, itemId, itemType]);
 
   const toggle = async () => {
     if (busy || !canContribute) return;
     setBusy(true);
     try {
       if (saved) {
-        await savedItemApi.unsave("NEWS", itemId);
+        await savedItemApi.unsave(itemType, itemId);
         setSaved(false);
         enqueueSnackbar(t('article:unsaved_article'), { variant: "info" });
       } else {
-        await savedItemApi.save("NEWS", itemId);
+        await savedItemApi.save(itemType, itemId);
         setSaved(true);
         enqueueSnackbar(t('article:saved_article'), { variant: "success" });
       }
@@ -271,18 +277,19 @@ const SaveArticleButton = ({ itemId }) => {
   );
 };
 
-const ArticleHighlightCard = ({ data, channel, eventId, isAdmin = false }) => {
+const ArticleHighlightCard = ({ data, channel, eventId, isAdmin = false, sharedInterest = null, onToggleSharedInterest = null }) => {
   const { enqueueSnackbar } = useSnackbar();
   const { t } = useTranslation(['common', 'article', 'event', 'donation', 'admin']);
   const { canContribute, canUseBasicActions } = useCanContribute();
   const canUseArticleAction = channel === "event" || channel === "donation"
     ? canUseBasicActions
     : canContribute;
-  const [isInterested, setIsInterested] = useState(false);
+  const [isInterestedLocal, setIsInterestedLocal] = useState(false);
   const [isJoined, setIsJoined] = useState(() => getEventRegisteredState(data));
-  const [interestedCount, setInterestedCount] = useState(data.stats?.[0]?.value ?? 0);
+  const [ticketStatus, setTicketStatus] = useState(null);
+  const [interestedCountLocal, setInterestedCountLocal] = useState(data.stats?.[0]?.value ?? 0);
   const [joinedCount, setJoinedCount] = useState(data.stats?.[1]?.value ?? 0);
-  const [loadingInterest, setLoadingInterest] = useState(false);
+  const [loadingInterestLocal, setLoadingInterestLocal] = useState(false);
   const [loadingJoin, setLoadingJoin] = useState(false);
   const [checkingRegistration, setCheckingRegistration] = useState(false);
   const [openJoinDialog, setOpenJoinDialog] = useState(false);
@@ -290,16 +297,26 @@ const ArticleHighlightCard = ({ data, channel, eventId, isAdmin = false }) => {
   const [cancelReason, setCancelReason] = useState("");
   const { data: questions = [] } = useEventQuestions(eventId, !isAdmin && canUseArticleAction && channel === "event" && Boolean(eventId));
 
+  const isTicketUsed = ["USED", "CHECKED_IN"].includes(String(ticketStatus ?? "").toUpperCase());
+  const isTicketBanned = String(ticketStatus ?? "").toUpperCase() === "BANNED";
+  const isRegistrationClosed = Boolean(data.registrationEndAt) && new Date() > new Date(data.registrationEndAt);
+
+  const isInterested = sharedInterest ? sharedInterest.isInterested : isInterestedLocal;
+  const interestedCount = sharedInterest ? sharedInterest.interestedCount : interestedCountLocal;
+  const loadingInterest = sharedInterest ? sharedInterest.loading : loadingInterestLocal;
+
   useEffect(() => {
     if (isAdmin || channel !== "event" || !eventId) return;
 
     if (canUseArticleAction) {
-      eventApi.checkInterest(eventId)
-        .then((res) => {
-          const checked = res?.isInterested ?? res?.data?.isInterested ?? false;
-          setIsInterested(checked);
-        })
-        .catch(() => {});
+      if (!sharedInterest) {
+        eventApi.checkInterest(eventId)
+          .then((res) => {
+            const checked = res?.isInterested ?? res?.data?.isInterested ?? false;
+            setIsInterestedLocal(checked);
+          })
+          .catch(() => {});
+      }
       setCheckingRegistration(true);
       eventApi.checkRegistered(eventId)
         .then((res) => {
@@ -307,46 +324,65 @@ const ArticleHighlightCard = ({ data, channel, eventId, isAdmin = false }) => {
         })
         .catch(() => {})
         .finally(() => setCheckingRegistration(false));
+      eventApi.getMyTickets({ page: 0, limit: 100 })
+        .then((ticketsPage) => {
+          const tickets = ticketsPage?.items ?? ticketsPage?.content ?? ticketsPage?.data ?? [];
+          const ticket = tickets.find((t) => Number(t?.eventId) === Number(eventId));
+          setTicketStatus(ticket?.status ?? null);
+        })
+        .catch(() => {});
     } else {
-      setIsInterested(false);
+      setIsInterestedLocal(false);
       setIsJoined(getEventRegisteredState(data));
       setCheckingRegistration(false);
+      setTicketStatus(null);
     }
 
     eventApi.getEventStatisticsById(eventId)
       .then((res) => {
-        if (res?.interestedCount != null) setInterestedCount(res.interestedCount);
+        if (res?.interestedCount != null && !sharedInterest) setInterestedCountLocal(res.interestedCount);
         if (res?.registeredCount != null) setJoinedCount(res.registeredCount);
       })
       .catch(() => {});
-  }, [canUseArticleAction, channel, data, eventId, isAdmin]);
+  }, [canUseArticleAction, channel, data, eventId, isAdmin, sharedInterest]);
 
   const handleInterest = async () => {
-    if (loadingInterest || !canUseArticleAction) return;
-    setLoadingInterest(true);
+    if (sharedInterest) {
+      if (sharedInterest.loading || !canUseArticleAction) return;
+      try {
+        await onToggleSharedInterest();
+      } catch (err) {
+        enqueueSnackbar(err?.response?.data?.message || t('common:action_failed'), { variant: "error" });
+      }
+      return;
+    }
+    if (loadingInterestLocal || !canUseArticleAction) return;
+    setLoadingInterestLocal(true);
     try {
-      if (isInterested) {
+      if (isInterestedLocal) {
         await eventApi.removeInterest(eventId);
-        setIsInterested(false);
-        setInterestedCount((c) => Math.max(0, c - 1));
+        setIsInterestedLocal(false);
+        setInterestedCountLocal((c) => Math.max(0, c - 1));
       } else {
         await eventApi.addInterest(eventId);
-        setIsInterested(true);
-        setInterestedCount((c) => c + 1);
+        setIsInterestedLocal(true);
+        setInterestedCountLocal((c) => c + 1);
       }
     } catch (err) {
       enqueueSnackbar(err?.response?.data?.message || t('common:action_failed'), { variant: "error" });
     } finally {
-      setLoadingInterest(false);
+      setLoadingInterestLocal(false);
     }
   };
 
   const handleJoinClick = () => {
     if (loadingJoin || checkingRegistration || !canUseArticleAction) return;
     if (isJoined) {
+      if (isTicketUsed || isTicketBanned) return;
       setOpenCancelDialog(true);
       return;
     }
+    if (isRegistrationClosed) return;
     setOpenJoinDialog(true);
   };
 
@@ -463,13 +499,16 @@ const ArticleHighlightCard = ({ data, channel, eventId, isAdmin = false }) => {
             <ContributeGuardTooltip required="basic" sx={{ flex: 1, opacity: canUseArticleAction ? 1 : 0.58, filter: canUseArticleAction ? "none" : "grayscale(0.25)" }}>
               <Button
                 fullWidth
-                variant={isJoined ? "outlined" : "contained"}
-                color={isJoined ? "error" : "accent"}
-                disabled={loadingJoin || checkingRegistration || !canUseArticleAction}
+                variant={isJoined && !isTicketUsed ? "outlined" : "contained"}
+                color={isJoined ? (isTicketUsed ? "success" : "error") : "accent"}
+                disabled={loadingJoin || checkingRegistration || !canUseArticleAction || (!isJoined && isRegistrationClosed) || isTicketBanned}
+                sx={isTicketUsed ? { pointerEvents: "none" } : undefined}
                 onClick={handleJoinClick}
-                startIcon={isJoined ? <CancelOutlinedIcon /> : <EventAvailableOutlinedIcon />}
+                startIcon={isJoined ? (isTicketUsed ? <EventAvailableOutlinedIcon /> : <CancelOutlinedIcon />) : <EventAvailableOutlinedIcon />}
               >
-                {isJoined ? t('event:cancel_ticket') : t('event:register_action')}
+                {isJoined
+                  ? (isTicketBanned ? t('event:ticket_status_banned') : isTicketUsed ? t('event:status_used') : t('event:cancel_ticket'))
+                  : (isRegistrationClosed ? t('event:registration_closed') : t('event:register_action'))}
               </Button>
             </ContributeGuardTooltip>
           </Stack>
@@ -608,6 +647,46 @@ const ArticlePage = () => {
   const { updateComment: updateAlumniPostComment } = useUpdateAlumniPostComment();
   const { deleteComment: deleteAlumniPostComment, isPending: deletingAlumniPostComment } = useDeleteAlumniPostComment();
 
+  // Shared event-interest state, lifted here so the heart icon (SaveArticleButton) and the
+  // "Quan tâm" button (ArticleHighlightCard) — two separate controls for the same event_interests
+  // row — stay in sync without a reload. Only active for the event channel.
+  const isEventChannel = article?.channel === "event";
+  const { canContribute: canToggleEventInterest, isAuthenticated: isAuthedForInterest } = useCanContribute();
+  const [eventInterestState, setEventInterestState] = useState({ isInterested: false, countDelta: 0, loading: false });
+  const eventInterest = {
+    isInterested: eventInterestState.isInterested,
+    interestedCount: Math.max(0, (article?.interestedCount ?? 0) + eventInterestState.countDelta),
+    loading: eventInterestState.loading,
+  };
+
+  useEffect(() => {
+    if (!isEventChannel || !id || !isAuthedForInterest) return undefined;
+    let active = true;
+    eventApi.checkInterest(id)
+      .then((res) => {
+        if (active) setEventInterestState((prev) => ({ ...prev, isInterested: res?.isInterested ?? false }));
+      })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [isEventChannel, id, isAuthedForInterest]);
+
+  const toggleEventInterest = async () => {
+    if (eventInterestState.loading || !canToggleEventInterest) return;
+    setEventInterestState((prev) => ({ ...prev, loading: true }));
+    try {
+      if (eventInterestState.isInterested) {
+        await eventApi.removeInterest(id);
+        setEventInterestState((prev) => ({ ...prev, isInterested: false, countDelta: prev.countDelta - 1, loading: false }));
+      } else {
+        await eventApi.addInterest(id);
+        setEventInterestState((prev) => ({ ...prev, isInterested: true, countDelta: prev.countDelta + 1, loading: false }));
+      }
+    } catch (err) {
+      setEventInterestState((prev) => ({ ...prev, loading: false }));
+      throw err;
+    }
+  };
+
   if (isPending) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
@@ -679,6 +758,7 @@ const ArticlePage = () => {
           date: formatDateRange(article.eventDate, article.eventEndDate),
           stats: [{ value: article.interestedCount ?? 0, label: t('article:stat_interested') }, { value: article.joinedCount ?? 0, label: t('event:stat_joined') }],
           isRegistered: article.isRegistered,
+          registrationEndAt: article.registrationEndAt,
         }
       : resolvedChannel === "donation"
       ? {
@@ -741,7 +821,9 @@ const ArticlePage = () => {
                     </Button>
                   </>
                 )}
-                <SaveArticleButton itemId={Number(id)} />
+                {!isEventArticle && SAVE_ITEM_TYPE_BY_CHANNEL[resolvedChannel] && (
+                  <SaveArticleButton itemId={Number(id)} itemType={SAVE_ITEM_TYPE_BY_CHANNEL[resolvedChannel]} />
+                )}
               </ScrollRevealItem>
 
               {/* Title */}
@@ -772,7 +854,14 @@ const ArticlePage = () => {
 
               {/* HIGHLIGHT */}
               {highlightData && (
-                <ScrollRevealItem><ArticleHighlightCard data={highlightData} channel={resolvedChannel} eventId={id} isAdmin={isAdmin} /></ScrollRevealItem>
+                <ScrollRevealItem><ArticleHighlightCard
+                  data={highlightData}
+                  channel={resolvedChannel}
+                  eventId={id}
+                  isAdmin={isAdmin}
+                  sharedInterest={isEventArticle ? eventInterest : null}
+                  onToggleSharedInterest={isEventArticle ? toggleEventInterest : null}
+                /></ScrollRevealItem>
               )}
 
               {/* Thumbnail */}

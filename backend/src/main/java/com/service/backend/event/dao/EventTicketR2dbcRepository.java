@@ -18,6 +18,14 @@ public interface EventTicketR2dbcRepository extends R2dbcRepository<EventTicket,
     @Query("SELECT * FROM event_tickets WHERE event_id = :eventId ORDER BY registered_at DESC LIMIT :limit OFFSET :offset")
     Flux<EventTicket> findByEventIdWithPagination(Long eventId, int limit, int offset);
 
+    @Query("""
+            SELECT DISTINCT ON (COALESCE(member_id::text, guest_email)) *
+            FROM event_tickets
+            WHERE event_id = :eventId
+            ORDER BY COALESCE(member_id::text, guest_email), registered_at DESC
+            """)
+    Flux<EventTicket> findLatestTicketPerOwner(Long eventId);
+
     Mono<Long> countByEventId(Long eventId);
 
     @Query("SELECT * FROM event_tickets WHERE member_id = :memberId ORDER BY registered_at DESC LIMIT :limit OFFSET :offset")
@@ -32,17 +40,31 @@ public interface EventTicketR2dbcRepository extends R2dbcRepository<EventTicket,
     Mono<Integer> cancelTicket(Long ticketId, String reason);
 
     @Modifying
-    @Query("UPDATE event_tickets SET status = 'REGISTERED', cancel_reason = null WHERE id = :ticketId")
+    @Query("UPDATE event_tickets SET status = 'ISSUED', cancel_reason = null, reject_reason = null WHERE id = :ticketId")
     Mono<Integer> undoTicket(Long ticketId);
 
     @Modifying
-    @Query("UPDATE event_tickets SET status = 'BANNED', cancel_reason = :reason WHERE id = :ticketId")
+    @Query("UPDATE event_tickets SET status = 'BANNED', reject_reason = :reason WHERE id = :ticketId")
     Mono<Integer> banTicket(Long ticketId, String reason);
 
 
     @Modifying
     @Query("UPDATE event_tickets SET status = 'USED', checked_in_at = :checkedInAt WHERE id = :ticketId")
     Mono<Integer> checkInTicket(Long ticketId, LocalDateTime checkedInAt);
+
+    @Modifying
+    @Query("UPDATE event_tickets SET status = 'EXPIRED' WHERE id = :ticketId")
+    Mono<Integer> expireTicket(Long ticketId);
+
+    @Modifying
+    @Query("""
+            UPDATE event_tickets et SET status = 'EXPIRED'
+            FROM events e
+            WHERE et.event_id = e.id
+              AND et.status = 'ISSUED'
+              AND e.end_time < :now
+            """)
+    Mono<Integer> expireIssuedTicketsForEndedEvents(LocalDateTime now);
 
     @Query("""
             SELECT EXISTS(
@@ -52,6 +74,14 @@ public interface EventTicketR2dbcRepository extends R2dbcRepository<EventTicket,
             )
             """)
     Mono<Boolean> existsActiveByEventIdAndMemberId(Long eventId, Long memberId);
+
+    @Query("""
+            SELECT EXISTS(
+                SELECT 1 FROM event_tickets
+                WHERE event_id = :eventId AND member_id = :memberId AND status = 'BANNED'
+            )
+            """)
+    Mono<Boolean> existsBannedByEventIdAndMemberId(Long eventId, Long memberId);
 
     @Query("SELECT * FROM event_tickets WHERE event_id = :eventId AND status = :status ORDER BY registered_at DESC LIMIT :limit OFFSET :offset")
     Flux<EventTicket> findByEventIdAndStatusWithPagination(Long eventId, String status, int limit, int offset);

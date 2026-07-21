@@ -8,6 +8,7 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
+import org.springframework.data.annotation.Transient;
 
 import com.service.backend.shared.enums.Status;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -69,6 +70,9 @@ public class EventTicket {
 
     @Column("cancel_reason")
     private String cancelReason;
+
+    @Transient
+    private Boolean latestForOwner;
 
     @JsonProperty("registrationAnswers")
     public List<java.util.Map<String, Object>> getRegistrationAnswers() {

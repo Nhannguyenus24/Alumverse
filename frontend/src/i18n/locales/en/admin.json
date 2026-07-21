@@ -963,6 +963,7 @@
   "fund_phase_ended": "Ended",
   "fund_phase_active": "Active",
   "fund_donations_load_error": "Failed to load donation list.",
+  "export_select_status_title": "Select ticket status to export",
   "fund_export_empty": "No data to export.",
   "fund_export_success": "CSV exported successfully.",
   "fund_export_failed": "Failed to export donation list.",
