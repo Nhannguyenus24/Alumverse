@@ -703,6 +703,15 @@ public class EventService {
                 .flatMap(this::mapDetailPage);
     }
 
+    public Mono<PaginatedResponse<Event>> getMyInterestedEvents(int page, int limit) {
+        int offset = page * limit;
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(memberId -> interestRepo.findInterestedEventsByMember(memberId, limit, offset)
+                        .collectList()
+                        .zipWith(interestRepo.countByMemberId(memberId))
+                        .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit)));
+    }
+
     // ─── Ticket response mapping (qrToken + attendee enrichment) ──────────────
 
     /** Map a ticket to a response carrying the encrypted QR token (no attendee lookup). */

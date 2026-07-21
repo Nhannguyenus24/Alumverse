@@ -91,6 +91,9 @@ const MyTicketsPage = Loadable(
 const SavedArticlesPage = Loadable(
   lazy(() => import("../pages/user/SavedArticlesPage")),
 );
+const SavedEventsPage = Loadable(
+  lazy(() => import("../pages/user/SavedEventsPage")),
+);
 
 // Admin pages
 const AdminLayout = Loadable(lazy(() => import("../layouts/AdminLayout")));
@@ -585,6 +588,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <SavedArticlesPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "saved-events",
+        element: (
+          <ProtectedRoute>
+            <SavedEventsPage />
           </ProtectedRoute>
         ),
       },
