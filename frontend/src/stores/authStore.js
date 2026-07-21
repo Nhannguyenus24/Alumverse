@@ -6,8 +6,7 @@ const initialState = {
   token: null,
   verificationLevel: null,
   mustChangePassword: false,
-  loading: false,
-  error: null,
+  sessionExpired: false,
 };
 
 const useAuthStore = create(
@@ -18,21 +17,14 @@ const useAuthStore = create(
       setAuth: (payload) => set((state) => ({
         ...state,
         ...payload,
-        loading: false,
-        error: null,
+        sessionExpired: false,
       })),
 
       setUser: (user) => set({ user }),
       setToken: (token) => set({ token }),
       setVerificationLevel: (verificationLevel) => set({ verificationLevel }),
       setMustChangePassword: (mustChangePassword) => set({ mustChangePassword }),
-
-      setLoading: (loading) => set((state) => ({
-        loading,
-        error: loading ? null : state.error,
-      })),
-
-      setError: (error) => set({ error, loading: false }),
+      setSessionExpired: (sessionExpired) => set({ sessionExpired }),
 
       reset: () => set(initialState),
     }),

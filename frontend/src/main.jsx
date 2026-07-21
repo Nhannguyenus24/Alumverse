@@ -8,6 +8,7 @@ import { GoogleReCaptchaProvider } from '@google-recaptcha/react';
 import { router } from './routes';
 import NotistackProvider from './components/NotistackProvider';
 import RealtimeEventsProvider from './components/RealtimeEventsProvider';
+import SessionExpiredDialog from './components/SessionExpiredDialog';
 import ThemeProvider from './theme';
 import './i18n';
 
@@ -40,6 +41,7 @@ const App = () => {
       <QueryClientProvider client={queryClient}>
         <NotistackProvider>
           <RealtimeEventsProvider />
+          <SessionExpiredDialog />
           <RouterProvider router={router} />
         </NotistackProvider>
       </QueryClientProvider>
