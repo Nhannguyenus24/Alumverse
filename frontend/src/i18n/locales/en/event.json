@@ -185,5 +185,15 @@
   "invite_success": "Invited {{count}} people.",
   "invite_error": "Failed to send invitations.",
   "invite_email_required": "Please enter at least one email.",
-  "event_not_found": "Event not found."
+  "event_not_found": "Event not found.",
+  "ticket_cancel_title": "Confirm cancel ticket",
+  "ticket_cancel_confirm": "Are you sure you want to cancel this ticket?",
+  "ticket_cancel_reason_label": "Reason for cancellation",
+  "ticket_ban_reason_label": "Reason for ban",
+  "ticket_reason_required": "Please enter a reason.",
+  "ticket_detail_title": "Ticket detail",
+  "ticket_detail_phone": "Phone number",
+  "ticket_detail_member_id": "Member ID",
+  "ticket_detail_cancel_reason": "Cancel reason",
+  "ticket_detail_reject_reason": "Ban reason"
 }

@@ -51,6 +51,7 @@ public enum ErrorCode {
     TICKET_NOT_PENDING("Vé không ở trạng thái chờ duyệt", 400),
     TICKET_ALREADY_REGISTERED("Bạn đã đăng ký sự kiện này rồi", 409),
     EVENT_REGISTRATION_BANNED("Bạn đã bị cấm tham gia sự kiện này", 403),
+    TICKET_REASON_REQUIRED("Vui lòng nhập lý do", 400),
     INVITATION_NOT_FOUND("Không tìm thấy lời mời", 404),
     INVITATION_EXPIRED("Lời mời đã hết hạn", 400),
     INVITATION_ALREADY_USED("Lời mời đã được sử dụng", 409),

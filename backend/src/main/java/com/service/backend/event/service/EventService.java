@@ -702,7 +702,7 @@ public class EventService {
         }
         return assertEventInCurrentOrg(eventId)
                 .then(ticketsPage)
-                .flatMap(this::mapDetailPageWithAttendees);
+                .flatMap(ticketPage -> mapDetailPageWithAttendees(ticketPage, eventId));
     }
 
     public Mono<PaginatedResponse<EventTicketDetailResponse>> getMyTickets(int page, int limit) {
@@ -762,8 +762,17 @@ public class EventService {
     /** Build a ticket detail from pre-loaded maps (no per-row DB calls). */
     private EventTicketDetailResponse buildTicketDetail(EventTicket ticket, Map<Long, Event> events,
                                                         Map<Integer, UserProfileRepository.AttendeeProfile> profiles) {
+        return buildTicketDetail(ticket, events, profiles, null);
+    }
+
+    private EventTicketDetailResponse buildTicketDetail(EventTicket ticket, Map<Long, Event> events,
+                                                        Map<Integer, UserProfileRepository.AttendeeProfile> profiles,
+                                                        Set<Long> latestTicketIds) {
         EventTicketDetailResponse.EventTicketDetailResponseBuilder builder = EventTicketDetailResponse.fromTicket(ticket)
                 .qrToken(eventQrService.encodeWithPrefix(ticket.getTicketCode(), ticket.getEventId()));
+        if (latestTicketIds != null) {
+            builder.latestForOwner(latestTicketIds.contains(ticket.getId()));
+        }
         if (ticket.getEventId() != null) {
             Event event = events.get(ticket.getEventId());
             if (event != null && event.getTitle() != null) builder.eventTitle(event.getTitle());
@@ -790,16 +799,19 @@ public class EventService {
                         .toList()));
     }
 
-    private Mono<PaginatedResponse<EventTicketDetailResponse>> mapDetailPageWithAttendees(PaginatedResponse<EventTicket> page) {
+    private Mono<PaginatedResponse<EventTicketDetailResponse>> mapDetailPageWithAttendees(PaginatedResponse<EventTicket> page, Long eventId) {
         Set<Long> eventIds = new HashSet<>();
         Set<Integer> memberIds = new HashSet<>();
         for (EventTicket t : page.getItems()) {
             if (t.getEventId() != null) eventIds.add(t.getEventId());
             if (t.getMemberId() != null) memberIds.add(t.getMemberId().intValue());
         }
-        return Mono.zip(eventsById(eventIds), userProfileRepository.findAttendeeProfilesByUserIds(memberIds))
+        Mono<Set<Long>> latestIds = ticketRepo.findLatestTicketPerOwner(eventId)
+                .map(EventTicket::getId)
+                .collect(java.util.stream.Collectors.toSet());
+        return Mono.zip(eventsById(eventIds), userProfileRepository.findAttendeeProfilesByUserIds(memberIds), latestIds)
                 .map(tuple -> withItems(page, page.getItems().stream()
-                        .map(t -> buildTicketDetail(t, tuple.getT1(), tuple.getT2()))
+                        .map(t -> buildTicketDetail(t, tuple.getT1(), tuple.getT2(), tuple.getT3()))
                         .toList()));
     }
 

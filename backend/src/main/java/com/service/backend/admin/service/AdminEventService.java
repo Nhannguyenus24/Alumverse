@@ -12,6 +12,7 @@ import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.service.ImageService;
+import com.service.backend.shared.service.SseService;
 import com.service.backend.shared.utils.CacheNames;
 import com.service.backend.shared.utils.CacheUtils;
 import com.service.backend.shared.utils.JsonUtils;
@@ -27,13 +28,14 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class AdminEventService {
 
     private static final Logger log = LoggerFactory.getLogger(AdminEventService.class);
     private static final String STATUS_CANCELLED = "CANCELLED";
-    private static final String STATUS_REGISTERED = "REGISTERED";
+    private static final String STATUS_ISSUED = "ISSUED";
     private static final String STATUS_BANNED = "BANNED";
 
     private final EventR2dbcRepository eventRepo;
@@ -42,19 +44,22 @@ public class AdminEventService {
     private final ImageService imageService;
     private final NotificationService notificationService;
     private final CacheUtils cacheUtils;
+    private final SseService sseService;
 
     public AdminEventService(EventR2dbcRepository eventRepo,
                              EventTicketR2dbcRepository ticketRepo,
                              EventInterestR2dbcRepository interestRepo,
                              ImageService imageService,
                              NotificationService notificationService,
-                             CacheUtils cacheUtils) {
+                             CacheUtils cacheUtils,
+                             SseService sseService) {
         this.eventRepo = eventRepo;
         this.ticketRepo = ticketRepo;
         this.interestRepo = interestRepo;
         this.imageService = imageService;
         this.notificationService = notificationService;
         this.cacheUtils = cacheUtils;
+        this.sseService = sseService;
     }
 
     /** Clears the shared {@link CacheNames#EVENT} namespace populated by EventService list reads. */
@@ -66,18 +71,28 @@ public class AdminEventService {
      * Fire-and-forget notification to the ticket holder. Guest tickets (no
      * member_id) are skipped. Pulls the event title so the message is meaningful.
      */
-    private void notifyTicketHolder(EventTicket ticket, String title, String messageTemplate) {
+    private void notifyTicketHolder(EventTicket ticket, String title, String messageTemplate, String reason) {
         if (ticket.getMemberId() == null) {
             return;
         }
         eventRepo.findById(ticket.getEventId())
                 .map(Event::getTitle)
                 .defaultIfEmpty("sự kiện")
-                .doOnNext(eventTitle -> notificationService.createNotificationAsync(
-                        ticket.getMemberId().intValue(),
-                        title,
-                        String.format(messageTemplate, eventTitle),
-                        "/events/" + ticket.getEventId()))
+                .doOnNext(eventTitle -> {
+                    String message = String.format(messageTemplate, eventTitle);
+                    notificationService.createNotificationAsync(
+                            ticket.getMemberId().intValue(),
+                            title,
+                            message,
+                            "/article/event/" + ticket.getEventId());
+                    sseService.sendToUser(ticket.getMemberId(), "ticket-status-updated", Map.of(
+                            "ticketCode", ticket.getTicketCode(),
+                            "eventId", ticket.getEventId(),
+                            "eventTitle", eventTitle,
+                            "status", ticket.getStatus().toString(),
+                            "reason", reason == null ? "" : reason,
+                            "message", message));
+                })
                 .onErrorResume(e -> {
                     log.warn("Failed to notify ticket holder {} for ticket {}",
                             ticket.getMemberId(), ticket.getTicketCode(), e);
@@ -164,6 +179,8 @@ public class AdminEventService {
                             existing.setRegistrationStartAt(request.getRegistrationStartAt());
                             existing.setRegistrationEndAt(request.getRegistrationEndAt());
                             existing.setMaxCapacity(request.getMaxCapacity());
+                            if (request.getTopic() != null) existing.setTopic(request.getTopic());
+                            if (request.getRequiresCheckIn() != null) existing.setRequiresCheckIn(request.getRequiresCheckIn());
                             return eventRepo.save(existing);
                         })))
                 .delayUntil(e -> evictEventCaches())
@@ -214,12 +231,24 @@ public class AdminEventService {
                     return PaginationHelper.paginate(
                             ticketRepo.findByEventIdWithPagination(eventId, size, offset),
                             ticketRepo.countByEventId(eventId),
-                            page, size);
+                            page, size,
+                            (List<EventTicket> pageItems) -> ticketRepo.findLatestTicketPerOwner(eventId)
+                                    .doOnError(e -> log.error("findLatestTicketPerOwner failed for event {}", eventId, e))
+                                    .map(EventTicket::getId)
+                                    .collect(java.util.stream.Collectors.toSet())
+                                    .map(latestIds -> {
+                                        pageItems.forEach(ticket -> ticket.setLatestForOwner(latestIds.contains(ticket.getId())));
+                                        return pageItems;
+                                    }));
                 })))
                 .doOnSuccess(r -> log.info("getTicketsByEvent result: {}", JsonUtils.toJson(r)));
     }
 
-    public Mono<EventTicket> cancelTicket(String ticketCode) {
+    public Mono<EventTicket> cancelTicket(String ticketCode, String reason) {
+        if (reason == null || reason.isBlank()) {
+            return Mono.error(new ApplicationException(ErrorCode.TICKET_REASON_REQUIRED, "Reason is required"));
+        }
+        String trimmedReason = reason.trim();
         return ticketRepo.findByTicketCode(ticketCode)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.TICKET_NOT_FOUND,
                         "Ticket not found with code: " + ticketCode)))
@@ -229,12 +258,12 @@ public class AdminEventService {
                                 "Ticket already cancelled"));
                     }
                     return assertCanManageTicket(ticket)
-                            .then(ticketRepo.cancelTicket(ticket.getId(), "Cancelled by admin"))
+                            .then(ticketRepo.cancelTicket(ticket.getId(), trimmedReason))
                             .then(ticketRepo.findById(ticket.getId()));
                 })
                 .delayUntil(t -> evictEventCaches())
                 .doOnSuccess(t -> notifyTicketHolder(t, "Vé sự kiện đã bị huỷ",
-                        "Vé của bạn cho \"%s\" đã bị quản trị viên huỷ."));
+                        "Vé của bạn cho \"%s\" đã bị quản trị viên huỷ.", trimmedReason));
     }
 
     public Mono<EventTicket> undoTicket(String ticketCode) {
@@ -242,9 +271,9 @@ public class AdminEventService {
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.TICKET_NOT_FOUND,
                         "Ticket not found with code: " + ticketCode)))
                 .flatMap(ticket -> {
-                    if (STATUS_REGISTERED.equals(ticket.getStatus().toString())) {
+                    if (STATUS_ISSUED.equals(ticket.getStatus().toString())) {
                         return Mono.error(new ApplicationException(ErrorCode.TICKET_ALREADY_CANCELLED,
-                                "Ticket is already in REGISTERED state, nothing to revert"));
+                                "Ticket is already in ISSUED state, nothing to revert"));
                     }
                     boolean wasUsed = "USED".equals(ticket.getStatus().toString())
                             || "CHECKED_IN".equals(ticket.getStatus().toString());
@@ -254,13 +283,17 @@ public class AdminEventService {
                             .doOnSuccess(t -> notifyTicketHolder(t, "Vé sự kiện đã được khôi phục",
                                     wasUsed
                                             ? "Trạng thái check-in của bạn cho \"%s\" đã được quản trị viên hoàn tác. Vé của bạn hiện đã hợp lệ trở lại."
-                                            : "Vé của bạn cho \"%s\" đã được quản trị viên khôi phục."));
+                                            : "Vé của bạn cho \"%s\" đã được quản trị viên khôi phục.", null));
                 })
                 .delayUntil(t -> evictEventCaches())
                 .doOnSuccess(t -> log.info("undoTicket result: {}", JsonUtils.toJson(t)));
     }
 
-    public Mono<EventTicket> banTicket(String ticketCode) {
+    public Mono<EventTicket> banTicket(String ticketCode, String reason) {
+        if (reason == null || reason.isBlank()) {
+            return Mono.error(new ApplicationException(ErrorCode.TICKET_REASON_REQUIRED, "Reason is required"));
+        }
+        String trimmedReason = reason.trim();
         return ticketRepo.findByTicketCode(ticketCode)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.TICKET_NOT_FOUND,
                         "Ticket not found with code: " + ticketCode)))
@@ -270,12 +303,12 @@ public class AdminEventService {
                                 "Ticket already banned"));
                     }
                     return assertCanManageTicket(ticket)
-                            .then(ticketRepo.banTicket(ticket.getId(), "Banned due to signs of fraud"))
+                            .then(ticketRepo.banTicket(ticket.getId(), trimmedReason))
                             .then(ticketRepo.findById(ticket.getId()));
                 })
                 .delayUntil(t -> evictEventCaches())
                 .doOnSuccess(t -> notifyTicketHolder(t, "Vé sự kiện đã bị khoá",
-                        "Vé của bạn cho \"%s\" đã bị khoá do có dấu hiệu gian lận."));
+                        "Vé của bạn cho \"%s\" đã bị khoá do có dấu hiệu gian lận.", trimmedReason));
     }
 
     public Mono<PaginatedResponse<EventInterest>> getInterestsByEvent(Long eventId, int page, int size) {

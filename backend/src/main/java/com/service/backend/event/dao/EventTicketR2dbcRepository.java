@@ -18,6 +18,14 @@ public interface EventTicketR2dbcRepository extends R2dbcRepository<EventTicket,
     @Query("SELECT * FROM event_tickets WHERE event_id = :eventId ORDER BY registered_at DESC LIMIT :limit OFFSET :offset")
     Flux<EventTicket> findByEventIdWithPagination(Long eventId, int limit, int offset);
 
+    @Query("""
+            SELECT DISTINCT ON (COALESCE(member_id::text, guest_email)) *
+            FROM event_tickets
+            WHERE event_id = :eventId
+            ORDER BY COALESCE(member_id::text, guest_email), registered_at DESC
+            """)
+    Flux<EventTicket> findLatestTicketPerOwner(Long eventId);
+
     Mono<Long> countByEventId(Long eventId);
 
     @Query("SELECT * FROM event_tickets WHERE member_id = :memberId ORDER BY registered_at DESC LIMIT :limit OFFSET :offset")
@@ -32,11 +40,11 @@ public interface EventTicketR2dbcRepository extends R2dbcRepository<EventTicket,
     Mono<Integer> cancelTicket(Long ticketId, String reason);
 
     @Modifying
-    @Query("UPDATE event_tickets SET status = 'REGISTERED', cancel_reason = null WHERE id = :ticketId")
+    @Query("UPDATE event_tickets SET status = 'ISSUED', cancel_reason = null, reject_reason = null WHERE id = :ticketId")
     Mono<Integer> undoTicket(Long ticketId);
 
     @Modifying
-    @Query("UPDATE event_tickets SET status = 'BANNED', cancel_reason = :reason WHERE id = :ticketId")
+    @Query("UPDATE event_tickets SET status = 'BANNED', reject_reason = :reason WHERE id = :ticketId")
     Mono<Integer> banTicket(Long ticketId, String reason);
 
 

@@ -149,8 +149,9 @@ public class AdminEventController {
     @PostMapping("/tickets/{ticketCode}/cancel")
     public Mono<ResponseEntity<ApiResponse<EventTicket>>> cancelTicket(
             @Parameter(example = "EVT2026-001")
-            @PathVariable @NotBlank(message = "Ticket code is required") String ticketCode) {
-        return adminEventService.cancelTicket(ticketCode)
+            @PathVariable @NotBlank(message = "Ticket code is required") String ticketCode,
+            @Valid @RequestBody TicketReasonRequest request) {
+        return adminEventService.cancelTicket(ticketCode, request.reason())
                 .map(ticket -> ResponseEntity.ok(new ApiResponse<>("Ticket cancelled successfully", ticket)));
     }
 
@@ -167,9 +168,13 @@ public class AdminEventController {
     @PostMapping("/tickets/{ticketCode}/ban")
     public Mono<ResponseEntity<ApiResponse<EventTicket>>> banTicket(
             @Parameter(example = "EVT2026-001")
-            @PathVariable @NotBlank(message = "Ticket code is required") String ticketCode) {
-        return adminEventService.banTicket(ticketCode)
+            @PathVariable @NotBlank(message = "Ticket code is required") String ticketCode,
+            @Valid @RequestBody TicketReasonRequest request) {
+        return adminEventService.banTicket(ticketCode, request.reason())
                 .map(ticket -> ResponseEntity.ok(new ApiResponse<>("Ticket banned successfully", ticket)));
+    }
+
+    public record TicketReasonRequest(@NotBlank(message = "Reason is required") String reason) {
     }
 
     @Operation(summary = "List interests recorded for an event")

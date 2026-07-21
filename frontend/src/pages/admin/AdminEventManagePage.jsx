@@ -7,8 +7,15 @@ import { useSnackbar } from 'notistack';
 import {
   Box,
   Button,
+  Checkbox,
   Chip,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControlLabel,
+  FormGroup,
   IconButton,
   MenuItem,
   Stack,
@@ -19,6 +26,7 @@ import {
   Typography,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import CloseIcon from '@mui/icons-material/Close';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
@@ -50,11 +58,11 @@ const extractPage = (data) => data ?? fallbackPage;
 
 const getTicketStatusChip = (t, status) => {
   const key = String(status || '').toUpperCase();
-  if (key === 'REGISTERED') return { color: 'primary', label: t('event:ticket_status_registered') };
-  if (key === 'PENDING') return { color: 'warning', label: t('event:ticket_status_pending') };
   if (key === 'ISSUED') return { color: 'info', label: t('event:ticket_status_issued') };
-  if (key === 'CHECKED_IN') return { color: 'success', label: t('event:ticket_status_checked_in') };
+  if (key === 'USED') return { color: 'success', label: t('event:ticket_status_checked_in') };
+  if (key === 'EXPIRED') return { color: 'default', label: t('event:ticket_status_expired') };
   if (key === 'CANCELLED') return { color: 'error', label: t('event:ticket_status_cancelled') };
+  if (key === 'BANNED') return { color: 'error', label: t('event:ticket_status_banned') };
   return { color: 'default', label: status || '-' };
 };
 
@@ -89,7 +97,13 @@ const AdminEventManagePage = () => {
   const [inviting, setInviting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isExportingAnswers, setIsExportingAnswers] = useState(false);
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [exportStatuses, setExportStatuses] = useState([]);
   const [banTarget, setBanTarget] = useState(null);
+  const [banReason, setBanReason] = useState('');
+  const [ticketDetail, setTicketDetail] = useState(null);
+  const [cancelTarget, setCancelTarget] = useState(null);
+  const [cancelReason, setCancelReason] = useState('');
 
   const { data: event, isLoading: eventLoading, refetch: refetchEvent } = useQuery({
     queryKey: ['event', eventId],
@@ -187,15 +201,28 @@ const AdminEventManagePage = () => {
     }
   };
 
-  const handleCancelTicket = async (ticket) => {
+  const handleCancelTicket = (ticket) => {
     if (!ticket?.ticketCode) return;
+    setCancelReason('');
+    setCancelTarget(ticket);
+  };
+
+  const confirmCancelTicket = async () => {
+    if (!cancelTarget?.ticketCode) return;
+    if (!cancelReason.trim()) {
+      enqueueSnackbar(t('event:ticket_reason_required'), { variant: 'warning' });
+      return;
+    }
     try {
-      await eventApi.adminCancelTicketByCode(ticket.ticketCode);
+      await eventApi.adminCancelTicketByCode(cancelTarget.ticketCode, cancelReason.trim());
       enqueueSnackbar(t('event:ticket_cancel_success'), { variant: 'success' });
       refetchTickets();
       refetchStats();
     } catch (err) {
       enqueueSnackbar(err?.response?.data?.message || t('event:ticket_cancel_error'), { variant: 'error' });
+    } finally {
+      setCancelTarget(null);
+      setCancelReason('');
     }
   };
 
@@ -212,13 +239,18 @@ const AdminEventManagePage = () => {
   };
 
   const handleBanTicket = (ticket) => {
+    setBanReason('');
     setBanTarget(ticket);
   };
 
   const confirmBanTicket = async () => {
     if (!banTarget?.ticketCode) return;
+    if (!banReason.trim()) {
+      enqueueSnackbar(t('event:ticket_reason_required'), { variant: 'warning' });
+      return;
+    }
     try {
-      await eventApi.adminBanTicketByCode(banTarget.ticketCode);
+      await eventApi.adminBanTicketByCode(banTarget.ticketCode, banReason.trim());
       enqueueSnackbar(t('event:ticket_ban_success', 'Cấm vé thành công'), { variant: 'success' });
       refetchTickets();
       refetchStats();
@@ -226,6 +258,7 @@ const AdminEventManagePage = () => {
       enqueueSnackbar(err?.response?.data?.message || t('event:ticket_ban_error', 'Cấm vé thất bại'), { variant: 'error' });
     } finally {
       setBanTarget(null);
+      setBanReason('');
     }
   };
 
@@ -283,37 +316,54 @@ const AdminEventManagePage = () => {
     }
   };
 
+  const buildAnswerRow = (row, index) => {
+    const answers = Array.isArray(row.registrationAnswers) ? row.registrationAnswers : [];
+    const answerByLabel = answers.reduce((acc, answer, answerIndex) => {
+      acc[getAnswerQuestionLabel(answer, answerIndex)] = formatAnswerValue(answer?.value);
+      return acc;
+    }, {});
+
+    const base = {
+      'STT': index + 1,
+      'Email': displayMemberEmail(row),
+    };
+
+    eventQuestions.forEach((question) => {
+      base[question.label] = answerByLabel[question.label] ?? '—';
+    });
+
+    return base;
+  };
+
   const handleExportAnswersExcel = async () => {
+    if (exportStatuses.length === 0) return;
     setIsExportingAnswers(true);
     try {
       const response = await eventApi.getTicketsByEvent(eventId, { limit: 100000 });
       const data = response?.items || [];
 
-      const exportData = data.map((row, index) => {
-        const answers = Array.isArray(row.registrationAnswers) ? row.registrationAnswers : [];
-        const answerByLabel = answers.reduce((acc, answer, answerIndex) => {
-          acc[getAnswerQuestionLabel(answer, answerIndex)] = formatAnswerValue(answer?.value);
-          return acc;
-        }, {});
-
-        const base = {
-          'STT': index + 1,
-          'Email': displayMemberEmail(row),
-        };
-
-        eventQuestions.forEach((question) => {
-          base[question.label] = answerByLabel[question.label] ?? '—';
-        });
-
-        return base;
-      });
-
-      const worksheet = XLSX.utils.json_to_sheet(exportData);
       const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Answers');
+      const usedSheetNames = new Set();
+
+      exportStatuses.forEach((status) => {
+        const rows = data.filter((row) => String(row.status).toUpperCase() === status);
+        const exportData = rows.length
+          ? rows.map(buildAnswerRow)
+          : [{ 'STT': '', 'Email': t('event:tickets_empty') }];
+
+        let sheetName = getTicketStatusChip(t, status).label.slice(0, 31);
+        while (usedSheetNames.has(sheetName)) {
+          sheetName = `${sheetName.slice(0, 28)}_${usedSheetNames.size}`;
+        }
+        usedSheetNames.add(sheetName);
+
+        const worksheet = XLSX.utils.json_to_sheet(exportData);
+        XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+      });
 
       XLSX.writeFile(workbook, `Event_${eventId}_Answers.xlsx`);
       enqueueSnackbar(t('admin:export_success', 'Xuất file thành công'), { variant: 'success' });
+      setExportDialogOpen(false);
     } catch (err) {
       console.error(err);
       enqueueSnackbar(t('admin:export_failed', 'Xuất file thất bại'), { variant: 'error' });
@@ -512,12 +562,13 @@ const AdminEventManagePage = () => {
               width: 120,
               render: (_, ticket) => {
                 const status = String(ticket.status).toUpperCase();
+                const isLatestForOwner = ticket.latestForOwner !== false;
                 const cancellable = !['CANCELLED', 'USED', 'EXPIRED', 'CHECKED_IN', 'BANNED'].includes(status);
-                const undoable = ['CANCELLED', 'BANNED'].includes(status);
-                const bannable = !['BANNED'].includes(status);
+                const undoable = ['CANCELLED', 'BANNED'].includes(status) && isLatestForOwner;
+                const bannable = !['BANNED'].includes(status) && isLatestForOwner;
                 
                 return (
-                  <Stack direction="row" spacing={0.75} justifyContent="flex-end" alignItems="center">
+                  <Stack direction="row" spacing={0.75} justifyContent="flex-end" alignItems="center" onClick={(e) => e.stopPropagation()}>
                     {undoable && (
                       <Tooltip title={t('event:tooltip_undo_ticket', 'Phục hồi vé')}>
                         <IconButton size="small" color="info" onClick={() => handleUndoTicket(ticket)}>
@@ -560,6 +611,7 @@ const AdminEventManagePage = () => {
           searchPlaceholder={t('common:search')}
           loading={ticketsLoading}
           emptyMessage={t('event:tickets_empty')}
+          onRowClick={(ticket) => setTicketDetail(ticket)}
           filters={(
             <Stack direction="row" spacing={1} alignItems="center">
               <TextField
@@ -571,7 +623,7 @@ const AdminEventManagePage = () => {
                 sx={{ minWidth: 180 }}
               >
                 <MenuItem value="">{t('common:all')}</MenuItem>
-                {['PENDING', 'ISSUED', 'REGISTERED', 'CHECKED_IN', 'CANCELLED'].map((status) => (
+                {['ISSUED', 'USED', 'EXPIRED', 'CANCELLED', 'BANNED'].map((status) => (
                   <MenuItem key={status} value={status}>
                     {getTicketStatusChip(t, status).label}
                   </MenuItem>
@@ -631,7 +683,7 @@ const AdminEventManagePage = () => {
                 sx={{ minWidth: 180 }}
               >
                 <MenuItem value="">{t('common:all')}</MenuItem>
-                {['PENDING', 'ISSUED', 'REGISTERED', 'CHECKED_IN', 'CANCELLED'].map((status) => (
+                {['ISSUED', 'USED', 'EXPIRED', 'CANCELLED', 'BANNED'].map((status) => (
                   <MenuItem key={status} value={status}>
                     {getTicketStatusChip(t, status).label}
                   </MenuItem>
@@ -640,7 +692,7 @@ const AdminEventManagePage = () => {
               <Button
                 variant="outlined"
                 startIcon={isExportingAnswers ? <CircularProgress size={20} color="inherit" /> : <FileDownloadOutlinedIcon />}
-                onClick={handleExportAnswersExcel}
+                onClick={() => { setExportStatuses([]); setExportDialogOpen(true); }}
                 disabled={isExportingAnswers}
                 sx={{ height: 40 }}
               >
@@ -650,6 +702,47 @@ const AdminEventManagePage = () => {
           )}
         />
       )}
+
+      <Dialog open={exportDialogOpen} onClose={() => setExportDialogOpen(false)}>
+        <DialogTitle sx={{ pr: 5, position: 'relative' }}>
+          {t('admin:export_select_status_title', 'Chọn trạng thái vé để export')}
+          <IconButton
+            onClick={() => setExportDialogOpen(false)}
+            sx={{ position: 'absolute', right: 8, top: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent>
+          <FormGroup>
+            {['ISSUED', 'USED', 'EXPIRED', 'CANCELLED', 'BANNED'].map((status) => (
+              <FormControlLabel
+                key={status}
+                control={
+                  <Checkbox
+                    checked={exportStatuses.includes(status)}
+                    onChange={(e) => setExportStatuses((prev) => (
+                      e.target.checked ? [...prev, status] : prev.filter((s) => s !== status)
+                    ))}
+                  />
+                }
+                label={getTicketStatusChip(t, status).label}
+              />
+            ))}
+          </FormGroup>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setExportDialogOpen(false)}>{t('common:cancel')}</Button>
+          <Button
+            variant="contained"
+            disabled={exportStatuses.length === 0 || isExportingAnswers}
+            onClick={handleExportAnswersExcel}
+            startIcon={isExportingAnswers ? <CircularProgress size={20} color="inherit" /> : null}
+          >
+            {t('admin:export_excel', 'Export Excel')}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {tab === 'interests' && (
         <AdminDataTable
@@ -754,7 +847,59 @@ const AdminEventManagePage = () => {
         onConfirm={confirmBanTicket}
         onCancel={() => setBanTarget(null)}
         confirmColor="error"
+        reasonLabel={t('event:ticket_ban_reason_label')}
+        reasonValue={banReason}
+        onReasonChange={setBanReason}
       />
+
+      <ConfirmDialog
+        open={Boolean(cancelTarget)}
+        title={t('event:ticket_cancel_title')}
+        message={t('event:ticket_cancel_confirm')}
+        confirmText={t('common:confirm', 'Xác nhận')}
+        cancelText={t('common:cancel', 'Hủy')}
+        onConfirm={confirmCancelTicket}
+        onCancel={() => setCancelTarget(null)}
+        confirmColor="warning"
+        reasonLabel={t('event:ticket_cancel_reason_label')}
+        reasonValue={cancelReason}
+        onReasonChange={setCancelReason}
+      />
+
+      <Dialog open={Boolean(ticketDetail)} onClose={() => setTicketDetail(null)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ pr: 5, position: 'relative' }}>
+          {t('event:ticket_detail_title')}
+          <IconButton onClick={() => setTicketDetail(null)} sx={{ position: 'absolute', right: 8, top: 8 }}>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent dividers>
+          {ticketDetail && (
+            <Stack spacing={1.5}>
+              {[
+                [t('event:ticket_code'), ticketDetail.ticketCode],
+                [t('admin:col_status'), <AdminStatusChip key="status" status={ticketDetail.status} category="ticket" />],
+                [t('admin:event_col_guest'), displayMemberName(ticketDetail)],
+                ['Email', displayMemberEmail(ticketDetail)],
+                [t('event:ticket_detail_phone'), ticketDetail.guestPhone || '—'],
+                [t('event:ticket_detail_member_id'), ticketDetail.memberId ?? '—'],
+                [t('event:col_registered_at'), formatDateTime(ticketDetail.registeredAt) || '—'],
+                [t('event:col_checked_in_at'), formatDateTime(ticketDetail.checkedInAt) || '—'],
+                [t('event:ticket_detail_cancel_reason'), ticketDetail.cancelReason || '—'],
+                [t('event:ticket_detail_reject_reason'), ticketDetail.rejectReason || '—'],
+              ].map(([label, value]) => (
+                <Stack key={label} direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2}>
+                  <Typography variant="body2" color="text.secondary" sx={{ flexShrink: 0 }}>{label}</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 600, textAlign: 'right', wordBreak: 'break-word' }}>{value}</Typography>
+                </Stack>
+              ))}
+            </Stack>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setTicketDetail(null)}>{t('common:close', 'Đóng')}</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
