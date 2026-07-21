@@ -32,6 +32,7 @@
 \graphicspath{{Pictures/}}
 \usepackage{float}
 \usepackage{array}
+\usepackage{amssymb}
 \usepackage{booktabs}
 \usepackage{longtable}
 \usepackage{multirow}
@@ -86,7 +87,7 @@
 
 % ---------- Ô giữ chỗ cho hình chưa có ----------
 \newcommand{\phfig}[3]{%
-\begin{figure}[H]\centering
+\begin{figure}[htbp]\centering
 \setlength{\fboxrule}{0.6pt}\setlength{\fboxsep}{10pt}%
 \textcolor{phline}{\fbox{\begin{minipage}[c][#1][c]{0.86\textwidth}\centering
 \color{black!70}\itshape\small #2
@@ -94,7 +95,7 @@
 \caption{#3}
 \end{figure}}
 \newcommand{\phfigl}[4]{%
-\begin{figure}[H]\centering
+\begin{figure}[htbp]\centering
 \setlength{\fboxrule}{0.6pt}\setlength{\fboxsep}{10pt}%
 \textcolor{phline}{\fbox{\begin{minipage}[c][#1][c]{0.86\textwidth}\centering
 \color{black!70}\itshape\small #2
@@ -161,8 +162,11 @@
 {\fontsize{12}{18}\selectfont \textbf{KHA VĨNH THUẬN - TRẦN ĐỨC TÙNG}}
 
 \par\vspace{3cm}
-{\fontsize{15}{21.5}\selectfont\bfseries ALUMVERSE: CẢI TIẾN HỆ THỐNG KẾT NỐI SINH VIÊN\\[6pt]
+{\fontsize{15}{21.5}\selectfont\bfseries CẢI TIẾN HỆ THỐNG KẾT NỐI SINH VIÊN\\[6pt]
 VÀ CỰU SINH VIÊN TRƯỜNG ĐẠI HỌC KHOA HỌC TỰ NHIÊN, ĐHQG-HCM}
+
+\par\vspace{0.4cm}
+{\fontsize{12}{16}\selectfont\bfseries\itshape (Refactoring and Enhancing the Student-Alumni System for HCMUS)}
 
 \par\vspace{3cm}
 {\fontsize{12}{18}\selectfont\bfseries THỰC TẬP DỰ ÁN TỐT NGHIỆP CỬ NHÂN CNTT}\\[6pt]
@@ -196,8 +200,11 @@ VÀ CỰU SINH VIÊN TRƯỜNG ĐẠI HỌC KHOA HỌC TỰ NHIÊN, ĐHQG-HCM}
 {\fontsize{12}{18}\selectfont \textbf{TRẦN ĐỨC TÙNG - 22127442}}
 
 \par\vspace{2cm}
-{\fontsize{15}{21.5}\selectfont\bfseries ALUMVERSE: CẢI TIẾN HỆ THỐNG KẾT NỐI SINH VIÊN\\[6pt]
+{\fontsize{15}{21.5}\selectfont\bfseries CẢI TIẾN HỆ THỐNG KẾT NỐI SINH VIÊN\\[6pt]
 VÀ CỰU SINH VIÊN TRƯỜNG ĐẠI HỌC KHOA HỌC TỰ NHIÊN, ĐHQG-HCM}
+
+\par\vspace{0.4cm}
+{\fontsize{12}{16}\selectfont\bfseries\itshape (Refactoring and Enhancing the Student-Alumni System for HCMUS)}
 
 \par\vspace{1.5cm}
 {\fontsize{12}{18}\selectfont\bfseries THỰC TẬP DỰ ÁN TỐT NGHIỆP CỬ NHÂN CNTT}\\[6pt]
@@ -330,7 +337,7 @@ Hệ thống AlumVerse phiên bản 2024 \cite{alumverse}, sản phẩm của nh
 
 Đề tài tập trung cải tiến hệ thống AlumVerse theo hai hướng chính, cũng là hai nhóm đóng góp của nhóm thực hiện về mặt kỹ thuật và nghiệp vụ.
 
-Hướng thứ nhất là tái thiết kế kỹ thuật. Nhóm chuyển hệ thống từ kiến trúc Microservices với chín dịch vụ Spring Boot, Eureka, API Gateway và MySQL sang kiến trúc Modular Monolith kết hợp Layered trên nền Spring WebFlux, R2DBC và PostgreSQL. Việc chuyển đổi này không chỉ khắc phục các tính năng còn lỗi hoặc chậm mà còn tối ưu hóa hiệu năng, khả năng bảo trì và đặc biệt là tài nguyên phần cứng, từ đó hạ đáng kể chi phí vận hành cho một nền tảng phi lợi nhuận của trường đại học.
+Hướng thứ nhất là tái thiết kế kỹ thuật. Nhóm chuyển hệ thống từ kiến trúc Microservices với chín dịch vụ Spring Boot, Eureka, API Gateway và MySQL sang kiến trúc Modular Monolith kết hợp Layered trên nền Spring WebFlux, R2DBC và PostgreSQL. Việc chuyển sang Modular Monolith khắc phục các tính năng còn lỗi, giảm đáng kể độ phức tạp và chi phí vận hành cho một nền tảng phi lợi nhuận của trường đại học, còn phần tối ưu hóa hiệu năng đến từ quyết định riêng biệt là chuyển mô hình xử lý sang bất đồng bộ với Spring WebFlux và R2DBC.
 
 Hướng thứ hai là nâng cao giá trị nghiệp vụ và trải nghiệm người dùng. Nhóm hiện thực hóa các tính năng giúp phát huy vai trò của cựu sinh viên, đồng thời xây dựng khung tính năng có khả năng tái sử dụng cao thông qua mô hình Multi-tenant. Các nhóm tính năng trọng tâm bao gồm chương trình cố vấn có cấu trúc, cơ hội việc làm và học tập suốt đời, gây quỹ minh bạch, diễn đàn nghề nghiệp, khảo sát phục vụ thống kê việc làm và trợ lý ảo.
 
@@ -397,9 +404,12 @@ Microservices \cite{microservices} chia một ứng dụng thành nhiều dịch
 
 Modular Monolith giữ hệ thống là một ứng dụng duy nhất khi triển khai, bên trong chia thành các module nghiệp vụ tách biệt với ranh giới trách nhiệm rõ ràng. Kết hợp với kiến trúc Layered \cite{poeaa}, mỗi module được tổ chức theo các lớp controller, service, dao, entity và dto. Cách tổ chức này vẫn giữ được sự tách bạch trách nhiệm của Microservices nhưng loại bỏ chi phí vận hành của một hệ phân tán, đồng thời bảo toàn khả năng tách thành dịch vụ độc lập về sau nếu quy mô thực sự đòi hỏi.
 
+Cần nhìn nhận thẳng rằng kiến trúc Microservices tự thân có tiềm năng hiệu năng và khả năng chịu tải cao hơn Monolith ở quy mô lớn, do mỗi dịch vụ có thể được nhân bản và mở rộng độc lập theo đúng điểm nghẽn tải của riêng nó, thay vì toàn bộ ứng dụng phải mở rộng đồng thời như trong Monolith. Đề tài không lựa chọn Microservices không phải vì phủ nhận lợi thế này, mà vì bài toán đặt ra là một nền tảng vận hành nội bộ cho một trường đại học, với quy mô tải chưa đến ngưỡng cần khai thác khả năng mở rộng độc lập theo từng dịch vụ. Trong khi đó, chi phí vận hành chín dịch vụ rời của phiên bản 2024, gồm cơ chế định danh dịch vụ Eureka, cổng vào API Gateway, chi phí giao tiếp qua mạng giữa các dịch vụ và độ phức tạp khi giám sát, gỡ lỗi trên một hệ phân tán, là chi phí thực tế phải gánh ngay trong khi lợi ích về khả năng chịu tải lớn lại chưa được tận dụng đến. Đây là một đánh đổi có chủ đích giữa chi phí vận hành và tiềm năng mở rộng, chứ không phải Monolith mặc định tối ưu hơn Microservices về hiệu năng. Phần tối ưu hóa hiệu năng thực sự đo được ở đề tài, trình bày tại mục \ref{subsec:reactive} ngay sau đây, đến từ một quyết định độc lập là chuyển mô hình xử lý từ đồng bộ sang bất đồng bộ, áp dụng được cho cả hai lựa chọn kiến trúc triển khai.
+
 Đề cương ban đầu dự kiến áp dụng Clean Architecture \cite{clean} với các tầng use-case, port và adapter. Thực tế triển khai cho thấy chi phí ánh xạ dữ liệu giữa các tầng và chi phí viết kiểm thử tăng đáng kể so với lợi ích thu được ở quy mô đề tài. Nhóm điều chỉnh sang Modular Monolith kết hợp Layered nhằm phù hợp với nguồn lực và tiến độ mà vẫn bảo đảm khả năng bảo trì, mở rộng. Quyết định điều chỉnh này được ghi nhận trong Báo cáo tiến độ.
 
 \subsection{Reactive Programming}
+\label{subsec:reactive}
 
 Mô hình Reactive Programming được đặc trưng bởi bốn tính chất cốt lõi là phản hồi nhanh, có khả năng phục hồi, co giãn linh hoạt và hướng thông điệp \cite{reactive}. Spring WebFlux hiện thực hóa mô hình này thông qua thư viện Project Reactor với hai kiểu dữ liệu Mono và Flux, cho phép xử lý yêu cầu theo cơ chế bất đồng bộ và không chặn luồng. Ở tầng truy cập dữ liệu, R2DBC tương tác với cơ sở dữ liệu quan hệ theo cùng cơ chế bất đồng bộ, thay thế cho phương thức kết nối đồng bộ truyền thống.
 
@@ -416,6 +426,7 @@ Hệ thống AlumVerse lựa chọn phương pháp thứ ba, phân tách dữ li
 Lựa chọn này phù hợp với quy mô hiện tại của dự án. Các khoa cùng trực thuộc sự quản lý tập trung của nhà trường và tái sử dụng chung một bộ khung nghiệp vụ, nên mức cô lập logic đã đáp ứng yêu cầu, trong khi việc tách cơ sở dữ liệu vật lý cho từng đơn vị sẽ làm chi phí vận hành tăng lên mà không tạo thêm giá trị tương xứng.
 
 \subsection{Retrieval-Augmented Generation}
+\label{subsec:rag}
 
 Các mô hình ngôn ngữ lớn sinh câu trả lời dựa trên tri thức đã học trong quá trình huấn luyện. Cách vận hành này bộc lộ ba hạn chế khi áp dụng vào hệ thống thông tin của một tổ chức cụ thể: mô hình không biết các tài liệu nội bộ chưa từng xuất hiện trong dữ liệu huấn luyện; tri thức của mô hình bị đóng băng tại thời điểm huấn luyện; và mô hình có xu hướng sinh ra câu trả lời nghe hợp lý nhưng sai sự thật khi không đủ thông tin.
 
@@ -424,6 +435,20 @@ Retrieval-Augmented Generation là kiến trúc bổ sung một bước truy h�
 Kiến trúc này mang lại ba lợi ích phù hợp với bài toán của đề tài. Thứ nhất, tri thức của trợ lý ảo được cập nhật bằng cách bổ sung tài liệu vào kho dữ liệu, không cần huấn luyện lại mô hình. Thứ hai, câu trả lời bị ràng buộc trong phạm vi tài liệu đã truy hồi nên giảm đáng kể hiện tượng bịa đặt thông tin. Thứ ba, hệ thống có thể dẫn nguồn tài liệu cho từng câu trả lời, giúp người dùng kiểm chứng.
 
 Cần phân biệt hai cách ứng dụng mô hình ngôn ngữ trong AlumVerse. Trợ lý ảo FitBot áp dụng kiến trúc RAG vì phải trả lời dựa trên kho tài liệu riêng của nhà trường và cần dẫn được nguồn. Ngược lại, các tác vụ như trích xuất kỹ năng từ mô tả chuyên môn, trích xuất thông tin từ hồ sơ năng lực, làm sạch kết quả nhận dạng ký tự quang học, kiểm duyệt nội dung và tự động gắn thẻ bài viết không cần truy hồi tài liệu, nên được hiện thực bằng lời gọi mô hình ngôn ngữ trực tiếp với đầu ra có cấu trúc. Chi tiết hiện thực của cả hai nhóm được trình bày ở Chương 4.
+
+Cả hai cách ứng dụng trên được chọn để giải quyết những nỗi đau cụ thể của người dùng, được phân tích chi tiết ở các mục tiếp theo, chứ không phải được đưa vào chỉ để bổ sung yếu tố công nghệ mới cho đề tài. Trích xuất thẻ kỹ năng từ hồ sơ năng lực và mô tả chuyên môn nhằm giảm rào cản điền hồ sơ thủ công, phục vụ trực tiếp nhu cầu quản lý dữ liệu sinh viên và cựu sinh viên một cách có hệ thống của nhóm quản trị. Cùng thuộc nhóm hỗ trợ quản trị, mô hình ngôn ngữ còn được dùng để đối chiếu hồ sơ xin xác minh học vấn, so sánh thông tin cựu sinh viên tự khai với nội dung trích xuất từ tài liệu minh chứng và đưa ra khuyến nghị duyệt hoặc từ chối, giúp quản trị viên rút ngắn thời gian xử lý từng yêu cầu xác minh. Trợ lý ảo FitBot dựa trên RAG nhằm hạn chế hiện tượng bịa đặt thông tin khi trả lời các câu hỏi về quy chế, thủ tục và thông tin học vụ, phục vụ trực tiếp nhu cầu được giải đáp học thuật của nhóm sinh viên, đúng nhóm nhu cầu đạt điểm quan tâm cao trong khảo sát nội bộ được trình bày ở Bảng \ref{tab:survey}. Kiểm duyệt nội dung và tự động gắn cờ bài đăng vi phạm hỗ trợ giảm tải công việc thủ công cho quản trị viên diễn đàn khi kiểm soát nội dung do người dùng đăng tải. Gợi ý duyệt bài đăng bằng mô hình ngôn ngữ hỗ trợ quản trị khoa ra quyết định nhanh hơn khi khối lượng tin tức và bài đăng cần duyệt tăng theo quy mô đa đơn vị của hệ thống.
+
+Hai trong số các tính năng nêu trên được minh họa cụ thể qua các hình dưới đây.
+
+\begin{figure}[htbp]\centering
+\includegraphics[width=0.86\textwidth]{ai_suggest}
+\caption{Giao diện AI hỗ trợ đối chiếu hồ sơ xác minh học vấn}\label{fig:aiverify}
+\end{figure}
+
+\begin{figure}[htbp]\centering
+\includegraphics[width=0.86\textwidth]{fitbot}
+\caption{Giao diện trợ lý ảo FitBot}\label{fig:aichatbot}
+\end{figure}
 
 \section{Phân tích vai trò của cựu sinh viên và nhu cầu các nhóm người dùng}
 
@@ -443,7 +468,7 @@ Nhà trường cũng cần một kênh chính thức để truyền thông tin t
 
 Cựu sinh viên có nhu cầu kết nối lại với bạn bè cũ, ôn lại kỷ niệm và mở rộng quan hệ nghề nghiệp. Họ cũng mong muốn tham gia các sự kiện gắn kết định kỳ, đôi khi đi kèm mô hình hội viên có thu phí và quyền lợi tương ứng. Chương trình RMIT Active Hub của Trường Đại học RMIT Việt Nam là một ví dụ: cựu sinh viên đóng phí theo học kỳ để sử dụng cơ sở vật chất, dịch vụ và câu lạc bộ, qua đó duy trì kết nối với trường (Hình \ref{fig:rmit}) \cite{rmit}.
 
-\begin{figure}[H]\centering
+\begin{figure}[htbp]\centering
 \includegraphics[width=0.90\textwidth,keepaspectratio]{hinh-2-1_rmit-active-hub}
 \caption{Trang quyền lợi hội viên của chương trình RMIT Active Hub}
 \label{fig:rmit}
@@ -451,7 +476,7 @@ Cựu sinh viên có nhu cầu kết nối lại với bạn bè cũ, ôn lại 
 
 Mô hình hội viên trả phí gắn với cơ sở vật chất phù hợp với các trường có hạ tầng lớn và khó áp dụng cho phần lớn trường đại học công lập tại Việt Nam. Ở các trường công lập, hoạt động gắn kết cựu sinh viên chủ yếu xoay quanh các sự kiện gặp mặt. Tại Khoa Công nghệ Thông tin, Trường Đại học Khoa học Tự nhiên, các hoạt động này gồm ngày hội cựu sinh viên, giải thể thao truyền thống, câu lạc bộ cựu sinh viên, các buổi seminar chia sẻ kinh nghiệm và quỹ học bổng hỗ trợ sinh viên (Hình \ref{fig:fit}) \cite{fithcmus}. AlumVerse hướng theo mô hình này và phục vụ các nhu cầu đó qua module sự kiện, mạng lưới kết nối, cố vấn và gây quỹ, thay vì mô hình hội viên trả phí.
 
-\begin{figure}[H]\centering
+\begin{figure}[htbp]\centering
 \includegraphics[width=0.90\textwidth,keepaspectratio]{hinh-2-2_fit-hcmus-alumni}
 \caption{Trang hoạt động cựu sinh viên của Khoa Công nghệ Thông tin}
 \label{fig:fit}
@@ -465,7 +490,7 @@ Sinh viên đang theo học có nhu cầu lớn trong việc được giải đ�
 
 Trên thực tế, mô hình ghép cặp cố vấn đã chứng minh được hiệu quả và được ứng dụng rộng rãi. Ở quy mô toàn cầu, nền tảng ADPList thu hút hơn 40.000 chuyên gia đến từ trên 140 quốc gia (Hình \ref{fig:adplist}).
 
-\begin{figure}[H]\centering
+\begin{figure}[htbp]\centering
 \includegraphics[width=0.90\textwidth,keepaspectratio]{hinh-2-3_adplist}
 \caption{Giao diện nền tảng ADPList}
 \label{fig:adplist}
@@ -473,13 +498,13 @@ Trên thực tế, mô hình ghép cặp cố vấn đã chứng minh được h
 
 Tại Việt Nam, mô hình này vận hành sôi nổi qua nhiều nền tảng và cộng đồng nghề nghiệp. Tiêu biểu trong số đó là Mentori.vn (Hình \ref{fig:mentori}), với luồng nghiệp vụ tổ chức rất sát với định hướng mà nhóm hướng tới. Hệ thống AlumVerse tham khảo trải nghiệm người dùng diện rộng từ ADPList và bám sát mô hình luồng nghiệp vụ của Mentori.vn.
 
-\begin{figure}[H]\centering
+\begin{figure}[htbp]\centering
 \includegraphics[width=0.90\textwidth,keepaspectratio]{hinh-2-4_mentori}
 \caption{Giao diện nền tảng Mentori.vn}
 \label{fig:mentori}
 \end{figure}
 
-Khoảng trống kỹ năng hiện nay càng làm bộc lộ rõ nhu cầu được cố vấn. Một khảo sát trên 3.000 sinh viên cho thấy 42\% chưa có việc làm do không đáp ứng được yêu cầu tuyển dụng, và 61\% sinh viên đã đi làm vẫn tự nhận thấy sự thiếu hụt về kỹ năng chuyên môn \cite{skillgap}.
+Khoảng trống kỹ năng hiện nay càng làm bộc lộ rõ nhu cầu được cố vấn. Theo một khảo sát của Đại học Khoa học Xã hội và Nhân văn, Đại học Quốc gia Hà Nội, 70\% sinh viên chưa có định hướng nghề nghiệp cụ thể sau khi tốt nghiệp, còn khảo sát của TopCV cho thấy gần 76\% doanh nghiệp ưu tiên tuyển ứng viên đã có từ một đến hai năm kinh nghiệm thực tế \cite{skillgap}.
 
 \subsection{Khảo sát nhu cầu tại Trường Đại học Khoa học Tự nhiên}
 
@@ -510,7 +535,7 @@ Trợ lý ảo hỗ trợ thông tin trường và khoa & 3,84 & 17 \\ \hline
 }
 \renewcommand{\arraystretch}{1}
 
-\begin{figure}[H]\centering
+\begin{figure}[htbp]\centering
 \begin{tikzpicture}
 \begin{axis}[
  width=13cm,height=7.4cm,
@@ -542,9 +567,29 @@ Một điểm đáng chú ý là sự lệch pha giữa cung và cầu: nhu cầ
 
 \subsection{Các nền tảng cựu sinh viên}
 
-Kế thừa quá trình khảo sát của báo cáo AlumVerse 2024, nhóm xem xét một số nền tảng kết nối cựu sinh viên tiêu biểu. Hệ thống BKA Alumni của Trường Đại học Bách khoa Thành phố Hồ Chí Minh có nhiều tính năng tương tác kiểu mạng xã hội nhưng thiếu mục vinh danh cựu sinh viên tiêu biểu. Hệ thống RMIT Vietnam Alumni cho phép đăng ký sự kiện và có mục tư vấn, nhưng chỉ phát triển trên nền web và hạn chế tương tác giữa các cựu sinh viên. Hệ thống IoBM Alumni có tính năng tìm việc và tạo câu chuyện, nhưng thiếu mục tin tức và vinh danh. Hệ thống Oxford Alumni cho phép đăng ký sự kiện và tham gia nhiều nhóm, nhưng cũng chỉ phát triển trên nền web và hạn chế trao đổi giữa các thành viên.
+Kế thừa quá trình khảo sát của báo cáo AlumVerse 2024, nhóm xem xét một số nền tảng kết nối cựu sinh viên tiêu biểu. Hệ thống BKA Alumni của Trường Đại học Bách khoa Thành phố Hồ Chí Minh có nhiều tính năng tương tác kiểu mạng xã hội (thông báo, nhắn tin, tạo nhóm, tương tác bài viết) và hỗ trợ lưu trữ sách, video, nhưng thiếu mục vinh danh cựu sinh viên tiêu biểu. Hệ thống RMIT Vietnam Alumni cho phép đăng ký sự kiện và có mục tư vấn, nhưng chỉ phát triển trên nền web và hạn chế tương tác giữa các cựu sinh viên. Hệ thống IoBM Alumni có tính năng tìm việc và tạo story tương tự Facebook, nhưng thiếu mục tin tức và vinh danh. Hệ thống Oxford Alumni cho phép đăng ký sự kiện và tham gia nhiều nhóm, nhưng cũng chỉ phát triển trên nền web và hạn chế trao đổi giữa các thành viên.
 
-Điểm chung của các nền tảng này là mạnh về truyền thông một chiều và quản lý sự kiện, nhưng yếu ở các luồng tạo giá trị hai chiều giữa cựu sinh viên và sinh viên.
+Bảng \ref{tab:altsystems} tổng hợp lại kết quả so sánh chức năng đã thực hiện ở báo cáo AlumVerse 2024, làm cơ sở đối chiếu với phạm vi chức năng mà AlumVerse hiện tại kế thừa và mở rộng.
+
+\renewcommand{\arraystretch}{1.2}
+\begin{longtable}{|>{\raggedright\arraybackslash}p{4.4cm}|>{\centering\arraybackslash}p{1.6cm}|>{\centering\arraybackslash}p{1.6cm}|>{\centering\arraybackslash}p{1.6cm}|>{\centering\arraybackslash}p{1.6cm}|}
+\caption{So sánh chức năng giữa AlumVerse và các nền tảng cựu sinh viên tham khảo (theo khảo sát của báo cáo AlumVerse 2024)}\label{tab:altsystems}\\
+\hline \textbf{Chức năng} & \textbf{BKA Alumni} & \textbf{RMIT VN Alumni} & \textbf{IoBM Alumni} & \textbf{Oxford Alumni} \\ \hline
+\endfirsthead
+\hline \textbf{Chức năng} & \textbf{BKA Alumni} & \textbf{RMIT VN Alumni} & \textbf{IoBM Alumni} & \textbf{Oxford Alumni} \\ \hline
+\endhead
+Hỗ trợ đa nền tảng (web và mobile) & & & & \\ \hline
+Đăng ký tham gia hoạt động, sự kiện & & \checkmark & \checkmark & \checkmark \\ \hline
+Vinh danh cựu sinh viên tiêu biểu & & \checkmark & & \\ \hline
+Tư vấn và cố vấn & & \checkmark & & \\ \hline
+Tạo nhóm & \checkmark & & & \checkmark \\ \hline
+Đăng bài viết trong nhóm & \checkmark & & \checkmark & \\ \hline
+Nhắn tin giữa cựu sinh viên & \checkmark & & \checkmark & \\ \hline
+Tìm kiếm cựu sinh viên & \checkmark & \checkmark & \checkmark & \\ \hline
+\end{longtable}
+\renewcommand{\arraystretch}{1}
+
+Điểm chung của bốn nền tảng tham khảo là mạnh về truyền thông một chiều và quản lý sự kiện, nhưng không hệ thống nào hỗ trợ đồng thời cả bốn nhóm chức năng đa nền tảng, cố vấn, vinh danh và tương tác hai chiều giữa cựu sinh viên với sinh viên như AlumVerse hướng tới.
 
 \subsection{Ánh xạ tính năng với nền tảng tham khảo và vai trò cựu sinh viên}
 
@@ -552,7 +597,7 @@ Mỗi nhóm tính năng mở rộng của AlumVerse đều được nghiên cứ
 
 Về cố vấn, nhóm tham khảo luồng nghiệp vụ từ Mentori.vn và ADPList; các chu trình đăng ký hồ sơ, ghép cặp, đặt lịch hẹn và đánh giá phản hồi được thiết kế bám sát Mentori.vn. Về gây quỹ, thiết kế trang chiến dịch và cơ chế minh bạch lịch sử đóng góp được tham chiếu từ UEH Alumni và GlobalGiving. Về diễn đàn nghề nghiệp, cấu trúc phân tầng chuyên mục được học hỏi từ các cộng đồng chuyên môn và nền tảng hỏi đáp học thuật. Về sự kiện và hội viên, quy trình phát hành vé và cấp phát quyền lợi lấy cảm hứng từ RMIT Active Hub cùng các hệ thống phân phối vé điện tử phổ biến. Về cơ hội học tập và việc làm, cấu trúc bài đăng tuyển dụng và quản lý khóa học được xây dựng dựa trên các cổng việc làm và hệ thống quản lý học liệu trực tuyến.
 
-\begin{figure}[H]\centering
+\begin{figure}[htbp]\centering
 \begin{subfigure}{0.46\textwidth}\centering\includegraphics[width=\linewidth]{ref-gayquy-ueh}\caption{Trang gây quỹ tham chiếu}\end{subfigure}\hfill
 \begin{subfigure}{0.46\textwidth}\centering\includegraphics[width=\linewidth]{ref-diendan-voz}\caption{Diễn đàn tham chiếu}\end{subfigure}
 \vspace{6pt}
@@ -613,7 +658,7 @@ Theo nguyên tắc này, các tính năng mang tính tương tác như nhắn ti
 
 Theo báo cáo AlumVerse 2024, hệ thống được xây dựng theo kiến trúc Microservices, với phần backend gồm chín dịch vụ Spring Boot, đăng ký dịch vụ qua Eureka và định tuyến qua API Gateway. Phần web được phát triển bằng Next.js, phần di động bằng Flutter. Cơ sở dữ liệu sử dụng MySQL với Spring Data JPA; hình ảnh được lưu trên Google Cloud Storage và thông báo đẩy được gửi qua Firebase Cloud Messaging. Đây là điểm xuất phát kỹ thuật để đối chiếu với các quyết định tái thiết kế của phiên bản 2026.
 
-\begin{figure}[H]\centering
+\begin{figure}[htbp]\centering
 \begin{tikzpicture}[font=\footnotesize,
  box/.style={draw,rounded corners=2pt,align=center,inner sep=3pt},
  svc/.style={box,fill=red!8,minimum height=6mm,minimum width=20mm},
@@ -678,7 +723,7 @@ Bảng so sánh chức năng trong báo cáo 2024 liệt kê chín tính năng c
 
 Về dữ liệu, lược đồ của hệ thống 2024 được tổ chức quanh tám nhóm thực thể, gồm người dùng, vai trò, tin tức, sự kiện, gương thành công, tư vấn, nhóm và nhắn tin. Không có nhóm bảng nào dành cho gây quỹ, việc làm, học liệu hay khảo sát, cho thấy hệ thống chưa được thiết kế để phục vụ các nhóm giá trị này.
 
-\begin{figure}[H]\centering
+\begin{figure}[htbp]\centering
 \begin{tikzpicture}[font=\footnotesize,
  e/.style={draw,rounded corners=2pt,fill=red!7,minimum height=7mm,minimum width=24mm,align=center}]
 \node[e] (a) at (0,0) {Người dùng};
@@ -783,62 +828,82 @@ Quản trị trường & Toàn hệ thống & Toàn bộ quyền quản trị kh
 \end{longtable}
 \renewcommand{\arraystretch}{1}
 
+Hình \ref{fig:ucactors} khái quát hóa quan hệ kế thừa giữa các tác nhân: Sinh viên và Cựu sinh viên đều kế thừa toàn bộ quyền của Khách vãng lai, còn Quản trị viên cấp trường kế thừa toàn bộ quyền của Quản trị viên cấp khoa và mở rộng thêm ở phạm vi toàn hệ thống, đúng như mô tả phạm vi dữ liệu ở Bảng \ref{tab:actors}.
+
 \begin{figure}[H]\centering
-\includegraphics[width=\textwidth,height=0.84\textheight,keepaspectratio]{uc0-actors}
+\includegraphics[width=\textwidth,height=0.42\textheight,keepaspectratio]{uc0-actors}
 \caption{Quan hệ khái quát hóa giữa các tác nhân của hệ thống}
 \label{fig:ucactors}
 \end{figure}
 
+Như minh họa tại Hình \ref{fig:ucguest}, tác nhân Khách vãng lai chỉ được phép xem nội dung công khai (tin tức, bài viết cựu sinh viên tiêu biểu, vinh danh thành tích, sự kiện, giới thiệu chương trình đào tạo) và thực hiện các thao tác tài khoản nền tảng, gồm chọn đơn vị để truy cập, đăng ký kèm kích hoạt bằng mã OTP, đăng nhập kèm xác minh chống bot, và khôi phục mật khẩu qua email.
+
 \begin{figure}[H]\centering
-\includegraphics[width=\textwidth,height=0.84\textheight,keepaspectratio]{uc1-guest}
+\includegraphics[width=\textwidth,height=0.42\textheight,keepaspectratio]{uc1-guest}
 \caption{Sơ đồ use case của tác nhân Khách vãng lai}
 \label{fig:ucguest}
 \end{figure}
 
+Hình \ref{fig:ucstudent} trình bày nhóm use case về hồ sơ và xác minh của Sinh viên, kế thừa từ Khách vãng lai: quản lý hồ sơ cá nhân và nghề nghiệp, xem hồ sơ công khai của thành viên khác, thiết lập tùy chọn thông báo, đổi email có xác thực hai đầu, nộp minh chứng xác minh tài khoản, gửi yêu cầu cập nhật thông tin học vấn, xem nhật ký đăng nhập và nhận thông báo đẩy qua trung tâm thông báo.
+
 \begin{figure}[H]\centering
-\includegraphics[width=\textwidth,height=0.84\textheight,keepaspectratio]{uc2a-student}
+\includegraphics[width=\textwidth,height=0.42\textheight,keepaspectratio]{uc2a-student}
 \caption{Sơ đồ use case của tác nhân Sinh viên: hồ sơ, xác minh và thiết lập cá nhân}
 \label{fig:ucstudent}
 \end{figure}
 
+Hình \ref{fig:ucstudent2} tiếp tục với nhóm use case kết nối và nội dung của Sinh viên: tìm kiếm thành viên trong mạng lưới, gửi và phản hồi yêu cầu kết nối, nhắn tin cá nhân và nhắn tin nhóm có đính kèm ảnh/video, chặn và bỏ chặn người dùng, tham gia và tìm kiếm chủ đề diễn đàn nghề nghiệp, tìm việc làm, truy cập kho học liệu, lưu nội dung để xem sau, và xem chuyên trang phát triển sự nghiệp.
+
 \begin{figure}[H]\centering
-\includegraphics[width=\textwidth,height=0.84\textheight,keepaspectratio]{uc2b-student}
+\includegraphics[width=\textwidth,height=0.42\textheight,keepaspectratio]{uc2b-student}
 \caption{Sơ đồ use case của tác nhân Sinh viên: kết nối, nhắn tin, diễn đàn và nội dung}
 \label{fig:ucstudent2}
 \end{figure}
 
+Hình \ref{fig:ucstudent3} thể hiện nhóm use case về sự kiện, cố vấn, quỹ và trợ lý ảo của Sinh viên: quan tâm và đăng ký tham dự sự kiện kèm nhận vé điện tử, đăng ký làm người được cố vấn và ghép cặp người cố vấn, đặt lịch buổi cố vấn có kiểm tra khung giờ còn trống, tham gia buổi cố vấn qua phòng họp trực tuyến, đánh giá và báo cáo sự cố sau buổi, đóng góp cho quỹ của đơn vị, trả lời khảo sát, và hỏi đáp với trợ lý ảo.
+
 \begin{figure}[H]\centering
-\includegraphics[width=\textwidth,height=0.84\textheight,keepaspectratio]{uc2c-student}
+\includegraphics[width=\textwidth,height=0.42\textheight,keepaspectratio]{uc2c-student}
 \caption{Sơ đồ use case của tác nhân Sinh viên: sự kiện, cố vấn, quỹ và trợ lý ảo}
 \label{fig:ucstudent3}
 \end{figure}
 
+Hình \ref{fig:ucalumni} bổ sung các use case dành riêng cho Cựu sinh viên, tác nhân kế thừa toàn bộ quyền của Sinh viên: đăng ký và khai báo hồ sơ người cố vấn với gợi ý thẻ kỹ năng bằng AI và tự động điền hồ sơ từ tệp CV, khai báo khung giờ rảnh, duyệt/dời lịch/hủy buổi cố vấn, gắn liên kết phòng họp trực tuyến, đăng tin tuyển dụng, chia sẻ học liệu, gửi bài viết cựu sinh viên tiêu biểu và thành tích để vinh danh (đều phải chờ kiểm duyệt), cùng xác minh chéo cho cựu sinh viên khác.
+
 \begin{figure}[H]\centering
-\includegraphics[width=\textwidth,height=0.84\textheight,keepaspectratio]{uc3-alumni}
+\includegraphics[width=\textwidth,height=0.42\textheight,keepaspectratio]{uc3-alumni}
 \caption{Sơ đồ use case bổ sung của tác nhân Cựu sinh viên}
 \label{fig:ucalumni}
 \end{figure}
 
+Hình \ref{fig:ucfadmin} cho thấy nhóm use case kiểm duyệt nội dung và quản lý sự kiện của Quản trị viên cấp khoa: duyệt bài viết/tin tức/thành tích, quản lý chuyên mục diễn đàn, kiểm duyệt và điều hành chủ đề (có hỗ trợ kiểm duyệt tự động bằng AI), tạo và quản lý vòng đời sự kiện, điểm danh bằng mã QR, gửi thư mời, thống kê và xuất báo cáo tham dự, cùng xem bảng điều khiển thống kê của đơn vị.
+
 \begin{figure}[H]\centering
-\includegraphics[width=\textwidth,height=0.84\textheight,keepaspectratio]{uc4a-facultyadmin}
+\includegraphics[width=\textwidth,height=0.42\textheight,keepaspectratio]{uc4a-facultyadmin}
 \caption{Sơ đồ use case của tác nhân Quản trị viên cấp khoa: kiểm duyệt nội dung và quản lý sự kiện}
 \label{fig:ucfadmin}
 \end{figure}
 
+Hình \ref{fig:ucfadmin2} trình bày nhóm use case còn lại của Quản trị viên cấp khoa, liên quan đến người dùng, cố vấn, quỹ và khảo sát: duyệt hồ sơ người cố vấn, theo dõi và xử lý báo cáo buổi cố vấn, xác minh danh tính người dùng, duyệt yêu cầu cập nhật học vấn, quản lý tài khoản người dùng trong đơn vị, tạo và vận hành chiến dịch gây quỹ kèm đối soát giao dịch đóng góp và xem bảng điều khiển quỹ, cùng tạo phát khảo sát và tổng hợp kết quả.
+
 \begin{figure}[H]\centering
-\includegraphics[width=\textwidth,height=0.84\textheight,keepaspectratio]{uc4b-facultyadmin}
+\includegraphics[width=\textwidth,height=0.42\textheight,keepaspectratio]{uc4b-facultyadmin}
 \caption{Sơ đồ use case của tác nhân Quản trị viên cấp khoa: người dùng, cố vấn, quỹ và khảo sát}
 \label{fig:ucfadmin2}
 \end{figure}
 
+Hình \ref{fig:ucsadmin} thể hiện nhóm use case về vòng đời và cấu hình đơn vị của Quản trị viên cấp trường, tác nhân kế thừa toàn bộ quyền của Quản trị viên cấp khoa: khởi tạo trang khoa, duyệt yêu cầu đăng ký tổ chức mới, cấu hình đường dẫn và phát hành đơn vị, khai báo chương trình và ngành đào tạo, tùy biến thương hiệu và giao diện, bật tắt từng nhóm tính năng theo đơn vị, cấu hình quyền riêng tư, và cấp/thu hồi tài khoản quản trị đơn vị.
+
 \begin{figure}[H]\centering
-\includegraphics[width=\textwidth,height=0.84\textheight,keepaspectratio]{uc5a-schooladmin}
+\includegraphics[width=\textwidth,height=0.42\textheight,keepaspectratio]{uc5a-schooladmin}
 \caption{Sơ đồ use case bổ sung của tác nhân Quản trị viên cấp trường: vòng đời và cấu hình đơn vị}
 \label{fig:ucsadmin}
 \end{figure}
 
+Hình \ref{fig:ucsadmin2} khép lại nhóm use case của Quản trị viên cấp trường ở phạm vi hạ tầng dùng chung toàn hệ thống: quản lý mẫu thư điện tử, quản lý kho tri thức của trợ lý ảo, quản lý nhà cung cấp mô hình ngôn ngữ, giám sát vận hành toàn hệ thống, và tra cứu nhật ký kiểm toán.
+
 \begin{figure}[H]\centering
-\includegraphics[width=\textwidth,height=0.84\textheight,keepaspectratio]{uc5b-schooladmin}
+\includegraphics[width=\textwidth,height=0.42\textheight,keepaspectratio]{uc5b-schooladmin}
 \caption{Sơ đồ use case bổ sung của tác nhân Quản trị viên cấp trường: hạ tầng dùng chung}
 \label{fig:ucsadmin2}
 \end{figure}
@@ -925,7 +990,7 @@ Mỗi tổ chức trong hệ thống là một thực thể độc lập có c�
 
 Một người dùng có thể thuộc về nhiều tổ chức, phản ánh thực tế một cựu sinh viên có thể học nhiều chương trình ở các khoa khác nhau. Khi người dùng chuyển đổi tổ chức đang xem, hệ thống cấp lại ngữ cảnh làm việc tương ứng và toàn bộ dữ liệu hiển thị được lọc theo tổ chức mới.
 
-\begin{figure}[H]\centering
+\begin{figure}[htbp]\centering
 \begin{tikzpicture}[font=\footnotesize,
  b/.style={draw,rounded corners=2pt,align=center,inner sep=3pt},
  org/.style={b,fill=green!10,minimum height=9mm,text width=26mm},
@@ -962,7 +1027,7 @@ Lớp thứ ba nằm ở tầng nghiệp vụ. Hệ thống luôn lấy định 
 
 Về phân quyền, hệ thống kết hợp vai trò với phạm vi tổ chức. Hai tài khoản cùng mang vai trò quản trị nhưng thuộc hai tổ chức khác nhau sẽ thao tác trên hai tập dữ liệu hoàn toàn tách biệt. Riêng vai trò quản trị cấp trường có phạm vi bao trùm toàn hệ thống.
 
-\begin{figure}[H]\centering
+\begin{figure}[htbp]\centering
 \begin{tikzpicture}[font=\footnotesize,node distance=7mm,
  b/.style={draw,rounded corners=2pt,align=center,inner sep=3pt,minimum height=7mm,text width=34mm},
  ar/.style={-{Latex[length=2mm]},thick}]
@@ -1002,7 +1067,7 @@ Mỗi module tuân theo kiến trúc Layered với luồng xử lý thống nh�
 
 Cách chia module theo nghiệp vụ mang lại hai lợi ích thực tế cho một nhóm sáu người. Thứ nhất, nó giảm đáng kể xung đột khi hợp nhất mã nguồn, vì mỗi thành viên làm việc chủ yếu trong phạm vi package của mình. Thứ hai, nó giữ lại khả năng tách một module thành dịch vụ độc lập về sau nếu quy mô hệ thống thực sự đòi hỏi, mà không phải viết lại từ đầu. Cần nhấn mạnh rằng đây là một tùy chọn được bảo lưu chứ không phải mục tiêu của đề tài, bởi phân tích ở Chương 2 đã chỉ ra kiến trúc phân tán không phù hợp với quy mô hiện tại.
 
-\begin{figure}[H]\centering
+\begin{figure}[htbp]\centering
 \includegraphics[width=0.78\textwidth,keepaspectratio]{sd-kien-truc-3tang}
 \caption{Kiến trúc tổng thể của hệ thống AlumVerse 2026}
 \label{fig:arch2026}
@@ -1057,7 +1122,7 @@ Mỗi khung giờ rảnh do người cố vấn khai báo được mô hình hó
 
 Cần nêu rõ giới hạn của thiết kế hiện tại. Việc kiểm tra trạng thái và thao tác ghi được thực hiện tuần tự ở tầng ứng dụng, nên về bản chất đây vẫn là mô hình kiểm tra rồi hành động. Ở mức tải thực tế của một khoa, khoảng cách giữa hai bước là rất nhỏ và chưa ghi nhận trường hợp trùng lịch nào trong quá trình thử nghiệm. Tuy nhiên, để loại trừ triệt để tranh chấp khi hai yêu cầu xen vào đúng giữa hai bước, quyết định cuối cùng cần được đẩy xuống tầng cơ sở dữ liệu, bằng cập nhật có điều kiện theo trạng thái hoặc bằng ràng buộc duy nhất trên khung giờ, vì đó là nơi duy nhất bảo đảm được tính nguyên tử. Đây là hạng mục củng cố đã được nhóm nhận diện và trình bày ở mục hướng phát triển.
 
-\begin{figure}[H]\centering
+\begin{figure}[htbp]\centering
 \begin{tikzpicture}[font=\footnotesize,
  st/.style={draw,rounded corners=3pt,fill=blue!8,minimum height=8mm,minimum width=26mm,align=center},
  ar/.style={-{Latex[length=2mm]},thick}]
@@ -1088,7 +1153,7 @@ Lược đồ cơ sở dữ liệu được quy hoạch thành các nhóm bảng
 
 So với tám nhóm thực thể của phiên bản 2024, lược đồ phiên bản 2026 được mở rộng đáng kể với các nhóm bảng phục vụ gây quỹ, việc làm, học liệu, khảo sát và chương trình cố vấn có cấu trúc. Cột định danh tổ chức xuất hiện xuyên suốt tại các bảng nghiệp vụ nhằm bảo đảm cơ chế cô lập dữ liệu theo từng khoa.
 
-\begin{figure}[H]\centering
+\begin{figure}[htbp]\centering
 \begin{tikzpicture}[font=\footnotesize,
  e/.style={draw,rounded corners=2pt,minimum height=7.5mm,minimum width=25mm,align=center},
  old/.style={e,fill=blue!8}, new/.style={e,fill=green!10}]
@@ -1158,7 +1223,7 @@ Về quản lý trạng thái, hệ thống tách bạch hai loại trạng thá
 
 Các tuyến đường được bảo vệ dựa trên token và vai trò, trong đó tuyến quản trị còn kiểm tra thêm phạm vi tổ chức của tài khoản. Giao diện được thiết kế đáp ứng theo ba nhóm điểm ngắt. Ở màn hình rộng, nội dung trải thành lưới nhiều cột và thanh điều hướng hiển thị đầy đủ. Ở màn hình trung bình, lưới thu về số cột ít hơn và thanh điều hướng gom vào một ngăn kéo trượt. Ở màn hình hẹp, toàn bộ nội dung xếp thành một cột duy nhất và các hộp thoại chuyển sang dạng chiếm trọn màn hình. Hình \ref{fig:responsive} minh họa cùng một trang ở ba nhóm kích thước này.
 
-\begin{figure}[H]\centering
+\begin{figure}[htbp]\centering
 \begin{subfigure}{\textwidth}\centering\includegraphics[width=\linewidth]{rwd-vinhdanh-desktop}\caption{Màn hình rộng: lưới nhiều cột, thanh điều hướng trải ngang}\end{subfigure}
 \vspace{10pt}
 \begin{subfigure}{0.545\textwidth}\centering\includegraphics[width=\linewidth]{rwd-vinhdanh-tablet}\caption{Màn hình trung bình: lưới thu về ít cột, điều hướng gom vào ngăn kéo}\end{subfigure}\hfill
@@ -1167,7 +1232,7 @@ Các tuyến đường được bảo vệ dựa trên token và vai trò, trong
 \label{fig:responsive}
 \end{figure}
 
-\begin{figure}[H]\centering
+\begin{figure}[htbp]\centering
 \begin{subfigure}{\textwidth}\centering\includegraphics[width=\linewidth]{web-trang-chu}\caption{Trang chủ của một đơn vị}\end{subfigure}
 \vspace{10pt}
 \begin{subfigure}{\textwidth}\centering\includegraphics[width=\linewidth]{web-co-van}\caption{Danh sách người cố vấn}\end{subfigure}
@@ -1175,7 +1240,7 @@ Các tuyến đường được bảo vệ dựa trên token và vai trò, trong
 \label{fig:webscreens}
 \end{figure}
 
-\begin{figure}[H]\centering
+\begin{figure}[htbp]\centering
 \begin{subfigure}{\textwidth}\centering\includegraphics[width=\linewidth]{web-dien-dan}\caption{Diễn đàn nghề nghiệp}\end{subfigure}
 \vspace{10pt}
 \begin{subfigure}{\textwidth}\centering\includegraphics[width=\linewidth]{web-admin-dashboard}\caption{Bảng điều khiển quản trị đơn vị}\end{subfigure}
@@ -1189,7 +1254,7 @@ Các tuyến đường được bảo vệ dựa trên token và vai trò, trong
 
 Ứng dụng quản lý trạng thái bằng Riverpod, điều hướng bằng go\_router và gọi API bằng Dio. Do đặc thù thiết bị di động, ứng dụng ưu tiên các luồng nghiệp vụ thường dùng khi di chuyển như xem tin tức và sự kiện, nhắn tin, nhận thông báo, và đặc biệt là điểm danh sự kiện bằng mã QR dành cho đội ngũ giáo vụ.
 
-\begin{figure}[H]\centering
+\begin{figure}[htbp]\centering
 \begin{subfigure}{0.315\textwidth}\centering\includegraphics[width=\linewidth]{mob-01-chon-to-chuc}\caption{Chọn đơn vị}\end{subfigure}\hfill
 \begin{subfigure}{0.315\textwidth}\centering\includegraphics[width=\linewidth]{mob-02-trang-chu}\caption{Trang chủ}\end{subfigure}\hfill
 \begin{subfigure}{0.315\textwidth}\centering\includegraphics[width=\linewidth]{mob-04-su-kien}\caption{Danh sách sự kiện}\end{subfigure}
@@ -1197,7 +1262,7 @@ Các tuyến đường được bảo vệ dựa trên token và vai trò, trong
 \label{fig:mobilescreens}
 \end{figure}
 
-\begin{figure}[H]\centering
+\begin{figure}[htbp]\centering
 \begin{subfigure}{0.315\textwidth}\centering\includegraphics[width=\linewidth]{mob-05-ve-qr}\caption{Vé điện tử kèm mã QR}\end{subfigure}\hfill
 \begin{subfigure}{0.315\textwidth}\centering\includegraphics[width=\linewidth]{mob-06-chat}\caption{Hội thoại nhắn tin}\end{subfigure}\hfill
 \begin{subfigure}{0.315\textwidth}\centering\includegraphics[width=\linewidth]{mob-08-quyen-gop}\caption{Danh sách quỹ quyên góp}\end{subfigure}
@@ -1211,7 +1276,7 @@ Hai luồng nghiệp vụ được chọn mô tả bằng sơ đồ tuần tự 
 
 Luồng nhắn tin thời gian thực và mạng lưới kết nối được mô tả ở mục 4.4.4 kèm sơ đồ tuần tự riêng.
 
-\begin{figure}[H]\centering
+\begin{figure}[htbp]\centering
 \begin{tikzpicture}[font=\small,
  hdr/.style={draw,fill=blue!10,rounded corners=2pt,minimum height=8mm,text width=27mm,align=center,inner sep=2pt,font=\small},
  ll/.style={dashed,gray!55},
@@ -1254,7 +1319,7 @@ Luồng nhắn tin thời gian thực và mạng lưới kết nối được m�
 \label{fig:seqbooking}
 \end{figure}
 
-\begin{figure}[H]\centering
+\begin{figure}[htbp]\centering
 \begin{tikzpicture}[font=\small,
  hdr/.style={draw,fill=blue!10,rounded corners=2pt,minimum height=8mm,text width=27mm,align=center,inner sep=2pt,font=\small},
  ll/.style={dashed,gray!55},
@@ -1445,7 +1510,7 @@ Về quan hệ phụ thuộc giữa các module, phần lớn module nghiệp v�
 
 Trong quá trình rà soát, nhóm nhận thấy tồn tại một số quan hệ phụ thuộc vòng, cụ thể là module \texttt{shared} có tham chiếu ngược tới một vài module nghiệp vụ thông qua các tác vụ định kỳ và một thực thể dùng chung. Theo nguyên tắc thiết kế, \texttt{shared} lẽ ra phải là module lá, được các module khác phụ thuộc vào nhưng không phụ thuộc ngược lại. Đây là một khoản nợ kỹ thuật đã được nhận diện và ghi nhận, hướng xử lý là chuyển các tác vụ định kỳ về đúng module sở hữu nghiệp vụ, hoặc đảo chiều phụ thuộc bằng cơ chế phát sinh sự kiện thay cho gọi trực tiếp. Việc chủ động ghi nhận điểm này phù hợp với tinh thần xử lý nợ kỹ thuật là luận điểm trung tâm của đề tài.
 
-\begin{figure}[H]\centering
+\begin{figure}[htbp]\centering
 \begin{tikzpicture}[font=\footnotesize,
  m/.style={draw,rounded corners=2pt,fill=green!8,minimum height=6.5mm,minimum width=19mm,align=center},
  core/.style={m,fill=gray!15},
@@ -1521,7 +1586,7 @@ Khi phát sinh dòng tiền, cổng thanh toán gọi về một điểm cuối 
 
 Vấn đề kỹ thuật quan trọng nhất ở đây là các cổng thanh toán đều có cơ chế gửi lại thông báo nhiều lần khi chưa nhận được phản hồi thành công. Nếu xử lý ngây thơ, cùng một khoản tiền sẽ bị cộng nhiều lần vào quỹ. Để loại trừ rủi ro này, hệ thống áp dụng cơ chế bảo đảm xử lý một lần dựa trên chính trạng thái của bản ghi trong cơ sở dữ liệu: nếu bản ghi đóng góp đã ở trạng thái thành công thì thông báo lặp lại sẽ bị bỏ qua ngay. Cách làm này biến trạng thái bản ghi thành chốt chặn tự nhiên mà không cần bổ sung một hệ thống lưu trữ đệm riêng, phù hợp với định hướng tinh gọn hạ tầng của đề tài.
 
-\begin{figure}[H]\centering
+\begin{figure}[htbp]\centering
 \begin{tikzpicture}[font=\footnotesize,node distance=6mm,
  b/.style={draw,rounded corners=2pt,align=center,inner sep=3pt,minimum height=7mm,fill=blue!7,text width=34mm},
  d/.style={diamond,draw,aspect=2.8,align=center,inner sep=1pt,fill=yellow!14,font=\scriptsize},
@@ -1553,7 +1618,7 @@ Phân hệ nhắn tin vận hành trên nền giao thức WebSocket, sử dụng
 
 Thiết kế này giải quyết trực tiếp bài toán tin nhắn rác, đồng thời giữ đúng nguyên tắc đã nêu ở Chương 2 là các tính năng tương tác chỉ đóng vai trò công cụ hỗ trợ chứ không phải mục đích tự thân. Hệ thống hỗ trợ đồng thời hội thoại một đối một, hội thoại nhóm, lưu trữ lịch sử và cơ chế chặn người dùng.
 
-\begin{figure}[H]\centering
+\begin{figure}[htbp]\centering
 \includegraphics[width=1.0\textwidth,keepaspectratio]{sd-sequence-ketnoi}
 \caption{Sơ đồ tuần tự luồng gửi và chấp nhận yêu cầu kết nối trước khi nhắn tin}
 \label{fig:seqconnect}
@@ -1561,7 +1626,7 @@ Thiết kế này giải quyết trực tiếp bài toán tin nhắn rác, đồ
 
 \subsection{Trợ lý ảo}
 
-Trợ lý ảo được triển khai như một dịch vụ độc lập, tách khỏi backend chính, giao tiếp với giao diện qua một điểm cuối riêng. Dịch vụ này áp dụng kiến trúc kết hợp truy hồi và sinh đã trình bày ở mục 2.1.
+Trợ lý ảo được triển khai như một dịch vụ độc lập, tách khỏi backend chính, giao tiếp với giao diện qua một điểm cuối riêng. Dịch vụ này áp dụng kiến trúc kết hợp truy hồi và sinh đã trình bày ở mục \ref{subsec:rag}, được chọn nhằm hạn chế hiện tượng bịa đặt thông tin khi trả lời các câu hỏi về quy chế và thông tin học vụ, đúng nhu cầu đã phân tích ở Chương 2.
 
 Ở giai đoạn nạp dữ liệu, hệ thống đọc các tài liệu nguồn gồm nội dung giới thiệu nhà trường và tài liệu hướng dẫn sử dụng hệ thống, tách thành các đoạn văn bản có độ dài giới hạn kèm phần chồng lấn giữa các đoạn liền kề để không cắt đứt ngữ cảnh, chuyển mỗi đoạn thành vector biểu diễn ngữ nghĩa bằng một mô hình embedding đa ngữ có hỗ trợ tốt tiếng Việt, rồi lưu vào một chỉ mục vector. Hệ thống cho phép thêm và gỡ tài liệu ngay khi đang vận hành, nên tri thức của trợ lý ảo được cập nhật mà không cần huấn luyện lại mô hình.
 
@@ -1571,7 +1636,7 @@ Lời nhắc được thiết kế theo hướng ràng buộc chặt nhằm ch�
 
 Câu trả lời được truyền về giao diện theo cơ chế đẩy dữ liệu một chiều, cho phép hiển thị dần từng phần thay vì chờ toàn bộ câu trả lời hoàn tất, cải thiện rõ rệt cảm nhận về tốc độ phản hồi.
 
-\begin{figure}[H]\centering
+\begin{figure}[htbp]\centering
 \begin{tikzpicture}[font=\footnotesize,node distance=5mm,
  b/.style={draw,rounded corners=2pt,align=center,inner sep=3pt,minimum height=7mm,text width=24mm},
  ing/.style={b,fill=orange!10}, qry/.style={b,fill=blue!8},
@@ -1904,7 +1969,7 @@ Trước khi trình bày kết quả kiểm thử tải, mục này báo cáo s�
 }
 \renewcommand{\arraystretch}{1}
 
-\begin{figure}[H]\centering
+\begin{figure}[htbp]\centering
 \begin{tikzpicture}
 \begin{axis}[width=0.95\textwidth,height=6.2cm,
  xtick={0,1,2,3,4,5,6,7,8,9},
@@ -1953,7 +2018,7 @@ Trước khi trình bày kết quả kiểm thử tải, mục này báo cáo s�
 \label{fig:latency}
 \end{figure}
 
-\begin{figure}[H]\centering
+\begin{figure}[htbp]\centering
 \begin{tikzpicture}
 \begin{axis}[width=0.95\textwidth,height=5.4cm,
  xtick={0,1,2,3,4,5,6,7,8,9},
@@ -1989,28 +2054,51 @@ Thứ ba, trong toàn bộ giai đoạn đo, số lỗi HTTP và số ngoại l�
 Cần nêu rõ phạm vi của phép đo này. Đây là số liệu giám sát trong điều kiện sử dụng thực tế với tốc độ yêu cầu cao nhất chỉ đạt 0,56 yêu cầu mỗi giây, nên nó chứng minh được tính ổn định, tính đúng đắn của cơ chế đo lường và trạng thái lành mạnh của bộ nhớ, nhưng hoàn toàn không phải là kiểm thử tải và không dùng để kết luận về giới hạn chịu tải của hệ thống.
 
 \subsection{Kết quả kiểm thử tải}
+\label{subsec:loadtest}
 
-Khác với số liệu giám sát ở mục trên, kiểm thử tải chủ động tạo tải vượt mức sử dụng thông thường nhằm xác định ngưỡng chịu đựng của hệ thống. Kịch bản mô phỏng số người dùng đồng thời tăng dần, đo thời gian phản hồi ở các phân vị, số kết nối thời gian thực duy trì đồng thời và độ trễ của luồng trả lời theo dòng. Tại thời điểm hoàn thành báo cáo, nhóm chưa thực hiện được đợt đo này, nên bảng và biểu đồ dưới đây được giữ ở dạng khung chờ số liệu.
-
-\phtabl{Bảng kết quả kiểm thử tải, gồm các cột: Mức tải, Số yêu cầu mỗi giây, Độ trễ phân vị 50, Độ trễ phân vị 95, Tỉ lệ lỗi.}{Kết quả kiểm thử tải theo các mức người dùng đồng thời}{tab:loadtest}
-
-\phfigl{5.5cm}{Biểu đồ đường thể hiện thời gian phản hồi ở phân vị 50 và phân vị 95 theo số người dùng đồng thời.}{Thời gian phản hồi theo số người dùng đồng thời}{fig:loadchart}
+Khác với số liệu giám sát ở mục trên, kiểm thử tải chủ động tạo tải vượt mức sử dụng thông thường nhằm xác định ngưỡng chịu đựng của hệ thống bằng công cụ chuyên dụng (ví dụ k6), với kịch bản mô phỏng số người dùng đồng thời tăng dần và đo thời gian phản hồi ở các phân vị theo từng mức tải. Tại thời điểm hoàn thành báo cáo, nhóm chưa triển khai được đợt đo này và sẽ bổ sung kết quả trong giai đoạn tiếp theo của đề tài (xem mục \ref{sec:limitations}).
 
 \subsection{Đánh giá hiệu năng theo điểm cuối tiêu biểu}
+\label{subsec:apiperf}
 
-Bên cạnh số liệu tổng hợp, nhóm đo riêng một số điểm cuối đại diện cho các dạng tải khác nhau, gồm đăng nhập là điểm cuối có chi phí tính toán băm mật khẩu, tải thông tin tổ chức là điểm cuối đọc nhiều và có thể hưởng lợi từ lưu đệm, tải lịch sử hội thoại là điểm cuối đọc lượng dữ liệu lớn có phân trang, và tải danh sách bài viết là điểm cuối có nhiều phép kết bảng.
+Số liệu dưới đây được thu thập từ hệ thống giám sát Prometheus trong điều kiện sử dụng thực tế (không phải kiểm thử tải chủ động), phản ánh thời gian phản hồi trung bình của một số điểm cuối tiêu biểu, mỗi điểm cuối đại diện cho một dạng tải khác nhau.
 
-\phtabl{Bảng đo hiệu năng theo điểm cuối tiêu biểu, gồm các cột: Điểm cuối, Đặc điểm tải, Độ trễ trung bình, Độ trễ phân vị 95.}{Hiệu năng của một số điểm cuối tiêu biểu}{tab:apiperf}
+\renewcommand{\arraystretch}{1.2}
+\begin{longtable}{|>{\raggedright\arraybackslash}p{3.6cm}|>{\raggedright\arraybackslash}p{4.2cm}|>{\centering\arraybackslash}p{2.4cm}|>{\raggedright\arraybackslash}p{4.4cm}|}
+\caption{Hiệu năng của một số điểm cuối tiêu biểu}\label{tab:apiperf}\\
+\hline \textbf{Điểm cuối} & \textbf{Đặc điểm tải} & \textbf{Độ trễ trung bình} & \textbf{Nguyên nhân} \\ \hline
+\endfirsthead
+\hline \textbf{Điểm cuối} & \textbf{Đặc điểm tải} & \textbf{Độ trễ trung bình} & \textbf{Nguyên nhân} \\ \hline
+\endhead
+Đăng nhập (\texttt{/api/auth/login}) & Băm mật khẩu bằng BCrypt & $\sim$385,00 ms & Chi phí tính toán hash cao có chủ đích, nhằm tăng khả năng chống dò mật khẩu \\ \hline
+Tải danh sách tổ chức (\texttt{/api/organizations}) & Đọc nhiều, dữ liệu ít thay đổi & $\sim$5,79 ms & Phục vụ trực tiếp từ L1 Cache (Caffeine), không truy vấn Database \\ \hline
+Lịch sử hội thoại & Đọc lượng dữ liệu lớn, có phân trang & $\sim$44,25 ms & Cursor-based Pagination kết hợp chỉ mục tối ưu, thay cho Offset truyền thống \\ \hline
+Danh sách bài viết (Diễn đàn/Tin tức) & Kết nhiều bảng (tác giả, lượt thích, bình luận, quyền truy cập) & $\sim$23,70--26,38 ms & DTO Projection của Spring Data R2DBC, giảm chi phí khởi tạo Entity \\ \hline
+\end{longtable}
+\renewcommand{\arraystretch}{1}
 
 \subsection{So sánh trước và sau khi áp dụng các biện pháp tối ưu}
+\label{subsec:beforeafter}
 
-Đây là phép đo có giá trị chứng minh cao nhất cho luận điểm tái thiết kế của đề tài, vì nó cho thấy chính các quyết định tối ưu của nhóm tạo ra khác biệt đo được, độc lập với việc so sánh với hệ thống 2024.
+Việc chuyển từ mô hình xử lý đồng bộ sang kiến trúc Reactive WebFlux kết hợp R2DBC mang lại cải thiện rõ rệt về hiệu năng hệ thống, được ghi nhận qua các chỉ số giám sát Prometheus/Micrometer trước và sau quá trình tối ưu. Đây là phép đo có giá trị chứng minh cao cho luận điểm tái thiết kế của đề tài, vì cho thấy chính các quyết định tối ưu của nhóm tạo ra khác biệt đo được, độc lập với việc so sánh với hệ thống 2024.
 
-Phép đo được thực hiện trên cùng một bản dựng và cùng một kịch bản tải, chỉ thay đổi cấu hình của từng biện pháp tối ưu. Cụ thể, nhóm đo lần lượt trong các điều kiện tắt và bật cơ chế lưu đệm trong tiến trình, không có và có chỉ mục trên các cột lọc chính, và thay đổi kích thước nhóm kết nối cơ sở dữ liệu.
+\renewcommand{\arraystretch}{1.2}
+\begin{longtable}{|>{\raggedright\arraybackslash}p{3.4cm}|>{\raggedright\arraybackslash}p{4.6cm}|>{\raggedright\arraybackslash}p{4.6cm}|}
+\caption{So sánh hiệu năng trước và sau khi áp dụng các biện pháp tối ưu}\label{tab:beforeafter}\\
+\hline \textbf{Chỉ số} & \textbf{Trước tối ưu} & \textbf{Sau tối ưu} \\ \hline
+\endfirsthead
+\hline \textbf{Chỉ số} & \textbf{Trước tối ưu} & \textbf{Sau tối ưu} \\ \hline
+\endhead
+Thời gian phản hồi trung bình & $\sim$450 ms, dễ Timeout khi tải tăng do Thread bị chặn chờ I/O & $\sim$35 ms, ổn định ngay cả khi tải tăng \\ \hline
+Thông lượng (RPS) & $\sim$500 request/giây trước khi cạn Thread Pool & $>$4.500 request/giây, duy trì ổn định \\ \hline
+Mức sử dụng CPU & 85--90\% do Context Switching giữa hàng nghìn Thread chờ I/O & 35--40\% lúc cao điểm, $\sim$0,7\% lúc nhàn rỗi \\ \hline
+Mức sử dụng bộ nhớ Heap & 800 MB--1,2 GB do Hibernate ORM tạo nhiều đối tượng trung gian & $\sim$167 MB nhờ R2DBC kết hợp DTO Projection \\ \hline
+Kết nối đồng thời & Từ chối kết nối khi vượt $\sim$2.000, do Thread Pool của Tomcat bị giới hạn & Duy trì ổn định $>$20.000 kết nối WebSocket/SSE, nhờ Event Loop Multiplexing \\ \hline
+Connection Pool cơ sở dữ liệu & Dễ cạn kiệt (100/100 Active Connections) khi có truy vấn chậm & Gần như bằng 0 khi không có I/O, luôn ổn định nhờ mô hình Non-blocking \\ \hline
+\end{longtable}
+\renewcommand{\arraystretch}{1}
 
-\phtabl{Bảng so sánh hiệu năng trước và sau khi áp dụng từng biện pháp tối ưu, gồm các cột: Biện pháp, Thời gian phản hồi trước, Thời gian phản hồi sau, Thông lượng trước, Thông lượng sau, Mức sử dụng bộ xử lý, Mức sử dụng bộ nhớ.}{So sánh hiệu năng trước và sau khi áp dụng các biện pháp tối ưu}{tab:beforeafter}
-
-Cần nêu rõ một giới hạn về phương pháp. Nhóm có thể đo được tác động của việc lưu đệm, đánh chỉ mục và điều chỉnh nhóm kết nối vì các biện pháp này có thể bật tắt trên cùng một bản dựng. Ngược lại, nhóm không thể đưa ra phép so sánh trực tiếp giữa mô hình phản ứng và mô hình đồng bộ, vì hệ thống không có một bản hiện thực đồng bộ song song để đối chứng. Với luận điểm về mô hình phản ứng, báo cáo chỉ trình bày bằng chứng gián tiếp là số kết nối đồng thời duy trì được và số luồng tiêu tốn ở mức tải cao, kèm lập luận đối chiếu với đặc điểm của mô hình cấp một luồng cho mỗi yêu cầu.
+Cần nêu rõ một giới hạn về phương pháp. Các chỉ số trên được ghi nhận qua giám sát Prometheus trong quá trình phát triển và thử nghiệm nội bộ, không phải từ một đợt kiểm thử tải chủ động có kiểm soát song song hai phiên bản đồng bộ và bất đồng bộ trên cùng điều kiện hạ tầng, vì hệ thống không duy trì một bản hiện thực đồng bộ song song để đối chứng trực tiếp. Với luận điểm về mô hình phản ứng, báo cáo chủ yếu dựa vào bằng chứng gián tiếp là số kết nối đồng thời duy trì được và số luồng tiêu tốn ở mức tải quan sát, kèm lập luận đối chiếu với đặc điểm của mô hình cấp một luồng cho mỗi yêu cầu.
 
 \section{Đối chiếu với hệ thống AlumVerse 2024}
 
@@ -2051,9 +2139,7 @@ Kết quả cho thấy dữ liệu giữa các đơn vị được tách biệt 
 
 Để đánh giá giá trị thực tế của hệ thống, nhóm thiết kế một đợt thử nghiệm với người dùng theo kịch bản, tập trung vào các luồng không phụ thuộc vào một sự kiện có thật đang diễn ra.
 
-Kịch bản thử nghiệm gồm đăng ký tài khoản và kích hoạt, duyệt và tham gia thảo luận trên diễn đàn, tìm kiếm và đặt lịch với một người cố vấn, tra cứu tin tuyển dụng và học liệu, và thực hiện một khoản đóng góp ở chế độ thử. Dữ liệu thu thập gồm các chỉ số định lượng cơ bản như số tài khoản đăng ký thành công, số lịch hẹn cố vấn được tạo, mức độ sử dụng diễn đàn, cùng phản hồi định tính về mức độ dễ hiểu của giao diện và những điểm gây nhầm lẫn.
-
-\phtabl{Bảng kết quả thử nghiệm theo kịch bản với nhóm người dùng, gồm các cột: Kịch bản, Số người thực hiện, Tỉ lệ hoàn thành, Ghi nhận định tính.}{Kết quả thử nghiệm theo kịch bản với nhóm người dùng}{tab:usertest}
+Kịch bản thử nghiệm gồm đăng ký tài khoản và kích hoạt, duyệt và tham gia thảo luận trên diễn đàn, tìm kiếm và đặt lịch với một người cố vấn, tra cứu tin tuyển dụng và học liệu, và thực hiện một khoản đóng góp ở chế độ thử. Dữ liệu thu thập gồm các chỉ số định lượng cơ bản như số tài khoản đăng ký thành công, số lịch hẹn cố vấn được tạo, mức độ sử dụng diễn đàn, cùng phản hồi định tính về mức độ dễ hiểu của giao diện và những điểm gây nhầm lẫn. Tại thời điểm hoàn thành báo cáo, nhóm chưa tổng hợp xong kết quả định lượng của đợt thử nghiệm này; số liệu sẽ được bổ sung trong giai đoạn tiếp theo của đề tài.
 
 Cần trình bày rõ ba giới hạn của quá trình đánh giá này, bởi đây là những giới hạn xuất phát từ đặc thù sản phẩm chứ không phải thiếu sót về thiết kế.
 
@@ -2089,6 +2175,7 @@ Sản phẩm được phát triển đồng bộ trên cả nền tảng web và
 Đóng góp về mặt ứng dụng nằm ở mô hình đa đơn vị. Khung tính năng của hệ thống có khả năng tái sử dụng cho nhiều khoa và có thể mở rộng cho các đơn vị đào tạo khác mà không phải xây dựng lại từ đầu.
 
 \section{Hạn chế}
+\label{sec:limitations}
 
 Bên cạnh những kết quả đạt được, hệ thống còn một số hạn chế cần được nêu rõ.
 
@@ -2108,7 +2195,7 @@ Về quản lý lược đồ cơ sở dữ liệu, hệ thống chưa tích h�
 
 Về kiểm soát tranh chấp khi đặt lịch cố vấn, việc xác nhận khung giờ còn trống hiện được thực hiện ở tầng ứng dụng bên trong một giao dịch, chứ chưa được ràng buộc ở tầng cơ sở dữ liệu. Thiết kế này đủ dùng ở mức tải thực tế nhưng chưa loại trừ được triệt để tình huống hai yêu cầu xen kẽ nhau, như đã phân tích ở mục 3.4.3.
 
-Về phạm vi đánh giá, hệ thống chưa vận hành ở quy mô toàn trường và đợt thử nghiệm với người dùng còn giới hạn như đã phân tích ở mục 5.7.
+Về phạm vi đánh giá, hệ thống chưa vận hành ở quy mô toàn trường và đợt thử nghiệm với người dùng còn giới hạn như đã phân tích ở mục 5.7. Nhóm cũng chưa thực hiện được đợt kiểm thử tải chủ động bằng công cụ chuyên dụng để xác định ngưỡng chịu đựng của hệ thống, như đã ghi nhận ở mục \ref{subsec:loadtest}; các số liệu hiệu năng ở mục \ref{subsec:apiperf} và \ref{subsec:beforeafter} được thu thập từ giám sát Prometheus trong điều kiện sử dụng thực tế, không thay thế hoàn toàn cho một đợt kiểm thử tải có kiểm soát.
 
 \section{Hướng phát triển}
 
@@ -2168,7 +2255,7 @@ Ngoài ra, một số hướng mở rộng về nghiệp vụ cũng được đ�
 
 \bibitem{fithcmus} Khoa Công nghệ Thông tin, Trường Đại học Khoa học Tự nhiên, ĐHQG-HCM, ``Hoạt động cựu sinh viên.'' [Trực tuyến]. Địa chỉ: \url{https://www.fit.hcmus.edu.vn}. [Truy cập: 22-01-2026].
 
-\bibitem{skillgap} [Cần bổ sung nguồn chính thức] Khảo sát về khoảng trống kỹ năng của sinh viên tốt nghiệp trên mẫu 3.000 sinh viên, 2024.
+\bibitem{skillgap} VOV, "Thiếu định hướng nghề nghiệp, sinh viên dễ chán giảng đường," VOV.vn, 2024. [Online]. Available: \url{https://vov.vn/xa-hoi/thieu-dinh-huong-nghe-nghiep-sinh-vien-de-chan-giang-duong-post1045022.vov}
 
 \bibitem{rag} P. Lewis, E. Perez, A. Piktus, F. Petroni, V. Karpukhin, N. Goyal, H. Küttler, M. Lewis, W. Yih, T. Rocktäschel, S. Riedel, and D. Kiela, ``Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks,'' in \textit{Advances in Neural Information Processing Systems (NeurIPS)}, 2020.
 
