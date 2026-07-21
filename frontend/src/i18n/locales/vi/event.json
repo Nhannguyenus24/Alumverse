@@ -75,6 +75,7 @@
   "already_registered": "Bạn đã đăng ký sự kiện này rồi.",
   "register_failed": "Đăng ký thất bại",
   "participants_interested": "{{participants}} người tham gia · {{interested}} người quan tâm",
+  "interested_only": "{{interested}} người quan tâm",
   "ticket_status_registered": "Đã đăng ký",
   "ticket_status_checked_in": "Đã check-in",
   "ticket_status_expired": "Đã hết hạn",

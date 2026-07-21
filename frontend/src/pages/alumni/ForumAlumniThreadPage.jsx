@@ -638,14 +638,22 @@ const ForumAlumniThreadPage = () => {
     return {
       title,
       authorName:
-        authorFromTopic ?? authorFromPost ?? FALLBACK_THREAD.authorName,
+        topicSummary !== undefined
+          ? authorFromTopic
+          : (authorFromPost ?? FALLBACK_THREAD.authorName),
       authorMemberId:
-        topicSummary?.createdByMemberId ?? firstPost?.authorMemberId ?? null,
+        topicSummary !== undefined
+          ? topicSummary.createdByMemberId
+          : (firstPost?.authorMemberId ?? null),
       authorAvatarUrl:
-        topicSummary?.authorAvatarUrl ?? firstPost?.authorAvatarUrl ?? null,
+        topicSummary !== undefined
+          ? topicSummary.authorAvatarUrl
+          : (firstPost?.authorAvatarUrl ?? null),
       role: "Alumni",
       createdAt:
-        createdFromTopic ?? createdFromPost ?? FALLBACK_THREAD.createdAt,
+        topicSummary !== undefined
+          ? createdFromTopic
+          : (createdFromPost ?? FALLBACK_THREAD.createdAt),
     };
   }, [
     location.state?.topicTitle,
