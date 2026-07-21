@@ -176,7 +176,7 @@ export default function SettingPage() {
 
   const navigate = useNavigate();
   const toOrgPath = useOrgPath();
-  const { user } = useAuthStore();
+  const user = useAuthStore(state => state.user);
   const verificationLevel = useAuthStore((state) => state.verificationLevel);
   const setAuthUser = useAuthStore((state) => state.setUser);
   const queryClient = useQueryClient();

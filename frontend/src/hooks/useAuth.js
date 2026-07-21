@@ -37,12 +37,21 @@ const getErrorMessage = (err, fallback) =>
 export const useAuth = () => {
   const { t } = useTranslation('auth');
   const queryClient = useQueryClient();
-  const store = useAuthStore();
-
-  const getFirstZodMessage = (error) =>
-    error?.issues?.[0]?.message ?? t('invalid_data');
+    const getFirstZodMessage = (error) => error?.issues?.[0]?.message ?? t('invalid_data');
   const organizationIdFromStore = useOrganizationStore((state) => state.organization?.id ?? null);
-  const { user, token, loading, error, verificationLevel, mustChangePassword } = store;
+  
+  const user = useAuthStore(state => state.user);
+  const token = useAuthStore(state => state.token);
+  const verificationLevel = useAuthStore(state => state.verificationLevel);
+  const mustChangePassword = useAuthStore(state => state.mustChangePassword);
+  
+  const reset = useAuthStore(state => state.reset);
+  const setAuth = useAuthStore(state => state.setAuth);
+  const setMustChangeStorePassword = useAuthStore(state => state.setMustChangePassword);
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const clearError = useCallback(() => setError(null), []);
 
   const [storageHydrated, setStorageHydrated] = useState(() =>
     typeof useAuthStore.persist?.hasHydrated === 'function'
@@ -145,10 +154,6 @@ export const useAuth = () => {
     };
   }, [storageHydrated, token, user, authResolved]);
 
-  const setLoading = useCallback((value) => store.setLoading(value), [store]);
-  const setError = useCallback((message) => store.setError(message), [store]);
-  const clearError = useCallback(() => store.setError(null), [store]);
-
   const applyAccessTokenToStore = useCallback((responseData, fallbackMessage) => {
     const accessToken = responseData?.data?.accessToken ?? null;
     const verificationLevel = responseData?.data?.verificationLevel ?? null;
@@ -156,24 +161,24 @@ export const useAuth = () => {
     const authUser = userFromAccessToken(accessToken);
     if (!accessToken || !authUser) {
       const msg = responseData?.message ?? fallbackMessage;
-      store.reset();
-      store.setError(msg);
+      reset();
+      setError(msg);
       return { ok: false, error: msg };
     }
-    store.setAuth({
+    setAuth({
       user: authUser,
       token: accessToken,
       verificationLevel,
       mustChangePassword,
     });
     return { ok: true, data: { token: accessToken, user: authUser, verificationLevel, mustChangePassword } };
-  }, [store]);
+  }, []);
 
   const login = useCallback(async (payload) => {
     const parsed = loginSchema.safeParse(payload);
     if (!parsed.success) {
       const msg = getFirstZodMessage(parsed.error);
-      store.setError(msg);
+      setError(msg);
       return { ok: false, error: msg };
     }
     const organizationId = payload.organizationId ?? organizationIdFromStore;
@@ -188,22 +193,22 @@ export const useAuth = () => {
       return applyAccessTokenToStore(data, t('login_failed'));
     } catch (err) {
       const message = getErrorMessage(err, t('login_failed'));
-      store.reset();
-      store.setError(message);
+      reset();
+      setError(message);
       return { ok: false, error: message };
     }
-  }, [store, organizationIdFromStore, setLoading, applyAccessTokenToStore]);
+  }, [organizationIdFromStore, setLoading, applyAccessTokenToStore]);
 
   const loginWithGoogle = useCallback(async (idToken, rememberMe = false) => {
     if (!idToken || typeof idToken !== 'string') {
       const msg = t('google_token_invalid');
-      store.setError(msg);
+      setError(msg);
       return { ok: false, error: msg };
     }
 
     if (!organizationIdFromStore) {
       const msg = 'Organization ID is required';
-      store.setError(msg);
+      setError(msg);
       return { ok: false, error: msg };
     }
 
@@ -217,23 +222,23 @@ export const useAuth = () => {
       return applyAccessTokenToStore(data, t('google_login_failed'));
     } catch (err) {
       const message = getErrorMessage(err, t('google_login_failed'));
-      store.reset();
-      store.setError(message);
+      reset();
+      setError(message);
       return { ok: false, error: message };
     }
-  }, [store, organizationIdFromStore, setLoading, applyAccessTokenToStore]);
+  }, [organizationIdFromStore, setLoading, applyAccessTokenToStore]);
 
   const register = useCallback(async (payload) => {
     const parsed = registerSchema.safeParse(payload);
     if (!parsed.success) {
       const msg = getFirstZodMessage(parsed.error);
-      store.setError(msg);
+      setError(msg);
       return { ok: false, error: msg };
     }
     const organizationId = payload.organizationId ?? organizationIdFromStore;
     if (!organizationId) {
       const msg = 'Organization ID is required';
-      store.setError(msg);
+      setError(msg);
       return { ok: false, error: msg };
     }
     setLoading(true);
@@ -246,20 +251,20 @@ export const useAuth = () => {
       });
       if (!data?.data) {
         const msg = data?.message ?? t('register_failed');
-        store.reset();
-        store.setError(msg);
+        reset();
+        setError(msg);
         return { ok: false, error: msg };
       }
-      store.setLoading(false);
-      store.setError(null);
+      setLoading(false);
+      setError(null);
       return { ok: true };
     } catch (err) {
       const message = getErrorMessage(err, t('register_failed'));
-      store.reset();
-      store.setError(message);
+      reset();
+      setError(message);
       return { ok: false, error: message };
     }
-  }, [store, organizationIdFromStore, setLoading]);
+  }, [organizationIdFromStore, setLoading]);
 
   /**
    * Runs a validated POST that does NOT establish a session (OTP-style flows):
@@ -269,7 +274,7 @@ export const useAuth = () => {
     const parsed = schema.safeParse(payload);
     if (!parsed.success) {
       const msg = getFirstZodMessage(parsed.error);
-      store.setError(msg);
+      setError(msg);
       return { ok: false, error: msg };
     }
     setLoading(true);
@@ -277,18 +282,18 @@ export const useAuth = () => {
       const { data } = await apiClient.post(url, parsed.data);
       if (!data?.data) {
         const msg = data?.message ?? t(failKey);
-        store.setError(msg);
+        setError(msg);
         return { ok: false, error: msg };
       }
-      store.setLoading(false);
-      store.setError(null);
+      setLoading(false);
+      setError(null);
       return { ok: true, message: data?.message };
     } catch (err) {
       const message = getErrorMessage(err, t(failKey));
-      store.setError(message);
+      setError(message);
       return { ok: false, error: message };
     }
-  }, [store, setLoading, t]);
+  }, [setLoading, t]);
 
   /** Forgot-password: send an OTP to the given email. */
   const forgotPassword = useCallback(
@@ -316,12 +321,12 @@ export const useAuth = () => {
     const parsed = changePasswordRequestSchema.safeParse(payload);
     if (!parsed.success) {
       const msg = getFirstZodMessage(parsed.error);
-      store.setError(msg);
+      setError(msg);
       return { ok: false, error: msg };
     }
-    if (!store.user?.id) {
+    if (!useAuthStore.getState().user?.id) {
       const msg = t('login_required_for_change_password');
-      store.setError(msg);
+      setError(msg);
       return { ok: false, error: msg };
     }
     setLoading(true);
@@ -332,26 +337,26 @@ export const useAuth = () => {
       });
       if (!data?.data) {
         const msg = data?.message ?? t('change_password_failed');
-        store.setError(msg);
+        setError(msg);
         return { ok: false, error: msg };
       }
-      store.setLoading(false);
-      store.setError(null);
-      store.setMustChangePassword(false);
+      setLoading(false);
+      setError(null);
+      setMustChangeStorePassword(false);
       return { ok: true, message: data?.message };
     } catch (err) {
       const message = getErrorMessage(err, t('change_password_failed'));
-      store.setLoading(false);
-      store.setError(message);
+      setLoading(false);
+      setError(message);
       return { ok: false, error: message };
     }
-  }, [store, setLoading, t]);
+  }, [setLoading, t]);
 
   const resetPasswordWithOtp = useCallback(async (payload) => {
     const { email, otp, newPassword } = payload ?? {};
     if (!email || !otp || !newPassword) {
       const msg = t('invalid_data');
-      store.setError(msg);
+      setError(msg);
       return { ok: false, error: msg };
     }
     setLoading(true);
@@ -359,27 +364,27 @@ export const useAuth = () => {
       const { data } = await apiClient.post('/auth/reset-password', { email, otp, newPassword });
       if (!data?.data && data?.message == null) {
         const msg = t('change_password_failed');
-        store.setError(msg);
+        setError(msg);
         return { ok: false, error: msg };
       }
-      store.setLoading(false);
-      store.setError(null);
+      setLoading(false);
+      setError(null);
       return { ok: true, message: data?.message };
     } catch (err) {
       const message = getErrorMessage(err, t('change_password_failed'));
-      store.setError(message);
+      setError(message);
       return { ok: false, error: message };
     }
-  }, [store, setLoading]);
+  }, [setLoading]);
 
   const logout = useCallback(async () => {
     try {
       await apiClient.post('/auth/logout');
     } finally {
       queryClient.clear();
-      store.reset();
+      reset();
     }
-  }, [queryClient, store]);
+  }, [queryClient]);
 
   const isBootLoading = !storageHydrated || !authResolved;
 
