@@ -196,6 +196,8 @@ export const useAuth = () => {
       reset();
       setError(message);
       return { ok: false, error: message };
+    } finally {
+      setLoading(false);
     }
   }, [organizationIdFromStore, setLoading, applyAccessTokenToStore]);
 
@@ -225,6 +227,8 @@ export const useAuth = () => {
       reset();
       setError(message);
       return { ok: false, error: message };
+    } finally {
+      setLoading(false);
     }
   }, [organizationIdFromStore, setLoading, applyAccessTokenToStore]);
 
@@ -255,7 +259,6 @@ export const useAuth = () => {
         setError(msg);
         return { ok: false, error: msg };
       }
-      setLoading(false);
       setError(null);
       return { ok: true };
     } catch (err) {
@@ -263,6 +266,8 @@ export const useAuth = () => {
       reset();
       setError(message);
       return { ok: false, error: message };
+    } finally {
+      setLoading(false);
     }
   }, [organizationIdFromStore, setLoading]);
 
@@ -285,13 +290,14 @@ export const useAuth = () => {
         setError(msg);
         return { ok: false, error: msg };
       }
-      setLoading(false);
       setError(null);
       return { ok: true, message: data?.message };
     } catch (err) {
       const message = getErrorMessage(err, t(failKey));
       setError(message);
       return { ok: false, error: message };
+    } finally {
+      setLoading(false);
     }
   }, [setLoading, t]);
 
@@ -340,15 +346,15 @@ export const useAuth = () => {
         setError(msg);
         return { ok: false, error: msg };
       }
-      setLoading(false);
       setError(null);
       setMustChangeStorePassword(false);
       return { ok: true, message: data?.message };
     } catch (err) {
       const message = getErrorMessage(err, t('change_password_failed'));
-      setLoading(false);
       setError(message);
       return { ok: false, error: message };
+    } finally {
+      setLoading(false);
     }
   }, [setLoading, t]);
 
@@ -367,13 +373,14 @@ export const useAuth = () => {
         setError(msg);
         return { ok: false, error: msg };
       }
-      setLoading(false);
       setError(null);
       return { ok: true, message: data?.message };
     } catch (err) {
       const message = getErrorMessage(err, t('change_password_failed'));
       setError(message);
       return { ok: false, error: message };
+    } finally {
+      setLoading(false);
     }
   }, [setLoading]);
 

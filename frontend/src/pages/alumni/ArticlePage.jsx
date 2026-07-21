@@ -29,10 +29,12 @@ import LinkIcon from "@mui/icons-material/Link";
 import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
 import EventAvailableOutlinedIcon from "@mui/icons-material/EventAvailableOutlined";
 import Page from "../../components/Page";
+import useOrganizationStore from "../../stores/organizationStore";
 import { useArticleById } from "../../hooks/articles/useArticleById";
 import DOMPurify from "dompurify";
 import { formatDate, formatDateRange } from "../../utils/dateFormatter";
 import { formatNumberVi } from "../../utils/numberFormatter";
+import { normalizeRichTextHtml } from "../../utils/stringUtils";
 import JoinEventDialog from "../../components/event/JoinEventDialog";
 import { eventApi, savedItemApi } from "../../utils/api";
 import { useEventQuestions, formatAnswersForApi } from "../../hooks/events/useEventQuestions";
@@ -573,7 +575,7 @@ const ArticlePage = () => {
   const { cleanContent, mainImageCaption } = useMemo(() => {
     const parsedContent = extractMainImageCaption(article?.content ?? "");
     return {
-      cleanContent: normalizeArticleHtml(parsedContent.content ? DOMPurify.sanitize(parsedContent.content) : ""),
+      cleanContent: normalizeRichTextHtml(parsedContent.content || ""),
       mainImageCaption: parsedContent.caption,
     };
   }, [article]);
@@ -687,10 +689,35 @@ const ArticlePage = () => {
     }
   };
 
+  const currentOrgId = useOrganizationStore((s) => s.organization?.id ?? null);
+  const articleOrgId = article?.organizationId ?? article?.organization_id;
+  const isOrgMismatch = Boolean(
+    article &&
+    currentOrgId &&
+    articleOrgId &&
+    String(articleOrgId) !== String(currentOrgId)
+  );
+
   if (isPending) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
         <LoadingSkeleton />
+      </Box>
+    );
+  }
+
+  if (isOrgMismatch) {
+    return (
+      <Box sx={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", minHeight: "60vh", textAlign: "center", px: 3 }}>
+        <Typography variant="h5" color="error.main" fontWeight={800} sx={{ mb: 1 }}>
+          {t('article:not_found_in_org_title', 'Nội dung không thuộc về tổ chức này')}
+        </Typography>
+        <Typography color="text.secondary" sx={{ mb: 3, maxWidth: 500 }}>
+          {t('article:not_found_in_org_desc', 'Nội dung này thuộc về một tổ chức khác và không thể xem từ đường dẫn hiện tại.')}
+        </Typography>
+        <Button variant="outlined" onClick={() => navigate('/')}>
+          {t('common:back_to_home', 'Quay về trang chủ')}
+        </Button>
       </Box>
     );
   }
@@ -951,12 +978,12 @@ const ArticlePage = () => {
                   "& .ql-align-center, & [style*='text-align: center' i]": { textAlign: "center !important" },
                   "& .ql-align-right, & [style*='text-align: right' i]": { textAlign: "right !important" },
                   "& .ql-align-justify, & [style*='text-align: justify' i]": { textAlign: "justify !important" },
-                  "& img, & img.ql-content-image": {
+                  "& img, & img.rich-content-image, & img.ql-content-image": {
                     display: "block",
-                    maxWidth: "min(100%, 560px) !important",
+                    maxWidth: "min(100%, 520px) !important",
                     width: "auto !important",
                     height: "auto !important",
-                    maxHeight: "80vh",
+                    maxHeight: "560px !important",
                     objectFit: "contain",
                     mx: "auto",
                     my: 2,

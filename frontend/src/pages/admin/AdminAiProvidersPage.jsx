@@ -287,19 +287,19 @@ export const AdminAiProvidersContent = ({ showHeader = true }) => {
             value={form.apiKey}
             onChange={(e) => setForm((f) => ({ ...f, apiKey: e.target.value }))}
             placeholder={modal.mode === 'edit' ? 'Để trống = giữ key cũ' : ''}
-            helperText="Key được mã hóa trước khi lưu, không hiển thị lại."
+            helperText={t('admin:ai_provider_key_encrypted', 'Key được mã hóa trước khi lưu, không hiển thị lại.')}
             slotProps={{ inputLabel: { shrink: true } }}
           />
           <Stack direction="row" spacing={2}>
             <TextField
-              label="Ưu tiên" type="number" value={form.priority}
+              label={t('admin:ai_provider_priority', 'Ưu tiên')} type="number" value={form.priority}
               onChange={(e) => setForm((f) => ({ ...f, priority: e.target.value }))}
               slotProps={{ inputLabel: { shrink: true } }}
               sx={{ width: 140 }}
             />
             <Stack direction="row" alignItems="center" spacing={1}>
               <Switch checked={form.enabled} onChange={(e) => setForm((f) => ({ ...f, enabled: e.target.checked }))} />
-              <Typography variant="body2">{form.enabled ? 'Bật' : 'Tắt'}</Typography>
+              <Typography variant="body2">{form.enabled ? t('common:enabled', 'Bật') : t('common:disabled', 'Tắt')}</Typography>
             </Stack>
           </Stack>
 
@@ -313,7 +313,7 @@ export const AdminAiProvidersContent = ({ showHeader = true }) => {
                 slotProps={{ inputLabel: { shrink: true } }}
               />
               <TextField
-                label="Ưu tiên" type="number" value={m.priority}
+                label={t('admin:ai_provider_priority', 'Ưu tiên')} type="number" value={m.priority}
                 onChange={(e) => setModelAt(idx, { priority: e.target.value })}
                 slotProps={{ inputLabel: { shrink: true } }}
                 sx={{ width: 100 }}
@@ -325,19 +325,19 @@ export const AdminAiProvidersContent = ({ showHeader = true }) => {
             </Stack>
           ))}
           <Button size="small" startIcon={<AddOutlinedIcon />} onClick={addModel} sx={{ alignSelf: 'flex-start' }}>
-            Thêm model
+            {t('admin:ai_provider_add_model', 'Thêm model')}
           </Button>
         </DialogContent>
         <DialogActions sx={{ p: 2.5 }}>
-          <Button variant="outlined" color="secondary" onClick={closeModal} disabled={saving}>Hủy</Button>
-          <Button variant="contained" onClick={handleSave} disabled={saving}>Lưu</Button>
+          <Button variant="outlined" color="secondary" onClick={closeModal} disabled={saving}>{t('common:cancel', 'Hủy')}</Button>
+          <Button variant="contained" onClick={handleSave} disabled={saving}>{t('common:save', 'Lưu')}</Button>
         </DialogActions>
       </Dialog>
 
       <AdminConfirmDeleteDialog
         open={Boolean(deleteTarget)}
-        title="Xóa AI provider"
-        description={deleteTarget ? `Xóa provider "${deleteTarget.name}" và toàn bộ model của nó?` : ''}
+        title={t('admin:ai_provider_delete_title', 'Xóa AI provider')}
+        description={deleteTarget ? t('admin:ai_provider_delete_desc', `Xóa provider "${deleteTarget.name}" và toàn bộ model của nó?`, { name: deleteTarget.name }) : ''}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
       />

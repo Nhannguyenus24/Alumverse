@@ -59,6 +59,7 @@ import AdminManualMemberDialog from './AdminManualMemberDialog';
 import { IMAGE_ACCEPT, useUploadImage, validateImageFile } from '../../utils/imageUtils';
 import { createBrandColor, DEFAULT_BRAND_COLORS, normalizeHexColor } from '../../theme/palette';
 import { useTranslation } from 'react-i18next';
+import { normalizeRichTextHtml } from '../../utils/stringUtils';
 
 const formatOrgDate = (value) => {
   if (!value) {
@@ -406,7 +407,8 @@ const AdminOrganizationMasterDetail = ({
                   <Stack direction="row" spacing={1.5} alignItems="center" sx={{ width: '100%' }}>
                     <Avatar
                       src={org.logoUrl}
-                      sx={{ width: 36, height: 36, border: 1, borderColor: 'divider', bgcolor: 'background.neutral' }}
+                      slotProps={{ img: { style: { objectFit: 'contain', width: '100%', height: '100%', padding: '2px' } } }}
+                      sx={{ width: 36, height: 36, border: 1, borderColor: 'divider', bgcolor: 'background.paper' }}
                     >
                       <BusinessOutlinedIcon sx={{ fontSize: 18 }} />
                     </Avatar>
@@ -455,31 +457,68 @@ const AdminOrganizationMasterDetail = ({
           <Fade in key={selectedOrg.id}>
             <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
               <Box sx={{ px: 3, pt: 3, pb: 1, borderBottom: 1, borderColor: 'divider' }}>
-                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ sm: 'center' }} justifyContent="space-between">
-                  <Stack direction="row" spacing={2} alignItems="center">
-                    <Avatar
-                      src={selectedOrg.logoUrl}
-                      sx={{ width: 56, height: 56, border: 2, borderColor: 'primary.main', p: 0.5, bgcolor: 'background.paper' }}
+                <Stack direction={{ xs: 'column', md: 'row' }} spacing={{ xs: 1.5, sm: 2 }} alignItems={{ xs: 'flex-start', md: 'center' }} justifyContent="space-between">
+                  <Stack direction="row" spacing={{ xs: 1.5, sm: 2 }} alignItems="center" sx={{ flex: 1, minWidth: 0 }}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        maxHeight: { xs: 40, sm: 48, md: 52 },
+                        maxWidth: { xs: 72, sm: 88, md: 100 },
+                        minWidth: 32,
+                        overflow: 'hidden',
+                        flexShrink: 0,
+                      }}
                     >
-                      <BusinessOutlinedIcon sx={{ fontSize: 32 }} />
-                    </Avatar>
-                    <Box>
-                      <Typography variant="h5" sx={{ fontWeight: 800 }}>{selectedOrg.name}</Typography>
-                      <Stack direction="row" spacing={1} alignItems="center">
+                      {selectedOrg.logoUrl ? (
+                        <Box
+                          component="img"
+                          src={selectedOrg.logoUrl}
+                          alt={selectedOrg.name}
+                          sx={{
+                            maxHeight: '100%',
+                            maxWidth: '100%',
+                            width: 'auto',
+                            height: 'auto',
+                            objectFit: 'contain',
+                          }}
+                        />
+                      ) : (
+                        <BusinessOutlinedIcon sx={{ fontSize: { xs: 24, sm: 32 }, color: 'text.secondary' }} />
+                      )}
+                    </Box>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography
+                        variant="h5"
+                        sx={{
+                          fontSize: { xs: '1.15rem', sm: '1.35rem', md: '1.5rem' },
+                          fontWeight: 800,
+                          lineHeight: 1.25,
+                          mb: 0.5,
+                        }}
+                      >
+                        {selectedOrg.name}
+                      </Typography>
+                      <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
                         <Typography variant="body2" color="text.secondary" fontWeight={500}>{selectedOrg.slug}</Typography>
                         <AdminStatusChip status={selectedOrg.status} category="organization" />
                       </Stack>
                     </Box>
                   </Stack>
                   <Stack
-                    direction={{ xs: 'column', sm: 'row' }}
+                    direction="row"
                     spacing={1}
+                    alignItems="center"
+                    flexWrap="wrap"
+                    sx={{ alignSelf: { xs: 'flex-start', md: 'center' }, flexShrink: 0, mt: { xs: 1, md: 0 } }}
                   >
                     <Button
                       variant="outlined"
                       size="small"
                       startIcon={<EditOutlinedIcon />}
                       onClick={() => onEditOrganization(selectedOrg)}
+                      sx={{ minHeight: 36, whiteSpace: 'nowrap' }}
                     >
                       {t('admin:org_edit_info_btn')}
                     </Button>
@@ -490,6 +529,7 @@ const AdminOrganizationMasterDetail = ({
                       startIcon={<VisibilityOutlinedIcon />}
                       onClick={() => window.open(`/${selectedOrg.slug}`, '_blank', 'noopener,noreferrer')}
                       disabled={!selectedOrg.slug}
+                      sx={{ minHeight: 36, whiteSpace: 'nowrap' }}
                     >
                       {t('admin:org_open_site_btn')}
                     </Button>
@@ -498,12 +538,12 @@ const AdminOrganizationMasterDetail = ({
                         size="small" 
                         color="error"
                         onClick={() => onDeleteOrganization(selectedOrg.id)} 
-                        sx={{ border: 1, borderColor: 'error.lighter', borderRadius: 1.5 }}
+                        sx={{ border: 1, borderColor: 'error.lighter', borderRadius: 1.5, width: 36, height: 36, flexShrink: 0 }}
                       >
                         <DeleteOutlineIcon fontSize="small" />
                       </IconButton>
                     )}
-                    <IconButton size="small" onClick={onRefresh} sx={{ border: 1, borderColor: 'divider', borderRadius: 1.5 }}>
+                    <IconButton size="small" onClick={onRefresh} sx={{ border: 1, borderColor: 'divider', borderRadius: 1.5, width: 36, height: 36, flexShrink: 0 }}>
                       <RefreshOutlinedIcon fontSize="small" />
                     </IconButton>
                   </Stack>
@@ -581,12 +621,29 @@ const AdminOrganizationMasterDetail = ({
                         sx={{ 
                           color: 'text.secondary', 
                           lineHeight: 1.6,
-                          whiteSpace: 'pre-wrap',
+                          overflowWrap: 'break-word',
                           wordBreak: 'break-word',
-                          '& img': { maxWidth: '100%', height: 'auto', borderRadius: 1 },
-                          '& p': { mb: 1.5 }
+                          '& img, & img.rich-content-image, & img.ql-content-image': {
+                            display: 'block',
+                            maxWidth: 'min(100%, 520px) !important',
+                            width: 'auto !important',
+                            height: 'auto !important',
+                            maxHeight: '560px !important',
+                            objectFit: 'contain',
+                            mx: 'auto',
+                            my: 1.5,
+                            borderRadius: 2,
+                          },
+                          '& p': { mb: 1.5, textAlign: 'justify', minHeight: '1.25em' },
+                          '& .ql-size-small': { fontSize: '0.85em' },
+                          '& .ql-size-large': { fontSize: '1.25em' },
+                          '& .ql-size-huge': { fontSize: '1.6em' },
+                          '& .ql-align-left, & [style*="text-align: left" i]': { textAlign: 'left !important' },
+                          '& .ql-align-center, & [style*="text-align: center" i]': { textAlign: 'center !important' },
+                          '& .ql-align-right, & [style*="text-align: right" i]': { textAlign: 'right !important' },
+                          '& .ql-align-justify, & [style*="text-align: justify" i]': { textAlign: 'justify !important' },
                         }}
-                        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(selectedIntroduction?.content || t('admin:org_no_description')) }}
+                        dangerouslySetInnerHTML={{ __html: normalizeRichTextHtml(selectedIntroduction?.content || t('admin:org_no_description')) }}
                       />
                     </DetailSection>
                     <Stack spacing={2}>

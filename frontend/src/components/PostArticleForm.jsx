@@ -380,7 +380,7 @@ const PostArticleForm = ({
             fullWidth
             type="url"
             label={t('article:source_url_label')}
-            placeholder="https://example.com/nguon-bai-viet"
+            placeholder={t('article:source_url_placeholder', 'https://example.com/source')}
             helperText={t('article:source_url_helper')}
             value={url ?? ''}
             onChange={(e) => setUrl?.(e.target.value)}

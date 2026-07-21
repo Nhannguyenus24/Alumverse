@@ -874,7 +874,7 @@ const AdminVerificationsPage = () => {
           {selectedRequest && (
             <Stack spacing={2.5} sx={{ py: 1 }}>
               <Box>
-                <Typography variant="caption" color="text.secondary" gutterBottom display="block">
+                <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
                   {t('verif_dialog_sender')}
                 </Typography>
                 <Typography variant="body1" sx={{ fontWeight: 700 }}>
@@ -1063,7 +1063,7 @@ const AdminVerificationsPage = () => {
             >
               <Stack spacing={2.5}>
                 <Box>
-                  <Typography variant="caption" color="text.secondary" gutterBottom display="block">
+                  <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
                     {t('verif_dialog_sender')}
                   </Typography>
                   <Stack direction="row" spacing={1.5} alignItems="center">
@@ -1073,11 +1073,11 @@ const AdminVerificationsPage = () => {
                     >
                       {(documentViewerRequest?.fullName || documentViewerRequest?.studentId || '?')[0].toUpperCase()}
                     </Avatar>
-                    <Box>
+                    <Box sx={{ minWidth: 0 }}>
                       <Typography variant="body2" sx={{ fontWeight: 700 }}>
                         {documentViewerRequest?.fullName || documentViewerRequest?.studentId}
                       </Typography>
-                      <Typography variant="caption" color="text.secondary">
+                      <Typography variant="caption" color="text.secondary" display="block">
                         {documentViewerRequest?.email}
                       </Typography>
                     </Box>

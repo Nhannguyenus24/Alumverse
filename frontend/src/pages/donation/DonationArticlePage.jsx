@@ -22,29 +22,38 @@ import { fundApi } from "../../utils/api";
 import { useAuth } from "../../hooks/useAuth";
 import { useCanContribute } from "../../hooks/useCanContribute";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
+import { normalizeRichTextHtml } from "../../utils/stringUtils";
 const ARTICLE_IMG_FALLBACK = "https://placehold.co/1200x720/eef3ff/0f3a7a?text=Fund";
 const DESCRIPTION_MAX_HEIGHT = { xs: 360, md: 480 };
 
 const descriptionContentSx = {
-  lineHeight: 1.8,
+  lineHeight: 1.6,
   color: "text.primary",
-  "& p": { mb: 2, textAlign: "justify" },
-  "& img": {
+  overflowWrap: "break-word",
+  wordBreak: "break-word",
+  "& p": { m: 0, textAlign: "justify", minHeight: "1.5em", "&:not(:last-child)": { mb: "0.5em" } },
+  "& p.ql-empty-line, & p:has(> br:only-child)": { display: "block", minHeight: "1.5em", lineHeight: "1.5em", my: 0 },
+  "& img, & img.rich-content-image, & img.ql-content-image": {
     display: "block",
-    maxWidth: "min(100%, 640px) !important",
+    maxWidth: "min(100%, 520px) !important",
     width: "auto !important",
     height: "auto !important",
-    maxHeight: "80vh",
+    maxHeight: "560px !important",
     objectFit: "contain",
     borderRadius: 2,
     mx: "auto",
     my: 2,
   },
+  "& .ql-size-small": { fontSize: "0.85em" },
+  "& .ql-size-large": { fontSize: "1.25em" },
+  "& .ql-size-huge": { fontSize: "1.6em" },
+  "& .ql-align-left": { textAlign: "left !important" },
+  "& .ql-align-center": { textAlign: "center !important" },
+  "& .ql-align-right": { textAlign: "right !important" },
+  "& .ql-align-justify": { textAlign: "justify !important" },
 };
 
-const sanitizeDonationContent = (html) => (
-  DOMPurify.sanitize(html || "").replace(/&amp;nbsp;|&nbsp;|&#160;|\u00a0/gi, " ")
-);
+const sanitizeDonationContent = (html) => normalizeRichTextHtml(html);
 
 const normalizeDonationContent = (html) => {
   if (!html || typeof document === "undefined") return html;

@@ -62,7 +62,7 @@
   "notif_email": "Allow email notifications",
   "notif_push": "Allow push notifications",
   "advisor_section": "Academic advisor info",
-  "advisor_no_advisor": "No advisor assigned. Please contact student management to be assigned an advisor.",
+  "advisor_no_advisor": "You don't have an academic advisor yet. Please contact student management for support.",
   "advisor_contact_title": "Contact information",
   "verification_section": "Peer verification management",
   "verification_desc": "These are peer verification requests waiting for your action.",

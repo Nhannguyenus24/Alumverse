@@ -153,11 +153,27 @@ public class ImageService {
      * (via {@link Mono#justOrEmpty}) so callers can fall back to an existing URL. File I/O runs on
      * the bounded elastic scheduler to avoid blocking the event loop.
      */
+    private boolean isAlreadyUrl(String value) {
+        if (value == null || value.isBlank()) return true;
+        if (value.startsWith("data:image/")) return false;
+        if (value.startsWith("http://") || value.startsWith("https://") || value.startsWith("/") || value.startsWith("blob:")) {
+            return true;
+        }
+        if (value.contains(".") || value.contains("/") || value.length() < 100) {
+            return true;
+        }
+        return false;
+    }
+
     public Mono<String> uploadBase64IfPresent(String base64String) {
         if (base64String == null || base64String.isBlank()) {
             return Mono.empty();
         }
+        if (isAlreadyUrl(base64String)) {
+            return Mono.just(base64String);
+        }
         return Mono.fromCallable(() -> uploadBase64Image(base64String))
+                .onErrorResume(e -> Mono.just(base64String))
                 .subscribeOn(Schedulers.boundedElastic());
     }
 

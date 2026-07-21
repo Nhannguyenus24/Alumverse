@@ -605,7 +605,7 @@ const UnifiedProfileEditPage = () => {
           '&:hover': { opacity: 1 },
         }}
       >
-        <CameraAltIcon sx={{ color: 'white' }} />
+        <CameraAltIcon sx={{ color: 'common.white' }} />
       </Box>
     </Box>
   );

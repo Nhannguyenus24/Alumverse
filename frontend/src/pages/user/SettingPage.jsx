@@ -496,7 +496,7 @@ export default function SettingPage() {
             <Box className="avatar-overlay" sx={{ position: 'absolute', inset: 0, bgcolor: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center',
                                                   justifyContent: 'center', opacity: 0, transition: '0.2s', pointerEvents: 'none', }}
             >
-              <CameraAltIcon sx={{ color: 'white', fontSize: 32 }} />
+              <CameraAltIcon sx={{ color: 'common.white', fontSize: 32 }} />
             </Box>
           </Box>
           <Box>

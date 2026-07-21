@@ -7,13 +7,14 @@ import {
 	Button,
 	TextField,
 } from "@mui/material";
+import { useTranslation } from "react-i18next";
 
 const ConfirmDialog = ({
 	open = false,
-	title = "Confirm",
-	message = "Are you sure you want to perform this action?",
-	confirmText = "Confirm",
-	cancelText = "Cancel",
+	title,
+	message,
+	confirmText,
+	cancelText,
 	onConfirm,
 	onCancel,
 	confirmColor = "primary",
@@ -22,6 +23,13 @@ const ConfirmDialog = ({
 	reasonValue,
 	onReasonChange,
 }) => {
+	const { t } = useTranslation(["common"]);
+
+	const displayTitle = title || t("common:confirm");
+	const displayMessage = message || t("common:confirm_message");
+	const displayConfirmText = confirmText || t("common:confirm");
+	const displayCancelText = cancelText || t("common:cancel");
+
 	const handleConfirm = () => {
 		if (onConfirm) {
 			onConfirm();
@@ -44,10 +52,10 @@ const ConfirmDialog = ({
 			aria-labelledby="confirm-dialog-title"
 			aria-describedby="confirm-dialog-description"
 		>
-			<DialogTitle id="confirm-dialog-title">{title}</DialogTitle>
+			<DialogTitle id="confirm-dialog-title">{displayTitle}</DialogTitle>
 			<DialogContent>
 				<DialogContentText id="confirm-dialog-description">
-					{message}
+					{displayMessage}
 				</DialogContentText>
 				{reasonRequired && (
 					<TextField
@@ -70,7 +78,7 @@ const ConfirmDialog = ({
 						color="secondary"
 						onClick={handleCancel}
 						disabled={loading}>
-					{cancelText}
+					{displayCancelText}
 				</Button>
 				<Button
 					onClick={handleConfirm}
@@ -78,7 +86,7 @@ const ConfirmDialog = ({
 					variant="contained"
 					disabled={loading || reasonBlank}
 				>
-					{confirmText}
+					{displayConfirmText}
 				</Button>
 			</DialogActions>
 		</Dialog>

@@ -56,7 +56,7 @@ import EditPostDialog from "../../components/forum/EditPostDialog";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import WYSIWYG from "../../components/WYSIWYG";
 import { formatDateTime } from "../../utils/dateFormatter";
-import { toPlainText, normalizeNbsp } from "../../utils/stringUtils";
+import { toPlainText, normalizeRichTextHtml } from "../../utils/stringUtils";
 import ReportPostDialog from "../../components/forum/ReportPostDialog";
 import {
   ScrollReveal,
@@ -221,11 +221,30 @@ const ForumReply = ({
             mr: 4,
             px: 0,
             py: 0,
-            lineHeight: 1.7,
-            "&.ql-editor": { p: 0, overflowWrap: "normal", wordBreak: "normal", hyphens: "none" },
-            "& p": { m: 0, "&:not(:last-child)": { mb: "1em" } },
+            lineHeight: 1.6,
+            "&.ql-editor": { p: 0, overflowWrap: "break-word", wordBreak: "break-word", hyphens: "auto" },
+            "& p": { m: 0, textAlign: "justify", minHeight: "1.5em", "&:not(:last-child)": { mb: "0.5em" } },
+            "& p.ql-empty-line, & p:has(> br:only-child)": { display: "block", minHeight: "1.5em", lineHeight: "1.5em", my: 0 },
+            "& img, & img.rich-content-image, & img.ql-content-image": {
+              display: "block",
+              maxWidth: "min(100%, 520px) !important",
+              width: "auto !important",
+              height: "auto !important",
+              maxHeight: "560px !important",
+              objectFit: "contain",
+              mx: "auto",
+              my: 2,
+              borderRadius: 2,
+            },
+            "& .ql-size-small": { fontSize: "0.85em" },
+            "& .ql-size-large": { fontSize: "1.25em" },
+            "& .ql-size-huge": { fontSize: "1.6em" },
+            "& .ql-align-left, & [style*='text-align: left' i]": { textAlign: "left !important" },
+            "& .ql-align-center, & [style*='text-align: center' i]": { textAlign: "center !important" },
+            "& .ql-align-right, & [style*='text-align: right' i]": { textAlign: "right !important" },
+            "& .ql-align-justify, & [style*='text-align: justify' i]": { textAlign: "justify !important" },
           }}
-          dangerouslySetInnerHTML={{ __html: normalizeNbsp(DOMPurify.sanitize(reply.content || "")) }}
+          dangerouslySetInnerHTML={{ __html: normalizeRichTextHtml(reply.content || "") }}
         />
         <Box
           sx={{

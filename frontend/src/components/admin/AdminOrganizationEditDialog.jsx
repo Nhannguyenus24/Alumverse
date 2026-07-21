@@ -96,7 +96,7 @@ useEffect(() => {
 
   return (
     <Dialog open={open} onClose={loading ? undefined : onClose} fullWidth maxWidth="sm" PaperProps={{ sx: { borderRadius: 3 } }}>
-      <DialogTitle sx={{ p: 3, pb: 2 }}>
+      <DialogTitle component="div" sx={{ p: 3, pb: 2 }}>
         <Typography variant="h5" sx={{ fontWeight: 800, color: 'primary.main' }}>
           {organization ? t('admin:edit_organization') : t('admin:add_organization')}
         </Typography>
@@ -107,17 +107,38 @@ useEffect(() => {
       <DialogContent sx={{ p: 3, pt: 1 }}>
         <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 1 }}>
-            <Avatar
-              src={formData.logoUrl}
-              sx={{ 
-                width: 100, 
-                height: 100, 
-                border: `2px solid ${theme => theme.palette.divider}`,
-                bgcolor: 'background.paper'
-              }}
-            >
-              {!formData.logoUrl && <BusinessIcon sx={{ fontSize: 40, color: 'text.disabled' }} />}
-            </Avatar>
+            {formData.logoUrl ? (
+              <Box
+                component="img"
+                src={formData.logoUrl}
+                alt="Organization Logo"
+                sx={{ 
+                  maxHeight: 90, 
+                  maxWidth: '100%', 
+                  height: 'auto',
+                  objectFit: 'contain',
+                  borderRadius: 1.5,
+                  p: 1,
+                  border: `1px solid ${theme => theme.palette.divider}`,
+                  bgcolor: 'background.paper'
+                }}
+              />
+            ) : (
+              <Box
+                sx={{
+                  width: 100,
+                  height: 70,
+                  borderRadius: 1.5,
+                  border: `1px dashed ${theme => theme.palette.divider}`,
+                  bgcolor: 'background.paper',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <BusinessIcon sx={{ fontSize: 36, color: 'text.disabled' }} />
+              </Box>
+            )}
             <Button
               component="label"
               variant="outlined"
