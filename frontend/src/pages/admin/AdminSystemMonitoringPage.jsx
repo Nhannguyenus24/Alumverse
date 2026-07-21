@@ -84,25 +84,25 @@ const QUERIES = {
   heapUtilPct: 'sum(jvm_memory_used_bytes{area="heap"}) / sum(jvm_memory_max_bytes{area="heap"}) * 100',
   systemLoad: 'system_load_average_1m',
   cpuCount: 'system_cpu_count',
-  logErrors: 'sum(rate(logback_events_total{level="error"}[5m]))',
-  logWarns: 'sum(rate(logback_events_total{level="warn"}[5m]))',
+  logErrors: 'sum(increase(logback_events_total{level="error"}[5m]))',
+  logWarns: 'sum(increase(logback_events_total{level="warn"}[5m]))',
   gcCount: 'sum(rate(jvm_gc_pause_seconds_count[5m]))',
   fdUsagePct: 'process_files_open_files / process_max_file_descriptors * 100',
   dbSaturationPct: 'sum(r2dbc_pool_acquired_connections) / sum(r2dbc_pool_max_allocated_connections) * 100',
 
   // --- Tier 3: newly added backend metrics ---
-  authLoginSuccess: 'sum(rate(auth_login_total{result="success"}[5m]))',
-  authLoginFailure: 'sum(rate(auth_login_total{result="failure"}[5m]))',
-  authRefreshSuccess: 'sum(rate(auth_token_refresh_total{result="success"}[5m]))',
-  authRefreshFailure: 'sum(rate(auth_token_refresh_total{result="failure"}[5m]))',
-  rateLimitRejected: 'sum(rate(ratelimit_rejected_total[5m]))',
+  authLoginSuccess: 'sum(increase(auth_login_total{result="success"}[5m]))',
+  authLoginFailure: 'sum(increase(auth_login_total{result="failure"}[5m]))',
+  authRefreshSuccess: 'sum(increase(auth_token_refresh_total{result="success"}[5m]))',
+  authRefreshFailure: 'sum(increase(auth_token_refresh_total{result="failure"}[5m]))',
+  rateLimitRejected: 'sum(increase(ratelimit_rejected_total[5m]))',
   wsActiveSessions: 'sum(chat_websocket_active_sessions)',
   wsActiveGroups: 'sum(chat_websocket_active_groups)',
 
   // --- SSE (real-time push) metrics ---
   sseActiveConnections: 'sum(sse_active_connections)',
   sseActiveUsers: 'sum(sse_active_users)',
-  sseEventsRate: 'sum(rate(sse_events_sent_total[5m]))',
+  sseEventsRate: 'sum(increase(sse_events_sent_total[5m]))',
 
   // --- AI (LLM) latency metrics ---
   aiLatencyAvg: '(sum(rate(ai_generate_time_seconds_sum[5m])) / sum(rate(ai_generate_time_seconds_count[5m]))) * 1000',
@@ -288,6 +288,8 @@ const AdminSystemMonitoringPage = () => {
   
   const [loading, setLoading] = useState(false);
   const [chartData, setChartData] = useState([]);
+  const [chartTicks, setChartTicks] = useState([]);
+  const [chartFormat, setChartFormat] = useState('HH:mm');
   const [endpointStats, setEndpointStats] = useState([]);
   const [exceptionStats, setExceptionStats] = useState([]);
   const [summaryStats, setSummaryStats] = useState({ totalRequests: 0, totalErrors: 0, errorRate: 0, avgLatency: 0, uptimeSeconds: 0, onlineUsers: 0 });
@@ -353,6 +355,24 @@ const AdminSystemMonitoringPage = () => {
       
       const end = endUnix;
       const start = timeRange === 'custom' ? (customStart.unix() - (customStart.unix() % snapInterval)) : end - rangeSeconds;
+
+      const formatString = rangeSeconds > 86400 ? 'MM/DD HH:mm' : 'HH:mm';
+      setChartFormat(formatString);
+
+      let tickInterval;
+      if (rangeSeconds <= 3600) tickInterval = 300; // 5 mins
+      else if (rangeSeconds <= 3 * 3600) tickInterval = 900; // 15 mins
+      else if (rangeSeconds <= 6 * 3600) tickInterval = 1800; // 30 mins
+      else if (rangeSeconds <= 12 * 3600) tickInterval = 3600; // 1 hour
+      else if (rangeSeconds <= 24 * 3600) tickInterval = 7200; // 2 hours
+      else tickInterval = Math.max(86400, Math.floor(rangeSeconds / 10));
+      
+      const ticksArr = [];
+      const firstTick = start - (start % tickInterval) + (start % tickInterval === 0 ? 0 : tickInterval);
+      for (let t = firstTick; t <= end; t += tickInterval) {
+        ticksArr.push(t);
+      }
+      setChartTicks(ticksArr);
 
       const [
         reqRateData,
@@ -463,18 +483,17 @@ const AdminSystemMonitoringPage = () => {
         fetchPrometheusRange(QUERIES.sseActiveConnections, start, end, step),
         fetchPrometheusRange(QUERIES.sseActiveUsers, start, end, step),
         fetchPrometheusRange(QUERIES.sseEventsRate, start, end, step),
-        fetchPrometheusRangeMultiple(`sum by (event) (rate(sse_events_sent_total[5m]))`, start, end, step),
+        fetchPrometheusRangeMultiple(`sum by (event) (increase(sse_events_sent_total[5m]))`, start, end, step),
         fetchPrometheusRange(QUERIES.aiLatencyAvg, start, end, step),
         fetchPrometheusRange(QUERIES.aiLatencyP50, start, end, step),
         fetchPrometheusRange(QUERIES.aiLatencyP95, start, end, step),
         fetchPrometheusRange(QUERIES.aiLatencyP99, start, end, step),
         fetchPrometheusRange(QUERIES.aiCallRate, start, end, step),
-        fetchPrometheusRangeMultiple(`sum by (template) (rate(email_send_count_total[5m]))`, start, end, step)
+        fetchPrometheusRangeMultiple(`sum by (template) (increase(email_send_count_total[5m]))`, start, end, step)
       ]);
 
       // Merge time-series data
       const mergedMap = new Map();
-      const formatString = rangeSeconds > 86400 ? 'MM/DD HH:mm' : 'HH:mm';
 
       const processSeries = (series, key) => {
         series.forEach(([timestamp, value]) => {
@@ -924,7 +943,7 @@ const AdminSystemMonitoringPage = () => {
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={chartData}>{renderDefs()}
                       <CartesianGrid {...gridProps} />
-                      <XAxis dataKey="timeFormatted" minTickGap={30} {...axisProps} />
+                      <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
                       <YAxis {...axisProps} width={45} />
                       <RechartsTooltip content={renderTooltip} />
                       <Legend />
@@ -944,7 +963,7 @@ const AdminSystemMonitoringPage = () => {
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData}>
                       <CartesianGrid {...gridProps} />
-                      <XAxis dataKey="timeFormatted" minTickGap={30} {...axisProps} />
+                      <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
                       <YAxis {...axisProps} width={45} />
                       <RechartsTooltip content={renderTooltip} />
                       <Legend onClick={(e) => handleLegendClick('latency', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
@@ -967,7 +986,7 @@ const AdminSystemMonitoringPage = () => {
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={chartData}>{renderDefs()}
                       <CartesianGrid {...gridProps} />
-                      <XAxis dataKey="timeFormatted" minTickGap={30} {...axisProps} />
+                      <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
                       <YAxis {...axisProps} width={45} />
                       <RechartsTooltip content={renderTooltip} />
                       <Legend />
@@ -988,7 +1007,7 @@ const AdminSystemMonitoringPage = () => {
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={chartData}>{renderDefs()}
                         <CartesianGrid {...gridProps} />
-                        <XAxis dataKey="timeFormatted" minTickGap={30} {...axisProps} />
+                        <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
                         <YAxis {...axisProps} width={45} />
                         <RechartsTooltip content={renderTooltip} />
                         <Legend onClick={(e) => handleLegendClick('status', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
@@ -1032,7 +1051,7 @@ const AdminSystemMonitoringPage = () => {
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={chartData}>{renderDefs()}
                         <CartesianGrid {...gridProps} />
-                        <XAxis dataKey="timeFormatted" minTickGap={30} {...axisProps} />
+                        <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
                         <YAxis {...axisProps} width={45} />
                         <RechartsTooltip content={renderTooltip} />
                         <Legend onClick={(e) => handleLegendClick('exceptions', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
@@ -1069,7 +1088,7 @@ const AdminSystemMonitoringPage = () => {
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData}>
                       <CartesianGrid {...gridProps} />
-                      <XAxis dataKey="timeFormatted" minTickGap={30} {...axisProps} />
+                      <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
                       <YAxis domain={[0, 100]} {...axisProps} width={45} />
                       <RechartsTooltip content={renderTooltip} />
                       <Legend onClick={(e) => handleLegendClick('cpu', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
@@ -1090,7 +1109,7 @@ const AdminSystemMonitoringPage = () => {
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData}>
                       <CartesianGrid {...gridProps} />
-                      <XAxis dataKey="timeFormatted" minTickGap={30} {...axisProps} />
+                      <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
                       <YAxis {...axisProps} width={45} />
                       <RechartsTooltip content={renderTooltip} />
                       <Legend onClick={(e) => handleLegendClick('memory', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
@@ -1111,7 +1130,7 @@ const AdminSystemMonitoringPage = () => {
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData}>
                       <CartesianGrid {...gridProps} />
-                      <XAxis dataKey="timeFormatted" minTickGap={30} {...axisProps} />
+                      <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
                       <YAxis {...axisProps} width={45} />
                       <RechartsTooltip content={renderTooltip} />
                       <Legend />
@@ -1131,7 +1150,7 @@ const AdminSystemMonitoringPage = () => {
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData}>
                       <CartesianGrid {...gridProps} />
-                      <XAxis dataKey="timeFormatted" minTickGap={30} {...axisProps} />
+                      <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
                       <YAxis {...axisProps} width={45} />
                       <RechartsTooltip content={renderTooltip} />
                       <Legend />
@@ -1151,7 +1170,7 @@ const AdminSystemMonitoringPage = () => {
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData}>
                       <CartesianGrid {...gridProps} />
-                      <XAxis dataKey="timeFormatted" minTickGap={30} {...axisProps} />
+                      <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
                       <YAxis domain={[0, 100]} {...axisProps} width={45} />
                       <RechartsTooltip content={renderTooltip} />
                       <Legend onClick={(e) => handleLegendClick('util', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
@@ -1173,7 +1192,7 @@ const AdminSystemMonitoringPage = () => {
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData}>
                       <CartesianGrid {...gridProps} />
-                      <XAxis dataKey="timeFormatted" minTickGap={30} {...axisProps} />
+                      <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
                       <YAxis {...axisProps} width={45} />
                       <RechartsTooltip content={renderTooltip} />
                       <Legend onClick={(e) => handleLegendClick('load', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
@@ -1194,7 +1213,7 @@ const AdminSystemMonitoringPage = () => {
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={chartData}>{renderDefs()}
                       <CartesianGrid {...gridProps} />
-                      <XAxis dataKey="timeFormatted" minTickGap={30} {...axisProps} />
+                      <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
                       <YAxis {...axisProps} width={45} />
                       <RechartsTooltip content={renderTooltip} />
                       <Legend onClick={(e) => handleLegendClick('logs', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
@@ -1215,7 +1234,7 @@ const AdminSystemMonitoringPage = () => {
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData}>
                       <CartesianGrid {...gridProps} />
-                      <XAxis dataKey="timeFormatted" minTickGap={30} {...axisProps} />
+                      <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
                       <YAxis {...axisProps} width={45} />
                       <RechartsTooltip content={renderTooltip} />
                       <Legend onClick={(e) => handleLegendClick('io', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
@@ -1238,7 +1257,7 @@ const AdminSystemMonitoringPage = () => {
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={chartData}>{renderDefs()}
                       <CartesianGrid {...gridProps} />
-                      <XAxis dataKey="timeFormatted" minTickGap={30} {...axisProps} />
+                      <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
                       <YAxis {...axisProps} width={45} />
                       <RechartsTooltip content={renderTooltip} />
                       <Legend />
@@ -1258,7 +1277,7 @@ const AdminSystemMonitoringPage = () => {
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData}>
                       <CartesianGrid {...gridProps} />
-                      <XAxis dataKey="timeFormatted" minTickGap={30} {...axisProps} />
+                      <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
                       <YAxis {...axisProps} width={45} />
                       <RechartsTooltip content={renderTooltip} />
                       <Legend onClick={(e) => handleLegendClick('auth', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
@@ -1281,7 +1300,7 @@ const AdminSystemMonitoringPage = () => {
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={chartData}>{renderDefs()}
                       <CartesianGrid {...gridProps} />
-                      <XAxis dataKey="timeFormatted" minTickGap={30} {...axisProps} />
+                      <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
                       <YAxis {...axisProps} width={45} />
                       <RechartsTooltip content={renderTooltip} />
                       <Legend />
@@ -1301,7 +1320,7 @@ const AdminSystemMonitoringPage = () => {
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={chartData}>{renderDefs()}
                       <CartesianGrid {...gridProps} />
-                      <XAxis dataKey="timeFormatted" minTickGap={30} {...axisProps} />
+                      <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
                       <YAxis {...axisProps} width={45} />
                       <RechartsTooltip content={renderTooltip} />
                       <Legend onClick={(e) => handleLegendClick('ws', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
@@ -1322,7 +1341,7 @@ const AdminSystemMonitoringPage = () => {
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={chartData}>{renderDefs()}
                       <CartesianGrid {...gridProps} />
-                      <XAxis dataKey="timeFormatted" minTickGap={30} {...axisProps} />
+                      <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
                       <YAxis allowDecimals={false} {...axisProps} width={45} />
                       <RechartsTooltip content={renderTooltip} />
                       <Legend onClick={(e) => handleLegendClick('sse', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
@@ -1335,20 +1354,20 @@ const AdminSystemMonitoringPage = () => {
 
               {/* SSE Events Pushed by type (feature-toggled / verification / ban / new-message) */}
               <AdminSectionPanel
-                title={t('admin:system_monitoring.sse_events', 'SSE Events Pushed (/s)')}
-                subtitle={t('admin:system_monitoring.sse_events_desc', 'Rate of real-time events pushed to clients, broken down by type')}
+                title={t('admin:system_monitoring.sse_events', 'Total SSE Events Pushed')}
+                subtitle={t('admin:system_monitoring.sse_events_desc', 'Total real-time events pushed to clients, broken down by type')}
                 sx={monitoringPanelSx}
               >
                 <Box sx={monitoringChartBoxSx}>
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={chartData}>{renderDefs()}
                       <CartesianGrid {...gridProps} />
-                      <XAxis dataKey="timeFormatted" minTickGap={30} {...axisProps} />
+                      <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
                       <YAxis {...axisProps} width={45} />
                       <RechartsTooltip content={renderTooltip} />
                       <Legend onClick={(e) => handleLegendClick('sseEvents', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
                       {availableSseEvents.length === 0 && (
-                        <Area type="monotone" dataKey="sseEventsRate" name={t("admin:system_monitoring.sse_events_total", "Events/s")} stroke={theme.palette.success.main} fill="url(#area-success)" strokeWidth={2.5} />
+                        <Area type="monotone" dataKey="sseEventsRate" name={t("admin:system_monitoring.sse_events_total", "Total Events")} stroke={theme.palette.success.main} fill="url(#area-success)" strokeWidth={2.5} />
                       )}
                       {availableSseEvents.map((eventName, idx) => {
                         const dataKey = `sse_evt_${eventName}`;
@@ -1383,7 +1402,7 @@ const AdminSystemMonitoringPage = () => {
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData}>
                       <CartesianGrid {...gridProps} />
-                      <XAxis dataKey="timeFormatted" minTickGap={30} {...axisProps} />
+                      <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
                       <YAxis {...axisProps} width={45} />
                       <RechartsTooltip content={renderTooltip} />
                       <Legend onClick={(e) => handleLegendClick('aiLatency', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
@@ -1398,15 +1417,15 @@ const AdminSystemMonitoringPage = () => {
 
               {/* Email Sends by Template (per-template counter rate) */}
               <AdminSectionPanel
-                title={t('admin:system_monitoring.email_by_template', 'Email Sends by Template (/s)')}
-                subtitle={t('admin:system_monitoring.email_by_template_desc', 'Rate of emails sent, broken down by template code')}
+                title={t('admin:system_monitoring.email_by_template', 'Email Sends by Template')}
+                subtitle={t('admin:system_monitoring.email_by_template_desc', 'Count of emails sent, broken down by template code')}
                 sx={monitoringPanelSx}
               >
                 <Box sx={monitoringChartBoxSx}>
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={chartData}>{renderDefs()}
                       <CartesianGrid {...gridProps} />
-                      <XAxis dataKey="timeFormatted" minTickGap={30} {...axisProps} />
+                      <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
                       <YAxis {...axisProps} width={45} />
                       <RechartsTooltip content={renderTooltip} />
                       <Legend onClick={(e) => handleLegendClick('emailTemplates', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
@@ -1445,7 +1464,7 @@ const AdminSystemMonitoringPage = () => {
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData}>
                       <CartesianGrid {...gridProps} />
-                      <XAxis dataKey="timeFormatted" minTickGap={30} {...axisProps} />
+                      <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
                       <YAxis {...axisProps} width={45} />
                       <RechartsTooltip content={renderTooltip} />
                       <Legend onClick={(e) => handleLegendClick('threads', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
@@ -1466,7 +1485,7 @@ const AdminSystemMonitoringPage = () => {
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={chartData}>{renderDefs()}
                       <CartesianGrid {...gridProps} />
-                      <XAxis dataKey="timeFormatted" minTickGap={30} {...axisProps} />
+                      <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
                       <YAxis {...axisProps} width={45} />
                       <RechartsTooltip content={renderTooltip} />
                       <Legend onClick={(e) => handleLegendClick('db', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />

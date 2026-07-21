@@ -17,6 +17,7 @@ import AlumniContentLayout from "../../layouts/AlumniContentLayout";
 import { useOrganization } from "../../hooks/useOrganization";
 import { useForumCategoryLogic } from "../../hooks/forum/useForumCategoryLogic";
 import { useCanContribute } from "../../hooks/useCanContribute";
+import { useOrgPath } from "../../hooks/useOrgNavigate";
 import {
   ScrollReveal,
   getStaggerDelay,
@@ -40,6 +41,13 @@ const ForumCategoryPage = () => {
     handleFilterChange,
     navigate,
   } = useForumCategoryLogic(organizationId);
+
+  const toOrgPath = useOrgPath();
+  const handleAuthorClick = (memberId) => {
+    if (!memberId) return;
+    const url = `${window.location.origin}${toOrgPath(`/profile/${memberId}`)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
 
   const handleTopicClick = (topic) => {
     navigate(`/forum/topic/${topic.id}`, {
@@ -227,6 +235,7 @@ const ForumCategoryPage = () => {
                     activeCategory={activeCategory}
                     categoryId={categoryId}
                     onClick={handleTopicClick}
+                    onAuthorClick={handleAuthorClick}
                   />
                 </ScrollReveal>
               ))

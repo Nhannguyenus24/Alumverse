@@ -852,11 +852,12 @@ public class AdminUserService {
 
     public Mono<UserGrowthStatisticsDTO> getUserGrowthStatistics() {
         java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        java.time.LocalDateTime today = now.minusDays(1);
         java.time.LocalDateTime sevenDaysAgo = now.minusDays(7);
         java.time.LocalDateTime thirtyDaysAgo = now.minusDays(30);
 
         return Mono.zip(
-                adminUserRepository.getAggregatedUserGrowthStats(sevenDaysAgo, thirtyDaysAgo),
+                adminUserRepository.getAggregatedUserGrowthStats(today, sevenDaysAgo, thirtyDaysAgo),
                 adminUserRepository.getDailyUserRegistrations()
                         .map(p -> UserGrowthStatisticsDTO.DayCount.builder()
                                 .date(p.getDate() != null ? p.getDate().toString() : "")
@@ -866,6 +867,7 @@ public class AdminUserService {
         ).map(t -> {
             var stats = t.getT1();
             return UserGrowthStatisticsDTO.builder()
+                .newUsersToday(stats.getNewUsersToday() != null ? stats.getNewUsersToday() : 0L)
                 .newUsersLast7Days(stats.getNewUsers7Days() != null ? stats.getNewUsers7Days() : 0L)
                 .newUsersLast30Days(stats.getNewUsers30Days() != null ? stats.getNewUsers30Days() : 0L)
                 .totalActiveUsers(stats.getActiveUsers() != null ? stats.getActiveUsers() : 0L)

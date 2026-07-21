@@ -75,6 +75,7 @@
   "already_registered": "You have already registered for this event.",
   "register_failed": "Registration failed",
   "participants_interested": "{{participants}} participants · {{interested}} interested",
+  "interested_only": "{{interested}} interested",
   "ticket_status_registered": "Registered",
   "ticket_status_checked_in": "Checked In",
   "ticket_status_expired": "Expired",

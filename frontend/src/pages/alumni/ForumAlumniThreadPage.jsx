@@ -178,11 +178,14 @@ const ForumReply = ({
         <Typography
           variant="body2"
           fontWeight={600}
+          onClick={handleOpenProfile}
           sx={{
             maxWidth: 104,
             textAlign: "center",
             lineHeight: 1.28,
             overflowWrap: "anywhere",
+            cursor: reply.authorMemberId ? "pointer" : "default",
+            "&:hover": reply.authorMemberId ? { textDecoration: "underline" } : {},
           }}
         >
           {reply.authorName}
@@ -654,14 +657,22 @@ const ForumAlumniThreadPage = () => {
     return {
       title,
       authorName:
-        authorFromTopic ?? authorFromPost ?? FALLBACK_THREAD.authorName,
+        topicSummary !== undefined
+          ? authorFromTopic
+          : (authorFromPost ?? FALLBACK_THREAD.authorName),
       authorMemberId:
-        topicSummary?.createdByMemberId ?? firstPost?.authorMemberId ?? null,
+        topicSummary !== undefined
+          ? topicSummary.createdByMemberId
+          : (firstPost?.authorMemberId ?? null),
       authorAvatarUrl:
-        topicSummary?.authorAvatarUrl ?? firstPost?.authorAvatarUrl ?? null,
+        topicSummary !== undefined
+          ? topicSummary.authorAvatarUrl
+          : (firstPost?.authorAvatarUrl ?? null),
       role: "Alumni",
       createdAt:
-        createdFromTopic ?? createdFromPost ?? FALLBACK_THREAD.createdAt,
+        topicSummary !== undefined
+          ? createdFromTopic
+          : (createdFromPost ?? FALLBACK_THREAD.createdAt),
     };
   }, [
     location.state?.topicTitle,
@@ -1457,7 +1468,12 @@ const ForumAlumniThreadPage = () => {
                     <Typography
                       variant="body2"
                       fontWeight={600}
-                      sx={{ lineHeight: 1.2 }}
+                      onClick={() => openProfileInNewTab(thread.authorMemberId)}
+                      sx={{
+                        lineHeight: 1.2,
+                        cursor: thread.authorMemberId ? "pointer" : "default",
+                        "&:hover": thread.authorMemberId ? { textDecoration: "underline" } : {},
+                      }}
                     >
                       {thread.authorName}
                     </Typography>

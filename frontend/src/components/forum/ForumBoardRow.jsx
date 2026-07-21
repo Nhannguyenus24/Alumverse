@@ -18,7 +18,7 @@ const StatCell = ({ label, value, showLabel = true }) => {
   );
 };
 
-const ForumBoardRow = ({ board, onClick }) => {
+const ForumBoardRow = ({ board, onClick, onAuthorClick }) => {
   const { t } = useTranslation(['forum']);
   const last = board?.lastPost;
   return (
@@ -106,6 +106,12 @@ const ForumBoardRow = ({ board, onClick }) => {
           </Box>
           <Box sx={{ mt: 1.25, display: 'flex', alignItems: 'center', gap: 1.25, minWidth: 0 }}>
             <Box
+              onClick={(e) => {
+                if (onAuthorClick && last?.authorMemberId) {
+                  e.stopPropagation();
+                  onAuthorClick(last.authorMemberId);
+                }
+              }}
               sx={{
                 width: 30,
                 height: 30,
@@ -116,6 +122,7 @@ const ForumBoardRow = ({ board, onClick }) => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 flexShrink: 0,
+                cursor: onAuthorClick && last?.authorMemberId ? 'pointer' : 'default',
               }}
             >
               <PersonIcon sx={{ fontSize: 16 }} />
@@ -125,7 +132,21 @@ const ForumBoardRow = ({ board, onClick }) => {
                 {last?.title ?? '—'}
               </Typography>
               <Typography variant="caption" color="text.secondary" noWrap>
-                {last?.authorName ? `${last.authorName} • ` : ''}
+                <Box
+                  component="span"
+                  onClick={(e) => {
+                    if (onAuthorClick && last?.authorMemberId) {
+                      e.stopPropagation();
+                      onAuthorClick(last.authorMemberId);
+                    }
+                  }}
+                  sx={{
+                    cursor: onAuthorClick && last?.authorMemberId ? 'pointer' : 'default',
+                    '&:hover': onAuthorClick && last?.authorMemberId ? { textDecoration: 'underline' } : {},
+                  }}
+                >
+                  {last?.authorName ? `${last.authorName} • ` : ''}
+                </Box>
                 {last?.createdAt ?? ''}
               </Typography>
             </Box>
