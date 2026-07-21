@@ -79,7 +79,7 @@ export const normalizeJob = (data) => {
     channel: "job",
     title: data.title,
     content: data.description,
-    thumbnailUrl: null,
+    thumbnailUrl: resolveMediaUrl(data.url),
     publishedAt: displayDate,
     createdAt,
     updatedAt,
