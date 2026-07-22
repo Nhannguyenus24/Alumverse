@@ -28,6 +28,7 @@ public class JobResponse {
     private String description;
     private String howToApply;
     private String url;
+    private String thumbnailUrl;
     private LocalDate deadline;
     private Boolean isActive;
     private LocalDateTime createdAt;
@@ -50,6 +51,7 @@ public class JobResponse {
                 .description(job.getDescription())
                 .howToApply(job.getHowToApply())
                 .url(job.getUrl())
+                .thumbnailUrl(job.getThumbnailUrl())
                 .deadline(job.getDeadline())
                 .isActive(job.getIsActive())
                 .createdAt(job.getCreatedAt())

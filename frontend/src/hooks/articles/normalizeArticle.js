@@ -87,7 +87,7 @@ export const normalizeJob = (data) => {
     organizationSlug: data.organizationSlug ?? data.organization_slug ?? data.organization?.slug ?? null,
     title: data.title,
     content: data.description,
-    thumbnailUrl: resolveMediaUrl(data.url),
+    thumbnailUrl: resolveMediaUrl(data.thumbnailUrl ?? data.thumbnail_url),
     publishedAt: displayDate,
     createdAt,
     updatedAt,
