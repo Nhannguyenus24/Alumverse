@@ -1,10 +1,13 @@
 package com.service.backend.user.service;
 
 import com.service.backend.auth.dao.AuthRepository;
+import com.service.backend.chat.service.ChatConversationRequestService;
+import com.service.backend.organization.dao.OrganizationRepository;
 import com.service.backend.shared.entity.OrganizationMember;
 import com.service.backend.shared.entity.PeerVerification;
 import com.service.backend.shared.entity.User;
 import com.service.backend.shared.entity.UserNotificationSettings;
+import com.service.backend.shared.enums.DocumentType;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.enums.Status;
 import com.service.backend.shared.exception.ApplicationException;
@@ -12,11 +15,14 @@ import com.service.backend.shared.service.FileUploadService;
 import com.service.backend.shared.service.ImageService;
 import com.service.backend.shared.service.OCRService;
 import com.service.backend.shared.service.EmailService;
+import com.service.backend.shared.service.SseService;
+import com.service.backend.user.dao.DeviceTokenRepository;
 import com.service.backend.user.dao.PeerVerificationRepository;
 import com.service.backend.user.dao.UserLoginHistoryRepository;
 import com.service.backend.user.dao.UserNotificationSettingsRepository;
 import com.service.backend.user.dao.UserOrganizationMemberRepository;
 import com.service.backend.user.dao.UserProfileRepository;
+import com.service.backend.user.dto.CreateVerificationRequest;
 import com.service.backend.user.dto.NotificationSettingsResponse;
 import com.service.backend.user.dto.UpdateAvatarRequest;
 import com.service.backend.user.dto.UpdateNotificationSettingsRequest;
@@ -35,6 +41,7 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
@@ -50,15 +57,136 @@ class UserServiceTest {
     @Mock private UserLoginHistoryRepository userLoginHistoryRepository;
     @Mock private UserNotificationSettingsRepository userNotificationSettingsRepository;
     @Mock private UserOrganizationMemberRepository userOrganizationMemberRepository;
+    @Mock private OrganizationRepository organizationRepository;
     @Mock private PeerVerificationRepository peerVerificationRepository;
+    @Mock private ChatConversationRequestService chatConversationRequestService;
     @Mock private FileUploadService fileUploadService;
     @Mock private ImageService imageService;
     @Mock private NotificationService notificationService;
+    @Mock private DeviceTokenRepository deviceTokenRepository;
     @Mock private OCRService ocrService;
+    @Mock private SseService sseService;
     @Mock private EmailService emailService;
 
     @InjectMocks
     private UserService userService;
+
+    @Nested
+    @DisplayName("createVerificationRequest()")
+    class CreateVerificationRequestTests {
+
+        @Test
+        @DisplayName("should keep legacy single-file payload working")
+        void createVerificationRequest_legacySingleFile() {
+            CreateVerificationRequest request = legacyVerificationRequest("base64", "proof.png", DocumentType.IMAGE);
+
+            when(fileUploadService.uploadBase64File("base64", "proof.png")).thenReturn(Mono.just("http://files/proof.png"));
+            when(authRepository.insertVerificationRequest(1, 7, "http://files/proof.png", "IMAGE")).thenReturn(Mono.just(10));
+            when(userOrganizationMemberRepository.updateVerificationLevelByOrgAndUser(1, 7, 1)).thenReturn(Mono.just(1));
+            when(fileUploadService.getLocalPath("http://files/proof.png")).thenReturn("/tmp/proof.png");
+            when(ocrService.extractTextFromFile("/tmp/proof.png")).thenReturn(Mono.just("Họ tên: Nguyễn Văn A\nMSSV: 22123456\nNgành: Công nghệ thông tin"));
+            when(authRepository.updateVerificationDocumentAndAiSummary(eq(10), eq("http://files/proof.png"), eq("IMAGE"), anyString()))
+                    .thenReturn(Mono.empty());
+
+            StepVerifier.create(userService.createVerificationRequest(7L, request))
+                    .verifyComplete();
+
+            verify(authRepository, timeout(1000)).updateVerificationDocumentAndAiSummary(
+                    eq(10), eq("http://files/proof.png"), eq("IMAGE"), contains("22123456"));
+        }
+
+        @Test
+        @DisplayName("should reject more than three files")
+        void createVerificationRequest_tooManyFiles() {
+            CreateVerificationRequest request = new CreateVerificationRequest();
+            request.setOrganizationId(1);
+            request.setFiles(List.of(
+                    verificationFile("b1", "f1.png"),
+                    verificationFile("b2", "f2.png"),
+                    verificationFile("b3", "f3.png"),
+                    verificationFile("b4", "f4.png")));
+
+            StepVerifier.create(userService.createVerificationRequest(7L, request))
+                    .expectErrorMatches(err -> err instanceof ApplicationException
+                            && ((ApplicationException) err).getErrorCode() == ErrorCode.BAD_REQUEST)
+                    .verify();
+
+            verifyNoInteractions(fileUploadService);
+        }
+
+        @Test
+        @DisplayName("should stop after first readable file")
+        void createVerificationRequest_stopsAfterReadableFile() {
+            CreateVerificationRequest request = new CreateVerificationRequest();
+            request.setOrganizationId(1);
+            request.setFiles(List.of(
+                    verificationFile("b1", "f1.png"),
+                    verificationFile("b2", "f2.png"),
+                    verificationFile("b3", "f3.png")));
+
+            when(fileUploadService.uploadBase64File("b1", "f1.png")).thenReturn(Mono.just("http://files/f1.png"));
+            when(authRepository.insertVerificationRequest(1, 7, "http://files/f1.png", "IMAGE")).thenReturn(Mono.just(10));
+            when(userOrganizationMemberRepository.updateVerificationLevelByOrgAndUser(1, 7, 1)).thenReturn(Mono.just(1));
+            when(fileUploadService.getLocalPath("http://files/f1.png")).thenReturn("/tmp/f1.png");
+            when(ocrService.extractTextFromFile("/tmp/f1.png")).thenReturn(Mono.just("UNREADABLE"));
+            when(fileUploadService.uploadBase64File("b2", "f2.png")).thenReturn(Mono.just("http://files/f2.png"));
+            when(fileUploadService.getLocalPath("http://files/f2.png")).thenReturn("/tmp/f2.png");
+            when(ocrService.extractTextFromFile("/tmp/f2.png")).thenReturn(Mono.just("Họ tên: Nguyễn Văn A\nMSSV: 22123456\nNgành: Công nghệ thông tin"));
+            when(authRepository.updateVerificationDocumentAndAiSummary(eq(10), eq("http://files/f2.png"), eq("IMAGE"), anyString()))
+                    .thenReturn(Mono.empty());
+
+            StepVerifier.create(userService.createVerificationRequest(7L, request))
+                    .verifyComplete();
+
+            verify(authRepository, timeout(1000)).updateVerificationDocumentAndAiSummary(
+                    eq(10), eq("http://files/f2.png"), eq("IMAGE"), contains("22123456"));
+            verify(fileUploadService, after(500).never()).uploadBase64File("b3", "f3.png");
+        }
+
+        @Test
+        @DisplayName("should keep first file when all files are unreadable")
+        void createVerificationRequest_allUnreadableKeepsFirstFile() {
+            CreateVerificationRequest request = new CreateVerificationRequest();
+            request.setOrganizationId(1);
+            request.setFiles(List.of(
+                    verificationFile("b1", "f1.png"),
+                    verificationFile("b2", "f2.png")));
+
+            when(fileUploadService.uploadBase64File("b1", "f1.png")).thenReturn(Mono.just("http://files/f1.png"));
+            when(authRepository.insertVerificationRequest(1, 7, "http://files/f1.png", "IMAGE")).thenReturn(Mono.just(10));
+            when(userOrganizationMemberRepository.updateVerificationLevelByOrgAndUser(1, 7, 1)).thenReturn(Mono.just(1));
+            when(fileUploadService.getLocalPath("http://files/f1.png")).thenReturn("/tmp/f1.png");
+            when(ocrService.extractTextFromFile("/tmp/f1.png")).thenReturn(Mono.just("UNREADABLE"));
+            when(fileUploadService.uploadBase64File("b2", "f2.png")).thenReturn(Mono.just("http://files/f2.png"));
+            when(fileUploadService.getLocalPath("http://files/f2.png")).thenReturn("/tmp/f2.png");
+            when(ocrService.extractTextFromFile("/tmp/f2.png")).thenReturn(Mono.just("too short"));
+            when(authRepository.updateVerificationDocumentAndAiSummary(10, "http://files/f1.png", "IMAGE", "UNREADABLE"))
+                    .thenReturn(Mono.empty());
+
+            StepVerifier.create(userService.createVerificationRequest(7L, request))
+                    .verifyComplete();
+
+            verify(authRepository, timeout(1000)).updateVerificationDocumentAndAiSummary(
+                    10, "http://files/f1.png", "IMAGE", "UNREADABLE");
+        }
+
+        private CreateVerificationRequest legacyVerificationRequest(String base64, String fileName, DocumentType documentType) {
+            CreateVerificationRequest request = new CreateVerificationRequest();
+            request.setOrganizationId(1);
+            request.setBase64File(base64);
+            request.setOriginalFileName(fileName);
+            request.setDocumentType(documentType);
+            return request;
+        }
+
+        private CreateVerificationRequest.VerificationFileRequest verificationFile(String base64, String fileName) {
+            CreateVerificationRequest.VerificationFileRequest file = new CreateVerificationRequest.VerificationFileRequest();
+            file.setBase64File(base64);
+            file.setOriginalFileName(fileName);
+            file.setDocumentType(DocumentType.IMAGE);
+            return file;
+        }
+    }
 
     // ─── getMyProfile ─────────────────────────────────────────────────────────
 
