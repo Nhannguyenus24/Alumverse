@@ -534,27 +534,36 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
         @Param("excludeAdmin") boolean excludeAdmin
     );
 
-    @Query("SELECT CAST(created_at AS DATE) AS date, COUNT(*) AS count " +
-           "FROM users " +
-           "WHERE created_at >= CURRENT_DATE - INTERVAL '30 days' " +
-           "GROUP BY CAST(created_at AS DATE) " +
+    @Query("SELECT CAST(u.created_at AS DATE) AS date, COUNT(*) AS count " +
+           "FROM users u " +
+           "WHERE u.created_at >= CURRENT_DATE - INTERVAL '30 days' " +
+           "AND (CAST(:organizationId AS INTEGER) IS NULL OR EXISTS (" +
+           "    SELECT 1 FROM organization_members om " +
+           "    WHERE om.user_id = u.id AND om.organization_id = :organizationId" +
+           ")) " +
+           "GROUP BY CAST(u.created_at AS DATE) " +
            "ORDER BY date")
-    Flux<com.service.backend.shared.projection.DailyCountProjection> getDailyUserRegistrations();
+    Flux<com.service.backend.shared.projection.DailyCountProjection> getDailyUserRegistrations(@Param("organizationId") Integer organizationId);
 
     @Query("""
         SELECT
-            SUM(CASE WHEN created_at >= :today THEN 1 ELSE 0 END) AS new_users_today,
-            SUM(CASE WHEN created_at >= :sevenDaysAgo THEN 1 ELSE 0 END) AS new_users7_days,
-            SUM(CASE WHEN created_at >= :thirtyDaysAgo THEN 1 ELSE 0 END) AS new_users30_days,
-            SUM(CASE WHEN "status" = 'ACTIVE' THEN 1 ELSE 0 END) AS active_users,
-            SUM(CASE WHEN "status" = 'BANNED' THEN 1 ELSE 0 END) AS banned_users,
-            SUM(CASE WHEN "status" = 'DELETED' THEN 1 ELSE 0 END) AS deleted_users
-        FROM users
+            SUM(CASE WHEN u.created_at >= :today THEN 1 ELSE 0 END) AS new_users_today,
+            SUM(CASE WHEN u.created_at >= :sevenDaysAgo THEN 1 ELSE 0 END) AS new_users7_days,
+            SUM(CASE WHEN u.created_at >= :thirtyDaysAgo THEN 1 ELSE 0 END) AS new_users30_days,
+            SUM(CASE WHEN u."status" = 'ACTIVE' THEN 1 ELSE 0 END) AS active_users,
+            SUM(CASE WHEN u."status" = 'BANNED' THEN 1 ELSE 0 END) AS banned_users,
+            SUM(CASE WHEN u."status" = 'DELETED' THEN 1 ELSE 0 END) AS deleted_users
+        FROM users u
+        WHERE CAST(:organizationId AS INTEGER) IS NULL OR EXISTS (
+            SELECT 1 FROM organization_members om 
+            WHERE om.user_id = u.id AND om.organization_id = :organizationId
+        )
     """)
     Mono<com.service.backend.admin.dto.UserGrowthStatsProjection> getAggregatedUserGrowthStats(
         @Param("today") LocalDateTime today,
         @Param("sevenDaysAgo") LocalDateTime sevenDaysAgo,
-        @Param("thirtyDaysAgo") LocalDateTime thirtyDaysAgo
+        @Param("thirtyDaysAgo") LocalDateTime thirtyDaysAgo,
+        @Param("organizationId") Integer organizationId
     );
 
     @Query("""
@@ -565,8 +574,11 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
             SUM(CASE WHEN "status" = 'REJECTED' THEN 1 ELSE 0 END) AS rejected_requests,
             SUM(CASE WHEN "status" = 'NEEDS_REVISION' THEN 1 ELSE 0 END) AS needs_revision_requests
         FROM verification_requests
+        WHERE CAST(:organizationId AS INTEGER) IS NULL OR organization_id = :organizationId
     """)
-    Mono<com.service.backend.admin.dto.VerificationStatsProjection> getAggregatedVerificationStats();
+    Mono<com.service.backend.admin.dto.VerificationStatsProjection> getAggregatedVerificationStats(
+        @Param("organizationId") Integer organizationId
+    );
 
     @Query("""
         SELECT
@@ -574,8 +586,11 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
             SUM(CASE WHEN "status" = 'PENDING' THEN 1 ELSE 0 END) AS pending_verifications,
             SUM(CASE WHEN "status" = 'APPROVED' THEN 1 ELSE 0 END) AS approved_verifications
         FROM peer_verifications
+        WHERE CAST(:organizationId AS INTEGER) IS NULL OR organization_id = :organizationId
     """)
-    Mono<com.service.backend.admin.dto.PeerVerificationStatsProjection> getAggregatedPeerVerificationStats();
+    Mono<com.service.backend.admin.dto.PeerVerificationStatsProjection> getAggregatedPeerVerificationStats(
+        @Param("organizationId") Integer organizationId
+    );
 
     @Query("SELECT member_id, organization_id FROM verification_requests WHERE id = :requestId")
     Mono<com.service.backend.admin.dto.VerificationRequestInfo> findVerificationRequestInfoById(@Param("requestId") Integer requestId);
