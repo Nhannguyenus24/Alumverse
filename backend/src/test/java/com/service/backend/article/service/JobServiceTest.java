@@ -7,6 +7,7 @@ import com.service.backend.shared.entity.Job;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.enums.JobType;
 import com.service.backend.shared.exception.ApplicationException;
+import com.service.backend.shared.service.ImageService;
 import com.service.backend.shared.utils.CacheUtils;
 import com.service.backend.user.service.NotificationService;
 import org.junit.jupiter.api.DisplayName;
@@ -30,6 +31,7 @@ import static org.mockito.Mockito.*;
 class JobServiceTest {
 
     @Mock private JobR2dbcRepository jobRepository;
+    @Mock private ImageService imageService;
     @Mock private CacheUtils cacheUtils;
     @Mock private NotificationService notificationService;
 
@@ -235,6 +237,7 @@ class JobServiceTest {
 
             when(jobRepository.findById(1)).thenReturn(Mono.just(existing));
             when(jobRepository.save(any())).thenReturn(Mono.just(updated));
+            when(imageService.uploadBase64IfPresent(any())).thenReturn(Mono.empty());
             when(cacheUtils.clear(anyString())).thenReturn(Mono.empty());
 
             StepVerifier.create(jobService.update(1, request)
