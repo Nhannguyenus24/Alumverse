@@ -9,6 +9,7 @@ import Chart from '../Chart';
 import AdminSectionPanel from './AdminSectionPanel';
 import AdminDashboardMetricTile from './AdminDashboardMetricTile';
 import useAdminVerificationStats from '../../hooks/admin/useAdminVerificationStats';
+import { useAdminSystemContext } from '../../stores/AdminStore';
 
 const metricRowSx = {
   '& > *': { flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 8px)', md: '1 1 0' } },
@@ -16,7 +17,8 @@ const metricRowSx = {
 
 const AdminVerificationSection = () => {
   const { t } = useTranslation('admin');
-  const { stats } = useAdminVerificationStats();
+  const system = useAdminSystemContext();
+  const { stats } = useAdminVerificationStats(system?.stableOrgId);
 
   const alumniStatusData = [
     { name: t('admin:verification_pending'), count: Number(stats.pendingAlumniRequests) },

@@ -368,15 +368,17 @@ public class AdminUserController {
     }
 
     @GetMapping("/growth-statistics")
-    public Mono<ResponseEntity<ApiResponse<UserGrowthStatisticsDTO>>> getUserGrowthStatistics() {
-        return adminUserService.getUserGrowthStatistics()
+    public Mono<ResponseEntity<ApiResponse<UserGrowthStatisticsDTO>>> getUserGrowthStatistics(
+            @RequestParam(required = false) Integer organizationId) {
+        return adminUserService.getUserGrowthStatistics(organizationId)
                 .map(stats -> ResponseEntity.ok(
                         new ApiResponse<>("User growth statistics fetched successfully", stats)));
     }
 
     @GetMapping("/verification-statistics")
-    public Mono<ResponseEntity<ApiResponse<VerificationStatisticsDTO>>> getVerificationStatistics() {
-        return adminUserService.getVerificationStatistics()
+    public Mono<ResponseEntity<ApiResponse<VerificationStatisticsDTO>>> getVerificationStatistics(
+            @RequestParam(required = false) Integer organizationId) {
+        return adminUserService.getVerificationStatistics(organizationId)
                 .map(stats -> ResponseEntity.ok(
                         new ApiResponse<>("Verification statistics fetched successfully", stats)));
     }

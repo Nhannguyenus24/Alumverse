@@ -415,6 +415,7 @@ const AdminSystemMonitoringPage = () => {
         endpointDataRes,
         exceptionDataRes,
         endpointLatencyRes,
+        endpointMaxLatencyRes,
         exceptionTimeSeriesRes,
         statusTimeSeriesRes,
         totalRequestsRes,
@@ -473,6 +474,7 @@ const AdminSystemMonitoringPage = () => {
         fetchPrometheusInstant(`topk(50, sum by (path, method) (increase(http_endpoint_requests_total[${rangeSeconds}s])))`, end),
         fetchPrometheusInstant(`topk(50, sum by (error_code) (increase(api_errors_count_total[${rangeSeconds}s])))`, end),
         fetchPrometheusInstant(`sum by (path, method) (increase(http_endpoint_latency_seconds_sum[${rangeSeconds}s])) / sum by (path, method) (increase(http_endpoint_latency_seconds_count[${rangeSeconds}s])) * 1000`, end),
+        fetchPrometheusInstant(`max by (path, method) (max_over_time(http_endpoint_latency_seconds_max[${rangeSeconds}s])) * 1000`, end),
         fetchPrometheusRangeMultiple(`sum by (error_code) (increase(api_errors_count_total[5m]))`, start, end, step),
         fetchPrometheusRangeMultiple(`sum by (status) (rate(http_endpoint_requests_total[5m]))`, start, end, step),
         fetchPrometheusInstant(`sum(http_endpoint_requests_total)`, end),
@@ -653,6 +655,16 @@ const AdminSystemMonitoringPage = () => {
         });
       }
 
+      const maxLatencyMap = new Map();
+      if (endpointMaxLatencyRes && endpointMaxLatencyRes.length > 0) {
+        endpointMaxLatencyRes.forEach(res => {
+          const key = `${res.metric.method || 'UNKNOWN'}-${res.metric.path || 'Unknown'}`;
+          let val = parseFloat(res.value[1]);
+          if (isNaN(val)) val = 0;
+          maxLatencyMap.set(key, val);
+        });
+      }
+
       // Process instant queries for tables
       setEndpointStats(
         endpointDataRes
@@ -664,7 +676,8 @@ const AdminSystemMonitoringPage = () => {
               path,
               method,
               count: parseFloat(res.value[1]),
-              avgLatency: latencyMap.get(key) || 0
+              avgLatency: latencyMap.get(key) || 0,
+              maxLatency: maxLatencyMap.get(key) || 0
             };
           })
           .sort((a, b) => b.count - a.count)
@@ -718,9 +731,13 @@ const AdminSystemMonitoringPage = () => {
   const renderTooltip = (props) => {
     const { active, payload, label } = props;
     if (active && payload && payload.length) {
+      const formattedLabel = (typeof label === 'number' || !isNaN(Number(label)))
+        ? dayjs(Number(label) * 1000).format('YYYY-MM-DD HH:mm:ss')
+        : label;
+
       return (
         <Box sx={{ bgcolor: 'background.paper', p: 1.5, border: '1px solid #ccc', borderRadius: 1, boxShadow: 1 }}>
-          <Typography variant="body2" color="text.secondary" mb={1}>{label}</Typography>
+          <Typography variant="body2" color="text.secondary" mb={1}>{formattedLabel}</Typography>
           {payload.map((entry, index) => (
             <Typography key={`item-${index}`} variant="body2" sx={{ color: entry.color }}>
               {entry.name}: {entry.value != null ? entry.value.toFixed(2) : '0'}
@@ -884,11 +901,12 @@ const AdminSystemMonitoringPage = () => {
                           <TableCell sx={adminTableHeadCellSx}>{t('admin:system_monitoring.endpoint_path')}</TableCell>
                           <TableCell align="right" sx={adminTableHeadCellSx}>{t('admin:system_monitoring.requests')}</TableCell>
                           <TableCell align="right" sx={adminTableHeadCellSx}>{t('admin:system_monitoring.avg_latency_ms')}</TableCell>
+                          <TableCell align="right" sx={adminTableHeadCellSx}>{t('admin:system_monitoring.max_latency_ms', 'Max Latency (ms)')}</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
                         {endpointStats.length === 0 && (
-                          <TableRow><TableCell colSpan={4} align="center">{t('admin:system_monitoring.no_data')}</TableCell></TableRow>
+                          <TableRow><TableCell colSpan={5} align="center">{t('admin:system_monitoring.no_data')}</TableCell></TableRow>
                         )}
                         {endpointStats.map((row, idx) => (
                           <TableRow key={idx} hover>
@@ -896,6 +914,7 @@ const AdminSystemMonitoringPage = () => {
                             <TableCell>{row.path}</TableCell>
                             <TableCell align="right">{row.count.toFixed(0)}</TableCell>
                             <TableCell align="right">{row.avgLatency.toFixed(2)}</TableCell>
+                            <TableCell align="right">{row.maxLatency.toFixed(2)}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
