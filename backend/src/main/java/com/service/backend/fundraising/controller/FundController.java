@@ -14,6 +14,7 @@ import com.service.backend.shared.dto.ApiResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -52,7 +53,7 @@ public class FundController {
     public Mono<ResponseEntity<ApiResponse<DataWithWarnings<PaginatedResponse<FundListItemResponse>>>>> getAll(
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int limit,
-            @RequestParam(required = false) String q,
+            @RequestParam(required = false) @Size(max = 255) String q,
             @RequestParam(required = false) String organizationId,
             @RequestParam(required = false) String timeStartedFrom,
             @RequestParam(required = false) String timeStartedTo,

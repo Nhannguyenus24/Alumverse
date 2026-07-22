@@ -229,7 +229,7 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
           </Typography>
 
           <Typography variant="caption" color="text.secondary">
-            {t('event:participants_interested', { participants: article.participants || 0, interested: article.interested || 0 })}
+            {t('event:interested_only', { interested: article.interested || 0 })}
           </Typography>
         </Box>
 

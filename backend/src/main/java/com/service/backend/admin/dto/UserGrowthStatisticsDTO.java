@@ -13,6 +13,7 @@ import java.util.List;
 @AllArgsConstructor
 public class UserGrowthStatisticsDTO {
 
+    private Long newUsersToday;
     private Long newUsersLast7Days;
     private Long newUsersLast30Days;
     private Long totalActiveUsers;

@@ -29,7 +29,7 @@ import { useEffect } from 'react';
 import Page from '../../components/Page';
 import MentorshipSlotPicker from '../../components/mentorship/MentorshipSlotPicker';
 import MentorshipBookingForm from '../../components/mentorship/MentorshipBookingForm';
-import { useOrgNavigate } from '../../hooks/useOrgNavigate';
+import { useOrgNavigate, useOrgPath } from '../../hooks/useOrgNavigate';
 import { useMentorPublicProfile } from '../../hooks/mentorship/useMentorPublicProfile';
 import { useMentorAvailability } from '../../hooks/mentorship/useMentorAvailability';
 import { useBookSession } from '../../hooks/mentorship/useBookSession';
@@ -46,6 +46,13 @@ const MentorshipBookingPage = () => {
   const navigate = useOrgNavigate();
   const { mentorId } = useParams();
   const mentorMemberId = Number(mentorId);
+  const toOrgPath = useOrgPath();
+
+  const handleOpenProfile = () => {
+    if (!mentorMemberId) return;
+    const url = `${window.location.origin}${toOrgPath(`/profile/${mentorMemberId}`)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
 
   const profileQuery = useMentorPublicProfile(mentorMemberId);
   const availabilityQuery = useMentorAvailability(mentorMemberId);
@@ -232,11 +239,19 @@ const MentorshipBookingPage = () => {
             ) : (
               <>
                 <Stack alignItems="center" spacing={1.5} textAlign="center">
-                  <Avatar src={mentor.avatarUrl} sx={{ width: 96, height: 96 }}>
+                  <Avatar 
+                    src={mentor.avatarUrl} 
+                    onClick={handleOpenProfile}
+                    sx={{ width: 96, height: 96, cursor: 'pointer' }}
+                  >
                     {(mentor.fullName ?? '#').charAt(0).toUpperCase()}
                   </Avatar>
                   <Box>
-                    <Typography fontWeight={700}>
+                    <Typography 
+                      fontWeight={700}
+                      onClick={handleOpenProfile}
+                      sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
+                    >
                       {mentor.fullName ?? `Mentor #${mentor.memberId}`}
                     </Typography>
                     {(mentor.currentJobTitle || mentor.currentCompany) && (
