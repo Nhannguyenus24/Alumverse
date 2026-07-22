@@ -175,11 +175,14 @@ const AdminOrganizationMasterDetail = ({
     setActiveTab(newValue);
   };
 
+  const { uploadFile, isPending } = useUploadImage();
+
   // Local editable states for config tab
   const [brandState, setBrandState] = useState({
     logoUrl: '',
     faviconUrl: '',
     heroBannerUrl: '',
+    heroSlides: [],
     themeColors: { ...DEFAULT_BRAND_COLORS },
   });
   const [identityState, setIdentityState] = useState({
@@ -295,6 +298,7 @@ const AdminOrganizationMasterDetail = ({
         logoUrl: brand.logo_url || brand.logoUrl || selectedOrg.logoUrl || '',
         faviconUrl: brand.favicon_url || brand.faviconUrl || '',
         heroBannerUrl: brand.hero_banner_url || brand.heroBannerUrl || '',
+        heroSlides: Array.isArray(brand.hero_slides || brand.heroSlides) ? (brand.hero_slides || brand.heroSlides) : [],
         themeColors: {
           primary: normalizeHexColor(themeColors.primary, DEFAULT_BRAND_COLORS.primary),
           secondary: normalizeHexColor(themeColors.secondary, DEFAULT_BRAND_COLORS.secondary),
@@ -407,8 +411,20 @@ const AdminOrganizationMasterDetail = ({
                   <Stack direction="row" spacing={1.5} alignItems="center" sx={{ width: '100%' }}>
                     <Avatar
                       src={org.logoUrl}
-                      slotProps={{ img: { style: { objectFit: 'contain', width: '100%', height: '100%', padding: '2px' } } }}
-                      sx={{ width: 36, height: 36, border: 1, borderColor: 'divider', bgcolor: 'background.paper' }}
+                      imgProps={{ style: { objectFit: 'contain', width: '100%', height: '100%', padding: '2px' } }}
+                      sx={{
+                        width: 36,
+                        height: 36,
+                        border: 1,
+                        borderColor: 'divider',
+                        bgcolor: 'background.paper',
+                        '& .MuiAvatar-img': {
+                          objectFit: 'contain !important',
+                          width: '100%',
+                          height: '100%',
+                          p: '2px',
+                        },
+                      }}
                     >
                       <BusinessOutlinedIcon sx={{ fontSize: 18 }} />
                     </Avatar>
@@ -464,10 +480,9 @@ const AdminOrganizationMasterDetail = ({
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        maxHeight: { xs: 40, sm: 48, md: 52 },
-                        maxWidth: { xs: 72, sm: 88, md: 100 },
-                        minWidth: 32,
-                        overflow: 'hidden',
+                        height: { xs: 44, sm: 52, md: 60 },
+                        maxWidth: { xs: 90, sm: 130, md: 160 },
+                        minWidth: 36,
                         flexShrink: 0,
                       }}
                     >
@@ -477,11 +492,11 @@ const AdminOrganizationMasterDetail = ({
                           src={selectedOrg.logoUrl}
                           alt={selectedOrg.name}
                           sx={{
-                            maxHeight: '100%',
+                            height: '100%',
                             maxWidth: '100%',
                             width: 'auto',
-                            height: 'auto',
-                            objectFit: 'contain',
+                            objectFit: 'contain !important',
+                            display: 'block',
                           }}
                         />
                       ) : (
@@ -729,73 +744,89 @@ const AdminOrganizationMasterDetail = ({
                 {activeTab === 2 && (
                   <Stack spacing={3}>
                     <DetailSection title={t('admin:org_training_programs')}>
-                                              <Grid container spacing={2}>
-                          <Grid item xs={12} sm={6}>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>{t('admin:org_programs')}</Typography>
-                            <Stack direction="row" flexWrap="wrap" gap={1} sx={{ mb: 1 }}>
-                              {programList.map((p) => (
-                                <Paper key={p} variant="outlined" sx={{ px: 1, py: 0.5, borderRadius: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-                                  <Typography sx={{ fontWeight: 700, fontSize: 13 }}>{p}</Typography>
-                                  <IconButton size="small" onClick={() => setProgramList(pl => pl.filter(x => x !== p))}><DeleteOutlineIcon fontSize="small" /></IconButton>
-                                </Paper>
-                              ))}
-                            </Stack>
-                            <Stack
-                              direction={{ xs: 'column', sm: 'row' }}
-                              spacing={1}
-                            >
-                              <TextField size="small" placeholder={t('admin:org_add_program')} value={newProgram} onChange={(e) => setNewProgram(e.target.value)} />
-                              <Button startIcon={<AddIcon />} variant="outlined" size="small" onClick={() => { if (newProgram.trim()) { setProgramList(pl => [...pl, newProgram.trim()]); setNewProgram(''); } }}>{t('admin:add')}</Button>
-                              <Button startIcon={<SaveOutlinedIcon />} variant="contained" size="small" onClick={async () => {
-                                try {
-                                  const remote = await adminOrganizationApi.getPrograms(selectedOrg.id);
-                                  const remoteList = Array.isArray(remote) ? remote : [];
-                                  const toAdd = programList.filter(p => !remoteList.includes(p));
-                                  const toRemove = remoteList.filter(p => !programList.includes(p));
-                                  await Promise.all(toAdd.map(v => adminOrganizationApi.addProgram(selectedOrg.id, v)));
-                                  await Promise.all(toRemove.map(v => adminOrganizationApi.removeProgram(selectedOrg.id, v)));
-                                  enqueueSnackbar(t('admin:org_programs_saved'), { variant: 'success' });
-                                  onRefresh?.();
-                                } catch (_) {
-                                  enqueueSnackbar(t('admin:org_programs_save_failed'), { variant: 'error' });
-                                }
-                              }}>{t('admin:save')}</Button>
-                            </Stack>
-                          </Grid>
+                      <Box>
+                        <Box sx={{ mb: 2 }}>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 0.5 }}>
+                            {t('admin:org_programs_heading')}
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                            {t('admin:org_programs_hint')}
+                          </Typography>
+                        </Box>
 
-                          <Grid item xs={12} sm={6}>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>{t('admin:org_majors')}</Typography>
-                            <Stack direction="row" flexWrap="wrap" gap={1} sx={{ mb: 1 }}>
-                              {majorList.map((m) => (
-                                <Paper key={m} variant="outlined" sx={{ px: 1, py: 0.5, borderRadius: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-                                  <Typography sx={{ fontWeight: 700, fontSize: 13 }}>{m}</Typography>
-                                  <IconButton size="small" onClick={() => setMajorList(ml => ml.filter(x => x !== m))}><DeleteOutlineIcon fontSize="small" /></IconButton>
-                                </Paper>
-                              ))}
-                            </Stack>
-                            <Stack
-                              direction={{ xs: 'column', sm: 'row' }}
-                              spacing={1}
-                            >
-                              <TextField size="small" placeholder={t('admin:org_add_major')} value={newMajor} onChange={(e) => setNewMajor(e.target.value)} />
-                              <Button startIcon={<AddIcon />} variant="outlined" size="small" onClick={() => { if (newMajor.trim()) { setMajorList(ml => [...ml, newMajor.trim()]); setNewMajor(''); } }}>{t('admin:add')}</Button>
-                              <Button startIcon={<SaveOutlinedIcon />} variant="contained" size="small" onClick={async () => {
-                                try {
-                                  const remote = await adminOrganizationApi.getMajors(selectedOrg.id);
-                                  const remoteList = Array.isArray(remote) ? remote : [];
-                                  const toAdd = majorList.filter(p => !remoteList.includes(p));
-                                  const toRemove = remoteList.filter(p => !majorList.includes(p));
-                                  await Promise.all(toAdd.map(v => adminOrganizationApi.addMajor(selectedOrg.id, v)));
-                                  await Promise.all(toRemove.map(v => adminOrganizationApi.removeMajor(selectedOrg.id, v)));
-                                  enqueueSnackbar(t('admin:org_majors_saved'), { variant: 'success' });
-                                  onRefresh?.();
-                                } catch (_) {
-                                  enqueueSnackbar(t('admin:org_majors_save_failed'), { variant: 'error' });
-                                }
-                              }}>{t('admin:save')}</Button>
-                            </Stack>
-                          </Grid>
-                        </Grid>
+                        <Stack direction="row" flexWrap="wrap" gap={1} sx={{ mb: 1.5 }}>
+                          {programList.map((p) => (
+                            <Paper key={p} variant="outlined" sx={{ px: 1.5, py: 0.5, borderRadius: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Typography sx={{ fontWeight: 700, fontSize: 13 }}>{p}</Typography>
+                              <IconButton size="small" onClick={() => setProgramList(pl => pl.filter(x => x !== p))}><DeleteOutlineIcon fontSize="small" /></IconButton>
+                            </Paper>
+                          ))}
+                        </Stack>
+                        <Stack
+                          direction={{ xs: 'column', sm: 'row' }}
+                          spacing={1}
+                        >
+                          <TextField size="small" placeholder={t('admin:org_add_program')} value={newProgram} onChange={(e) => setNewProgram(e.target.value)} />
+                          <Button startIcon={<AddIcon />} variant="outlined" size="small" onClick={() => { if (newProgram.trim()) { setProgramList(pl => [...pl, newProgram.trim()]); setNewProgram(''); } }}>{t('admin:add')}</Button>
+                          <Button startIcon={<SaveOutlinedIcon />} variant="contained" size="small" onClick={async () => {
+                            try {
+                              const remote = await adminOrganizationApi.getPrograms(selectedOrg.id);
+                              const remoteList = Array.isArray(remote) ? remote : [];
+                              const toAdd = programList.filter(p => !remoteList.includes(p));
+                              const toRemove = remoteList.filter(p => !programList.includes(p));
+                              await Promise.all(toAdd.map(v => adminOrganizationApi.addProgram(selectedOrg.id, v)));
+                              await Promise.all(toRemove.map(v => adminOrganizationApi.removeProgram(selectedOrg.id, v)));
+                              enqueueSnackbar(t('admin:org_programs_saved'), { variant: 'success' });
+                              onRefresh?.();
+                            } catch (_) {
+                              enqueueSnackbar(t('admin:org_programs_save_failed'), { variant: 'error' });
+                            }
+                          }}>{t('admin:save')}</Button>
+                        </Stack>
+                      </Box>
+
+                      <Divider sx={{ my: 3 }} />
+
+                      <Box>
+                        <Box sx={{ mb: 2 }}>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 0.5 }}>
+                            {t('admin:org_majors_heading')}
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                            {t('admin:org_majors_hint')}
+                          </Typography>
+                        </Box>
+
+                        <Stack direction="row" flexWrap="wrap" gap={1} sx={{ mb: 1.5 }}>
+                          {majorList.map((m) => (
+                            <Paper key={m} variant="outlined" sx={{ px: 1.5, py: 0.5, borderRadius: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Typography sx={{ fontWeight: 700, fontSize: 13 }}>{m}</Typography>
+                              <IconButton size="small" onClick={() => setMajorList(ml => ml.filter(x => x !== m))}><DeleteOutlineIcon fontSize="small" /></IconButton>
+                            </Paper>
+                          ))}
+                        </Stack>
+                        <Stack
+                          direction={{ xs: 'column', sm: 'row' }}
+                          spacing={1}
+                        >
+                          <TextField size="small" placeholder={t('admin:org_add_major')} value={newMajor} onChange={(e) => setNewMajor(e.target.value)} />
+                          <Button startIcon={<AddIcon />} variant="outlined" size="small" onClick={() => { if (newMajor.trim()) { setMajorList(ml => [...ml, newMajor.trim()]); setNewMajor(''); } }}>{t('admin:add')}</Button>
+                          <Button startIcon={<SaveOutlinedIcon />} variant="contained" size="small" onClick={async () => {
+                            try {
+                              const remote = await adminOrganizationApi.getMajors(selectedOrg.id);
+                              const remoteList = Array.isArray(remote) ? remote : [];
+                              const toAdd = majorList.filter(p => !remoteList.includes(p));
+                              const toRemove = remoteList.filter(p => !majorList.includes(p));
+                              await Promise.all(toAdd.map(v => adminOrganizationApi.addMajor(selectedOrg.id, v)));
+                              await Promise.all(toRemove.map(v => adminOrganizationApi.removeMajor(selectedOrg.id, v)));
+                              enqueueSnackbar(t('admin:org_majors_saved'), { variant: 'success' });
+                              onRefresh?.();
+                            } catch (_) {
+                              enqueueSnackbar(t('admin:org_majors_save_failed'), { variant: 'error' });
+                            }
+                          }}>{t('admin:save')}</Button>
+                        </Stack>
+                      </Box>
                     </DetailSection>
 
                     <Box
@@ -877,8 +908,11 @@ const AdminOrganizationMasterDetail = ({
                       {/* Brand / theme editor */}
                       <DetailSection title={t('admin:org_ui_config')}>
                         <Box>
-                          <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1.5 }}>
-                            {t('admin:org_colors')}
+                          <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 0.5 }}>
+                            {t('admin:org_colors_heading')}
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
+                            {t('admin:org_colors_hint')}
                           </Typography>
 
                           <Stack spacing={1.5}>
@@ -920,9 +954,14 @@ const AdminOrganizationMasterDetail = ({
                           </Stack>
                         </Box>
 
-                        <Box sx={{ mt: 3 }}>
-                          <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1.5 }}>
-                            {t('admin:org_images')}
+                        <Divider sx={{ my: 3 }} />
+
+                        <Box>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 0.5 }}>
+                            {t('admin:org_images_heading')}
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
+                            {t('admin:org_images_hint')}
                           </Typography>
 
                           <Box
@@ -946,12 +985,12 @@ const AdminOrganizationMasterDetail = ({
                               sx={{ gridColumn: { md: 1 }, gridRow: { md: 2 } }}
                             />
                             <ImagePreviewBox
-                              label="Favicon"
+                              label={t('admin:org_favicon_label')}
                               src={brandState.faviconUrl}
                               sx={{ gridColumn: { md: 1 }, gridRow: { md: 3 } }}
                             />
                             <UploadImageButton
-                              label="Favicon"
+                              label={t('admin:org_favicon_label')}
                               onUpload={(base64) => setBrandState(s => ({ ...s, faviconUrl: base64 }))}
                               sx={{ gridColumn: { md: 1 }, gridRow: { md: 4 } }}
                             />
@@ -960,11 +999,121 @@ const AdminOrganizationMasterDetail = ({
                               sx={{ gridColumn: { md: 2 }, gridRow: { md: '1 / 4' } }}
                             />
                             <UploadImageButton
-                              label="Hero Banner"
+                              label={t('admin:org_hero_banner_label')}
                               onUpload={(base64) => setBrandState(s => ({ ...s, heroBannerUrl: base64 }))}
                               sx={{ gridColumn: { md: 2 }, gridRow: { md: 4 } }}
                             />
                           </Box>
+                        </Box>
+
+                        <Divider sx={{ my: 3 }} />
+
+                        {/* Hero Banner Slides (Băng rôn trang chủ) Section */}
+                        <Box>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 0.5 }}>
+                            {t('admin:org_hero_slides_heading')}
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
+                            {t('admin:org_hero_slides_hint')}
+                          </Typography>
+
+                          <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap sx={{ mb: 2, alignItems: 'center' }}>
+                            {(brandState.heroSlides || []).map((slideUrl, idx) => (
+                              <Box
+                                key={idx}
+                                sx={{
+                                  position: 'relative',
+                                  width: 140,
+                                  height: 80,
+                                  borderRadius: 1.5,
+                                  overflow: 'hidden',
+                                  border: '1px solid',
+                                  borderColor: 'divider',
+                                  bgcolor: 'background.default',
+                                }}
+                              >
+                                <Box
+                                  component="img"
+                                  src={slideUrl}
+                                  alt={`Hero Slide ${idx + 1}`}
+                                  sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                />
+                                <IconButton
+                                  size="small"
+                                  sx={{
+                                    position: 'absolute',
+                                    top: 4,
+                                    right: 4,
+                                    width: 22,
+                                    height: 22,
+                                    p: 0,
+                                    borderRadius: '50%',
+                                    bgcolor: 'error.main',
+                                    color: 'common.white',
+                                    '&:hover': { bgcolor: 'error.dark' },
+                                    zIndex: 2,
+                                  }}
+                                  onClick={() => {
+                                    setBrandState(prev => ({
+                                      ...prev,
+                                      heroSlides: prev.heroSlides.filter((_, i) => i !== idx),
+                                    }));
+                                  }}
+                                >
+                                  <Box component="span" sx={{ fontSize: 14, fontWeight: 700, lineHeight: 1 }}>×</Box>
+                                </IconButton>
+                              </Box>
+                            ))}
+                          </Stack>
+
+                          <Button
+                            component="label"
+                            variant="outlined"
+                            size="small"
+                            startIcon={<CloudUploadIcon />}
+                            disabled={isPending || (brandState.heroSlides?.length >= 5)}
+                            sx={{ textTransform: 'none' }}
+                          >
+                            {t('admin:org_hero_slides_add')}
+                            <input
+                              type="file"
+                              hidden
+                              multiple
+                              accept={IMAGE_ACCEPT}
+                              onChange={async (e) => {
+                                const files = Array.from(e.target.files || []);
+                                e.target.value = '';
+                                if (!files.length) return;
+
+                                const currentCount = brandState.heroSlides?.length || 0;
+                                const availableSlots = 5 - currentCount;
+                                if (availableSlots <= 0) {
+                                  enqueueSnackbar(t('admin:org_hero_slides_max_reached'), { variant: 'warning' });
+                                  return;
+                                }
+
+                                const filesToUpload = files.slice(0, availableSlots);
+                                try {
+                                  const uploadedUrls = [];
+                                  for (const file of filesToUpload) {
+                                    const validation = validateImageFile(file, t);
+                                    if (validation.valid) {
+                                      const url = await uploadFile(file);
+                                      if (url) uploadedUrls.push(url);
+                                    }
+                                  }
+                                  if (uploadedUrls.length > 0) {
+                                    setBrandState(prev => ({
+                                      ...prev,
+                                      heroSlides: [...(prev.heroSlides || []), ...uploadedUrls].slice(0, 5),
+                                    }));
+                                  }
+                                } catch (err) {
+                                  enqueueSnackbar(t('common:image_upload_error'), { variant: 'error' });
+                                }
+                              }}
+                            />
+                          </Button>
                         </Box>
 
                         <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
@@ -984,6 +1133,7 @@ const AdminOrganizationMasterDetail = ({
                                     logo_url: brandState.logoUrl,
                                     favicon_url: brandState.faviconUrl,
                                     hero_banner_url: brandState.heroBannerUrl,
+                                    hero_slides: brandState.heroSlides || [],
                                     theme_colors: {
                                       primary: normalizeHexColor(brandState.themeColors.primary, DEFAULT_BRAND_COLORS.primary),
                                       secondary: normalizeHexColor(brandState.themeColors.secondary, DEFAULT_BRAND_COLORS.secondary),
@@ -1032,12 +1182,12 @@ const AdminOrganizationMasterDetail = ({
                       ) : (
                         <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2, mb: 3 }}>
                           <Table size="small">
-                            <TableHead>
-                              <TableRow sx={{ bgcolor: 'action.hover' }}>
-                                <TableCell sx={{ fontWeight: 700 }}>{t('admin:full_name')}</TableCell>
-                                <TableCell sx={{ fontWeight: 700 }}>{t('admin:position')}</TableCell>
-                                <TableCell sx={{ fontWeight: 700 }}>Email</TableCell>
-                                <TableCell align="right" sx={{ fontWeight: 700 }}>{t('admin:actions')}</TableCell>
+                            <TableHead sx={{ bgcolor: 'primary.main', '& .MuiTableCell-head': { bgcolor: 'primary.main', color: 'primary.contrastText', fontWeight: 700 } }}>
+                              <TableRow>
+                                <TableCell>{t('admin:full_name')}</TableCell>
+                                <TableCell>{t('admin:position')}</TableCell>
+                                <TableCell>Email</TableCell>
+                                <TableCell align="right">{t('admin:actions')}</TableCell>
                               </TableRow>
                             </TableHead>
                             <TableBody>
@@ -1086,12 +1236,12 @@ const AdminOrganizationMasterDetail = ({
                       ) : (
                         <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
                           <Table size="small">
-                            <TableHead>
-                              <TableRow sx={{ bgcolor: 'action.hover' }}>
-                                <TableCell sx={{ fontWeight: 700 }}>{t('admin:full_name')}</TableCell>
-                                <TableCell sx={{ fontWeight: 700 }}>{t('admin:position')}</TableCell>
-                                <TableCell sx={{ fontWeight: 700 }}>Email</TableCell>
-                                <TableCell align="right" sx={{ fontWeight: 700 }}>{t('admin:actions')}</TableCell>
+                            <TableHead sx={{ bgcolor: 'primary.main', '& .MuiTableCell-head': { bgcolor: 'primary.main', color: 'primary.contrastText', fontWeight: 700 } }}>
+                              <TableRow>
+                                <TableCell>{t('admin:full_name')}</TableCell>
+                                <TableCell>{t('admin:position')}</TableCell>
+                                <TableCell>Email</TableCell>
+                                <TableCell align="right">{t('admin:actions')}</TableCell>
                               </TableRow>
                             </TableHead>
                             <TableBody>

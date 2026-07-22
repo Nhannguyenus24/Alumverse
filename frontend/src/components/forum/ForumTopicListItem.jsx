@@ -33,25 +33,24 @@ const ForumTopicListItem = ({ topic, onClick, onAuthorClick }) => {
           alignItems: 'center',
           gap: 1.5,
           flex: 1,
+          width: '100%',
           minWidth: 0,
         }}
       >
-        <Box sx={{ minWidth: 0 }}>
+        <Box sx={{ minWidth: 0, width: '100%' }}>
           <Typography
             variant="subtitle1"
-            fontWeight={600}
+            fontWeight={700}
             sx={{
               fontSize: { xs: '0.95rem', md: '1rem' },
               overflow: 'hidden',
               display: '-webkit-box',
-              WebkitLineClamp: 2,
+              WebkitLineClamp: { xs: 2, md: 1 },
               WebkitBoxOrient: 'vertical',
+              wordBreak: 'break-word',
             }}
           >
             {topic.title}
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            {t('forum:created_at_label')} · {formatRelativeTimeVi(topic.createdAt)}
           </Typography>
         </Box>
       </Box>
@@ -61,34 +60,38 @@ const ForumTopicListItem = ({ topic, onClick, onAuthorClick }) => {
           display: 'flex',
           flexWrap: 'wrap',
           alignItems: 'center',
-          gap: { xs: 2, md: 3 },
+          justifyContent: { xs: 'space-between', md: 'flex-end' },
+          gap: { xs: 1.5, md: 3 },
+          width: { xs: '100%', md: 'auto' },
           ml: { md: 'auto' },
           flexShrink: 0,
         }}
       >
-        <Box sx={{ textAlign: 'center', minWidth: { xs: 56, sm: 72 } }}>
-          <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-            {t('forum:views')}
-          </Typography>
-          <Typography variant="body2" fontWeight={800}>
-            {topic.viewCount ?? 0}
-          </Typography>
-        </Box>
-        <Box sx={{ textAlign: 'center', minWidth: { xs: 56, sm: 72 } }}>
-          <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-            {t('forum:discussions')}
-          </Typography>
-          <Typography variant="body2" fontWeight={800}>
-            {topic.postCount ?? 0}
-          </Typography>
+        <Box sx={{ display: 'flex', gap: { xs: 2, md: 3 } }}>
+          <Box sx={{ textAlign: 'center', minWidth: { xs: 48, sm: 72 } }}>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+              {t('forum:views')}
+            </Typography>
+            <Typography variant="body2" fontWeight={800}>
+              {topic.viewCount ?? 0}
+            </Typography>
+          </Box>
+          <Box sx={{ textAlign: 'center', minWidth: { xs: 48, sm: 72 } }}>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+              {t('forum:discussions')}
+            </Typography>
+            <Typography variant="body2" fontWeight={800}>
+              {topic.postCount ?? 0}
+            </Typography>
+          </Box>
         </Box>
         <Box
           sx={{
             display: 'flex',
             alignItems: 'center',
             gap: 1,
-            minWidth: { xs: 120, sm: 160 },
-            justifyContent: 'flex-end',
+            minWidth: { xs: 'auto', sm: 140 },
+            justifyContent: { xs: 'flex-start', md: 'flex-end' },
           }}
         >
           <Avatar
@@ -111,7 +114,7 @@ const ForumTopicListItem = ({ topic, onClick, onAuthorClick }) => {
           >
             {getInitial(authorName) || <PersonIcon sx={{ fontSize: 18 }} />}
           </Avatar>
-          <Box sx={{ textAlign: 'left', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 0.4 }}>
+          <Box sx={{ textAlign: 'left', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 0.2 }}>
             <Typography
               variant="body2"
               fontWeight={600}
@@ -123,6 +126,7 @@ const ForumTopicListItem = ({ topic, onClick, onAuthorClick }) => {
               }}
               sx={{
                 lineHeight: 1.15,
+                fontSize: { xs: '0.825rem', md: '0.875rem' },
                 cursor: onAuthorClick && topic.createdByMemberId ? 'pointer' : 'default',
                 '&:hover': onAuthorClick && topic.createdByMemberId ? { textDecoration: 'underline' } : {},
               }}

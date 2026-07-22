@@ -1,9 +1,11 @@
 import { Box, Typography, Button, Stack } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { useState } from 'react';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import LinkIcon from '@mui/icons-material/Link';
 import { useTranslation } from 'react-i18next';
+import { getCardTitleFontSize } from '../../utils/text';
 
 const ArticleCard = ({ article, isAdmin = false, onEdit, stretch = true }) => {
   const { t } = useTranslation(['common']);
@@ -18,13 +20,44 @@ const ArticleCard = ({ article, isAdmin = false, onEdit, stretch = true }) => {
         flexDirection: 'column',
         height: stretch ? '100%' : 'auto',
         gap: 1.5,
-        // Lift nhẹ toàn card khi hover
-        transition: 'transform 0.25s ease',
+        transition: 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
         transform: hovered ? 'translateY(-4px)' : 'translateY(0)',
       }}
     >
-      {/* IMAGE — wrapper để clip scale */}
-      <Box sx={{ width: '100%', height: 180, borderRadius: 1, overflow: 'hidden', flexShrink: 0 }}>
+      {/* IMAGE — wrapper với hiệu ứng wipe từ góc trên bên phải & bóng mờ phát sáng tông chính */}
+      <Box
+        sx={{
+          position: 'relative',
+          width: '100%',
+          height: 180,
+          borderRadius: 2,
+          overflow: 'hidden',
+          flexShrink: 0,
+          boxShadow: hovered
+            ? '0 8px 20px rgba(0,0,0,0.12)'
+            : '0 2px 8px rgba(0,0,0,0.04)',
+          transition: 'box-shadow 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            right: 0,
+            width: '140%',
+            height: '140%',
+            transformOrigin: '100% 0%',
+            background: (theme) =>
+              `radial-gradient(circle at 100% 0%, ${alpha(theme.palette.primary.main, 0.34)} 0%, ${alpha(
+                theme.palette.primary.main,
+                0.12
+              )} 40%, transparent 75%)`,
+            opacity: hovered ? 1 : 0,
+            transform: hovered ? 'scale(1.15)' : 'scale(0.2)',
+            transition: 'opacity 0.65s cubic-bezier(0.25, 1, 0.5, 1), transform 0.65s cubic-bezier(0.25, 1, 0.5, 1)',
+            pointerEvents: 'none',
+            zIndex: 2,
+          },
+        }}
+      >
         <Box
           component="img"
           src={article.image}
@@ -33,8 +66,8 @@ const ArticleCard = ({ article, isAdmin = false, onEdit, stretch = true }) => {
             width: '100%',
             height: '100%',
             objectFit: 'cover',
-            transition: 'transform 0.4s ease',
-            transform: hovered ? 'scale(1.06)' : 'scale(1)',
+            transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+            transform: hovered ? 'scale(1.08)' : 'scale(1)',
           }}
         />
       </Box>
@@ -48,10 +81,9 @@ const ArticleCard = ({ article, isAdmin = false, onEdit, stretch = true }) => {
             fontWeight={700}
             sx={{
               flex: 1,
-              display: '-webkit-box',
-              overflow: 'hidden',
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical',
+              fontSize: getCardTitleFontSize(article.title),
+              lineHeight: 1.25,
+              wordBreak: 'break-word',
               color: hovered ? 'primary.main' : 'text.primary',
               transition: 'color 0.2s ease',
             }}

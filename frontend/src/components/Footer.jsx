@@ -153,19 +153,21 @@ const Footer = () => {
               component={RouterLink}
               to={toOrgPath('/contact')}
               variant="contained"
-              size="small"
+              size="large"
               sx={{
-                mt: 1.5,
-                px: 2,
+                mt: 2,
+                px: 3,
+                py: 1,
+                fontSize: '0.95rem',
                 width: 'fit-content',
                 bgcolor: 'common.white',
                 color: 'primary.main',
                 textTransform: 'none',
                 fontWeight: 700,
-                boxShadow: 'none',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
                 '&:hover': {
-                  bgcolor: alpha(theme.palette.common.white, 0.88),
-                  boxShadow: 'none',
+                  bgcolor: alpha(theme.palette.common.white, 0.92),
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
                 },
               }}
             >
