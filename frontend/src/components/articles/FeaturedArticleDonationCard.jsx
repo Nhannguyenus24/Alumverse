@@ -1,4 +1,5 @@
 import { Box, Typography, Button, LinearProgress, Stack } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
@@ -44,10 +45,10 @@ const FeaturedArticleDonationCard = ({ campaign, article, onNavigate, onEdit, on
         flexDirection: { xs: "column", md: "row" },
         alignItems: { xs: "stretch", md: "stretch" },
         width: "100%",
-        gap: 3,
+        gap: { xs: 1.25, md: 3 },
         cursor: "pointer",
 
-        transition: "transform 0.25s ease",
+        transition: "transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)",
         transform: hovered
           ? "translateY(-4px)"
           : "translateY(0)",
@@ -56,15 +57,39 @@ const FeaturedArticleDonationCard = ({ campaign, article, onNavigate, onEdit, on
       {/* IMAGE */}
       <Box
         sx={{
+          position: "relative",
           width: { xs: "100%", md: "45%" },
-          height: { xs: 220, md: "auto" },
-          minHeight: { xs: 220, md: isAdmin ? 330 : 280 },
+          height: { xs: 180, sm: 220, md: "auto" },
+          minHeight: { xs: 180, sm: 220, md: isAdmin ? 330 : 280 },
           alignSelf: { md: "stretch" },
 
           borderRadius: 2,
           overflow: "hidden",
 
           flexShrink: 0,
+          boxShadow: hovered
+            ? "0 8px 20px rgba(0,0,0,0.12)"
+            : "0 2px 8px rgba(0,0,0,0.04)",
+          transition: "box-shadow 0.35s cubic-bezier(0.4, 0, 0.2, 1)",
+          "&::after": {
+            content: '""',
+            position: "absolute",
+            top: 0,
+            right: 0,
+            width: "140%",
+            height: "140%",
+            transformOrigin: "100% 0%",
+            background: (theme) =>
+              `radial-gradient(circle at 100% 0%, ${alpha(theme.palette.primary.main, 0.34)} 0%, ${alpha(
+                theme.palette.primary.main,
+                0.12
+              )} 40%, transparent 75%)`,
+            opacity: hovered ? 1 : 0,
+            transform: hovered ? "scale(1.15)" : "scale(0.2)",
+            transition: "opacity 0.65s cubic-bezier(0.25, 1, 0.5, 1), transform 0.65s cubic-bezier(0.25, 1, 0.5, 1)",
+            pointerEvents: "none",
+            zIndex: 2,
+          },
         }}
       >
         <Box
@@ -96,7 +121,7 @@ const FeaturedArticleDonationCard = ({ campaign, article, onNavigate, onEdit, on
         }}
       >
         {/* INFO BLOCK */}
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 0.5, md: 1 } }}>
           {/* DATE */}
           <Typography variant="caption" sx={{ color: "primary.main", fontWeight: 700 }}>
             {`${startedAt} - ${endedAt}`}
@@ -108,7 +133,7 @@ const FeaturedArticleDonationCard = ({ campaign, article, onNavigate, onEdit, on
               display: "flex",
               alignItems: "flex-start",
               gap: 0.5,
-              my: 0.5,
+              my: { xs: 0, md: 0.5 },
             }}
           >
             <Typography
@@ -164,13 +189,13 @@ const FeaturedArticleDonationCard = ({ campaign, article, onNavigate, onEdit, on
         {/* DESCRIPTION */}
         <Typography
           sx={{
-            mt: 1.8,
+            mt: { xs: 0.75, md: 1.8 },
 
             display: "-webkit-box",
             WebkitLineClamp: (data?.name || data?.title || "").length > 75 ? 2 : 3,
             WebkitBoxOrient: "vertical",
             overflow: "hidden",
-            lineHeight: 1.6,
+            lineHeight: { xs: 1.4, md: 1.6 },
           }}
         >
           {truncateText(
@@ -182,7 +207,7 @@ const FeaturedArticleDonationCard = ({ campaign, article, onNavigate, onEdit, on
         </Typography>
 
         {isAdmin && (
-          <Box sx={{ mt: 1.5 }}>
+          <Box sx={{ mt: { xs: 1, md: 1.5 } }}>
             <Typography sx={{ mb: 0.8, color: "primary.main", fontWeight: 700, fontSize: "0.92rem" }}>
               {`${formatCurrency(data?.currentAmount)} / ${formatCurrency(data?.targetAmount)} (VND)`}
             </Typography>
@@ -198,7 +223,7 @@ const FeaturedArticleDonationCard = ({ campaign, article, onNavigate, onEdit, on
         )}
 
         {/* ACTION BLOCK */}
-        <Box sx={{ mt: "auto", pt: 2.5, display: "flex", flexDirection: "column", gap: 2.5 }}>
+        <Box sx={{ mt: "auto", pt: { xs: 1.25, md: 2.5 }, display: "flex", flexDirection: "column", gap: { xs: 1.5, md: 2.5 } }}>
 
           {isClosed ? (
             <Button

@@ -23,3 +23,16 @@ export function getFeaturedTitleFontSize(text) {
   }
   return { xs: "1.3rem", sm: "1.5rem", md: "1.68rem" };
 }
+
+// For regular (non-featured) cards — mirrors getFeaturedTitleFontSize breakpoints (>80, >45)
+// but scaled down proportionally for the smaller card layout
+export function getCardTitleFontSize(text) {
+  const len = normalizePreviewText(text).length;
+  if (len > 80) {
+    return { xs: "0.88rem", sm: "0.92rem", md: "0.96rem" };
+  }
+  if (len > 45) {
+    return { xs: "0.95rem", sm: "1.0rem", md: "1.08rem" };
+  }
+  return { xs: "1.05rem", sm: "1.1rem", md: "1.18rem" };
+}

@@ -1,4 +1,5 @@
 import { Box, Typography, Button, Stack } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
@@ -23,21 +24,45 @@ const FeaturedArticleCard = ({
         flexDirection: { xs: 'column', md: 'row' },
         alignItems: { xs: 'stretch', md: 'stretch' },
         width: '100%',
-        gap: 3,
-        transition: 'transform 0.25s ease',
+        gap: { xs: 1.25, md: 3 },
+        transition: 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
         transform: hovered ? 'translateY(-4px)' : 'translateY(0)',
       }}
     >
       {/* IMAGE */}
       <Box
         sx={{
+          position: 'relative',
           width: { xs: '100%', md: '45%' },
-          height: { xs: 200, md: 'auto' },
-          minHeight: { xs: 200, md: 250 },
+          height: { xs: 180, sm: 220, md: 'auto' },
+          minHeight: { xs: 180, sm: 220, md: 250 },
           alignSelf: { md: 'stretch' },
           borderRadius: 2,
           overflow: 'hidden',
           flexShrink: 0,
+          boxShadow: hovered
+            ? '0 8px 20px rgba(0,0,0,0.12)'
+            : '0 2px 8px rgba(0,0,0,0.04)',
+          transition: 'box-shadow 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            right: 0,
+            width: '140%',
+            height: '140%',
+            transformOrigin: '100% 0%',
+            background: (theme) =>
+              `radial-gradient(circle at 100% 0%, ${alpha(theme.palette.primary.main, 0.34)} 0%, ${alpha(
+                theme.palette.primary.main,
+                0.12
+              )} 40%, transparent 75%)`,
+            opacity: hovered ? 1 : 0,
+            transform: hovered ? 'scale(1.15)' : 'scale(0.2)',
+            transition: 'opacity 0.65s cubic-bezier(0.25, 1, 0.5, 1), transform 0.65s cubic-bezier(0.25, 1, 0.5, 1)',
+            pointerEvents: 'none',
+            zIndex: 2,
+          },
         }}
       >
         <Box
@@ -48,8 +73,8 @@ const FeaturedArticleCard = ({
             width: '100%',
             height: '100%',
             objectFit: 'cover',
-            transition: 'transform 0.4s ease',
-            transform: hovered ? 'scale(1.06)' : 'scale(1)',
+            transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+            transform: hovered ? 'scale(1.08)' : 'scale(1)',
           }}
         />
       </Box>
@@ -104,11 +129,12 @@ const FeaturedArticleCard = ({
         {/* DESCRIPTION */}
         <Typography
           sx={{
-            mt: 2,
+            mt: { xs: 0.75, md: 2 },
             display: '-webkit-box',
             WebkitLineClamp: (article.title || '').length > 75 ? 2 : 3,
             WebkitBoxOrient: 'vertical',
             overflow: 'hidden',
+            lineHeight: { xs: 1.4, md: 1.6 },
           }}
         >
           {article.description}
@@ -118,10 +144,10 @@ const FeaturedArticleCard = ({
         <Box
           sx={{
             mt: 'auto',
-            pt: 2.5,
+            pt: { xs: 1.25, md: 2.5 },
             display: 'flex',
             flexDirection: 'column',
-            gap: 2,
+            gap: { xs: 1.25, md: 2 },
           }}
         >
           <Box

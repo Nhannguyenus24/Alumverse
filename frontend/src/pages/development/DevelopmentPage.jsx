@@ -232,7 +232,7 @@ const DevelopmentPage = () => {
                   <Paper
                     elevation={0}
                     sx={{
-                      p: 4,
+                      p: { xs: 2.5, sm: 3.5, md: 4 },
                       bgcolor: (theme) => theme.palette.mode === 'dark'
                         ? alpha(theme.palette.primary.main, 0.18)
                         : 'primary.lighter',
@@ -246,20 +246,34 @@ const DevelopmentPage = () => {
                         : 'none',
                       borderRadius: 1,
                       display: 'flex',
-                      alignItems: 'center',
-                      gap: 5,
+                      flexDirection: { xs: 'column', md: 'row' },
+                      alignItems: { xs: 'stretch', md: 'center' },
+                      gap: { xs: 2.5, md: 5 },
                     }}
                   >
                     <Box sx={{ flex: 1 }}>
-                      <Typography variant="h3" color="primary.main" mb={1}>
+                      <Typography
+                        variant="h3"
+                        color="primary.main"
+                        mb={1}
+                        sx={{ fontSize: { xs: '1.35rem', sm: '1.6rem', md: '1.85rem' }, fontWeight: 700 }}
+                      >
                         {t('dev:mentorship_program_title')}
                       </Typography>
-                      <Typography variant="body1">
+                      <Typography variant="body1" sx={{ fontSize: { xs: '0.9rem', md: '1rem' } }}>
                         {t('dev:mentorship_program_desc')}
                       </Typography>
                     </Box>
 
-                    <Button variant="contained" onClick={() => navigate('/mentorship')}>
+                    <Button
+                      variant="contained"
+                      onClick={() => navigate('/mentorship')}
+                      sx={{
+                        width: { xs: '100%', sm: 'auto' },
+                        alignSelf: { xs: 'stretch', sm: 'flex-start', md: 'center' },
+                        py: { xs: 1.2, md: 1 },
+                      }}
+                    >
                       {t('dev:find_mentor_now')}
                     </Button>
                   </Paper>

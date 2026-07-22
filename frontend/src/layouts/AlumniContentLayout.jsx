@@ -133,7 +133,7 @@ const AlumniContentLayout = ({
       <Container maxWidth={false} disableGutters sx={{ minHeight, pb: { xs: 4, md: 6 }, overflowX: 'hidden', ...outerSx }}>
         <Container
           maxWidth={resolvedMaxWidth}
-          sx={{ pt: { xs: 2, sm: 3, md: 4 }, px: { xs: 2, sm: 3, lg: 6 } }}
+          sx={{ pt: { xs: 2, sm: 3, md: 4 }, px: { xs: 1, sm: 3, lg: 6 } }}
         >
           <Box
             sx={{
@@ -164,7 +164,7 @@ const AlumniContentLayout = ({
                 flex: 1,
                 minWidth: 0,
                 width: '100%',
-                px: isOneColumn ? 0 : { xs: 1.5, sm: 2, md: 2.75 },
+                px: isOneColumn ? 0 : { xs: 0, sm: 2, md: 2.75 },
                 ...mainSx,
               }}
             >

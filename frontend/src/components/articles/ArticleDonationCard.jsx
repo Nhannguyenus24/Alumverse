@@ -1,4 +1,5 @@
 import { Box, Typography, Button, LinearProgress, Stack } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
@@ -8,7 +9,7 @@ import VolunteerActivismOutlinedIcon from "@mui/icons-material/VolunteerActivism
 import { useState } from "react";
 import dayjs from "dayjs";
 import { useTranslation } from "react-i18next";
-import { normalizePreviewText, truncateText } from "../../utils/text";
+import { normalizePreviewText, truncateText, getCardTitleFontSize } from "../../utils/text";
 import { formatCurrency } from "../../utils/numberFormatter";
 import { formatDate } from "../../utils/dateFormatter";
 
@@ -52,11 +53,35 @@ const ArticleDonationCard = ({ campaign, onNavigate, onEdit, onClose, isAdmin })
       {/* IMAGE */}
       <Box
         sx={{
+          position: "relative",
           width: "100%",
           height: 180,
           borderRadius: 1,
           overflow: "hidden",
           flexShrink: 0,
+          boxShadow: hovered
+            ? "0 8px 20px rgba(0,0,0,0.12)"
+            : "0 2px 8px rgba(0,0,0,0.04)",
+          transition: "box-shadow 0.35s cubic-bezier(0.4, 0, 0.2, 1)",
+          "&::after": {
+            content: '""',
+            position: "absolute",
+            top: 0,
+            right: 0,
+            width: "140%",
+            height: "140%",
+            transformOrigin: "100% 0%",
+            background: (theme) =>
+              `radial-gradient(circle at 100% 0%, ${alpha(theme.palette.primary.main, 0.34)} 0%, ${alpha(
+                theme.palette.primary.main,
+                0.12
+              )} 40%, transparent 75%)`,
+            opacity: hovered ? 1 : 0,
+            transform: hovered ? "scale(1.15)" : "scale(0.2)",
+            transition: "opacity 0.65s cubic-bezier(0.25, 1, 0.5, 1), transform 0.65s cubic-bezier(0.25, 1, 0.5, 1)",
+            pointerEvents: "none",
+            zIndex: 2,
+          },
         }}
       >
         <Box
@@ -102,17 +127,12 @@ const ArticleDonationCard = ({ campaign, onNavigate, onEdit, onClose, isAdmin })
             fontWeight={700}
             sx={{
               flex: 1,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              display: "-webkit-box",
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: "vertical",
-              overflowWrap: "anywhere",
-
+              fontSize: getCardTitleFontSize(campaign.name),
+              lineHeight: 1.25,
+              wordBreak: 'break-word',
               color: hovered
                 ? "primary.main"
                 : "text.primary",
-
               transition: "color 0.2s ease",
             }}
           >
