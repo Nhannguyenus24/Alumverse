@@ -224,6 +224,34 @@ const HomePage = () => {
   const plainSectionBg = "background.default";
   const featuredAlumniBg = theme.palette.mode === "dark" ? "primary.dark" : "primary.main";
 
+  const activeHeroSlides = useMemo(() => {
+    if (!organization) return HERO_SLIDES;
+    let customSlides = null;
+
+    try {
+      if (organization.brandConfig) {
+        const b = typeof organization.brandConfig === 'string' ? JSON.parse(organization.brandConfig) : organization.brandConfig;
+        if (Array.isArray(b?.hero_slides) && b.hero_slides.length > 0) customSlides = b.hero_slides;
+        else if (Array.isArray(b?.heroSlides) && b.heroSlides.length > 0) customSlides = b.heroSlides;
+      }
+    } catch (e) {}
+
+    if (!customSlides && organization.featuresConfig) {
+      try {
+        const f = typeof organization.featuresConfig === 'string' ? JSON.parse(organization.featuresConfig) : organization.featuresConfig;
+        const b = f?.brand_config || f?.brandConfig;
+        if (Array.isArray(b?.hero_slides) && b.hero_slides.length > 0) customSlides = b.hero_slides;
+        else if (Array.isArray(b?.heroSlides) && b.heroSlides.length > 0) customSlides = b.heroSlides;
+      } catch (e) {}
+    }
+
+    if (customSlides && customSlides.length > 0) {
+      return customSlides.map((url) => (typeof url === 'string' ? { src: url, position: 'center' } : url));
+    }
+
+    return HERO_SLIDES;
+  }, [organization]);
+
   return (
     <Page
       title={t("home:page_title")}
@@ -241,9 +269,9 @@ const HomePage = () => {
           position: "relative",
           height: { xs: "100svh", md: "100vh" },
           minHeight: { xs: 480, md: "100vh" },
-          backgroundImage: `url(${HERO_SLIDES[0].src})`,
+          backgroundImage: `url(${activeHeroSlides[0]?.src || HERO_SLIDES[0].src})`,
           backgroundSize: "cover",
-          backgroundPosition: HERO_SLIDES[0].position,
+          backgroundPosition: activeHeroSlides[0]?.position || "center",
           backgroundRepeat: "no-repeat",
           display: "flex",
           alignItems: "center",
@@ -260,7 +288,7 @@ const HomePage = () => {
           },
         }}
       >
-        {HERO_SLIDES.map((slide, index) => (
+        {activeHeroSlides.map((slide, index) => (
           <Box
             key={slide.src}
             sx={{
@@ -268,9 +296,9 @@ const HomePage = () => {
               inset: 0,
               backgroundImage: `url(${slide.src})`,
               backgroundSize: "cover",
-              backgroundPosition: slide.position,
+              backgroundPosition: slide.position || "center",
               opacity: index === 0 ? 1 : 0,
-              animation: `${heroSlideAnimation} ${HERO_SLIDES.length * 9}s ease-in-out infinite`,
+              animation: `${heroSlideAnimation} ${activeHeroSlides.length * 9}s ease-in-out infinite`,
               animationDelay: `${index * 9}s`,
               transformOrigin: "center",
             }}
@@ -583,7 +611,13 @@ const HomePage = () => {
       </Box>
 
       {/* Cựu sinh viên tiêu biểu */}
-      <Box sx={{ py: { xs: 8, sm: 10, md: 13 }, backgroundColor: featuredAlumniBg }}>
+      <Box sx={{
+        py: { xs: 8, sm: 10, md: 13 },
+        backgroundColor: featuredAlumniBg,
+        minHeight: { xs: 'calc(100svh - 64px)', md: 'calc(100vh - 64px)' },
+        display: 'flex',
+        alignItems: 'center',
+      }}>
         <Container sx={{ px: { xs: 2, sm: 3 } }}>
           <Stack
             direction={{ xs: "column", md: "row" }}
@@ -659,11 +693,6 @@ const HomePage = () => {
                     },
                     "& h4": {
                       color: "#fff",
-                      display: "-webkit-box",
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: "vertical",
-                      overflow: "hidden",
-                      fontSize: { xs: "1.15rem", md: "1.28rem", lg: "1.35rem" },
                       lineHeight: 1.28,
                     },
                     "& p": {

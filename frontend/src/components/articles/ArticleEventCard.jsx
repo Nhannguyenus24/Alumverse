@@ -10,6 +10,7 @@ import {
   DialogTitle,
   TextField,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
@@ -24,6 +25,7 @@ import { useEventQuestions, formatAnswersForApi } from '../../hooks/events/useEv
 import { findCancelableTicketForEvent, getEventRegisteredState } from '../../utils/eventRegistration';
 import { useCanContribute } from '../../hooks/useCanContribute';
 import { ContributeGuardTooltip } from '../ContributeGuard';
+import { getCardTitleFontSize } from '../../utils/text';
 
 const ArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
   const { t } = useTranslation(['common', 'event']);
@@ -98,18 +100,17 @@ const ArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
       setOpenCancelDialog(true);
       return;
     }
-    if (isRegistrationClosed) return;
-    setOpenJoinDialog(true);
+    if (questions.length > 0) {
+      setOpenJoinDialog(true);
+    } else {
+      handleDirectJoin([]);
+    }
   };
 
-  const handleConfirmJoin = async (answerMap) => {
-    if (loadingJoin || checkingRegistration || isJoined || !canUseBasicActions) return;
+  const handleDirectJoin = async (answersPayload = []) => {
     setLoadingJoin(true);
     try {
-      const payload = questions.length > 0
-        ? { answers: formatAnswersForApi(answerMap, questions) }
-        : {};
-      await eventApi.registerForEvent(article.id, payload);
+      await eventApi.registerForEvent(article.id, { answers: answersPayload });
       setIsJoined(true);
       setOpenJoinDialog(false);
       enqueueSnackbar(t('event:register_success'), { variant: 'success' });
@@ -123,6 +124,10 @@ const ArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
     } finally {
       setLoadingJoin(false);
     }
+  };
+
+  const handleConfirmJoin = async (answerMap) => {
+    handleDirectJoin(formatAnswersForApi(answerMap, questions));
   };
 
   const handleConfirmCancel = async () => {
@@ -157,17 +162,41 @@ const ArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
         flexDirection: 'column',
         height: '100%',
         gap: 1,
-        transition: 'transform 0.25s ease',
+        transition: 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
         transform: hovered ? 'translateY(-4px)' : 'translateY(0)',
       }}
     >
       <Box
         sx={{
+          position: 'relative',
           width: '100%',
           height: 180,
-          borderRadius: 1,
+          borderRadius: 2,
           overflow: 'hidden',
           flexShrink: 0,
+          boxShadow: hovered
+            ? '0 8px 20px rgba(0,0,0,0.12)'
+            : '0 2px 8px rgba(0,0,0,0.04)',
+          transition: 'box-shadow 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            right: 0,
+            width: '140%',
+            height: '140%',
+            transformOrigin: '100% 0%',
+            background: (theme) =>
+              `radial-gradient(circle at 100% 0%, ${alpha(theme.palette.primary.main, 0.34)} 0%, ${alpha(
+                theme.palette.primary.main,
+                0.12
+              )} 40%, transparent 75%)`,
+            opacity: hovered ? 1 : 0,
+            transform: hovered ? 'scale(1.15)' : 'scale(0.2)',
+            transition: 'opacity 0.65s cubic-bezier(0.25, 1, 0.5, 1), transform 0.65s cubic-bezier(0.25, 1, 0.5, 1)',
+            pointerEvents: 'none',
+            zIndex: 2,
+          },
         }}
       >
         <Box
@@ -178,8 +207,8 @@ const ArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
             width: '100%',
             height: '100%',
             objectFit: 'cover',
-            transition: 'transform 0.4s ease',
-            transform: hovered ? 'scale(1.06)' : 'scale(1)',
+            transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+            transform: hovered ? 'scale(1.08)' : 'scale(1)',
           }}
         />
       </Box>
@@ -195,10 +224,9 @@ const ArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
             fontWeight={700}
               sx={{
                 flex: 1,
-                display: '-webkit-box',
-                overflow: 'hidden',
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: 'vertical',
+                fontSize: getCardTitleFontSize(article.title),
+                lineHeight: 1.25,
+                wordBreak: 'break-word',
                 color: hovered ? 'primary.main' : 'text.primary',
                 transition: 'color 0.2s ease',
               }}

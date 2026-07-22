@@ -1232,7 +1232,7 @@ const ForumAlumniThreadPage = () => {
           flex: 1,
           minWidth: 0,
           width: "100%",
-          px: { xs: 1.5, sm: 2, md: 2.75 },
+          px: { xs: 0, sm: 2, md: 2.75 },
         }}
       >
         <ScrollReveal>
