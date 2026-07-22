@@ -618,7 +618,8 @@ public class EventService {
                                     boolean eventEnded = event.getEndTime() != null && event.getEndTime().isBefore(LocalDateTime.now());
                                     if (eventEnded && ticket.getStatus() == Status.ISSUED) {
                                         return ticketRepo.expireTicket(ticket.getId())
-                                                .then(Mono.error(new ApplicationException(ErrorCode.TICKET_EXPIRED, "Ticket has expired")));
+                                                .then(evictEventCaches())
+                                                .then(Mono.<EventTicket>error(new ApplicationException(ErrorCode.TICKET_EXPIRED, "Ticket has expired")));
                                     }
                                     if (ticket.getStatus() == Status.CANCELLED || ticket.getStatus() == Status.EXPIRED) {
                                         return Mono.error(new ApplicationException(ErrorCode.TICKET_ALREADY_CANCELLED, "Ticket is cancelled or expired"));
@@ -1174,7 +1175,10 @@ public class EventService {
         ticketData.setTicketCode(UUID.randomUUID().toString().substring(0, 8).toUpperCase());
         ticketData.setStatus(Status.ISSUED);
         ticketData.setRegisteredAt(LocalDateTime.now());
-        return ticketRepo.save(ticketData);
+        // Covers self-register and invitation-confirm flows: both issue a ticket
+        // here, so admin_event_statistics ticket counts must be invalidated.
+        return ticketRepo.save(ticketData)
+                .delayUntil(saved -> evictEventCaches());
     }
 
     private Mono<Boolean> hasRegistered(Long eventId, Long memberId) {
@@ -1199,7 +1203,8 @@ public class EventService {
                 if (ticket.getEventId() != null) {
                     sendTicketCancellationEmailAsync(ticket, reason);
                 }
-            });
+            })
+            .delayUntil(ticket -> evictEventCaches());
     }
 
     private void sendTicketCancellationEmailAsync(EventTicket ticket, String reason) {
@@ -1213,7 +1218,8 @@ public class EventService {
 
     private Mono<EventTicket> checkInTicket(Long ticketId) {
         return ticketRepo.checkInTicket(ticketId, LocalDateTime.now())
-                .then(ticketRepo.findById(ticketId));
+                .then(ticketRepo.findById(ticketId))
+                .delayUntil(ticket -> evictEventCaches());
     }
 
     // ─── Ticket — query ───────────────────────────────────────────────────────

@@ -327,60 +327,62 @@ public class AdminEventService {
     }
 
     public Mono<EventStatisticsDTO> getEventStatistics() {
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
-        LocalDateTime endOfDay = startOfDay.plusDays(1);
+        return cacheUtils.getOrCompute(CacheNames.EVENT, "admin_event_statistics", java.time.Duration.ofMinutes(5), () -> {
+            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
+            LocalDateTime endOfDay = startOfDay.plusDays(1);
 
-        Mono<EventStatisticsDTO> overviewMono = eventRepo.getAggregatedEventStats(now, startOfDay, endOfDay)
-                .map(stats -> EventStatisticsDTO.builder()
-                        .totalEvents(stats.getTotalEvents() != null ? stats.getTotalEvents() : 0L)
-                        .publishedEvents(stats.getPublishedEvents() != null ? stats.getPublishedEvents() : 0L)
-                        .unpublishedEvents(stats.getUnpublishedEvents() != null ? stats.getUnpublishedEvents() : 0L)
-                        .upcomingEvents(stats.getUpcomingEvents() != null ? stats.getUpcomingEvents() : 0L)
-                        .ongoingEvents(stats.getOngoingEvents() != null ? stats.getOngoingEvents() : 0L)
-                        .pastEvents(stats.getPastEvents() != null ? stats.getPastEvents() : 0L)
-                        .newEventsToday(stats.getNewEventsToday() != null ? stats.getNewEventsToday() : 0L)
-                        .build());
+            Mono<EventStatisticsDTO> overviewMono = eventRepo.getAggregatedEventStats(now, startOfDay, endOfDay)
+                    .map(stats -> EventStatisticsDTO.builder()
+                            .totalEvents(stats.getTotalEvents() != null ? stats.getTotalEvents() : 0L)
+                            .publishedEvents(stats.getPublishedEvents() != null ? stats.getPublishedEvents() : 0L)
+                            .unpublishedEvents(stats.getUnpublishedEvents() != null ? stats.getUnpublishedEvents() : 0L)
+                            .upcomingEvents(stats.getUpcomingEvents() != null ? stats.getUpcomingEvents() : 0L)
+                            .ongoingEvents(stats.getOngoingEvents() != null ? stats.getOngoingEvents() : 0L)
+                            .pastEvents(stats.getPastEvents() != null ? stats.getPastEvents() : 0L)
+                            .newEventsToday(stats.getNewEventsToday() != null ? stats.getNewEventsToday() : 0L)
+                            .build());
 
-        Mono<long[]> ticketCountsMono = Mono.zip(
-                eventRepo.getAggregatedTicketStats(),
-                eventRepo.countAllInterests().defaultIfEmpty(0L)
-        ).map(tuple -> {
-            var stats = tuple.getT1();
-            return new long[]{
-                stats.getTotalTickets() != null ? stats.getTotalTickets() : 0L,
-                stats.getRegisteredTickets() != null ? stats.getRegisteredTickets() : 0L,
-                stats.getCheckedInTickets() != null ? stats.getCheckedInTickets() : 0L,
-                stats.getCancelledTickets() != null ? stats.getCancelledTickets() : 0L,
-                tuple.getT2()
-            };
+            Mono<long[]> ticketCountsMono = Mono.zip(
+                    eventRepo.getAggregatedTicketStats(),
+                    eventRepo.countAllInterests().defaultIfEmpty(0L)
+            ).map(tuple -> {
+                var stats = tuple.getT1();
+                return new long[]{
+                    stats.getTotalTickets() != null ? stats.getTotalTickets() : 0L,
+                    stats.getRegisteredTickets() != null ? stats.getRegisteredTickets() : 0L,
+                    stats.getCheckedInTickets() != null ? stats.getCheckedInTickets() : 0L,
+                    stats.getCancelledTickets() != null ? stats.getCancelledTickets() : 0L,
+                    tuple.getT2()
+                };
+            });
+
+            Mono<List<EventStatisticsDTO.EventSummary>> topByRegistrationMono =
+                    eventRepo.findTopEventsByRegistrationSummary(5)
+                            .collectList()
+                            .defaultIfEmpty(Collections.emptyList());
+
+            Mono<List<EventStatisticsDTO.EventSummary>> topByInterestMono =
+                    eventRepo.findTopEventsByInterestSummary(5)
+                            .collectList()
+                            .defaultIfEmpty(Collections.emptyList());
+
+            return Mono.zip(overviewMono, ticketCountsMono, topByRegistrationMono, topByInterestMono)
+                    .map(tuple -> {
+                        EventStatisticsDTO stats = tuple.getT1();
+                        long[] counts = tuple.getT2();
+                        stats.setTotalTickets(counts[0]);
+                        stats.setRegisteredTickets(counts[1]);
+                        stats.setCheckedInTickets(counts[2]);
+                        stats.setCancelledTickets(counts[3]);
+                        stats.setTotalInterests(counts[4]);
+                        stats.setTopEventsByRegistration(tuple.getT3());
+                        stats.setTopEventsByInterest(tuple.getT4());
+                        return stats;
+                    })
+                    .doOnSuccess(s -> log.info("getEventStatistics result: {}", JsonUtils.toJson(s)))
+                    .doOnError(error -> log.error("Error fetching event statistics", error));
         });
-
-        Mono<List<EventStatisticsDTO.EventSummary>> topByRegistrationMono =
-                eventRepo.findTopEventsByRegistrationSummary(5)
-                        .collectList()
-                        .defaultIfEmpty(Collections.emptyList());
-
-        Mono<List<EventStatisticsDTO.EventSummary>> topByInterestMono =
-                eventRepo.findTopEventsByInterestSummary(5)
-                        .collectList()
-                        .defaultIfEmpty(Collections.emptyList());
-
-        return Mono.zip(overviewMono, ticketCountsMono, topByRegistrationMono, topByInterestMono)
-                .map(tuple -> {
-                    EventStatisticsDTO stats = tuple.getT1();
-                    long[] counts = tuple.getT2();
-                    stats.setTotalTickets(counts[0]);
-                    stats.setRegisteredTickets(counts[1]);
-                    stats.setCheckedInTickets(counts[2]);
-                    stats.setCancelledTickets(counts[3]);
-                    stats.setTotalInterests(counts[4]);
-                    stats.setTopEventsByRegistration(tuple.getT3());
-                    stats.setTopEventsByInterest(tuple.getT4());
-                    return stats;
-                })
-                .doOnSuccess(s -> log.info("getEventStatistics result: {}", JsonUtils.toJson(s)))
-                .doOnError(error -> log.error("Error fetching event statistics", error));
     }
 
     private Mono<Void> assertCanManageTicket(EventTicket ticket) {
