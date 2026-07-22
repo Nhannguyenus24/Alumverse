@@ -46,7 +46,7 @@ public class MentorshipCvController {
         return fileUploadService.uploadBase64File(request.getBase64File(), request.getOriginalFileName())
                 .flatMap(fileUrl -> {
                     String localPath = fileUploadService.getLocalPath(fileUrl);
-                    return ocrService.extractTextFromFile(localPath)
+                    return ocrService.extractRawTextFromFile(localPath)
                             .flatMap(text -> Mono.zip(
                                             Mono.fromCallable(() -> cvExtractionService.extractProfile(text))
                                                     .subscribeOn(Schedulers.boundedElastic()),
