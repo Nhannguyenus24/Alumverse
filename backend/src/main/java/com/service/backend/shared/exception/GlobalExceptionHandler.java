@@ -14,7 +14,10 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.support.WebExchangeBindException;
 import org.springframework.web.reactive.resource.NoResourceFoundException;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.server.ServerWebInputException;
 import reactor.core.publisher.Mono;
+
+import jakarta.validation.ConstraintViolationException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -61,6 +64,40 @@ public class GlobalExceptionHandler {
             errors.put(key, errorMessage);
         });
         return buildError(400, "VALIDATION_FAILED", "Validation failed", errors);
+    }
+
+    /**
+     * Vi phạm ràng buộc trên tham số query/path ({@code @Validated} + {@code @Min}/{@code @Size}...
+     * trên {@code @RequestParam}/{@code @PathVariable}). Khác với body ({@link WebExchangeBindException}),
+     * loại này ném {@link ConstraintViolationException} và nếu không bắt sẽ rơi xuống handler chung → 500.
+     * Ở đây trả 400 kèm map {tên tham số -> thông báo}.
+     */
+    @ExceptionHandler(ConstraintViolationException.class)
+    public Mono<ResponseEntity<?>> handleConstraintViolationException(ConstraintViolationException ex) {
+        meterRegistry.counter("api.errors.count", "error_code", "VALIDATION_FAILED").increment();
+
+        Map<String, String> errors = new HashMap<>();
+        ex.getConstraintViolations().forEach(violation -> {
+            String path = violation.getPropertyPath().toString();
+            // propertyPath dạng "method.arg" -> chỉ giữ tên tham số cuối cho gọn
+            String key = path.contains(".") ? path.substring(path.lastIndexOf('.') + 1) : path;
+            errors.put(key, violation.getMessage());
+        });
+        return buildError(400, "VALIDATION_FAILED", "Validation failed", errors);
+    }
+
+    /**
+     * Body không đọc được hoặc sai kiểu (JSON hỏng, sai kiểu tham số...). {@link ServerWebInputException}
+     * vốn mang status 400 nhưng {@code reason} có thể lộ chi tiết parser nội bộ; ở đây trả thông báo gọn,
+     * ổn định thay vì để handler {@link ResponseStatusException} phát nguyên văn lý do.
+     */
+    @ExceptionHandler(ServerWebInputException.class)
+    public Mono<ResponseEntity<?>> handleServerWebInputException(ServerWebInputException ex) {
+        log.debug("Malformed request input: {}", ex.getReason());
+
+        meterRegistry.counter("api.errors.count", "error_code", "BAD_REQUEST").increment();
+
+        return buildError(400, "BAD_REQUEST", "Malformed or unreadable request", null);
     }
 
     @ExceptionHandler(ApplicationException.class)
