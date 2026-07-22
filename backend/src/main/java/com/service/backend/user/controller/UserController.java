@@ -126,7 +126,7 @@ public class UserController {
 
     @PutMapping("/notification-settings")
     public Mono<ResponseEntity<ApiResponse<NotificationSettingsResponse>>> updateMyNotificationSettings(
-            @RequestBody UpdateNotificationSettingsRequest request) {
+            @Valid @RequestBody UpdateNotificationSettingsRequest request) {
         return SecurityUtils.getCurrentUserId()
                 .flatMap(userId -> userService.updateMyNotificationSettings(userId, request))
                 .map(settings -> ResponseEntity.ok(new ApiResponse<>("Notification settings updated successfully", settings)));

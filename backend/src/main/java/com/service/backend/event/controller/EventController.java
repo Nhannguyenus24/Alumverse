@@ -245,7 +245,7 @@ public class EventController {
     @PostMapping("/{eventId}/tickets/check-in")
     public Mono<ResponseEntity<ApiResponse<EventTicketDetailResponse>>> checkIn(
             @Parameter(example = "1") @PathVariable @Min(1) Long eventId,
-            @RequestBody(required = false) CheckInRequest request) {
+            @Valid @RequestBody(required = false) CheckInRequest request) {
         return eventService.checkIn(eventId, request)
                 .map(t -> ResponseEntity.ok(new ApiResponse<>("Checked in successfully", t)));
     }

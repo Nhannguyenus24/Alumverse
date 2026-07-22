@@ -134,3 +134,159 @@ export const DONATION_AVATAR_FALLBACK = "/school_logo/HCMUS_Logo_Main.svg";
 export const formatDonationTimestamp = (value) => (value ? dayjs(value).format("DD/MM/YYYY HH:mm") : "--");
 
 export const formatDonationAmount = (value) => `${Number(value ?? 0).toLocaleString("vi-VN")} VND`;
+
+// --- User Profile Schemas ---
+
+/** Update My Profile: backend UpdateMyProfileRequest */
+export const getUpdateMyProfileSchema = (t) => z.object({
+  fullName: z.string().max(255, t ? t('user:fullname_too_long') : 'Họ tên tối đa 255 ký tự').optional().nullable(),
+  phone: z
+    .string()
+    .refine(
+      (v) => !v || VIETNAM_PHONE_REGEX.test(v),
+      t ? t('auth:phone_invalid') : 'Số điện thoại không hợp lệ'
+    )
+    .optional()
+    .nullable(),
+  gender: z.string().max(255).optional().nullable(),
+  dob: z.string().optional().nullable(),
+  bio: z.string().max(255, t ? t('user:bio_too_long') : 'Tiểu sử tối đa 255 ký tự').optional().nullable(),
+  currentJobTitle: z.string().max(255).optional().nullable(),
+  currentCompany: z.string().max(255).optional().nullable(),
+  organizationId: z.number().int().positive(t ? t('common:invalid_id') : 'ID tổ chức không hợp lệ'),
+});
+
+// --- Event Schemas ---
+
+/** Create Event: backend CreateEventRequest */
+export const getCreateEventSchema = (t) => z.object({
+  title: z
+    .string()
+    .min(1, t ? t('event:title_required') : 'Tiêu đề sự kiện là bắt buộc')
+    .min(3, t ? t('event:title_length') : 'Tiêu đề từ 3–255 ký tự')
+    .max(255, t ? t('event:title_length') : 'Tiêu đề từ 3–255 ký tự'),
+  description: z.string().max(255).optional().nullable(),
+  location: z.string().max(255).optional().nullable(),
+  startTime: z.string().optional().nullable(),
+  endTime: z.string().optional().nullable(),
+  registrationStartAt: z.string().optional().nullable(),
+  registrationEndAt: z.string().optional().nullable(),
+});
+
+// --- Forum Schemas ---
+
+/** Create Forum Post: backend CreateForumPostRequest */
+export const getCreateForumPostSchema = (t) => z.object({
+  topicId: z.number().int().positive(t ? t('common:invalid_id') : 'ID chủ đề không hợp lệ'),
+  content: z
+    .string()
+    .min(1, t ? t('forum:content_required') : 'Nội dung bài viết là bắt buộc')
+    .min(10, t ? t('forum:content_length') : 'Nội dung từ 10–5000 ký tự')
+    .max(5000, t ? t('forum:content_length') : 'Nội dung từ 10–5000 ký tự'),
+});
+
+/** Create Forum Topic: backend CreateForumTopicRequest */
+export const getCreateForumTopicSchema = (t) => z.object({
+  categoryId: z.number().int().positive(t ? t('common:invalid_id') : 'ID danh mục không hợp lệ'),
+  title: z
+    .string()
+    .min(1, t ? t('forum:title_required') : 'Tiêu đề chủ đề là bắt buộc')
+    .min(3, t ? t('forum:title_length') : 'Tiêu đề từ 3–255 ký tự')
+    .max(255, t ? t('forum:title_length') : 'Tiêu đề từ 3–255 ký tự'),
+  content: z
+    .string()
+    .min(1, t ? t('forum:content_required') : 'Nội dung chủ đề là bắt buộc')
+    .min(10, t ? t('forum:content_length') : 'Nội dung từ 10–5000 ký tự')
+    .max(5000, t ? t('forum:content_length') : 'Nội dung từ 10–5000 ký tự'),
+});
+
+// --- Article Schemas ---
+
+/** Create News Article: backend CreateNewsRequest */
+export const getCreateNewsSchema = (t) => z.object({
+  title: z
+    .string()
+    .min(1, t ? t('article:title_required') : 'Tiêu đề bài viết là bắt buộc')
+    .min(3, t ? t('article:title_length') : 'Tiêu đề từ 3–255 ký tự')
+    .max(255, t ? t('article:title_length') : 'Tiêu đề từ 3–255 ký tự'),
+  description: z.string().max(255).optional().nullable(),
+  content: z
+    .string()
+    .min(1, t ? t('article:content_required') : 'Nội dung bài viết là bắt buộc')
+    .min(10, t ? t('article:content_length') : 'Nội dung từ 10–5000 ký tự')
+    .max(5000, t ? t('article:content_length') : 'Nội dung từ 10–5000 ký tự'),
+  thumbnail: z.string().url(t ? t('common:invalid_url') : 'URL hình ảnh không hợp lệ').optional().nullable(),
+});
+
+// --- Chat/Group Schemas ---
+
+/** Create Group: backend CreateGroupRequest */
+export const getCreateGroupSchema = (t) => z.object({
+  title: z
+    .string()
+    .min(1, t ? t('chat:group_name_required') : 'Tên nhóm là bắt buộc')
+    .min(2, t ? t('chat:group_name_length') : 'Tên nhóm từ 2–100 ký tự')
+    .max(100, t ? t('chat:group_name_length') : 'Tên nhóm từ 2–100 ký tự'),
+});
+
+/** Add Members to Group: backend AddMembersRequest */
+export const getAddMembersSchema = (t) => z.object({
+  memberIds: z
+    .array(z.number().int().positive())
+    .min(1, t ? t('chat:members_required') : 'Phải chọn ít nhất một thành viên')
+    .max(100, t ? t('chat:members_too_many') : 'Tối đa 100 thành viên'),
+});
+
+// --- Mentorship Schemas ---
+
+/** Create Mentor Profile: backend CreateMentorProfileRequest */
+export const getCreateMentorProfileSchema = (t) => z.object({
+  bio: z.string().max(255).optional().nullable(),
+  meetingLink: z
+    .string()
+    .url(t ? t('common:invalid_url') : 'Link tham gia không hợp lệ')
+    .optional()
+    .nullable(),
+});
+
+/** Create Mentee Profile: backend CreateMenteeProfileRequest */
+export const getCreateMenteeProfileSchema = (t) => z.object({
+  bio: z.string().max(255).optional().nullable(),
+});
+
+// --- Survey Schemas ---
+
+/** Create Survey: backend CreateSurveyRequest */
+export const getCreateSurveySchema = (t) => z.object({
+  title: z
+    .string()
+    .min(1, t ? t('survey:title_required') : 'Tiêu đề khảo sát là bắt buộc')
+    .max(255),
+  description: z.string().max(255).optional().nullable(),
+  startDate: z.string().optional().nullable(),
+  endDate: z.string().optional().nullable(),
+});
+
+// --- Contact/General Schemas ---
+
+/** Contact Form: public contact page */
+export const getContactSchema = (t) => z.object({
+  name: z
+    .string()
+    .min(1, t ? t('contact:field_name_required') : 'Tên là bắt buộc')
+    .min(2, t ? t('contact:field_name_length') : 'Tên từ 2–255 ký tự')
+    .max(255),
+  email: z.email(t ? t('auth:email_required') : 'Email không hợp lệ'),
+  phone: z
+    .string()
+    .refine(
+      (v) => !v || VIETNAM_PHONE_REGEX.test(v),
+      t ? t('auth:phone_invalid') : 'Số điện thoại không hợp lệ'
+    )
+    .optional(),
+  message: z
+    .string()
+    .min(1, t ? t('contact:field_message_required') : 'Thông điệp là bắt buộc')
+    .min(10, t ? t('contact:field_message_length') : 'Thông điệp tối thiểu 10 ký tự')
+    .max(2000, t ? t('contact:field_message_max') : 'Thông điệp tối đa 2000 ký tự'),
+});

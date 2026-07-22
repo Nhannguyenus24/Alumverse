@@ -5,6 +5,9 @@ import com.service.backend.shared.service.ImageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -49,12 +52,7 @@ public class ImageController {
             summary = "Upload Base64 Image",
             description = "Upload an image in Base64 format and convert to WebP format"
     )
-    public Mono<ResponseEntity<ApiResponse<String>>> uploadImage(@RequestBody ImageUploadRequest request) {
-        if (request.getBase64String() == null || request.getBase64String().isEmpty()) {
-            return Mono.just(ResponseEntity.badRequest().body(
-                    new ApiResponse<>("Base64 string cannot be empty", null)));
-        }
-
+    public Mono<ResponseEntity<ApiResponse<String>>> uploadImage(@Valid @RequestBody ImageUploadRequest request) {
         return imageService.uploadBase64ImageReactive(request.getBase64String())
                 .map(imageUrl -> ResponseEntity.ok(new ApiResponse<>("Image uploaded successfully", imageUrl)))
                 .onErrorResume(IllegalArgumentException.class, e ->
@@ -69,6 +67,9 @@ public class ImageController {
     @lombok.NoArgsConstructor
     @lombok.AllArgsConstructor
     public static class ImageUploadRequest {
+        // Bounded to the WebFlux 50MB codec limit; base64 is ~33% larger than the raw bytes.
+        @NotBlank
+        @Size(max = 52_428_800)
         @Schema(
                 description = "Base64 string of the image (may include header: data:image/png;base64,...)",
                 example = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA..."
