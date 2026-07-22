@@ -19,31 +19,19 @@ public class UpdateAchievementRequest {
 
     @NotBlank
     @Size(min = 3, max = 255)
-    @Size(max = 255)
-
     private String title;
-
-    @Size(max = 255)
-
 
     private String description;
 
     @URL
-    @Size(max = 255)
-
     private String url;
 
     /** Base64-encoded image. When present it replaces the current image; when absent the existing image is kept. */
-    @Size(max = 255)
-
     private String imageBase64;
 
     private LocalDate awardedDate;
 
     private Status status;
-
-    @Size(max = 255)
-
 
     private String topic;
 }

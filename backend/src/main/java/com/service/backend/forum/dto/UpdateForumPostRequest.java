@@ -17,7 +17,5 @@ public class UpdateForumPostRequest {
     @NotBlank(message = "Post content is required")
     @Size(min = 1, max = 10000, message = "Post content must be between 1 and 10000 characters")
     @Schema(example = "Bài viết được chỉnh sửa - bạn nào biết cách đăng ký môn học không?")
-    @Size(max = 255)
-
     private String content;
 }

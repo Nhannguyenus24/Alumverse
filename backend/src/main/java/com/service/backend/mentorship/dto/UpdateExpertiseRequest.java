@@ -15,26 +15,18 @@ import lombok.NoArgsConstructor;
 public class UpdateExpertiseRequest {
 
     @Size(min = 1, max = 255)
-    @Size(max = 255)
-
     private String topic;
 
     @Min(0)
     private Integer yearsExperience;
 
     @Size(max = 2000)
-    @Size(max = 255)
-
     private String description;
 
     @Pattern(regexp = "CAREER|ACADEMIC|SOFT_SKILLS|GENERAL",
             message = "category must be one of: CAREER, ACADEMIC, SOFT_SKILLS, GENERAL")
-    @Size(max = 255)
-
     private String category;
 
     @Size(max = 100)
-    @Size(max = 255)
-
     private String tag;
 }

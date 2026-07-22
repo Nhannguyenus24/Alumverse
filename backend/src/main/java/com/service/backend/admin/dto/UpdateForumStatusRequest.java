@@ -1,7 +1,6 @@
 package com.service.backend.admin.dto;
 
 import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -17,7 +16,5 @@ import lombok.NoArgsConstructor;
 @Builder
 public class UpdateForumStatusRequest {
     @Pattern(regexp = "PENDING|ACTIVE|INACTIVE", message = "Status must be one of PENDING, ACTIVE, INACTIVE")
-    @Size(max = 255)
-
     private String status;
 }

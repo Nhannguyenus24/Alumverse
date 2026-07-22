@@ -1,7 +1,5 @@
 package com.service.backend.event.dto;
 
-import jakarta.validation.constraints.*;
-import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 /**
@@ -13,10 +11,6 @@ import lombok.Data;
  */
 @Data
 public class CheckInRequest {
-    @Size(max = 255)
-
     private String qrToken;
-    @Size(max = 255)
-
     private String code;
 }

@@ -21,8 +21,6 @@ public class CreateFeedbackRequest {
     private Integer rating;
 
     @Size(max = 2000)
-    @Size(max = 255)
-
     private String comment;
 
     private Boolean isPublic;

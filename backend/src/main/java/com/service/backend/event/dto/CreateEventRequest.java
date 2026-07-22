@@ -4,7 +4,6 @@ package com.service.backend.event.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -24,19 +23,13 @@ public class CreateEventRequest {
     @NotBlank()
     @Size(min = 3, max = 255)
     @Schema(example = "Hội thảo AI 2026")
-    @Size(max = 255)
-
     private String title;
 
     @Schema(example = "Sự kiện chia sẻ về trí tuệ nhân tạo và ứng dụng thực tiễn năm 2026.")
-    @Size(max = 255)
-
     private String description;
 
     @Size(max = 500)
     @Schema(example = "Hội trường A, Đại học Khoa học Tự nhiên")
-    @Size(max = 255)
-
     private String location;
 
     @Schema(example = "2026-05-20T08:00:00")
@@ -56,22 +49,14 @@ public class CreateEventRequest {
     private Integer maxCapacity;
 
     /** Base64-encoded banner. When present, the backend converts it to WebP and stores it. */
-    @Size(max = 255)
-
     private String bannerBase64;
 
     @Schema(example = "Workshop")
-    @Size(max = 255)
-
     private String topic;
 
     @Schema(example = "true", description = "Whether this event requires QR code check-in scanning")
     private Boolean requiresCheckIn;
 
     @Schema(example = "1", description = "Organization that owns the event. Admins may provide this explicitly; staff use their token organization.")
-    @NotNull
-
-    @Min(value = 1)
-
     private Integer organizationId;
 }

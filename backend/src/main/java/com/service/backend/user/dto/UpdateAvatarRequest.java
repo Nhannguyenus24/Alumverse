@@ -2,8 +2,6 @@ package com.service.backend.user.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
-import jakarta.validation.constraints.*;
-import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -17,7 +15,5 @@ public class UpdateAvatarRequest {
                     + "It is converted to WebP and stored server-side.",
             example = "data:image/png;base64,iVBORw0KGgo..."
     )
-    @Size(max = 255)
-
     private String avatarBase64;
 }

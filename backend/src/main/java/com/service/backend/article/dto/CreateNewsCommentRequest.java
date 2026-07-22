@@ -13,33 +13,15 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CreateNewsCommentRequest {
 
-    @NotNull
-
-
-    @Min(value = 1)
-
-
     private Integer newsId;
 
     @NotNull(message = "Author member ID is required")
     @Min(value = 1, message = "Author member ID must be greater than 0")
-    @NotNull
-
-    @Min(value = 1)
-
     private Integer authorMemberId;
 
     @NotBlank(message = "Content is required")
     @Size(min = 1, max = 5000, message = "Content must be between 1 and 5000 characters")
-    @Size(max = 255)
-
     private String content;
-
-    @NotNull
-
-
-    @Min(value = 1)
-
 
     private Integer parentCommentId;
 }

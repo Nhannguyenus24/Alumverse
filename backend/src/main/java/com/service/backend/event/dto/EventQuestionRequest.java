@@ -3,7 +3,6 @@ package com.service.backend.event.dto;
 import com.service.backend.shared.enums.QuestionType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -24,13 +23,9 @@ public class EventQuestionRequest {
 
     @NotBlank
     @Schema(example = "Bạn thuộc khóa nào?")
-    @Size(max = 255)
-
     private String label;
 
     @Schema(example = "[\"K2019\", \"K2020\", \"K2021\"]")
-    @Size(max = 100)
-
     private List<String> options;
 
     @Schema(example = "true")

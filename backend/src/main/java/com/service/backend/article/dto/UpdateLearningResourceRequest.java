@@ -16,22 +16,13 @@ public class UpdateLearningResourceRequest {
 
     @NotBlank
     @Size(min = 3, max = 255)
-    @Size(max = 255)
-
     private String title;
 
     @Size(max = 50)
-    @Size(max = 255)
-
     private String type;
 
     @URL
-    @Size(max = 255)
-
     private String linkUrl;
-
-    @Size(max = 255)
-
 
     private String description;
 
@@ -39,7 +30,5 @@ public class UpdateLearningResourceRequest {
      * Base64-encoded thumbnail (optionally with a data URL header). When present it replaces the
      * current thumbnail; when absent the existing thumbnail is kept.
      */
-    @Size(max = 255)
-
     private String thumbnailBase64;
 }

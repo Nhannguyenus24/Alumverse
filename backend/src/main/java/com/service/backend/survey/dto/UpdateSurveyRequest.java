@@ -25,20 +25,13 @@ public class UpdateSurveyRequest {
 
     @NotBlank(message = "Title is required")
     @Size(max = 255, message = "Title must be at most 255 characters")
-    @Size(max = 255)
-
     private String title;
-
-    @Size(max = 255)
-
 
     private String description;
 
     @Valid
     @NotNull(message = "Questions are required")
     @Size(min = 1, message = "At least one question is required")
-    @Size(max = 100)
-
     private List<SurveyQuestionDto> questions;
 
     @NotNull(message = "Start time is required")

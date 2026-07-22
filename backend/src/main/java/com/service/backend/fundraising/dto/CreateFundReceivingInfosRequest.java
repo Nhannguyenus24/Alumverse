@@ -17,22 +17,16 @@ public class CreateFundReceivingInfosRequest {
     @NotBlank
     @Size(min = 3, max = 255)
     @Schema(example = "1234567890")
-    @Size(max = 255)
-
     private String accountNumber;
 
     @NotBlank
     @Size(min = 3, max = 255)
     @Schema(example = "HCMUS Student Scholarship Fund")
-    @Size(max = 255)
-
     private String accountName;
 
     @NotBlank
     @Size(min = 2, max = 20)
     @Schema(description = "Bank code from banks.json", example = "MB")
-    @Size(max = 255)
-
     private String bankName;
 }
 
