@@ -13,5 +13,7 @@ public class UpdateNewsCommentRequest {
 
     @NotBlank(message = "Content is required")
     @Size(min = 1, max = 5000, message = "Content must be between 1 and 5000 characters")
+    @Size(max = 255)
+
     private String content;
 }

@@ -16,9 +16,15 @@ import lombok.NoArgsConstructor;
 public class CreateForumPostReportRequest {
     @NotNull(message = "Reporter member ID is required")
     @Min(value = 1, message = "Reporter member ID must be greater than 0")
+    @NotNull
+
+    @Min(value = 1)
+
     private Integer reporterMemberId;
 
     @NotBlank(message = "Reason is required")
     @Size(max = 100, message = "Reason must be less than 100 characters")
+    @Size(max = 255)
+
     private String reason;
 }

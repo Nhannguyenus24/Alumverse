@@ -19,15 +19,21 @@ public class UpdateFundBasicInfoRequest {
     @NotBlank
     @Size(max = 255)
     @Schema(example = "Nguyễn Văn B")
+    @Size(max = 255)
+
     private String managerName;
 
     @NotBlank
     @Email
     @Schema(example = "manager@hcmus.edu.vn")
+    @Size(max = 255)
+
     private String managerEmail;
 
     @NotBlank
     @Schema(example = "Mô tả đầy đủ đã cập nhật")
     @JsonProperty("description_full")
+    @Size(max = 255)
+
     private String descriptionFull;
 }

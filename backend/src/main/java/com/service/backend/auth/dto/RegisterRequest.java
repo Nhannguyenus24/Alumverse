@@ -23,16 +23,24 @@ public class RegisterRequest {
     @NotNull(message = "Organization ID is required")
     @Min(value = 1, message = "Organization ID must be greater than 0")
     @Schema(example = "1")
+    @NotNull
+
+    @Min(value = 1)
+
     private Integer organizationId;
 
     @NotBlank(message = "Email is required")
     @Email(message = "Email should be valid")
     @Schema(example = "student01@hcmus.edu.vn")
+    @Size(max = 255)
+
     private String email;
     
     @NotBlank(message = "Full name is required")
     @Size(min = 2, max = 100, message = "Full name must be between 2 and 100 characters")
     @Schema(example = "Nguyễn Văn A")
+    @Size(max = 255)
+
     private String fullName;
     
     @NotBlank(message = "Password is required")
@@ -40,5 +48,7 @@ public class RegisterRequest {
     @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]+$", 
              message = "Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character")
     @Schema(example = "Student@2024")
+    @Size(max = 255)
+
     private String password;
 }

@@ -1,6 +1,8 @@
 package com.service.backend.article.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,23 +19,41 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class CreateAchievementRequest {
 
+    @NotNull
+
+
+    @Min(value = 1)
+
+
     private Integer organizationId;
 
     @NotBlank
     @Size(min = 3, max = 255)
+    @Size(max = 255)
+
     private String title;
+
+    @Size(max = 255)
+
 
     private String description;
 
     @URL
+    @Size(max = 255)
+
     private String url;
 
     /** Base64-encoded image. When present, the backend converts it to WebP and stores it. */
+    @Size(max = 255)
+
     private String imageBase64;
 
     private LocalDate awardedDate;
 
     private Status status;
+
+    @Size(max = 255)
+
 
     private String topic;
 }

@@ -17,15 +17,21 @@ public class ResetPasswordRequest {
     @NotBlank(message = "Email is required")
     @Email(message = "Email should be valid")
     @Schema(example = "student01@hcmus.edu.vn")
+    @Size(max = 255)
+
     private String email;
 
     @NotBlank(message = "OTP is required")
     @Pattern(regexp = "^[0-9]{6}$", message = "OTP must be a 6-digit number")
     @Schema(example = "123456")
+    @Size(max = 255)
+
     private String otp;
 
     @NotBlank(message = "New password is required")
     @Size(min = 8, max = 100, message = "Password must be between 8 and 100 characters")
     @Schema(example = "NewPass@123")
+    @Size(max = 255)
+
     private String newPassword;
 }

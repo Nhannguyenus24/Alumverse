@@ -14,7 +14,12 @@ import lombok.NoArgsConstructor;
 public class AdminResetPasswordRequest {
     @NotBlank(message = "New password is required")
     @Size(min = 8, max = 100, message = "Password must be between 8 and 100 characters")
+    @Size(max = 255)
+
     private String newPassword;
+
+    @Size(max = 255)
+
 
     private String reason;
 }

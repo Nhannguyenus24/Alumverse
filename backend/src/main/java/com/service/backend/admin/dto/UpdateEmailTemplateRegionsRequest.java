@@ -2,6 +2,8 @@ package com.service.backend.admin.dto;
 
 import java.util.Map;
 
+import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 /**
@@ -12,6 +14,8 @@ import lombok.Data;
 public class UpdateEmailTemplateRegionsRequest {
 
     /** Subject có thể để trống -> hệ thống dùng subject động truyền từ code khi gửi. */
+    @Size(max = 255)
+
     private String subject;
 
     /** map {regionKey -> nội dung mới}. */

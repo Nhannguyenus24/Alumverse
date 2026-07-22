@@ -24,13 +24,19 @@ public class UpdateEventRequest {
     @NotBlank()
     @Size(min = 3, max = 255)
     @Schema(example = "Hội thảo AI 2026 (Cập nhật)")
+    @Size(max = 255)
+
     private String title;
 
     @Schema(example = "Cập nhật thông tin sự kiện AI 2026.")
+    @Size(max = 255)
+
     private String description;
 
     @Size(max = 500)
     @Schema(example = "Hội trường B, Đại học Khoa học Tự nhiên")
+    @Size(max = 255)
+
     private String location;
 
     @NotNull(message = "Start time is required")
@@ -52,9 +58,13 @@ public class UpdateEventRequest {
     private Integer maxCapacity;
 
     /** Base64-encoded banner. When present it replaces the current banner; when absent the existing banner is kept. */
+    @Size(max = 255)
+
     private String bannerBase64;
 
     @Schema(example = "Workshop")
+    @Size(max = 255)
+
     private String topic;
 
     @Schema(example = "true", description = "Whether this event requires QR code check-in scanning")

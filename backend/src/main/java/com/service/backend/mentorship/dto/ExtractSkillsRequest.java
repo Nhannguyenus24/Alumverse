@@ -19,5 +19,7 @@ public class ExtractSkillsRequest {
 
     @NotBlank
     @Size(max = 5000)
+    @Size(max = 255)
+
     private String text;
 }

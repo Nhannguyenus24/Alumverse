@@ -23,9 +23,13 @@ public class CreateSurveyRequest {
     @Schema(example = "Khảo sát nhân sự 2026")
     @NotBlank(message = "Title is required")
     @Size(max = 255, message = "Title must be at most 255 characters")
+    @Size(max = 255)
+
     private String title;
 
     @Schema(example = "Đánh giá mức độ hài lòng về môi trường làm việc")
+    @Size(max = 255)
+
     private String description;
 
     @Schema(description = "Organization the survey belongs to. Ignored for STAFF (forced to own org).")
@@ -34,6 +38,8 @@ public class CreateSurveyRequest {
     @Valid
     @NotNull(message = "Questions are required")
     @Size(min = 1, message = "At least one question is required")
+    @Size(max = 100)
+
     private List<SurveyQuestionDto> questions;
 
     @Schema(example = "2026-08-01T09:00:00")

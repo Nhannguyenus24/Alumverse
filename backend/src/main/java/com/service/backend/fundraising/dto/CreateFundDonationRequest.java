@@ -22,16 +22,26 @@ public class CreateFundDonationRequest {
     @NotNull
     @Min(1)
     @Schema(example = "1")
+    @NotNull
+
+    @Min(value = 1)
+
     private Integer fundId;
 
     @Min(1)
     @JsonProperty("donor_member_id")
     @Schema(example = "123")
+    @NotNull
+
+    @Min(value = 1)
+
     private Integer donorMemberId;
 
     @Size(max = 50)
     @JsonProperty("donor_name")
     @Schema(example = "Nguyễn Văn A")
+    @Size(max = 255)
+
     private String donorName;
 
     @NotNull
@@ -41,18 +51,26 @@ public class CreateFundDonationRequest {
 
     @Size(max = 500)
     @Schema(example = "123 Đường ABC, Quận 1")
+    @Size(max = 255)
+
     private String address;
 
     @Size(max = 50)
     @Schema(example = "0901234567")
+    @Size(max = 255)
+
     private String phone;
 
     @Size(max = 255)
     @Schema(example = "nguyenvana@example.com")
+    @Size(max = 255)
+
     private String email;
 
     @Size(max = 100) // Already checked that the bank allow max 119, i left 19 character left for fund donation id
     @Schema(example = "Chúc các bạn nhận được học bổng!")
+    @Size(max = 255)
+
     private String message;
 }
 
