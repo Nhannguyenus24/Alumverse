@@ -54,6 +54,9 @@ public class Job {
     @Column("url")
     private String url;
 
+    @Column("thumbnail_url")
+    private String thumbnailUrl;
+
     private LocalDate deadline;
 
     @Column("is_active")

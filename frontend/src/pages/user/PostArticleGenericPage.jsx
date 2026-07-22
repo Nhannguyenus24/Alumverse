@@ -116,16 +116,17 @@ const CHANNEL_CONFIG = {
     redirect: (id) => `/article/job/${id}`,
     pendingRedirect: () => `/development/jobs`,
     useHook: useCreateJob,
-    payloadKey: null,
-    useBase64: false,
+    payloadKey: 'thumbnailBase64',
+    useBase64: true,
     contentKey: 'description',
-    buildPayload: ({ title, content, topic, url, organizationId }) => ({
+    buildPayload: ({ title, content, topic, url, imageBase64, organizationId }) => ({
       organizationId,
       title,
       description: content,
       type: JOB_TYPE_BY_TOPIC[topic],
       isReferral: topic === 'internal_referral',
       url: url || null,
+      ...(imageBase64 ? { thumbnailBase64: imageBase64 } : {}),
     }),
   },
   learning: {

@@ -8,6 +8,7 @@ import com.service.backend.article.dto.JobResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
+import com.service.backend.shared.service.ImageService;
 import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.shared.utils.SecurityUtils;
 import com.service.backend.shared.utils.CacheNames;
@@ -29,6 +30,7 @@ public class JobService {
     private static final Duration LIST_TTL = Duration.ofMinutes(5);
 
     private final JobR2dbcRepository jobRepository;
+    private final ImageService imageService;
     private final CacheUtils cacheUtils;
     private final NotificationService notificationService;
 
@@ -51,7 +53,8 @@ public class JobService {
                     return SecurityUtils.resolveContentOrganizationId(request.getOrganizationId())
                             .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.BAD_REQUEST, "Organization ID is required to create job")))
                             .flatMap(orgId -> SecurityUtils.assertCanSubmitContributorContent(orgId)
-                                    .then(Mono.defer(() -> {
+                                    .then(imageService.uploadBase64IfPresent(request.getThumbnailBase64()).defaultIfEmpty(""))
+                                    .flatMap(thumbnailUrl -> {
                     Job job = Job.builder()
                             .organizationId(orgId)
                             .posterMemberId(userId.intValue())
@@ -63,6 +66,7 @@ public class JobService {
                             .salaryRange(request.getSalaryRange())
                             .howToApply(request.getHowToApply())
                             .url(request.getUrl())
+                            .thumbnailUrl(thumbnailUrl.isEmpty() ? null : thumbnailUrl)
                             .deadline(request.getDeadline())
                             .isReferral(request.getIsReferral() != null ? request.getIsReferral() : false)
                             .isActive(publishImmediately)
@@ -82,7 +86,7 @@ public class JobService {
                                 }
                             })
                             .map(JobResponse::from);
-                            })));
+                            }));
                 });
     }
 
@@ -90,7 +94,8 @@ public class JobService {
         return jobRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.JOB_NOT_FOUND, "Job not found with id: " + id)))
                 .flatMap(existing -> SecurityUtils.assertCanManageContentOrganization(existing.getOrganizationId())
-                        .then(Mono.defer(() -> {
+                        .then(imageService.uploadBase64IfPresent(request.getThumbnailBase64()).defaultIfEmpty("")
+                                .flatMap(thumbnailUrl -> {
                     existing.setTitle(request.getTitle());
                     existing.setDescription(request.getDescription());
                     existing.setCompanyName(request.getCompanyName());
@@ -99,6 +104,7 @@ public class JobService {
                     existing.setSalaryRange(request.getSalaryRange());
                     existing.setHowToApply(request.getHowToApply());
                     existing.setUrl(request.getUrl());
+                    existing.setThumbnailUrl(thumbnailUrl.isEmpty() ? existing.getThumbnailUrl() : thumbnailUrl);
                     existing.setDeadline(request.getDeadline());
                     existing.setIsReferral(request.getIsReferral() != null ? request.getIsReferral() : false);
                     return jobRepository.save(existing);

@@ -59,6 +59,7 @@ const buildPayload = (channel, input) => {
         title,
         description: content,
         type: topic ?? null,
+        thumbnailBase64: thumbnailBase64 ?? null,
         ...rest,
       };
     case 'learning':

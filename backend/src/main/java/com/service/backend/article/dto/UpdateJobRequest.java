@@ -38,6 +38,9 @@ public class UpdateJobRequest {
     @org.hibernate.validator.constraints.URL
     private String url;
 
+    /** Base64-encoded thumbnail image. When present, the backend converts it to WebP and stores it; otherwise the existing thumbnail is kept. */
+    private String thumbnailBase64;
+
     private LocalDate deadline;
 
     private Boolean isReferral;
