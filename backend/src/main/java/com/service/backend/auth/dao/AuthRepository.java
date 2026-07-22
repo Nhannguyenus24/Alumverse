@@ -107,4 +107,12 @@ public interface AuthRepository extends R2dbcRepository<User, Integer> {
     @Modifying
     @Query("UPDATE verification_requests SET ai_summary = :aiSummary, updated_at = CURRENT_TIMESTAMP WHERE id = :id")
     Mono<Void> updateAiSummary(@Param("id") Integer id, @Param("aiSummary") String aiSummary);
+
+    @Modifying
+    @Query("UPDATE verification_requests SET document_url = :documentUrl, document_type = :documentType, ai_summary = :aiSummary, updated_at = CURRENT_TIMESTAMP WHERE id = :id")
+    Mono<Void> updateVerificationDocumentAndAiSummary(
+            @Param("id") Integer id,
+            @Param("documentUrl") String documentUrl,
+            @Param("documentType") String documentType,
+            @Param("aiSummary") String aiSummary);
 }
