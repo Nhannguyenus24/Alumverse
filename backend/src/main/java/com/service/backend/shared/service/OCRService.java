@@ -6,6 +6,11 @@ import net.sourceforge.tess4j.Tesseract;
 import net.sourceforge.tess4j.TesseractException;
 import org.springframework.stereotype.Service;
 
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -15,7 +20,11 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Optional;
 
+import javax.imageio.ImageIO;
+
 import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.rendering.ImageType;
+import org.apache.pdfbox.rendering.PDFRenderer;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.multipart.MultipartFile;
@@ -45,6 +54,11 @@ public class OCRService {
         }
     }
 
+    private static final int MAX_PDF_OCR_PAGES = 5;
+    private static final float PDF_RENDER_DPI = 200f;
+    private static final int MIN_TEXT_LAYER_CHARS = 20;
+    private static final String UNREADABLE = "UNREADABLE";
+
     private final MeterRegistry meterRegistry;
     private final DocumentExtractionService documentExtractionService;
     private final VisionOcrService visionOcrService;
@@ -72,6 +86,14 @@ public class OCRService {
      * Supported formats: PNG, JPEG, JPG, PDF, TXT.
      */
     public Mono<String> extractTextFromFile(String filePath) {
+        return extractTextFromFile(filePath, true);
+    }
+
+    public Mono<String> extractRawTextFromFile(String filePath) {
+        return extractTextFromFile(filePath, false);
+    }
+
+    private Mono<String> extractTextFromFile(String filePath, boolean extractDocumentFields) {
         if (filePath == null || filePath.trim().isEmpty()) {
             return Mono.error(new IllegalArgumentException("File path cannot be null or empty."));
         }
@@ -92,7 +114,7 @@ public class OCRService {
                     };
         }).subscribeOn(heavyTaskScheduler)
           .map(result -> {
-              if (!result.needsExtraction()) {
+              if (!extractDocumentFields || !result.needsExtraction()) {
                   return result.text();
               }
               try {
@@ -133,23 +155,81 @@ public class OCRService {
     }
 
     /**
-     * PDF xuất từ máy (Word, hệ thống của trường...) đã có sẵn text layer: bóc thẳng ra thì
-     * chính xác tuyệt đối và không tốn một token AI nào. Chỉ PDF scan (ảnh chụp lưu thành PDF,
-     * không có text layer) mới phải OCR.
+     * PDF bảng điểm/bằng cấp có thể vừa có text layer vừa có trang scan. Đọc từng trang để
+     * trang scan vẫn đi qua pipeline ảnh (vision + xoay + Tesseract) thay vì OCR PDF trực tiếp.
      */
-    private OcrResult readPdf(File file) throws TesseractException {
+    private OcrResult readPdf(File file) {
         try (PDDocument document = PDDocument.load(file)) {
-            String text = new PDFTextStripper().getText(document);
-            if (text != null && !text.isBlank()) {
-                log.info("PDF '{}' có sẵn text layer — bóc trực tiếp, không cần OCR.", file.getName());
-                // Text layer là nguyên văn cả trang (kèm URL, menu, bảng điểm) nên vẫn phải rút gọn.
-                return new OcrResult(text.trim(), true);
+            int pagesToRead = Math.min(document.getNumberOfPages(), MAX_PDF_OCR_PAGES);
+            log.info("PDF '{}' đọc {} / {} trang.", file.getName(), pagesToRead, document.getNumberOfPages());
+
+            PDFRenderer renderer = new PDFRenderer(document);
+            StringBuilder text = new StringBuilder();
+            for (int pageIndex = 0; pageIndex < pagesToRead; pageIndex++) {
+                String pageText = extractPdfPageText(document, pageIndex + 1);
+                if (!hasUsefulTextLayer(pageText)) {
+                    pageText = ocrPdfPage(renderer, pageIndex, file.getName());
+                }
+                appendPageText(text, pageIndex + 1, pageText);
             }
-            log.info("PDF '{}' không có text layer (bản scan) — chuyển sang OCR.", file.getName());
+
+            String result = text.toString().trim();
+            return new OcrResult(result.isBlank() ? UNREADABLE : result, true);
         } catch (IOException e) {
-            log.warn("Không đọc được text layer của PDF '{}', chuyển sang OCR: {}", file.getName(), e.getMessage());
+            log.warn("Không đọc được PDF '{}': {}", file.getName(), e.getMessage());
+            return new OcrResult(UNREADABLE, true);
         }
-        return new OcrResult(performOcr(file), true);
+    }
+
+    private String extractPdfPageText(PDDocument document, int pageNumber) throws IOException {
+        PDFTextStripper stripper = new PDFTextStripper();
+        stripper.setStartPage(pageNumber);
+        stripper.setEndPage(pageNumber);
+        return stripper.getText(document);
+    }
+
+    private boolean hasUsefulTextLayer(String text) {
+        if (text == null) {
+            return false;
+        }
+        String trimmed = text.trim();
+        String lower = trimmed.toLowerCase();
+        return trimmed.length() >= MIN_TEXT_LAYER_CHARS
+                || lower.contains("mssv")
+                || lower.contains("họ tên")
+                || lower.contains("ho ten")
+                || trimmed.matches(".*\\b\\d{8,}\\b.*");
+    }
+
+    private String ocrPdfPage(PDFRenderer renderer, int pageIndex, String pdfName) {
+        Path tempPage = null;
+        try {
+            tempPage = Files.createTempFile("ocr_pdf_page_", ".png");
+            BufferedImage image = renderer.renderImageWithDPI(pageIndex, PDF_RENDER_DPI, ImageType.RGB);
+            ImageIO.write(image, "png", tempPage.toFile());
+            return readImage(tempPage.toFile(), "png").text();
+        } catch (IOException | TesseractException e) {
+            log.warn("Không OCR được trang {} của PDF '{}': {}", pageIndex + 1, pdfName, e.getMessage());
+            return "";
+        } finally {
+            if (tempPage != null) {
+                try {
+                    Files.deleteIfExists(tempPage);
+                } catch (IOException e) {
+                    log.warn("Không xóa được ảnh PDF tạm '{}': {}", tempPage, e.getMessage());
+                }
+            }
+        }
+    }
+
+    private void appendPageText(StringBuilder out, int pageNumber, String text) {
+        if (text == null || text.isBlank()) {
+            return;
+        }
+        if (!out.isEmpty()) {
+            out.append("\n\n");
+        }
+        out.append("Trang ").append(pageNumber).append(":\n").append(text.trim());
     }
 
     /**
@@ -157,11 +237,107 @@ public class OCRService {
      * vision tắt / lỗi / không đọc nổi. Chữ vision trả về đã sạch nên không cần dọn thêm.
      */
     private OcrResult readImage(File file, String extension) throws TesseractException {
-        Optional<String> viaVision = visionOcrService.extractText(file, mimeTypeOf(extension));
+        String mimeType = mimeTypeOf(extension);
+        Optional<String> viaVision = extractVisionWithRotations(file, extension, mimeType);
         if (viaVision.isPresent()) {
             return new OcrResult(viaVision.get(), false);
         }
-        return new OcrResult(performOcr(file), true);
+        return new OcrResult(performOcrWithRotations(file, extension), true);
+    }
+
+    private Optional<String> extractVisionWithRotations(File file, String extension, String mimeType) {
+        Optional<String> original = visionOcrService.extractText(file, mimeType);
+        if (original.isPresent()) {
+            return original;
+        }
+        for (int degrees : new int[] {90, 180, 270}) {
+            Optional<String> rotatedText = withRotatedImage(file, extension, degrees,
+                    rotated -> visionOcrService.extractText(rotated, mimeType));
+            if (rotatedText.isPresent()) {
+                return rotatedText;
+            }
+        }
+        return Optional.empty();
+    }
+
+    private String performOcrWithRotations(File file, String extension) throws TesseractException {
+        String original = performOcr(file);
+        if (original != null && !original.isBlank()) {
+            return original;
+        }
+        for (int degrees : new int[] {90, 180, 270}) {
+            Optional<String> rotatedText = withRotatedImage(file, extension, degrees, rotated -> {
+                try {
+                    return Optional.ofNullable(performOcr(rotated)).filter(text -> !text.isBlank());
+                } catch (TesseractException e) {
+                    log.warn("Tesseract OCR lỗi với ảnh xoay {}° '{}': {}", degrees, file.getName(), e.getMessage());
+                    return Optional.empty();
+                }
+            });
+            if (rotatedText.isPresent()) {
+                return rotatedText.get();
+            }
+        }
+        return original;
+    }
+
+    private Optional<String> withRotatedImage(File file, String extension, int degrees, ImageReader reader) {
+        Path rotated = null;
+        try {
+            rotated = Files.createTempFile("ocr_rotate_", "." + extension);
+            rotateImage(file, rotated.toFile(), degrees, extension);
+            return reader.read(rotated.toFile());
+        } catch (IOException e) {
+            log.warn("Không xoay được ảnh '{}' {}°: {}", file.getName(), degrees, e.getMessage());
+            return Optional.empty();
+        } finally {
+            if (rotated != null) {
+                try {
+                    Files.deleteIfExists(rotated);
+                } catch (IOException e) {
+                    log.warn("Không xóa được ảnh tạm '{}': {}", rotated, e.getMessage());
+                }
+            }
+        }
+    }
+
+    private void rotateImage(File source, File target, int degrees, String extension) throws IOException {
+        BufferedImage input = ImageIO.read(source);
+        if (input == null) {
+            throw new IOException("Unsupported image data");
+        }
+
+        double radians = Math.toRadians(degrees);
+        int width = input.getWidth();
+        int height = input.getHeight();
+        int rotatedWidth = degrees == 180 ? width : height;
+        int rotatedHeight = degrees == 180 ? height : width;
+        BufferedImage output = new BufferedImage(rotatedWidth, rotatedHeight, BufferedImage.TYPE_INT_RGB);
+
+        Graphics2D graphics = output.createGraphics();
+        try {
+            graphics.setColor(Color.WHITE);
+            graphics.fillRect(0, 0, rotatedWidth, rotatedHeight);
+            graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+            AffineTransform transform = new AffineTransform();
+            transform.translate(rotatedWidth / 2.0, rotatedHeight / 2.0);
+            transform.rotate(radians);
+            transform.translate(-width / 2.0, -height / 2.0);
+            graphics.drawRenderedImage(input, transform);
+        } finally {
+            graphics.dispose();
+        }
+
+        ImageIO.write(output, imageIoFormat(extension), target);
+    }
+
+    private String imageIoFormat(String extension) {
+        return "png".equals(extension) ? "png" : "jpg";
+    }
+
+    @FunctionalInterface
+    private interface ImageReader {
+        Optional<String> read(File file);
     }
 
     private String mimeTypeOf(String extension) {
