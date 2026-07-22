@@ -14,17 +14,20 @@ const fetchMyOrgMember = async (organizationId) => {
   }
 };
 
+import { useAuth } from './useAuth';
+
 /**
  * Returns the current user's OrganizationMember record (verificationLevel, graduationStatus, ...)
  * for the currently selected organization.
  */
 export const useMyOrganizationMember = () => {
   const organizationId = useOrganizationStore((state) => state.organization?.id ?? null);
+  const { isAuthenticated } = useAuth();
 
   return useQuery({
     queryKey: ['user', 'me', 'organization-member', organizationId],
     queryFn: () => fetchMyOrgMember(organizationId),
-    enabled: Boolean(organizationId),
+    enabled: Boolean(organizationId && isAuthenticated),
     staleTime: 5 * 60 * 1000,
   });
 };
