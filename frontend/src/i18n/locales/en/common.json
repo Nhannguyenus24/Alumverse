@@ -137,5 +137,6 @@
   "sse_account_banned": "Your account has been banned.",
   "sse_event_reminder": "An event you're interested in is closing registration soon.",
   "sse_ticket_cancelled": "Your event ticket has been cancelled.",
-  "sse_ticket_banned": "Your event ticket has been banned."
+  "sse_ticket_banned": "Your event ticket has been banned.",
+  "sse_connection_request": "You have a new connection request."
 }

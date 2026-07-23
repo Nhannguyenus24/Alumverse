@@ -32,6 +32,8 @@ public class FundListItemResponse {
 
     private String topic;
 
+    private String fundDocumentUrl;
+
     private Boolean donationListPublic;
 
     public static FundListItemResponse from(Funds fund) {
@@ -52,6 +54,7 @@ public class FundListItemResponse {
                 .timeStarted(fund.getTimeStarted())
                 .timeEnded(fund.getTimeEnded())
                 .topic(fund.getTopic())
+                .fundDocumentUrl(fund.getFundDocumentUrl())
                 .donationListPublic(Boolean.TRUE.equals(fund.getDonationListPublic()))
                 .build();
     }

@@ -137,5 +137,6 @@
   "sse_account_banned": "Tài khoản của bạn đã bị khóa.",
   "sse_event_reminder": "Một sự kiện bạn quan tâm sắp hết hạn đăng ký.",
   "sse_ticket_cancelled": "Vé sự kiện của bạn đã bị huỷ.",
-  "sse_ticket_banned": "Vé sự kiện của bạn đã bị cấm tham gia."
+  "sse_ticket_banned": "Vé sự kiện của bạn đã bị cấm tham gia.",
+  "sse_connection_request": "Bạn có một lời mời kết nối mới."
 }

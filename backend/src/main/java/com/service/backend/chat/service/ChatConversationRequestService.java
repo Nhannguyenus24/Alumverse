@@ -10,14 +10,15 @@ import com.service.backend.chat.dto.ConversationRequestSearchItemResponse;
 import com.service.backend.chat.dto.RespondConversationRequestResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.utils.PaginationHelper;
-import com.service.backend.shared.utils.SecurityUtils;
 import com.service.backend.shared.entity.ChatConversationRequest;
 import com.service.backend.shared.entity.ChatGroup;
 import com.service.backend.shared.entity.ChatGroupMember;
 import com.service.backend.shared.entity.ChatMessage;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.enums.ConversationRequestStatus;
-import com.service.backend.user.dao.UserOrganizationMemberRepository;
+import com.service.backend.shared.service.SseService;
+import com.service.backend.user.dao.UserProfileRepository;
+import com.service.backend.user.service.NotificationService;
 
 
 import com.service.backend.shared.enums.ChatType;
@@ -33,6 +34,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -44,7 +46,9 @@ public class ChatConversationRequestService {
     private final ChatGroupRepository chatGroupRepository;
     private final ChatGroupMemberRepository chatGroupMemberRepository;
     private final UserBlockService userBlockService;
-    private final UserOrganizationMemberRepository userOrganizationMemberRepository;
+    private final UserProfileRepository userProfileRepository;
+    private final NotificationService notificationService;
+    private final SseService sseService;
 
     /**
      * Returns connection status and the current member's latest message in the request chat group,
@@ -68,17 +72,14 @@ public class ChatConversationRequestService {
         long memberLowId = Math.min(currentMemberId, targetMemberId);
         long memberHighId = Math.max(currentMemberId, targetMemberId);
 
-        Mono<ConversationRequestConnectionStatusResponse> requestPartMono = chatConversationRequestRepository
+        // The network directory (/api/chat/network/members) spans every organization, so a member
+        // may legitimately connect with someone outside their own JWT organization. There is no
+        // per-organization verification gate on connection requests, so this only reports the
+        // existing request status (if any) between the two members.
+        return chatConversationRequestRepository
                 .findByMemberPair(memberLowId, memberHighId)
                 .flatMap(request -> buildConnectionStatusResponse(request, currentMemberId))
-                .defaultIfEmpty(new ConversationRequestConnectionStatusResponse(null, null, null, true));
-
-        return Mono.zip(requestPartMono, computeTargetVerified(targetMemberId))
-                .map(tuple -> {
-                    ConversationRequestConnectionStatusResponse response = tuple.getT1();
-                    response.setTargetVerified(tuple.getT2());
-                    return response;
-                });
+                .defaultIfEmpty(new ConversationRequestConnectionStatusResponse(null, null, null));
     }
 
     private Mono<ConversationRequestConnectionStatusResponse> buildConnectionStatusResponse(
@@ -96,8 +97,7 @@ public class ChatConversationRequestService {
         return new ConversationRequestConnectionStatusResponse(
                 request.getStatus(),
                 request.getCooldownUntil(),
-                message != null ? toLatestMessageResponse(message) : null,
-                true);
+                message != null ? toLatestMessageResponse(message) : null);
     }
 
     private ConversationRequestLatestMessageResponse toLatestMessageResponse(ChatMessage message) {
@@ -220,7 +220,6 @@ public class ChatConversationRequestService {
         }
 
         return assertTargetActive(targetMemberId)
-                .then(assertTargetVerifiedInCurrentOrganization(targetMemberId))
                 .then(userBlockService.assertCommunicationNotBlocked(currentMemberId, targetMemberId))
                 .then(createConversationRequestAfterBlockCheck(currentMemberId, targetMemberId, message));
     }
@@ -232,41 +231,6 @@ public class ChatConversationRequestService {
                         : Mono.error(new ApplicationException(
                                 ErrorCode.USER_NOT_FOUND,
                                 "Target member is not active")));
-    }
-
-    /**
-     * Blocks sending a conversation request to a target who is not verified (verification_level &gt;= 2)
-     * within the requester's current organization context. Verification is tracked per (user, organization)
-     * pair, so the check needs an org to be meaningful; if the requester has no current organization
-     * (e.g. no JWT org claim), the request is rejected rather than falling back to a global check.
-     */
-    private Mono<Void> assertTargetVerifiedInCurrentOrganization(Long targetMemberId) {
-        return SecurityUtils.getCurrentOrganizationId()
-                .switchIfEmpty(Mono.error(new ApplicationException(
-                        ErrorCode.CONVERSATION_REQUEST_ORGANIZATION_CONTEXT_REQUIRED)))
-                .flatMap(organizationId -> isVerifiedInOrganization(targetMemberId, organizationId))
-                .flatMap(verified -> verified
-                        ? Mono.empty()
-                        : Mono.error(new ApplicationException(ErrorCode.CONVERSATION_REQUEST_TARGET_NOT_VERIFIED)));
-    }
-
-    /**
-     * Preview used by {@link #getConnectionStatus} so the frontend can block composing and warn
-     * the user as soon as the drawer opens. Collapses "no organization context" and "not verified"
-     * into a single false, since the frontend only needs a yes/no gate here (the submit-time
-     * {@link #assertTargetVerifiedInCurrentOrganization} keeps the distinct error codes).
-     */
-    private Mono<Boolean> computeTargetVerified(Long targetMemberId) {
-        return SecurityUtils.getCurrentOrganizationId()
-                .flatMap(organizationId -> isVerifiedInOrganization(targetMemberId, organizationId))
-                .defaultIfEmpty(false);
-    }
-
-    private Mono<Boolean> isVerifiedInOrganization(Long targetMemberId, Integer organizationId) {
-        return userOrganizationMemberRepository
-                .findByOrganizationIdAndUserId(organizationId, targetMemberId.intValue())
-                .map(member -> true)
-                .defaultIfEmpty(false);
     }
 
     private Mono<Long> createConversationRequestAfterBlockCheck(
@@ -289,7 +253,54 @@ public class ChatConversationRequestService {
                                             log.info("Conversation request created: id={}, requester={}, target={}",
                                                     savedRequest.getId(), currentMemberId, targetMemberId);
                                             return savedRequest.getId();
-                                        })));
+                                        }))
+                                // A concurrent send can win the (member_low_id, member_high_id) unique
+                                // index between the findByMemberPair read above and this insert, making
+                                // the insert throw DataIntegrityViolationException. Re-read the pair and
+                                // route through handleExistingRequest so the loser gets the proper 4xx
+                                // (e.g. ALREADY_PENDING) instead of a generic 500. Mirrors the
+                                // autoAcceptConversationRequestAfterBlockCheck race handling.
+                                .onErrorResume(DataIntegrityViolationException.class, error ->
+                                        chatConversationRequestRepository.findByMemberPair(memberLowId, memberHighId)
+                                                .flatMap(existing -> handleExistingRequest(
+                                                        existing, currentMemberId, targetMemberId, message))
+                                                .switchIfEmpty(Mono.error(error))))
+                // Both the brand-new and the re-sent (post-cooldown) paths emit the request id on
+                // success; error paths (already pending/accepted/cooldown) short-circuit and never
+                // reach here, so the recipient is notified only when a request was actually sent.
+                .flatMap(requestId -> notifyTargetOfIncomingRequest(currentMemberId, targetMemberId)
+                        .thenReturn(requestId));
+    }
+
+    /**
+     * Notifies the recipient that {@code requesterMemberId} sent them a connection request:
+     * persists a bell notification (+ FCM push) and pushes a realtime {@code connection-request}
+     * SSE event so an online recipient sees it instantly. Best-effort — any failure here is
+     * logged and swallowed so it can never roll back or fail the request that was just created.
+     */
+    private Mono<Void> notifyTargetOfIncomingRequest(Long requesterMemberId, Long targetMemberId) {
+        return userProfileRepository.findDisplayInfoByUserId(requesterMemberId.intValue())
+                .map(info -> StringUtils.hasText(info.getFullName())
+                        ? info.getFullName().trim()
+                        : "Người dùng " + requesterMemberId)
+                .defaultIfEmpty("Người dùng " + requesterMemberId)
+                .doOnNext(requesterName -> {
+                    String title = "Lời mời kết nối mới";
+                    String messageText = requesterName + " đã gửi cho bạn một lời mời kết nối.";
+                    String link = "/network/requests";
+                    notificationService.createNotificationAsync(targetMemberId.intValue(), title, messageText, link);
+                    sseService.sendToUser(targetMemberId, "connection-request", Map.of(
+                            "title", title,
+                            "message", messageText,
+                            "link", link,
+                            "requesterMemberId", requesterMemberId));
+                })
+                .then()
+                .onErrorResume(error -> {
+                    log.warn("Failed to notify target {} of incoming connection request from {}",
+                            targetMemberId, requesterMemberId, error);
+                    return Mono.empty();
+                });
     }
 
     /**
