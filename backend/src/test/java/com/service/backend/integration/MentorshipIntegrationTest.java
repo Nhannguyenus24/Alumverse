@@ -4,6 +4,10 @@ import com.service.backend.auth.dto.LoginRequest;
 import com.service.backend.auth.dto.RegisterRequest;
 import com.service.backend.mentorship.dto.BookSessionRequest;
 import com.service.backend.mentorship.dto.CreateMentorProfileRequest;
+import com.service.backend.mentorship.dto.UpdateMentorProfileRequest;
+import com.service.backend.mentorship.dto.CreateExpertiseRequest;
+import com.service.backend.mentorship.dto.UpdateExpertiseRequest;
+import com.service.backend.mentorship.dto.CreateAvailabilityRequest;
 import com.service.backend.shared.dto.CvExtractionResponse;
 import com.service.backend.mentorship.dto.ExtractCvRequest;
 import com.service.backend.mentorship.dto.UpdateMeetingLinkRequest;
@@ -516,4 +520,486 @@ public class MentorshipIntegrationTest extends BaseIntegrationTest {
                 .exchange()
                 .expectStatus().isOk();
     }
+
+    // Nhóm 0: Tạo Mentor Profile (TC49 - TC52)
+    @Test
+    @Order(49)
+    void saveDraft_TC49_Success() {
+        String token = getValidAccessToken("mentor49@example.com", "USER");
+        CreateMentorProfileRequest req = CreateMentorProfileRequest.builder()
+                .currentJobTitle("Draft Developer")
+                .currentCompany("Draft Corp")
+                .build();
+        
+        webTestClient.post().uri("/api/mentorship/mentor/profile/draft")
+                .header("X-Forwarded-For", randomIp())
+                .header(org.springframework.http.HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .bodyValue(req)
+                .exchange()
+                .expectStatus().isOk();
+    }
+
+    @Test
+    @Order(50)
+    void createProfile_TC50_Success() {
+        String token = getValidAccessToken("mentor50@example.com", "USER");
+        CreateMentorProfileRequest req = CreateMentorProfileRequest.builder()
+                .currentJobTitle("Senior Developer")
+                .currentCompany("Tech Corp")
+                .expertiseTags(java.util.List.of("Java", "Spring"))
+                .build();
+        
+        webTestClient.post().uri("/api/mentorship/mentor/profile")
+                .header("X-Forwarded-For", randomIp())
+                .header(org.springframework.http.HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .bodyValue(req)
+                .exchange()
+                .expectStatus().isCreated();
+    }
+
+    @Test
+    @Order(51)
+    void updateProfile_TC51_Success() {
+        Long mentorId = prepareUser("mentor51@example.com", "USER");
+        prepareMentorProfile(mentorId);
+        String token = getValidAccessToken("mentor51@example.com", "USER");
+        
+        UpdateMentorProfileRequest req = UpdateMentorProfileRequest.builder()
+                .currentJobTitle("Lead Developer")
+                .build();
+                
+        webTestClient.put().uri("/api/mentorship/mentor/profile")
+                .header("X-Forwarded-For", randomIp())
+                .header(org.springframework.http.HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .bodyValue(req)
+                .exchange()
+                .expectStatus().isOk();
+    }
+
+    @Test
+    @Order(52)
+    void getMyProfile_TC52_Success() {
+        Long mentorId = prepareUser("mentor52@example.com", "USER");
+        prepareMentorProfile(mentorId);
+        String token = getValidAccessToken("mentor52@example.com", "USER");
+        
+        webTestClient.get().uri("/api/mentorship/mentor/profile")
+                .header("X-Forwarded-For", randomIp())
+                .header(org.springframework.http.HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .exchange()
+                .expectStatus().isOk();
+    }
+
+    // Nhóm 1: Mentor Expertise (TC53 - TC56)
+    @Test
+    @Order(53)
+    void addExpertise_TC53_Success() {
+        Long mentorId = prepareUser("mentor53@example.com", "USER");
+        prepareMentorProfile(mentorId);
+        String token = getValidAccessToken("mentor53@example.com", "USER");
+        
+        CreateExpertiseRequest req = CreateExpertiseRequest.builder()
+                .topic("System Design")
+                .yearsExperience(5)
+                .build();
+                
+        webTestClient.post().uri("/api/mentorship/mentor/expertise")
+                .header("X-Forwarded-For", randomIp())
+                .header(org.springframework.http.HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .bodyValue(req)
+                .exchange()
+                .expectStatus().isCreated();
+    }
+
+    @Test
+    @Order(54)
+    void getMyExpertise_TC54_Success() {
+        Long mentorId = prepareUser("mentor54@example.com", "USER");
+        prepareMentorProfile(mentorId);
+        String token = getValidAccessToken("mentor54@example.com", "USER");
+        
+        webTestClient.get().uri("/api/mentorship/mentor/expertise")
+                .header("X-Forwarded-For", randomIp())
+                .header(org.springframework.http.HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .exchange()
+                .expectStatus().isOk();
+    }
+
+    @Test
+    @Order(55)
+    void updateExpertise_TC55_Success() {
+        Long mentorId = prepareUser("mentor55@example.com", "USER");
+        prepareMentorProfile(mentorId);
+        String token = getValidAccessToken("mentor55@example.com", "USER");
+        
+        // Add one first
+        CreateExpertiseRequest createReq = CreateExpertiseRequest.builder()
+                .topic("Backend")
+                .yearsExperience(2)
+                .build();
+                
+        java.util.Map<String, Object> response = webTestClient.post().uri("/api/mentorship/mentor/expertise")
+                .header("X-Forwarded-For", randomIp())
+                .header(org.springframework.http.HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .bodyValue(createReq)
+                .exchange()
+                .expectStatus().isCreated()
+                .expectBody(java.util.Map.class)
+                .returnResult()
+                .getResponseBody();
+                
+        Integer id = (Integer) ((java.util.Map<String, Object>) response.get("data")).get("id");
+        
+        UpdateExpertiseRequest updateReq = UpdateExpertiseRequest.builder()
+                .topic("Backend Updated")
+                .yearsExperience(3)
+                .build();
+                
+        webTestClient.put().uri("/api/mentorship/mentor/expertise/" + id)
+                .header("X-Forwarded-For", randomIp())
+                .header(org.springframework.http.HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .bodyValue(updateReq)
+                .exchange()
+                .expectStatus().isOk();
+    }
+
+    @Test
+    @Order(56)
+    void deleteExpertise_TC56_Success() {
+        Long mentorId = prepareUser("mentor56@example.com", "USER");
+        prepareMentorProfile(mentorId);
+        String token = getValidAccessToken("mentor56@example.com", "USER");
+        
+        CreateExpertiseRequest createReq = CreateExpertiseRequest.builder()
+                .topic("Frontend")
+                .yearsExperience(2)
+                .build();
+                
+        java.util.Map<String, Object> response = webTestClient.post().uri("/api/mentorship/mentor/expertise")
+                .header("X-Forwarded-For", randomIp())
+                .header(org.springframework.http.HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .bodyValue(createReq)
+                .exchange()
+                .expectStatus().isCreated()
+                .expectBody(java.util.Map.class)
+                .returnResult()
+                .getResponseBody();
+                
+        Integer id = (Integer) ((java.util.Map<String, Object>) response.get("data")).get("id");
+        
+        webTestClient.delete().uri("/api/mentorship/mentor/expertise/" + id)
+                .header("X-Forwarded-For", randomIp())
+                .header(org.springframework.http.HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .exchange()
+                .expectStatus().isOk();
+    }
+
+    // Nhóm 2: Mentor Availability (TC57 - TC67)
+    @Test
+    @Order(57)
+    void addAvailability_TC57_Success() {
+        Long mentorId = prepareUser("mentor57@example.com", "USER");
+        prepareMentorProfile(mentorId);
+        String token = getValidAccessToken("mentor57@example.com", "USER");
+        
+        CreateAvailabilityRequest req = CreateAvailabilityRequest.builder()
+                .startTime(java.time.LocalDateTime.now().plusDays(2))
+                .endTime(java.time.LocalDateTime.now().plusDays(2).plusHours(1))
+                .build();
+                
+        webTestClient.post().uri("/api/mentorship/mentor/availability")
+                .header("X-Forwarded-For", randomIp())
+                .header(org.springframework.http.HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .bodyValue(req)
+                .exchange()
+                .expectStatus().isCreated();
+    }
+
+    @Test
+    @Order(58)
+    void addAvailability_TC58_InvalidTime() {
+        Long mentorId = prepareUser("mentor58@example.com", "USER");
+        prepareMentorProfile(mentorId);
+        String token = getValidAccessToken("mentor58@example.com", "USER");
+        
+        CreateAvailabilityRequest req = CreateAvailabilityRequest.builder()
+                .startTime(java.time.LocalDateTime.now().minusDays(1)) // Past time
+                .endTime(java.time.LocalDateTime.now().plusHours(1))
+                .build();
+                
+        webTestClient.post().uri("/api/mentorship/mentor/availability")
+                .header("X-Forwarded-For", randomIp())
+                .header(org.springframework.http.HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .bodyValue(req)
+                .exchange()
+                .expectStatus().isBadRequest();
+    }
+
+    @Test
+    @Order(59)
+    void addAvailability_TC59_Conflict() {
+        Long mentorId = prepareUser("mentor59@example.com", "USER");
+        prepareMentorProfile(mentorId);
+        String token = getValidAccessToken("mentor59@example.com", "USER");
+        
+        java.time.LocalDateTime start = java.time.LocalDateTime.now().plusDays(3);
+        java.time.LocalDateTime end = start.plusHours(2);
+        
+        CreateAvailabilityRequest req1 = CreateAvailabilityRequest.builder()
+                .startTime(start)
+                .endTime(end)
+                .build();
+                
+        webTestClient.post().uri("/api/mentorship/mentor/availability")
+                .header("X-Forwarded-For", randomIp())
+                .header(org.springframework.http.HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .bodyValue(req1)
+                .exchange()
+                .expectStatus().isCreated();
+                
+        // Conflict req
+        CreateAvailabilityRequest req2 = CreateAvailabilityRequest.builder()
+                .startTime(start.plusHours(1))
+                .endTime(end.plusHours(1))
+                .build();
+                
+        webTestClient.post().uri("/api/mentorship/mentor/availability")
+                .header("X-Forwarded-For", randomIp())
+                .header(org.springframework.http.HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .bodyValue(req2)
+                .exchange()
+                .expectStatus().isEqualTo(409);
+    }
+
+    @Test
+    @Order(60)
+    void getMyAvailabilities_TC60_Success() {
+        Long mentorId = prepareUser("mentor60@example.com", "USER");
+        prepareMentorProfile(mentorId);
+        String token = getValidAccessToken("mentor60@example.com", "USER");
+        
+        webTestClient.get().uri("/api/mentorship/mentor/availability")
+                .header("X-Forwarded-For", randomIp())
+                .header(org.springframework.http.HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .exchange()
+                .expectStatus().isOk();
+    }
+
+    @Test
+    @Order(61)
+    void updateAvailability_TC61_Success() {
+        Long mentorId = prepareUser("mentor61@example.com", "USER");
+        prepareMentorProfile(mentorId);
+        String token = getValidAccessToken("mentor61@example.com", "USER");
+        
+        java.time.LocalDateTime start = java.time.LocalDateTime.now().plusDays(4);
+        java.time.LocalDateTime end = start.plusHours(2);
+        
+        CreateAvailabilityRequest createReq = CreateAvailabilityRequest.builder()
+                .startTime(start)
+                .endTime(end)
+                .build();
+                
+        java.util.Map<String, Object> response = webTestClient.post().uri("/api/mentorship/mentor/availability")
+                .header("X-Forwarded-For", randomIp())
+                .header(org.springframework.http.HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .bodyValue(createReq)
+                .exchange()
+                .expectStatus().isCreated()
+                .expectBody(java.util.Map.class)
+                .returnResult()
+                .getResponseBody();
+                
+        Integer id = (Integer) ((java.util.Map<String, Object>) response.get("data")).get("id");
+        
+        CreateAvailabilityRequest updateReq = CreateAvailabilityRequest.builder()
+                .startTime(start.plusHours(1))
+                .endTime(end.plusHours(1))
+                .build();
+                
+        webTestClient.put().uri("/api/mentorship/mentor/availability/" + id)
+                .header("X-Forwarded-For", randomIp())
+                .header(org.springframework.http.HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .bodyValue(updateReq)
+                .exchange()
+                .expectStatus().isOk();
+    }
+
+    @Test
+    @Order(62)
+    void updateAvailability_TC62_Conflict() {
+        Long mentorId = prepareUser("mentor62@example.com", "USER");
+        prepareMentorProfile(mentorId);
+        String token = getValidAccessToken("mentor62@example.com", "USER");
+        
+        java.time.LocalDateTime start1 = java.time.LocalDateTime.now().plusDays(5);
+        java.time.LocalDateTime end1 = start1.plusHours(1);
+        
+        CreateAvailabilityRequest req1 = CreateAvailabilityRequest.builder()
+                .startTime(start1)
+                .endTime(end1)
+                .build();
+                
+        webTestClient.post().uri("/api/mentorship/mentor/availability")
+                .header("X-Forwarded-For", randomIp())
+                .header(org.springframework.http.HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .bodyValue(req1)
+                .exchange()
+                .expectStatus().isCreated();
+                
+        java.time.LocalDateTime start2 = java.time.LocalDateTime.now().plusDays(6);
+        java.time.LocalDateTime end2 = start2.plusHours(1);
+        
+        CreateAvailabilityRequest req2 = CreateAvailabilityRequest.builder()
+                .startTime(start2)
+                .endTime(end2)
+                .build();
+                
+        java.util.Map<String, Object> response = webTestClient.post().uri("/api/mentorship/mentor/availability")
+                .header("X-Forwarded-For", randomIp())
+                .header(org.springframework.http.HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .bodyValue(req2)
+                .exchange()
+                .expectStatus().isCreated()
+                .expectBody(java.util.Map.class)
+                .returnResult()
+                .getResponseBody();
+                
+        Integer id2 = (Integer) ((java.util.Map<String, Object>) response.get("data")).get("id");
+        
+        // Try to update id2 to conflict with id1
+        CreateAvailabilityRequest updateReq = CreateAvailabilityRequest.builder()
+                .startTime(start1)
+                .endTime(end1)
+                .build();
+                
+        webTestClient.put().uri("/api/mentorship/mentor/availability/" + id2)
+                .header("X-Forwarded-For", randomIp())
+                .header(org.springframework.http.HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .bodyValue(updateReq)
+                .exchange()
+                .expectStatus().isEqualTo(409);
+    }
+
+    @Test
+    @Order(63)
+    void deleteAvailability_TC63_Success() {
+        Long mentorId = prepareUser("mentor63@example.com", "USER");
+        prepareMentorProfile(mentorId);
+        String token = getValidAccessToken("mentor63@example.com", "USER");
+        
+        CreateAvailabilityRequest createReq = CreateAvailabilityRequest.builder()
+                .startTime(java.time.LocalDateTime.now().plusDays(7))
+                .endTime(java.time.LocalDateTime.now().plusDays(7).plusHours(1))
+                .build();
+                
+        java.util.Map<String, Object> response = webTestClient.post().uri("/api/mentorship/mentor/availability")
+                .header("X-Forwarded-For", randomIp())
+                .header(org.springframework.http.HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .bodyValue(createReq)
+                .exchange()
+                .expectStatus().isCreated()
+                .expectBody(java.util.Map.class)
+                .returnResult()
+                .getResponseBody();
+                
+        Integer id = (Integer) ((java.util.Map<String, Object>) response.get("data")).get("id");
+        
+        webTestClient.delete().uri("/api/mentorship/mentor/availability/" + id)
+                .header("X-Forwarded-For", randomIp())
+                .header(org.springframework.http.HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .exchange()
+                .expectStatus().isOk();
+    }
+
+    @Test
+    @Order(64)
+    void addAvailability_TC64_MissingFields() {
+        String token = getValidAccessToken("mentor64@example.com", "USER");
+        CreateAvailabilityRequest req = new CreateAvailabilityRequest();
+        
+        webTestClient.post().uri("/api/mentorship/mentor/availability")
+                .header("X-Forwarded-For", randomIp())
+                .header(org.springframework.http.HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .bodyValue(req)
+                .exchange()
+                .expectStatus().isBadRequest();
+    }
+
+    @Test
+    @Order(65)
+    void addAvailability_TC65_EndBeforeStart() {
+        Long mentorId = prepareUser("mentor65@example.com", "USER");
+        prepareMentorProfile(mentorId);
+        String token = getValidAccessToken("mentor65@example.com", "USER");
+        java.time.LocalDateTime start = java.time.LocalDateTime.now().plusDays(8);
+        java.time.LocalDateTime end = start.minusHours(1); // End before start
+        
+        CreateAvailabilityRequest req = CreateAvailabilityRequest.builder()
+                .startTime(start)
+                .endTime(end)
+                .build();
+                
+        webTestClient.post().uri("/api/mentorship/mentor/availability")
+                .header("X-Forwarded-For", randomIp())
+                .header(org.springframework.http.HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .bodyValue(req)
+                .exchange()
+                .expectStatus().isBadRequest();
+    }
+
+    @Test
+    @Order(66)
+    void updateAvailability_TC66_NotFound() {
+        Long mentorId = prepareUser("mentor66@example.com", "USER");
+        prepareMentorProfile(mentorId);
+        String token = getValidAccessToken("mentor66@example.com", "USER");
+        
+        CreateAvailabilityRequest req = CreateAvailabilityRequest.builder()
+                .startTime(java.time.LocalDateTime.now().plusDays(9))
+                .endTime(java.time.LocalDateTime.now().plusDays(9).plusHours(1))
+                .build();
+                
+        webTestClient.put().uri("/api/mentorship/mentor/availability/999999")
+                .header("X-Forwarded-For", randomIp())
+                .header(org.springframework.http.HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .bodyValue(req)
+                .exchange()
+                .expectStatus().isNotFound();
+    }
+
+    @Test
+    @Order(67)
+    void deleteAvailability_TC67_NotFound() {
+        Long mentorId = prepareUser("mentor67@example.com", "USER");
+        prepareMentorProfile(mentorId);
+        String token = getValidAccessToken("mentor67@example.com", "USER");
+        
+        webTestClient.delete().uri("/api/mentorship/mentor/availability/999999")
+                .header("X-Forwarded-For", randomIp())
+                .header(org.springframework.http.HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .exchange()
+                .expectStatus().isNotFound();
+    }
+
 }
