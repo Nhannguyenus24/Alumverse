@@ -61,7 +61,7 @@ const loadMessagesFromStorage = (greeting) => {
 
     const prunedHistory = normalizeAndPruneMessages(parsedHistory);
     return prunedHistory.length > 0 ? prunedHistory : [buildDefaultMessage(greeting)];
-  } catch (_) {
+  } catch {
     return [buildDefaultMessage(greeting)];
   }
 };
@@ -78,7 +78,7 @@ const saveMessagesToStorage = (messages) => {
       CHAT_HISTORY_STORAGE_KEY,
       JSON.stringify(serializableMessages)
     );
-  } catch (_) {
+  } catch {
     // Ignore error
   }
 };
@@ -168,8 +168,8 @@ const SuggestionBubble = styled(Paper)(({ theme }) => ({
 
 const ChatWindow = styled(Paper)(({ theme }) => ({
   position: 'fixed',
-  bottom: 160,
-  right: 20,
+  bottom: 0,
+  right: 96,
   width: 380,
   height: 500,
   borderRadius: theme.spacing(2),
@@ -179,8 +179,10 @@ const ChatWindow = styled(Paper)(({ theme }) => ({
   zIndex: 998,
   backgroundColor: theme.palette.background.paper,
   [theme.breakpoints.down('sm')]: {
+    right: 10,
+    bottom: 90,
     width: 'calc(100% - 20px)',
-    height: 'calc(100vh - 100px)',
+    height: 'calc(100vh - 120px)',
   },
 }));
 
@@ -290,13 +292,12 @@ const SUGGESTION_KEYS = [
 
 // SSE response handler using fetch
 const streamSSEResponse = async (userMessage, onChunk, onComplete, onError, signal) => {
-  const apiEndpoint = `${import.meta.env.VITE_FITBOT_API_URL || '/fitbot-api'}/api/stream-query`;
-  
+  const apiEndpoint = '/api/fitbot/stream-query';
+
   try {
     const requestBody = {
       question: userMessage,
       top_k: 10,
-      model: 'gemini-2.5-flash',
       use_reranker: false
     };
 
@@ -339,7 +340,7 @@ const streamSSEResponse = async (userMessage, onChunk, onComplete, onError, sign
           answer = data;
         }
         if (answer) onChunk(answer);
-      } catch (_) {
+      } catch {
         onChunk(result);
       }
       onComplete();
@@ -377,7 +378,7 @@ const streamSSEResponse = async (userMessage, onChunk, onComplete, onError, sign
               textChunk = data;
             }
             if (textChunk) onChunk(textChunk);
-          } catch (_) {
+          } catch {
             onChunk(dataStr);
           }
         }
@@ -392,7 +393,7 @@ const streamSSEResponse = async (userMessage, onChunk, onComplete, onError, sign
           const data = JSON.parse(dataStr);
           const textChunk = data.answer || data.response || data.text || data.content || (data.message ? data.message.content : '') || dataStr;
           if (textChunk) onChunk(textChunk);
-        } catch (_) {
+        } catch {
           onChunk(dataStr);
         }
       }
@@ -449,12 +450,6 @@ export default function FitBot({ isOpen = false, isBlocked = false, onOpen, onCl
 
   // Show random suggestion at random interval
   useEffect(() => {
-    if (isBlocked) {
-      setShowSuggestion(false);
-    }
-  }, [isBlocked]);
-
-  useEffect(() => {
     if (!isChatOpen) {
       const scheduleNextSuggestion = () => {
         suggestionTimeoutRef.current = setTimeout(() => {
@@ -483,8 +478,6 @@ export default function FitBot({ isOpen = false, isBlocked = false, onOpen, onCl
         clearTimeout(suggestionTimeoutRef.current);
         clearTimeout(suggestionHideTimeoutRef.current);
       };
-    } else {
-      setShowSuggestion(false);
     }
   }, [isBlocked, isChatOpen, t]);
 
@@ -549,7 +542,7 @@ export default function FitBot({ isOpen = false, isBlocked = false, onOpen, onCl
         setIsTyping(false);
         abortControllerRef.current = null;
       },
-      (error) => {
+      () => {
         // On error - show fallback message
         const errorMessage = t('fitbot_error_message');
         fullResponse = errorMessage;
@@ -568,7 +561,7 @@ export default function FitBot({ isOpen = false, isBlocked = false, onOpen, onCl
       },
       abortControllerRef.current.signal
     );
-  }, [inputValue]);
+  }, [inputValue, t]);
 
   const handleSuggestionClick = useCallback((suggestion) => {
     setShowSuggestion(false);
