@@ -14,6 +14,8 @@ import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
 import AlumniContentLayout from '../../layouts/AlumniContentLayout';
 import MentorshipHubActions from '../../components/mentorship/MentorshipHubActions';
 import MentorshipMentorListSection from '../../components/mentorship/MentorshipMentorListSection';
+import MentorshipHubStatsSection from '../../components/mentorship/MentorshipHubStatsSection';
+import MentorshipStatsLoader from '../../components/mentorship/MentorshipStatsLoader';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useMentorshipAccessState } from '../../hooks/mentorship/useMentorshipAccessState';
 import { getMentorshipStats } from '../../constants/mentorshipNav';
@@ -106,7 +108,7 @@ const GuestLandingContent = () => {
         <MentorshipHubActions tone="onPrimary" />
       </ScrollRevealItem>
 
-      <ScrollRevealItem><StatsBanner items={getMentorshipStats(t)} /></ScrollRevealItem>
+      <ScrollRevealItem><MentorshipStatsLoader /></ScrollRevealItem>
 
       <ScrollRevealItem>
         <Typography variant="h4" fontWeight={700} mb={3}>
@@ -275,7 +277,8 @@ const HubContent = () => {
         </Typography>
       </Stack></ScrollRevealItem>
 
-      <ScrollRevealItem><StatsBanner items={getMentorshipStats(t)} /></ScrollRevealItem>
+      <ScrollRevealItem><MentorshipStatsLoader /></ScrollRevealItem>
+      <MentorshipHubStatsSection />
       <MentorshipMentorListSection />
     </ScrollRevealGroup>
   );

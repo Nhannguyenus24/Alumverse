@@ -9,9 +9,14 @@ import {
   Stack,
   Grid,
   Paper,
+  Card,
+  Avatar,
   useTheme,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
+import VisibilityRoundedIcon from "@mui/icons-material/VisibilityRounded";
+import RocketLaunchRoundedIcon from "@mui/icons-material/RocketLaunchRounded";
+import FavoriteRoundedIcon from "@mui/icons-material/FavoriteRounded";
 import Page from "../../components/Page";
 import { useOrganization } from "../../hooks/useOrganization";
 import { getIntroduction } from "../../utils/api";
@@ -141,9 +146,154 @@ const IntroducePage = () => {
     <Box>
       {renderHTML(introduction?.content)}
 
+      {(introduction?.vision || introduction?.mission || introduction?.coreValues) && (
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: { xs: "column", md: "row" },
+            gap: 2.5,
+            alignItems: "stretch",
+            width: "100%",
+            mt: 5,
+            mb: 5,
+          }}
+        >
+          {introduction?.vision && (
+            <Box sx={{ flex: 1, minWidth: 0, display: "flex" }}>
+              <ScrollReveal delay={0.05} sx={{ width: "100%", display: "flex", flexDirection: "column" }}>
+                <Card
+                  variant="outlined"
+                  sx={{
+                    p: 2.5,
+                    borderRadius: 3,
+                    bgcolor: alpha(theme.palette.success.main, 0.03),
+                    border: `1px solid ${alpha(theme.palette.success.main, 0.18)}`,
+                    display: "flex",
+                    flexDirection: "column",
+                    width: "100%",
+                    height: "100%",
+                  }}
+                >
+                  <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1.5 }}>
+                    <Avatar sx={{ bgcolor: "success.main", width: 34, height: 34 }}>
+                      <VisibilityRoundedIcon sx={{ fontSize: 19, color: "#fff" }} />
+                    </Avatar>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "success.main", fontSize: "1.05rem" }}>
+                      {t('intro_vision')}
+                    </Typography>
+                  </Stack>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: "text.secondary",
+                      fontWeight: 500,
+                      lineHeight: 1.65,
+                      textAlign: "justify",
+                      flex: 1,
+                      fontSize: "0.92rem",
+                    }}
+                  >
+                    {introduction.vision}
+                  </Typography>
+                </Card>
+              </ScrollReveal>
+            </Box>
+          )}
+
+          {introduction?.mission && (
+            <Box sx={{ flex: 1, minWidth: 0, display: "flex" }}>
+              <ScrollReveal delay={0.1} sx={{ width: "100%", display: "flex", flexDirection: "column" }}>
+                <Card
+                  variant="outlined"
+                  sx={{
+                    p: 2.5,
+                    borderRadius: 3,
+                    bgcolor: alpha(theme.palette.primary.main, 0.03),
+                    border: `1px solid ${alpha(theme.palette.primary.main, 0.18)}`,
+                    display: "flex",
+                    flexDirection: "column",
+                    width: "100%",
+                    height: "100%",
+                  }}
+                >
+                  <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1.5 }}>
+                    <Avatar sx={{ bgcolor: "primary.main", width: 34, height: 34 }}>
+                      <RocketLaunchRoundedIcon sx={{ fontSize: 19, color: "#fff" }} />
+                    </Avatar>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "primary.dark", fontSize: "1.05rem" }}>
+                      {t('intro_mission')}
+                    </Typography>
+                  </Stack>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: "text.secondary",
+                      fontWeight: 500,
+                      lineHeight: 1.65,
+                      textAlign: "justify",
+                      flex: 1,
+                      fontSize: "0.92rem",
+                    }}
+                  >
+                    {introduction.mission}
+                  </Typography>
+                </Card>
+              </ScrollReveal>
+            </Box>
+          )}
+
+          {introduction?.coreValues && (
+            <Box sx={{ flex: 1, minWidth: 0, display: "flex" }}>
+              <ScrollReveal delay={0.15} sx={{ width: "100%", display: "flex", flexDirection: "column" }}>
+                <Card
+                  variant="outlined"
+                  sx={{
+                    p: 2.5,
+                    borderRadius: 3,
+                    bgcolor: alpha(theme.palette.error.main, 0.03),
+                    border: `1px solid ${alpha(theme.palette.error.main, 0.18)}`,
+                    display: "flex",
+                    flexDirection: "column",
+                    width: "100%",
+                    height: "100%",
+                  }}
+                >
+                  <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1.5 }}>
+                    <Avatar sx={{ bgcolor: "error.main", width: 34, height: 34 }}>
+                      <FavoriteRoundedIcon sx={{ fontSize: 19, color: "#fff" }} />
+                    </Avatar>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "error.dark", fontSize: "1.05rem" }}>
+                      {t('intro_core_values')}
+                    </Typography>
+                  </Stack>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: "text.secondary",
+                      fontWeight: 500,
+                      lineHeight: 1.65,
+                      textAlign: "justify",
+                      flex: 1,
+                      fontSize: "0.92rem",
+                    }}
+                  >
+                    {introduction.coreValues}
+                  </Typography>
+                </Card>
+              </ScrollReveal>
+            </Box>
+          )}
+        </Box>
+      )}
+
       {introduction?.imageUrls && introduction.imageUrls.length > 0 && (
-        <Box sx={{ mt: 4, mb: 4 }}>
-          <Typography variant="h6" color="primary" fontWeight={700} sx={{ mb: 3 }}>
+        <Box sx={{ mt: 5, mb: 4 }}>
+          <Typography
+            variant="h5"
+            color="primary.main"
+            fontWeight={800}
+            sx={{ mb: 3, fontSize: "1.25rem" }}
+          >
             {t('intro_activity_images')}
           </Typography>
           <Grid container spacing={2}>
@@ -170,75 +320,6 @@ const IntroducePage = () => {
               </Grid>
             ))}
           </Grid>
-        </Box>
-      )}
-
-      {(introduction?.vision || introduction?.mission || introduction?.coreValues) && (
-        <Box sx={{ mt: 6 }}>
-          <ScrollRevealGroup
-            stagger={0.09}
-            sx={{ display: "flex", flexDirection: "column", gap: 4 }}
-          >
-            {introduction?.vision && (
-              <ScrollRevealItem sx={{ flex: 1 }}>
-                <Typography
-                  variant="h5"
-                  color="primary.main"
-                  fontWeight={800}
-                  gutterBottom
-                  sx={{ display: "flex", alignItems: "center", gap: 1, fontSize: "1.25rem", mb: 1.5 }}
-                >
-                  {t('intro_vision')}
-                </Typography>
-                <Typography
-                  variant="body1"
-                  sx={{ lineHeight: 1.6, color: "text.primary", textAlign: "justify", fontSize: "1rem" }}
-                >
-                  {introduction.vision}
-                </Typography>
-              </ScrollRevealItem>
-            )}
-
-            {introduction?.mission && (
-              <ScrollRevealItem sx={{ flex: 1 }}>
-                <Typography
-                  variant="h5"
-                  color="primary.main"
-                  fontWeight={800}
-                  gutterBottom
-                  sx={{ display: "flex", alignItems: "center", gap: 1, fontSize: "1.25rem", mb: 1.5 }}
-                >
-                  {t('intro_mission')}
-                </Typography>
-                <Typography
-                  variant="body1"
-                  sx={{ lineHeight: 1.6, color: "text.primary", textAlign: "justify", fontSize: "1rem" }}
-                >
-                  {introduction.mission}
-                </Typography>
-              </ScrollRevealItem>
-            )}
-
-            {introduction?.coreValues && (
-              <ScrollRevealItem sx={{ flex: 1 }}>
-                <Typography
-                  variant="h5"
-                  color="primary.main"
-                  fontWeight={800}
-                  gutterBottom
-                  sx={{ display: "flex", alignItems: "center", gap: 1, fontSize: "1.25rem", mb: 1.5 }}
-                >
-                  {t('intro_core_values')}
-                </Typography>
-                <Typography
-                  variant="body1"
-                  sx={{ lineHeight: 1.6, color: "text.primary", textAlign: "justify", fontSize: "1rem" }}
-                >
-                  {introduction.coreValues}
-                </Typography>
-              </ScrollRevealItem>
-            )}
-          </ScrollRevealGroup>
         </Box>
       )}
     </Box>
@@ -388,6 +469,34 @@ const IntroducePage = () => {
     }
   };
 
+  const getHeroBannerSrc = () => {
+    let url = introduction?.bannerUrl || null;
+
+    if (!url && organization?.brandConfig) {
+      try {
+        const b = typeof organization.brandConfig === 'string' ? JSON.parse(organization.brandConfig) : organization.brandConfig;
+        url = b?.hero_banner_url || b?.heroBannerUrl;
+      } catch (e) {}
+    }
+
+    if (!url && organization?.featuresConfig) {
+      try {
+        const f = typeof organization.featuresConfig === 'string' ? JSON.parse(organization.featuresConfig) : organization.featuresConfig;
+        const b = f?.brand_config || f?.brandConfig;
+        url = b?.hero_banner_url || b?.heroBannerUrl;
+      } catch (e) {}
+    }
+
+    return (
+      url ||
+      organization?.heroBannerUrl ||
+      organization?.hero_banner_url ||
+      BANNER_IMG
+    );
+  };
+
+  const activeBanner = getHeroBannerSrc();
+
   return (
     <Page
       key={location.pathname}
@@ -420,7 +529,7 @@ const IntroducePage = () => {
               inset: 0,
               top: "-1px",
               backgroundColor: "primary.dark",
-              backgroundImage: `url(${introduction?.bannerUrl || BANNER_IMG})`,
+              backgroundImage: `url(${activeBanner})`,
               backgroundSize: "cover",
               backgroundPosition: "center",
               backgroundRepeat: "no-repeat",
@@ -474,11 +583,11 @@ const IntroducePage = () => {
               </ScrollRevealItem>
 
               {/* Full-width cover image directly under title */}
-              {!loading && (introduction?.bannerUrl || BANNER_IMG) && (
+              {!loading && activeBanner && (
                 <ScrollRevealItem>
                   <Box
                     component="img"
-                    src={introduction?.bannerUrl || BANNER_IMG}
+                    src={activeBanner}
                     alt={config.title}
                     sx={{
                       width: "100%",

@@ -40,7 +40,7 @@ import ActionOverlay from '../../components/ActionOverlay';
 import { useAsyncAction } from '../../hooks/useAsyncAction';
 import { formatAccountStatusLabel } from '../../constants/adminStatusDisplay';
 import { USER_ROLES } from '../../constants/adminDefaultUsers';
-import { useAdminUsersContext } from '../../stores/AdminStore';
+import { useAdminUsersContext, useAdminSystemContext } from '../../stores/AdminStore';
 import useAdminUserGrowthStats from '../../hooks/admin/useAdminUserGrowthStats';
 import { adminOrganizationApi } from '../../utils/api';
 import { formatDateTime } from '../../utils/dateFormatter';
@@ -116,6 +116,7 @@ const AdminUsersListPage = () => {
     unbanUser,
     sortedUsers,
   } = useAdminUsersContext();
+  const system = useAdminSystemContext();
 
   const { setBreadcrumbs, adminBase } = useOutletContext();
   const { user: currentUser } = useAuth();
@@ -318,7 +319,7 @@ const AdminUsersListPage = () => {
     </Stack>
   );
 
-  const { stats: growthStats } = useAdminUserGrowthStats();
+  const { stats: growthStats } = useAdminUserGrowthStats(system?.stableOrgId);
   
   const stats = {
     total: filteredCount,

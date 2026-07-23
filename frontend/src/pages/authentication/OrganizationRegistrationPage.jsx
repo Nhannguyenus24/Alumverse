@@ -193,8 +193,8 @@ const OrganizationRegistrationPage = () => {
   // Status
   const [loading, setLoading] = useState(false);
 
-  // Proof file
-  const [proofFile, setProofFile] = useState(null);
+  // Proof files
+  const [proofFiles, setProofFiles] = useState([]);
 
   // Verifiers
   const [trustedVerifiers, setTrustedVerifiers] = useState([]);
@@ -277,14 +277,15 @@ const OrganizationRegistrationPage = () => {
   }, [organizationId]);
 
   const handleProofFileChange = (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(event.target.files || []);
+    if (files.length === 0) return;
     const allowedTypes = ["application/pdf", "image/jpeg", "image/png"];
     const maxSizeBytes = 5 * 1024 * 1024;
-    if (!allowedTypes.includes(file.type)) { enqueueSnackbar(t("auth:proof_invalid_type"), { variant: 'error' }); return; }
-    if (file.size > maxSizeBytes) { enqueueSnackbar(t("auth:proof_too_large"), { variant: 'error' }); return; }
+    if (files.length > 3) { enqueueSnackbar(t("auth:proof_too_many"), { variant: 'error' }); return; }
+    if (files.some((file) => !allowedTypes.includes(file.type))) { enqueueSnackbar(t("auth:proof_invalid_type"), { variant: 'error' }); return; }
+    if (files.some((file) => file.size > maxSizeBytes)) { enqueueSnackbar(t("auth:proof_too_large"), { variant: 'error' }); return; }
     setShowProofPanel(true);
-    setProofFile(file);
+    setProofFiles(files);
   };
 
   const toggleVerifier = (userId) => {
@@ -295,7 +296,7 @@ const OrganizationRegistrationPage = () => {
   };
 
   const onSubmit = async (data) => {
-    if (!proofFile && selectedVerifierUserIds.length === 0) {
+    if (proofFiles.length === 0 && selectedVerifierUserIds.length === 0) {
       enqueueSnackbar(t("auth:select_verification_method"), { variant: 'error' });
       return;
     }
@@ -339,15 +340,17 @@ const OrganizationRegistrationPage = () => {
           });
         }
 
-        // Upload proof document
-        if (proofFile) {
+        // Upload proof documents
+        if (proofFiles.length > 0) {
           try {
-            const base64File = await fileToBase64(proofFile);
+            const files = await Promise.all(proofFiles.map(async (file) => ({
+              base64File: await fileToBase64(file),
+              originalFileName: file.name,
+              documentType: file.type === "application/pdf" ? "pdf" : "image",
+            })));
             await createVerificationRequest({
               organizationId: Number(data.organizationId),
-              base64File,
-              originalFileName: proofFile.name,
-              documentType: proofFile.type === "application/pdf" ? "pdf" : "image",
+              files,
             });
             enqueueSnackbar(t("auth:proof_verification_sent"), { variant: "success" });
           } catch (proofError) {
@@ -560,7 +563,7 @@ const OrganizationRegistrationPage = () => {
                 icon="eva:cloud-upload-fill"
                 title={t("auth:verification_opt_proof_title")}
                 description={t("auth:verification_opt_proof_desc")}
-                selected={showProofPanel || Boolean(proofFile)}
+                selected={showProofPanel || proofFiles.length > 0}
                 onClick={() => setShowProofPanel((value) => !value)}
               />
               <VerificationOptionCard
@@ -589,13 +592,16 @@ const OrganizationRegistrationPage = () => {
                   startIcon={<Iconify icon="eva:cloud-upload-fill" />}
                   sx={{ alignSelf: "flex-start" }}
                 >
-                  {proofFile ? t("auth:proof_change_file") : t("auth:proof_select_file")}
-                  <input hidden type="file" accept=".pdf,image/jpeg,image/png" onChange={handleProofFileChange} />
+                  {proofFiles.length > 0 ? t("auth:proof_change_file") : t("auth:proof_select_file")}
+                  <input hidden multiple type="file" accept=".pdf,image/jpeg,image/png" onChange={handleProofFileChange} />
                 </Button>
-                <Typography variant="caption" color={proofFile ? "success.main" : "textSecondary"}>
-                  {proofFile
-                    ? `✓ ${t("auth:proof_selected", { name: proofFile.name })}`
+                <Typography variant="caption" color={proofFiles.length > 0 ? "success.main" : "textSecondary"}>
+                  {proofFiles.length > 0
+                    ? `✓ ${t("auth:proof_selected", { name: proofFiles.map((file) => file.name).join(", ") })}`
                     : t("auth:proof_format_hint")}
+                </Typography>
+                <Typography variant="caption" color="textSecondary" sx={{ lineHeight: 1.6 }}>
+                  {t("auth:verification_opt_proof_guide")}
                 </Typography>
               </Box>
             )}

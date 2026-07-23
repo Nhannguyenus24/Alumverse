@@ -4,6 +4,7 @@ import com.service.backend.user.dto.*;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.dao.DataIntegrityViolationException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -16,6 +17,7 @@ import org.springframework.util.StringUtils;
 import com.service.backend.auth.dao.AuthRepository;
 import com.service.backend.organization.dao.OrganizationRepository;
 import com.service.backend.shared.entity.OrganizationMember;
+import com.service.backend.shared.enums.DocumentType;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.enums.Status;
 import com.service.backend.shared.enums.VerificationLevel;
@@ -34,6 +36,7 @@ import com.service.backend.shared.service.OCRService;
 import com.service.backend.shared.entity.UserNotificationSettings;
 
 import lombok.RequiredArgsConstructor;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
@@ -42,6 +45,9 @@ import reactor.core.scheduler.Schedulers;
 public class UserService {
 
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
+    private static final int MAX_VERIFICATION_FILES = 3;
+    private static final int MIN_READABLE_OCR_LENGTH = 25;
+    private static final String UNREADABLE = "UNREADABLE";
 
     private final UserProfileRepository userProfileRepository;
     private final AuthRepository authRepository;
@@ -71,30 +77,123 @@ public class UserService {
 
     @Transactional
     public Mono<Void> createVerificationRequest(Long currentUserId, CreateVerificationRequest request) {
-        return fileUploadService.uploadBase64File(request.getBase64File(), request.getOriginalFileName())
-                .flatMap(fileUrl -> authRepository.insertVerificationRequest(
-                        request.getOrganizationId(),
-                        currentUserId.intValue(),
-                        fileUrl,
-                        request.getDocumentType() != null ? request.getDocumentType().getValue() : null
-                ).publishOn(Schedulers.boundedElastic()).doOnSuccess(requestId -> {
-                    if (requestId != null) {
-                        String localPath = fileUploadService.getLocalPath(fileUrl);
-                        if (localPath != null) {
-                            ocrService.extractTextFromFile(localPath)
-                                    .flatMap(text -> authRepository.updateAiSummary(requestId, text))
-                                    // Đọc tài liệu mất ~30s sau khi gửi. Báo cho tổ chức biết đã xong
-                                    // để màn hình duyệt của admin tự làm mới, khỏi ngồi đoán.
-                                    .doOnSuccess(ignored -> sseService.sendToOrganization(
-                                            request.getOrganizationId(),
-                                            "verification-ocr-ready",
-                                            Map.of("requestId", requestId)))
-                                    .doOnError(e -> logger.error("Background OCR failed for requestId {}: {}", requestId, e.getMessage()))
-                                    .subscribe();
+        return Mono.defer(() -> {
+            List<CreateVerificationRequest.VerificationFileRequest> files = normalizeVerificationFiles(request);
+            CreateVerificationRequest.VerificationFileRequest firstFile = files.get(0);
+
+            return fileUploadService.uploadBase64File(firstFile.getBase64File(), firstFile.getOriginalFileName())
+                    .flatMap(firstFileUrl -> authRepository.insertVerificationRequest(
+                            request.getOrganizationId(),
+                            currentUserId.intValue(),
+                            firstFileUrl,
+                            documentTypeValue(firstFile)
+                    ).publishOn(Schedulers.boundedElastic()).doOnSuccess(requestId -> {
+                        if (requestId != null) {
+                            startVerificationOcr(requestId, request.getOrganizationId(), firstFileUrl, files);
                         }
-                    }
-                })).flatMap(v -> userOrganizationMemberRepository.updateVerificationLevelByOrgAndUser(request.getOrganizationId(), currentUserId.intValue(), 1))
-                .then();
+                    }))
+                    .flatMap(v -> userOrganizationMemberRepository.updateVerificationLevelByOrgAndUser(
+                            request.getOrganizationId(), currentUserId.intValue(), 1))
+                    .then();
+        });
+    }
+
+    private void startVerificationOcr(
+            Integer requestId,
+            Integer organizationId,
+            String firstFileUrl,
+            List<CreateVerificationRequest.VerificationFileRequest> files) {
+        extractFirstReadableFile(firstFileUrl, files)
+                .defaultIfEmpty(new VerificationOcrResult(firstFileUrl, documentTypeValue(files.get(0)), UNREADABLE))
+                .flatMap(result -> authRepository.updateVerificationDocumentAndAiSummary(
+                        requestId, result.fileUrl(), result.documentType(), result.text()))
+                // Đọc tài liệu mất ~30s sau khi gửi. Báo cho tổ chức biết đã xong
+                // để màn hình duyệt của admin tự làm mới, khỏi ngồi đoán.
+                .doOnSuccess(ignored -> sseService.sendToOrganization(
+                        organizationId,
+                        "verification-ocr-ready",
+                        Map.of("requestId", requestId)))
+                .doOnError(e -> logger.error("Background OCR failed for requestId {}: {}", requestId, e.getMessage()))
+                .subscribe();
+    }
+
+    private Mono<VerificationOcrResult> extractFirstReadableFile(
+            String firstFileUrl,
+            List<CreateVerificationRequest.VerificationFileRequest> files) {
+        return Flux.range(0, files.size())
+                .concatMap(index -> uploadVerificationFile(index, firstFileUrl, files.get(index))
+                        .flatMap(uploaded -> extractUploadedVerificationFile(uploaded)
+                                .onErrorReturn(new VerificationOcrResult(
+                                        uploaded.fileUrl(), uploaded.documentType(), UNREADABLE)))
+                        .onErrorResume(e -> {
+                            logger.warn("Verification OCR skipped file {}: {}", index + 1, e.getMessage());
+                            return Mono.empty();
+                        }))
+                .filter(result -> isReadableOcrText(result.text()))
+                .next();
+    }
+
+    private Mono<UploadedVerificationFile> uploadVerificationFile(
+            int index,
+            String firstFileUrl,
+            CreateVerificationRequest.VerificationFileRequest file) {
+        Mono<String> fileUrl = index == 0
+                ? Mono.just(firstFileUrl)
+                : fileUploadService.uploadBase64File(file.getBase64File(), file.getOriginalFileName());
+        return fileUrl.map(url -> new UploadedVerificationFile(url, documentTypeValue(file)));
+    }
+
+    private Mono<VerificationOcrResult> extractUploadedVerificationFile(UploadedVerificationFile file) {
+        String localPath = fileUploadService.getLocalPath(file.fileUrl());
+        if (localPath == null) {
+            return Mono.just(new VerificationOcrResult(file.fileUrl(), file.documentType(), UNREADABLE));
+        }
+        return ocrService.extractTextFromFile(localPath)
+                .map(text -> new VerificationOcrResult(file.fileUrl(), file.documentType(), text));
+    }
+
+    private List<CreateVerificationRequest.VerificationFileRequest> normalizeVerificationFiles(CreateVerificationRequest request) {
+        List<CreateVerificationRequest.VerificationFileRequest> files = new ArrayList<>();
+        if (request.getFiles() != null) {
+            files.addAll(request.getFiles());
+        }
+        if (files.isEmpty() && StringUtils.hasText(request.getBase64File()) && StringUtils.hasText(request.getOriginalFileName())) {
+            CreateVerificationRequest.VerificationFileRequest file = new CreateVerificationRequest.VerificationFileRequest();
+            file.setBase64File(request.getBase64File());
+            file.setOriginalFileName(request.getOriginalFileName());
+            file.setDocumentType(request.getDocumentType());
+            files.add(file);
+        }
+        if (files.isEmpty()) {
+            throw new ApplicationException(ErrorCode.BAD_REQUEST, "At least one verification file is required");
+        }
+        if (files.size() > MAX_VERIFICATION_FILES) {
+            throw new ApplicationException(ErrorCode.BAD_REQUEST, "At most 3 verification files are allowed");
+        }
+        if (files.stream().anyMatch(file -> !StringUtils.hasText(file.getBase64File())
+                || !StringUtils.hasText(file.getOriginalFileName()) || file.getDocumentType() == null)) {
+            throw new ApplicationException(ErrorCode.BAD_REQUEST, "Each verification file must include file content, name, and type");
+        }
+        return files;
+    }
+
+    private String documentTypeValue(CreateVerificationRequest.VerificationFileRequest file) {
+        DocumentType type = file.getDocumentType();
+        return type != null ? type.getValue() : null;
+    }
+
+    private boolean isReadableOcrText(String text) {
+        if (!StringUtils.hasText(text)) {
+            return false;
+        }
+        String trimmed = text.trim();
+        return trimmed.length() >= MIN_READABLE_OCR_LENGTH && !UNREADABLE.equalsIgnoreCase(trimmed);
+    }
+
+    private record UploadedVerificationFile(String fileUrl, String documentType) {
+    }
+
+    private record VerificationOcrResult(String fileUrl, String documentType, String text) {
     }
 
     @Transactional

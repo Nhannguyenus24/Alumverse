@@ -53,6 +53,8 @@ public class FeatureConfig {
         private String faviconUrl;
         @JsonProperty("hero_banner_url")
         private String heroBannerUrl;
+        @JsonProperty("hero_slides")
+        private List<String> heroSlides;
         @JsonProperty("theme_colors")
         private ThemeColors themeColors;
     }

@@ -1370,6 +1370,10 @@ const mentorshipApi = {
 	uploadCvFile({ base64String, fileName }) {
 		return apiClient.post(`${BASE_MENTOR}/cv/upload`, { base64String, fileName });
 	},
+
+	getHubStats(limit = 5) {
+		return apiClient.get('/api/mentorship/hub/stats', { params: { limit } });
+	},
 };
 
 export const {
@@ -1412,6 +1416,7 @@ export const {
 	updateSessionMeetingLink: updateMentorSessionMeetingLink,
 	getMyMentorFeedbacks,
 	uploadCvFile,
+	getHubStats,
 } = mentorshipApi;
 
 export const notificationApi = {

@@ -10,6 +10,7 @@ import {
   DialogTitle,
   TextField,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
@@ -22,10 +23,9 @@ import { eventApi } from '../../utils/api';
 import JoinEventDialog from '../event/JoinEventDialog';
 import { useEventQuestions, formatAnswersForApi } from '../../hooks/events/useEventQuestions';
 import { findCancelableTicketForEvent, getEventRegisteredState } from '../../utils/eventRegistration';
+import { getFeaturedTitleFontSize } from '../../utils/text';
 import { useCanContribute } from '../../hooks/useCanContribute';
 import { ContributeGuardTooltip } from '../ContributeGuard';
-
-import { getFeaturedTitleFontSize } from '../../utils/text';
 
 const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
   const { t } = useTranslation(['common', 'event']);
@@ -101,7 +101,11 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
       return;
     }
     if (isRegistrationClosed) return;
-    setOpenJoinDialog(true);
+    if (questions.length > 0) {
+      setOpenJoinDialog(true);
+    } else {
+      handleConfirmJoin({});
+    }
   };
 
   const handleConfirmJoin = async (answerMap) => {
@@ -159,21 +163,45 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
         flexDirection: { xs: 'column', md: 'row' },
         alignItems: { xs: 'stretch', md: 'stretch' },
         width: '100%',
-        gap: 3,
-        transition: 'transform 0.25s ease',
+        gap: { xs: 1.25, md: 3 },
+        transition: 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
         transform: hovered ? 'translateY(-4px)' : 'translateY(0)',
       }}
     >
       {/* IMAGE */}
       <Box
         sx={{
+          position: 'relative',
           width: { xs: '100%', md: '45%' },
-          height: { xs: 200, md: 'auto' },
-          minHeight: { xs: 200, md: 260 },
+          height: { xs: 180, sm: 220, md: 'auto' },
+          minHeight: { xs: 180, sm: 220, md: 260 },
           alignSelf: { md: 'stretch' },
           borderRadius: 2,
           overflow: 'hidden',
           flexShrink: 0,
+          boxShadow: hovered
+            ? '0 8px 20px rgba(0,0,0,0.12)'
+            : '0 2px 8px rgba(0,0,0,0.04)',
+          transition: 'box-shadow 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            right: 0,
+            width: '140%',
+            height: '140%',
+            transformOrigin: '100% 0%',
+            background: (theme) =>
+              `radial-gradient(circle at 100% 0%, ${alpha(theme.palette.primary.main, 0.34)} 0%, ${alpha(
+                theme.palette.primary.main,
+                0.12
+              )} 40%, transparent 75%)`,
+            opacity: hovered ? 1 : 0,
+            transform: hovered ? 'scale(1.15)' : 'scale(0.2)',
+            transition: 'opacity 0.65s cubic-bezier(0.25, 1, 0.5, 1), transform 0.65s cubic-bezier(0.25, 1, 0.5, 1)',
+            pointerEvents: 'none',
+            zIndex: 2,
+          },
         }}
       >
         <Box
@@ -184,20 +212,20 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
             width: '100%',
             height: '100%',
             objectFit: 'cover',
-            transition: 'transform 0.4s ease',
-            transform: hovered ? 'scale(1.06)' : 'scale(1)',
+            transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+            transform: hovered ? 'scale(1.08)' : 'scale(1)',
           }}
         />
       </Box>
 
       {/* CONTENT */}
       <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: { md: 260 } }}>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 0.5, md: 1 } }}>
           <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 600 }}>
             {article.date}
           </Typography>
 
-          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5, my: 0.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5, my: { xs: 0, md: 0.5 } }}>
             <Typography
               variant="h2"
               fontWeight={700}
@@ -235,19 +263,19 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
 
         <Typography
           sx={{
-            mt: 2,
+            mt: { xs: 0.75, md: 2 },
             display: '-webkit-box',
             WebkitLineClamp: (article.title || '').length > 75 ? 2 : 3,
             WebkitBoxOrient: 'vertical',
             overflow: 'hidden',
-            lineHeight: 1.6,
+            lineHeight: { xs: 1.4, md: 1.6 },
           }}
         >
           {article.description}
         </Typography>
 
         {/* ACTION BUTTONS */}
-        <Box sx={{ mt: 'auto', pt: 2 }}>
+        <Box sx={{ mt: 'auto', pt: { xs: 1.25, md: 2 } }}>
           {isAdmin ? (
             <Stack direction="row" spacing={1}>
               <Button

@@ -9,6 +9,7 @@ import Chart from '../Chart';
 import AdminSectionPanel from './AdminSectionPanel';
 import AdminDashboardMetricTile from './AdminDashboardMetricTile';
 import useAdminUserGrowthStats from '../../hooks/admin/useAdminUserGrowthStats';
+import { useAdminSystemContext } from '../../stores/AdminStore';
 
 const metricRowSx = {
   '& > *': { flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 8px)', md: '1 1 0' } },
@@ -16,7 +17,8 @@ const metricRowSx = {
 
 const AdminUserGrowthSection = () => {
   const { t } = useTranslation('admin');
-  const { stats } = useAdminUserGrowthStats();
+  const system = useAdminSystemContext();
+  const { stats } = useAdminUserGrowthStats(system?.stableOrgId);
 
   const fmtDate = (str) => {
     const p = String(str ?? '').slice(0, 10).split('-');

@@ -30,6 +30,7 @@ import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
 import EventAvailableOutlinedIcon from "@mui/icons-material/EventAvailableOutlined";
 import Page from "../../components/Page";
 import useOrganizationStore from "../../stores/organizationStore";
+import { useOrganization } from "../../hooks/useOrganization";
 import { useArticleById } from "../../hooks/articles/useArticleById";
 import DOMPurify from "dompurify";
 import { formatDate, formatDateRange } from "../../utils/dateFormatter";
@@ -448,22 +449,34 @@ const ArticleHighlightCard = ({ data, channel, eventId, isAdmin = false, sharedI
       sx={(theme) => ({
         mt: 3,
         mb: 6,
-        p: 5,
+        p: { xs: 2.5, sm: 4, md: 5 },
         bgcolor: alpha(theme.palette.primary.main, theme.palette.mode === "dark" ? 0.14 : 0.08),
         border: "1px solid",
         borderColor: alpha(theme.palette.primary.main, theme.palette.mode === "dark" ? 0.28 : 0.14),
         borderRadius: 2,
         display: "flex",
         flexDirection: { xs: "column", md: "row" },
-        gap: 3,
+        gap: { xs: 2, md: 3 },
       })}
     >
       {/* LEFT */}
       <Box sx={{ flex: 1 }}>
-        <Typography variant="h4" sx={{ color: "primary.main" }}>{data.channel}</Typography>
-        <Typography variant="h2" sx={{ color: "primary.main" }}>{data.title}</Typography>
-        <Typography variant="body1">{data.organizer}</Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>{data.date}</Typography>
+        <Typography variant="h4" sx={{ color: "primary.main", fontSize: { xs: "0.9rem", sm: "1.1rem", md: "1.25rem" } }}>{data.channel}</Typography>
+        <Typography
+          variant="h2"
+          sx={{
+            color: "primary.main",
+            fontSize: { xs: "1.15rem", sm: "1.4rem", md: "1.85rem" },
+            fontWeight: 700,
+            my: 1,
+            wordBreak: "break-word",
+            lineHeight: 1.3,
+          }}
+        >
+          {data.title}
+        </Typography>
+        <Typography variant="body1" sx={{ fontSize: { xs: "0.9rem", md: "1rem" } }}>{data.organizer}</Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75, fontSize: { xs: "0.8rem", md: "0.875rem" } }}>{data.date}</Typography>
       </Box>
 
       {/* RIGHT */}
@@ -689,7 +702,30 @@ const ArticlePage = () => {
     }
   };
 
-  const currentOrgId = useOrganizationStore((s) => s.organization?.id ?? null);
+  const { organization } = useOrganization();
+  const currentOrgId = organization?.id ?? null;
+  const orgHeroBannerUrl = useMemo(() => {
+    if (!organization) return null;
+    let url = null;
+
+    try {
+      if (organization.brandConfig) {
+        const b = typeof organization.brandConfig === 'string' ? JSON.parse(organization.brandConfig) : organization.brandConfig;
+        url = b?.hero_banner_url || b?.heroBannerUrl;
+      }
+    } catch (e) {}
+
+    if (!url && organization.featuresConfig) {
+      try {
+        const f = typeof organization.featuresConfig === 'string' ? JSON.parse(organization.featuresConfig) : organization.featuresConfig;
+        const b = f?.brand_config || f?.brandConfig;
+        url = b?.hero_banner_url || b?.heroBannerUrl;
+      } catch (e) {}
+    }
+
+    return url || organization?.heroBannerUrl || organization?.hero_banner_url || null;
+  }, [organization]);
+
   const articleOrgId = article?.organizationId ?? article?.organization_id;
   const isOrgMismatch = Boolean(
     article &&
@@ -796,14 +832,16 @@ const ArticlePage = () => {
           stats: [{ value: article.donorCount ?? 0, label: t('donation:stat_donors') }, { value: t('donation:currency_vnd', { amount: formatNumberVi(article.targetAmount ?? 0) }), label: t('donation:stat_target') }],
         }
       : null;
-  
+
+  const activeHeroBanner = article.thumbnailUrl || orgHeroBannerUrl;
+
   return (
     <Page title={article.title} meta={<meta name="description" content={`${article.title} - AlumVerse`} />}>
       <Container maxWidth={false} disableGutters sx={{ display: "flex", flexDirection: "column" }}>
         {/* Hero + absolute content frame wrapper */}
         <Box ref={heroRef} sx={{ position: "relative", top: "-1px", pt: "1px", height: { xs: "42vh", sm: "50vh", md: "62vh" }, minHeight: { xs: 300, sm: 380, md: 480 } }}>
           {/* Hero banner */}
-          <ScrollReveal direction="none" duration={0.82} amount={0.05} sx={{ position: "absolute", inset: 0, top: "-1px", backgroundColor: "primary.dark", backgroundImage: article.thumbnailUrl ? `url(${article.thumbnailUrl})` : "none", backgroundSize: "cover", backgroundPosition: "center", backgroundRepeat: "no-repeat" }} />
+          <ScrollReveal direction="none" duration={0.82} amount={0.05} sx={{ position: "absolute", inset: 0, top: "-1px", backgroundColor: "primary.dark", backgroundImage: activeHeroBanner ? `url(${activeHeroBanner})` : "none", backgroundSize: "cover", backgroundPosition: "center", backgroundRepeat: "no-repeat" }} />
           {/* Main content frame */}
           <Box ref={contentRef} sx={{ position: "absolute", top: { xs: "54%", sm: "56%", md: "54%" }, left: 0, right: 0, display: "flex", flexDirection: "column", alignItems: "center", px: { xs: 2, sm: 3 } }}>
             <ScrollRevealGroup stagger={0.09} sx={{ width: "100%", maxWidth: 1200, backgroundColor: contentFrameBg, borderRadius: 2, boxShadow: contentFrameShadow, overflow: "hidden", py: { xs: 5, md: 6 }, px: { xs: 3, sm: 4, md: 6 } }}>
