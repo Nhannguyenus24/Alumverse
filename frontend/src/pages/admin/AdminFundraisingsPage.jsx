@@ -23,8 +23,13 @@ import {
   TableHead,
   TableRow,
   Paper,
+  Slider,
 } from "@mui/material";
 import LaunchOutlinedIcon from "@mui/icons-material/LaunchOutlined";
+import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
+import OpenInNewOutlinedIcon from "@mui/icons-material/OpenInNewOutlined";
+import ZoomInOutlinedIcon from "@mui/icons-material/ZoomInOutlined";
+import ZoomOutOutlinedIcon from "@mui/icons-material/ZoomOutOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
@@ -53,6 +58,13 @@ import { useDebounce } from "../../hooks/useDebounce";
 import { exportToCSV } from "../../utils/exportUtils";
 
 const isFundActive = (fund, getFundPhase) => getFundPhase(fund.timeStarted, fund.timeEnded).status === "ACTIVE";
+
+// Fund documents are PDF/DOC/DOCX. Only PDFs can be previewed inline (iframe);
+// DOC/DOCX fall back to opening in a new tab.
+const isPdfDocument = (url) => {
+  const value = String(url || "");
+  return /^data:application\/pdf/i.test(value) || /\.pdf(?:[?#]|$)/i.test(value);
+};
 
 const AdminFundraisingsPage = () => {
   const navigate = useNavigate();
@@ -121,6 +133,14 @@ const AdminFundraisingsPage = () => {
   const [isExporting, setIsExporting] = useState(false);
   const [visibilityTarget, setVisibilityTarget] = useState(null);
   const [isTogglingVisibility, setIsTogglingVisibility] = useState(false);
+  // The fund whose document is being previewed (null = viewer closed).
+  const [documentTarget, setDocumentTarget] = useState(null);
+  const [documentZoom, setDocumentZoom] = useState(1);
+
+  const openDocumentViewer = (fund) => {
+    setDocumentZoom(1);
+    setDocumentTarget(fund);
+  };
 
   const loadCampaignDonations = async (fundId, pageNum = 1, keyword = "", searchByField = "name") => {
     setDonationsLoading(true);
@@ -267,6 +287,30 @@ const AdminFundraisingsPage = () => {
       ),
     },
     { id: "donorCount", label: t('fund_col_donors'), align: "right" },
+    {
+      id: "fundDocumentUrl",
+      label: t('fund_document_section'),
+      align: "center",
+      render: (_, fund) =>
+        fund.fundDocumentUrl ? (
+          <Tooltip title={t('verif_view_document')}>
+            <IconButton
+              size="small"
+              sx={{ color: "info.main" }}
+              onClick={(ev) => {
+                ev.stopPropagation();
+                openDocumentViewer(fund);
+              }}
+            >
+              <DescriptionOutlinedIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        ) : (
+          <Typography variant="body2" sx={{ color: "text.disabled" }}>
+            —
+          </Typography>
+        ),
+    },
     {
       id: "updatedAt",
       label: t('fund_col_updated_at'),
@@ -571,6 +615,145 @@ const AdminFundraisingsPage = () => {
           <Button
             variant="outlined"
             onClick={() => setDetailItem(null)}
+            sx={{ textTransform: "none", fontWeight: 700 }}
+          >
+            {t('fund_btn_close')}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Document viewer: PDFs preview inline with zoom; DOC/DOCX open in a new tab */}
+      <Dialog
+        open={Boolean(documentTarget)}
+        onClose={() => setDocumentTarget(null)}
+        fullWidth
+        maxWidth="lg"
+      >
+        <DialogTitle
+          sx={{
+            fontWeight: 800,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 2,
+            flexWrap: "wrap",
+          }}
+        >
+          <span>{t('fund_document_viewer_title')}</span>
+          {isPdfDocument(documentTarget?.fundDocumentUrl) && (
+            <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: { xs: "100%", sm: 280 } }}>
+              <Tooltip title={t('verif_zoom_out')}>
+                <span>
+                  <IconButton
+                    size="small"
+                    onClick={() => setDocumentZoom((value) => Math.max(0.5, Number((value - 0.25).toFixed(2))))}
+                    disabled={documentZoom <= 0.5}
+                  >
+                    <ZoomOutOutlinedIcon fontSize="small" />
+                  </IconButton>
+                </span>
+              </Tooltip>
+              <Slider
+                size="small"
+                min={0.5}
+                max={2.5}
+                step={0.25}
+                value={documentZoom}
+                onChange={(_, value) => setDocumentZoom(value)}
+                valueLabelDisplay="auto"
+                valueLabelFormat={(value) => `${Math.round(value * 100)}%`}
+                aria-label={t('verif_zoom_level')}
+                sx={{ flex: 1 }}
+              />
+              <Typography
+                variant="body2"
+                sx={{ fontWeight: 700, minWidth: 48, textAlign: "right", fontVariantNumeric: "tabular-nums" }}
+              >
+                {Math.round(documentZoom * 100)}%
+              </Typography>
+              <Tooltip title={t('verif_zoom_in')}>
+                <span>
+                  <IconButton
+                    size="small"
+                    onClick={() => setDocumentZoom((value) => Math.min(2.5, Number((value + 0.25).toFixed(2))))}
+                    disabled={documentZoom >= 2.5}
+                  >
+                    <ZoomInOutlinedIcon fontSize="small" />
+                  </IconButton>
+                </span>
+              </Tooltip>
+              <Button size="small" onClick={() => setDocumentZoom(1)} disabled={documentZoom === 1}>
+                {t('verif_zoom_reset')}
+              </Button>
+            </Stack>
+          )}
+        </DialogTitle>
+        <DialogContent dividers sx={{ height: "78vh", p: 0, overflow: "hidden" }}>
+          {isPdfDocument(documentTarget?.fundDocumentUrl) ? (
+            <Box sx={{ width: "100%", height: "100%", overflow: "auto" }}>
+              <Box
+                sx={{
+                  width: `${100 / documentZoom}%`,
+                  height: `${100 / documentZoom}%`,
+                  minHeight: `${78 / documentZoom}vh`,
+                  transform: `scale(${documentZoom})`,
+                  transformOrigin: "top left",
+                }}
+              >
+                <iframe
+                  src={documentTarget?.fundDocumentUrl}
+                  title={t('fund_document_viewer_title')}
+                  style={{ width: "100%", height: "100%", border: "none" }}
+                />
+              </Box>
+            </Box>
+          ) : (
+            <Box
+              sx={{
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 2,
+                p: 4,
+                textAlign: "center",
+              }}
+            >
+              <DescriptionOutlinedIcon sx={{ fontSize: 56, color: "text.disabled" }} />
+              <Typography variant="body1" color="text.secondary" sx={{ fontWeight: 600, maxWidth: 420 }}>
+                {t('fund_document_not_previewable')}
+              </Typography>
+              <Button
+                variant="contained"
+                startIcon={<OpenInNewOutlinedIcon />}
+                component="a"
+                href={documentTarget?.fundDocumentUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                sx={{ textTransform: "none", fontWeight: 700 }}
+              >
+                {t('fund_document_open_new_tab')}
+              </Button>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 3, justifyContent: "space-between" }}>
+          <Button
+            variant="text"
+            startIcon={<OpenInNewOutlinedIcon />}
+            component="a"
+            href={documentTarget?.fundDocumentUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            disabled={!documentTarget?.fundDocumentUrl}
+            sx={{ textTransform: "none", fontWeight: 700 }}
+          >
+            {t('fund_document_open_new_tab')}
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={() => setDocumentTarget(null)}
             sx={{ textTransform: "none", fontWeight: 700 }}
           >
             {t('fund_btn_close')}
