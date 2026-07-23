@@ -235,4 +235,28 @@ public interface UserOrganizationMemberRepository extends R2dbcRepository<Organi
               AND target_member_id = :userId
             """)
     Mono<Integer> expireAllUserPeerVerifications(@Param("organizationId") Integer organizationId, @Param("userId") Integer userId);
+
+    record ConfirmedAlumniDto(Integer memberId, String fullName, String avatarUrl, String currentJobTitle, String currentCompany) {}
+
+    @Query("""
+            SELECT om.id AS member_id, u.full_name, u.avatar_url,
+                   u.current_job_title, u.current_company
+            FROM organization_members om
+            JOIN users u ON u.id = om.user_id
+            WHERE om.organization_id = :organizationId
+            AND om.verification_level >= 2
+            AND om.status = 'ACTIVE'
+            ORDER BY om.updated_at DESC
+            LIMIT :limit
+            """)
+    Flux<ConfirmedAlumniDto> findConfirmedAlumni(@Param("organizationId") Integer organizationId, @Param("limit") int limit);
+
+    @Query("""
+            SELECT COUNT(*)
+            FROM organization_members om
+            WHERE om.organization_id = :organizationId
+            AND om.verification_level >= 2
+            AND om.status = 'ACTIVE'
+            """)
+    Mono<Long> countConfirmedAlumni(@Param("organizationId") Integer organizationId);
 }
