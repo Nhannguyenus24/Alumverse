@@ -17,6 +17,8 @@ import UploadFileIcon from '@mui/icons-material/UploadFile';
 import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
 import { useSnackbar } from 'notistack';
 import { AdminAiProvidersContent } from './AdminAiProvidersPage';
+import AdminFitBotKnowledgeContent from './AdminFitBotKnowledgePage';
+import apiClient from '../../utils/axios';
 
 const FITBOT_API_URL = import.meta.env.VITE_FITBOT_API_URL || '/fitbot-api';
 
@@ -37,7 +39,8 @@ const AdminAIBotConfigPage = () => {
   const [viewFilename, setViewFilename] = useState(null);
   const [viewContent, setViewContent] = useState('');
   const [viewLoading, setViewLoading] = useState(false);
-  const activeTab = searchParams.get('tab') === 'providers' ? 'providers' : 'knowledge';
+  const tabParam = searchParams.get('tab');
+  const activeTab = ['knowledge-db', 'providers'].includes(tabParam) ? tabParam : 'knowledge';
 
   useEffect(() => {
     if (setBreadcrumbs) {
@@ -54,11 +57,11 @@ const AdminAIBotConfigPage = () => {
   }, [activeTab]);
 
   const handleTabChange = (_, nextTab) => {
-    if (nextTab === 'providers') {
-      setSearchParams({ tab: 'providers' });
+    if (nextTab === 'knowledge') {
+      setSearchParams({});
       return;
     }
-    setSearchParams({});
+    setSearchParams({ tab: nextTab });
   };
 
   const fetchFiles = async () => {
@@ -154,17 +157,12 @@ const AdminAIBotConfigPage = () => {
     setAsking(true);
     setBotResponse(null);
     try {
-      const res = await fetch(`${FITBOT_API_URL}/api/query`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'ngrok-skip-browser-warning': 'true'
-        },
-        body: JSON.stringify({ question, top_k: 7, model: "gemini-2.5-flash", use_reranker: false })
+      const response = await apiClient.post('/fitbot/query', {
+        question,
+        top_k: 7,
+        use_reranker: false,
       });
-      if (!res.ok) throw new Error('API error');
-      const data = await res.json();
-      setBotResponse(data);
+      setBotResponse(response?.data?.data ?? response?.data ?? null);
     } catch (error) {
       setBotResponse({ answer: t('bot_error_prefix') + error.message });
     } finally {
@@ -186,12 +184,15 @@ const AdminAIBotConfigPage = () => {
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
         <Tabs value={activeTab} onChange={handleTabChange} variant="scrollable" scrollButtons="auto">
           <Tab value="knowledge" label={t('bot_config_tab_knowledge')} sx={{ textTransform: 'none', fontWeight: 700 }} />
+          <Tab value="knowledge-db" label={t('bot_config_tab_knowledge_db')} sx={{ textTransform: 'none', fontWeight: 700 }} />
           <Tab value="providers" label={t('bot_config_tab_providers')} sx={{ textTransform: 'none', fontWeight: 700 }} />
         </Tabs>
       </Box>
 
       {activeTab === 'providers' ? (
         <AdminAiProvidersContent showHeader={false} />
+      ) : activeTab === 'knowledge-db' ? (
+        <AdminFitBotKnowledgeContent />
       ) : (
         <Stack spacing={4}>
           <Box>
