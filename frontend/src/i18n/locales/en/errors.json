@@ -121,8 +121,6 @@
   "CONVERSATION_REQUEST_ALREADY_ACCEPTED": "You are already connected with each other",
   "CONVERSATION_REQUEST_COOLDOWN_ACTIVE": "The connection request was rejected; please try again after the cooldown period",
   "CONVERSATION_REQUEST_SEARCH_STATUS_NOT_ALLOWED": "Cannot filter requests by ACCEPTED status; please use the current Connections tab",
-  "CONVERSATION_REQUEST_TARGET_NOT_VERIFIED": "This person has not reached verification level 2 in your organization; you cannot send a connection request yet",
-  "CONVERSATION_REQUEST_ORGANIZATION_CONTEXT_REQUIRED": "Could not determine your current organization; please try again",
   "CHAT_USER_NOT_GROUP_MEMBER": "You are not a member of this chat group",
   "GROUP_MEMBER_LIMIT_EXCEEDED": "A chat group can have at most 10 members",
   "CANNOT_BLOCK_SELF": "You cannot block yourself",

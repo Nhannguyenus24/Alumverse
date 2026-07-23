@@ -28,6 +28,7 @@ public interface NetworkMemberSearchRepository
             WHERE (:filterByOrg = FALSE OR om.organization_id IN (:organizationIds))
               AND om.status = 'ACTIVE'
               AND u.status = 'ACTIVE'
+              AND u.role NOT IN ('ADMIN', 'STAFF')
               AND u.id <> :currentUserId
               AND NOT EXISTS (
                 SELECT 1 FROM user_blocks ub

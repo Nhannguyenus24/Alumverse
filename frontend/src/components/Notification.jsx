@@ -14,6 +14,7 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import { formatTimeAgoVi } from "../utils/dateFormatter";
 import { notificationApi } from "../utils/api";
 import { useOrgNavigate } from "../hooks/useOrgNavigate";
+import { NOTIFICATIONS_UPDATED_EVENT } from "../hooks/useServerSentEvents";
 import useAuthStore from "../stores/authStore";
 import useNotificationUnreadStore from "../stores/notificationUnreadStore";
 
@@ -61,7 +62,16 @@ const Notification = ({ headerTextColor = "text.primary" }) => {
     // Set up polling every 2 minutes. Local dev often points to the shared
     // production API, so keeping this modest helps avoid rate-limit noise.
     const interval = setInterval(fetchNotifications, 120000);
-    return () => clearInterval(interval);
+
+    // Realtime SSE notifications (vd: lời mời kết nối) phát sự kiện này để chuông
+    // refetch ngay, không phải chờ vòng poll kế tiếp.
+    const handleRealtimeUpdate = () => fetchNotifications();
+    window.addEventListener(NOTIFICATIONS_UPDATED_EVENT, handleRealtimeUpdate);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener(NOTIFICATIONS_UPDATED_EVENT, handleRealtimeUpdate);
+    };
   }, [fetchNotifications, token]);
 
   const handleOpen = useCallback((event) => {

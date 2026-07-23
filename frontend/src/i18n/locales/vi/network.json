@@ -60,7 +60,6 @@
   "drawer_banner_accepted": "Hai người đã kết nối.",
   "drawer_banner_retry": "Bạn có thể gửi thêm 1 tin nhắn.",
   "drawer_banner_rejected": "Yêu cầu kết nối đã bị từ chối. Bạn có thể gửi lại sau {{datetime}}.",
-  "drawer_banner_not_verified": "Người này chưa đạt verification level 2 trong tổ chức của bạn nên chưa thể kết nối.",
   "send_message_aria": "Gửi tin nhắn",
   "close_aria": "Đóng",
   "member_fallback_name": "Thành viên",

@@ -14,7 +14,6 @@ import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
 import AlumniContentLayout from '../../layouts/AlumniContentLayout';
 import MentorshipHubActions from '../../components/mentorship/MentorshipHubActions';
 import MentorshipMentorListSection from '../../components/mentorship/MentorshipMentorListSection';
-import MentorshipHubStatsSection from '../../components/mentorship/MentorshipHubStatsSection';
 import MentorshipStatsLoader from '../../components/mentorship/MentorshipStatsLoader';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useMentorshipAccessState } from '../../hooks/mentorship/useMentorshipAccessState';
@@ -278,7 +277,6 @@ const HubContent = () => {
       </Stack></ScrollRevealItem>
 
       <ScrollRevealItem><MentorshipStatsLoader /></ScrollRevealItem>
-      <MentorshipHubStatsSection />
       <MentorshipMentorListSection />
     </ScrollRevealGroup>
   );

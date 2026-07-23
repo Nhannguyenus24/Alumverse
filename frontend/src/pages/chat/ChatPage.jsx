@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Box, useMediaQuery, useTheme } from '@mui/material';
 import { useSnackbar } from 'notistack';
 import { useQueryClient } from '@tanstack/react-query';
@@ -99,25 +99,34 @@ const ChatPage = () => {
     }
   }, [totalPage, page]);
 
+  // Deep-link params (memberId/chatId) only SEED the initial selection. We consume
+  // each param value once (tracked via refs) instead of re-applying it on every
+  // render: keeping it in the deps of `activeChatId` made the param override manual
+  // sidebar selection, so clicking another conversation snapped straight back to the
+  // deep-linked one and the user could never switch. The param stays in the URL so
+  // the private list keeps its enlarged page size (the target chat stays loaded).
+  const consumedMemberIdRef = useRef(null);
+  const consumedChatIdRef = useRef(null);
+
   useEffect(() => {
-    if (!targetMemberId) return;
+    if (!targetMemberId || consumedMemberIdRef.current === targetMemberId) return;
     const targetChat = chats.find(
       (chat) => chat.type === 'PRIVATE' && String(chat.peerMemberId) === String(targetMemberId),
     );
-    if (targetChat && activeChatId !== targetChat.id) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setActiveChatId(targetChat.id);
-    }
-  }, [activeChatId, chats, targetMemberId]);
+    if (!targetChat) return;
+    consumedMemberIdRef.current = targetMemberId;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setActiveChatId(targetChat.id);
+  }, [chats, targetMemberId]);
 
   useEffect(() => {
-    if (!targetChatId) return;
+    if (!targetChatId || consumedChatIdRef.current === targetChatId) return;
     const targetChat = chats.find((chat) => String(chat.id) === String(targetChatId));
-    if (targetChat && activeChatId !== targetChat.id) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setActiveChatId(targetChat.id);
-    }
-  }, [activeChatId, chats, targetChatId]);
+    if (!targetChat) return;
+    consumedChatIdRef.current = targetChatId;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setActiveChatId(targetChat.id);
+  }, [chats, targetChatId]);
 
   useEffect(() => {
     if (targetMemberId || targetChatId) return;

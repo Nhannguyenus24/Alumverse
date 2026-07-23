@@ -50,6 +50,13 @@ const parseEvent = (event) => {
 /** DOM event phát lại khi backend đọc xong tài liệu của một yêu cầu xác thực. */
 export const VERIFICATION_OCR_READY_EVENT = 'alumverse:verification-ocr-ready';
 
+/**
+ * DOM event phát khi có một thông báo mới đến qua SSE (vd: lời mời kết nối). Chuông
+ * (Notification.jsx) tự fetch/poll nên nó lắng nghe sự kiện này để refetch ngay, giúp
+ * số đếm chưa đọc nhảy tức thì thay vì phải chờ vòng poll kế tiếp.
+ */
+export const NOTIFICATIONS_UPDATED_EVENT = 'alumverse:notifications-updated';
+
 export const useServerSentEvents = ({ onNotify } = {}) => {
   const token = useAuthStore((state) => state.token);
   const queryClient = useQueryClient();
@@ -121,6 +128,15 @@ export const useServerSentEvents = ({ onNotify } = {}) => {
       window.dispatchEvent(new CustomEvent(VERIFICATION_OCR_READY_EVENT, { detail: data }));
     };
 
+    const handleConnectionRequest = (event) => {
+      const data = parseEvent(event);
+      if (!data) return;
+      showInfo(data.message || i18next.t('common:sse_connection_request'));
+      // Chuông tự quản lý fetch, nên báo nó refetch để số chưa đọc cập nhật ngay.
+      window.dispatchEvent(new CustomEvent(NOTIFICATIONS_UPDATED_EVENT, { detail: data }));
+      onNotifyRef.current?.();
+    };
+
     const handleTicketStatusUpdated = (event) => {
       const data = parseEvent(event);
       if (!data) return;
@@ -138,6 +154,7 @@ export const useServerSentEvents = ({ onNotify } = {}) => {
     source.addEventListener('new-message', handleNewMessage);
     source.addEventListener('verification-ocr-ready', handleVerificationOcrReady);
     source.addEventListener('event-reminder', handleEventReminder);
+    source.addEventListener('connection-request', handleConnectionRequest);
     source.addEventListener('ticket-status-updated', handleTicketStatusUpdated);
     source.onerror = () => {
       // readyState CONNECTING nghĩa là EventSource đang tự reconnect (mất mạng tạm thời,
@@ -166,6 +183,7 @@ export const useServerSentEvents = ({ onNotify } = {}) => {
       source.removeEventListener('new-message', handleNewMessage);
       source.removeEventListener('verification-ocr-ready', handleVerificationOcrReady);
       source.removeEventListener('event-reminder', handleEventReminder);
+      source.removeEventListener('connection-request', handleConnectionRequest);
       source.removeEventListener('ticket-status-updated', handleTicketStatusUpdated);
       source.close();
     };

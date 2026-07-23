@@ -12,6 +12,7 @@ const mapFundRow = (fund) => ({
   donorCount: Number(fund.donorCount || fund.totalDonors || 0),
   updatedAt: fund.updatedAt || fund.timeUpdated || fund.createdAt || new Date().toISOString(),
   donationListPublic: Boolean(fund.donationListPublic),
+  fundDocumentUrl: fund.fundDocumentUrl || '',
 });
 
 const extractPagedFunds = (payload) => {
