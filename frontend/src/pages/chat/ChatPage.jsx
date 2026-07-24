@@ -3,6 +3,7 @@ import { Box, useMediaQuery, useTheme } from '@mui/material';
 import { useSnackbar } from 'notistack';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router';
+import { useTranslation } from 'react-i18next';
 
 import Page from '../../components/Page';
 import NetworkChatPanel from '../../components/network/NetworkChatPanel';
@@ -18,24 +19,49 @@ import useActiveChatStore from '../../stores/activeChatStore';
 import { chatApi } from '../../utils/api';
 import { HEADER_HEIGHT } from '../../constants/layout';
 
-function normalizeGroupChat(item) {
+function getPreviewText(previewText, t) {
+  if (!previewText) return '';
+  const urlRegex = /^https?:\/\/[^\s]+$/;
+  if (urlRegex.test(previewText)) {
+    const backendUrl = import.meta.env.VITE_API_BASE_URL || '';
+    if (backendUrl && previewText.startsWith(backendUrl)) {
+      const lowerText = previewText.toLowerCase();
+      if (lowerText.match(/\.(jpeg|jpg|gif|png|webp|svg)(\?.*)?$/)) {
+        return t('network:chat.preview_image', '[Hình ảnh]');
+      }
+      if (lowerText.match(/\.(mp4|mov|webm|avi)(\?.*)?$/)) {
+        return t('network:chat.preview_video', '[Video]');
+      }
+      if (
+        lowerText.includes('/files/') || 
+        lowerText.match(/\.(pdf|doc|docx|xls|xlsx|ppt|pptx|zip|rar|txt|csv|rtf|7z)(\?.*)?$/)
+      ) {
+        return t('network:chat.preview_file', '[Tập tin]');
+      }
+    }
+    return t('network:chat.preview_link', '[Đường dẫn]');
+  }
+  return previewText;
+}
+
+function normalizeGroupChat(item, t) {
   return {
     id: item.id,
-    name: item.title ?? '(No name)',
+    name: item.title ?? t('network:chat.no_name', '(No name)'),
     avatarUrl: item.avatarUrl ?? null,
-    preview: item.lastMessagePreview ?? '',
+    preview: getPreviewText(item.lastMessagePreview, t),
     lastMessageAt: item.lastMessageAt ?? null,
     unreadCount: Number(item.unreadCount) || 0,
     type: 'GROUP',
   };
 }
 
-function normalizePrivateChat(item) {
+function normalizePrivateChat(item, t) {
   return {
     id: item.id,
-    name: item.peerFullName ?? item.title ?? '(No name)',
+    name: item.peerFullName ?? item.title ?? t('network:chat.no_name', '(No name)'),
     avatarUrl: item.peerAvatarUrl ?? null,
-    preview: item.lastMessagePreview ?? '',
+    preview: getPreviewText(item.lastMessagePreview, t),
     lastMessageAt: item.lastMessageAt ?? null,
     unreadCount: Number(item.unreadCount) || 0,
     type: 'PRIVATE',
@@ -46,6 +72,7 @@ function normalizePrivateChat(item) {
 }
 
 const ChatPage = () => {
+  const { t } = useTranslation(['network']);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const queryClient = useQueryClient();
@@ -84,8 +111,8 @@ const ChatPage = () => {
 
   const chats = useMemo(() => {
     const merged = [
-      ...groupItems.map(normalizeGroupChat),
-      ...privateItems.map(normalizePrivateChat),
+      ...groupItems.map(item => normalizeGroupChat(item, t)),
+      ...privateItems.map(item => normalizePrivateChat(item, t)),
     ];
     merged.sort((a, b) => {
       if (!a.lastMessageAt && !b.lastMessageAt) return 0;
@@ -94,7 +121,7 @@ const ChatPage = () => {
       return new Date(b.lastMessageAt) - new Date(a.lastMessageAt);
     });
     return merged;
-  }, [groupItems, privateItems]);
+  }, [groupItems, privateItems, t]);
 
   const totalPage = Math.max(groupTotalPage, privateTotalPage);
   const safePage = totalPage === 0 ? 1 : Math.min(page, totalPage);

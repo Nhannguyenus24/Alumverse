@@ -16,6 +16,7 @@ import {
   TextField,
   Tooltip,
   Typography,
+  Link,
 } from '@mui/material';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
@@ -62,6 +63,34 @@ import {
 
 
 const SCROLL_TOP_THRESHOLD = 8;
+const URL_REGEX = /(https?:\/\/[^\s]+)/g;
+
+function renderMessageContent(content, isOwn) {
+  if (!content) return null;
+  const parts = content.split(URL_REGEX);
+  return parts.map((part, index) => {
+    if (part.match(URL_REGEX)) {
+      return (
+        <Link
+          key={index}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          sx={{
+            color: 'inherit',
+            textDecoration: 'underline',
+            '&:hover': {
+              opacity: 0.8,
+            },
+          }}
+        >
+          {part}
+        </Link>
+      );
+    }
+    return <Fragment key={index}>{part}</Fragment>;
+  });
+}
 
 const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
   const { t } = useTranslation(['network', 'common']);
@@ -609,7 +638,7 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
                           whiteSpace: 'pre-wrap',
                         }}
                       >
-                        {msg.content}
+                        {renderMessageContent(msg.content, isOwn)}
                       </Typography>
                     </Box>
                   )}
