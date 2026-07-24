@@ -9,6 +9,12 @@ import apiClient, {
 import useAuthStore from '../stores/authStore';
 import useOrganizationStore from '../stores/organizationStore';
 import useChatUnreadStore from '../stores/chatUnreadStore';
+import useActiveChatStore from '../stores/activeChatStore';
+import {
+  applyIncomingMessageToChatLists,
+  resetChatUnreadInLists,
+} from './chat/invalidateChatQueries';
+import { chatApi } from '../utils/api';
 import { useNotification } from './useNotification';
 
 /**
@@ -108,9 +114,52 @@ export const useServerSentEvents = ({ onNotify } = {}) => {
       }
     };
 
-    const handleNewMessage = () => {
-      useChatUnreadStore.getState().increment();
+    const handleNewMessage = (event) => {
+      const data = parseEvent(event);
+      // Older payload / parse failure: fall back to just bumping the global badge.
+      if (!data || data.groupId == null) {
+        useChatUnreadStore.getState().increment();
+        onNotifyRef.current?.();
+        return;
+      }
+
+      const chatId = data.groupId;
+      const isActive = String(useActiveChatStore.getState().activeChatId) === String(chatId);
+
+      // Live-update the left column (preview + last-message time → re-sort) and flag the
+      // conversation as unread unless the user is currently reading it.
+      const matched = applyIncomingMessageToChatLists(queryClient, {
+        chatId,
+        preview: data.preview,
+        createdAt: data.createdAt,
+        markUnread: !isActive,
+      });
+
+      // Not in any cached page (brand-new chat, or on a page we haven't loaded): refetch
+      // the lists so the conversation shows up.
+      if (!matched) {
+        queryClient.invalidateQueries({ queryKey: ['groupChatList'] });
+        queryClient.invalidateQueries({ queryKey: ['privateChatList'] });
+      }
+      // Keep the header's recent-previews dropdown fresh too.
+      queryClient.invalidateQueries({ queryKey: ['recentChatPreviews'] });
+
+      if (isActive) {
+        // The user is looking at this conversation — keep the server read-state in sync
+        // so the unread count doesn't resurface on the next full refetch.
+        chatApi.markGroupAsRead(chatId).catch(() => {});
+      } else {
+        useChatUnreadStore.getState().increment();
+      }
       onNotifyRef.current?.();
+    };
+
+    // Emitted to the reader's own connections when they mark a conversation read in
+    // another tab; clear the unread marker here so open tabs stay consistent.
+    const handleChatRead = (event) => {
+      const data = parseEvent(event);
+      if (!data || data.groupId == null) return;
+      resetChatUnreadInLists(queryClient, data.groupId);
     };
 
     const handleEventReminder = (event) => {
@@ -152,6 +201,7 @@ export const useServerSentEvents = ({ onNotify } = {}) => {
     source.addEventListener('verification-updated', handleVerificationUpdated);
     source.addEventListener('user-banned', handleUserBanned);
     source.addEventListener('new-message', handleNewMessage);
+    source.addEventListener('chat-read', handleChatRead);
     source.addEventListener('verification-ocr-ready', handleVerificationOcrReady);
     source.addEventListener('event-reminder', handleEventReminder);
     source.addEventListener('connection-request', handleConnectionRequest);
@@ -181,6 +231,7 @@ export const useServerSentEvents = ({ onNotify } = {}) => {
       source.removeEventListener('verification-updated', handleVerificationUpdated);
       source.removeEventListener('user-banned', handleUserBanned);
       source.removeEventListener('new-message', handleNewMessage);
+      source.removeEventListener('chat-read', handleChatRead);
       source.removeEventListener('verification-ocr-ready', handleVerificationOcrReady);
       source.removeEventListener('event-reminder', handleEventReminder);
       source.removeEventListener('connection-request', handleConnectionRequest);

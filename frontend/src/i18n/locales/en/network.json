@@ -165,6 +165,7 @@
   "chat_block_confirm_btn": "Block",
   "chat_search_placeholder": "Search conversations",
   "chat_no_conversations": "No conversations.",
+  "chat_unread_conversation": "{{name}}, {{count}} unread messages",
   "chat_sidebar_title": "Messages",
   "create_group_chat_tooltip": "Create group chat",
   "create_group_chat_aria": "Create group chat",

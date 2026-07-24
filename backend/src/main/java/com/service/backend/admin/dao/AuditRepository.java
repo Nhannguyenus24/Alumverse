@@ -47,6 +47,15 @@ public interface AuditRepository extends R2dbcRepository<UserLoginHistory, Long>
            "ORDER BY count DESC")
     Flux<LoginMethodProjection> getLoginMethodStats();
 
+    // 30-day window so the engagement chart aligns with loginsByHour / dailyLogins,
+    // which also look back 30 days. The all-time variant above stays for AuditService.
+    @Query("SELECT login_method AS method, COUNT(*) AS count " +
+           "FROM user_login_histories " +
+           "WHERE login_at >= CURRENT_DATE - INTERVAL '30 days' " +
+           "GROUP BY login_method " +
+           "ORDER BY count DESC")
+    Flux<LoginMethodProjection> getLoginMethodStatsLast30Days();
+
     @Query("SELECT CAST(login_at AS DATE) AS date, COUNT(*) AS count " +
            "FROM user_login_histories " +
            "WHERE login_at >= CURRENT_DATE - INTERVAL '30 days' " +

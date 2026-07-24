@@ -10,7 +10,12 @@ import NetworkChatSidebar from '../../components/network/NetworkChatSidebar';
 import CreateGroupChatDialog from '../../components/CreateGroupChatDialog';
 import { useGroupChatList } from '../../hooks/chat/useGroupChatList';
 import { usePrivateChatList } from '../../hooks/chat/usePrivateChatList';
-import { invalidateChatListQueries } from '../../hooks/chat/invalidateChatQueries';
+import {
+  invalidateChatListQueries,
+  resetChatUnreadInLists,
+} from '../../hooks/chat/invalidateChatQueries';
+import useActiveChatStore from '../../stores/activeChatStore';
+import { chatApi } from '../../utils/api';
 import { HEADER_HEIGHT } from '../../constants/layout';
 
 function normalizeGroupChat(item) {
@@ -20,6 +25,7 @@ function normalizeGroupChat(item) {
     avatarUrl: item.avatarUrl ?? null,
     preview: item.lastMessagePreview ?? '',
     lastMessageAt: item.lastMessageAt ?? null,
+    unreadCount: Number(item.unreadCount) || 0,
     type: 'GROUP',
   };
 }
@@ -31,6 +37,7 @@ function normalizePrivateChat(item) {
     avatarUrl: item.peerAvatarUrl ?? null,
     preview: item.lastMessagePreview ?? '',
     lastMessageAt: item.lastMessageAt ?? null,
+    unreadCount: Number(item.unreadCount) || 0,
     type: 'PRIVATE',
     peerMemberId: item.peerMemberId,
     blockedByMe: Boolean(item.blockedByMe),
@@ -141,6 +148,20 @@ const ChatPage = () => {
     () => chats.find((c) => c.id === activeChatId) ?? null,
     [chats, activeChatId],
   );
+
+  // Keep the global active-chat store in sync so the SSE handler (mounted app-wide, with
+  // no access to this page's state) knows which conversation is open and won't flag its
+  // incoming messages as unread. Also mark the conversation read on the server and clear
+  // its unread marker locally right away when it becomes active.
+  useEffect(() => {
+    useActiveChatStore.getState().setActiveChatId(activeChatId);
+    if (activeChatId == null) return;
+    resetChatUnreadInLists(queryClient, activeChatId);
+    chatApi.markGroupAsRead(activeChatId).catch(() => {});
+  }, [activeChatId, queryClient]);
+
+  // Clear the active-chat marker when leaving the chat page.
+  useEffect(() => () => useActiveChatStore.getState().setActiveChatId(null), []);
 
   const isPending = groupPending || privatePending;
   const isFetching = groupFetching || privateFetching;
