@@ -156,6 +156,8 @@
   "checkout_dialog_desc": "Please scan the QR code below to complete your donation.",
   "checkout_qr_alt": "Payment QR code",
   "checkout_qr_failed": "Unable to display QR directly. Please open the payment link.",
+  "checkout_dialog_done": "Done",
+  "checkout_dialog_close": "Close",
   "donate_button": "Donate",
   "channel_label": "Donation",
   "stat_donors": "donors",
