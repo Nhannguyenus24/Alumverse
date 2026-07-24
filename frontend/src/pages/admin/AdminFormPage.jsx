@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useOutletContext } from 'react-router';
 import {
   Box, Typography, Chip, IconButton, Tooltip, Button, TextField, MenuItem, Grid,
 } from '@mui/material';
@@ -34,7 +34,12 @@ const statusColor = (status) => {
 const AdminFormPage = () => {
   const { t } = useTranslation(['survey', 'common', 'admin']);
   const navigate = useNavigate();
+  const { setBreadcrumbs } = useOutletContext();
   const { showSuccess, showError } = useNotification();
+
+  useEffect(() => {
+    setBreadcrumbs?.([{ label: t('survey:page_title'), active: true }]);
+  }, [setBreadcrumbs, t]);
 
   const [rows, setRows] = useState([]);
   const [total, setTotal] = useState(0);

@@ -93,5 +93,6 @@
   "prompt_title": "Bạn có khảo sát đang chờ",
   "prompt_subtitle": "Tổ chức đang có khảo sát dành cho bạn. Bạn có muốn tham gia không?",
   "prompt_join": "Tham gia",
-  "prompt_skip": "Để sau"
+  "prompt_skip": "Để sau",
+  "prompt_tooltip": "Khảo sát đang chờ bạn"
 }

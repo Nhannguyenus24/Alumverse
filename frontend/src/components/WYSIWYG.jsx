@@ -227,24 +227,27 @@ const WYSIWYG = ({
     return () => clearTimeout(timeoutId);
   }, [allowImages, normalizeEditorImages, value]);
 
-  const formats = [
-    "header",
-    //"font",
-    "size",
-    "bold",
-    "italic",
-    "underline",
-    "strike",
-    "blockquote",
-    "list",
-    "indent",
-    "link",
-    ...(allowImages ? ["image"] : []),
-    "video",
-    "color",
-    "background",
-    "align",
-  ];
+  const formats = useMemo(
+    () => [
+      "header",
+      //"font",
+      "size",
+      "bold",
+      "italic",
+      "underline",
+      "strike",
+      "blockquote",
+      "list",
+      "indent",
+      "link",
+      ...(allowImages ? ["image"] : []),
+      "video",
+      "color",
+      "background",
+      "align",
+    ],
+    [allowImages]
+  );
 
   return (
     <Box

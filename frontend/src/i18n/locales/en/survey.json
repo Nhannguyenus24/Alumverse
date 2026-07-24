@@ -93,5 +93,6 @@
   "prompt_title": "You have a pending survey",
   "prompt_subtitle": "Your organization has a survey for you. Would you like to participate?",
   "prompt_join": "Join",
-  "prompt_skip": "Later"
+  "prompt_skip": "Later",
+  "prompt_tooltip": "Surveys waiting for you"
 }

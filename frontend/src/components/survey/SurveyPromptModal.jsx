@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography, Stack, Box, Chip,
 } from '@mui/material';
@@ -6,57 +6,35 @@ import PollOutlinedIcon from '@mui/icons-material/PollOutlined';
 import { useTranslation } from 'react-i18next';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useAuth } from '../../hooks/useAuth';
-import { surveyApi } from '../../utils/api';
-
-const DISMISS_KEY = 'dismissed_surveys';
-
-const getDismissed = () => {
-  try { return new Set(JSON.parse(sessionStorage.getItem(DISMISS_KEY) || '[]')); }
-  catch { return new Set(); }
-};
-const addDismissed = (id) => {
-  const set = getDismissed();
-  set.add(id);
-  sessionStorage.setItem(DISMISS_KEY, JSON.stringify([...set]));
-};
+import useSurveyPromptStore from '../../stores/surveyPromptStore';
 
 /**
- * Popup shown on the org site when there are OPEN surveys the user has not answered.
- * Dismissals are remembered per browser session so the user is not nagged repeatedly.
+ * Popup listing OPEN surveys the user has not answered.
+ * Auto-shows on entry (once per session), and can be re-opened anytime from the
+ * survey icon in the header. State lives in {@link useSurveyPromptStore}.
  */
 const SurveyPromptModal = () => {
   const { t } = useTranslation(['survey', 'common']);
   const navigate = useOrgNavigate();
   const { isAuthenticated } = useAuth();
-  const [pending, setPending] = useState([]);
-  const [open, setOpen] = useState(false);
+
+  const pending = useSurveyPromptStore((s) => s.pending);
+  const open = useSurveyPromptStore((s) => s.open);
+  const fetchPending = useSurveyPromptStore((s) => s.fetchPending);
+  const dismissAll = useSurveyPromptStore((s) => s.dismissAll);
+  const markOpened = useSurveyPromptStore((s) => s.markOpened);
+  const reset = useSurveyPromptStore((s) => s.reset);
 
   useEffect(() => {
-    if (!isAuthenticated) return;
-    let active = true;
-    (async () => {
-      try {
-        const list = await surveyApi.getActiveSurveys();
-        if (!active) return;
-        const dismissed = getDismissed();
-        const todo = (list || []).filter((s) => !s.hasSubmitted && !dismissed.has(s.id));
-        if (todo.length > 0) {
-          setPending(todo);
-          setOpen(true);
-        }
-      } catch { /* ignore — not critical */ }
-    })();
-    return () => { active = false; };
-  }, [isAuthenticated]);
-
-  const dismissAll = () => {
-    pending.forEach((s) => addDismissed(s.id));
-    setOpen(false);
-  };
+    if (!isAuthenticated) {
+      reset();
+      return;
+    }
+    fetchPending();
+  }, [isAuthenticated, fetchPending, reset]);
 
   const join = (id) => {
-    addDismissed(id);
-    setOpen(false);
+    markOpened(id);
     navigate(`/surveys/${id}`);
   };
 

@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { surveyApi } from '../../utils/api';
 import { useNotification } from '../../hooks/useNotification';
 import { isChoiceType } from '../../constants/surveyQuestionTypes';
+import useSurveyPromptStore from '../../stores/surveyPromptStore';
 
 const SurveyFillPage = ({ mode }) => {
   const { surveyId } = useParams();
@@ -71,6 +72,8 @@ const SurveyFillPage = ({ mode }) => {
       await surveyApi.submitSurvey(surveyId, answers);
       showSuccess(t('survey:submit_success'));
       setReviewMode(true);
+      // Refresh the header badge so the just-answered survey drops off.
+      useSurveyPromptStore.getState().fetchPending();
     } catch (e) {
       showError(e?.response?.data?.message || t('common:error_occurred'));
     } finally {
