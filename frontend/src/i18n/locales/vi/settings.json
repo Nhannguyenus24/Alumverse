@@ -92,5 +92,9 @@
   "edu_request_pending_note": "Yêu cầu thay đổi học vấn đang chờ admin duyệt. Bạn không thể chỉnh sửa cho đến khi yêu cầu được xử lý.",
   "submitting": "Đang gửi...",
   "submit_request": "Gửi yêu cầu",
-  "advisor_contact_phone": "Điện thoại: 028 3821 4444"
+  "advisor_contact_phone": "Điện thoại: 028 3821 4444",
+  "label_job_title": "Chức danh",
+  "label_company": "Công ty",
+  "not_set": "Chưa cập nhật",
+  "advisor_default_department": "Khoa Công nghệ Thông tin"
 }

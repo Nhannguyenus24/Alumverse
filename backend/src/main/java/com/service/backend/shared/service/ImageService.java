@@ -105,7 +105,10 @@ public class ImageService {
                     .fromBytes(imageBytes)
                     .output(WebpWriter.DEFAULT, targetPath);
 
-            sample.stop(meterRegistry.timer("image.processing.time"));
+            sample.stop(Timer.builder("image.processing.time")
+                    .publishPercentiles(0.5, 0.95, 0.99)
+                    .publishPercentileHistogram(true)
+                    .register(meterRegistry));
             return domain + fileName;
 
         } catch (IllegalArgumentException e) {

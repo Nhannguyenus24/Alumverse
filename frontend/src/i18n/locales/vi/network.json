@@ -165,6 +165,7 @@
   "chat_block_confirm_btn": "Chặn",
   "chat_search_placeholder": "Tìm đoạn chat",
   "chat_no_conversations": "Không có cuộc trò chuyện nào.",
+  "chat_unread_conversation": "{{name}}, {{count}} tin nhắn chưa đọc",
   "chat_sidebar_title": "Tin nhắn",
   "create_group_chat_tooltip": "Tạo nhóm chat",
   "create_group_chat_aria": "Tạo nhóm chat",

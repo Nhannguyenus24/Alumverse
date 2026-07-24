@@ -1,4 +1,5 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { ScrollReveal } from '../animations/ScrollReveal';
 import {
@@ -30,6 +31,7 @@ import ConfirmDialog from '../ConfirmDialog';
 import IconButtonMenu from '../IconButtonMenu';
 import GroupMembersDrawer from './GroupMembersDrawer';
 import { useChatMessages } from '../../hooks/chat/useChatMessages';
+import { applyIncomingMessageToChatLists } from '../../hooks/chat/invalidateChatQueries';
 import { useGroupBlockedMembersContext } from '../../hooks/chat/useGroupBlockedMembersContext';
 import { usePeerActiveStatus } from '../../hooks/chat/usePeerActiveStatus';
 import { useChatWebSocket } from '../../hooks/mentorship/useChatWebSocket';
@@ -63,6 +65,7 @@ const SCROLL_TOP_THRESHOLD = 8;
 
 const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
   const { t } = useTranslation(['network', 'common']);
+  const queryClient = useQueryClient();
   const { canUseBasicActions } = useCanContribute();
   const { showError } = useNotification();
   const [draft, setDraft] = useState('');
@@ -126,7 +129,16 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
       metadata: p.metadata,
       createdAt: p.createdAt,
     });
-  }, []);
+    // Keep the left column's preview + ordering in sync for the open conversation. This is
+    // the only signal the sender gets (the SSE new-message fan-out excludes the sender), so
+    // it stops the sender's own sidebar from drifting. The chat is open, so never unread.
+    applyIncomingMessageToChatLists(queryClient, {
+      chatId: p.groupId,
+      preview: p.content,
+      createdAt: p.createdAt,
+      markUnread: false,
+    });
+  }, [queryClient]);
 
   const resyncMessagesRef = useRef(resyncMessages);
   useEffect(() => { resyncMessagesRef.current = resyncMessages; }, [resyncMessages]);

@@ -146,5 +146,10 @@
   "display_error": "Unable to display this article.",
   "main_image_too_large": "The main image is too large to upload. Please choose a smaller image.",
   "article_too_large_post": "The article is too large to publish. The total size of content and main image must be under 19MB.",
-  "article_too_large_update": "The article is too large to update. The total size of content and main image must be under 19MB."
+  "article_too_large_update": "The article is too large to update. The total size of content and main image must be under 19MB.",
+  "sort": "Sort by",
+  "sort_newest": "Newest",
+  "sort_oldest": "Oldest",
+  "from_date": "From date",
+  "to_date": "To date"
 }

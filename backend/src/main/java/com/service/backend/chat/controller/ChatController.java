@@ -138,7 +138,22 @@ public class ChatController {
 
 
     /*
-        Create a group chat with a list of member IDs                  
+        Mark a chat group as read for the current user. Stamps last_read_at = now so the
+        conversation's unread count drops to 0 on the next list fetch, and notifies the
+        user's other open tabs via SSE (chat-read) to clear the unread marker in real time.
+    */
+    @PostMapping("/groups/{groupId}/read")
+    public Mono<ResponseEntity<ApiResponse<Void>>> markGroupAsRead(
+            @PathVariable("groupId") @Min(1) Long groupId) {
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(memberId -> this.chatService.markGroupAsRead(groupId, memberId))
+                .thenReturn(ResponseEntity
+                        .ok(new ApiResponse<>("Chat group marked as read", null)));
+    }
+
+
+    /*
+        Create a group chat with a list of member IDs
     */
     @PostMapping("/groups")
     public Mono<ResponseEntity<ApiResponse<ChatGroup>>> createGroupChat(
