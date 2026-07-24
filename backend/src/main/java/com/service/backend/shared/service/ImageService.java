@@ -2,8 +2,6 @@ package com.service.backend.shared.service;
 
 import com.sksamuel.scrimage.ImmutableImage;
 import com.sksamuel.scrimage.webp.WebpWriter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -22,8 +20,6 @@ import jakarta.annotation.PostConstruct;
 
 @Service
 public class ImageService {
-
-    private static final Logger log = LoggerFactory.getLogger(ImageService.class);
 
     /**
      * Fixed path on the server to save images.
@@ -77,57 +73,46 @@ public class ImageService {
      * @throws Exception if decoding, converting, or saving the file fails
      */
     public String uploadBase64Image(String base64String) throws Exception {
-        // 1. Extract the Base64 header part if present (e.g.: data:image/png;base64,...)
-        String pureBase64 = extractPureBase64(base64String);
-
-        // 2. Decode Base64 string to byte array (cheap; done synchronously so bad input is
-        //    rejected before we hand back a URL).
-        byte[] imageBytes;
+        Timer.Sample sample = Timer.start(meterRegistry);
         try {
-            imageBytes = Base64.getDecoder().decode(pureBase64);
+            // 1. Extract the Base64 header part if present (e.g.: data:image/png;base64,...)
+            String pureBase64 = extractPureBase64(base64String);
+
+            // 2. Decode Base64 string to byte array
+            byte[] imageBytes;
+            try {
+                imageBytes = Base64.getDecoder().decode(pureBase64);
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Invalid Base64 string", e);
+            }
+
+            // 3. Reject oversized payloads before the expensive decode/resize/encode below.
+            if (imageBytes.length > IMAGE_MAX_BYTES) {
+                throw new IllegalArgumentException(
+                        "Image exceeds " + (IMAGE_MAX_BYTES / (1024 * 1024)) + "MB limit");
+            }
+
+            // 4. Generate unique filename using UUID to prevent overwriting
+            String fileName = UUID.randomUUID() + ".webp";
+            var targetPath = Paths.get(uploadDir + fileName);
+            Files.createDirectories(targetPath.getParent());
+
+            // 5. Use Scrimage to:
+            //    - Load byte array as image object
+            //    - Convert to WebP format (auto compressed)
+            //    - Save file to disk
+            ImmutableImage.loader()
+                    .fromBytes(imageBytes)
+                    .output(WebpWriter.DEFAULT, targetPath);
+
+            sample.stop(meterRegistry.timer("image.processing.time"));
+            return domain + fileName;
+
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Invalid Base64 string", e);
+            throw e;
+        } catch (Exception e) {
+            throw new Exception("Error processing image: " + e.getMessage(), e);
         }
-
-        // 3. Reject oversized payloads before the expensive decode/encode below.
-        if (imageBytes.length > IMAGE_MAX_BYTES) {
-            throw new IllegalArgumentException(
-                    "Image exceeds " + (IMAGE_MAX_BYTES / (1024 * 1024)) + "MB limit");
-        }
-
-        // 4. Generate unique filename using UUID to prevent overwriting.
-        String fileName = UUID.randomUUID() + ".webp";
-        Path targetPath = Paths.get(uploadDir + fileName);
-
-        // 5. Fire-and-forget: the filename (hence the URL) is deterministic, so we return it
-        //    immediately and run the expensive WebP encode + disk write on a background thread
-        //    detached from this request. Trade-off: if encoding later fails the URL will 404.
-        encodeAndStoreAsync(imageBytes, targetPath);
-
-        return domain + fileName;
-    }
-
-    /**
-     * Runs the blocking decode/WebP-encode/disk-write on the bounded elastic scheduler, fully
-     * detached from any caller (fire-and-forget). Nothing awaits the result, so failures are
-     * logged rather than propagated.
-     */
-    private void encodeAndStoreAsync(byte[] imageBytes, Path targetPath) {
-        Mono.fromRunnable(() -> {
-                    Timer.Sample sample = Timer.start(meterRegistry);
-                    try {
-                        Files.createDirectories(targetPath.getParent());
-                        ImmutableImage.loader()
-                                .fromBytes(imageBytes)
-                                .output(WebpWriter.DEFAULT, targetPath);
-                        sample.stop(meterRegistry.timer("image.processing.time"));
-                    } catch (Exception e) {
-                        log.error("Background WebP encode failed for {}: {}",
-                                targetPath, e.getMessage(), e);
-                    }
-                })
-                .subscribeOn(Schedulers.boundedElastic())
-                .subscribe();
     }
 
     /**
