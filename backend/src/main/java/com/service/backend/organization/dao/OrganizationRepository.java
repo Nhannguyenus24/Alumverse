@@ -20,7 +20,7 @@ public interface OrganizationRepository extends R2dbcRepository<Organization, In
     Mono<Organization> findBySlug(String slug);
 
     @NonNull
-    Flux<Organization> findAll();
+    Flux<Organization>  findAll();
 
     @Query("SELECT u.id AS user_id, u.full_name, om.student_id as student_id, u.avatar_url, u.email, om.major, om.program " +
            "FROM users u " +
