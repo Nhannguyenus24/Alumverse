@@ -13,6 +13,7 @@ import { SURVEY_QUESTION_TYPES, isChoiceType } from '../../constants/surveyQuest
 import { surveyApi } from '../../utils/api';
 import { useNotification } from '../../hooks/useNotification';
 import { useOrganization } from '../../hooks/useOrganization';
+import WYSIWYG from '../WYSIWYG';
 
 let counter = 0;
 const uid = (prefix) => `${prefix}_${Date.now()}_${counter++}`;
@@ -146,7 +147,15 @@ const AdminSurveyBuilderDialog = ({ open, onClose, survey, onSaved }) => {
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+    <Dialog 
+      open={open} 
+      onClose={(event, reason) => {
+        if (reason === 'backdropClick' || reason === 'escapeKeyDown') return;
+        onClose?.();
+      }} 
+      maxWidth="md" 
+      fullWidth
+    >
       <DialogTitle>
         {isEdit ? t('survey:edit_survey') : t('survey:create_survey')}
       </DialogTitle>
@@ -159,10 +168,17 @@ const AdminSurveyBuilderDialog = ({ open, onClose, survey, onSaved }) => {
             label={t('survey:field_title')} value={title} disabled={readOnly}
             onChange={(e) => setTitle(e.target.value)} fullWidth required
           />
-          <TextField
-            label={t('survey:field_description')} value={description} disabled={readOnly}
-            onChange={(e) => setDescription(e.target.value)} fullWidth multiline minRows={2}
-          />
+          <Box>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+              {t('survey:field_description')}
+            </Typography>
+            <WYSIWYG
+              value={description}
+              onChange={(val) => setDescription(val)}
+              readOnly={readOnly}
+              height={200}
+            />
+          </Box>
           <Grid container spacing={2}>
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
