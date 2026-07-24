@@ -3,10 +3,10 @@ import { create } from 'zustand';
 /**
  * Tracks the number of unread chat messages surfaced on the message button badge.
  *
- * The count is driven by the global SSE stream (see useServerSentEvents): each
- * `new-message` event increments it, and opening the messages panel resets it.
- * It is intentionally not persisted — a fresh session starts at zero and the
- * badge reflects only messages received while the tab is open.
+ * On initial load useServerSentEvents seeds it once from the server (the real
+ * unread total), then the global SSE stream keeps it live: each `new-message`
+ * event increments it, and opening the messages panel resets it. It is not
+ * persisted — every fresh load re-seeds from the server rather than from storage.
  */
 const useChatUnreadStore = create((set) => ({
   unreadCount: 0,

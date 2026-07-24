@@ -369,6 +369,11 @@ export const chatApi = {
 		return unwrap(response);
 	},
 
+	async getUnreadCount() {
+		const response = await apiClient.get('/chat/unread-count');
+		return Number(unwrap(response)) || 0;
+	},
+
 	async getMessages(groupId, page = 0, size = 10) {
 		const response = await apiClient.get(`/chat/groups/${groupId}/messages`, {
 			params: { page, size },
@@ -1377,7 +1382,7 @@ const mentorshipApi = {
 	},
 
 	getHubStats(limit = 5) {
-		return apiClient.get('/api/mentorship/hub/stats', { params: { limit } });
+		return apiClient.get('/mentorship/hub/stats', { params: { limit } });
 	},
 };
 

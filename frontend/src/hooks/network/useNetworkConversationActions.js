@@ -12,6 +12,10 @@ export function useNetworkConversationActions(peerMemberId) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['incomingConversationRequests'] });
       queryClient.invalidateQueries({ queryKey: ['networkMembers'] });
+      // Replying to an incoming request auto-accepts it, creating a new connection and
+      // private chat, so refresh those lists too.
+      queryClient.invalidateQueries({ queryKey: ['networkConnections'] });
+      queryClient.invalidateQueries({ queryKey: ['privateChatList'] });
     },
     onError: (error) => {
       const msg =

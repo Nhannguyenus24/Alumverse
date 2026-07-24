@@ -64,7 +64,8 @@ public interface NetworkMemberSearchRepository
                        CAST(om.program AS text) AS program,
                        CAST(om.major AS text) AS major,
                        u.avatar_url AS avatar_url,
-                       ccr.status AS connection_status
+                       ccr.status AS connection_status,
+                       (ccr.status = 'PENDING' AND ccr.target_member_id = :currentUserId) AS incoming
             """ + SEARCH_FROM_JOIN + SEARCH_CONNECTION_JOIN + SEARCH_WHERE + """
                 ORDER BY om.user_id, om.id ASC
             ) sub

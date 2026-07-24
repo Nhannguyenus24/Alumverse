@@ -83,6 +83,18 @@ public class ChatService {
                 .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size));
     }
 
+    /**
+     * Total unread messages for the member across all their chats. Used to seed the global
+     * message badge on initial load; realtime SSE {@code new-message} events keep it fresh
+     * afterwards, so the client does not need to poll this.
+     */
+    public Mono<Long> getUnreadCount(Long memberId) {
+        if (memberId == null) {
+            return Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND, "Member ID must not be null"));
+        }
+        return chatMessageRepository.countUnreadForMember(memberId).defaultIfEmpty(0L);
+    }
+
     public Mono<PaginatedResponse<GroupChatListItemResponse>> getListGroupChatsWithSummary(
             Long memberId, String text, int page, int size) {
         if (memberId == null) {

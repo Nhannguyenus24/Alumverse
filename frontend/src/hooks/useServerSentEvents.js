@@ -72,6 +72,27 @@ export const useServerSentEvents = ({ onNotify } = {}) => {
   const onNotifyRef = useRef(onNotify);
   onNotifyRef.current = onNotify;
 
+  // Seed the global unread-message badge ONCE per login, right when the app opens. After that
+  // the badge is kept live by the `new-message` SSE events below, so we never poll or refetch
+  // it (a token refresh keeps the same session → still seeded; logout resets it so the next
+  // login re-seeds from the server).
+  const seededUnreadRef = useRef(false);
+  useEffect(() => {
+    if (!token) {
+      seededUnreadRef.current = false;
+      useChatUnreadStore.getState().reset();
+      return;
+    }
+    if (seededUnreadRef.current) return;
+    seededUnreadRef.current = true;
+    chatApi.getUnreadCount()
+      .then((count) => useChatUnreadStore.getState().setUnreadCount(count))
+      .catch(() => {
+        // Let a later token change retry the seed if this initial attempt failed.
+        seededUnreadRef.current = false;
+      });
+  }, [token]);
+
   useEffect(() => {
     if (!token) return undefined;
 
