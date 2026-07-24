@@ -429,14 +429,19 @@ const NetworkMemberDirectory = () => {
               member.connectionStatus === CONVERSATION_REQUEST_STATUS.ACCEPTED;
             const isPending =
               member.connectionStatus === CONVERSATION_REQUEST_STATUS.PENDING;
+            // Incoming pending: this member invited the current user first. Sending back
+            // auto-accepts and connects, so surface "Accept" instead of "Pending".
+            const isIncomingPending = isPending && Boolean(member.incoming);
 
             const messageButtonLabel = isSelf
               ? t('network:this_is_you')
               : isConnected
                 ? t('network:message')
-                : isPending
-                  ? t('network:connect_pending')
-                  : t('network:connect');
+                : isIncomingPending
+                  ? t('network:connect_accept')
+                  : isPending
+                    ? t('network:connect_pending')
+                    : t('network:connect');
 
             return (
               <ScrollRevealItem key={member.userId} sx={{ display: 'flex', width: '100%', minWidth: 0, height: '100%' }}>

@@ -15,4 +15,10 @@ public class ConversationRequestConnectionStatusResponse {
     private ConversationRequestStatus status;
     private LocalDateTime cooldownUntil;
     private ConversationRequestLatestMessageResponse latestMessage;
+    /**
+     * True when there is a PENDING request that the OTHER member sent TO the current user
+     * (i.e. the current user is the target). The UI uses this to let the current user send
+     * back, which auto-accepts and connects the pair instead of stacking a second request.
+     */
+    private boolean incoming;
 }

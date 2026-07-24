@@ -29,6 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.reactive.TransactionalOperator;
 import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -49,6 +50,7 @@ public class ChatConversationRequestService {
     private final UserProfileRepository userProfileRepository;
     private final NotificationService notificationService;
     private final SseService sseService;
+    private final TransactionalOperator transactionalOperator;
 
     /**
      * Returns connection status and the current member's latest message in the request chat group,
@@ -79,7 +81,7 @@ public class ChatConversationRequestService {
         return chatConversationRequestRepository
                 .findByMemberPair(memberLowId, memberHighId)
                 .flatMap(request -> buildConnectionStatusResponse(request, currentMemberId))
-                .defaultIfEmpty(new ConversationRequestConnectionStatusResponse(null, null, null));
+                .defaultIfEmpty(new ConversationRequestConnectionStatusResponse(null, null, null, false));
     }
 
     private Mono<ConversationRequestConnectionStatusResponse> buildConnectionStatusResponse(
@@ -87,17 +89,23 @@ public class ChatConversationRequestService {
             Long currentMemberId) {
         return chatMessageRepository
                 .findLatestByGroupIdAndSenderMemberId(request.getChatGroupId(), currentMemberId)
-                .map(message -> toConnectionStatusResponse(request, message))
-                .defaultIfEmpty(toConnectionStatusResponse(request, null));
+                .map(message -> toConnectionStatusResponse(request, message, currentMemberId))
+                .defaultIfEmpty(toConnectionStatusResponse(request, null, currentMemberId));
     }
 
     private ConversationRequestConnectionStatusResponse toConnectionStatusResponse(
             ChatConversationRequest request,
-            ChatMessage message) {
+            ChatMessage message,
+            Long currentMemberId) {
+        // "incoming" means the other member sent this still-pending request to the current user,
+        // so sending back will auto-accept (see handleExistingRequest).
+        boolean incoming = request.getStatus() == ConversationRequestStatus.PENDING
+                && currentMemberId.equals(request.getTargetMemberId());
         return new ConversationRequestConnectionStatusResponse(
                 request.getStatus(),
                 request.getCooldownUntil(),
-                message != null ? toLatestMessageResponse(message) : null);
+                message != null ? toLatestMessageResponse(message) : null,
+                incoming);
     }
 
     private ConversationRequestLatestMessageResponse toLatestMessageResponse(ChatMessage message) {
@@ -206,8 +214,15 @@ public class ChatConversationRequestService {
      * Creates a new conversation request between the current member and a target member.
      * Allocates a dedicated private chat group, inserts the initial message, and records
      * the request with status PENDING. Cooldown is only set when the request is rejected.
+     *
+     * <p>The mutation runs inside a programmatic transaction (via {@link TransactionalOperator})
+     * rather than {@code @Transactional} so the concurrent-conflict retry can live OUTSIDE the
+     * transaction: a competing send may win the {@code (member_low_id, member_high_id)} unique
+     * index, which aborts the current transaction — re-querying inside it is impossible
+     * ("current transaction is aborted"). On that conflict we retry once in a fresh transaction,
+     * where {@code findByMemberPair} now sees the winner's row and short-circuits with the proper
+     * 4xx via {@code handleExistingRequest} (or re-sends if it was a rejected, cooled-down pair).
      */
-    @Transactional
     public Mono<Long> createConversationRequest(
             Long currentMemberId,
             Long targetMemberId,
@@ -221,7 +236,11 @@ public class ChatConversationRequestService {
 
         return assertTargetActive(targetMemberId)
                 .then(userBlockService.assertCommunicationNotBlocked(currentMemberId, targetMemberId))
-                .then(createConversationRequestAfterBlockCheck(currentMemberId, targetMemberId, message));
+                .then(createConversationRequestAfterBlockCheck(currentMemberId, targetMemberId, message)
+                        .as(transactionalOperator::transactional))
+                .onErrorResume(DataIntegrityViolationException.class, error ->
+                        createConversationRequestAfterBlockCheck(currentMemberId, targetMemberId, message)
+                                .as(transactionalOperator::transactional));
     }
 
     private Mono<Void> assertTargetActive(Long targetMemberId) {
@@ -241,6 +260,11 @@ public class ChatConversationRequestService {
         long memberLowId = Math.min(currentMemberId, targetMemberId);
         long memberHighId = Math.max(currentMemberId, targetMemberId);
 
+        // A concurrent send can win the (member_low_id, member_high_id) unique index between the
+        // findByMemberPair read below and the insert, making the insert throw
+        // DataIntegrityViolationException. That error aborts this transaction, so it cannot be
+        // recovered here — it propagates to createConversationRequest, which retries the whole
+        // flow in a fresh transaction (see that method's javadoc).
         return chatConversationRequestRepository.findByMemberPair(memberLowId, memberHighId)
                 .flatMap(existing -> handleExistingRequest(existing, currentMemberId, targetMemberId, message))
                 .switchIfEmpty(
@@ -254,22 +278,13 @@ public class ChatConversationRequestService {
                                                     savedRequest.getId(), currentMemberId, targetMemberId);
                                             return savedRequest.getId();
                                         }))
-                                // A concurrent send can win the (member_low_id, member_high_id) unique
-                                // index between the findByMemberPair read above and this insert, making
-                                // the insert throw DataIntegrityViolationException. Re-read the pair and
-                                // route through handleExistingRequest so the loser gets the proper 4xx
-                                // (e.g. ALREADY_PENDING) instead of a generic 500. Mirrors the
-                                // autoAcceptConversationRequestAfterBlockCheck race handling.
-                                .onErrorResume(DataIntegrityViolationException.class, error ->
-                                        chatConversationRequestRepository.findByMemberPair(memberLowId, memberHighId)
-                                                .flatMap(existing -> handleExistingRequest(
-                                                        existing, currentMemberId, targetMemberId, message))
-                                                .switchIfEmpty(Mono.error(error))))
-                // Both the brand-new and the re-sent (post-cooldown) paths emit the request id on
-                // success; error paths (already pending/accepted/cooldown) short-circuit and never
-                // reach here, so the recipient is notified only when a request was actually sent.
-                .flatMap(requestId -> notifyTargetOfIncomingRequest(currentMemberId, targetMemberId)
-                        .thenReturn(requestId));
+                                // Brand-new request → notify the recipient of the incoming request.
+                                // The existing-request paths handle their own notification: the
+                                // post-cooldown re-send notifies as a fresh request, while the mutual
+                                // auto-accept and the error cases (already pending/accepted/cooldown)
+                                // do not send a "new request" notification.
+                                .flatMap(requestId -> notifyTargetOfIncomingRequest(currentMemberId, targetMemberId)
+                                        .thenReturn(requestId)));
     }
 
     /**
@@ -307,7 +322,11 @@ public class ChatConversationRequestService {
      * Handles the case where a conversation request already exists between the two members.
      *
      * <ul>
-     *   <li>PENDING  → reject: the previous request has not been answered yet.</li>
+     *   <li>PENDING, current sender is the original requester → reject: their own request is
+     *       still awaiting a response.</li>
+     *   <li>PENDING, current sender is the original target → auto-accept: the other member already
+     *       invited them, so sending back is mutual intent and connects the pair immediately
+     *       (same effect as accepting the request).</li>
      *   <li>ACCEPTED → reject: the two members are already connected.</li>
      *   <li>REJECTED + cooldown still active → reject: too early to retry.</li>
      *   <li>REJECTED + cooldown expired → allow re-request: insert a new message into the
@@ -327,9 +346,15 @@ public class ChatConversationRequestService {
         ConversationRequestStatus status = existing.getStatus();
 
         if (status == ConversationRequestStatus.PENDING) {
-            return Mono.error(new ApplicationException(
-                    ErrorCode.CONVERSATION_REQUEST_ALREADY_PENDING,
-                    "A conversation request is already pending between these two members"));
+            // The current sender already owns the pending outgoing request → still just pending.
+            if (existing.getRequesterMemberId().equals(currentMemberId)) {
+                return Mono.error(new ApplicationException(
+                        ErrorCode.CONVERSATION_REQUEST_ALREADY_PENDING,
+                        "A conversation request is already pending between these two members"));
+            }
+            // The other member invited the current sender first; sending back is mutual intent,
+            // so connect the pair right away instead of stacking a second pending request.
+            return autoAcceptMutualRequest(existing, currentMemberId, message);
         }
 
         if (status == ConversationRequestStatus.ACCEPTED) {
@@ -356,16 +381,49 @@ public class ChatConversationRequestService {
                         existing.setCooldownUntil(null);
                         return chatConversationRequestRepository.save(existing);
                     })
-                    .map(updated -> {
+                    .flatMap(updated -> {
                         log.info("Conversation request re-sent: id={}, requester={}, target={}",
                                 updated.getId(), currentMemberId, targetMemberId);
-                        return updated.getId();
+                        // A re-send is a fresh request → notify the recipient like a brand-new one.
+                        return notifyTargetOfIncomingRequest(currentMemberId, targetMemberId)
+                                .thenReturn(updated.getId());
                     });
         }
 
         return Mono.error(new ApplicationException(
                 ErrorCode.BAD_REQUEST,
                 "Unexpected conversation request status: " + status));
+    }
+
+    /**
+     * Accepts a still-pending request on behalf of its target because that target is now the one
+     * sending back — mutual intent. Inserts the sender's message into the existing group, flips the
+     * request to ACCEPTED and adds both members to the group, mirroring the normal accept flow (and
+     * like that flow, it does not notify the original requester of a "new request"). Returns the
+     * request id.
+     */
+    private Mono<Long> autoAcceptMutualRequest(
+            ChatConversationRequest existing,
+            Long currentMemberId,
+            String message) {
+
+        return insertInitialMessage(existing.getChatGroupId(), currentMemberId, message)
+                .flatMap(savedMessage -> {
+                    existing.setStatus(ConversationRequestStatus.ACCEPTED);
+                    existing.setCooldownUntil(null);
+                    existing.setUpdatedAt(LocalDateTime.now());
+                    return chatConversationRequestRepository.save(existing);
+                })
+                .flatMap(saved -> chatGroupRepository.findById(saved.getChatGroupId())
+                        .switchIfEmpty(Mono.error(new ApplicationException(
+                                ErrorCode.RESOURCES_NOT_FOUND,
+                                "Chat group not found for conversation request: " + saved.getChatGroupId())))
+                        .flatMap(group -> addBothMembersToGroup(
+                                group, saved.getRequesterMemberId(), saved.getTargetMemberId())
+                                .thenReturn(saved.getId())))
+                .doOnSuccess(id -> log.info(
+                        "Conversation auto-connected via mutual request: id={}, requester={}, acceptingSender={}",
+                        id, existing.getRequesterMemberId(), currentMemberId));
     }
 
     private Mono<ChatGroup> createPrivateChatGroup(Long createdByMemberId) {
@@ -435,7 +493,6 @@ public class ChatConversationRequestService {
      * accept step. Silently no-ops when the pair is blocked or still under an active
      * rejection cooldown, mirroring how those cases are treated as "not connectable" elsewhere.
      */
-    @Transactional
     public Mono<Void> autoAcceptConversationRequest(
             Long requesterMemberId,
             Long targetMemberId,
@@ -449,8 +506,15 @@ public class ChatConversationRequestService {
         long memberHighId = Math.max(requesterMemberId, targetMemberId);
 
         return userBlockService.assertCommunicationNotBlocked(requesterMemberId, targetMemberId)
+                // Mutation in its own transaction so the concurrent-conflict retry can run outside
+                // it (a failed insert aborts the transaction and blocks any in-tx re-query).
                 .then(Mono.defer(() -> autoAcceptConversationRequestAfterBlockCheck(
-                        memberLowId, memberHighId, requesterMemberId, targetMemberId, message)))
+                        memberLowId, memberHighId, requesterMemberId, targetMemberId, message)
+                        .as(transactionalOperator::transactional)))
+                .onErrorResume(DataIntegrityViolationException.class, error ->
+                        autoAcceptConversationRequestAfterBlockCheck(
+                                memberLowId, memberHighId, requesterMemberId, targetMemberId, message)
+                                .as(transactionalOperator::transactional))
                 .onErrorResume(ApplicationException.class, error -> {
                     if (error.getErrorCode() == ErrorCode.USER_COMMUNICATION_BLOCKED) {
                         log.info("Skipping auto-accept conversation: communication blocked between {} and {}",
@@ -468,13 +532,13 @@ public class ChatConversationRequestService {
             Long targetMemberId,
             String message) {
 
+        // On a concurrent insert conflict the transaction is aborted; the error propagates to
+        // autoAcceptConversationRequest, which retries in a fresh transaction where the pair is
+        // now found and auto-accepted via autoAcceptExistingRequest.
         return chatConversationRequestRepository.findByMemberPair(memberLowId, memberHighId)
                 .flatMap(this::autoAcceptExistingRequest)
                 .switchIfEmpty(createAutoAcceptedConversation(
-                        memberLowId, memberHighId, requesterMemberId, targetMemberId, message)
-                        .onErrorResume(DataIntegrityViolationException.class, error ->
-                                chatConversationRequestRepository.findByMemberPair(memberLowId, memberHighId)
-                                        .flatMap(this::autoAcceptExistingRequest)));
+                        memberLowId, memberHighId, requesterMemberId, targetMemberId, message));
     }
 
     private Mono<Void> autoAcceptExistingRequest(ChatConversationRequest existing) {

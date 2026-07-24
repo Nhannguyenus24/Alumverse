@@ -46,6 +46,22 @@ export function resolveConnectionDrawerState(connectionStatus, t) {
   }
 
   if (status === CONVERSATION_REQUEST_STATUS.PENDING) {
+    // Incoming pending: the other member invited the current user first. Sending back
+    // auto-accepts and connects the pair server-side, so allow a single message.
+    if (connectionStatus?.incoming) {
+      return {
+        banner: {
+          severity: 'info',
+          text: t('network:drawer_banner_incoming_pending'),
+        },
+        canCompose: true,
+        singleMessageOnly: true,
+        messages,
+        emptyHint: t('network:no_messages_yet'),
+        composerPlaceholder: t('network:drawer_placeholder_type'),
+      };
+    }
+
     return {
       banner: {
         severity: 'info',
