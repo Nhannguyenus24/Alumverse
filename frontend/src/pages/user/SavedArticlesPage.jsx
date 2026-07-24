@@ -7,7 +7,7 @@ import SavedItemsHeader from "../../components/SavedItemsHeader";
 import SavedItemList from "../../components/SavedItemList";
 import { savedItemApi } from "../../utils/api";
 import apiClient from "../../utils/axios";
-import { normalizeAlumniPost, normalizeNews } from "../../hooks/articles/normalizeArticle";
+import { normalizeAlumniPost, normalizeNews, normalizeAchievement } from "../../hooks/articles/normalizeArticle";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
 
 /** itemType -> how to fetch + normalize + route to a saved post. */
@@ -21,6 +21,11 @@ const POST_CHANNELS = {
     fetch: (id) => apiClient.get(`/articles/alumni-posts/${id}`),
     normalize: normalizeAlumniPost,
     articlePath: (id) => `/article/alumni/${id}`,
+  },
+  ACHIEVEMENT: {
+    fetch: (id) => apiClient.get(`/articles/achievements/${id}`),
+    normalize: normalizeAchievement,
+    articlePath: (id) => `/article/achievement/${id}`,
   },
 };
 
