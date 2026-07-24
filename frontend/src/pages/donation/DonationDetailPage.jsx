@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Box, Button, Card, Container, Dialog, DialogActions, DialogContent, DialogTitle, Grid, MenuItem, Switch, TextField, Typography, LinearProgress } from "@mui/material";
+import { Box, Button, Card, Container, Dialog, DialogActions, DialogContent, DialogTitle, Grid, IconButton, MenuItem, Switch, TextField, Typography, LinearProgress } from "@mui/material";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
@@ -8,6 +8,7 @@ import { useParams } from "react-router";
 import Page from "../../components/Page";
 import MoneyField from "../../components/MoneyField";
 import VolunteerActivismOutlinedIcon from "@mui/icons-material/VolunteerActivismOutlined";
+import CloseIcon from "@mui/icons-material/Close";
 import { VIETNAM_PHONE_REGEX } from "../../utils/regexUtils";
 import { fundApi } from "../../utils/api";
 import { useAuth } from "../../hooks/useAuth";
@@ -419,7 +420,16 @@ function DonationContributionForm({ fundDetail }) {
         )}
       />
       <Dialog open={isCheckoutPopupOpen} onClose={() => setIsCheckoutPopupOpen(false)} fullWidth maxWidth="xs">
-        <DialogTitle sx={{ color: "primary.main", fontWeight: 800 }}>{t('checkout_dialog_title')}</DialogTitle>
+        <DialogTitle sx={{ color: "primary.main", fontWeight: 800, pr: 6 }}>
+          {t('checkout_dialog_title')}
+          <IconButton
+            aria-label={t('checkout_dialog_close')}
+            onClick={() => setIsCheckoutPopupOpen(false)}
+            sx={{ position: "absolute", right: 8, top: 8, color: "text.secondary" }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
         <DialogContent>
           <Typography sx={{ color: "text.secondary", fontSize: "0.92rem", mb: 1.5 }}>
             {t('checkout_dialog_desc')}
@@ -434,7 +444,7 @@ function DonationContributionForm({ fundDetail }) {
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2, justifyContent: "center" }}>
           <Button variant="contained" onClick={() => setIsCheckoutPopupOpen(false)} sx={{ textTransform: "none", fontWeight: 700 }}>
-            {t('close_fund_cancel')}
+            {t('checkout_dialog_done')}
           </Button>
         </DialogActions>
       </Dialog>
