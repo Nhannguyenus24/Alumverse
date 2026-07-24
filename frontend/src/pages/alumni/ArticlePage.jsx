@@ -217,6 +217,7 @@ const normalizeArticleHtml = (html) => {
 const SAVE_ITEM_TYPE_BY_CHANNEL = {
   news: "NEWS",
   alumni: "ALUMNI_POST",
+  achievement: "ACHIEVEMENT",
 };
 
 /** Heart toggle to save ("quan tâm") an article or alumni post via the generic saved-items
