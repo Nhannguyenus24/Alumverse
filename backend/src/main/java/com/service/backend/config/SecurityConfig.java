@@ -40,7 +40,16 @@ public class SecurityConfig {
 
     private static final Logger log = LoggerFactory.getLogger(SecurityConfig.class);
 
-    private static final String[] PUBLIC_URLS = {
+    /**
+     * Allowlist for NON-controller resources only: infrastructure paths, static assets,
+     * websockets, actuator and external webhooks that have no handler method to annotate.
+     *
+     * Do NOT add controller routes here. Controller endpoints declare their access rule
+     * at the method (or class) via {@code @PublicEndpoint} / {@code @PreAuthorize}; anything
+     * unannotated is authenticated by default. Adding a controller path here would make it
+     * public for ALL HTTP methods and bypass that per-method model.
+     */
+    private static final String[] INFRA_PUBLIC_URLS = {
             "/health",
             "/swagger-ui/**",
             "/swagger-ui.html",
@@ -69,21 +78,36 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .addFilterAt(headerAuthenticationFilter(jwtUtils, publicEndpointConfig), SecurityWebFiltersOrder.AUTHENTICATION)
-                .authorizeExchange(auth -> auth
-                        .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .pathMatchers(PUBLIC_URLS).permitAll()
-                        .pathMatchers(publicEndpointConfig.getAnnotatedPublicUrlsArray()).permitAll()
-                        .anyExchange().authenticated());
+                .authorizeExchange(auth -> {
+                    auth.pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .pathMatchers(INFRA_PUBLIC_URLS).permitAll();
+                    // Public endpoints discovered via @PublicEndpoint are permitted only for
+                    // the exact HTTP method they were declared with, so a public GET does not
+                    // expose a sibling POST/PUT/DELETE on the same path to unauthenticated calls.
+                    publicEndpointConfig.getPublicUrlsByMethod().forEach((method, patterns) ->
+                            auth.pathMatchers(method, patterns.toArray(new String[0])).permitAll());
+                    String[] methodAgnostic = publicEndpointConfig.getMethodAgnosticPublicUrlsArray();
+                    if (methodAgnostic.length > 0) {
+                        auth.pathMatchers(methodAgnostic).permitAll();
+                    }
+                    auth.anyExchange().authenticated();
+                });
 
         return http.build();
     }
 
     private WebFilter headerAuthenticationFilter(JwtUtils jwtUtils, PublicEndpointConfig publicEndpointConfig) {
+        List<ServerWebExchangeMatcher> matchers = new ArrayList<>();
+        matchers.add(ServerWebExchangeMatchers.pathMatchers(HttpMethod.OPTIONS, "/**"));
+        matchers.add(ServerWebExchangeMatchers.pathMatchers(INFRA_PUBLIC_URLS));
+        publicEndpointConfig.getPublicUrlsByMethod().forEach((method, patterns) ->
+                matchers.add(ServerWebExchangeMatchers.pathMatchers(method, patterns.toArray(new String[0]))));
+        String[] methodAgnostic = publicEndpointConfig.getMethodAgnosticPublicUrlsArray();
+        if (methodAgnostic.length > 0) {
+            matchers.add(ServerWebExchangeMatchers.pathMatchers(methodAgnostic));
+        }
         ServerWebExchangeMatcher publicMatcher = ServerWebExchangeMatchers.matchers(
-                ServerWebExchangeMatchers.pathMatchers(HttpMethod.OPTIONS, "/**"),
-                ServerWebExchangeMatchers.pathMatchers(PUBLIC_URLS),
-                ServerWebExchangeMatchers.pathMatchers(publicEndpointConfig.getAnnotatedPublicUrlsArray())
-        );
+                matchers.toArray(new ServerWebExchangeMatcher[0]));
 
         return (exchange, chain) -> publicMatcher.matches(exchange)
                 .flatMap(matchResult -> {
