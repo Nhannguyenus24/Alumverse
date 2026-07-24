@@ -87,12 +87,21 @@ const AdminDashboardPage = () => {
     return () => clearInterval(intervalRef.current);
   }, [refreshInterval, handleRefresh]);
 
-  const { chartData, totalUsers, pendingPosts, totalOrgs } = useMemo(() => ({
-    chartData: Array.isArray(timeline) ? timeline : [],
-    totalUsers: metrics?.totalUsers ?? aggregates.user.totalUsers,
-    pendingPosts: metrics?.pendingPosts ?? metrics?.postsAwaitingModerationCount ?? aggregates.forum.pending,
-    totalOrgs: organizations?.length ?? 0,
-  }), [timeline, metrics, aggregates, organizations]);
+  const { chartData, totalUsers, pendingPosts, totalOrgs, memberTrend } = useMemo(() => {
+    const total = metrics?.totalUsers ?? aggregates.user.totalUsers;
+    const newUsers30 = Number(metrics?.newUsers?.['30d'] ?? 0);
+    // Real 30-day growth: new members over the prior member base. null hides the chip
+    // when there is no history to compare against (avoids showing a fabricated number).
+    const priorBase = Number(total) - newUsers30;
+    const trend = priorBase > 0 ? Math.round((newUsers30 / priorBase) * 100) : null;
+    return {
+      chartData: Array.isArray(timeline) ? timeline : [],
+      totalUsers: total,
+      pendingPosts: metrics?.pendingPosts ?? metrics?.postsAwaitingModerationCount ?? aggregates.forum.pending,
+      totalOrgs: organizations?.length ?? 0,
+      memberTrend: trend,
+    };
+  }, [timeline, metrics, aggregates, organizations]);
 
   const donationsFormatted = useMemo(() => {
     const val = metrics?.donationsLast30Days ?? 0;
@@ -197,7 +206,7 @@ const AdminDashboardPage = () => {
             label={t('admin:total_members')}
             value={totalUsers.toLocaleString()}
             icon={<PeopleAltOutlinedIcon />}
-            trend={12}
+            trend={memberTrend}
           />
           <AdminDashboardMetricTile
             label={t('admin:posts_pending_moderation')}
@@ -209,7 +218,6 @@ const AdminDashboardPage = () => {
             label={t('admin:organizations_units')}
             value={totalOrgs}
             icon={<BusinessCenterOutlinedIcon />}
-            trend={2}
           />
         </Stack>
         <Stack

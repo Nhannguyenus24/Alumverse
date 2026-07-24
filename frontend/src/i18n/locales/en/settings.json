@@ -92,5 +92,9 @@
   "edu_request_pending_note": "An education change request is pending admin approval. You cannot edit until the request is processed.",
   "submitting": "Submitting...",
   "submit_request": "Submit request",
-  "advisor_contact_phone": "Phone: 028 3821 4444"
+  "advisor_contact_phone": "Phone: 028 3821 4444",
+  "label_job_title": "Job Title",
+  "label_company": "Company",
+  "not_set": "Not set",
+  "advisor_default_department": "Faculty of Information Technology"
 }

@@ -376,6 +376,11 @@ export const chatApi = {
 		return unwrap(response);
 	},
 
+	async markGroupAsRead(groupId) {
+		const response = await apiClient.post(`/chat/groups/${groupId}/read`);
+		return unwrap(response);
+	},
+
 	async createGroupChat({ title, memberIds }) {
 		const response = await apiClient.post('/chat/groups', { title: title || null, memberIds });
 		return unwrap(response);

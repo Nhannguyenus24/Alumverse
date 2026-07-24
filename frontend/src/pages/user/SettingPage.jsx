@@ -553,8 +553,8 @@ export default function SettingPage() {
           <TextField fullWidth label={t('label_phone')} name="phone" value={formData.phone} InputProps={{ readOnly: !isEditMode }} onChange={handleFormChange} autoComplete="tel" />
           <TextField fullWidth label={t('label_student_id')} name="studentId" value={formData.studentId} InputProps={{ readOnly: true }} />
           <TextField fullWidth label={t('label_email')} name="email" type="email" value={formData.email} InputProps={{ readOnly: true }} />
-          <TextField fullWidth label={t('label_job_title', { defaultValue: 'Chức danh' })} name="currentJobTitle" value={formData.currentJobTitle} InputProps={{ readOnly: !isEditMode }} onChange={handleFormChange} />
-          <TextField fullWidth label={t('label_company', { defaultValue: 'Công ty' })} name="currentCompany" value={formData.currentCompany} InputProps={{ readOnly: !isEditMode }} onChange={handleFormChange} />
+          <TextField fullWidth label={t('label_job_title')} name="currentJobTitle" value={formData.currentJobTitle} InputProps={{ readOnly: !isEditMode }} onChange={handleFormChange} />
+          <TextField fullWidth label={t('label_company')} name="currentCompany" value={formData.currentCompany} InputProps={{ readOnly: !isEditMode }} onChange={handleFormChange} />
         </Box>
       </ScrollRevealItem>
 
@@ -600,7 +600,7 @@ export default function SettingPage() {
                 <TextField fullWidth label={t('label_grad_year')} value={edu.graduatedYear} InputProps={{ readOnly: !isEditMode }} onChange={(e) => handleEducationChange(index, 'graduatedYear', e.target.value)} />
                 <Autocomplete freeSolo options={organizationMajorOptions} value={edu.major} readOnly={!isEditMode} onInputChange={(_e, value) => handleEducationChange(index, 'major', value)} onChange={(_e, value) => handleEducationChange(index, 'major', value || '')} renderInput={(params) => <TextField {...params} label={t('label_major')} />} />
                 <TextField select fullWidth label={t('label_grad_status')} value={normalizeGraduationStatus(edu.graduationStatus)} InputProps={{ readOnly: !isEditMode }} sx={!isEditMode ? { pointerEvents: 'none' } : undefined} onChange={(e) => handleEducationChange(index, 'graduationStatus', e.target.value)}>
-                  <MenuItem value="">{t('not_set', { defaultValue: 'Chưa cập nhật' })}</MenuItem>
+                  <MenuItem value="">{t('not_set')}</MenuItem>
                   {GRADUATION_STATUS_OPTIONS.map((status) => (
                     <MenuItem key={status} value={status}>{t(`grad_status_${status.toLowerCase()}`)}</MenuItem>
                   ))}
@@ -715,7 +715,7 @@ export default function SettingPage() {
       <ScrollRevealItem><Typography variant="body1" color="textSecondary">{t('advisor_no_advisor')}</Typography></ScrollRevealItem>
       <ScrollRevealItem><Paper variant="outlined" sx={{ p: 3, bgcolor: 'background.default' }}>
         <Typography variant="h5" sx={{ color: 'primary.main' }}>{t('advisor_contact_title')}</Typography>
-        <Typography variant="body1" color="text.primary" display="block" sx={{ mt: 2, fontWeight: 600 }}>{organization?.departmentName || 'Khoa Công nghệ Thông tin'}</Typography>
+        <Typography variant="body1" color="text.primary" display="block" sx={{ mt: 2, fontWeight: 600 }}>{organization?.departmentName || t('advisor_default_department')}</Typography>
         <Typography variant="body1" color="text.secondary" display="block" sx={{ mt: 0.5 }}>Email: {organization?.contactEmail || 'admin@hcmus.edu.vn'}</Typography>
         <Typography variant="body1" color="text.secondary" display="block">Phone: {organization?.contactPhone || '(028) 6288 4499'}</Typography>
       </Paper></ScrollRevealItem>

@@ -55,7 +55,7 @@ export const getArticleFilterConfig = (t, channels = []) => [
   {
     type: 'dropdown',
     key: 'topic',
-    label: t('article:topic', { defaultValue: 'Chủ đề' }),
+    label: t('article:topic'),
     multiple: true,
     options: getTopicOptionsForChannels(t, channels),
   },
@@ -63,21 +63,21 @@ export const getArticleFilterConfig = (t, channels = []) => [
     type: 'topics',
     key: 'sort',
     single: true,
-    label: t('article:sort', { defaultValue: 'Sắp xếp' }),
+    label: t('article:sort'),
     options: [
-      { value: 'newest', label: t('article:sort_newest', { defaultValue: 'Mới nhất' }) },
-      { value: 'oldest', label: t('article:sort_oldest', { defaultValue: 'Cũ nhất' }) },
+      { value: 'newest', label: t('article:sort_newest') },
+      { value: 'oldest', label: t('article:sort_oldest') },
     ],
   },
   {
     type: 'date',
     key: 'fromDate',
-    label: t('article:from_date', { defaultValue: 'Từ ngày' }),
+    label: t('article:from_date'),
   },
   {
     type: 'date',
     key: 'toDate',
-    label: t('article:to_date', { defaultValue: 'Đến ngày' }),
+    label: t('article:to_date'),
   },
 ];
 
