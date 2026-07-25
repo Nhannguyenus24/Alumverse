@@ -45,7 +45,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 @RestController
 @RequestMapping("/api/admin/organizations")
 @Validated
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
 public class AdminOrganizationController {
     
     private final AdminOrganizationService organizationService;
@@ -58,6 +58,7 @@ public class AdminOrganizationController {
      * Get all organizations with pagination and search
      */
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<Organization>>>> getAllOrganizations(
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int size,
@@ -73,13 +74,15 @@ public class AdminOrganizationController {
     @GetMapping("/{organizationId}")
     public Mono<ResponseEntity<ApiResponse<Organization>>> getOrganizationById(
             @PathVariable Integer organizationId) {
-        return organizationService.getOrganizationById(organizationId)
+        return SecurityUtils.assertCanAdministerOrganization(organizationId)
+                .then(organizationService.getOrganizationById(organizationId))
                 .map(organization -> ResponseEntity.ok(
                         new ApiResponse<>("Organization fetched successfully", organization)))
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.ORGANIZATION_NOT_FOUND, "Organization not found")));
     }
 
     @GetMapping("/feedbacks")
+    @PreAuthorize("hasRole('ADMIN')")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<SchoolFeedback>>>> getSchoolFeedbacks(
             @RequestParam(required = false) Integer organizationId,
             @RequestParam(defaultValue = "0") @Min(0) int page,
@@ -90,6 +93,7 @@ public class AdminOrganizationController {
     }
 
     @PatchMapping("/feedbacks/{feedbackId}/read")
+    @PreAuthorize("hasRole('ADMIN')")
     public Mono<ResponseEntity<ApiResponse<Boolean>>> markSchoolFeedbackAsRead(
             @PathVariable Integer feedbackId) {
         return organizationService.markSchoolFeedbackAsRead(feedbackId)
@@ -109,6 +113,7 @@ public class AdminOrganizationController {
      * Get organization by slug
      */
     @GetMapping("/slug/{slug}")
+    @PreAuthorize("hasRole('ADMIN')")
     public Mono<ResponseEntity<ApiResponse<Organization>>> getOrganizationBySlug(
             @PathVariable String slug) {
         return organizationService.getOrganizationBySlug(slug)
@@ -133,11 +138,11 @@ public class AdminOrganizationController {
      * Update organization
      */
     @PutMapping("/{organizationId}")
-    @PreAuthorize("hasRole('ADMIN')")
     public Mono<ResponseEntity<ApiResponse<Organization>>> updateOrganization(
             @PathVariable Integer organizationId,
             @Valid @RequestBody UpdateOrganizationRequest organizationUpdate) {
-        return organizationService.updateOrganization(organizationId, organizationUpdate)
+        return SecurityUtils.assertCanAdministerOrganization(organizationId)
+                .then(organizationService.updateOrganization(organizationId, organizationUpdate))
                 .map(updated -> ResponseEntity.ok(
                         new ApiResponse<>("Organization updated successfully", updated)))
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.ORGANIZATION_NOT_FOUND, "Organization not found")));
@@ -174,37 +179,38 @@ public class AdminOrganizationController {
     @GetMapping("/{organizationId}/programs")
     public Mono<ResponseEntity<ApiResponse<List<String>>>> getPrograms(
             @PathVariable Integer organizationId) {
-        return organizationService.getPrograms(organizationId)
+        return SecurityUtils.assertCanAdministerOrganization(organizationId)
+                .then(organizationService.getPrograms(organizationId))
                 .map(programs -> ResponseEntity.ok(
                         new ApiResponse<>("Programs fetched successfully", programs)));
     }
 
     @PostMapping("/{organizationId}/programs")
-    @PreAuthorize("hasRole('ADMIN')")
     public Mono<ResponseEntity<ApiResponse<List<String>>>> addProgram(
             @PathVariable Integer organizationId,
             @Valid @RequestBody OrganizationOptionRequest request) {
-        return organizationService.addProgram(organizationId, request.getValue())
+        return SecurityUtils.assertCanAdministerOrganization(organizationId)
+                .then(organizationService.addProgram(organizationId, request.getValue()))
                 .map(programs -> ResponseEntity.ok(
                         new ApiResponse<>("Program added successfully", programs)));
     }
 
     @PutMapping("/{organizationId}/programs")
-    @PreAuthorize("hasRole('ADMIN')")
     public Mono<ResponseEntity<ApiResponse<List<String>>>> updateProgram(
             @PathVariable Integer organizationId,
             @Valid @RequestBody UpdateOrganizationOptionRequest request) {
-        return organizationService.updateProgram(organizationId, request.getOldValue(), request.getNewValue())
+        return SecurityUtils.assertCanAdministerOrganization(organizationId)
+                .then(organizationService.updateProgram(organizationId, request.getOldValue(), request.getNewValue()))
                 .map(programs -> ResponseEntity.ok(
                         new ApiResponse<>("Program updated successfully", programs)));
     }
 
     @DeleteMapping("/{organizationId}/programs")
-    @PreAuthorize("hasRole('ADMIN')")
     public Mono<ResponseEntity<ApiResponse<List<String>>>> removeProgram(
             @PathVariable Integer organizationId,
             @RequestParam @NotBlank String value) {
-        return organizationService.removeProgram(organizationId, value)
+        return SecurityUtils.assertCanAdministerOrganization(organizationId)
+                .then(organizationService.removeProgram(organizationId, value))
                 .map(programs -> ResponseEntity.ok(
                         new ApiResponse<>("Program removed successfully", programs)));
     }
@@ -212,37 +218,38 @@ public class AdminOrganizationController {
     @GetMapping("/{organizationId}/majors")
     public Mono<ResponseEntity<ApiResponse<List<String>>>> getMajors(
             @PathVariable Integer organizationId) {
-        return organizationService.getMajors(organizationId)
+        return SecurityUtils.assertCanAdministerOrganization(organizationId)
+                .then(organizationService.getMajors(organizationId))
                 .map(majors -> ResponseEntity.ok(
                         new ApiResponse<>("Majors fetched successfully", majors)));
     }
 
     @PostMapping("/{organizationId}/majors")
-    @PreAuthorize("hasRole('ADMIN')")
     public Mono<ResponseEntity<ApiResponse<List<String>>>> addMajor(
             @PathVariable Integer organizationId,
             @Valid @RequestBody OrganizationOptionRequest request) {
-        return organizationService.addMajor(organizationId, request.getValue())
+        return SecurityUtils.assertCanAdministerOrganization(organizationId)
+                .then(organizationService.addMajor(organizationId, request.getValue()))
                 .map(majors -> ResponseEntity.ok(
                         new ApiResponse<>("Major added successfully", majors)));
     }
 
     @PutMapping("/{organizationId}/majors")
-    @PreAuthorize("hasRole('ADMIN')")
     public Mono<ResponseEntity<ApiResponse<List<String>>>> updateMajor(
             @PathVariable Integer organizationId,
             @Valid @RequestBody UpdateOrganizationOptionRequest request) {
-        return organizationService.updateMajor(organizationId, request.getOldValue(), request.getNewValue())
+        return SecurityUtils.assertCanAdministerOrganization(organizationId)
+                .then(organizationService.updateMajor(organizationId, request.getOldValue(), request.getNewValue()))
                 .map(majors -> ResponseEntity.ok(
                         new ApiResponse<>("Major updated successfully", majors)));
     }
 
     @DeleteMapping("/{organizationId}/majors")
-    @PreAuthorize("hasRole('ADMIN')")
     public Mono<ResponseEntity<ApiResponse<List<String>>>> removeMajor(
             @PathVariable Integer organizationId,
             @RequestParam @NotBlank String value) {
-        return organizationService.removeMajor(organizationId, value)
+        return SecurityUtils.assertCanAdministerOrganization(organizationId)
+                .then(organizationService.removeMajor(organizationId, value))
                 .map(majors -> ResponseEntity.ok(
                         new ApiResponse<>("Major removed successfully", majors)));
     }
@@ -250,17 +257,18 @@ public class AdminOrganizationController {
     @GetMapping("/{organizationId}/features-config")
     public Mono<ResponseEntity<ApiResponse<FeatureConfig>>> getConfig(
             @PathVariable Integer organizationId) {
-        return organizationService.getConfig(organizationId)
+        return SecurityUtils.assertCanAdministerOrganization(organizationId)
+                .then(organizationService.getConfig(organizationId))
                 .map(config -> ResponseEntity.ok(
                         new ApiResponse<>("Config fetched successfully", config)));
     }
 
     @PutMapping("/{organizationId}/features-config")
-    @PreAuthorize("hasRole('ADMIN')")
     public Mono<ResponseEntity<ApiResponse<FeatureConfig>>> updateConfig(
             @PathVariable Integer organizationId,
             @RequestBody FeatureConfig config) {
-        return organizationService.updateConfig(organizationId, config)
+        return SecurityUtils.assertCanAdministerOrganization(organizationId)
+                .then(organizationService.updateConfig(organizationId, config))
                 .map(updated -> ResponseEntity.ok(
                         new ApiResponse<>("Config updated successfully", updated)));
     }
@@ -268,48 +276,51 @@ public class AdminOrganizationController {
     @GetMapping("/{organizationId}/features-config/site-identity")
     public Mono<ResponseEntity<ApiResponse<FeatureConfig.SiteIdentity>>> getSiteIdentity(
             @PathVariable Integer organizationId) {
-        return organizationService.getSiteIdentity(organizationId)
+        return SecurityUtils.assertCanAdministerOrganization(organizationId)
+                .then(organizationService.getSiteIdentity(organizationId))
                 .map(v -> ResponseEntity.ok(new ApiResponse<>("Fetched successfully", v)));
     }
 
     @PutMapping("/{organizationId}/features-config/site-identity")
-    @PreAuthorize("hasRole('ADMIN')")
     public Mono<ResponseEntity<ApiResponse<FeatureConfig>>> updateSiteIdentity(
             @PathVariable Integer organizationId,
             @RequestBody FeatureConfig.SiteIdentity siteIdentity) {
-        return organizationService.updateSiteIdentity(organizationId, siteIdentity)
+        return SecurityUtils.assertCanAdministerOrganization(organizationId)
+                .then(organizationService.updateSiteIdentity(organizationId, siteIdentity))
                 .map(updated -> ResponseEntity.ok(new ApiResponse<>("Updated successfully", updated)));
     }
 
     @GetMapping("/{organizationId}/features-config/brand")
     public Mono<ResponseEntity<ApiResponse<FeatureConfig.BrandConfig>>> getBrandConfig(
             @PathVariable Integer organizationId) {
-        return organizationService.getBrandConfig(organizationId)
+        return SecurityUtils.assertCanAdministerOrganization(organizationId)
+                .then(organizationService.getBrandConfig(organizationId))
                 .map(v -> ResponseEntity.ok(new ApiResponse<>("Fetched successfully", v)));
     }
 
     @PutMapping("/{organizationId}/features-config/brand")
-    @PreAuthorize("hasRole('ADMIN')")
     public Mono<ResponseEntity<ApiResponse<FeatureConfig>>> updateBrandConfig(
             @PathVariable Integer organizationId,
             @RequestBody FeatureConfig.BrandConfig brandConfig) {
-        return organizationService.updateBrandConfig(organizationId, brandConfig)
+        return SecurityUtils.assertCanAdministerOrganization(organizationId)
+                .then(organizationService.updateBrandConfig(organizationId, brandConfig))
                 .map(updated -> ResponseEntity.ok(new ApiResponse<>("Updated successfully", updated)));
     }
 
     @GetMapping("/{organizationId}/features-config/features")
     public Mono<ResponseEntity<ApiResponse<Map<String, FeatureConfig.Feature>>>> getFeatures(
             @PathVariable Integer organizationId) {
-        return organizationService.getFeatures(organizationId)
+        return SecurityUtils.assertCanAdministerOrganization(organizationId)
+                .then(organizationService.getFeatures(organizationId))
                 .map(v -> ResponseEntity.ok(new ApiResponse<>("Fetched successfully", v)));
     }
 
     @PutMapping("/{organizationId}/features-config/features")
-    @PreAuthorize("hasRole('ADMIN')")
     public Mono<ResponseEntity<ApiResponse<FeatureConfig>>> updateFeatures(
             @PathVariable Integer organizationId,
             @RequestBody Map<String, FeatureConfig.Feature> featuresConfig) {
-        return organizationService.updateFeatures(organizationId, featuresConfig)
+        return SecurityUtils.assertCanAdministerOrganization(organizationId)
+                .then(organizationService.updateFeatures(organizationId, featuresConfig))
                 .map(updated -> ResponseEntity.ok(new ApiResponse<>("Updated successfully", updated)));
     }
 
@@ -317,42 +328,44 @@ public class AdminOrganizationController {
     public Mono<ResponseEntity<ApiResponse<FeatureConfig.Feature>>> getFeature(
             @PathVariable Integer organizationId,
             @PathVariable String featureName) {
-        return organizationService.getFeature(organizationId, featureName)
+        return SecurityUtils.assertCanAdministerOrganization(organizationId)
+                .then(organizationService.getFeature(organizationId, featureName))
                 .map(v -> ResponseEntity.ok(new ApiResponse<>("Fetched successfully", v)));
     }
 
     @PutMapping("/{organizationId}/features-config/features/{featureName}")
-    @PreAuthorize("hasRole('ADMIN')")
     public Mono<ResponseEntity<ApiResponse<FeatureConfig>>> updateFeature(
             @PathVariable Integer organizationId,
             @PathVariable String featureName,
             @RequestBody FeatureConfig.Feature patch) {
-        return organizationService.updateFeature(organizationId, featureName, patch)
+        return SecurityUtils.assertCanAdministerOrganization(organizationId)
+                .then(organizationService.updateFeature(organizationId, featureName, patch))
                 .map(updated -> ResponseEntity.ok(new ApiResponse<>("Updated successfully", updated)));
     }
 
     @PatchMapping("/{organizationId}/features-config/features/{featureName}/toggle")
-    @PreAuthorize("hasRole('ADMIN')")
     public Mono<ResponseEntity<ApiResponse<FeatureConfig>>> toggleFeature(
             @PathVariable Integer organizationId,
             @PathVariable String featureName) {
-        return organizationService.toggleFeature(organizationId, featureName)
+        return SecurityUtils.assertCanAdministerOrganization(organizationId)
+                .then(organizationService.toggleFeature(organizationId, featureName))
                 .map(updated -> ResponseEntity.ok(new ApiResponse<>("Feature toggled successfully", updated)));
     }
 
     @GetMapping("/{organizationId}/features-config/privacy")
     public Mono<ResponseEntity<ApiResponse<FeatureConfig.PrivacySettings>>> getPrivacySettings(
             @PathVariable Integer organizationId) {
-        return organizationService.getPrivacySettings(organizationId)
+        return SecurityUtils.assertCanAdministerOrganization(organizationId)
+                .then(organizationService.getPrivacySettings(organizationId))
                 .map(v -> ResponseEntity.ok(new ApiResponse<>("Fetched successfully", v)));
     }
 
     @PutMapping("/{organizationId}/features-config/privacy")
-    @PreAuthorize("hasRole('ADMIN')")
     public Mono<ResponseEntity<ApiResponse<FeatureConfig>>> updatePrivacySettings(
             @PathVariable Integer organizationId,
             @RequestBody FeatureConfig.PrivacySettings privacySettings) {
-        return organizationService.updatePrivacySettings(organizationId, privacySettings)
+        return SecurityUtils.assertCanAdministerOrganization(organizationId)
+                .then(organizationService.updatePrivacySettings(organizationId, privacySettings))
                 .map(updated -> ResponseEntity.ok(new ApiResponse<>("Updated successfully", updated)));
     }
 }
