@@ -276,7 +276,7 @@
   "metric_active_users": "Active",
   "metric_inactive_users": "Inactive",
   "metric_banned_users": "Banned",
-  "chart_new_registrations": "New registrations by day (last 14 days)",
+  "chart_new_registrations": "New registrations by day (last 1 month)",
   "section_forum_title": "Forum",
   "section_forum_subtitle": "Post volume, moderation status, and live API statistics.",
   "metric_total_posts": "Total posts",

@@ -3,6 +3,7 @@ import { Navigate, useLocation, useParams } from "react-router";
 import LoadingScreen from "../components/LoadingScreen";
 import { useAuth } from "../hooks/useAuth";
 import useOrganizationStore from "../stores/organizationStore";
+import { isSameOrganization } from "./routeGuards";
 
 const MANAGER_ONLY_CHANNELS = new Set(["news", "event"]);
 const CONTRIBUTOR_CHANNELS = new Set(["alumni", "achievement", "job", "learning"]);
@@ -23,10 +24,7 @@ const PostArticleRouteGuard = ({ children, channel: explicitChannel }) => {
   const role = String(user?.role ?? "").toUpperCase();
   const level = Number(verificationLevel ?? 0);
   const tokenOrganizationId = user?.organizationId ?? null;
-  const isCurrentOrganization =
-    currentOrganizationId != null &&
-    tokenOrganizationId != null &&
-    Number(currentOrganizationId) === Number(tokenOrganizationId);
+  const isCurrentOrganization = isSameOrganization(currentOrganizationId, tokenOrganizationId);
   const isAdmin = role === "ADMIN";
   const isCurrentOrgStaffManager = role === "STAFF" && level >= 4 && isCurrentOrganization;
   const isVerifiedContributor = role === "USER" && level >= 2 && isCurrentOrganization;

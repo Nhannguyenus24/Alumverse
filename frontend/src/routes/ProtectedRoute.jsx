@@ -2,6 +2,7 @@ import { Navigate, useLocation, useParams } from "react-router";
 import { useAuth } from "../hooks/useAuth";
 import LoadingScreen from "../components/LoadingScreen";
 import useOrganizationStore from "../stores/organizationStore";
+import { isGlobalAdminPath, isSlugAdminPath, isSameOrganization } from "./routeGuards";
 
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   const { isAuthenticated, isLoading, user, mustChangePassword, verificationLevel } = useAuth();
@@ -9,8 +10,8 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   const { slug } = useParams();
   const currentOrganizationId = useOrganizationStore((state) => state.organization?.id ?? null);
 
-  const isGlobalAdminRoute = /^\/admin(?:\/|$)/.test(location.pathname);
-  const isSlugAdminRoute = /^\/[^/]+\/admin(?:\/|$)/.test(location.pathname);
+  const isGlobalAdminRoute = isGlobalAdminPath(location.pathname);
+  const isSlugAdminRoute = isSlugAdminPath(location.pathname);
   const isAnyAdminRoute = isGlobalAdminRoute || isSlugAdminRoute;
 
   // For admin routes, don't require slug context
@@ -53,9 +54,7 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   const tokenOrganizationId = user?.organizationId ?? null;
   const staffInCurrentOrganization =
     isSlugAdminRoute &&
-    currentOrganizationId != null &&
-    tokenOrganizationId != null &&
-    Number(currentOrganizationId) === Number(tokenOrganizationId);
+    isSameOrganization(currentOrganizationId, tokenOrganizationId);
 
   if (user?.role === 'STAFF' && isAnyAdminRoute && (Number(verificationLevel ?? 0) < 4 || !staffInCurrentOrganization)) {
     return <Navigate to="/unauthorized" replace />;
