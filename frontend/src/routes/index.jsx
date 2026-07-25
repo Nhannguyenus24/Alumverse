@@ -805,7 +805,7 @@ export const router = createBrowserRouter([
           {
             path: "organizations",
             element: (
-              <ProtectedRoute allowedRoles={["ADMIN"]}>
+              <ProtectedRoute allowedRoles={["ADMIN", "STAFF"]}>
                 <AdminOrganizationsPage />
               </ProtectedRoute>
             ),
