@@ -53,7 +53,7 @@ const NAV_GROUPS = (adminBase, t) => [
   {
     title: t('admin:nav_group_entity_management'),
     items: [
-      { to: `${adminBase}/organizations`, icon: <BusinessOutlinedIcon />, label: t('admin:nav_organizations'), roles: ['ADMIN'] },
+      { to: `${adminBase}/organizations`, icon: <BusinessOutlinedIcon />, label: t('admin:nav_organizations'), roles: ['ADMIN', 'STAFF'] },
       { to: `${adminBase}/users`, icon: <GroupsOutlinedIcon />, label: t('admin:nav_users') },
       { to: `${adminBase}/verifications`, icon: <VerifiedUserOutlinedIcon />, label: t('admin:nav_verifications') },
       { to: `${adminBase}/mentorship`, icon: <SchoolOutlinedIcon />, label: t('admin:nav_mentorship') },
@@ -82,7 +82,7 @@ const NAV_GROUPS = (adminBase, t) => [
   {
     title: t('admin:nav_group_system'),
     items: [
-      { to: `${adminBase}/feedbacks`, icon: <FeedbackOutlinedIcon />, label: t('admin:nav_feedbacks') },
+      { to: `${adminBase}/feedbacks`, icon: <FeedbackOutlinedIcon />, label: t('admin:nav_feedbacks'), roles: ['ADMIN'] },
       { to: `${adminBase}/education-requests`, icon: <HistoryEduOutlinedIcon />, label: t('admin:nav_education_requests') },
       { to: `${adminBase}/audit-logs`, icon: <GavelOutlinedIcon />, label: t('admin:nav_audit_logs'), roles: ['ADMIN'] },
       { to: `${adminBase}/email-templates`, icon: <MarkEmailReadOutlinedIcon />, label: t('admin:nav_email_templates'), roles: ['ADMIN'] },
