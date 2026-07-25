@@ -163,11 +163,9 @@ const CreateGroupChatDialog = ({ open, onClose, onCreated }) => {
         <Typography
           variant="caption"
           color={
-            selectedMembers.length < MIN_OTHER_MEMBERS
-              ? 'error'
-              : selectedMembers.length >= MAX_OTHER_MEMBERS
-                ? 'warning.main'
-                : 'text.secondary'
+            selectedMembers.length >= MAX_OTHER_MEMBERS
+              ? 'warning.main'
+              : 'text.secondary'
           }
         >
           {t('network:selected_count_with_limits', { count: selectedMembers.length, min: MIN_OTHER_MEMBERS, max: MAX_OTHER_MEMBERS })}
