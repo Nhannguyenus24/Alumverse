@@ -401,12 +401,14 @@ const ForumAlumniCreateTopicPage = () => {
               >
                 <TextField
                   fullWidth
+                  required
                   variant="outlined"
                   size="small"
                   label={t("forum:topic_title_label")}
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder={t("forum:topic_title_label")}
+                  inputProps={{ maxLength: 150 }}
                   sx={{
                     "& .MuiInputBase-input": {
                       fontSize: { xs: "1.05rem", md: "1.1rem" },

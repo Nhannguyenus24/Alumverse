@@ -4,9 +4,9 @@ import { Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
 import ConfirmationNumberOutlinedIcon from "@mui/icons-material/ConfirmationNumberOutlined";
+import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
 import { QRCodeSVG } from "qrcode.react";
 
-const CANCEL_TICKET_ICON = "/icons/icon_cancel_ticket.png";
 import { eventApi } from "../utils/api";
 import useOrganizationStore from "../stores/organizationStore";
 import { canCancelEventTicketStatus } from "../utils/eventRegistration";
@@ -128,14 +128,7 @@ const MyTicketCard = ({ ticket, onCancelled, highlighted = false }) => {
                 variant="outlined"
                 color="error"
                 size="small"
-                startIcon={
-                  <Box
-                    component="img"
-                    src={CANCEL_TICKET_ICON}
-                    alt=""
-                    sx={{ width: 18, height: 18, objectFit: "contain" }}
-                  />
-                }
+                startIcon={<CancelOutlinedIcon />}
                 onClick={() => setOpenCancelDialog(true)}
               >
                 {t("event:cancel_ticket")}

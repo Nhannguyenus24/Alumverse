@@ -121,7 +121,10 @@ export default function MessagesPreviewPanel({
           </Box>
         )}
 
-        {!isPending && !isError && previews.map((chat, index) => (
+        {!isPending && !isError && previews.map((chat, index) => {
+          const unreadCount = chat.unreadCount ?? 0;
+          const hasUnread = unreadCount > 0;
+          return (
           <Box
             key={chat.id}
             role="button"
@@ -160,7 +163,7 @@ export default function MessagesPreviewPanel({
                   gap: 1,
                 }}
               >
-                <Typography variant="subtitle2" fontWeight={600} noWrap>
+                <Typography variant="subtitle2" fontWeight={hasUnread ? 800 : 600} color={hasUnread ? 'text.primary' : undefined} noWrap>
                   {chat.name}
                 </Typography>
                 <Typography
@@ -171,12 +174,34 @@ export default function MessagesPreviewPanel({
                   {formatDateTime(chat.updatedAt)}
                 </Typography>
               </Box>
-              <Typography variant="body2" color="text.secondary" noWrap>
+              <Typography variant="body2" color={hasUnread ? 'text.primary' : 'text.secondary'} fontWeight={hasUnread ? 600 : 400} noWrap>
                 {chat.preview}
               </Typography>
             </Box>
+            {hasUnread ? (
+              <Box
+                sx={{
+                  flexShrink: 0,
+                  minWidth: 20,
+                  height: 20,
+                  px: 0.75,
+                  borderRadius: 999,
+                  bgcolor: 'primary.main',
+                  color: 'primary.contrastText',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '0.7rem',
+                  fontWeight: 700,
+                  lineHeight: 1,
+                  alignSelf: 'center',
+                }}
+              >
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </Box>
+            ) : null}
           </Box>
-        ))}
+        )})}
       </Scrollbar>
 
       <Divider />

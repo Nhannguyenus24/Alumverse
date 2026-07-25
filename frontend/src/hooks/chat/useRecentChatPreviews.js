@@ -10,6 +10,7 @@ function normalizeRecentChatPreview(item) {
     avatarUrl: item.avatarUrl ?? null,
     preview: item.preview ?? '',
     updatedAt: item.updatedAt ?? null,
+    unreadCount: Number(item.unreadCount) || 0,
     type: item.type === 'GROUP' ? 'GROUP' : 'PRIVATE',
   };
 }

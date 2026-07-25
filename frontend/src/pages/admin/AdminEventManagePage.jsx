@@ -458,9 +458,7 @@ const AdminEventManagePage = () => {
   const interestsData = extractPage(interests);
   const invitationsData = extractPage(invitations);
   const emailLogsData = extractPage(emailLogs);
-  const answerCount = (ticketsData.items ?? []).filter(
-    (ticket) => Array.isArray(ticket.registrationAnswers) && ticket.registrationAnswers.length > 0,
-  ).length;
+  const answerCount = ticketsData.totalItem ?? 0;
 
   return (
     <Box>
@@ -579,12 +577,7 @@ const AdminEventManagePage = () => {
                     {cancellable && (
                       <Tooltip title={t('event:tooltip_cancel_ticket')}>
                         <IconButton size="small" color="warning" onClick={() => handleCancelTicket(ticket)}>
-                          <Box
-                            component="img"
-                            src="/icons/icon_cancel_ticket.png"
-                            alt=""
-                            sx={{ width: 20, height: 20 }}
-                          />
+                          <CancelOutlinedIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
                     )}
