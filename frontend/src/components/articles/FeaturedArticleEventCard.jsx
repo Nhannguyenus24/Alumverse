@@ -77,9 +77,11 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
       if (isInterested) {
         await eventApi.removeInterest(article.id);
         setIsInterested(false);
+        enqueueSnackbar(t('event:unmark_interested_success', { defaultValue: 'Đã hủy quan tâm sự kiện' }), { variant: 'info' });
       } else {
         await eventApi.addInterest(article.id);
         setIsInterested(true);
+        enqueueSnackbar(t('event:mark_interested_success', { defaultValue: 'Đã quan tâm sự kiện' }), { variant: 'success' });
       }
     } catch (err) {
       enqueueSnackbar(err?.response?.data?.message || t('common:action_failed'), { variant: 'error' });
