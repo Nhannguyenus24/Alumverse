@@ -79,6 +79,12 @@ const SignupCodePage = () => {
   };
 
   const handleOtpKeyDown = (index, event) => {
+    const isControlKey = ['Backspace', 'Tab', 'ArrowLeft', 'ArrowRight', 'Delete', 'Enter'].includes(event.key);
+    const isModifier = event.ctrlKey || event.metaKey || event.altKey;
+    if (!isControlKey && !isModifier && !/^\d$/.test(event.key)) {
+      event.preventDefault();
+    }
+
     if (event.key !== 'Backspace') return;
 
     if (otpDigits[index]) {

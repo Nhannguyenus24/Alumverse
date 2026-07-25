@@ -283,8 +283,12 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
   }, [handleSend]);
 
   const handleEmojiSelect = useCallback((emoji) => {
+    if (draft.length + emoji.length > MAX_MESSAGE_LENGTH) {
+      showError(t('network:chat.paste_limit_exceeded', 'Văn bản vượt quá giới hạn {{max}} ký tự và đã bị cắt bớt.', { max: MAX_MESSAGE_LENGTH }));
+      return;
+    }
     insertTextAtInputSelection(draftInputRef, setDraft, emoji);
-  }, []);
+  }, [draft.length, showError, t]);
 
   const isAttachDisabled = isInputDisabled || isUploadingAttachment;
 
@@ -744,10 +748,17 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
                   : t('network:connecting_placeholder')
             }
             value={draft}
-            onChange={(event) => setDraft(event.target.value)}
+            onChange={(event) => {
+              const val = event.target.value;
+              if (val.length > MAX_MESSAGE_LENGTH) {
+                setDraft(val.slice(0, MAX_MESSAGE_LENGTH));
+                showError(t('network:chat.paste_limit_exceeded', 'Văn bản vượt quá giới hạn {{max}} ký tự và đã bị cắt bớt.', { max: MAX_MESSAGE_LENGTH }));
+              } else {
+                setDraft(val);
+              }
+            }}
             onKeyDown={handleKeyDown}
             disabled={isInputDisabled}
-            inputProps={{ maxLength: MAX_MESSAGE_LENGTH }}
             variant="outlined"
             size="small"
             sx={{
