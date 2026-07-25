@@ -28,6 +28,7 @@ import HourglassEmptyOutlinedIcon from "@mui/icons-material/HourglassEmptyOutlin
 import ForumOutlinedIcon from "@mui/icons-material/ForumOutlined";
 import ChatOutlinedIcon from "@mui/icons-material/ChatOutlined";
 import VisibilityIcon from "@mui/icons-material/Visibility";
+import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
 import AdminDataTable from "../../components/admin/AdminDataTable";
 import AdminStatusChip from "../../components/admin/AdminStatusChip";
 import AdminDashboardMetricTile from "../../components/admin/AdminDashboardMetricTile";
@@ -167,6 +168,17 @@ const AdminForumTopicsPage = () => {
               <VisibilityOutlinedIcon fontSize="small" />
             </IconButton>
           </Tooltip>
+          {String(row.status || "").toUpperCase() === "PENDING" && (
+            <Tooltip title={t('forum_action_approve', { defaultValue: 'Duyệt' })}>
+              <IconButton
+                size="small"
+                color="success"
+                onClick={() => handleChangeStatus(row.id, "ACTIVE")}
+              >
+                <CheckCircleOutlinedIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
           <Tooltip title={t('forum_action_edit')}>
             <IconButton size="small" onClick={() => openEdit(row)}>
               <EditOutlinedIcon fontSize="small" />
