@@ -196,7 +196,7 @@ const fetchPrometheusRange = async (query, start, end, step) => {
   try {
     const res = await axios.get(PROMETHEUS_URL_RANGE, {
       params: { query, start, end, step: `${step}s` },
-      timeout: 10000
+      timeout: 60000
     });
     if (res.data && res.data.data && res.data.data.result.length > 0) {
       return res.data.data.result[0].values;
@@ -212,7 +212,7 @@ const fetchPrometheusRangeMultiple = async (query, start, end, step) => {
   try {
     const res = await axios.get(PROMETHEUS_URL_RANGE, {
       params: { query, start, end, step: `${step}s` },
-      timeout: 10000
+      timeout: 60000
     });
     if (res.data && res.data.data && res.data.data.result) {
       return res.data.data.result;
@@ -228,7 +228,7 @@ const fetchPrometheusInstant = async (query, time) => {
   try {
     const res = await axios.get(PROMETHEUS_URL_INSTANT, {
       params: { query, time },
-      timeout: 10000
+      timeout: 60000
     });
     if (res.data && res.data.data && res.data.data.result.length > 0) {
       return res.data.data.result;

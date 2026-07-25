@@ -135,6 +135,10 @@ public class AdminUserService {
                                                   String status) {
         String upperStatus = status == null ? "ACTIVE" : status.toUpperCase();
         boolean trustedVerifier = isTrustedVerifier != null && isTrustedVerifier;
+        // Chuẩn hoá student_id rỗng thành null: Postgres cho phép nhiều NULL trong unique
+        // constraint (organization_id, student_id) nhưng chuỗi rỗng "" thì bị coi là trùng.
+        // Nhờ đó STAFF/USER không điền MSSV sẽ không đụng uk_organization_members_student_id.
+        String normalizedStudentId = StringUtils.hasText(studentId) ? studentId.trim() : null;
         String facultyJson = JsonUtils.toJson(faculty);
         String startedYearJson = JsonUtils.toJson(startedYear);
         String graduatedYearJson = JsonUtils.toJson(graduatedYear);
@@ -233,7 +237,7 @@ public class AdminUserService {
                     ? adminUserRepository.updateOrganizationMemberByUserId(
                         organizationId,
                         actualUserId,
-                        studentId,
+                        normalizedStudentId,
                         facultyJson,
                         startedYearJson,
                         graduatedYearJson,
@@ -247,7 +251,7 @@ public class AdminUserService {
                     : adminUserRepository.createOrganizationMember(
                         organizationId,
                         actualUserId,
-                        studentId,
+                        normalizedStudentId,
                         facultyJson,
                         startedYearJson,
                         graduatedYearJson,
@@ -264,6 +268,12 @@ public class AdminUserService {
                         : Mono.empty())
                 .doOnSuccess(success -> logger.info("createOrganizationMember: userId={}, organizationId={}, success={}", actualUserId, organizationId, success))
                 .doOnError(error -> logger.error("Error adding user {} to organization {}: {}", actualUserId, organizationId, error.getMessage()))
+                .onErrorMap(org.springframework.dao.DuplicateKeyException.class, e -> {
+                    if (e.getMessage() != null && e.getMessage().contains("uk_organization_members_student_id")) {
+                        return new ApplicationException(ErrorCode.STUDENT_ID_ALREADY_EXISTS, "Mã số sinh viên này đã được sử dụng trong tổ chức");
+                    }
+                    return new ApplicationException(ErrorCode.RESOURCES_DUPLICATE, "Dữ liệu bị trùng lặp");
+                })
             );
         });
     }
