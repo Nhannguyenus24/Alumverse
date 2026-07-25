@@ -16,12 +16,12 @@ export function normalizePreviewText(text) {
 export function getFeaturedTitleFontSize(text) {
   const len = normalizePreviewText(text).length;
   if (len > 80) {
-    return { xs: "1.1rem", sm: "1.2rem", md: "1.3rem" };
+    return { xs: "1.16rem", sm: "1.28rem", md: "1.42rem" };
   }
   if (len > 45) {
-    return { xs: "1.2rem", sm: "1.35rem", md: "1.48rem" };
+    return { xs: "1.24rem", sm: "1.42rem", md: "1.58rem" };
   }
-  return { xs: "1.3rem", sm: "1.5rem", md: "1.68rem" };
+  return { xs: "1.34rem", sm: "1.56rem", md: "1.76rem" };
 }
 
 // For regular (non-featured) cards — mirrors getFeaturedTitleFontSize breakpoints (>80, >45)

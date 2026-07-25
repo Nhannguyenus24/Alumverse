@@ -16,11 +16,11 @@ const addDismissed = (id) => {
 /**
  * Shared state for open surveys the current user has not answered yet.
  *
- * - `pending` drives the badge count on the header icon so the user always
+ * - `pending` drives the badge count on the floating survey action so the user always
  *   knows there are surveys to fill, even after dismissing the popup.
  * - The auto-popup only fires when there is at least one survey not dismissed
  *   this session, so the user is not nagged repeatedly.
- * - The header icon can always re-open the modal (`openModal`) to list every
+ * - The floating action can always re-open the modal (`openModal`) to list every
  *   pending survey again.
  */
 const useSurveyPromptStore = create((set, get) => ({

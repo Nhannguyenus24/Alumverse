@@ -15,14 +15,14 @@ import { useTranslation } from 'react-i18next';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import EventAvailableOutlinedIcon from '@mui/icons-material/EventAvailableOutlined';
-import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
+import EventBusyOutlinedIcon from '@mui/icons-material/EventBusyOutlined';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import { useSnackbar } from 'notistack';
 import { eventApi } from '../../utils/api';
 import JoinEventDialog from '../event/JoinEventDialog';
 import { useEventQuestions, formatAnswersForApi } from '../../hooks/events/useEventQuestions';
-import { findCancelableTicketForEvent, getEventRegisteredState } from '../../utils/eventRegistration';
+import { findCancelableTicketForEvent, getEventActionState, getEventRegisteredState } from '../../utils/eventRegistration';
 import { getFeaturedTitleFontSize } from '../../utils/text';
 import { useCanContribute } from '../../hooks/useCanContribute';
 import { ContributeGuardTooltip } from '../ContributeGuard';
@@ -92,17 +92,26 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
 
   const isTicketUsed = ["USED", "CHECKED_IN"].includes(String(ticketStatus ?? "").toUpperCase());
   const isTicketBanned = String(ticketStatus ?? "").toUpperCase() === "BANNED";
-  const isRegistrationClosed = Boolean(article?.registrationEndAt) && new Date() > new Date(article.registrationEndAt);
+  const eventActionState = getEventActionState({
+    event: article,
+    isJoined,
+    ticketStatus,
+    canUseAction: canUseBasicActions,
+    loading: loadingJoin,
+    checking: checkingRegistration,
+  });
+  const eventActionIcon = eventActionState.icon === 'available'
+    ? <EventAvailableOutlinedIcon />
+    : <EventBusyOutlinedIcon />;
 
   const handleJoinClick = (e) => {
     e.stopPropagation();
-    if (loadingJoin || checkingRegistration || !canUseBasicActions) return;
+    if (eventActionState.disabled) return;
     if (isJoined) {
       if (isTicketUsed || isTicketBanned) return;
       setOpenCancelDialog(true);
       return;
     }
-    if (isRegistrationClosed) return;
     if (questions.length > 0) {
       setOpenJoinDialog(true);
     } else {
@@ -236,7 +245,9 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
                 fontSize: getFeaturedTitleFontSize(article.title),
                 color: hovered ? 'primary.main' : 'text.primary',
                 transition: 'color 0.2s ease',
-                wordBreak: 'break-word',
+                lineHeight: { xs: 1.22, md: 1.18 },
+                overflowWrap: 'break-word',
+                wordBreak: 'normal',
               }}
             >
               {article.title}
@@ -267,7 +278,7 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
           sx={{
             mt: { xs: 0.75, md: 2 },
             display: '-webkit-box',
-            WebkitLineClamp: (article.title || '').length > 75 ? 2 : 3,
+            WebkitLineClamp: 3,
             WebkitBoxOrient: 'vertical',
             overflow: 'hidden',
             lineHeight: { xs: 1.4, md: 1.6 },
@@ -312,16 +323,14 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
               <ContributeGuardTooltip required="basic" sx={{ flex: 1, opacity: canUseBasicActions ? 1 : 0.58, filter: canUseBasicActions ? 'none' : 'grayscale(0.25)' }}>
                 <Button
                   fullWidth
-                  variant={isJoined && !isTicketUsed ? 'outlined' : 'contained'}
-                  color={isJoined ? (isTicketUsed ? 'success' : 'error') : 'accent'}
-                  disabled={loadingJoin || checkingRegistration || !canUseBasicActions || (!isJoined && isRegistrationClosed) || isTicketBanned}
-                  sx={isTicketUsed ? { pointerEvents: 'none' } : undefined}
-                  startIcon={isJoined ? (isTicketUsed ? <EventAvailableOutlinedIcon /> : <CancelOutlinedIcon />) : <EventAvailableOutlinedIcon />}
+                  variant={eventActionState.variant}
+                  color={eventActionState.color}
+                  disabled={eventActionState.disabled}
+                  sx={eventActionState.disabled ? { pointerEvents: 'none' } : undefined}
+                  startIcon={eventActionIcon}
                   onClick={handleJoinClick}
                 >
-                  {isJoined
-                    ? (isTicketBanned ? t('event:ticket_status_banned') : isTicketUsed ? t('event:status_used') : t('event:cancel_ticket'))
-                    : (isRegistrationClosed ? t('event:registration_closed') : t('event:join'))}
+                  {t(eventActionState.labelKey)}
                 </Button>
               </ContributeGuardTooltip>
             </Stack>
@@ -368,7 +377,7 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
           <Button
             variant="contained"
             color="error"
-            startIcon={<CancelOutlinedIcon />}
+            startIcon={<EventBusyOutlinedIcon />}
             disabled={!cancelReason.trim() || loadingJoin}
             onClick={(e) => {
               e.stopPropagation();

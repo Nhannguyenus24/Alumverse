@@ -182,18 +182,24 @@ const AdminOrganizationsPage = () => {
       return Array.isArray(val) ? val : [];
     };
 
-    const cleanPayload = {
-      name: payload.name,
-      slug: payload.slug,
-      logoUrl: payload.logoUrl,
-      status: payload.status,
-      featuresConfig: payload.featuresConfig,
-      programs: parseIfNeeded(payload.programs),
-      majors: parseIfNeeded(payload.majors),
-      contactPhone: payload.contactPhone,
-      contactEmail: payload.contactEmail,
-      departmentName: payload.departmentName,
-    };
+    const cleanPayload = isStaffView
+      ? {
+        logoUrl: payload.logoUrl,
+        contactPhone: payload.contactPhone,
+        contactEmail: payload.contactEmail,
+      }
+      : {
+        name: payload.name,
+        slug: payload.slug,
+        logoUrl: payload.logoUrl,
+        status: payload.status,
+        featuresConfig: payload.featuresConfig,
+        programs: parseIfNeeded(payload.programs),
+        majors: parseIfNeeded(payload.majors),
+        contactPhone: payload.contactPhone,
+        contactEmail: payload.contactEmail,
+        departmentName: payload.departmentName,
+      };
 
     await run(async () => {
       try {
@@ -220,7 +226,7 @@ const AdminOrganizationsPage = () => {
         enqueueSnackbar(error?.response?.data?.message || t('org_update_error'), { variant: 'error' });
       }
     });
-  }, [editTarget, enqueueSnackbar, isStaffView, run, staffOrganizationId, t, setActiveOrgId]);
+  }, [editTarget, enqueueSnackbar, isStaffView, organizations, run, staffOrganizationId, t, setActiveOrgId]);
 
   const handleDeleteOrganization = useCallback(async (orgId) => {
     if (isStaffView) return;
@@ -399,6 +405,7 @@ const AdminOrganizationsPage = () => {
         open={editDialogOpen}
         onClose={() => setEditDialogOpen(false)}
         organization={editTarget}
+        staffView={isStaffView}
         loading={pending}
         onConfirm={editTarget ? (payload) => handleUpdateOrganization(editTarget.id, payload) : handleCreateOrganization}
       />

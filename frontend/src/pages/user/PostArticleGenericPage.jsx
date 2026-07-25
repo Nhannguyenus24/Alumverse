@@ -21,25 +21,6 @@ import { useCanContribute } from '../../hooks/useCanContribute';
 import { withMainImageCaption } from '../../utils/articleContentCaption';
 import useOrganizationStore from '../../stores/organizationStore';
 
-const JOB_TYPE_BY_TOPIC = {
-  internship: 'INTERNSHIP',
-  full_time: 'FULL_TIME',
-  part_time: 'PART_TIME',
-  freelance: 'FREELANCE',
-  internal_referral: 'FULL_TIME',
-  remote: 'CONTRACT',
-};
-
-const LEARNING_TYPE_BY_TOPIC = {
-  online_course: 'COURSE',
-  certificate: 'COURSE',
-  study_abroad: 'OTHER',
-  masters: 'OTHER',
-  student_exchange: 'OTHER',
-  research: 'OTHER',
-  achievement_scholarship: 'OTHER',
-};
-
 /**
  * Per-channel static configuration (no translated strings here).
  * useHook: a React hook — called unconditionally in the component below.
@@ -123,7 +104,7 @@ const CHANNEL_CONFIG = {
       organizationId,
       title,
       description: content,
-      type: JOB_TYPE_BY_TOPIC[topic],
+      type: topic,
       isReferral: topic === 'internal_referral',
       url: url || null,
       ...(imageBase64 ? { thumbnailBase64: imageBase64 } : {}),
@@ -143,7 +124,7 @@ const CHANNEL_CONFIG = {
       organizationId,
       title,
       description: content,
-      type: LEARNING_TYPE_BY_TOPIC[topic],
+      type: topic,
       linkUrl: url || null,
       ...(imageBase64 ? { thumbnailBase64: imageBase64 } : {}),
     }),
@@ -162,13 +143,14 @@ const useAllHooks = () => ({
 });
 
 const PostArticleGenericPage = () => {
-  const { channel } = useParams();
+  const { slug, channel } = useParams();
   const navigate = useOrgNavigate();
   const { t } = useTranslation('article');
   const { showSuccess, showError } = useNotification();
   const { isOrgManager } = useCanContribute();
   const organizationId = useOrganizationStore((state) => state.organization?.id ?? null);
   const isAdminLike = isOrgManager;
+  const adminBase = slug ? `/${slug}/admin` : '/admin';
   const {
     coverFile,
     coverPreview,
@@ -250,7 +232,7 @@ const PostArticleGenericPage = () => {
       const usesReviewFlow = !isAdminLike;
       const successRedirect = usesReviewFlow
         ? config.pendingRedirect()
-        : (result?.id ? config.redirect(result.id) : '/admin/article');
+        : `${adminBase}/article`;
       showSuccess(usesReviewFlow ? t('success_submitted_for_review') : t(config.successMsgKey));
       navigate(successRedirect);
     } catch (err) {
@@ -265,7 +247,7 @@ const PostArticleGenericPage = () => {
       onCoverChange={handleCoverUpload}
       coverPositionY={coverPositionY}
       onCoverPositionYChange={setCoverPositionY}
-      onCancel={() => navigate(-1)}
+      onCancel={() => navigate(isAdminLike ? `${adminBase}/article` : -1)}
       onSubmit={handleSubmit}
       isPending={isPending}
     >

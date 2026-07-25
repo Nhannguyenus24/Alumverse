@@ -16,7 +16,6 @@ import com.service.backend.shared.utils.CacheUtils;
 import com.service.backend.user.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import com.service.backend.shared.enums.JobType;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
@@ -62,7 +61,7 @@ public class JobService {
                             .description(request.getDescription())
                             .companyName(request.getCompanyName())
                             .location(request.getLocation())
-                            .type(JobType.valueOf(request.getType().toUpperCase().replace("-", "_")))
+                            .type(normalizeType(request.getType()))
                             .salaryRange(request.getSalaryRange())
                             .howToApply(request.getHowToApply())
                             .url(request.getUrl())
@@ -100,7 +99,7 @@ public class JobService {
                     existing.setDescription(request.getDescription());
                     existing.setCompanyName(request.getCompanyName());
                     existing.setLocation(request.getLocation());
-                    existing.setType(JobType.valueOf(request.getType().toUpperCase().replace("-", "_")));
+                    existing.setType(normalizeType(request.getType()));
                     existing.setSalaryRange(request.getSalaryRange());
                     existing.setHowToApply(request.getHowToApply());
                     existing.setUrl(request.getUrl());
@@ -225,5 +224,10 @@ public class JobService {
                         "/development/jobs"
                 ))
                 .map(JobResponse::from);
+    }
+
+    private String normalizeType(String type) {
+        if (type == null || type.trim().isEmpty()) return null;
+        return type.trim().toLowerCase().replace("-", "_");
     }
 }

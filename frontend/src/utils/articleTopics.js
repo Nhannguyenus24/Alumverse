@@ -72,3 +72,26 @@ export const getTopicOptionsForChannels = (t, channels = []) => {
     return true;
   });
 };
+
+const LEGACY_TYPE_TO_TOPIC = {
+  job: {
+    FULL_TIME: 'full_time',
+    PART_TIME: 'part_time',
+    INTERNSHIP: 'internship',
+    FREELANCE: 'freelance',
+    CONTRACT: 'remote',
+  },
+  learning: {
+    COURSE: 'online_course',
+    EBOOK: 'online_course',
+    VIDEO: 'online_course',
+    OTHER: 'achievement_scholarship',
+  },
+};
+
+export const normalizeArticleTopicForChannel = (channel, value) => {
+  if (!value) return '';
+  const raw = String(value).trim();
+  const legacy = LEGACY_TYPE_TO_TOPIC[channel]?.[raw.toUpperCase()];
+  return legacy ?? raw.toLowerCase().replace(/-/g, '_');
+};

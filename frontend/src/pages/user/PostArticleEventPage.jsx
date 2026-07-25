@@ -100,9 +100,10 @@ const emptyEventData = {
 };
 
 const PostEventPage = () => {
-  const { id: eventIdParam } = useParams();
+  const { slug, id: eventIdParam } = useParams();
   const eventId = eventIdParam ? Number(eventIdParam) : null;
   const isEditMode = Boolean(eventId && !Number.isNaN(eventId));
+  const adminBase = slug ? `/${slug}/admin` : '/admin';
 
   const navigate = useOrgNavigate();
   const { t } = useTranslation(['event', 'article']);
@@ -227,7 +228,7 @@ const PostEventPage = () => {
           showError(qErr.response?.data?.message ?? t('post_questions_failed'));
         }
         showSuccess(t('update_success'));
-        navigate(`/admin/events/${eventId}`);
+        navigate(`${adminBase}/events/${eventId}`);
         return;
       }
 
@@ -244,7 +245,7 @@ const PostEventPage = () => {
       }
 
       showSuccess(t('post_success'));
-      navigate(result?.id ? `/admin/events/${result.id}` : '/admin/events');
+      navigate(result?.id ? `${adminBase}/events/${result.id}` : `${adminBase}/events`);
     } catch (err) {
       showError(err.response?.data?.message ?? err.message ?? (isEditMode ? t('update_failed') : t('post_failed')));
     } finally {
@@ -270,7 +271,7 @@ const PostEventPage = () => {
         <Typography variant="body1" color="text.secondary" sx={{ mb: 3, maxWidth: 500 }}>
           {t('event_not_in_org_desc', { defaultValue: 'Sự kiện này thuộc về một tổ chức khác và không thể chỉnh sửa từ đường dẫn này.' })}
         </Typography>
-        <Button variant="outlined" onClick={() => navigate('/admin/events')}>
+        <Button variant="outlined" onClick={() => navigate(`${adminBase}/events`)}>
           {t('back_to_events', { defaultValue: 'Quay lại danh sách sự kiện' })}
         </Button>
       </Box>
@@ -286,7 +287,7 @@ const PostEventPage = () => {
       onCoverChange={handleCoverUpload}
       coverPositionY={coverPositionY}
       onCoverPositionYChange={setCoverPositionY}
-      onCancel={() => navigate(isEditMode ? `/admin/events/${eventId}` : -1)}
+      onCancel={() => navigate(isEditMode ? `${adminBase}/events/${eventId}` : -1)}
       onSubmit={handleSubmit}
       isPending={isPending}
       submitLabel={isEditMode ? t('update_submit_label') : t('post_submit_label')}

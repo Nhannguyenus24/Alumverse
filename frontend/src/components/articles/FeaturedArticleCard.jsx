@@ -105,7 +105,9 @@ const FeaturedArticleCard = ({
               fontSize: getFeaturedTitleFontSize(article.title),
               color: hovered ? 'primary.main' : 'text.primary',
               transition: 'color 0.2s ease',
-              wordBreak: 'break-word',
+              lineHeight: { xs: 1.22, md: 1.18 },
+              overflowWrap: 'break-word',
+              wordBreak: 'normal',
             }}
           >
             {article.title}
@@ -128,13 +130,19 @@ const FeaturedArticleCard = ({
 
         {/* DESCRIPTION */}
         <Typography
+          variant="body1"
           sx={{
             mt: { xs: 0.75, md: 2 },
             display: '-webkit-box',
-            WebkitLineClamp: (article.title || '').length > 75 ? 2 : 3,
+            WebkitLineClamp: 3,
             WebkitBoxOrient: 'vertical',
             overflow: 'hidden',
-            lineHeight: { xs: 1.4, md: 1.6 },
+            color: 'text.secondary',
+            lineHeight: { xs: 1.45, md: 1.55 },
+            minHeight: { xs: '4.35em', md: '4.65em' },
+            textAlign: 'left',
+            overflowWrap: 'break-word',
+            wordBreak: 'break-word',
           }}
         >
           {article.description}
