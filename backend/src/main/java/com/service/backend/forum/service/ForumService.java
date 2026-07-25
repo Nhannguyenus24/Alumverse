@@ -178,6 +178,34 @@ public class ForumService {
     }
 
     // Topic methods
+    public Mono<ForumTopicDTO> findTopicById(Integer id) {
+        return forumTopicRepository.findById(id)
+                .flatMap(topic -> convertToTopicDTOWithPostCount(topic)
+                        .flatMap(dto -> forumCategoryRepository.findById(topic.getCategoryId())
+                                .flatMap(category -> {
+                                    dto.setCategoryName(category.getName());
+                                    if (category.getParentId() != null) {
+                                        dto.setParentCategoryId(category.getParentId());
+                                        return forumCategoryRepository.findById(category.getParentId())
+                                                .map(parent -> {
+                                                    dto.setParentCategoryName(parent.getName());
+                                                    return dto;
+                                                })
+                                                .defaultIfEmpty(dto);
+                                    }
+                                    return Mono.just(dto);
+                                })
+                                .defaultIfEmpty(dto)
+                        )
+                )
+                .switchIfEmpty(Mono.defer(() -> {
+                    log.warn("Forum topic not found with ID: {}", id);
+                    return Mono.error(new ApplicationException(ErrorCode.FORUM_TOPIC_NOT_FOUND));
+                }))
+                .doOnSuccess(result -> log.info("findTopicById result: {}", JsonUtils.toJson(result)))
+                .doOnError(error -> log.error("Error finding forum topic ID: {}", id, error));
+    }
+
     public Mono<ForumTopicDTO> findTopicByTitle(String title) {
         return forumTopicRepository.findByTitle(title)
                 .flatMap(this::convertToTopicDTOWithPostCount)

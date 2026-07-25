@@ -102,6 +102,17 @@ public class ForumController {
     // ========== TOPIC ENDPOINTS ==========
 
     /**
+     * Find forum topic by id
+     */
+    @PublicEndpoint
+    @GetMapping("/topic/{id}")
+    public Mono<ResponseEntity<ApiResponse<ForumTopicDTO>>> getTopicById(
+            @PathVariable @Min(value = 1, message = "Topic ID must be greater than 0") Integer id) {
+        return forumService.findTopicById(id)
+                .map(topic -> ResponseEntity.ok(new ApiResponse<>("Topic retrieved successfully", topic)));
+    }
+
+    /**
      * Find forum topic by title
      */
     @PublicEndpoint
