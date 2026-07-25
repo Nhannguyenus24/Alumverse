@@ -172,6 +172,11 @@ const Header = () => {
     }
 
     const paths = [item.href, ...getVisibleChildren(item).map((child) => child.href)];
+    
+    if (item.href === '/network') {
+      paths.push('/chat');
+    }
+
     return paths.some((path) => normalizedPath === path || normalizedPath.startsWith(`${path}/`));
   }, [getVisibleChildren, normalizedPath]);
 

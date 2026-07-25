@@ -507,7 +507,7 @@
   "metric_active_users": "Hoạt động",
   "metric_inactive_users": "Chưa kích hoạt",
   "metric_banned_users": "Đã khóa",
-  "chart_new_registrations": "Đăng ký mới theo ngày (14 ngày qua)",
+  "chart_new_registrations": "Đăng ký mới theo ngày (1 tháng qua)",
   "section_forum_title": "Diễn đàn",
   "section_forum_subtitle": "Khối lượng bài viết, tình trạng kiểm duyệt và thống kê trực tiếp từ API.",
   "metric_total_posts": "Tổng bài viết",
