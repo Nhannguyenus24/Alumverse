@@ -669,20 +669,20 @@ const ForumAlumniThreadPage = () => {
     return {
       title,
       authorName:
-        topicSummary !== undefined
+        topicSummary != null
           ? authorFromTopic
           : (authorFromPost ?? FALLBACK_THREAD.authorName),
       authorMemberId:
-        topicSummary !== undefined
+        topicSummary != null
           ? topicSummary.createdByMemberId
           : (firstPost?.authorMemberId ?? null),
       authorAvatarUrl:
-        topicSummary !== undefined
+        topicSummary != null
           ? topicSummary.authorAvatarUrl
           : (firstPost?.authorAvatarUrl ?? null),
       role: "Alumni",
       createdAt:
-        topicSummary !== undefined
+        topicSummary != null
           ? createdFromTopic
           : (createdFromPost ?? FALLBACK_THREAD.createdAt),
     };
