@@ -116,7 +116,7 @@ const Footer = () => {
               </Box>
             </Box>
             <Typography variant="body1" fontWeight={700} sx={{ fontSize: '1.125rem' }}>
-              © AlumVerse (2026)
+              © AlumVerse ({new Date().getFullYear()})
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
               <Typography variant="body2" sx={{ color: mutedText, lineHeight: 1.45 }}>
