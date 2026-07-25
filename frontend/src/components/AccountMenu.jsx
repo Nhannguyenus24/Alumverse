@@ -275,7 +275,7 @@ const AccountMenu = ({
         {isStaff && isOrgManager && (organization?.slug || currentSlug) && (
           <MenuItem
             component={Link}
-            to={toOrgPath('/admin')}
+            to={`/${organization?.slug || currentSlug}/admin`}
             target="_blank"
             rel="noopener noreferrer"
             onClick={handleItemClick}

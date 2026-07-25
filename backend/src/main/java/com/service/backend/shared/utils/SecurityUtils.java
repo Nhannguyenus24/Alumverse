@@ -157,6 +157,43 @@ public final class SecurityUtils {
     }
 
     /**
+     * Whether the current user may administer the given organization.
+     * ADMIN: any organization. STAFF: only their own organization (from the JWT).
+     */
+    public static Mono<Boolean> canAdministerOrganization(Integer organizationId) {
+        if (organizationId == null) {
+            return Mono.just(false);
+        }
+        return getCurrentUserRole()
+                .flatMap(role -> {
+                    if ("ADMIN".equalsIgnoreCase(role)) {
+                        return Mono.just(true);
+                    }
+                    if ("STAFF".equalsIgnoreCase(role)) {
+                        return getCurrentOrganizationId()
+                                .map(organizationId::equals)
+                                .defaultIfEmpty(false);
+                    }
+                    return Mono.just(false);
+                })
+                .defaultIfEmpty(false)
+                .onErrorReturn(false);
+    }
+
+    /**
+     * Ensures the current user may administer the given organization, otherwise FORBIDDEN.
+     * ADMIN: any organization. STAFF: only their own organization.
+     */
+    public static Mono<Void> assertCanAdministerOrganization(Integer organizationId) {
+        return canAdministerOrganization(organizationId)
+                .flatMap(allowed -> allowed
+                        ? Mono.<Void>empty()
+                        : Mono.<Void>error(new ApplicationException(
+                                ErrorCode.FORBIDDEN,
+                                "You can only manage your own organization")));
+    }
+
+    /**
      * Resolves the effective organizationId for the current user.
      * STAFF: always returns their own organizationId from the JWT (ignores requestedOrgId).
      * ADMIN: returns Mono.just(requestedOrgId) if non-null, else Mono.empty() (meaning "all orgs").
