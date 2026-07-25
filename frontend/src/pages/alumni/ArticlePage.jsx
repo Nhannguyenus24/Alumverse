@@ -367,10 +367,12 @@ const ArticleHighlightCard = ({ data, channel, eventId, isAdmin = false, sharedI
         await eventApi.removeInterest(eventId);
         setIsInterestedLocal(false);
         setInterestedCountLocal((c) => Math.max(0, c - 1));
+        enqueueSnackbar(t('event:unmark_interested_success', { defaultValue: 'Đã hủy quan tâm sự kiện' }), { variant: 'info' });
       } else {
         await eventApi.addInterest(eventId);
         setIsInterestedLocal(true);
         setInterestedCountLocal((c) => c + 1);
+        enqueueSnackbar(t('event:mark_interested_success', { defaultValue: 'Đã quan tâm sự kiện' }), { variant: 'success' });
       }
     } catch (err) {
       enqueueSnackbar(err?.response?.data?.message || t('common:action_failed'), { variant: "error" });
@@ -693,9 +695,11 @@ const ArticlePage = () => {
       if (eventInterestState.isInterested) {
         await eventApi.removeInterest(id);
         setEventInterestState((prev) => ({ ...prev, isInterested: false, countDelta: prev.countDelta - 1, loading: false }));
+        enqueueSnackbar(t('event:unmark_interested_success', { defaultValue: 'Đã hủy quan tâm sự kiện' }), { variant: 'info' });
       } else {
         await eventApi.addInterest(id);
         setEventInterestState((prev) => ({ ...prev, isInterested: true, countDelta: prev.countDelta + 1, loading: false }));
+        enqueueSnackbar(t('event:mark_interested_success', { defaultValue: 'Đã quan tâm sự kiện' }), { variant: 'success' });
       }
     } catch (err) {
       setEventInterestState((prev) => ({ ...prev, loading: false }));
