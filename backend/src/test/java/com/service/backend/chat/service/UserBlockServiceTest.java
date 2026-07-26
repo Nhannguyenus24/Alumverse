@@ -123,10 +123,10 @@ class UserBlockServiceTest {
                     .assertNext(block -> assertThat(block.getBlockedMemberId()).isEqualTo(2L))
                     .verifyComplete();
 
-            // Connection downgraded to REJECTED with cleared cooldown.
+            // Connection downgraded to DISCONNECTED with cleared cooldown.
             ArgumentCaptor<ChatConversationRequest> captor = ArgumentCaptor.forClass(ChatConversationRequest.class);
             verify(chatConversationRequestRepository).save(captor.capture());
-            assertThat(captor.getValue().getStatus()).isEqualTo(ConversationRequestStatus.REJECTED);
+            assertThat(captor.getValue().getStatus()).isEqualTo(ConversationRequestStatus.DISCONNECTED);
             assertThat(captor.getValue().getCooldownUntil()).isNull();
             // Both members removed from the shared private chat group.
             verify(chatGroupMemberRepository).deleteByGroupId(77L);

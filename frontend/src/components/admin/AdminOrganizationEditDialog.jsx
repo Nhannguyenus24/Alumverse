@@ -21,7 +21,7 @@ import BusinessIcon from '@mui/icons-material/Business';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { fileToBase64 } from '../../utils/imageUtils';
 
-const AdminOrganizationEditDialog = ({ open, onClose, organization, onConfirm, loading = false }) => {
+const AdminOrganizationEditDialog = ({ open, onClose, organization, onConfirm, loading = false, staffView = false }) => {
   const { t } = useTranslation(['admin', 'common']);
   const [formData, setFormData] = useState({
     name: '',
@@ -84,6 +84,15 @@ useEffect(() => {
   };
 
   const handleSubmit = () => {
+    if (staffView) {
+      onConfirm({
+        logoUrl: formData.logoUrl,
+        contactPhone: formData.contactPhone,
+        contactEmail: formData.contactEmail,
+      });
+      return;
+    }
+
     onConfirm({
       ...formData,
       programs: formData.programs.split(',').map(s => s.trim()).filter(Boolean),
@@ -173,6 +182,7 @@ useEffect(() => {
             onChange={handleChange}
             placeholder={t('admin:organization_name_placeholder')}
             variant="outlined"
+            InputProps={staffView ? { readOnly: true } : undefined}
           />
           <Grid container spacing={2}>
             <Grid item xs={12} sm={6}>
@@ -184,6 +194,7 @@ useEffect(() => {
                 onChange={handleChange}
                 placeholder={t('admin:organization_slug_placeholder')}
                 helperText={t('admin:slug_helper_text')}
+                InputProps={staffView ? { readOnly: true } : undefined}
               />
             </Grid>
             <Grid item xs={12} sm={6} sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
@@ -196,6 +207,7 @@ useEffect(() => {
                     })}
                     name="status"
                     color="primary"
+                    disabled={staffView}
                   />
                 }
                 label={
@@ -231,6 +243,7 @@ useEffect(() => {
               value={formData.departmentName}
               onChange={handleChange}
               placeholder={t('admin:organization_department_name_placeholder')}
+              InputProps={staffView ? { readOnly: true } : undefined}
             />
           </Stack>
         </Box>

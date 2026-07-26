@@ -47,6 +47,7 @@ import AdminDataTable from '../../components/admin/AdminDataTable';
 import FavoriteBorderOutlinedIcon from '@mui/icons-material/FavoriteBorderOutlined';
 import ConfirmationNumberOutlinedIcon from '@mui/icons-material/ConfirmationNumberOutlined';
 import EventAvailableOutlinedIcon from '@mui/icons-material/EventAvailableOutlined';
+import EventBusyOutlinedIcon from '@mui/icons-material/EventBusyOutlined';
 import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
 import ConfirmDialog from '../../components/ConfirmDialog';
@@ -464,7 +465,7 @@ const AdminEventManagePage = () => {
     <Box>
       <Stack direction="row" alignItems="flex-start" justifyContent="space-between" flexWrap="wrap" gap={2} sx={{ mb: 3 }}>
         <Stack direction="row" alignItems="center" spacing={1.5}>
-          <IconButton onClick={() => orgNavigate('/admin/events')} size="small">
+          <IconButton onClick={() => orgNavigate(`${adminBase}/events`)} size="small">
             <ArrowBackIcon />
           </IconButton>
           <Box>
@@ -505,7 +506,7 @@ const AdminEventManagePage = () => {
           <Button color="primary" variant="contained" startIcon={<OpenInNewIcon />} onClick={handlePreview}>
             {t('event:preview_public')}
           </Button>
-          <Button color="accent" variant="contained" startIcon={<HowToRegOutlinedIcon />} onClick={() => orgNavigate(`/admin/events/${eventId}/organize`)}>
+          <Button color="accent" variant="contained" startIcon={<HowToRegOutlinedIcon />} onClick={() => orgNavigate(`${adminBase}/events/${eventId}/organize`)}>
             {t('event:check_in')}
           </Button>
         </Stack>
@@ -577,7 +578,7 @@ const AdminEventManagePage = () => {
                     {cancellable && (
                       <Tooltip title={t('event:tooltip_cancel_ticket')}>
                         <IconButton size="small" color="warning" onClick={() => handleCancelTicket(ticket)}>
-                          <CancelOutlinedIcon fontSize="small" />
+                          <EventBusyOutlinedIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
                     )}

@@ -24,6 +24,7 @@ import {
   ScrollRevealGroup,
   ScrollRevealItem,
 } from '../../components/animations/ScrollReveal';
+import { useParams } from 'react-router';
 
 const getBenefits = (t) => [
   {
@@ -52,8 +53,10 @@ const getSteps = (t) => [
 /** Full marketing landing — guest & level 0 only */
 const GuestLandingContent = () => {
   const { t } = useTranslation(['nav', 'mentorship']);
+  const { slug } = useParams();
   const access = useMentorshipAccessState();
   const navigate = useOrgNavigate();
+  const adminBase = slug ? `/${slug}/admin` : '/admin';
   const isAdmin = access.isOrgManager;
 
   return (
@@ -210,7 +213,7 @@ const GuestLandingContent = () => {
         <Stack direction="row" spacing={1.5} justifyContent="center" flexWrap="wrap" useFlexGap>
           <MentorshipHubActions />
           {isAdmin && (
-            <Button color="primary" variant="outlined" startIcon={<GroupsOutlinedIcon />} onClick={() => navigate('/admin/mentorship')}>
+            <Button color="primary" variant="outlined" startIcon={<GroupsOutlinedIcon />} onClick={() => navigate(`${adminBase}/mentorship`)}>
               {t('mentorship:manage_mentors')}
             </Button>
           )}
@@ -228,8 +231,10 @@ const GuestLandingContent = () => {
 /** Hub header + mentor list — level 1 & 2 */
 const HubContent = () => {
   const { t } = useTranslation(['nav', 'mentorship']);
+  const { slug } = useParams();
   const access = useMentorshipAccessState();
   const navigate = useOrgNavigate();
+  const adminBase = slug ? `/${slug}/admin` : '/admin';
   const isAdmin = access.isOrgManager;
 
   return (
@@ -265,7 +270,7 @@ const HubContent = () => {
           <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
             {!isAdmin && <MentorshipHubActions />}
             {isAdmin && (
-              <Button color="primary" variant="outlined" startIcon={<GroupsOutlinedIcon />} onClick={() => navigate('/admin/mentorship')}>
+              <Button color="primary" variant="outlined" startIcon={<GroupsOutlinedIcon />} onClick={() => navigate(`${adminBase}/mentorship`)}>
                 {t('mentorship:manage_mentors')}
               </Button>
             )}

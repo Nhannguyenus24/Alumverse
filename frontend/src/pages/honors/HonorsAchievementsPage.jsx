@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
+import { useParams } from 'react-router';
 import { Box, Button, Pagination, Typography } from '@mui/material';
 import { useSnackbar } from 'notistack';
 
@@ -22,7 +23,6 @@ import apiClient from '../../utils/axios';
 import { deleteArticleByChannel, getArticleAdminEditPath } from '../../utils/articleAdminActions';
 import {
   ARTICLE_FETCH_LIMIT,
-  ARTICLE_PAGE_SIZE,
   applyArticleFilters,
   getArticleFilterConfig,
   paginateArticles,
@@ -34,14 +34,18 @@ import {
   ScrollRevealItem,
 } from '../../components/animations/ScrollReveal';
 
+const HONORS_LIST_PAGE_SIZE = 12;
+
 const HonorsAchievementsPage = () => {
   const { t } = useTranslation(['honors', 'common']);
+  const { slug } = useParams();
   const navigate = useOrgNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const queryClient = useQueryClient();
   const { isAuthenticated } = useAuth();
   const { canContribute, isOrgManager } = useCanContribute();
   const isAdmin = isAuthenticated && isOrgManager;
+  const adminBase = slug ? `/${slug}/admin` : '/admin';
   const sidebar = getHonorsSidebarItems(t);
   const filters = useMemo(() => getArticleFilterConfig(t, ['achievement']), [t]);
 
@@ -56,14 +60,13 @@ const HonorsAchievementsPage = () => {
     () => applyArticleFilters(achievements, filterValues),
     [achievements, filterValues],
   );
+  const [featured, ...rest] = filteredAchievements;
   const { items: pagedAchievements, pageInfo } = useMemo(
-    () => paginateArticles(filteredAchievements, page, ARTICLE_PAGE_SIZE),
-    [filteredAchievements, page],
+    () => paginateArticles(rest, page, HONORS_LIST_PAGE_SIZE),
+    [rest, page],
   );
-
-  const [featured, ...rest] = pagedAchievements;
   const featuredCard = featured ? toCardShape(featured) : null;
-  const cards = rest.slice(0, 9).map(toCardShape);
+  const cards = pagedAchievements.map(toCardShape);
 
   const openArticle = (article) => {
     if (!article?.id) return;
@@ -71,7 +74,7 @@ const HonorsAchievementsPage = () => {
   };
 
   const handleEdit = (article) => {
-    const editPath = getArticleAdminEditPath(article);
+    const editPath = getArticleAdminEditPath(article, adminBase);
     if (editPath) navigate(editPath);
   };
 
@@ -112,7 +115,7 @@ const HonorsAchievementsPage = () => {
           </Button>
         </ContributeGuardTooltip>
       ) : isAdmin ? (
-        <Button variant="outlined" color="primary" startIcon={<EmojiEventsIcon />} onClick={() => navigate('/admin/article')}>
+        <Button variant="outlined" color="primary" startIcon={<EmojiEventsIcon />} onClick={() => navigate(`${adminBase}/article`)}>
           {t('honors:manage_honors')}
         </Button>
       ) : null}
@@ -157,12 +160,12 @@ const HonorsAchievementsPage = () => {
                     }}
                   >
                     {cards.map((card, i) => (
-                      <ScrollRevealItem key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(rest[i])}>
+                      <ScrollRevealItem key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(pagedAchievements[i])}>
                         <ArticleCard
                           article={card}
                           isAdmin={isAdmin}
-                          onEdit={() => handleEdit(rest[i])}
-                          onDelete={() => handleDelete(rest[i])}
+                          onEdit={() => handleEdit(pagedAchievements[i])}
+                          onDelete={() => handleDelete(pagedAchievements[i])}
                         />
                       </ScrollRevealItem>
                     ))}

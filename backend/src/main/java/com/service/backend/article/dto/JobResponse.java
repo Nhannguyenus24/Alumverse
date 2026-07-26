@@ -6,7 +6,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import com.service.backend.shared.enums.JobType;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -20,7 +19,7 @@ public class JobResponse {
     private Integer organizationId;
     private Integer posterMemberId;
     private Boolean isReferral;
-    private JobType type;
+    private String type;
     private String title;
     private String companyName;
     private String location;

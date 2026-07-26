@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
+import { useParams } from 'react-router';
 import { Box, Button, CircularProgress, ListItemIcon, ListItemText, Menu, MenuItem, Paper, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { useSnackbar } from 'notistack';
@@ -109,12 +110,14 @@ const PreviewSection = ({
 
 const DevelopmentPage = () => {
   const { t } = useTranslation(['dev', 'mentorship', 'common']);
+  const { slug } = useParams();
   const navigate = useOrgNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const queryClient = useQueryClient();
   const { isAuthenticated } = useAuth();
   const { canContribute, isOrgManager } = useCanContribute();
   const isAdmin = isAuthenticated && isOrgManager;
+  const adminBase = slug ? `/${slug}/admin` : '/admin';
   const sidebar = getDevelopmentSidebarItems(t);
   const filters = useMemo(() => getArticleFilterConfig(t, ['learning', 'job']), [t]);
 
@@ -141,10 +144,10 @@ const DevelopmentPage = () => {
   );
   const visibleAcademics = filteredDevelopmentArticles
     .filter((article) => article.channel === 'learning')
-    .slice(0, 3);
+    .slice(0, 9);
   const visibleJobs = filteredDevelopmentArticles
     .filter((article) => article.channel === 'job')
-    .slice(0, 3);
+    .slice(0, 9);
 
   const openArticle = (article) => {
     if (!article?.id) return;
@@ -152,7 +155,7 @@ const DevelopmentPage = () => {
   };
 
   const handleEdit = (article) => {
-    const editPath = getArticleAdminEditPath(article);
+    const editPath = getArticleAdminEditPath(article, adminBase);
     if (editPath) navigate(editPath);
   };
 
@@ -187,7 +190,7 @@ const DevelopmentPage = () => {
           variant="outlined"
           color="primary"
           startIcon={<WorkIcon />}
-          onClick={() => navigate('/admin/article')}
+          onClick={() => navigate(`${adminBase}/article`)}
         >
           {t('dev:manage_opportunities')}
         </Button>

@@ -13,7 +13,6 @@ import CloseIcon from '@mui/icons-material/Close';
 import { useTranslation } from 'react-i18next';
 import Iconify from './Iconify';
 import Notification from './Notification';
-import SurveyBell from './survey/SurveyBell';
 import Logo from './Logo';
 import AccountMenu from './AccountMenu';
 import LanguageSwitcher from './LanguageSwitcher';
@@ -405,7 +404,6 @@ const Header = () => {
 
                 {isAuthenticated ? (
                   <>
-                    <SurveyBell headerTextColor={headerTextColor} />
                     <Notification headerTextColor={headerTextColor} />
                     <AccountMenu
                     displayName={displayName} displayRole={displayRole}
@@ -573,7 +571,6 @@ const Header = () => {
               </IconButton>
             </Tooltip>
             <LanguageSwitcher />
-            {isAuthenticated && <SurveyBell />}
             {isAuthenticated && <Notification />}
           </Box>
         </Box>
