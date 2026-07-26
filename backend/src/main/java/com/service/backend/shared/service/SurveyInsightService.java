@@ -23,7 +23,7 @@ public interface SurveyInsightService {
         4. 2-3 đề xuất hành động cụ thể.
 
         Yêu cầu:
-        - Trả về văn bản thuần (plain text, có thể dùng gạch đầu dòng), KHÔNG dùng markdown fences.
+        - Trả về văn bản thuần (plain text, có thể dùng gạch đầu dòng), không thêm giải thích, KHÔNG dùng markdown fences.
         - Chỉ dựa trên số liệu được cung cấp, không bịa đặt.
         - Ngắn gọn, súc tích, tối đa khoảng 250 từ.
         """)

@@ -13,6 +13,8 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
+import java.util.concurrent.TimeUnit;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -25,6 +27,7 @@ public class ForumPostTagScheduler {
 
     private final ForumPostRepository forumPostRepository;
     private final AITagService aiTagService;
+    private final MeterRegistry meterRegistry;
 
     @Value("${forum.post.tag.interval.hours:24}")
     private int intervalHours;
@@ -37,12 +40,13 @@ public class ForumPostTagScheduler {
 
     @Scheduled(cron = "${forum.post.tag.cron:0 0 3 * * *}")
     public void tagRecentForumPosts() {
+        long startTime = System.currentTimeMillis();
         if (!taggingEnabled) {
-            log.info("Gemini tagging is disabled. Skipping scheduled job.");
+            log.info("START/END: Gemini tagging is disabled. Skipping scheduled job at {}", LocalDateTime.now());
             return;
         }
 
-        log.info("Starting scheduled job: Tagging forum posts from the last {} hours", intervalHours);
+        log.info("START: Starting scheduled job at {}: Tagging forum posts from the last {} hours", LocalDateTime.now(), intervalHours);
 
         forumPostRepository.findPostsCreatedSince(LocalDateTime.now().minusHours(intervalHours))
                 .collectList()
@@ -79,11 +83,17 @@ public class ForumPostTagScheduler {
                             });
                 })
                 .doOnSuccess(savedPosts -> {
-                    if (savedPosts != null && !savedPosts.isEmpty()) {
-                        log.info("Successfully tagged and saved {} forum posts.", savedPosts.size());
-                    }
+                    long endTime = System.currentTimeMillis();
+                    int count = (savedPosts != null) ? savedPosts.size() : 0;
+                    meterRegistry.timer("cronjob.execution.time", "job_name", "ForumPostTag", "status", "success").record(endTime - startTime, TimeUnit.MILLISECONDS);
+                    log.info("END (SUCCESS): Successfully tagged and saved {} forum posts at {}. Duration: {} ms", count, LocalDateTime.now(), endTime - startTime);
                 })
-                .doOnError(error -> log.error("Error occurred while tagging forum posts: ", error))
+                .onErrorResume(error -> {
+                    long endTime = System.currentTimeMillis();
+                    meterRegistry.timer("cronjob.execution.time", "job_name", "ForumPostTag", "status", "error").record(endTime - startTime, TimeUnit.MILLISECONDS);
+                    log.error("END (ERROR): Error occurred while tagging forum posts at {}. Duration: {} ms", LocalDateTime.now(), endTime - startTime, error);
+                    return Mono.empty();
+                })
                 .subscribe();
     }
 }

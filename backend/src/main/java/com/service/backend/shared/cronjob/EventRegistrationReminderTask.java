@@ -14,6 +14,8 @@ import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import io.micrometer.core.instrument.MeterRegistry;
 
 /**
  * Job chạy 1 lần/ngày cho các sự kiện có registration_end_at trong vòng 24h tới:
@@ -32,12 +34,14 @@ public class EventRegistrationReminderTask {
     private final EventTicketR2dbcRepository ticketRepo;
     private final SseService sseService;
     private final NotificationService notificationService;
+    private final MeterRegistry meterRegistry;
 
     @Scheduled(cron = "${event.registration.reminder.cron:0 0 8 * * *}", zone = "Asia/Ho_Chi_Minh")
     public void notifyUpcomingRegistrationDeadlines() {
+        long startTime = System.currentTimeMillis();
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime windowEnd = now.plusDays(1);
-        log.info("Running event registration reminder job (now={}, windowEnd={})", now, windowEnd);
+        log.info("START: Running event registration reminder job at {} (windowEnd={})", now, windowEnd);
 
         Mono<Long> interestCount = interestRepo.findPendingRegistrationReminders(now, windowEnd)
                 .doOnNext(this::notifyInterestedMember)
@@ -49,11 +53,16 @@ public class EventRegistrationReminderTask {
                 .count();
 
         Mono.zip(interestCount, registeredCount)
-                .doOnSuccess(counts -> log.info(
-                        "Event registration reminder job notified {} interested + {} registered member(s)",
-                        counts.getT1(), counts.getT2()))
+                .doOnSuccess(counts -> {
+                    long endTime = System.currentTimeMillis();
+                    meterRegistry.timer("cronjob.execution.time", "job_name", "EventRegistrationReminder", "status", "success").record(endTime - startTime, TimeUnit.MILLISECONDS);
+                    log.info("END (SUCCESS): Event registration reminder job finished at {}. Notified {} interested + {} registered member(s). Duration: {} ms",
+                            LocalDateTime.now(), counts.getT1(), counts.getT2(), endTime - startTime);
+                })
                 .onErrorResume(e -> {
-                    log.error("Error in EventRegistrationReminderTask", e);
+                    long endTime = System.currentTimeMillis();
+                    meterRegistry.timer("cronjob.execution.time", "job_name", "EventRegistrationReminder", "status", "error").record(endTime - startTime, TimeUnit.MILLISECONDS);
+                    log.error("END (ERROR): Error in EventRegistrationReminderTask at {}. Duration: {} ms", LocalDateTime.now(), endTime - startTime, e);
                     return Mono.empty();
                 })
                 .subscribe();
