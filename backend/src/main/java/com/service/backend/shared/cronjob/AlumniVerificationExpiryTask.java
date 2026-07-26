@@ -12,9 +12,11 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
+import java.util.concurrent.TimeUnit;
+import io.micrometer.core.instrument.MeterRegistry;
 
 /**
- * Job chạy lúc 2h30 sáng mỗi ngày để dọn dẹp các tài khoản alumni đang "đang xác thực".
+ * Job chạy lúc 4h sáng mỗi ngày để dọn dẹp các tài khoản alumni đang "đang xác thực".
  *
  * <p>Khi một thành viên gửi yêu cầu xác thực (verification request) hoặc yêu cầu xác thực
  * đồng nghiệp (peer verify), verification_level của họ được đặt thành 1 (đang xác thực).
@@ -31,14 +33,16 @@ public class AlumniVerificationExpiryTask {
 
     private final UserOrganizationMemberRepository memberRepository;
     private final NotificationService notificationService;
+    private final MeterRegistry meterRegistry;
 
     @Value("${alumni.verification.expiry-days:3}")
     private long expiryDays;
 
-    @Scheduled(cron = "${alumni.verification.expiry.cron:0 30 2 * * *}")
+    @Scheduled(cron = "${alumni.verification.expiry.cron:0 0 4 * * *}")
     public void expireStaleVerifyingMembers() {
+        long startTime = System.currentTimeMillis();
         LocalDateTime threshold = LocalDateTime.now().minusDays(expiryDays);
-        log.info("Running alumni verification expiry job (threshold before {})", threshold);
+        log.info("START: Running alumni verification expiry job at {} (threshold before {})", LocalDateTime.now(), threshold);
 
         memberRepository.expireStaleVerifyingMembers(threshold)
                 .flatMap(expired -> Mono.zip(
@@ -52,9 +56,15 @@ public class AlumniVerificationExpiryTask {
                                 + " ngày mà chưa được xử lý. Bạn có thể gửi lại yêu cầu xác thực.",
                         "/settings?tab=verification"))
                 .count()
-                .doOnSuccess(count -> log.info("Alumni verification expiry job reset {} member(s) to level 0", count))
+                .doOnSuccess(count -> {
+                    long endTime = System.currentTimeMillis();
+                    meterRegistry.timer("cronjob.execution.time", "job_name", "AlumniVerificationExpiry", "status", "success").record(endTime - startTime, TimeUnit.MILLISECONDS);
+                    log.info("END (SUCCESS): Alumni verification expiry job finished at {}. Reset {} member(s) to level 0. Duration: {} ms", LocalDateTime.now(), count, endTime - startTime);
+                })
                 .onErrorResume(e -> {
-                    log.error("Error in AlumniVerificationExpiryTask", e);
+                    long endTime = System.currentTimeMillis();
+                    meterRegistry.timer("cronjob.execution.time", "job_name", "AlumniVerificationExpiry", "status", "error").record(endTime - startTime, TimeUnit.MILLISECONDS);
+                    log.error("END (ERROR): Error in AlumniVerificationExpiryTask at {}. Duration: {} ms", LocalDateTime.now(), endTime - startTime, e);
                     return Mono.empty();
                 })
                 .subscribe();

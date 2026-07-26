@@ -10,6 +10,8 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
+import java.util.concurrent.TimeUnit;
+import io.micrometer.core.instrument.MeterRegistry;
 
 /**
  * Job chạy lúc 2h sáng mỗi ngày (giờ Việt Nam) để hết hạn các vé sự kiện chưa check-in
@@ -24,16 +26,24 @@ public class EventTicketExpiryTask {
     private static final Logger log = LoggerFactory.getLogger(EventTicketExpiryTask.class);
 
     private final EventTicketR2dbcRepository ticketRepo;
+    private final MeterRegistry meterRegistry;
 
     @Scheduled(cron = "${event.ticket.expiry.cron:0 0 2 * * *}", zone = "Asia/Ho_Chi_Minh")
     public void expireIssuedTicketsForEndedEvents() {
+        long startTime = System.currentTimeMillis();
         LocalDateTime now = LocalDateTime.now();
-        log.info("Running event ticket expiry job (now={})", now);
+        log.info("START: Running event ticket expiry job at {}", now);
 
         ticketRepo.expireIssuedTicketsForEndedEvents(now)
-                .doOnSuccess(count -> log.info("Event ticket expiry job expired {} ticket(s)", count))
+                .doOnSuccess(count -> {
+                    long endTime = System.currentTimeMillis();
+                    meterRegistry.timer("cronjob.execution.time", "job_name", "EventTicketExpiry", "status", "success").record(endTime - startTime, TimeUnit.MILLISECONDS);
+                    log.info("END (SUCCESS): Event ticket expiry job finished at {}. Expired {} ticket(s). Duration: {} ms", LocalDateTime.now(), count, endTime - startTime);
+                })
                 .onErrorResume(e -> {
-                    log.error("Error in EventTicketExpiryTask", e);
+                    long endTime = System.currentTimeMillis();
+                    meterRegistry.timer("cronjob.execution.time", "job_name", "EventTicketExpiry", "status", "error").record(endTime - startTime, TimeUnit.MILLISECONDS);
+                    log.error("END (ERROR): Error in EventTicketExpiryTask at {}. Duration: {} ms", LocalDateTime.now(), endTime - startTime, e);
                     return Mono.empty();
                 })
                 .subscribe();

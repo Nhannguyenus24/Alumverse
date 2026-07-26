@@ -16,6 +16,8 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
+import java.util.concurrent.TimeUnit;
+import io.micrometer.core.instrument.MeterRegistry;
 
 @Component
 @RequiredArgsConstructor
@@ -28,13 +30,16 @@ public class MentorshipSessionStatusTask {
     private final MentorAvailabilityR2dbcRepository availabilityRepository;
     private final MentorProfileR2dbcRepository profileRepository;
     private final NotificationService notificationService;
+    private final MeterRegistry meterRegistry;
 
     @Value("${mentorship.meeting-link.reminder-minutes:180}")
     private long meetingLinkReminderMinutes;
 
     @Scheduled(cron = "${mentorship.session.status.cron:0 */15 * * * *}")
     public void autoTransition() {
+        long startTime = System.currentTimeMillis();
         LocalDateTime now = LocalDateTime.now();
+        log.info("START: MentorshipSessionStatusTask autoTransition at {}", now);
 
         sessionRepository.findEndedCandidates(now)
                 .flatMap(session -> {
@@ -52,17 +57,35 @@ public class MentorshipSessionStatusTask {
                                 return Mono.empty();
                             });
                 }, 8)
-                .doOnError(e -> log.error("Error in MentorshipSessionStatusTask", e))
+                .doOnComplete(() -> {
+                    long endTime = System.currentTimeMillis();
+                    meterRegistry.timer("cronjob.execution.time", "job_name", "MentorshipSessionStatus_Close", "status", "success").record(endTime - startTime, TimeUnit.MILLISECONDS);
+                    log.info("END (SUCCESS): MentorshipSessionStatusTask (auto-close sessions) finished at {}. Duration: {} ms", LocalDateTime.now(), endTime - startTime);
+                })
+                .doOnError(e -> {
+                    long endTime = System.currentTimeMillis();
+                    meterRegistry.timer("cronjob.execution.time", "job_name", "MentorshipSessionStatus_Close", "status", "error").record(endTime - startTime, TimeUnit.MILLISECONDS);
+                    log.error("END (ERROR): Error in MentorshipSessionStatusTask (auto-close sessions) at {}. Duration: {} ms", LocalDateTime.now(), endTime - startTime, e);
+                })
                 .subscribe();
 
         availabilityRepository.expireStaleAvailabilities(now)
-                .doOnError(e -> log.error("Failed to expire stale availabilities", e))
+                .doOnSuccess(ignored -> {
+                    long endTime = System.currentTimeMillis();
+                    meterRegistry.timer("cronjob.execution.time", "job_name", "MentorshipSessionStatus_ExpireAvail", "status", "success").record(endTime - startTime, TimeUnit.MILLISECONDS);
+                    log.info("END (SUCCESS): MentorshipSessionStatusTask (expire availabilities) finished at {}. Duration: {} ms", LocalDateTime.now(), endTime - startTime);
+                })
+                .doOnError(e -> {
+                    long endTime = System.currentTimeMillis();
+                    meterRegistry.timer("cronjob.execution.time", "job_name", "MentorshipSessionStatus_ExpireAvail", "status", "error").record(endTime - startTime, TimeUnit.MILLISECONDS);
+                    log.error("END (ERROR): Failed to expire stale availabilities at {}. Duration: {} ms", LocalDateTime.now(), endTime - startTime, e);
+                })
                 .subscribe();
 
-        remindMissingMeetingLinks(now);
+        remindMissingMeetingLinks(now, startTime);
     }
 
-    private void remindMissingMeetingLinks(LocalDateTime now) {
+    private void remindMissingMeetingLinks(LocalDateTime now, long startTime) {
         LocalDateTime until = now.plusMinutes(meetingLinkReminderMinutes);
         sessionRepository.findMissingMeetingLinkCandidates(now, until)
                 .flatMap(candidate ->
@@ -78,7 +101,16 @@ public class MentorshipSessionStatusTask {
                                             candidate.getSessionId(), e);
                                     return Mono.empty();
                                 }), 8)
-                .doOnError(e -> log.error("Error reminding missing meeting links", e))
+                .doOnComplete(() -> {
+                    long endTime = System.currentTimeMillis();
+                    meterRegistry.timer("cronjob.execution.time", "job_name", "MentorshipSessionStatus_RemindLinks", "status", "success").record(endTime - startTime, TimeUnit.MILLISECONDS);
+                    log.info("END (SUCCESS): MentorshipSessionStatusTask (remind missing links) finished at {}. Duration: {} ms", LocalDateTime.now(), endTime - startTime);
+                })
+                .doOnError(e -> {
+                    long endTime = System.currentTimeMillis();
+                    meterRegistry.timer("cronjob.execution.time", "job_name", "MentorshipSessionStatus_RemindLinks", "status", "error").record(endTime - startTime, TimeUnit.MILLISECONDS);
+                    log.error("END (ERROR): Error reminding missing meeting links at {}. Duration: {} ms", LocalDateTime.now(), endTime - startTime, e);
+                })
                 .subscribe();
     }
 
