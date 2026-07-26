@@ -6,7 +6,7 @@ import PostArticleShell from '../../components/PostArticleShell';
 import useCoverUpload from '../../hooks/useCoverUpload';
 import { useCreateNews } from '../../hooks/news/useCreateNews';
 import {
-  fileToCroppedCoverBase64,
+  fileToBase64,
   getJsonPayloadByteSize,
   MAX_JSON_PAYLOAD_BYTES,
   validateImageFile,
@@ -31,7 +31,6 @@ const PostArticlePage = () => {
   const {
     coverFile,
     coverPreview,
-    coverCroppedPreview,
     coverPositionY,
     handleCoverUpload,
     setCoverPositionY,
@@ -55,7 +54,7 @@ const PostArticlePage = () => {
       }
     }
     try {
-      const thumbnailBase64 = coverFile ? await fileToCroppedCoverBase64(coverFile, coverPositionY) : null;
+      const thumbnailBase64 = coverFile ? await fileToBase64(coverFile) : null;
       const payload = {
         organizationId: organizationId != null ? Number(organizationId) : null,
         title: title.trim(),
@@ -98,7 +97,7 @@ const PostArticlePage = () => {
         setTopic={setTopic}
         url={url}
         setUrl={setUrl}
-        mainImagePreview={coverCroppedPreview ?? coverPreview}
+        mainImagePreview={coverPreview}
       />
     </PostArticleShell>
   );

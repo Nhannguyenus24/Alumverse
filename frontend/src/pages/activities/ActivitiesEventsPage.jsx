@@ -68,7 +68,7 @@ const ActivitiesPage = () => {
     [upcomingRest, upcomingPage],
   );
   const { items: pagedOngoingEvents, pageInfo: ongoingPageInfo } = useMemo(
-    () => paginateArticles(filteredOngoingEvents, ongoingPage, 6),
+    () => paginateArticles(filteredOngoingEvents, ongoingPage, EVENT_SECTION_PAGE_SIZE),
     [filteredOngoingEvents, ongoingPage],
   );
   const { items: pagedPastEvents, pageInfo: pastPageInfo } = useMemo(

@@ -1299,7 +1299,10 @@ const ForumAlumniThreadPage = () => {
                 fontWeight={800}
                 sx={{
                   fontSize: { xs: "1.2rem", sm: "1.4rem", md: "1.6rem" },
+                  lineHeight: 1.22,
                   wordBreak: "break-word",
+                  flex: 1,
+                  minWidth: 0,
                 }}
               >
                 {thread.title}
@@ -1314,14 +1317,15 @@ const ForumAlumniThreadPage = () => {
                     },
                     gap: 1,
                     width: "100%",
-                    maxWidth: { xs: 300, sm: 360 },
-                    minWidth: { xs: 240, sm: 320 },
+                    maxWidth: { xs: 320, sm: 390 },
+                    minWidth: { xs: 260, sm: 350 },
+                    flexShrink: 0,
                   }}
                 >
                   <Button
                     fullWidth
                     variant="outlined"
-                    color={isSubscribed ? "primary" : "secondary"}
+                    color="primary"
                     size="small"
                     startIcon={
                       <NotificationsNoneOutlinedIcon sx={{ fontSize: 18 }} />
@@ -1331,6 +1335,8 @@ const ForumAlumniThreadPage = () => {
                     sx={{
                       whiteSpace: "nowrap",
                       minWidth: 0,
+                      height: 40,
+                      "& .MuiButton-startIcon": { flexShrink: 0 },
                     }}
                   >
                     {isSubscribed
@@ -1363,12 +1369,17 @@ const ForumAlumniThreadPage = () => {
                       <Button
                         fullWidth
                         variant="contained"
-                        color="primary"
+                        color="accent"
                         size="small"
                         startIcon={<ReplyOutlinedIcon sx={{ fontSize: 18 }} />}
                         onClick={focusReplyEditor}
                         disabled={isGuest}
-                        sx={{ whiteSpace: "nowrap" }}
+                        sx={{
+                          whiteSpace: "nowrap",
+                          minWidth: 0,
+                          height: 40,
+                          "& .MuiButton-startIcon": { flexShrink: 0 },
+                        }}
                       >
                         {t("forum:reply")}
                       </Button>
@@ -1419,13 +1430,14 @@ const ForumAlumniThreadPage = () => {
                 <Box
                   sx={{
                     display: "flex",
-                    flexWrap: "wrap",
+                    flexWrap: { xs: "wrap", sm: "nowrap" },
                     gap: 1,
                     justifyContent: { xs: "flex-start", sm: "flex-end" },
+                    flexShrink: 0,
                   }}
                 >
                   <Button
-                    variant={isSubscribed ? "contained" : "outlined"}
+                    variant="outlined"
                     color="primary"
                     size="small"
                     startIcon={
@@ -1433,6 +1445,12 @@ const ForumAlumniThreadPage = () => {
                     }
                     onClick={handleToggleSubscription}
                     disabled={subStatusPending || subTogglePending}
+                    sx={{
+                      minWidth: 118,
+                      height: 40,
+                      whiteSpace: "nowrap",
+                      "& .MuiButton-startIcon": { flexShrink: 0 },
+                    }}
                   >
                     {isSubscribed
                       ? t("forum:subscribed")
@@ -1449,11 +1467,17 @@ const ForumAlumniThreadPage = () => {
                     <span>
                       <Button
                         variant="contained"
-                        color="primary"
+                        color="accent"
                         size="small"
                         startIcon={<ReplyOutlinedIcon sx={{ fontSize: 18 }} />}
                         onClick={focusReplyEditor}
                         disabled={isGuest}
+                        sx={{
+                          minWidth: 104,
+                          height: 40,
+                          whiteSpace: "nowrap",
+                          "& .MuiButton-startIcon": { flexShrink: 0 },
+                        }}
                       >
                         {t("forum:reply")}
                       </Button>

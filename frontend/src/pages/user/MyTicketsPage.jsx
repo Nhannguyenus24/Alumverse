@@ -9,6 +9,7 @@ import SearchBar from "../../components/SearchBar";
 import MyTicketCard from "../../components/MyTicketCard";
 import { eventApi } from "../../utils/api";
 import useOrganizationStore from "../../stores/organizationStore";
+import { HEADER_HEIGHT } from "../../constants/layout";
 import {
   ScrollReveal,
   ScrollRevealGroup,
@@ -120,11 +121,20 @@ const MyTicketsPage = () => {
   };
 
   return (
-    <Page title={t("event:my_tickets")}>
+    <Page
+      title={t("event:my_tickets")}
+      sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}
+    >
       <Container
         maxWidth="lg"
         sx={{
-          minHeight: { xs: "calc(100vh - 72px)", md: "calc(100vh - 88px)" },
+          flex: 1,
+          width: "100%",
+          minHeight: {
+            xs: `calc(100dvh - ${HEADER_HEIGHT.xs}px + 32px)`,
+            md: `calc(100dvh - ${HEADER_HEIGHT.md}px + 32px)`,
+          },
+          boxSizing: "border-box",
           pt: { xs: 2, sm: 3, md: 4 },
           pb: { xs: 4, md: 8 },
           px: { xs: 2, sm: 3, lg: 6 },

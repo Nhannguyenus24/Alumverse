@@ -9,7 +9,7 @@ import { useCreateAchievement } from '../../hooks/news/useCreateAchievement';
 import { useCreateJob } from '../../hooks/news/useCreateJob';
 import { useCreateLearningResource } from '../../hooks/news/useCreateLearningResource';
 import {
-  fileToCroppedCoverBase64,
+  fileToBase64,
   getJsonPayloadByteSize,
   MAX_JSON_PAYLOAD_BYTES,
   validateImageFile,
@@ -154,7 +154,6 @@ const PostArticleGenericPage = () => {
   const {
     coverFile,
     coverPreview,
-    coverCroppedPreview,
     coverPositionY,
     handleCoverUpload,
     setCoverPositionY,
@@ -201,7 +200,7 @@ const PostArticleGenericPage = () => {
     }
     try {
       const imageBase64 = config.useBase64 && coverFile
-        ? await fileToCroppedCoverBase64(coverFile, coverPositionY)
+        ? await fileToBase64(coverFile)
         : undefined;
 
       if (imageBase64 && getJsonPayloadByteSize({ base64String: imageBase64 }) > MAX_JSON_PAYLOAD_BYTES) {
@@ -262,7 +261,7 @@ const PostArticleGenericPage = () => {
         setTopic={setTopic}
         url={url}
         setUrl={setUrl}
-        mainImagePreview={coverCroppedPreview ?? coverPreview}
+        mainImagePreview={coverPreview}
         mainImageCaption={mainImageCaption}
         setMainImageCaption={setMainImageCaption}
         showSourceUrl

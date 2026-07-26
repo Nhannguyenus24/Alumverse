@@ -115,7 +115,7 @@
   "warn_unknown_org": "Could not determine current organization. Please try refreshing the page.",
   "warn_alumni_verification_required": "You must verify your alumni status (verification level 2) to post in the alumni forum.",
   "error_create_topic_failed": "Failed to create topic.",
-  "success_create_topic": "Topic created successfully. Your topic is pending Admin approval before being visible to the public.",
+  "success_create_topic": "Your topic has been submitted and is pending Admin approval before it appears publicly.",
   "page_title_alumni_career": "Forum - Alumni",
   "page_meta_alumni_career": "Alumni Forum - Career Guidance",
   "page_title_create_topic": "Create Topic - Alumni",

@@ -8,7 +8,7 @@ import PostArticleForm from '../../components/PostArticleForm';
 import PostArticleShell from '../../components/PostArticleShell';
 import useCoverUpload from '../../hooks/useCoverUpload';
 import { useCreateEvent } from '../../hooks/news/useCreateEvent';
-import { fileToCroppedCoverBase64 } from '../../utils/imageUtils';
+import { fileToBase64 } from '../../utils/imageUtils';
 import { useNotification } from '../../hooks/useNotification';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { eventApi } from '../../utils/api';
@@ -113,7 +113,6 @@ const PostEventPage = () => {
   const {
     coverFile,
     coverPreview,
-    coverCroppedPreview,
     coverPositionY,
     handleCoverUpload,
     setCoverPreview,
@@ -176,7 +175,7 @@ const PostEventPage = () => {
   };
 
   const buildPayload = async () => {
-    const bannerBase64 = coverFile ? await fileToCroppedCoverBase64(coverFile, coverPositionY) : null;
+    const bannerBase64 = coverFile ? await fileToBase64(coverFile) : null;
     const targetOrgId = isEditMode && existingOrgId ? existingOrgId : organizationId;
     return {
       title: title.trim(),
@@ -306,7 +305,7 @@ const PostEventPage = () => {
         handleEventInputChange={handleEventInputChange}
         registrationQuestions={registrationQuestions}
         setRegistrationQuestions={setRegistrationQuestions}
-        mainImagePreview={coverCroppedPreview ?? coverPreview}
+        mainImagePreview={coverPreview}
         mainImageCaption={mainImageCaption}
         setMainImageCaption={setMainImageCaption}
         showSourceUrl={false}

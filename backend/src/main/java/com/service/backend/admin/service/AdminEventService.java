@@ -1,6 +1,7 @@
 package com.service.backend.admin.service;
 
 import com.service.backend.admin.dto.EventStatisticsDTO;
+import com.service.backend.article.validation.ArticleTopicCatalog;
 import com.service.backend.event.dao.EventInterestR2dbcRepository;
 import com.service.backend.event.dao.EventR2dbcRepository;
 import com.service.backend.event.dao.EventTicketR2dbcRepository;
@@ -163,6 +164,9 @@ public class AdminEventService {
     }
 
     public Mono<Event> updateEvent(Long eventId, UpdateEventRequest request) {
+        String topic = request.getTopic() != null
+                ? ArticleTopicCatalog.requireValid(ArticleTopicCatalog.Channel.EVENT, request.getTopic())
+                : null;
         return eventRepo.findById(eventId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND,
                         "Event not found with id: " + eventId)))
@@ -179,7 +183,7 @@ public class AdminEventService {
                             existing.setRegistrationStartAt(request.getRegistrationStartAt());
                             existing.setRegistrationEndAt(request.getRegistrationEndAt());
                             existing.setMaxCapacity(request.getMaxCapacity());
-                            if (request.getTopic() != null) existing.setTopic(request.getTopic());
+                            if (request.getTopic() != null) existing.setTopic(topic);
                             if (request.getRequiresCheckIn() != null) existing.setRequiresCheckIn(request.getRequiresCheckIn());
                             return eventRepo.save(existing);
                         })))

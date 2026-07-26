@@ -335,18 +335,17 @@ const PostArticleForm = ({
       </ScrollRevealItem>
 
       {mainImagePreview && (
-        <ScrollRevealItem sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 1, mb: 1 }}>
+        <ScrollRevealItem sx={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', mt: 1, mb: 1 }}>
           <Box
             component="img"
             src={mainImagePreview}
             alt={title || 'Main photo preview'}
             sx={{
-              width: 'auto',
-              maxWidth: { xs: '100%', md: '72%' },
+              display: 'block',
+              width: '100%',
               height: 'auto',
               objectFit: 'contain',
-              borderRadius: 2,
-              boxShadow: '0 2px 12px rgba(0,0,0,0.12)',
+              borderRadius: 1,
             }}
           />
           {showMainImageCaption && (
@@ -358,7 +357,7 @@ const PostArticleForm = ({
               helperText={t('article:main_image_caption_helper')}
               value={mainImageCaption ?? ''}
               onChange={(e) => setMainImageCaption?.(e.target.value)}
-              sx={{ mt: 1.5, maxWidth: { xs: '100%', md: '72%' } }}
+              sx={{ mt: 1.5 }}
             />
           )}
         </ScrollRevealItem>

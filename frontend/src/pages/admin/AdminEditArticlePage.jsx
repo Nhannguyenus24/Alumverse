@@ -15,7 +15,7 @@ import CoverUpload from '../../components/CoverUpload';
 import { useArticleById } from '../../hooks/articles/useArticleById';
 import { useUpdateArticle } from '../../hooks/articles/useUpdateArticle';
 import {
-  fileToCroppedCoverBase64,
+  fileToBase64,
   getJsonPayloadByteSize,
   MAX_JSON_PAYLOAD_BYTES,
   validateImageFile,
@@ -69,7 +69,6 @@ const AdminEditArticlePage = () => {
   const [topic, setTopic] = useState('');
   const [coverFile, setCoverFile] = useState(null);
   const [coverPreview, setCoverPreview] = useState(null);
-  const [coverCroppedPreview, setCoverCroppedPreview] = useState(null);
   const [coverPositionY, setCoverPositionY] = useState(50);
   const [url, setUrl] = useState('');
   const [mainImageCaption, setMainImageCaption] = useState('');
@@ -93,27 +92,6 @@ const AdminEditArticlePage = () => {
       { label: t('admin:edit_article_breadcrumb'), active: true },
     ]);
   }, [article, setBreadcrumbs, t, adminBase, isOrgMismatch]);
-
-  useEffect(() => {
-    if (!coverFile) {
-      return undefined;
-    }
-
-    let isCancelled = false;
-    const timeout = window.setTimeout(async () => {
-      try {
-        const nextPreview = await fileToCroppedCoverBase64(coverFile, coverPositionY);
-        if (!isCancelled) setCoverCroppedPreview(nextPreview);
-      } catch {
-        if (!isCancelled) setCoverCroppedPreview(coverPreview);
-      }
-    }, 80);
-
-    return () => {
-      isCancelled = true;
-      window.clearTimeout(timeout);
-    };
-  }, [coverFile, coverPositionY, coverPreview]);
 
   const handleCoverUpload = (event) => {
     const file = event.target.files?.[0];
@@ -145,7 +123,7 @@ const AdminEditArticlePage = () => {
     }
 
     try {
-      const thumbnailBase64 = coverFile ? await fileToCroppedCoverBase64(coverFile, coverPositionY) : null;
+      const thumbnailBase64 = coverFile ? await fileToBase64(coverFile) : null;
       if (thumbnailBase64 && getJsonPayloadByteSize({ base64String: thumbnailBase64 }) > MAX_JSON_PAYLOAD_BYTES) {
         showError(t('article:main_image_too_large'));
         return;
@@ -250,7 +228,7 @@ const AdminEditArticlePage = () => {
               setTopic={setTopic}
               url={url}
               setUrl={setUrl}
-              mainImagePreview={coverCroppedPreview ?? coverPreview}
+              mainImagePreview={coverPreview}
               mainImageCaption={mainImageCaption}
               setMainImageCaption={setMainImageCaption}
             />

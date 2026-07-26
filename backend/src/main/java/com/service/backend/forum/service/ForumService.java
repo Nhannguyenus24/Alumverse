@@ -628,9 +628,9 @@ public class ForumService {
             return Mono.just(base);
         }
 
-        Mono<Long> topicCountMono = forumTopicRepository.countByCategoryId(category.getId(), null).defaultIfEmpty(0L);
+        Mono<Long> topicCountMono = forumTopicRepository.countActiveByCategoryId(category.getId()).defaultIfEmpty(0L);
         Mono<Long> participantCountMono = forumTopicRepository
-                .countDistinctParticipantsByCategoryId(category.getId())
+                .countActiveDistinctParticipantsByCategoryId(category.getId())
                 .defaultIfEmpty(0L);
 
         return Mono.zip(topicCountMono, participantCountMono)
@@ -658,9 +658,9 @@ public class ForumService {
             return Mono.just(categories.stream().map(this::convertToCategoryDTO).collect(Collectors.toList()));
         }
 
-        Mono<Map<Integer, Long>> topicCountsMono = forumTopicRepository.countByCategoryIds(subCategoryIds)
+        Mono<Map<Integer, Long>> topicCountsMono = forumTopicRepository.countActiveByCategoryIds(subCategoryIds)
                 .collectMap(IdCountDTO::getId, IdCountDTO::getCount);
-        Mono<Map<Integer, Long>> participantCountsMono = forumTopicRepository.countDistinctParticipantsByCategoryIds(subCategoryIds)
+        Mono<Map<Integer, Long>> participantCountsMono = forumTopicRepository.countActiveDistinctParticipantsByCategoryIds(subCategoryIds)
                 .collectMap(IdCountDTO::getId, IdCountDTO::getCount);
 
         return Mono.zip(topicCountsMono, participantCountsMono)

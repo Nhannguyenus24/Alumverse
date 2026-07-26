@@ -5,6 +5,7 @@ import com.service.backend.shared.entity.AlumniPost;
 import com.service.backend.article.dto.CreateAlumniPostRequest;
 import com.service.backend.article.dto.UpdateAlumniPostRequest;
 import com.service.backend.article.dto.AlumniPostResponse;
+import com.service.backend.article.validation.ArticleTopicCatalog;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
@@ -42,6 +43,7 @@ public class AlumniPostService {
     }
 
     public Mono<AlumniPostResponse> create(CreateAlumniPostRequest request) {
+        String topic = ArticleTopicCatalog.requireValid(ArticleTopicCatalog.Channel.ALUMNI, request.getTopic());
         return Mono.zip(SecurityUtils.getCurrentUserId(), SecurityUtils.getCurrentUserRole())
                 .flatMap(ctx -> {
                     Long userId = ctx.getT1();
@@ -60,7 +62,7 @@ public class AlumniPostService {
                                         .slug(request.getSlug())
                                         .content(request.getContent())
                                         .thumbnailUrl(thumbnailUrl.isEmpty() ? null : thumbnailUrl)
-                                        .topic(request.getTopic())
+                                        .topic(topic)
                                         .url(request.getUrl())
                                         .isHidden(!publishImmediately)
                                         .build();
@@ -83,6 +85,9 @@ public class AlumniPostService {
     }
 
     public Mono<AlumniPostResponse> update(Integer id, UpdateAlumniPostRequest request) {
+        String topic = request.getTopic() != null
+                ? ArticleTopicCatalog.requireValid(ArticleTopicCatalog.Channel.ALUMNI, request.getTopic())
+                : null;
         return alumniPostRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.ALUMNI_POST_NOT_FOUND, "Alumni post not found with id: " + id)))
                 .flatMap(existing -> SecurityUtils.assertCanManageContentOrganization(existing.getOrganizationId())
@@ -93,7 +98,7 @@ public class AlumniPostService {
                             existing.setSlug(request.getSlug());
                             existing.setContent(request.getContent());
                             existing.setThumbnailUrl(thumbnailUrl.isEmpty() ? existing.getThumbnailUrl() : thumbnailUrl);
-                            if (request.getTopic() != null) existing.setTopic(request.getTopic());
+                            if (request.getTopic() != null) existing.setTopic(topic);
                             if (request.getUrl() != null) existing.setUrl(request.getUrl());
                             return alumniPostRepository.save(existing);
                         })))
@@ -119,8 +124,12 @@ public class AlumniPostService {
     public Mono<AlumniPostResponse> getPublicById(Integer id, Integer organizationId) {
         return SecurityUtils.resolvePublicOrganizationId(organizationId)
                 .flatMap(orgId -> alumniPostRepository.findById(id)
-                        .filter(post -> orgId.equals(post.getOrganizationId())
-                                && !Boolean.TRUE.equals(post.getIsHidden())))
+                        .filter(post -> orgId.equals(post.getOrganizationId()))
+                        .flatMap(post -> !Boolean.TRUE.equals(post.getIsHidden())
+                                ? Mono.just(post)
+                                : SecurityUtils.canManageContentOrganization(post.getOrganizationId())
+                                        .filter(Boolean::booleanValue)
+                                        .map(ignored -> post)))
                 .switchIfEmpty(Mono.error(new ApplicationException(
                         ErrorCode.ALUMNI_POST_NOT_FOUND, "Published alumni post not found")))
                 .map(AlumniPostResponse::from);
