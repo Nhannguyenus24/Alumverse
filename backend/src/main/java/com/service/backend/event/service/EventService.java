@@ -172,6 +172,12 @@ public class EventService {
         );
     }
 
+    public Mono<PaginatedResponse<Event>> getOngoingEvents(Long organizationId, int page, int limit) {
+        String cacheKey = "ongoing_events_org_" + organizationId + "_page_" + page + "_limit_" + limit;
+        return cacheUtils.getOrCompute(CacheNames.EVENT, cacheKey, java.time.Duration.ofMinutes(5), () ->
+                this.findOngoingEvents(organizationId, page, limit));
+    }
+
     public Mono<PaginatedResponse<Event>> getPastEvents(Long organizationId, int page, int limit) {
         String cacheKey = "past_events_org_" + organizationId + "_page_" + page + "_limit_" + limit;
         return cacheUtils.getOrCompute(CacheNames.EVENT, cacheKey, java.time.Duration.ofMinutes(5), () ->
@@ -1106,6 +1112,17 @@ public class EventService {
         return PaginationHelper.paginate(
                 eventRepo.findUpcomingEvents(organizationId, now, limit, offset).collectList(),
                 eventRepo.countUpcomingEvents(organizationId, now),
+                page,
+                limit
+        );
+    }
+
+    private Mono<PaginatedResponse<Event>> findOngoingEvents(Long organizationId, int page, int limit) {
+        int offset = page * limit;
+        LocalDateTime now = LocalDateTime.now();
+        return PaginationHelper.paginate(
+                eventRepo.findOngoingEvents(organizationId, now, limit, offset).collectList(),
+                eventRepo.countOngoingEvents(organizationId, now),
                 page,
                 limit
         );

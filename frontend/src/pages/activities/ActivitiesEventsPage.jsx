@@ -35,8 +35,10 @@ const ActivitiesPage = () => {
   const queryClient = useQueryClient();
 
   const [upcomingPage, setUpcomingPage] = useState(0);
+  const [ongoingPage, setOngoingPage] = useState(0);
   const [pastPage, setPastPage] = useState(0);
   const { events: upcomingEvents } = usePublishedEvents('upcoming', 0, ARTICLE_FETCH_LIMIT);
+  const { events: ongoingEvents } = usePublishedEvents('ongoing', 0, ARTICLE_FETCH_LIMIT);
   const { events: pastEvents } = usePublishedEvents('past', 0, ARTICLE_FETCH_LIMIT);
 
   const [filters, setFilters] = useState({ all: true });
@@ -48,6 +50,10 @@ const ActivitiesPage = () => {
     () => applyArticleFilters(upcomingEvents, filters),
     [upcomingEvents, filters],
   );
+  const filteredOngoingEvents = useMemo(
+    () => applyArticleFilters(ongoingEvents, filters),
+    [ongoingEvents, filters],
+  );
   const filteredPastEvents = useMemo(
     () => applyArticleFilters(pastEvents, filters),
     [pastEvents, filters],
@@ -55,6 +61,10 @@ const ActivitiesPage = () => {
   const { items: pagedUpcomingEvents, pageInfo: upcomingPageInfo } = useMemo(
     () => paginateArticles(filteredUpcomingEvents, upcomingPage, 7),
     [filteredUpcomingEvents, upcomingPage],
+  );
+  const { items: pagedOngoingEvents, pageInfo: ongoingPageInfo } = useMemo(
+    () => paginateArticles(filteredOngoingEvents, ongoingPage, 6),
+    [filteredOngoingEvents, ongoingPage],
   );
   const { items: pagedPastEvents, pageInfo: pastPageInfo } = useMemo(
     () => paginateArticles(filteredPastEvents, pastPage, 6),
@@ -64,6 +74,7 @@ const ActivitiesPage = () => {
   const [featured, ...upcomingRest] = pagedUpcomingEvents;
   const featuredCard = featured ? toEventCardShape(featured) : null;
   const upcomingCards = upcomingRest.slice(0, 6).map(toEventCardShape);
+  const ongoingCards = pagedOngoingEvents.slice(0, 6).map(toEventCardShape);
   const pastCards = pagedPastEvents.slice(0, 6).map(toEventCardShape);
 
   const openArticle = (article) => {
@@ -121,6 +132,7 @@ const ActivitiesPage = () => {
         onChange: (next) => {
           setFilters(next);
           setUpcomingPage(0);
+          setOngoingPage(0);
           setPastPage(0);
         },
       }}
@@ -129,6 +141,7 @@ const ActivitiesPage = () => {
         onChange: (val) => {
           setFilters((prev) => ({ ...prev, search: val }));
           setUpcomingPage(0);
+          setOngoingPage(0);
           setPastPage(0);
         },
       }}
@@ -184,6 +197,51 @@ const ActivitiesPage = () => {
                         count={upcomingPageInfo.totalPage}
                         page={upcomingPage + 1}
                         onChange={(_, value) => setUpcomingPage(value - 1)}
+                      />
+                    </ScrollRevealItem>
+                  )}
+                </ScrollRevealGroup>
+              )}
+
+              {/* ONGOING */}
+              {ongoingCards.length > 0 && (
+                <ScrollRevealGroup stagger={0.08}>
+                  <ScrollRevealItem>
+                    <Typography variant="h4" fontWeight={700} mb={3}>
+                      {t('event:ongoing')}
+                    </Typography>
+                  </ScrollRevealItem>
+
+                  <ScrollRevealGroup
+                    stagger={0.08}
+                    sx={{
+                      display: 'grid',
+                      gridTemplateColumns: {
+                        xs: '1fr',
+                        sm: '1fr 1fr',
+                        md: '1fr 1fr 1fr',
+                      },
+                      gap: 4,
+                    }}
+                  >
+                    {ongoingCards.map((card, i) => (
+                      <ScrollRevealItem key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(pagedOngoingEvents[i])}>
+                        <ArticleEventCard
+                          article={card}
+                          isAdmin={isAdmin}
+                          onEdit={() => handleEdit(pagedOngoingEvents[i])}
+                          onDelete={() => handleDelete(pagedOngoingEvents[i])}
+                        />
+                      </ScrollRevealItem>
+                    ))}
+                  </ScrollRevealGroup>
+                  {(ongoingPageInfo?.totalPage ?? 0) > 1 && (
+                    <ScrollRevealItem sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+                      <Pagination
+                        color="primary"
+                        count={ongoingPageInfo.totalPage}
+                        page={ongoingPage + 1}
+                        onChange={(_, value) => setOngoingPage(value - 1)}
                       />
                     </ScrollRevealItem>
                   )}

@@ -6,7 +6,12 @@ import useOrganizationStore from "../../stores/organizationStore";
 const fetchEvents = async ({ queryKey }) => {
   const [, scope, { page, limit, organizationId }] = queryKey;
   if (!organizationId) return { items: [], pageInfo: null };
-  const path = scope === "past" ? "/events/past" : "/events/upcoming";
+  const path =
+    scope === "past"
+      ? "/events/past"
+      : scope === "ongoing"
+        ? "/events/ongoing"
+        : "/events/upcoming";
   const res = await apiClient.get(path, { params: { page, limit, organizationId } });
   return res?.data?.data ?? { items: [], pageInfo: null };
 };
