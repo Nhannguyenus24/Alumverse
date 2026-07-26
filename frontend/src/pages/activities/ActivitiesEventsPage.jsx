@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useParams } from 'react-router';
 import { Box, Button, Pagination, Typography } from '@mui/material';
 import { useSnackbar } from 'notistack';
 
@@ -28,8 +29,11 @@ import {
   ScrollRevealItem,
 } from '../../components/animations/ScrollReveal';
 
+const EVENT_SECTION_PAGE_SIZE = 6;
+
 const ActivitiesPage = () => {
   const { t } = useTranslation(['nav', 'event']);
+  const { slug } = useParams();
   const navigate = useOrgNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const queryClient = useQueryClient();
@@ -52,19 +56,19 @@ const ActivitiesPage = () => {
     () => applyArticleFilters(pastEvents, filters),
     [pastEvents, filters],
   );
+  const [featured, ...upcomingRest] = filteredUpcomingEvents;
   const { items: pagedUpcomingEvents, pageInfo: upcomingPageInfo } = useMemo(
-    () => paginateArticles(filteredUpcomingEvents, upcomingPage, 7),
-    [filteredUpcomingEvents, upcomingPage],
+    () => paginateArticles(upcomingRest, upcomingPage, EVENT_SECTION_PAGE_SIZE),
+    [upcomingRest, upcomingPage],
   );
   const { items: pagedPastEvents, pageInfo: pastPageInfo } = useMemo(
-    () => paginateArticles(filteredPastEvents, pastPage, 6),
+    () => paginateArticles(filteredPastEvents, pastPage, EVENT_SECTION_PAGE_SIZE),
     [filteredPastEvents, pastPage],
   );
 
-  const [featured, ...upcomingRest] = pagedUpcomingEvents;
   const featuredCard = featured ? toEventCardShape(featured) : null;
-  const upcomingCards = upcomingRest.slice(0, 6).map(toEventCardShape);
-  const pastCards = pagedPastEvents.slice(0, 6).map(toEventCardShape);
+  const upcomingCards = pagedUpcomingEvents.map(toEventCardShape);
+  const pastCards = pagedPastEvents.map(toEventCardShape);
 
   const openArticle = (article) => {
     if (!article?.id) return;
@@ -74,6 +78,7 @@ const ActivitiesPage = () => {
   const { isAuthenticated } = useAuth();
   const { isOrgManager } = useCanContribute();
   const isAdmin = isAuthenticated && isOrgManager;
+  const adminBase = slug ? `/${slug}/admin` : '/admin';
 
   const handleEdit = (event) => {
     navigate(`/post/event/${event.id}`);
@@ -110,7 +115,7 @@ const ActivitiesPage = () => {
           variant="outlined"
           color="primary"
           startIcon={<EventNoteOutlinedIcon />}
-          onClick={() => navigate('/admin/events')}
+          onClick={() => navigate(`${adminBase}/events`)}
         >
           {t('event:manage_events')}
         </Button>
@@ -167,12 +172,12 @@ const ActivitiesPage = () => {
                     }}
                   >
                     {upcomingCards.map((card, i) => (
-                      <ScrollRevealItem key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(upcomingRest[i])}>
+                      <ScrollRevealItem key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(pagedUpcomingEvents[i])}>
                         <ArticleEventCard
                           article={card}
                           isAdmin={isAdmin}
-                          onEdit={() => handleEdit(upcomingRest[i])}
-                          onDelete={() => handleDelete(upcomingRest[i])}
+                          onEdit={() => handleEdit(pagedUpcomingEvents[i])}
+                          onDelete={() => handleDelete(pagedUpcomingEvents[i])}
                         />
                       </ScrollRevealItem>
                     ))}

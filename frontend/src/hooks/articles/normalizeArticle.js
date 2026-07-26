@@ -1,4 +1,5 @@
 import { resolveMediaUrl } from "../../utils/imageUtils";
+import { normalizeArticleTopicForChannel } from "../../utils/articleTopics";
 
 export const normalizeNews = (data) => {
   if (!data) return null;
@@ -79,7 +80,7 @@ export const normalizeJob = (data) => {
   const createdAt = data.createdAt ?? data.created_at;
   const updatedAt = data.updatedAt ?? data.updated_at;
   const displayDate = updatedAt ?? createdAt;
-  const topic = data.topic ?? data.type;
+  const topic = normalizeArticleTopicForChannel("job", data.topic ?? data.type);
   return {
     id: data.id,
     channel: "job",
@@ -97,7 +98,7 @@ export const normalizeJob = (data) => {
     salaryRange: data.salaryRange,
     deadline: data.deadline,
     howToApply: data.howToApply,
-    type: data.type,
+    type: topic,
     isReferral: data.isReferral ?? data.is_referral ?? false,
     topic,
     url: data.url,
@@ -136,7 +137,7 @@ export const normalizeLearning = (data) => {
   const createdAt = data.createdAt ?? data.created_at;
   const updatedAt = data.updatedAt ?? data.updated_at;
   const displayDate = updatedAt ?? createdAt;
-  const topic = data.topic ?? data.type;
+  const topic = normalizeArticleTopicForChannel("learning", data.topic ?? data.type);
   return {
     id: data.id,
     channel: "learning",
@@ -150,7 +151,8 @@ export const normalizeLearning = (data) => {
     updatedAt,
     authorMemberId: data.uploaderMemberId ?? data.uploader_member_id,
     linkUrl: data.linkUrl,
-    type: data.type,
+    url: data.url ?? data.linkUrl,
+    type: topic,
     status: data.status,
     topic,
   };

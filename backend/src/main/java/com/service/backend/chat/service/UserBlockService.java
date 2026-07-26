@@ -63,7 +63,7 @@ public class UserBlockService {
 
                     return userBlockRepository.save(block)
                             // Blocking severs any existing connection between the two members:
-                            // the accepted conversation request is downgraded and the shared
+                            // the conversation request is marked as disconnected and the shared
                             // private chat is removed from both sides. See severConnection.
                             .flatMap(saved -> severConnection(blockerMemberId, targetMemberId)
                                     .thenReturn(saved))
@@ -78,9 +78,9 @@ public class UserBlockService {
      * Removes the network connection between two members when one blocks the other.
      * <ol>
      *   <li>Downgrades their conversation request away from {@code ACCEPTED} (to
-     *       {@code REJECTED} with no cooldown), so the pair no longer appears in the
-     *       connections list; the record is kept so a fresh request after an eventual
-     *       unblock reuses the existing re-request flow.</li>
+     *       {@code DISCONNECTED} with no cooldown), so the pair no longer appears in the
+     *       connections list and is not treated as a rejected request. The record is kept so
+     *       a fresh request after an eventual unblock can reuse the existing chat group.</li>
      *   <li>Removes both members from the shared private chat group, so the thread
      *       disappears from both users' chat lists. Messages and the group row are
      *       preserved and are restored intact if the pair reconnects and re-accepts.</li>
@@ -97,11 +97,12 @@ public class UserBlockService {
     }
 
     private Mono<Void> downgradeConnectionRequest(ChatConversationRequest request) {
-        // Already not connected (a prior rejection) — nothing to downgrade.
-        if (request.getStatus() == ConversationRequestStatus.REJECTED) {
+        // Already not connected (a prior rejection/disconnect) — nothing to downgrade.
+        if (request.getStatus() == ConversationRequestStatus.REJECTED
+                || request.getStatus() == ConversationRequestStatus.DISCONNECTED) {
             return Mono.empty();
         }
-        request.setStatus(ConversationRequestStatus.REJECTED);
+        request.setStatus(ConversationRequestStatus.DISCONNECTED);
         request.setCooldownUntil(null);
         request.setUpdatedAt(LocalDateTime.now());
         return chatConversationRequestRepository.save(request)

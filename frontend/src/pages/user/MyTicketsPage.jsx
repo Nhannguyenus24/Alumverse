@@ -124,6 +124,7 @@ const MyTicketsPage = () => {
       <Container
         maxWidth="lg"
         sx={{
+          minHeight: { xs: "calc(100vh - 72px)", md: "calc(100vh - 88px)" },
           pt: { xs: 2, sm: 3, md: 4 },
           pb: { xs: 4, md: 8 },
           px: { xs: 2, sm: 3, lg: 6 },

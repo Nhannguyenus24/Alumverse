@@ -113,6 +113,10 @@ const ArticleCard = ({ article, isAdmin = false, onEdit, stretch = true }) => {
             WebkitLineClamp: 3,
             WebkitBoxOrient: 'vertical',
             overflow: 'hidden',
+            textAlign: 'left',
+            lineHeight: 1.5,
+            overflowWrap: 'break-word',
+            wordBreak: 'break-word',
           }}
         >
           {article.description}

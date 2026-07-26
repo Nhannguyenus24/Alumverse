@@ -9,6 +9,7 @@ import { surveyApi } from '../../utils/api';
 import { useNotification } from '../../hooks/useNotification';
 import { isChoiceType } from '../../constants/surveyQuestionTypes';
 import useSurveyPromptStore from '../../stores/surveyPromptStore';
+import { normalizeRichTextHtml } from '../../utils/stringUtils';
 
 const SurveyFillPage = ({ mode }) => {
   const { surveyId } = useParams();
@@ -72,7 +73,7 @@ const SurveyFillPage = ({ mode }) => {
       await surveyApi.submitSurvey(surveyId, answers);
       showSuccess(t('survey:submit_success'));
       setReviewMode(true);
-      // Refresh the header badge so the just-answered survey drops off.
+      // Refresh the floating survey badge so the just-answered survey drops off.
       useSurveyPromptStore.getState().fetchPending();
     } catch (e) {
       showError(e?.response?.data?.message || t('common:error_occurred'));
@@ -154,7 +155,40 @@ const SurveyFillPage = ({ mode }) => {
           {reviewMode && <Chip size="small" color="success" label={t('survey:submitted_chip')} />}
         </Stack>
         {survey.description && (
-          <Typography variant="body2" color="text.secondary">{survey.description}</Typography>
+          <Box
+            sx={{
+              mt: 1.5,
+              color: 'text.secondary',
+              fontSize: '0.95rem',
+              lineHeight: 1.65,
+              whiteSpace: 'pre-line',
+              overflowWrap: 'break-word',
+              wordBreak: 'break-word',
+              '& p': {
+                m: 0,
+                textAlign: 'justify',
+                minHeight: '1.45em',
+                '&:not(:last-child)': { mb: 1.25 },
+              },
+              '& p.ql-empty-line, & p:has(> br:only-child)': {
+                display: 'block',
+                minHeight: '1.45em',
+                lineHeight: '1.45em',
+                my: 0,
+              },
+              '& ul, & ol': { my: 1, pl: 3 },
+              '& li': { mb: 0.5 },
+              '& .ql-align-left': { textAlign: 'left !important' },
+              '& [style*="text-align: left" i]': { textAlign: 'left !important' },
+              '& .ql-align-center': { textAlign: 'center !important' },
+              '& [style*="text-align: center" i]': { textAlign: 'center !important' },
+              '& .ql-align-right': { textAlign: 'right !important' },
+              '& [style*="text-align: right" i]': { textAlign: 'right !important' },
+              '& .ql-align-justify': { textAlign: 'justify !important' },
+              '& [style*="text-align: justify" i]': { textAlign: 'justify !important' },
+            }}
+            dangerouslySetInnerHTML={{ __html: normalizeRichTextHtml(survey.description) }}
+          />
         )}
 
         {reviewMode && (

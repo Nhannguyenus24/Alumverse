@@ -18,6 +18,7 @@ const ConfirmDialog = ({
 	onConfirm,
 	onCancel,
 	confirmColor = "primary",
+	titleColor,
 	loading = false,
 	reasonLabel,
 	reasonValue,
@@ -52,7 +53,9 @@ const ConfirmDialog = ({
 			aria-labelledby="confirm-dialog-title"
 			aria-describedby="confirm-dialog-description"
 		>
-			<DialogTitle id="confirm-dialog-title">{displayTitle}</DialogTitle>
+			<DialogTitle id="confirm-dialog-title" sx={{ color: titleColor }}>
+				{displayTitle}
+			</DialogTitle>
 			<DialogContent>
 				<DialogContentText id="confirm-dialog-description">
 					{displayMessage}

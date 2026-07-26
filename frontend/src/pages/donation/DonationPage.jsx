@@ -11,6 +11,7 @@ import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
 import dayjs from "dayjs";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
+import { useParams } from "react-router";
 import { useAuth } from "../../hooks/useAuth";
 import { useCanContribute } from "../../hooks/useCanContribute";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
@@ -40,7 +41,9 @@ function toIsoEndOfDay(value) {
 
 export default function DonationPage() {
   const { t } = useTranslation(["donation", "common"]);
+  const { slug } = useParams();
   const navigate = useOrgNavigate();
+  const adminBase = slug ? `/${slug}/admin` : "/admin";
   const { enqueueSnackbar } = useSnackbar();
   const { isAuthenticated } = useAuth();
   const { isOrgManager } = useCanContribute();
@@ -61,7 +64,8 @@ export default function DonationPage() {
   const [adminStats, setAdminStats] = useState(DEFAULT_ADMIN_STATS);
   const warningSetRef = useRef(new Set());
 
-  const gridPageSize = 4;
+  const gridPageSize = 9;
+  const fundFetchLimit = 200;
   const handlePageChange = usePaginationScrollToTop({ currentPage: page, setPage });
 
   const donationFilters = useMemo(() => getDonationFilterConfig(t), [t]);
@@ -94,7 +98,7 @@ export default function DonationPage() {
       setErrorMessage("");
 
       const params = {
-        page: page - 1, limit: gridPageSize,
+        page: 0, limit: fundFetchLimit,
         organizationId: organizationId != null ? String(organizationId) : undefined,
         q: search.trim() || undefined,
         targetAmountMin: filters.amountMin || undefined, targetAmountMax: filters.amountMax || undefined,
@@ -116,19 +120,12 @@ export default function DonationPage() {
           const pagedData = payload?.data;
           const items = pagedData?.items ?? [];
 
-          if (page === 1) {
-            if (items.length > 0) {
-              setFeaturedCampaign(items[0]);
-              setCampaigns(items.slice(1));
-            } else {
-              setFeaturedCampaign(null);
-              setCampaigns([]);
-            }
-          } else {
-            setCampaigns(items);
-          }
+          const [featured, ...rest] = items;
+          const start = (page - 1) * gridPageSize;
+          setFeaturedCampaign(featured ?? null);
+          setCampaigns(rest.slice(start, start + gridPageSize));
 
-          const totalItems = Number(pagedData?.totalItem ?? 0);
+          const totalItems = Number(pagedData?.totalItem ?? items.length);
           const adjustedTotalItems = Math.max(totalItems - 1, 0);
           setPageCount(Math.max(1, Math.ceil(adjustedTotalItems / gridPageSize)));
         })
@@ -143,7 +140,7 @@ export default function DonationPage() {
       return () => { ignore = true; };
     }, 300);
     return () => clearTimeout(debounce);
-  }, [filters, search, enqueueSnackbar, organizationId, page, refreshToken]);
+  }, [filters, search, enqueueSnackbar, organizationId, page, refreshToken, t]);
 
   const adminBannerItems = useMemo(() => [
     { value: `${formatCurrency(adminStats.totalCurrentAmount)} VND`, label: t("donation:stats_total_raised") },
@@ -191,7 +188,7 @@ export default function DonationPage() {
           <Button variant="contained" startIcon={<AddCircleOutlineIcon />} onClick={() => navigate("/post/donation")} sx={{ textTransform: "none", fontWeight: 700 }}>
             {t("donation:create_fund")}
           </Button>
-          <Button variant="outlined" color="primary" startIcon={<FormatListBulletedIcon />} onClick={() => navigate("/admin/donations")} sx={{ textTransform: "none", fontWeight: 700 }}>
+          <Button variant="outlined" color="primary" startIcon={<FormatListBulletedIcon />} onClick={() => navigate(`${adminBase}/donations`)} sx={{ textTransform: "none", fontWeight: 700 }}>
             {t("donation:manage_funds")}
           </Button>
         </Stack>

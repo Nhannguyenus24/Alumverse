@@ -415,7 +415,7 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
                   }}
                 >
                   <ListItemIcon sx={{ minWidth: 36 }}>
-                    <LockOpenOutlinedIcon fontSize="small" color="success" />
+                    <LockOpenOutlinedIcon fontSize="small" color="error" />
                   </ListItemIcon>
                   <ListItemText primary={t('network:unblock_user')} primaryTypographyProps={{ variant: 'body2' }} />
                 </MenuItem>
@@ -429,7 +429,7 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
                   }}
                 >
                   <ListItemIcon sx={{ minWidth: 36 }}>
-                    <BlockOutlinedIcon fontSize="small" color="primary" />
+                    <BlockOutlinedIcon fontSize="small" color="error" />
                   </ListItemIcon>
                   <ListItemText primary={t('network:block_user')} primaryTypographyProps={{ variant: 'body2' }} />
                 </MenuItem>
@@ -461,7 +461,7 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
           }}
           action={
             <Button
-              color="inherit"
+              color="error"
               size="small"
               onClick={() => { if (canUseBasicActions) unblockUser(); }}
               disabled={isBlockActionPending || !canUseBasicActions}
@@ -827,7 +827,8 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
         )}
         confirmText={t('network:block')}
         cancelText={t('network:cancel')}
-        confirmColor="primary"
+        titleColor="error.main"
+        confirmColor="error"
         loading={isBlockActionPending}
         onConfirm={() => { if (canUseBasicActions) blockUser(); }}
         onCancel={() => setBlockConfirmOpen(false)}

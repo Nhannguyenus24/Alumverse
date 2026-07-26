@@ -82,31 +82,29 @@ const ChatPage = () => {
   const targetChatId = searchParams.get('chatId');
   const [searchInput, setSearchInput] = useState('');
   const [appliedSearch, setAppliedSearch] = useState('');
-  const [page, setPage] = useState(1);
   const [activeChatId, setActiveChatId] = useState(null);
   const [createGroupOpen, setCreateGroupOpen] = useState(false);
   const { enqueueSnackbar } = useSnackbar();
+  const chatListPageSize = 200;
 
   const {
     items: groupItems,
-    totalPage: groupTotalPage,
     isPending: groupPending,
     isFetching: groupFetching,
     isError: groupError,
     errorMessage: groupErrorMsg,
-  } = useGroupChatList({ searchQuery: appliedSearch, page });
+  } = useGroupChatList({ searchQuery: appliedSearch, page: 1, pageSize: chatListPageSize });
 
   const {
     items: privateItems,
-    totalPage: privateTotalPage,
     isPending: privatePending,
     isFetching: privateFetching,
     isError: privateError,
     errorMessage: privateErrorMsg,
   } = usePrivateChatList({
     searchQuery: appliedSearch,
-    page,
-    pageSize: targetMemberId || targetChatId ? 100 : undefined,
+    page: 1,
+    pageSize: chatListPageSize,
   });
 
   const chats = useMemo(() => {
@@ -123,22 +121,12 @@ const ChatPage = () => {
     return merged;
   }, [groupItems, privateItems, t]);
 
-  const totalPage = Math.max(groupTotalPage, privateTotalPage);
-  const safePage = totalPage === 0 ? 1 : Math.min(page, totalPage);
-
-  useEffect(() => {
-    if (totalPage > 0 && page > totalPage) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setPage(totalPage);
-    }
-  }, [totalPage, page]);
-
   // Deep-link params (memberId/chatId) only SEED the initial selection. We consume
   // each param value once (tracked via refs) instead of re-applying it on every
   // render: keeping it in the deps of `activeChatId` made the param override manual
   // sidebar selection, so clicking another conversation snapped straight back to the
-  // deep-linked one and the user could never switch. The param stays in the URL so
-  // the private list keeps its enlarged page size (the target chat stays loaded).
+  // deep-linked one and the user could never switch. The param stays in the URL, while
+  // the sidebar always loads a single large scrollable list so the target chat stays loaded.
   const consumedMemberIdRef = useRef(null);
   const consumedChatIdRef = useRef(null);
 
@@ -203,12 +191,7 @@ const ChatPage = () => {
 
   const handleSearchSubmit = useCallback(() => {
     setAppliedSearch(searchInput.trim());
-    setPage(1);
   }, [searchInput]);
-
-  const handlePageChange = useCallback((_, value) => {
-    setPage(value);
-  }, []);
 
   const handleGroupCreated = useCallback((createdGroup) => {
     if (createdGroup?.id) {
@@ -270,9 +253,6 @@ const ChatPage = () => {
               searchValue={searchInput}
               onSearchChange={setSearchInput}
               onSearchSubmit={handleSearchSubmit}
-              page={safePage}
-              totalPage={totalPage}
-              onPageChange={handlePageChange}
               isPending={isPending}
               isFetching={isFetching}
             />

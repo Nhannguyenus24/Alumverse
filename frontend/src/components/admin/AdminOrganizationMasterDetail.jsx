@@ -663,12 +663,12 @@ const AdminOrganizationMasterDetail = ({
                     </DetailSection>
                     <Stack spacing={2}>
                       <Box>
-                        <Card variant="outlined" sx={{ p: 2.5, borderRadius: 3, bgcolor: alpha(theme.palette.success.main, 0.02), border: `1px solid ${alpha(theme.palette.success.main, 0.1)}` }}>
+                        <Card variant="outlined" sx={{ p: 2.5, borderRadius: 3, bgcolor: alpha(theme.palette.secondary.main, theme.palette.mode === 'dark' ? 0.16 : 0.04), border: `1px solid ${alpha(theme.palette.secondary.main, theme.palette.mode === 'dark' ? 0.38 : 0.18)}` }}>
                           <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1.5 }}>
-                            <Avatar sx={{ bgcolor: 'success.main', width: 32, height: 32 }}><VisibilityRoundedIcon sx={{ fontSize: 18 }} /></Avatar>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'success.main' }}>{t('admin:org_vision')}</Typography>
+                            <Avatar sx={{ bgcolor: 'secondary.main', color: 'secondary.contrastText', width: 32, height: 32 }}><VisibilityRoundedIcon sx={{ fontSize: 18 }} /></Avatar>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'secondary.main' }}>{t('admin:org_vision')}</Typography>
                           </Stack>
-                          <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500, lineHeight: 1.6 }}>{selectedIntroduction?.vision || '—'}</Typography>
+                          <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500, lineHeight: 1.6, whiteSpace: 'pre-line' }}>{selectedIntroduction?.vision || '—'}</Typography>
                         </Card>
                       </Box>
                       <Box>
@@ -677,16 +677,16 @@ const AdminOrganizationMasterDetail = ({
                             <Avatar sx={{ bgcolor: 'primary.main', width: 32, height: 32 }}><RocketLaunchRoundedIcon sx={{ fontSize: 18 }} /></Avatar>
                             <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'primary.dark' }}>{t('admin:org_mission')}</Typography>
                           </Stack>
-                          <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500, lineHeight: 1.6 }}>{selectedIntroduction?.mission || '—'}</Typography>
+                          <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500, lineHeight: 1.6, whiteSpace: 'pre-line' }}>{selectedIntroduction?.mission || '—'}</Typography>
                         </Card>
                       </Box>
                       <Box>
-                        <Card variant="outlined" sx={{ p: 2.5, borderRadius: 3, bgcolor: alpha(theme.palette.error.main, 0.02), border: `1px solid ${alpha(theme.palette.error.main, 0.1)}` }}>
+                        <Card variant="outlined" sx={{ p: 2.5, borderRadius: 3, bgcolor: alpha(theme.palette.accent.main, theme.palette.mode === 'dark' ? 0.15 : 0.06), border: `1px solid ${alpha(theme.palette.accent.main, theme.palette.mode === 'dark' ? 0.42 : 0.24)}` }}>
                           <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1.5 }}>
-                            <Avatar sx={{ bgcolor: 'error.main', width: 32, height: 32 }}><FavoriteRoundedIcon sx={{ fontSize: 18 }} /></Avatar>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'error.dark' }}>{t('admin:org_core_values')}</Typography>
+                            <Avatar sx={{ bgcolor: 'accent.main', color: 'accent.contrastText', width: 32, height: 32 }}><FavoriteRoundedIcon sx={{ fontSize: 18 }} /></Avatar>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'accent.dark' }}>{t('admin:org_core_values')}</Typography>
                           </Stack>
-                          <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500, lineHeight: 1.6 }}>{selectedIntroduction?.coreValues || '—'}</Typography>
+                          <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500, lineHeight: 1.6, whiteSpace: 'pre-line' }}>{selectedIntroduction?.coreValues || '—'}</Typography>
                         </Card>
                       </Box>
                     </Stack>
@@ -758,31 +758,35 @@ const AdminOrganizationMasterDetail = ({
                           {programList.map((p) => (
                             <Paper key={p} variant="outlined" sx={{ px: 1.5, py: 0.5, borderRadius: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
                               <Typography sx={{ fontWeight: 700, fontSize: 13 }}>{p}</Typography>
-                              <IconButton size="small" onClick={() => setProgramList(pl => pl.filter(x => x !== p))}><DeleteOutlineIcon fontSize="small" /></IconButton>
+                              {!staffView && (
+                                <IconButton size="small" onClick={() => setProgramList(pl => pl.filter(x => x !== p))}><DeleteOutlineIcon fontSize="small" /></IconButton>
+                              )}
                             </Paper>
                           ))}
                         </Stack>
-                        <Stack
-                          direction={{ xs: 'column', sm: 'row' }}
-                          spacing={1}
-                        >
-                          <TextField size="small" placeholder={t('admin:org_add_program')} value={newProgram} onChange={(e) => setNewProgram(e.target.value)} />
-                          <Button startIcon={<AddIcon />} variant="outlined" size="small" onClick={() => { if (newProgram.trim()) { setProgramList(pl => [...pl, newProgram.trim()]); setNewProgram(''); } }}>{t('admin:add')}</Button>
-                          <Button startIcon={<SaveOutlinedIcon />} variant="contained" size="small" onClick={async () => {
-                            try {
-                              const remote = await adminOrganizationApi.getPrograms(selectedOrg.id);
-                              const remoteList = Array.isArray(remote) ? remote : [];
-                              const toAdd = programList.filter(p => !remoteList.includes(p));
-                              const toRemove = remoteList.filter(p => !programList.includes(p));
-                              await Promise.all(toAdd.map(v => adminOrganizationApi.addProgram(selectedOrg.id, v)));
-                              await Promise.all(toRemove.map(v => adminOrganizationApi.removeProgram(selectedOrg.id, v)));
-                              enqueueSnackbar(t('admin:org_programs_saved'), { variant: 'success' });
-                              onRefresh?.();
-                            } catch (_) {
-                              enqueueSnackbar(t('admin:org_programs_save_failed'), { variant: 'error' });
-                            }
-                          }}>{t('admin:save')}</Button>
-                        </Stack>
+                        {!staffView && (
+                          <Stack
+                            direction={{ xs: 'column', sm: 'row' }}
+                            spacing={1}
+                          >
+                            <TextField size="small" placeholder={t('admin:org_add_program')} value={newProgram} onChange={(e) => setNewProgram(e.target.value)} />
+                            <Button startIcon={<AddIcon />} variant="outlined" size="small" onClick={() => { if (newProgram.trim()) { setProgramList(pl => [...pl, newProgram.trim()]); setNewProgram(''); } }}>{t('admin:add')}</Button>
+                            <Button startIcon={<SaveOutlinedIcon />} variant="contained" size="small" onClick={async () => {
+                              try {
+                                const remote = await adminOrganizationApi.getPrograms(selectedOrg.id);
+                                const remoteList = Array.isArray(remote) ? remote : [];
+                                const toAdd = programList.filter(p => !remoteList.includes(p));
+                                const toRemove = remoteList.filter(p => !programList.includes(p));
+                                await Promise.all(toAdd.map(v => adminOrganizationApi.addProgram(selectedOrg.id, v)));
+                                await Promise.all(toRemove.map(v => adminOrganizationApi.removeProgram(selectedOrg.id, v)));
+                                enqueueSnackbar(t('admin:org_programs_saved'), { variant: 'success' });
+                                onRefresh?.();
+                              } catch (_) {
+                                enqueueSnackbar(t('admin:org_programs_save_failed'), { variant: 'error' });
+                              }
+                            }}>{t('admin:save')}</Button>
+                          </Stack>
+                        )}
                       </Box>
 
                       <Divider sx={{ my: 3 }} />
@@ -801,35 +805,40 @@ const AdminOrganizationMasterDetail = ({
                           {majorList.map((m) => (
                             <Paper key={m} variant="outlined" sx={{ px: 1.5, py: 0.5, borderRadius: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
                               <Typography sx={{ fontWeight: 700, fontSize: 13 }}>{m}</Typography>
-                              <IconButton size="small" onClick={() => setMajorList(ml => ml.filter(x => x !== m))}><DeleteOutlineIcon fontSize="small" /></IconButton>
+                              {!staffView && (
+                                <IconButton size="small" onClick={() => setMajorList(ml => ml.filter(x => x !== m))}><DeleteOutlineIcon fontSize="small" /></IconButton>
+                              )}
                             </Paper>
                           ))}
                         </Stack>
-                        <Stack
-                          direction={{ xs: 'column', sm: 'row' }}
-                          spacing={1}
-                        >
-                          <TextField size="small" placeholder={t('admin:org_add_major')} value={newMajor} onChange={(e) => setNewMajor(e.target.value)} />
-                          <Button startIcon={<AddIcon />} variant="outlined" size="small" onClick={() => { if (newMajor.trim()) { setMajorList(ml => [...ml, newMajor.trim()]); setNewMajor(''); } }}>{t('admin:add')}</Button>
-                          <Button startIcon={<SaveOutlinedIcon />} variant="contained" size="small" onClick={async () => {
-                            try {
-                              const remote = await adminOrganizationApi.getMajors(selectedOrg.id);
-                              const remoteList = Array.isArray(remote) ? remote : [];
-                              const toAdd = majorList.filter(p => !remoteList.includes(p));
-                              const toRemove = remoteList.filter(p => !majorList.includes(p));
-                              await Promise.all(toAdd.map(v => adminOrganizationApi.addMajor(selectedOrg.id, v)));
-                              await Promise.all(toRemove.map(v => adminOrganizationApi.removeMajor(selectedOrg.id, v)));
-                              enqueueSnackbar(t('admin:org_majors_saved'), { variant: 'success' });
-                              onRefresh?.();
-                            } catch (_) {
-                              enqueueSnackbar(t('admin:org_majors_save_failed'), { variant: 'error' });
-                            }
-                          }}>{t('admin:save')}</Button>
-                        </Stack>
+                        {!staffView && (
+                          <Stack
+                            direction={{ xs: 'column', sm: 'row' }}
+                            spacing={1}
+                          >
+                            <TextField size="small" placeholder={t('admin:org_add_major')} value={newMajor} onChange={(e) => setNewMajor(e.target.value)} />
+                            <Button startIcon={<AddIcon />} variant="outlined" size="small" onClick={() => { if (newMajor.trim()) { setMajorList(ml => [...ml, newMajor.trim()]); setNewMajor(''); } }}>{t('admin:add')}</Button>
+                            <Button startIcon={<SaveOutlinedIcon />} variant="contained" size="small" onClick={async () => {
+                              try {
+                                const remote = await adminOrganizationApi.getMajors(selectedOrg.id);
+                                const remoteList = Array.isArray(remote) ? remote : [];
+                                const toAdd = majorList.filter(p => !remoteList.includes(p));
+                                const toRemove = remoteList.filter(p => !majorList.includes(p));
+                                await Promise.all(toAdd.map(v => adminOrganizationApi.addMajor(selectedOrg.id, v)));
+                                await Promise.all(toRemove.map(v => adminOrganizationApi.removeMajor(selectedOrg.id, v)));
+                                enqueueSnackbar(t('admin:org_majors_saved'), { variant: 'success' });
+                                onRefresh?.();
+                              } catch (_) {
+                                enqueueSnackbar(t('admin:org_majors_save_failed'), { variant: 'error' });
+                              }
+                            }}>{t('admin:save')}</Button>
+                          </Stack>
+                        )}
                       </Box>
                     </DetailSection>
 
-                    <Box
+                    {!staffView && (
+                      <Box
                       sx={{
                         mt: 2,
                         p: 2,
@@ -844,7 +853,8 @@ const AdminOrganizationMasterDetail = ({
                         <InfoOutlinedIcon sx={{ fontSize: 14 }} />
                         {t('admin:org_training_save_note')}
                       </Typography>
-                    </Box>
+                      </Box>
+                    )}
                   </Stack>
                 )}
 

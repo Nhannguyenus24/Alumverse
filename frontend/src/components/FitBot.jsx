@@ -131,13 +131,16 @@ const AnimatedAvatar = styled(Avatar, {
 })(({ isAnimating, theme }) => ({
   width: 60,
   height: 60,
-  backgroundColor: theme.palette.primary.main,
+  backgroundColor: theme.palette.primary.lighter,
   animation: isAnimating ? `${pulse} 1.5s ease-in-out infinite` : 'none',
   transition: 'transform 0.2s',
   '&:hover': {
     transform: 'scale(1.1)',
   },
-  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+  border: `1px solid ${theme.palette.divider}`,
+  boxShadow: theme.palette.mode === 'dark'
+    ? '0 4px 14px rgba(0, 0, 0, 0.45)'
+    : '0 4px 12px rgba(0, 0, 0, 0.15)',
 }));
 
 const SuggestionBubble = styled(Paper)(({ theme }) => ({

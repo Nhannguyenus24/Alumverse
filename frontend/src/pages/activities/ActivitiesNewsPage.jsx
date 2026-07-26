@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useParams } from 'react-router';
 import { Box, Button, Pagination, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 
@@ -18,7 +19,6 @@ import apiClient from '../../utils/axios';
 import { deleteArticleByChannel, getArticleAdminEditPath } from '../../utils/articleAdminActions';
 import {
   ARTICLE_FETCH_LIMIT,
-  ARTICLE_PAGE_SIZE,
   applyArticleFilters,
   getArticleFilterConfig,
   paginateArticles,
@@ -30,8 +30,12 @@ import {
   ScrollRevealItem,
 } from '../../components/animations/ScrollReveal';
 
+const NEWS_SECTION_PAGE_SIZE = 18;
+const NEWS_SECTION_LIMIT = 9;
+
 const ActivitiesPage = () => {
   const { t } = useTranslation(['nav', 'article']);
+  const { slug } = useParams();
   const navigate = useOrgNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const queryClient = useQueryClient();
@@ -46,15 +50,17 @@ const ActivitiesPage = () => {
   const filterConfig = useMemo(() => getArticleFilterConfig(t, ['news']), [t]);
   const normalized = useMemo(() => rawNews.map(normalizeNews).filter(Boolean), [rawNews]);
   const filteredNews = useMemo(() => applyArticleFilters(normalized, filters), [normalized, filters]);
+  const [featured, ...listNews] = filteredNews;
   const { items: pageNews, pageInfo } = useMemo(
-    () => paginateArticles(filteredNews, page, ARTICLE_PAGE_SIZE),
-    [filteredNews, page],
+    () => paginateArticles(listNews, page, NEWS_SECTION_PAGE_SIZE),
+    [listNews, page],
   );
 
-  const [featured, ...rest] = pageNews;
   const featuredCard = featured ? toCardShape(featured) : null;
-  const suggestionCards = rest.slice(0, 3).map(toCardShape);
-  const dailyCards = rest.slice(3, 6).map(toCardShape);
+  const suggestionArticles = pageNews.slice(0, NEWS_SECTION_LIMIT);
+  const dailyArticles = pageNews.slice(NEWS_SECTION_LIMIT, NEWS_SECTION_LIMIT * 2);
+  const suggestionCards = suggestionArticles.map(toCardShape);
+  const dailyCards = dailyArticles.map(toCardShape);
 
   const openArticle = (article) => {
     if (!article?.id) return;
@@ -64,9 +70,10 @@ const ActivitiesPage = () => {
   const { isAuthenticated } = useAuth();
   const { isOrgManager } = useCanContribute();
   const isAdmin = isAuthenticated && isOrgManager;
+  const adminBase = slug ? `/${slug}/admin` : '/admin';
 
   const handleEdit = (article) => {
-    const editPath = getArticleAdminEditPath(article);
+    const editPath = getArticleAdminEditPath(article, adminBase);
     if (editPath) navigate(editPath);
   };
 
@@ -101,7 +108,7 @@ const ActivitiesPage = () => {
           variant="outlined"
           color="primary"
           startIcon={<ArticleOutlinedIcon />}
-          onClick={() => navigate('/admin/article')}
+          onClick={() => navigate(`${adminBase}/article`)}
         >
           {t('article:manage_news')}
         </Button>
@@ -156,12 +163,12 @@ const ActivitiesPage = () => {
                     }}
                   >
                     {suggestionCards.map((card, i) => (
-                      <ScrollRevealItem key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(rest[i])}>
+                      <ScrollRevealItem key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(suggestionArticles[i])}>
                         <ArticleCard
                           article={card}
                           isAdmin={isAdmin}
-                          onEdit={() => handleEdit(rest[i])}
-                          onDelete={() => handleDelete(rest[i])}
+                          onEdit={() => handleEdit(suggestionArticles[i])}
+                          onDelete={() => handleDelete(suggestionArticles[i])}
                         />
                       </ScrollRevealItem>
                     ))}
@@ -193,13 +200,13 @@ const ActivitiesPage = () => {
                       <ScrollRevealItem
                         key={card.id ?? i}
                         sx={{ cursor: 'pointer' }}
-                        onClick={() => openArticle(rest[i + 3])}
+                        onClick={() => openArticle(dailyArticles[i])}
                       >
                         <ArticleCard
                           article={card}
                           isAdmin={isAdmin}
-                          onEdit={() => handleEdit(rest[i + 3])}
-                          onDelete={() => handleDelete(rest[i + 3])}
+                          onEdit={() => handleEdit(dailyArticles[i])}
+                          onDelete={() => handleDelete(dailyArticles[i])}
                         />
                       </ScrollRevealItem>
                     ))}
