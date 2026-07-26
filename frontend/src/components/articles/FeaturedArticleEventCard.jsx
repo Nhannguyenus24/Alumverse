@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Box,
   Typography,
@@ -31,7 +32,9 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
   const { t } = useTranslation(['common', 'event']);
   const { enqueueSnackbar } = useSnackbar();
   const { canUseBasicActions } = useCanContribute();
+  const queryClient = useQueryClient();
   const [isInterested, setIsInterested] = useState(false);
+  const [interestedCount, setInterestedCount] = useState(article?.interested ?? 0);
   const [isJoined, setIsJoined] = useState(() => getEventRegisteredState(article));
   const [ticketStatus, setTicketStatus] = useState(null);
   const [loadingInterest, setLoadingInterest] = useState(false);
@@ -42,6 +45,10 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
   const [openCancelDialog, setOpenCancelDialog] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const { data: questions = [] } = useEventQuestions(article?.id, !isAdmin && canUseBasicActions && Boolean(article?.id));
+
+  useEffect(() => {
+    setInterestedCount(article?.interested ?? 0);
+  }, [article?.interested]);
 
   useEffect(() => {
     if (isAdmin || !article?.id) return;
@@ -77,12 +84,16 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
       if (isInterested) {
         await eventApi.removeInterest(article.id);
         setIsInterested(false);
+        setInterestedCount((c) => Math.max(0, c - 1));
         enqueueSnackbar(t('event:unmark_interested_success', { defaultValue: 'Đã hủy quan tâm sự kiện' }), { variant: 'info' });
       } else {
         await eventApi.addInterest(article.id);
         setIsInterested(true);
+        setInterestedCount((c) => c + 1);
         enqueueSnackbar(t('event:mark_interested_success', { defaultValue: 'Đã quan tâm sự kiện' }), { variant: 'success' });
       }
+      queryClient.invalidateQueries({ queryKey: ['publishedEvents'] });
+      queryClient.invalidateQueries({ queryKey: ['article'] });
     } catch (err) {
       enqueueSnackbar(err?.response?.data?.message || t('common:action_failed'), { variant: 'error' });
     } finally {
@@ -270,7 +281,7 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
           </Typography>
 
           <Typography variant="caption" color="text.secondary">
-            {t('event:interested_only', { interested: article.interested || 0 })}
+            {t('event:interested_only', { interested: interestedCount || 0 })}
           </Typography>
         </Box>
 
