@@ -74,6 +74,21 @@ const sectionRevealAnimation = keyframes`
   100% { opacity: 1; transform: translateY(0); }
 `;
 
+const softFadeIn = keyframes`
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+`;
+
+const slideInLeft = keyframes`
+  0% { opacity: 0; transform: translateX(-42px); }
+  100% { opacity: 1; transform: translateX(0); }
+`;
+
+const dropIn = keyframes`
+  0% { opacity: 0; transform: translateY(-28px); }
+  100% { opacity: 1; transform: translateY(0); }
+`;
+
 const mainSectionTitleSx = {
   mb: { xs: 3.5, md: 5 },
   fontSize: { xs: "1.75rem", sm: "2.05rem", md: "2.5rem" },
@@ -265,7 +280,7 @@ const FeatureStep = ({ number, title, description }) => (
       {number}
     </Typography>
     <Box>
-      <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary" }}>
+      <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "primary.main" }}>
         {title}
       </Typography>
       <Typography variant="body2" sx={{ color: "text.secondary", lineHeight: 1.7 }}>
@@ -451,7 +466,12 @@ const HomePage = () => {
     ? "background.paper"
     : alpha(theme.palette.primary.main, 0.035);
   const plainSectionBg = "background.default";
-  const featuredAlumniBg = "accent.main";
+  const connectionSectionBg = theme.palette.mode === "dark" ? "background.default" : "background.paper";
+  const partnersSectionBg = theme.palette.mode === "dark" ? "background.default" : softSectionBg;
+  const featuredAlumniAccent = theme.palette.mode === "dark"
+    ? theme.palette.accent?.dark ?? theme.palette.accent.main
+    : theme.palette.accent.main;
+  const featuredAlumniBg = featuredAlumniAccent;
 
   const activeHeroSlides = useMemo(() => {
     if (!organization) return HERO_SLIDES;
@@ -607,13 +627,23 @@ const HomePage = () => {
                 </Typography>
               </RevealBox>
               <RevealBox delay={220} sx={{ display: "flex", justifyContent: { xs: "center", md: "flex-start" } }}>
-                <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ width: { xs: "100%", sm: "auto" } }}>
+                <Stack
+                  direction="row"
+                  spacing={1.5}
+                  useFlexGap
+                  sx={{
+                    width: "auto",
+                    maxWidth: "100%",
+                    flexWrap: "wrap",
+                    justifyContent: { xs: "center", md: "flex-start" },
+                  }}
+                >
                   <Button
                     onClick={() => navigate("/introduction")}
                     variant="outlined"
                     size="large"
                     sx={{
-                      width: { xs: "100%", sm: 150 },
+                      width: { xs: 142, sm: 150 },
                       borderColor: "#fff",
                       color: "#fff",
                       fontWeight: 700,
@@ -632,7 +662,7 @@ const HomePage = () => {
                     variant="contained"
                     size="large"
                     sx={{
-                      width: { xs: "100%", sm: 150 },
+                      width: { xs: 142, sm: 150 },
                       bgcolor: "#fff",
                       color: "secondary.main",
                       fontWeight: 700,
@@ -825,11 +855,14 @@ const HomePage = () => {
               </Stack>
               <Skeleton variant="rounded" sx={{ height: { xs: 245, md: 280 }, borderRadius: 2 }} />
             </Box>
-          ) : visibleEvent ? (
+          ) : (
             <Box
               sx={{
                 display: "grid",
-                gridTemplateColumns: { xs: "1fr", md: "minmax(0, 1.28fr) minmax(0, 0.72fr)" },
+                gridTemplateColumns: {
+                  xs: "1fr",
+                  md: visibleEvent ? "minmax(0, 1.28fr) minmax(0, 0.72fr)" : "1fr",
+                },
                 gap: { xs: 3, md: 6.5 },
                 alignItems: "center",
               }}
@@ -838,6 +871,7 @@ const HomePage = () => {
                 <Stack
                   spacing={2.25}
                   sx={{
+                    width: "100%",
                     textAlign: { xs: "center", md: "left" },
                     alignItems: { xs: "center", md: "flex-start" },
                   }}
@@ -852,65 +886,54 @@ const HomePage = () => {
                   >
                     {t("home:events_title")}
                   </Typography>
-                  <Typography variant="body1" sx={{ maxWidth: 640, lineHeight: 1.65, color: alpha("#fff", 0.88) }}>
+                  <Typography variant="body1" sx={{ width: "100%", maxWidth: visibleEvent ? 640 : "none", lineHeight: 1.65, color: alpha("#fff", 0.88) }}>
                     {t("home:events_desc")}
+                    {!visibleEvent && (
+                      <Box component="span" sx={{ display: "block", mt: 1 }}>
+                        {t("home:events_empty")}
+                      </Box>
+                    )}
                   </Typography>
                   <Button
-                    variant="contained"
-                    color="inherit"
+                    variant="outlined"
                     endIcon={<ArrowForwardIcon />}
                     onClick={() => navigate("/events")}
                     sx={{
                       px: 2.5,
                       fontWeight: 800,
-                      bgcolor: "#fff",
-                      color: "primary.main",
-                      "&:hover": { bgcolor: "#fff", color: "primary.main" },
+                      borderColor: "#fff",
+                      color: "#fff",
+                      "&:hover": {
+                        borderColor: "#fff",
+                        color: "#fff",
+                        bgcolor: alpha("#fff", 0.12),
+                      },
                     }}
                   >
                     {t("home:events_all_cta")}
                   </Button>
                 </Stack>
               </RevealBox>
-              <RevealBox
-                key={`${eventPage}-${visibleEvent.id}`}
-                delay={120}
-                revealAnimation={alumniFlipIn}
-                sx={{ display: "flex", justifyContent: { xs: "center", md: "flex-end" } }}
-              >
-                <EventFeaturedCard
-                  event={visibleEvent}
-                  onClick={() => navigate(`/article/event/${visibleEvent.id}`)}
-                />
-              </RevealBox>
+              {visibleEvent && (
+                <RevealBox
+                  key={`${eventPage}-${visibleEvent.id}`}
+                  delay={120}
+                  revealAnimation={alumniFlipIn}
+                  sx={{ display: "flex", justifyContent: { xs: "center", md: "flex-end" } }}
+                >
+                  <EventFeaturedCard
+                    event={visibleEvent}
+                    onClick={() => navigate(`/article/event/${visibleEvent.id}`)}
+                  />
+                </RevealBox>
+              )}
             </Box>
-          ) : (
-            <RevealBox>
-              <Card
-                elevation={0}
-                sx={{
-                  minHeight: 220,
-                  borderRadius: 2,
-                  border: 1,
-                  borderColor: "divider",
-                  bgcolor: "background.paper",
-                  display: "grid",
-                  placeItems: "center",
-                  textAlign: "center",
-                  px: 3,
-                }}
-              >
-                <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 560, lineHeight: 1.8 }}>
-                  {t("home:events_empty")}
-                </Typography>
-              </Card>
-            </RevealBox>
           )}
         </Container>
       </Box>
 
       {/* Kết nối và đồng hành */}
-      <Box sx={{ py: { xs: 7, sm: 9, md: 12 }, backgroundColor: "background.paper" }}>
+      <Box sx={{ py: { xs: 7, sm: 9, md: 12 }, backgroundColor: connectionSectionBg }}>
         <Container sx={{ px: { xs: 2, sm: 3 } }}>
           <RevealBox>
             <Box sx={{ maxWidth: 820, ml: "auto", mb: { xs: 3.5, md: 5 }, textAlign: { xs: "center", md: "right" } }}>
@@ -926,7 +949,7 @@ const HomePage = () => {
             </Box>
           </RevealBox>
           <Stack spacing={{ xs: 2.5, md: 3 }}>
-            <RevealBox revealAnimation={alumniFlipIn}>
+            <RevealBox revealAnimation={slideInLeft}>
               <Card
                 elevation={0}
                 sx={{
@@ -946,7 +969,7 @@ const HomePage = () => {
                     alignItems: "center",
                   }}
                 >
-                  <Box>
+                  <RevealBox delay={140}>
                     <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1 }}>
                       <SchoolOutlinedIcon sx={{ color: "primary.main", fontSize: 34 }} />
                       <Typography variant="h3" color="primary.main" sx={{ fontWeight: 800 }}>
@@ -968,16 +991,22 @@ const HomePage = () => {
                     >
                       {isAuthenticated ? t("home:mentorship_auth_cta") : t("home:mentorship_guest_cta")}
                     </Button>
-                  </Box>
+                  </RevealBox>
                   <Stack spacing={2} divider={<Divider flexItem />}>
-                    <FeatureStep number="01" title={t("home:mentorship_step_1_title")} description={t("home:mentorship_step_1_desc")} />
-                    <FeatureStep number="02" title={t("home:mentorship_step_2_title")} description={t("home:mentorship_step_2_desc")} />
-                    <FeatureStep number="03" title={t("home:mentorship_step_3_title")} description={t("home:mentorship_step_3_desc")} />
+                    {[
+                      ["01", t("home:mentorship_step_1_title"), t("home:mentorship_step_1_desc")],
+                      ["02", t("home:mentorship_step_2_title"), t("home:mentorship_step_2_desc")],
+                      ["03", t("home:mentorship_step_3_title"), t("home:mentorship_step_3_desc")],
+                    ].map(([number, title, description], index) => (
+                      <RevealBox key={number} delay={180 + index * 120} revealAnimation={slideInLeft}>
+                        <FeatureStep number={number} title={title} description={description} />
+                      </RevealBox>
+                    ))}
                   </Stack>
                 </Box>
               </Card>
             </RevealBox>
-            <RevealBox delay={100} revealAnimation={alumniFlipIn}>
+            <RevealBox delay={120} revealAnimation={softFadeIn}>
               <Card
                 elevation={0}
                 sx={{
@@ -990,7 +1019,7 @@ const HomePage = () => {
                 }}
               >
                 <Stack spacing={2.25}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                  <RevealBox delay={120} revealAnimation={dropIn} sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                     <ForumOutlinedIcon sx={{ color: "secondary.main", fontSize: 34, flexShrink: 0 }} />
                     <Box>
                       <Typography variant="h3" color="secondary.main" sx={{ fontWeight: 800 }}>
@@ -1000,44 +1029,47 @@ const HomePage = () => {
                         {t("home:forum_preview_desc")}
                       </Typography>
                     </Box>
-                  </Box>
+                  </RevealBox>
                   <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(3, minmax(0, 1fr))" }, gap: 2 }}>
                     {[
                       ["forum_category_study", "warning"],
                       ["forum_category_career", "accent"],
                       ["forum_category_alumni", "primary"],
-                    ].map(([key, color]) => (
-                      <Card
-                        key={key}
-                        elevation={0}
-                        sx={{
-                          p: 2,
-                          borderRadius: 2,
-                          border: 1,
-                          borderColor: "divider",
-                          bgcolor: "background.default",
-                          minHeight: 150,
-                          transition: "transform 0.22s ease, border-color 0.22s ease",
-                          "&:hover": { transform: "translateY(-5px)", borderColor: `${color}.main` },
-                        }}
-                      >
-                        <Stack spacing={1.25}>
-                          <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: `${color}.main`, flexShrink: 0 }} />
-                          <Box>
-                            <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary" }}>
-                              {t(`home:${key}_title`)}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.65 }}>
-                              {t(`home:${key}_desc`)}
-                            </Typography>
-                          </Box>
-                        </Stack>
-                      </Card>
+                    ].map(([key, color], index) => (
+                      <RevealBox key={key} delay={220 + index * 110}>
+                        <Card
+                          elevation={0}
+                          sx={{
+                            p: 2,
+                            borderRadius: 2,
+                            border: 1,
+                            borderColor: "divider",
+                            bgcolor: "background.default",
+                            minHeight: 150,
+                            transition: "transform 0.22s ease, border-color 0.22s ease",
+                            "&:hover": { transform: "translateY(-5px)", borderColor: `${color}.main` },
+                          }}
+                        >
+                          <Stack spacing={1.25}>
+                            <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: `${color}.main`, flexShrink: 0 }} />
+                            <Box>
+                              <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary" }}>
+                                {t(`home:${key}_title`)}
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.65 }}>
+                                {t(`home:${key}_desc`)}
+                              </Typography>
+                            </Box>
+                          </Stack>
+                        </Card>
+                      </RevealBox>
                     ))}
                   </Box>
-                  <Button variant="contained" color="secondary" endIcon={<ArrowForwardIcon />} onClick={() => navigate("/forum")} sx={{ alignSelf: "flex-start", fontWeight: 800 }}>
-                    {t("home:forum_preview_cta")}
-                  </Button>
+                  <RevealBox delay={560} sx={{ alignSelf: { xs: "flex-start", md: "flex-end" } }}>
+                    <Button variant="outlined" color="secondary" endIcon={<ArrowForwardIcon />} onClick={() => navigate("/forum")} sx={{ fontWeight: 800 }}>
+                      {t("home:forum_preview_cta")}
+                    </Button>
+                  </RevealBox>
                 </Stack>
               </Card>
             </RevealBox>
@@ -1052,7 +1084,7 @@ const HomePage = () => {
             <HomeSectionHeader
               title={t("home:development_title")}
               description={t("home:development_desc")}
-              titleColor="secondary.main"
+              titleColor={theme.palette.mode === "dark" ? "#fff" : "secondary.main"}
             />
           </RevealBox>
           <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))" }, gap: { xs: 2, md: 3 } }}>
@@ -1131,7 +1163,7 @@ const HomePage = () => {
           </Stack>
           <RevealBox delay={120} sx={{ display: "flex", justifyContent: "center", mt: { xs: 3, md: 5 } }}>
             <Button
-              variant="contained"
+              variant="outlined"
               endIcon={<ArrowForwardIcon />}
               onClick={() => navigate("/news")}
               sx={{ px: 3, py: 1.1, fontWeight: 800 }}
@@ -1182,13 +1214,13 @@ const HomePage = () => {
                 <Button
                   variant="contained"
                   endIcon={<ArrowForwardIcon />}
-                  onClick={() => navigate("/honors/achievements")}
+                  onClick={() => navigate("/honors")}
                   sx={{
                     px: 2.5,
                     fontWeight: 700,
                     bgcolor: "#fff",
-                    color: "accent.main",
-                    "&:hover": { bgcolor: "#fff", color: "accent.main" },
+                    color: featuredAlumniAccent,
+                    "&:hover": { bgcolor: "#fff", color: featuredAlumniAccent },
                   }}
                 >
                   {t("home:featured_alumni_cta")}
@@ -1259,7 +1291,7 @@ const HomePage = () => {
       </Box>
 
       {/* Đối tác */}
-      <Box sx={{ py: { xs: 8, sm: 10, md: 12 }, backgroundColor: softSectionBg, overflow: "hidden" }}>
+      <Box sx={{ py: { xs: 8, sm: 10, md: 12 }, backgroundColor: partnersSectionBg, overflow: "hidden" }}>
         <Container sx={{ px: { xs: 2, sm: 3 } }}>
           <RevealBox>
             <Typography

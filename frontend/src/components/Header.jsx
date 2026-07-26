@@ -93,16 +93,14 @@ const Header = () => {
     () => getNormalizedPathname(location.pathname, routeSlug),
     [location.pathname, routeSlug]
   );
-  const { isAdmin, isGuestVerificationLevel, isTransparent, isOrgRegistrationPage } = useMemo(() => {
-    const admin = user?.role === 'ADMIN';
+  const { isGuestVerificationLevel, isTransparent, isOrgRegistrationPage } = useMemo(() => {
     const home = normalizedPath === '/';
     return {
-      isAdmin: admin,
       isGuestVerificationLevel: isAuthenticated && verificationLevel === 0,
       isTransparent: home && !isScrolled,
       isOrgRegistrationPage: normalizedPath === '/organization-registration',
     };
-  }, [normalizedPath, user?.role, isAuthenticated, verificationLevel, isScrolled]);
+  }, [normalizedPath, isAuthenticated, verificationLevel, isScrolled]);
 
   const rafRef = useRef(null);
   useEffect(() => {
@@ -430,7 +428,7 @@ const Header = () => {
                             sx={{
                               fontWeight: 600,
                               bgcolor: isTransparent ? '#FFFFFF' : 'primary.main',
-                              color: isTransparent ? 'primary.main' : 'primary.contrastText',
+                              color: isTransparent ? 'secondary.main' : 'primary.contrastText',
                               '&:hover': { bgcolor: isTransparent ? '#f0f0f0' : 'primary.dark' }
                             }}
                     >

@@ -5,6 +5,7 @@ import com.service.backend.shared.entity.LearningResource;
 import com.service.backend.article.dto.CreateLearningResourceRequest;
 import com.service.backend.article.dto.UpdateLearningResourceRequest;
 import com.service.backend.article.dto.LearningResourceResponse;
+import com.service.backend.article.validation.ArticleTopicCatalog;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.enums.Status;
@@ -46,6 +47,7 @@ public class LearningResourceService {
     }
 
     public Mono<LearningResourceResponse> create(CreateLearningResourceRequest request) {
+        String type = ArticleTopicCatalog.requireValid(ArticleTopicCatalog.Channel.LEARNING, request.getType());
         return Mono.zip(SecurityUtils.getCurrentUserId(), SecurityUtils.getCurrentUserRole())
                 .flatMap(ctx -> {
                     Long userId = ctx.getT1();
@@ -62,7 +64,7 @@ public class LearningResourceService {
                                         .organizationId(orgId)
                                         .uploaderMemberId(userId.intValue())
                                         .title(request.getTitle())
-                                        .type(normalizeType(request.getType()))
+                                        .type(type)
                                         .linkUrl(request.getLinkUrl())
                                         .description(request.getDescription())
                                         .thumbnailUrl(thumbnailUrl.isEmpty() ? null : thumbnailUrl)
@@ -88,6 +90,9 @@ public class LearningResourceService {
     }
 
     public Mono<LearningResourceResponse> update(Integer id, UpdateLearningResourceRequest request) {
+        String type = request.getType() != null
+                ? ArticleTopicCatalog.requireValid(ArticleTopicCatalog.Channel.LEARNING, request.getType())
+                : null;
         return learningResourceRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.LEARNING_RESOURCE_NOT_FOUND, "Learning resource not found with id: " + id)))
                 .flatMap(existing -> SecurityUtils.assertCanManageContentOrganization(existing.getOrganizationId())
@@ -95,7 +100,7 @@ public class LearningResourceService {
                         .map(Optional::of).defaultIfEmpty(Optional.empty())
                         .flatMap(uploadedThumbnail -> {
                             existing.setTitle(request.getTitle());
-                            existing.setType(normalizeType(request.getType()));
+                            if (request.getType() != null) existing.setType(type);
                             existing.setLinkUrl(request.getLinkUrl());
                             existing.setDescription(request.getDescription());
                             uploadedThumbnail.ifPresent(newThumbnail -> existing.setThumbnailUrl(newThumbnail.isEmpty() ? null : newThumbnail));
@@ -123,8 +128,12 @@ public class LearningResourceService {
     public Mono<LearningResourceResponse> getPublicById(Integer id, Integer organizationId) {
         return SecurityUtils.resolvePublicOrganizationId(organizationId)
                 .flatMap(orgId -> learningResourceRepository.findById(id)
-                        .filter(resource -> orgId.equals(resource.getOrganizationId())
-                                && Status.APPROVED.equals(resource.getStatus())))
+                        .filter(resource -> orgId.equals(resource.getOrganizationId()))
+                        .flatMap(resource -> Status.APPROVED.equals(resource.getStatus())
+                                ? Mono.just(resource)
+                                : SecurityUtils.canManageContentOrganization(resource.getOrganizationId())
+                                        .filter(Boolean::booleanValue)
+                                        .map(ignored -> resource)))
                 .switchIfEmpty(Mono.error(new ApplicationException(
                         ErrorCode.LEARNING_RESOURCE_NOT_FOUND, "Approved learning resource not found")))
                 .map(LearningResourceResponse::from);
@@ -181,7 +190,6 @@ public class LearningResourceService {
     }
 
     private String normalizeType(String type) {
-        if (type == null || type.trim().isEmpty()) return null;
-        return type.trim().toLowerCase().replace("-", "_");
+        return ArticleTopicCatalog.normalize(type);
     }
 }

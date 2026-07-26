@@ -5,6 +5,7 @@ import com.service.backend.shared.entity.News;
 import com.service.backend.article.dto.CreateNewsRequest;
 import com.service.backend.article.dto.UpdateNewsRequest;
 import com.service.backend.article.dto.NewsResponse;
+import com.service.backend.article.validation.ArticleTopicCatalog;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
@@ -42,6 +43,7 @@ public class NewsService {
     }
 
     public Mono<NewsResponse> create(CreateNewsRequest request) {
+        String topic = ArticleTopicCatalog.requireValid(ArticleTopicCatalog.Channel.NEWS, request.getTopic());
         return Mono.zip(SecurityUtils.getCurrentUserId(), SecurityUtils.getCurrentUserRole())
                 .flatMap(ctx -> {
                     Long userId = ctx.getT1();
@@ -60,7 +62,7 @@ public class NewsService {
                                         .slug(request.getSlug())
                                         .content(request.getContent())
                                         .thumbnailUrl(thumbnailUrl.isEmpty() ? null : thumbnailUrl)
-                                        .topic(request.getTopic())
+                                        .topic(topic)
                                         .url(request.getUrl())
                                         .isHidden(!publishImmediately)
                                         .build();
@@ -83,6 +85,9 @@ public class NewsService {
     }
 
     public Mono<NewsResponse> update(Integer id, UpdateNewsRequest request) {
+        String topic = request.getTopic() != null
+                ? ArticleTopicCatalog.requireValid(ArticleTopicCatalog.Channel.NEWS, request.getTopic())
+                : null;
         return newsRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.NEWS_NOT_FOUND, "News not found with id: " + id)))
                 .flatMap(existing -> SecurityUtils.assertCanManageContentOrganization(existing.getOrganizationId())
@@ -93,7 +98,7 @@ public class NewsService {
                             existing.setSlug(request.getSlug());
                             existing.setContent(request.getContent());
                             existing.setThumbnailUrl(thumbnailUrl.isEmpty() ? existing.getThumbnailUrl() : thumbnailUrl);
-                            if (request.getTopic() != null) existing.setTopic(request.getTopic());
+                            if (request.getTopic() != null) existing.setTopic(topic);
                             if (request.getUrl() != null) existing.setUrl(request.getUrl());
                             return newsRepository.save(existing);
                         })))
@@ -119,8 +124,12 @@ public class NewsService {
     public Mono<NewsResponse> getPublicById(Integer id, Integer organizationId) {
         return SecurityUtils.resolvePublicOrganizationId(organizationId)
                 .flatMap(orgId -> newsRepository.findById(id)
-                        .filter(news -> orgId.equals(news.getOrganizationId())
-                                && !Boolean.TRUE.equals(news.getIsHidden())))
+                        .filter(news -> orgId.equals(news.getOrganizationId()))
+                        .flatMap(news -> !Boolean.TRUE.equals(news.getIsHidden())
+                                ? Mono.just(news)
+                                : SecurityUtils.canManageContentOrganization(news.getOrganizationId())
+                                        .filter(Boolean::booleanValue)
+                                        .map(ignored -> news)))
                 .switchIfEmpty(Mono.error(new ApplicationException(
                         ErrorCode.NEWS_NOT_FOUND, "Published news not found")))
                 .map(NewsResponse::from);

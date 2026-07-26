@@ -5,6 +5,7 @@ import com.service.backend.shared.entity.Job;
 import com.service.backend.article.dto.CreateJobRequest;
 import com.service.backend.article.dto.UpdateJobRequest;
 import com.service.backend.article.dto.JobResponse;
+import com.service.backend.article.validation.ArticleTopicCatalog;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
@@ -44,6 +45,7 @@ public class JobService {
     }
 
     public Mono<JobResponse> create(CreateJobRequest request) {
+        String type = ArticleTopicCatalog.requireValid(ArticleTopicCatalog.Channel.JOB, request.getType());
         return Mono.zip(SecurityUtils.getCurrentUserId(), SecurityUtils.getCurrentUserRole())
                 .flatMap(ctx -> {
                     Long userId = ctx.getT1();
@@ -61,7 +63,7 @@ public class JobService {
                             .description(request.getDescription())
                             .companyName(request.getCompanyName())
                             .location(request.getLocation())
-                            .type(normalizeType(request.getType()))
+                            .type(type)
                             .salaryRange(request.getSalaryRange())
                             .howToApply(request.getHowToApply())
                             .url(request.getUrl())
@@ -90,6 +92,9 @@ public class JobService {
     }
 
     public Mono<JobResponse> update(Integer id, UpdateJobRequest request) {
+        String type = request.getType() != null
+                ? ArticleTopicCatalog.requireValid(ArticleTopicCatalog.Channel.JOB, request.getType())
+                : null;
         return jobRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.JOB_NOT_FOUND, "Job not found with id: " + id)))
                 .flatMap(existing -> SecurityUtils.assertCanManageContentOrganization(existing.getOrganizationId())
@@ -99,7 +104,7 @@ public class JobService {
                     existing.setDescription(request.getDescription());
                     existing.setCompanyName(request.getCompanyName());
                     existing.setLocation(request.getLocation());
-                    existing.setType(normalizeType(request.getType()));
+                    if (request.getType() != null) existing.setType(type);
                     existing.setSalaryRange(request.getSalaryRange());
                     existing.setHowToApply(request.getHowToApply());
                     existing.setUrl(request.getUrl());
@@ -130,8 +135,12 @@ public class JobService {
     public Mono<JobResponse> getPublicById(Integer id, Integer organizationId) {
         return SecurityUtils.resolvePublicOrganizationId(organizationId)
                 .flatMap(orgId -> jobRepository.findById(id)
-                        .filter(job -> orgId.equals(job.getOrganizationId())
-                                && Boolean.TRUE.equals(job.getIsActive())))
+                        .filter(job -> orgId.equals(job.getOrganizationId()))
+                        .flatMap(job -> Boolean.TRUE.equals(job.getIsActive())
+                                ? Mono.just(job)
+                                : SecurityUtils.canManageContentOrganization(job.getOrganizationId())
+                                        .filter(Boolean::booleanValue)
+                                        .map(ignored -> job)))
                 .switchIfEmpty(Mono.error(new ApplicationException(
                         ErrorCode.JOB_NOT_FOUND, "Active job not found")))
                 .map(JobResponse::from);
@@ -227,7 +236,6 @@ public class JobService {
     }
 
     private String normalizeType(String type) {
-        if (type == null || type.trim().isEmpty()) return null;
-        return type.trim().toLowerCase().replace("-", "_");
+        return ArticleTopicCatalog.normalize(type);
     }
 }

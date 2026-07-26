@@ -787,7 +787,7 @@ export default function SettingPage() {
 
   return (
       <Page title={t('page_title')} meta={<meta name="description" content={t('page_title')} />}>
-        <Container maxWidth="xl" sx={{ minHeight: { xs: 'auto', md: 'calc(100dvh - 64px)' }, boxSizing: 'border-box', display: 'flex', alignItems: 'stretch', pt: { xs: 2, sm: 3, md: 4 }, px: { xs: 2, sm: 3, lg: 6 }, pb: { xs: 5, sm: 7, md: 3 } }}>
+        <Container maxWidth="xl" sx={{ minHeight: { xs: 'auto', md: 'calc(100dvh - 64px)' }, boxSizing: 'border-box', display: 'flex', alignItems: 'stretch', pt: { xs: 2, sm: 3, md: 4 }, px: { xs: 2, sm: 3, lg: 6 }, pb: { xs: 5, sm: 7, md: 7 } }}>
           <Box sx={{ display: 'flex', width: '100%', flexDirection: { xs: 'column', md: 'row' }, alignItems: 'stretch', gap: { xs: 2, md: 3 } }}>
             <ScrollReveal direction="right" sx={{ width: { xs: '100%', md: 260 } }}>
               <Sidebar items={menuItems} value={activeTab} onChange={setActiveTab} useRouting={false} />

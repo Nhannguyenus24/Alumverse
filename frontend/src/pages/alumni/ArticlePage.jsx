@@ -957,11 +957,11 @@ const ArticlePage = () => {
               {/* Thumbnail */}
               {article.thumbnailUrl && (
                 <ScrollRevealItem sx={{ display: "flex", flexDirection: "column", alignItems: "center", mt: { xs: 2, md: 3 }, mb: { xs: 5, md: 6 } }}>
-                  <Box component="img" src={article.thumbnailUrl} alt={article.title} sx={{ width: { xs: "100%", md: "72%" }, aspectRatio: "16 / 10", objectFit: "cover", borderRadius: 2, boxShadow: "0 2px 10px rgba(0,0,0,0.1)" }} />
+                  <Box component="img" src={article.thumbnailUrl} alt={article.title} sx={{ display: "block", width: "100%", height: "auto", objectFit: "contain", borderRadius: 1 }} />
                   {mainImageCaption && (
                     <Typography
                       variant="caption"
-                      sx={{ color: "text.secondary", mt: 1, fontStyle: "italic", textAlign: "center", maxWidth: { xs: "100%", md: "72%" } }}
+                      sx={{ color: "text.secondary", mt: 1, fontStyle: "italic", textAlign: "center", maxWidth: "100%" }}
                     >
                       {mainImageCaption}
                     </Typography>
@@ -1043,14 +1043,24 @@ const ArticlePage = () => {
                   "& .ql-align-justify, & [style*='text-align: justify' i]": { textAlign: "justify !important" },
                   "& img, & img.rich-content-image, & img.ql-content-image": {
                     display: "block",
-                    maxWidth: "min(100%, 520px) !important",
-                    width: "auto !important",
+                    maxWidth: "100% !important",
+                    width: "100% !important",
                     height: "auto !important",
-                    maxHeight: "560px !important",
                     objectFit: "contain",
                     mx: "auto",
                     my: 2,
-                    borderRadius: 2,
+                    borderRadius: 1,
+                  },
+                  "& p > span > img, & li > span > img, & h1 > span > img, & h2 > span > img, & h3 > span > img, & h4 > span > img, & h5 > span > img, & h6 > span > img": {
+                    display: "inline-block !important",
+                    width: "1.1em !important",
+                    height: "1.1em !important",
+                    maxWidth: "1.5em !important",
+                    verticalAlign: "-0.2em !important",
+                    objectFit: "contain",
+                    mx: 0,
+                    my: 0,
+                    borderRadius: 0,
                   },
                   "& p.ql-image-line": {
                     minHeight: 0,

@@ -284,6 +284,7 @@ public class AdminForumService {
                     topic.setStatus(newStatus);
                     topic.setUpdatedAt(LocalDateTime.now());
                     return forumTopicRepository.save(topic)
+                            .doOnSuccess(saved -> notifyTopicApprovedIfNeeded(saved, before, newStatus))
                             .flatMap(saved -> createAuditLog(adminUserId, topic.getCreatedByMemberId(),
                                     "UPDATE_TOPIC_STATUS", "FORUM_TOPIC", String.valueOf(topicId),
                                     before, newStatus).thenReturn(saved));
@@ -291,6 +292,20 @@ public class AdminForumService {
                 .flatMap(this::convertToTopicDTOWithPostCount)
                 .delayUntil(r -> cacheUtils.clear(CacheNames.FORUM_CATEGORY))
                 .doOnSuccess(r -> log.info("updateTopicStatus result: {}", JsonUtils.toJson(r)));
+    }
+
+    private void notifyTopicApprovedIfNeeded(ForumTopic topic, String beforeStatus, String newStatus) {
+        if (!Status.PENDING.name().equals(beforeStatus) || !Status.ACTIVE.name().equals(newStatus)) {
+            return;
+        }
+        if (topic.getCreatedByMemberId() == null) {
+            return;
+        }
+        notificationService.createNotificationAsync(
+                topic.getCreatedByMemberId(),
+                "Chủ đề diễn đàn đã được duyệt",
+                "Chủ đề \"" + topic.getTitle() + "\" đã được duyệt và đang hiển thị trên diễn đàn.",
+                "/forum/topic/" + topic.getId());
     }
 
     public Mono<ForumCategoryDTO> updateCategoryStatus(Integer categoryId, String status, Integer adminUserId) {

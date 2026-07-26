@@ -135,13 +135,13 @@ class LearningResourceServiceTest {
                     .id(1)
                     .title("New Title")
                     .linkUrl("http://new.com")
-                    .type("masters")
+                    .type("masters_doctorate")
                     .build();
 
             UpdateLearningResourceRequest request = new UpdateLearningResourceRequest();
             request.setTitle("New Title");
             request.setLinkUrl("http://new.com");
-            request.setType("masters");
+            request.setType("masters_doctorate");
 
             when(learningResourceRepository.findById(1)).thenReturn(Mono.just(existing));
             when(imageService.uploadBase64IfPresent(any())).thenReturn(Mono.empty());
@@ -152,7 +152,7 @@ class LearningResourceServiceTest {
                             .contextWrite(adminContext()))
                     .assertNext(dto -> {
                         assertThat(dto.getTitle()).isEqualTo("New Title");
-                        assertThat(dto.getType()).isEqualTo("masters");
+                        assertThat(dto.getType()).isEqualTo("masters_doctorate");
                     })
                     .verifyComplete();
         }

@@ -115,7 +115,7 @@
   "warn_unknown_org": "Không xác định được tổ chức hiện tại. Vui lòng thử tải lại trang.",
   "warn_alumni_verification_required": "Bạn cần xác minh là cựu sinh viên (mức xác minh 2) để đăng bài trong diễn đàn cựu sinh viên.",
   "error_create_topic_failed": "Tạo chủ đề thất bại.",
-  "success_create_topic": "Tạo chủ đề thành công. Chủ đề của bạn đang chờ Admin duyệt trước khi được hiển thị công khai.",
+  "success_create_topic": "Đã gửi chủ đề của bạn. Chủ đề đang chờ Admin duyệt trước khi hiển thị công khai.",
   "page_title_alumni_career": "Diễn đàn - Cựu sinh viên",
   "page_meta_alumni_career": "Diễn đàn Cựu sinh viên - Hướng nghiệp",
   "page_title_create_topic": "Tạo chủ đề - Cựu sinh viên",
