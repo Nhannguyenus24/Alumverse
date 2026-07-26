@@ -1,5 +1,6 @@
 import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useParams } from "react-router";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
@@ -285,6 +286,7 @@ const ArticleHighlightCard = ({ data, channel, eventId, isAdmin = false, sharedI
   const { enqueueSnackbar } = useSnackbar();
   const { t } = useTranslation(['common', 'article', 'event', 'donation', 'admin']);
   const { canContribute, canUseBasicActions } = useCanContribute();
+  const queryClient = useQueryClient();
   const canUseArticleAction = channel === "event" || channel === "donation"
     ? canUseBasicActions
     : canContribute;
@@ -384,6 +386,7 @@ const ArticleHighlightCard = ({ data, channel, eventId, isAdmin = false, sharedI
         setInterestedCountLocal((c) => c + 1);
         enqueueSnackbar(t('event:mark_interested_success', { defaultValue: 'Đã quan tâm sự kiện' }), { variant: 'success' });
       }
+      queryClient.invalidateQueries({ queryKey: ['publishedEvents'] });
     } catch (err) {
       enqueueSnackbar(err?.response?.data?.message || t('common:action_failed'), { variant: "error" });
     } finally {
@@ -677,6 +680,7 @@ const ArticlePage = () => {
   // "Quan tâm" button (ArticleHighlightCard) — two separate controls for the same event_interests
   // row — stay in sync without a reload. Only active for the event channel.
   const isEventChannel = article?.channel === "event";
+  const queryClient = useQueryClient();
   const { canUseBasicActions: canToggleEventInterest, isAuthenticated: isAuthedForInterest } = useCanContribute();
   const [eventInterestState, setEventInterestState] = useState({ isInterested: false, countDelta: 0, loading: false });
   const eventInterest = {
@@ -684,6 +688,10 @@ const ArticlePage = () => {
     interestedCount: Math.max(0, (article?.interestedCount ?? 0) + eventInterestState.countDelta),
     loading: eventInterestState.loading,
   };
+
+  useEffect(() => {
+    setEventInterestState((prev) => ({ ...prev, countDelta: 0 }));
+  }, [article?.interestedCount, id]);
 
   useEffect(() => {
     if (!isEventChannel || !id || !isAuthedForInterest) return undefined;
@@ -709,6 +717,8 @@ const ArticlePage = () => {
         setEventInterestState((prev) => ({ ...prev, isInterested: true, countDelta: prev.countDelta + 1, loading: false }));
         enqueueSnackbar(t('event:mark_interested_success', { defaultValue: 'Đã quan tâm sự kiện' }), { variant: 'success' });
       }
+      queryClient.invalidateQueries({ queryKey: ['publishedEvents'] });
+      await queryClient.invalidateQueries({ queryKey: ['article', { channel: 'event', id }], exact: false });
     } catch (err) {
       setEventInterestState((prev) => ({ ...prev, loading: false }));
       throw err;

@@ -172,6 +172,12 @@ public class EventService {
         );
     }
 
+    public Mono<PaginatedResponse<Event>> getOngoingEvents(Long organizationId, int page, int limit) {
+        String cacheKey = "ongoing_events_org_" + organizationId + "_page_" + page + "_limit_" + limit;
+        return cacheUtils.getOrCompute(CacheNames.EVENT, cacheKey, java.time.Duration.ofMinutes(5), () ->
+                this.findOngoingEvents(organizationId, page, limit));
+    }
+
     public Mono<PaginatedResponse<Event>> getPastEvents(Long organizationId, int page, int limit) {
         String cacheKey = "past_events_org_" + organizationId + "_page_" + page + "_limit_" + limit;
         return cacheUtils.getOrCompute(CacheNames.EVENT, cacheKey, java.time.Duration.ofMinutes(5), () ->
@@ -619,7 +625,7 @@ public class EventService {
                                     if (eventEnded && ticket.getStatus() == Status.ISSUED) {
                                         return ticketRepo.expireTicket(ticket.getId())
                                                 .then(evictEventCaches())
-                                                .then(Mono.<EventTicket>error(new ApplicationException(ErrorCode.TICKET_EXPIRED, "Ticket has expired")));
+                                                .then(Mono.error(new ApplicationException(ErrorCode.TICKET_EXPIRED, "Ticket has expired")));
                                     }
                                     if (ticket.getStatus() == Status.CANCELLED || ticket.getStatus() == Status.EXPIRED) {
                                         return Mono.error(new ApplicationException(ErrorCode.TICKET_ALREADY_CANCELLED, "Ticket is cancelled or expired"));
@@ -722,14 +728,6 @@ public class EventService {
     }
 
     // ─── Ticket response mapping (qrToken + attendee enrichment) ──────────────
-
-    /** Map a ticket to a response carrying the encrypted QR token (no attendee lookup). */
-    private Mono<EventTicketDetailResponse> toDetail(EventTicket ticket) {
-        EventTicketDetailResponse.EventTicketDetailResponseBuilder builder = EventTicketDetailResponse.fromTicket(ticket)
-                .qrToken(eventQrService.encodeWithPrefix(ticket.getTicketCode(), ticket.getEventId()));
-        return enrichTicketEventTitle(ticket, builder)
-                .map(EventTicketDetailResponse.EventTicketDetailResponseBuilder::build);
-    }
 
     /** Map a ticket to a response, additionally resolving the holder's profile for verification. */
     private Mono<EventTicketDetailResponse> toDetailWithAttendee(EventTicket ticket) {
@@ -1106,6 +1104,17 @@ public class EventService {
         return PaginationHelper.paginate(
                 eventRepo.findUpcomingEvents(organizationId, now, limit, offset).collectList(),
                 eventRepo.countUpcomingEvents(organizationId, now),
+                page,
+                limit
+        );
+    }
+
+    private Mono<PaginatedResponse<Event>> findOngoingEvents(Long organizationId, int page, int limit) {
+        int offset = page * limit;
+        LocalDateTime now = LocalDateTime.now();
+        return PaginationHelper.paginate(
+                eventRepo.findOngoingEvents(organizationId, now, limit, offset).collectList(),
+                eventRepo.countOngoingEvents(organizationId, now),
                 page,
                 limit
         );

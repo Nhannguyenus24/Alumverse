@@ -34,7 +34,7 @@ import reactor.core.publisher.Mono;
  * chỉ xử lý text (vd. gpt-oss), đưa ảnh vào sẽ hỏng.
  *
  * <p>Không đi qua {@code DynamicChatModel} vì lý do trên. Mọi lỗi đều trả {@link Optional#empty()}
- * để {@link OCRService} tự lùi về Tesseract.
+ * và {@link OCRService} sẽ báo lỗi OCR.
  */
 @Service
 public class VisionOcrService {
@@ -78,22 +78,22 @@ public class VisionOcrService {
         this.visionModelName = visionModelName;
     }
 
-    /** Dựng model sau khi DB sẵn sàng; hỏng thì chỉ log, OCR vẫn chạy bằng Tesseract. */
+    /** Dựng model sau khi DB sẵn sàng; hỏng thì chỉ log, chức năng OCR có thể không hoạt động. */
     @EventListener(ApplicationReadyEvent.class)
     public void onStartup() {
         reload().subscribe(
                 ok -> { },
-                e -> log.warn("Vision OCR: không nạp được provider, dùng Tesseract. {}", e.getMessage()));
+                e -> log.warn("Vision OCR: không nạp được provider, chức năng OCR có thể lỗi. {}", e.getMessage()));
     }
 
     /** Nạp lại model vision từ provider đang bật. Gọi lại sau khi admin đổi cấu hình AI. */
     public Mono<Boolean> reload() {
         if (!enabled) {
-            log.info("Vision OCR tắt (ocr.vision.enabled=false) — dùng Tesseract.");
+            log.info("Vision OCR tắt (ocr.vision.enabled=false).");
             return Mono.just(false);
         }
         if (visionModelName == null || visionModelName.isBlank()) {
-            log.info("Vision OCR chưa cấu hình ocr.vision.model — dùng Tesseract.");
+            log.info("Vision OCR chưa cấu hình ocr.vision.model.");
             return Mono.just(false);
         }
         return providerRepo.findByEnabledTrueOrderByPriorityAscIdAsc()
@@ -146,7 +146,7 @@ public class VisionOcrService {
             }
             return Optional.of(text.trim());
         } catch (Exception e) {
-            log.warn("Vision OCR lỗi với '{}', lùi về Tesseract: {}", imageFile.getName(), e.getMessage());
+            log.warn("Vision OCR lỗi với '{}': {}", imageFile.getName(), e.getMessage());
             return Optional.empty();
         }
     }
