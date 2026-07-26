@@ -82,13 +82,13 @@ public class SseService {
         log.info("SSE connected: connectionId={}, userId={}, orgId={}, total={}",
                 connectionId, userId, organizationId, connections.size());
 
-        ServerSentEvent<Object> connected = ServerSentEvent.<Object>builder()
+        ServerSentEvent<Object> connected = ServerSentEvent.builder()
                 .event("connected")
                 .data(Map.of("connectionId", connectionId))
                 .build();
 
         Flux<ServerSentEvent<Object>> heartbeat = Flux.interval(HEARTBEAT_INTERVAL)
-                .map(tick -> ServerSentEvent.<Object>builder().comment("ping").build());
+                .map(tick -> ServerSentEvent.builder().comment("ping").build());
 
         return Flux.merge(Flux.just(connected), sink.asFlux(), heartbeat)
                 .doFinally(signal -> {
@@ -132,7 +132,7 @@ public class SseService {
     }
 
     private ServerSentEvent<Object> build(String event, Object data) {
-        return ServerSentEvent.<Object>builder()
+        return ServerSentEvent.builder()
                 .id(UUID.randomUUID().toString())
                 .event(event)
                 .data(data)

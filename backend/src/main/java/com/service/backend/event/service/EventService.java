@@ -625,7 +625,7 @@ public class EventService {
                                     if (eventEnded && ticket.getStatus() == Status.ISSUED) {
                                         return ticketRepo.expireTicket(ticket.getId())
                                                 .then(evictEventCaches())
-                                                .then(Mono.<EventTicket>error(new ApplicationException(ErrorCode.TICKET_EXPIRED, "Ticket has expired")));
+                                                .then(Mono.error(new ApplicationException(ErrorCode.TICKET_EXPIRED, "Ticket has expired")));
                                     }
                                     if (ticket.getStatus() == Status.CANCELLED || ticket.getStatus() == Status.EXPIRED) {
                                         return Mono.error(new ApplicationException(ErrorCode.TICKET_ALREADY_CANCELLED, "Ticket is cancelled or expired"));
@@ -728,14 +728,6 @@ public class EventService {
     }
 
     // ─── Ticket response mapping (qrToken + attendee enrichment) ──────────────
-
-    /** Map a ticket to a response carrying the encrypted QR token (no attendee lookup). */
-    private Mono<EventTicketDetailResponse> toDetail(EventTicket ticket) {
-        EventTicketDetailResponse.EventTicketDetailResponseBuilder builder = EventTicketDetailResponse.fromTicket(ticket)
-                .qrToken(eventQrService.encodeWithPrefix(ticket.getTicketCode(), ticket.getEventId()));
-        return enrichTicketEventTitle(ticket, builder)
-                .map(EventTicketDetailResponse.EventTicketDetailResponseBuilder::build);
-    }
 
     /** Map a ticket to a response, additionally resolving the holder's profile for verification. */
     private Mono<EventTicketDetailResponse> toDetailWithAttendee(EventTicket ticket) {

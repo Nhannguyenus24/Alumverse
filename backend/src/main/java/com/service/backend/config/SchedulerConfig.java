@@ -10,8 +10,8 @@ import reactor.core.scheduler.Schedulers;
 public class SchedulerConfig {
 
     /**
-     * Dedicated bounded scheduler for heavy, long-running blocking work (Tesseract OCR and
-     * Gemini AI calls). Isolating these from the shared {@code Schedulers.boundedElastic()}
+     * Dedicated bounded scheduler for heavy, long-running blocking work (Vision/Gemini AI calls).
+     * Isolating these from the shared {@code Schedulers.boundedElastic()}
      * stops a burst of slow OCR/AI tasks from starving the many short blocking I/O operations
      * (file, image, mail, login history, etc.) that also use boundedElastic.
      *
