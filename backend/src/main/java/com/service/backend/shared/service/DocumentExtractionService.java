@@ -4,7 +4,7 @@ import dev.langchain4j.service.SystemMessage;
 import dev.langchain4j.service.UserMessage;
 
 /**
- * Rút phần chữ thô đọc được từ giấy tờ (PDF text layer, Tesseract) xuống còn các trường
+ * Rút phần chữ thô đọc được từ giấy tờ (PDF text layer) xuống còn các trường
  * dùng để đối chiếu danh tính.
  *
  * <p>Model vision đã tự trả về đúng dạng này khi đọc ảnh, nên service chỉ dùng cho các

@@ -27,12 +27,6 @@ public interface EventR2dbcRepository extends R2dbcRepository<Event, Long> {
     @Query("SELECT COUNT(*) FROM events WHERE organization_id = :organizationId AND start_time > :now AND is_published = true")
     Mono<Long> countUpcomingEvents(Long organizationId, LocalDateTime now);
 
-    @Query("SELECT * FROM events WHERE start_time > :now AND is_published = true ORDER BY start_time ASC LIMIT :limit OFFSET :offset")
-    Flux<Event> findAllUpcomingEvents(LocalDateTime now, int limit, int offset);
-
-    @Query("SELECT COUNT(*) FROM events WHERE start_time > :now AND is_published = true")
-    Mono<Long> countAllUpcomingEvents(LocalDateTime now);
-
     @Query("SELECT * FROM events WHERE organization_id = :organizationId AND start_time <= :now AND end_time >= :now AND is_published = true ORDER BY start_time ASC LIMIT :limit OFFSET :offset")
     Flux<Event> findOngoingEvents(Long organizationId, LocalDateTime now, int limit, int offset);
 

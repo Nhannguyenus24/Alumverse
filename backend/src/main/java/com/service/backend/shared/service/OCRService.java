@@ -1,9 +1,7 @@
 package com.service.backend.shared.service;
 
 import lombok.extern.slf4j.Slf4j;
-import net.sourceforge.tess4j.ITesseract;
-import net.sourceforge.tess4j.Tesseract;
-import net.sourceforge.tess4j.TesseractException;
+
 import org.springframework.stereotype.Service;
 
 import java.awt.Color;
@@ -41,18 +39,7 @@ import io.micrometer.core.instrument.Timer;
 @Service
 public class OCRService {
 
-    static {
-        String osName = System.getProperty("os.name").toLowerCase();
-        if (osName.contains("mac")) {
-            String arch = System.getProperty("os.arch");
-            String brewLibPath = "aarch64".equals(arch) ? "/opt/homebrew/lib" : "/usr/local/lib";
-            try {
-                com.sun.jna.NativeLibrary.addSearchPath("tesseract", brewLibPath);
-            } catch (Throwable t) {
-                // Ignore if JNA is not yet on classpath or fails
-            }
-        }
-    }
+
 
     private static final int MAX_PDF_OCR_PAGES = 5;
     private static final float PDF_RENDER_DPI = 200f;
@@ -75,8 +62,8 @@ public class OCRService {
 
     /**
      * Kết quả OCR kèm cờ cho biết chữ còn ở dạng thô hay đã là các trường đối chiếu.
-     * Model vision trả về sẵn dạng trường nên khỏi trích lại; PDF text layer và Tesseract
-     * thì ra nguyên văn giấy tờ (kèm URL, menu, bảng điểm...) nên phải rút gọn.
+     * Model vision trả về sẵn dạng trường nên khỏi trích lại; PDF text layer
+     * thì ra nguyên văn giấy tờ nên phải rút gọn.
      */
     private record OcrResult(String text, boolean needsExtraction) {
     }
@@ -127,10 +114,6 @@ public class OCRService {
           .onErrorMap(IOException.class, e -> {
               log.error("Failed to read text file: {}", filePath, e);
               return new RuntimeException("Error reading text file: " + e.getMessage(), e);
-          })
-          .onErrorMap(TesseractException.class, e -> {
-              log.error("OCR processing failed for file: {}", filePath, e);
-              return new RuntimeException("Error during OCR processing: " + e.getMessage(), e);
           });
     }
 
@@ -156,7 +139,7 @@ public class OCRService {
 
     /**
      * PDF bảng điểm/bằng cấp có thể vừa có text layer vừa có trang scan. Đọc từng trang để
-     * trang scan vẫn đi qua pipeline ảnh (vision + xoay + Tesseract) thay vì OCR PDF trực tiếp.
+     * trang scan vẫn đi qua pipeline ảnh (vision + xoay) thay vì OCR PDF trực tiếp.
      */
     private OcrResult readPdf(File file) {
         try (PDDocument document = PDDocument.load(file)) {
@@ -208,7 +191,7 @@ public class OCRService {
             BufferedImage image = renderer.renderImageWithDPI(pageIndex, PDF_RENDER_DPI, ImageType.RGB);
             ImageIO.write(image, "png", tempPage.toFile());
             return readImage(tempPage.toFile(), "png").text();
-        } catch (IOException | TesseractException e) {
+        } catch (IOException | RuntimeException e) {
             log.warn("Không OCR được trang {} của PDF '{}': {}", pageIndex + 1, pdfName, e.getMessage());
             return "";
         } finally {
@@ -233,16 +216,16 @@ public class OCRService {
     }
 
     /**
-     * Ảnh thì để model vision đọc thẳng vì nó "nhìn" được bố cục giấy tờ; Tesseract chỉ dùng khi
-     * vision tắt / lỗi / không đọc nổi. Chữ vision trả về đã sạch nên không cần dọn thêm.
+     * Ảnh được xử lý thông qua AI Vision Model vì nó "nhìn" được bố cục giấy tờ
+     * và trả về dữ liệu có cấu trúc.
      */
-    private OcrResult readImage(File file, String extension) throws TesseractException {
+    private OcrResult readImage(File file, String extension) {
         String mimeType = mimeTypeOf(extension);
         Optional<String> viaVision = extractVisionWithRotations(file, extension, mimeType);
         if (viaVision.isPresent()) {
             return new OcrResult(viaVision.get(), false);
         }
-        return new OcrResult(performOcrWithRotations(file, extension), true);
+        throw new RuntimeException("Vision OCR failed or disabled for file: " + file.getName());
     }
 
     private Optional<String> extractVisionWithRotations(File file, String extension, String mimeType) {
@@ -260,26 +243,7 @@ public class OCRService {
         return Optional.empty();
     }
 
-    private String performOcrWithRotations(File file, String extension) throws TesseractException {
-        String original = performOcr(file);
-        if (original != null && !original.isBlank()) {
-            return original;
-        }
-        for (int degrees : new int[] {90, 180, 270}) {
-            Optional<String> rotatedText = withRotatedImage(file, extension, degrees, rotated -> {
-                try {
-                    return Optional.ofNullable(performOcr(rotated)).filter(text -> !text.isBlank());
-                } catch (TesseractException e) {
-                    log.warn("Tesseract OCR lỗi với ảnh xoay {}° '{}': {}", degrees, file.getName(), e.getMessage());
-                    return Optional.empty();
-                }
-            });
-            if (rotatedText.isPresent()) {
-                return rotatedText.get();
-            }
-        }
-        return original;
-    }
+
 
     private Optional<String> withRotatedImage(File file, String extension, int degrees, ImageReader reader) {
         Path rotated = null;
@@ -349,24 +313,7 @@ public class OCRService {
         return Files.readString(path, StandardCharsets.UTF_8);
     }
 
-    private String performOcr(File file) throws TesseractException {
-        Timer.Sample sample = Timer.start(meterRegistry);
-        try {
-            File tessDataFolder = new File("./src/main/resources/tessdata");
-            if (!tessDataFolder.exists() || !tessDataFolder.isDirectory()) {
-                throw new IllegalStateException("tessdata folder not found at " + tessDataFolder.getAbsolutePath() + ". Tesseract requires language data files.");
-            }
-            
-            ITesseract tesseract = new Tesseract();
-            tesseract.setDatapath(tessDataFolder.getAbsolutePath());
-            tesseract.setLanguage("vie+eng");
-            // Set thread limit to 1 to prevent SIGSEGV on Apple Silicon / macOS
-            tesseract.setTessVariable("omp_thread_limit", "1");
-            return tesseract.doOCR(file);
-        } finally {
-            sample.stop(meterRegistry.timer("ocr.processing.time"));
-        }
-    }
+
 
     private String getFileExtension(String fileName) {
         int lastIndexOfDot = fileName.lastIndexOf('.');

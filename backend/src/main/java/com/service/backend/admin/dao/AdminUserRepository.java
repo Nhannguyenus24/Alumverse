@@ -563,7 +563,7 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
             SUM(CASE WHEN u."status" = 'DELETED' THEN 1 ELSE 0 END) AS deleted_users
         FROM users u
         WHERE CAST(:organizationId AS INTEGER) IS NULL OR EXISTS (
-            SELECT 1 FROM organization_members om 
+            SELECT 1 FROM organization_members om
             WHERE om.user_id = u.id AND om.organization_id = :organizationId
         )
     """)

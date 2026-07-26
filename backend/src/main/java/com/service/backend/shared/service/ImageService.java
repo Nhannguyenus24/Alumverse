@@ -162,10 +162,7 @@ public class ImageService {
         if (value.startsWith("http://") || value.startsWith("https://") || value.startsWith("/") || value.startsWith("blob:")) {
             return true;
         }
-        if (value.contains(".") || value.contains("/") || value.length() < 100) {
-            return true;
-        }
-        return false;
+        return value.contains(".") || value.contains("/") || value.length() < 100;
     }
 
     public Mono<String> uploadBase64IfPresent(String base64String) {

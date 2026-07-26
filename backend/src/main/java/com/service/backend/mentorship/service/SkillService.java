@@ -9,7 +9,6 @@ import com.service.backend.shared.entity.Skill;
 import com.service.backend.shared.utils.PaginationHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
