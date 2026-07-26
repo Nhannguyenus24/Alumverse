@@ -96,7 +96,7 @@ const ActionSlot = ({ children }) => (
 
 const AdminArticlesPage = () => {
   const { t } = useTranslation(['admin', 'common']);
-  const { setBreadcrumbs } = useOutletContext();
+  const { setBreadcrumbs, adminBase = '/admin' } = useOutletContext();
   const navigate = useOrgNavigate();
   const toOrgPath = useOrgPath();
   const { enqueueSnackbar } = useSnackbar();
@@ -134,7 +134,7 @@ const AdminArticlesPage = () => {
     window.open(toOrgPath(path), '_blank', 'noopener,noreferrer');
   };
 
-  const openEdit = (a) => openInNewTab(`/admin/article/${channelOf(a, channel)}/${idOf(a)}/edit`);
+  const openEdit = (a) => openInNewTab(`${adminBase}/article/${channelOf(a, channel)}/${idOf(a)}/edit`);
   const openView = (a) => openInNewTab(`/article/${channelOf(a, channel)}/${idOf(a)}`);
   const openDeleteDialog = (a) => setDeleteTarget({ ...a, channel: channelOf(a, channel) });
   const closeDeleteDialog = () => {

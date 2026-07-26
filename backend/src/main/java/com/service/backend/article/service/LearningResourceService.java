@@ -7,7 +7,6 @@ import com.service.backend.article.dto.UpdateLearningResourceRequest;
 import com.service.backend.article.dto.LearningResourceResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.enums.ErrorCode;
-import com.service.backend.shared.enums.LearningResourceType;
 import com.service.backend.shared.enums.Status;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.PaginationHelper;
@@ -63,7 +62,7 @@ public class LearningResourceService {
                                         .organizationId(orgId)
                                         .uploaderMemberId(userId.intValue())
                                         .title(request.getTitle())
-                                        .type(LearningResourceType.valueOf(request.getType().toUpperCase()))
+                                        .type(normalizeType(request.getType()))
                                         .linkUrl(request.getLinkUrl())
                                         .description(request.getDescription())
                                         .thumbnailUrl(thumbnailUrl.isEmpty() ? null : thumbnailUrl)
@@ -96,7 +95,7 @@ public class LearningResourceService {
                         .map(Optional::of).defaultIfEmpty(Optional.empty())
                         .flatMap(uploadedThumbnail -> {
                             existing.setTitle(request.getTitle());
-                            existing.setType(LearningResourceType.valueOf(request.getType().toUpperCase()));
+                            existing.setType(normalizeType(request.getType()));
                             existing.setLinkUrl(request.getLinkUrl());
                             existing.setDescription(request.getDescription());
                             uploadedThumbnail.ifPresent(newThumbnail -> existing.setThumbnailUrl(newThumbnail.isEmpty() ? null : newThumbnail));
@@ -148,7 +147,7 @@ public class LearningResourceService {
 
     public Mono<PaginatedResponse<LearningResourceResponse>> getByType(String type, int page, int limit) {
         int offset = page * limit;
-        LearningResourceType resourceType = LearningResourceType.valueOf(type.toUpperCase());
+        String resourceType = normalizeType(type);
         return SecurityUtils.getCurrentOrganizationId()
                 .flatMap(orgId -> cacheUtils.getOrCompute(CacheNames.LEARNING_RESOURCE,
                         "type_" + resourceType + "_org_" + orgId + "_p" + page + "_l" + limit, LIST_TTL, () -> PaginationHelper.paginate(
@@ -158,11 +157,11 @@ public class LearningResourceService {
                 .switchIfEmpty(Mono.defer(() -> cacheUtils.getOrCompute(CacheNames.LEARNING_RESOURCE,
                         "type_" + resourceType + "_global_p" + page + "_l" + limit, LIST_TTL, () -> PaginationHelper.paginate(
                                 learningResourceRepository.findAll()
-                                        .filter(r -> r.getType() == resourceType && Status.APPROVED.equals(r.getStatus()))
+                                        .filter(r -> resourceType != null && resourceType.equalsIgnoreCase(r.getType()) && Status.APPROVED.equals(r.getStatus()))
                                         .skip(offset)
                                         .take(limit)
                                         .map(LearningResourceResponse::from),
-                                learningResourceRepository.countAllApproved(),
+                                learningResourceRepository.countAllApprovedByType(resourceType),
                                 page, limit))));
     }
 
@@ -179,5 +178,10 @@ public class LearningResourceService {
                                 learningResourceRepository.countSearchResources(orgId, keyword),
                                 page, limit)))
                 .switchIfEmpty(Mono.just(PaginatedResponse.of(java.util.List.of(), 0, page, limit)));
+    }
+
+    private String normalizeType(String type) {
+        if (type == null || type.trim().isEmpty()) return null;
+        return type.trim().toLowerCase().replace("-", "_");
     }
 }

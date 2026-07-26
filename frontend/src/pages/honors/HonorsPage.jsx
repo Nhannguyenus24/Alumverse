@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
-import { Box, Button, ListItemIcon, ListItemText, Menu, MenuItem, Typography } from '@mui/material';
+import { useParams } from 'react-router';
+import { Box, Button, ListItemIcon, ListItemText, Menu, MenuItem, Stack, Typography } from '@mui/material';
 import { useSnackbar } from 'notistack';
 
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
@@ -35,12 +36,14 @@ import {
 
 const HonorsPage = () => {
   const { t } = useTranslation(['honors', 'common']);
+  const { slug } = useParams();
   const navigate = useOrgNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const queryClient = useQueryClient();
   const { isAuthenticated } = useAuth();
   const { canContribute, isOrgManager } = useCanContribute();
   const isAdmin = isAuthenticated && isOrgManager;
+  const adminBase = slug ? `/${slug}/admin` : '/admin';
 
   const { achievements } = usePublishedAchievements(0, ARTICLE_FETCH_LIMIT);
   const { articles: alumniArticles } = usePublishedAlumniPosts(0, ARTICLE_FETCH_LIMIT);
@@ -60,8 +63,8 @@ const HonorsPage = () => {
 
   const [featured, ...rest] = filteredArticles;
   const featuredCard = featured ? toCardShape(featured) : null;
-  const visibleAlumniArticles = rest.filter((article) => article.channel === 'alumni').slice(0, 6);
-  const visibleAchievementArticles = rest.filter((article) => article.channel === 'achievement').slice(0, 6);
+  const visibleAlumniArticles = rest.filter((article) => article.channel === 'alumni').slice(0, 9);
+  const visibleAchievementArticles = rest.filter((article) => article.channel === 'achievement').slice(0, 9);
   const alumniCards = visibleAlumniArticles.map(toCardShape);
   const achievementCards = visibleAchievementArticles.map(toCardShape);
 
@@ -71,7 +74,7 @@ const HonorsPage = () => {
   };
 
   const handleEdit = (article) => {
-    const editPath = getArticleAdminEditPath(article);
+    const editPath = getArticleAdminEditPath(article, adminBase);
     if (editPath) navigate(editPath);
   };
 
@@ -130,7 +133,7 @@ const HonorsPage = () => {
           variant="outlined"
           color="primary"
           startIcon={<EmojiEventsIcon />}
-          onClick={() => navigate('/admin/article')}
+          onClick={() => navigate(`${adminBase}/article`)}
         >
           {t('honors:manage_honors')}
         </Button>
@@ -154,7 +157,14 @@ const HonorsPage = () => {
               {/* ALUMNI SECTION */}
               {alumniCards.length > 0 && (
                 <ScrollRevealGroup stagger={0.08}>
-                  <ScrollRevealItem><Typography variant="h4" fontWeight={700} mb={3}>{t('honors:section_alumni')}</Typography></ScrollRevealItem>
+                  <ScrollRevealItem>
+                    <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
+                      <Typography variant="h4" fontWeight={700}>{t('honors:section_alumni')}</Typography>
+                      <Button variant="text" onClick={() => navigate('/honors/alumni')}>
+                        {t('common:view_all')}
+                      </Button>
+                    </Stack>
+                  </ScrollRevealItem>
 
                   <ScrollRevealGroup stagger={0.08}
                     sx={{
@@ -184,7 +194,14 @@ const HonorsPage = () => {
               {/* ACHIEVEMENTS SECTION */}
               {achievementCards.length > 0 && (
                 <ScrollRevealGroup stagger={0.08}>
-                  <ScrollRevealItem><Typography variant="h4" fontWeight={700} mb={3}>{t('honors:section_achievements')}</Typography></ScrollRevealItem>
+                  <ScrollRevealItem>
+                    <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
+                      <Typography variant="h4" fontWeight={700}>{t('honors:section_achievements')}</Typography>
+                      <Button variant="text" onClick={() => navigate('/honors/achievements')}>
+                        {t('common:view_all')}
+                      </Button>
+                    </Stack>
+                  </ScrollRevealItem>
 
                   <ScrollRevealGroup stagger={0.08}
                     sx={{

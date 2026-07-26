@@ -6,7 +6,8 @@ import lombok.Getter;
 public enum ConversationRequestStatus {
     PENDING("PENDING"),
     ACCEPTED("ACCEPTED"),
-    REJECTED("REJECTED");
+    REJECTED("REJECTED"),
+    DISCONNECTED("DISCONNECTED");
 
     private final String value;
 

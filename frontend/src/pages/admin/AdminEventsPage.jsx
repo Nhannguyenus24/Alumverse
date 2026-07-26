@@ -72,7 +72,7 @@ const AdminEventsPage = () => {
     unpublishEvent,
     deleteEvent,
   } = useAdminEvents(stableOrgId || 'ALL');
-  const { setBreadcrumbs } = useOutletContext();
+  const { setBreadcrumbs, adminBase = '/admin' } = useOutletContext();
 
   const [searchTerm, setSearchTerm] = useState(search);
   const debouncedSearch = useDebounce(searchTerm, 500);
@@ -121,7 +121,7 @@ const AdminEventsPage = () => {
   const openInNewTab = (path) => {
     window.open(toOrgPath(path), "_blank", "noopener,noreferrer");
   };
-  const openEventManage = (event) => openInNewTab(`/admin/events/${event.id}`);
+  const openEventManage = (event) => openInNewTab(`${adminBase}/events/${event.id}`);
   const openEventEdit = (event) => openInNewTab(`/post/event/${event.id}`);
 
   const orgLabel = (id) => orgNameById.get(id) ?? `#${id ?? "-"}`;

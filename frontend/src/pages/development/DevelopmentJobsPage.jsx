@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
+import { useParams } from 'react-router';
 import { Box, Button, Pagination, Typography } from '@mui/material';
 import { useSnackbar } from 'notistack';
 
@@ -20,7 +21,6 @@ import apiClient from '../../utils/axios';
 import { deleteArticleByChannel, getArticleAdminEditPath } from '../../utils/articleAdminActions';
 import {
   ARTICLE_FETCH_LIMIT,
-  ARTICLE_PAGE_SIZE,
   applyArticleFilters,
   getArticleFilterConfig,
   paginateArticles,
@@ -32,14 +32,18 @@ import {
   ScrollRevealItem,
 } from '../../components/animations/ScrollReveal';
 
+const DEVELOPMENT_LIST_PAGE_SIZE = 12;
+
 const DevelopmentJobsPage = () => {
   const { t } = useTranslation(['dev', 'mentorship', 'common']);
+  const { slug } = useParams();
   const navigate = useOrgNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const queryClient = useQueryClient();
   const { isAuthenticated } = useAuth();
   const { canContribute, isOrgManager } = useCanContribute();
   const isAdmin = isAuthenticated && isOrgManager;
+  const adminBase = slug ? `/${slug}/admin` : '/admin';
   const sidebar = getDevelopmentSidebarItems(t);
   const filters = useMemo(() => getArticleFilterConfig(t, ['job']), [t]);
 
@@ -51,14 +55,14 @@ const DevelopmentJobsPage = () => {
   const [deleting, setDeleting] = useState(false);
 
   const filteredJobs = useMemo(() => applyArticleFilters(jobs, filterValues), [jobs, filterValues]);
+  const [featured, ...rest] = filteredJobs;
   const { items: pagedJobs, pageInfo } = useMemo(
-    () => paginateArticles(filteredJobs, page, ARTICLE_PAGE_SIZE),
-    [filteredJobs, page],
+    () => paginateArticles(rest, page, DEVELOPMENT_LIST_PAGE_SIZE),
+    [rest, page],
   );
 
-  const [featured, ...rest] = pagedJobs;
   const featuredCard = featured ? toCardShape(featured) : null;
-  const cards = rest.slice(0, 9).map(toCardShape);
+  const cards = pagedJobs.map(toCardShape);
 
   const openArticle = (article) => {
     if (!article?.id) return;
@@ -66,7 +70,7 @@ const DevelopmentJobsPage = () => {
   };
 
   const handleEdit = (article) => {
-    const editPath = getArticleAdminEditPath(article);
+    const editPath = getArticleAdminEditPath(article, adminBase);
     if (editPath) navigate(editPath);
   };
 
@@ -96,7 +100,7 @@ const DevelopmentJobsPage = () => {
       description={t('dev:jobs_desc')}
       uppercaseTitle
       actions={isAdmin ? (
-        <Button variant="outlined" color="primary" startIcon={<WorkIcon />} onClick={() => navigate('/admin/article')}>
+        <Button variant="outlined" color="primary" startIcon={<WorkIcon />} onClick={() => navigate(`${adminBase}/article`)}>
           {t('dev:manage_opportunities')}
         </Button>
       ) : (
@@ -158,12 +162,12 @@ const DevelopmentJobsPage = () => {
                     }}
                   >
                     {cards.map((card, i) => (
-                      <ScrollRevealItem key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(rest[i])}>
+                      <ScrollRevealItem key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(pagedJobs[i])}>
                         <ArticleCard
                           article={card}
                           isAdmin={isAdmin}
-                          onEdit={() => handleEdit(rest[i])}
-                          onDelete={() => handleDelete(rest[i])}
+                          onEdit={() => handleEdit(pagedJobs[i])}
+                          onDelete={() => handleDelete(pagedJobs[i])}
                         />
                       </ScrollRevealItem>
                     ))}

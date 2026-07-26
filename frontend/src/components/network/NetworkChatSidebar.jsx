@@ -3,7 +3,6 @@ import {
   Box,
   CircularProgress,
   IconButton,
-  Pagination,
   Stack,
   Tooltip,
   Typography,
@@ -24,9 +23,6 @@ const NetworkChatSidebar = ({
   searchValue = '',
   onSearchChange,
   onSearchSubmit,
-  page = 1,
-  totalPage = 0,
-  onPageChange,
   isPending = false,
   isFetching = false,
 }) => {
@@ -224,32 +220,6 @@ const NetworkChatSidebar = ({
         )}
       </Scrollbar>
 
-      {totalPage > 1 ? (
-        <Box
-          sx={{
-            borderTop: 1,
-            borderColor: 'divider',
-            py: 1,
-            display: 'flex',
-            justifyContent: 'center',
-          }}
-        >
-          <Pagination
-            count={totalPage}
-            page={page}
-            onChange={onPageChange}
-            color="primary"
-            shape="rounded"
-            size="small"
-            disabled={isFetching}
-            sx={{
-              '& .MuiPaginationItem-root': {
-                fontWeight: 700,
-              },
-            }}
-          />
-        </Box>
-      ) : null}
     </ScrollReveal>
   );
 };

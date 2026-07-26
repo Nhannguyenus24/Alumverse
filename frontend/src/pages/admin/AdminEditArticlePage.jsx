@@ -23,6 +23,7 @@ import {
 import { extractMainImageCaption, withMainImageCaption } from '../../utils/articleContentCaption';
 import { useNotification } from '../../hooks/useNotification';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
+import { normalizeArticleTopicForChannel } from '../../utils/articleTopics';
 
 import useOrganizationStore from '../../stores/organizationStore';
 
@@ -81,14 +82,14 @@ const AdminEditArticlePage = () => {
     setContent(parsedContent.content);
     setMainImageCaption(parsedContent.caption);
     setCoverPreview(articleThumbnail(article));
-    setTopic(article.topic ?? article.type ?? '');
+    setTopic(normalizeArticleTopicForChannel(channel, article.topic ?? article.type ?? ''));
     setUrl(article.url || article.linkUrl || '');
   }, [article, isOrgMismatch]);
 
   useEffect(() => {
     if (!article || isOrgMismatch) return;
     setBreadcrumbs?.([
-      { label: t('admin:articles'), path: `${adminBase}/articles` },
+      { label: t('admin:articles'), path: `${adminBase}/article` },
       { label: t('admin:edit_article_breadcrumb'), active: true },
     ]);
   }, [article, setBreadcrumbs, t, adminBase, isOrgMismatch]);
@@ -187,7 +188,7 @@ const AdminEditArticlePage = () => {
         <Typography color="text.secondary">
           {t('admin:article_not_in_org_desc', 'Nội dung này thuộc về một tổ chức khác và không thể chỉnh sửa từ đường dẫn hiện tại.')}
         </Typography>
-        <Button variant="outlined" onClick={() => navigate(`${adminBase}/articles`)}>
+        <Button variant="outlined" onClick={() => navigate(`${adminBase}/article`)}>
           {t('admin:back_to_article_list', 'Quay lại danh sách')}
         </Button>
       </Stack>
@@ -198,7 +199,7 @@ const AdminEditArticlePage = () => {
     return (
       <Stack alignItems="center" spacing={2} sx={{ py: 8 }}>
         <Typography color="text.secondary">{t('admin:article_not_found')}</Typography>
-        <Button variant="outlined" onClick={() => navigate(`${adminBase}/articles`)}>
+        <Button variant="outlined" onClick={() => navigate(`${adminBase}/article`)}>
           Back to article list
         </Button>
       </Stack>
@@ -257,7 +258,7 @@ const AdminEditArticlePage = () => {
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, pt: 2, mt: 3 }}>
               <Button
                 variant="outlined"
-                onClick={() => navigate(`${adminBase}/articles`)}
+                onClick={() => navigate(`${adminBase}/article`)}
                 sx={{ textTransform: 'none', px: 3, fontWeight: 700 }}
               >
                 {t('admin:cancel')}

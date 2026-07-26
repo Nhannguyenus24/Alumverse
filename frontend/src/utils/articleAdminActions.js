@@ -29,9 +29,9 @@ const ARTICLE_VISIBILITY_ACTIONS = {
   },
 };
 
-export const getArticleAdminEditPath = (article) => {
+export const getArticleAdminEditPath = (article, adminBase = "/admin") => {
   if (!article?.channel || !article?.id) return null;
-  return `/admin/article/${article.channel}/${article.id}/edit`;
+  return `${adminBase}/article/${article.channel}/${article.id}/edit`;
 };
 
 const getArticleDeleteEndpoint = (article) => {

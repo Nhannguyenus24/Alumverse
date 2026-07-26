@@ -48,7 +48,7 @@ import {
   ScrollRevealItem,
 } from '../../components/animations/ScrollReveal';
 
-const PAGE_SIZE = 9;
+const PAGE_SIZE = 15;
 const guestBenefitIcons = [
   GroupsOutlinedIcon,
   ChatBubbleOutlineOutlinedIcon,
@@ -506,7 +506,8 @@ const NetworkMemberDirectory = () => {
         )}
         confirmText={t('network:block')}
         cancelText={t('common:cancel')}
-        confirmColor="primary"
+        titleColor="error.main"
+        confirmColor="error"
         loading={isBlocking}
         onConfirm={() => blockUser()}
         onCancel={() => setBlockTarget(null)}

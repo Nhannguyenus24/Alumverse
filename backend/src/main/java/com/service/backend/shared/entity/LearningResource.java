@@ -10,7 +10,6 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
-import com.service.backend.shared.enums.LearningResourceType;
 import com.service.backend.shared.enums.Status;
 import java.time.LocalDateTime;
 
@@ -35,7 +34,7 @@ public class LearningResource {
     private String title;
 
     @Column("type")
-    private LearningResourceType type;
+    private String type;
 
     @Column("link_url")
     private String linkUrl;
