@@ -30,7 +30,12 @@ public interface EventInterestR2dbcRepository extends R2dbcRepository<EventInter
 
     @Query("SELECT i.id AS interest_id, i.member_id AS member_id, e.id AS event_id, e.title AS event_title " +
            "FROM event_interests i JOIN events e ON e.id = i.event_id " +
-           "WHERE e.registration_end_at > :now AND e.registration_end_at <= :windowEnd AND i.reminder_sent = false")
+           "WHERE e.registration_end_at > :now AND e.registration_end_at <= :windowEnd AND i.reminder_sent = false " +
+           "AND NOT EXISTS (" +
+           "  SELECT 1 FROM event_tickets t " +
+           "  WHERE t.event_id = i.event_id AND t.member_id = i.member_id " +
+           "    AND t.status IN ('ISSUED', 'ACTIVE', 'CHECKED_IN', 'USED')" +
+           ")")
     Flux<EventReminderProjection> findPendingRegistrationReminders(LocalDateTime now, LocalDateTime windowEnd);
 
     @Query("UPDATE event_interests SET reminder_sent = true WHERE id = :id")

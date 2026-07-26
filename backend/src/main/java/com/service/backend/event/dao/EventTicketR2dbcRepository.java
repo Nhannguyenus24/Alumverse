@@ -155,4 +155,24 @@ public interface EventTicketR2dbcRepository extends R2dbcRepository<EventTicket,
             )
             """)
     Mono<Long> countSearchByEventIdAndStatus(Long eventId, String status, String keyword);
+
+    /**
+     * Các thành viên đã đăng ký (ticket còn hiệu lực) cho những sự kiện sắp hết hạn đăng ký
+     * trong khoảng (now, windowEnd]. Dùng để nhắc riêng nhóm đã đăng ký (khác với nhắc đăng ký).
+     * DISTINCT theo member để tránh gửi trùng khi 1 người có nhiều vé cho cùng sự kiện.
+     */
+    @Query("""
+            SELECT DISTINCT t.member_id AS member_id, e.id AS event_id, e.title AS event_title
+            FROM event_tickets t JOIN events e ON e.id = t.event_id
+            WHERE e.registration_end_at > :now AND e.registration_end_at <= :windowEnd
+              AND t.member_id IS NOT NULL
+              AND t.status IN ('ISSUED', 'ACTIVE', 'CHECKED_IN', 'USED')
+            """)
+    Flux<RegisteredMemberReminderProjection> findRegisteredMembersForUpcomingDeadline(LocalDateTime now, LocalDateTime windowEnd);
+
+    interface RegisteredMemberReminderProjection {
+        Long getMemberId();
+        Long getEventId();
+        String getEventTitle();
+    }
 }

@@ -201,6 +201,21 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
+    if (axios.isCancel(error)) {
+      return Promise.reject(error);
+    }
+
+    if (error.response) {
+      if (error.response.status > 500) {
+        window.location.href = '/500';
+        return Promise.reject(error);
+      }
+    } else {
+      // No response implies network error, timeout, or server down
+      window.location.href = '/maintenance';
+      return Promise.reject(error);
+    }
+
     const originalRequest = error.config;
 
     // Translate the backend errorCode into the user's language before the error
