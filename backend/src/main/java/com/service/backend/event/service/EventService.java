@@ -1,5 +1,6 @@
 package com.service.backend.event.service;
 
+import com.service.backend.article.validation.ArticleTopicCatalog;
 import com.service.backend.shared.entity.*;
 import com.service.backend.user.dao.UserProfileRepository;
 import com.service.backend.event.dao.EventR2dbcRepository;
@@ -62,6 +63,7 @@ public class EventService {
     // ─── Event CRUD ───────────────────────────────────────────────────────────
 
     public Mono<Event> createEvent(CreateEventRequest request) {
+        String topic = ArticleTopicCatalog.requireValid(ArticleTopicCatalog.Channel.EVENT, request.getTopic());
         Mono<Integer> organizationIdMono = SecurityUtils.resolveOrganizationId(request.getOrganizationId())
                 .switchIfEmpty(Mono.error(new ApplicationException(
                         ErrorCode.BAD_REQUEST,
@@ -86,7 +88,7 @@ public class EventService {
                                         .registrationStartAt(request.getRegistrationStartAt())
                                         .registrationEndAt(request.getRegistrationEndAt())
                                         .maxCapacity(request.getMaxCapacity())
-                                        .topic(request.getTopic())
+                                        .topic(topic)
                                         .requiresCheckIn(Boolean.TRUE.equals(request.getRequiresCheckIn()))
                                         .creatorMemberId(userId)
                                         .organizationId(orgId)
@@ -97,6 +99,9 @@ public class EventService {
     }
 
     public Mono<Event> updateEvent(Long eventId, UpdateEventRequest request) {
+        String topic = request.getTopic() != null
+                ? ArticleTopicCatalog.requireValid(ArticleTopicCatalog.Channel.EVENT, request.getTopic())
+                : null;
         return this.findEventById(eventId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId)))
                 .flatMap(existingEvent -> SecurityUtils.assertCanManageContentOrganization(existingEvent.getOrganizationId())
@@ -113,7 +118,7 @@ public class EventService {
                                             .registrationStartAt(request.getRegistrationStartAt())
                                             .registrationEndAt(request.getRegistrationEndAt())
                                             .maxCapacity(request.getMaxCapacity())
-                                            .topic(request.getTopic() != null ? request.getTopic() : existingEvent.getTopic())
+                                            .topic(request.getTopic() != null ? topic : existingEvent.getTopic())
                                             .requiresCheckIn(request.getRequiresCheckIn() != null ? request.getRequiresCheckIn() : existingEvent.getRequiresCheckIn())
                                             .build();
                                     return this.updateEvent(eventId, updatedEvent);

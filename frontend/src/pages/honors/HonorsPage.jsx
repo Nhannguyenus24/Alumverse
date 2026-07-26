@@ -117,6 +117,14 @@ const HonorsPage = () => {
             anchorEl={submitAnchorEl}
             open={Boolean(submitAnchorEl)}
             onClose={() => setSubmitAnchorEl(null)}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+            PaperProps={{
+              sx: {
+                mt: 1,
+                minWidth: submitAnchorEl?.offsetWidth || 240,
+              },
+            }}
           >
             <MenuItem onClick={() => { setSubmitAnchorEl(null); navigate('/post/alumni'); }}>
               <ListItemIcon><GroupsIcon fontSize="small" /></ListItemIcon>

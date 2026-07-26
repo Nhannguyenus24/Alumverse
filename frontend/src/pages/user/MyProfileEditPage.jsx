@@ -8,8 +8,12 @@ import {
   Button,
   Checkbox,
   CircularProgress,
+  FormControl,
   FormControlLabel,
   IconButton,
+  InputLabel,
+  MenuItem,
+  Select,
   Stack,
   TextField,
   Typography,
@@ -21,6 +25,7 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import PersonIcon from '@mui/icons-material/Person';
 import EmailIcon from '@mui/icons-material/Email'
 import PhoneIcon from '@mui/icons-material/Phone';
+import WcIcon from '@mui/icons-material/Wc';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import WorkIcon from '@mui/icons-material/Work';
 import LinkIcon from '@mui/icons-material/Link';
@@ -58,6 +63,7 @@ import {
 } from '../../utils/imageUtils';
 import { extractMentorshipSkills, userSettingsApi } from '../../utils/api';
 import { validateVietnamPhone } from '../../utils/regexUtils';
+import { GENDER_OPTIONS, GENDER_LABEL_KEYS, normalizeGender } from '../../constants/gender';
 import {
   PROFILE_CONTACT_FIELDS,
   buildProfileContactLinksPayload,
@@ -250,7 +256,7 @@ const ProfileItem = ({ label, value, notUpdatedLabel = '—' }) => (
 );
 
 const UnifiedProfileEditPage = () => {
-  const { t } = useTranslation(['mentorship', 'profile']);
+  const { t } = useTranslation(['mentorship', 'profile', 'settings']);
   const { enqueueSnackbar } = useSnackbar();
   const topTabs = getBaseProfileTabs(t);
   const navigate = useOrgNavigate();
@@ -288,6 +294,7 @@ const UnifiedProfileEditPage = () => {
   const [awards, setAwards] = useState([]);
   const [skills, setSkills] = useState([]);
   const [phone, setPhone] = useState('');
+  const [gender, setGender] = useState('');
   const [contactLinks, setContactLinks] = useState(() =>
     Object.fromEntries(PROFILE_CONTACT_FIELDS.map((field) => [field.key, ''])),
   );
@@ -312,6 +319,7 @@ const UnifiedProfileEditPage = () => {
       setBio(p?.bio ?? '');
       setDefaultMeetingLink(m?.defaultMeetingLink ?? '');
       setPhone(p?.phone ?? '');
+      setGender(p?.gender ? normalizeGender(p.gender) : '');
 
       setCoverPreview(resolveMediaUrl(p?.coverUrl) || (isMentorshipEdit ? MENTORSHIP_COVER : DEFAULT_COVER));
       setCoverFile(null);
@@ -437,9 +445,11 @@ const UnifiedProfileEditPage = () => {
         extras: contactLinkExtras,
       });
       const existingLinksPayload = normalizeProfileContactLinksPayload(profileQuery.data?.links);
+      const currentGender = profileQuery.data?.gender ? normalizeGender(profileQuery.data.gender) : '';
       const hasBaseProfileChanges = !isMentorshipEdit && (
         bio.trim() !== (profileQuery.data?.bio ?? '').trim() ||
         phone.trim() !== (profileQuery.data?.phone ?? '').trim() ||
+        gender !== currentGender ||
         currentJobTitle.trim() !== (profileQuery.data?.currentJobTitle ?? '').trim() ||
         currentCompany.trim() !== (profileQuery.data?.currentCompany ?? '').trim() ||
         JSON.stringify(linksPayload) !== JSON.stringify(existingLinksPayload)
@@ -450,6 +460,7 @@ const UnifiedProfileEditPage = () => {
           ...(organizationId ? { organizationId } : {}),
           bio: bio.trim(),
           phone: phone.trim() || undefined,
+          gender: gender || null,
           currentJobTitle: currentJobTitle.trim(),
           currentCompany: currentCompany.trim(),
           links: linksPayload,
@@ -712,21 +723,48 @@ const UnifiedProfileEditPage = () => {
       </ScrollRevealItem>
 
       <ScrollRevealItem>
-        <Stack spacing={1.25}>
-          <Typography variant="h5" fontWeight={800} color="primary.main" display="flex" alignItems="center" gap={1}>
-            <PhoneIcon />
-            {t('profile:phone')}
-          </Typography>
-          <TextField
-            fullWidth
-            value={phone}
-            onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-            placeholder={t('profile:phone_placeholder')}
-            inputProps={{ inputMode: 'numeric', maxLength: 10 }}
-            error={Boolean(phoneError)}
-            helperText={phoneError || t('profile:phone_private_hint', { defaultValue: 'Số điện thoại được lưu trong hệ thống và không hiển thị công khai trên hồ sơ.' })}
-          />
-        </Stack>
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+            gap: 2,
+          }}
+        >
+          <Stack spacing={1.25}>
+            <Typography variant="h5" fontWeight={800} color="primary.main" display="flex" alignItems="center" gap={1}>
+              <PhoneIcon />
+              {t('profile:phone')}
+            </Typography>
+            <TextField
+              fullWidth
+              value={phone}
+              onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+              placeholder={t('profile:phone_placeholder')}
+              inputProps={{ inputMode: 'numeric', maxLength: 10 }}
+              error={Boolean(phoneError)}
+              helperText={phoneError || t('profile:phone_private_hint', { defaultValue: 'Số điện thoại được lưu trong hệ thống và không hiển thị công khai trên hồ sơ.' })}
+            />
+          </Stack>
+          <Stack spacing={1.25}>
+            <Typography variant="h5" fontWeight={800} color="primary.main" display="flex" alignItems="center" gap={1}>
+              <WcIcon />
+              {t('settings:label_gender')}
+            </Typography>
+            <FormControl fullWidth>
+              <InputLabel>{t('settings:label_gender')}</InputLabel>
+              <Select
+                value={gender}
+                label={t('settings:label_gender')}
+                onChange={(event) => setGender(event.target.value)}
+                autoComplete="sex"
+              >
+                {GENDER_OPTIONS.map((g) => (
+                  <MenuItem key={g} value={g}>{t(`settings:${GENDER_LABEL_KEYS[g]}`)}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Stack>
+        </Box>
       </ScrollRevealItem>
 
       <ScrollRevealItem>

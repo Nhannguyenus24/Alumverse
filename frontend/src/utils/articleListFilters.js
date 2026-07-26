@@ -22,15 +22,25 @@ const getArticleTopicCandidates = (article) => {
   const type = normalizeComparable(article?.type);
   const candidates = [directTopic, type].filter(Boolean);
 
+  // Map legacy achievement topics to newly standardized topics
+  if (article?.channel === 'achievement') {
+    if (directTopic === 'award') candidates.push('competition_award', 'international_honor');
+    if (directTopic === 'achievement_scholarship') candidates.push('prestigious_scholarship');
+    if (directTopic === 'career_achievement') candidates.push('career_milestone');
+    if (directTopic === 'science_research') candidates.push('research_publication');
+    if (directTopic === 'international') candidates.push('international_honor');
+  }
+
   if (article?.channel === 'job') {
     if (article?.isReferral || article?.isReferral === true) candidates.push('internal_referral');
     if (type === 'contract') candidates.push('remote');
   }
 
   if (article?.channel === 'learning') {
-    if (type === 'course') candidates.push('online_course', 'certificate');
+    if (directTopic === 'masters' || directTopic === 'doctorate') candidates.push('masters_doctorate');
+    if (type === 'course') candidates.push('online_course', 'certificate', 'special_session');
     if (type === 'other') {
-      candidates.push('study_abroad', 'masters', 'student_exchange', 'research', 'achievement_scholarship');
+      candidates.push('study_abroad', 'bachelor', 'masters_doctorate', 'masters', 'doctorate', 'student_exchange', 'research', 'scholarships', 'special_session');
     }
   }
 
