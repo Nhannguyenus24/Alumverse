@@ -16,6 +16,8 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
+import java.util.concurrent.TimeUnit;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -30,10 +32,12 @@ public class ForumNotificationTask {
     private final ForumTopicRepository forumTopicRepository;
     private final NotificationService notificationService;
     private final CacheUtils cacheUtils;
+    private final MeterRegistry meterRegistry;
 
     @Scheduled(cron = "0 0 */12 * * *")
     public void sendForumNotifications() {
-        log.warn("Starting ForumNotificationTask...");
+        long startTime = System.currentTimeMillis();
+        log.info("START: Starting ForumNotificationTask at {}", LocalDateTime.now());
 
         cacheUtils.getKeys(CacheNames.FORUM_RECENT_POSTS)
                 .flatMapMany(keys -> {
@@ -72,11 +76,20 @@ public class ForumNotificationTask {
                                     }
                                 }
                                 if (subIdsToUpdate.isEmpty()) return Mono.empty();
-                                return forumTopicSubscriptionRepository.updateLastNotifiedAtBatch(subIdsToUpdate, LocalDateTime.now());
+                                return forumTopicSubscriptionRepository.updateLastNotifiedAtBatch(subIdsToUpdate, LocalDateTime.now())
+                                        .thenReturn(subIdsToUpdate.size());
                             });
                 })
-                .doOnError(error -> log.error("Error in ForumNotificationTask", error))
-                .doOnSuccess(ignored -> log.info("Finished ForumNotificationTask"))
-                .subscribe();
+                .doOnSuccess(count -> {
+                    long endTime = System.currentTimeMillis();
+                    meterRegistry.timer("cronjob.execution.time", "job_name", "ForumNotification", "status", "success").record(endTime - startTime, TimeUnit.MILLISECONDS);
+                    log.info("END (SUCCESS): Forum notification summary job finished at {}. Summarized {} post(s). Duration: {} ms", LocalDateTime.now(), count, endTime - startTime);
+                })
+                .onErrorResume(e -> {
+                    long endTime = System.currentTimeMillis();
+                    meterRegistry.timer("cronjob.execution.time", "job_name", "ForumNotification", "status", "error").record(endTime - startTime, TimeUnit.MILLISECONDS);
+                    log.error("END (ERROR): Error in ForumNotificationTask at {}. Duration: {} ms", LocalDateTime.now(), endTime - startTime, e);
+                    return Mono.empty();
+                }).subscribe();
     }
 }
