@@ -314,6 +314,7 @@ const RegisterPage = () => {
                   onSuccess={handleGoogleSuccess}
                   onError={handleGoogleError}
                   useOneTap={false}
+                  use_fedcm_for_button
                   size="large"
                   text="signin_with"
                   locale="vi"

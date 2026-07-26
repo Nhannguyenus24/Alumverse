@@ -1,5 +1,6 @@
 import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useParams } from "react-router";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
@@ -26,8 +27,8 @@ import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
 import EventOutlinedIcon from "@mui/icons-material/EventOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import LinkIcon from "@mui/icons-material/Link";
-import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
 import EventAvailableOutlinedIcon from "@mui/icons-material/EventAvailableOutlined";
+import EventBusyOutlinedIcon from "@mui/icons-material/EventBusyOutlined";
 import Page from "../../components/Page";
 import useOrganizationStore from "../../stores/organizationStore";
 import { useOrganization } from "../../hooks/useOrganization";
@@ -42,7 +43,7 @@ import { useEventQuestions, formatAnswersForApi } from "../../hooks/events/useEv
 import { useCanContribute } from "../../hooks/useCanContribute";
 import { ContributeGuardTooltip, VerificationRequiredAlert } from "../../components/ContributeGuard";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
-import { findCancelableTicketForEvent, getEventRegisteredState } from "../../utils/eventRegistration";
+import { findCancelableTicketForEvent, getEventActionState, getEventRegisteredState } from "../../utils/eventRegistration";
 import { extractMainImageCaption } from "../../utils/articleContentCaption";
 import { usePublicProfile } from "../../hooks/profile/usePublicProfile";
 import {
@@ -285,6 +286,7 @@ const ArticleHighlightCard = ({ data, channel, eventId, isAdmin = false, sharedI
   const { enqueueSnackbar } = useSnackbar();
   const { t } = useTranslation(['common', 'article', 'event', 'donation', 'admin']);
   const { canContribute, canUseBasicActions } = useCanContribute();
+  const queryClient = useQueryClient();
   const canUseArticleAction = channel === "event" || channel === "donation"
     ? canUseBasicActions
     : canContribute;
@@ -303,7 +305,17 @@ const ArticleHighlightCard = ({ data, channel, eventId, isAdmin = false, sharedI
 
   const isTicketUsed = ["USED", "CHECKED_IN"].includes(String(ticketStatus ?? "").toUpperCase());
   const isTicketBanned = String(ticketStatus ?? "").toUpperCase() === "BANNED";
-  const isRegistrationClosed = Boolean(data.registrationEndAt) && new Date() > new Date(data.registrationEndAt);
+  const eventActionState = getEventActionState({
+    event: data,
+    isJoined,
+    ticketStatus,
+    canUseAction: canUseArticleAction,
+    loading: loadingJoin,
+    checking: checkingRegistration,
+  });
+  const eventActionIcon = eventActionState.icon === "available"
+    ? <EventAvailableOutlinedIcon />
+    : <EventBusyOutlinedIcon />;
 
   const isInterested = sharedInterest ? sharedInterest.isInterested : isInterestedLocal;
   const interestedCount = sharedInterest ? sharedInterest.interestedCount : interestedCountLocal;
@@ -374,6 +386,7 @@ const ArticleHighlightCard = ({ data, channel, eventId, isAdmin = false, sharedI
         setInterestedCountLocal((c) => c + 1);
         enqueueSnackbar(t('event:mark_interested_success', { defaultValue: 'Đã quan tâm sự kiện' }), { variant: 'success' });
       }
+      queryClient.invalidateQueries({ queryKey: ['publishedEvents'] });
     } catch (err) {
       enqueueSnackbar(err?.response?.data?.message || t('common:action_failed'), { variant: "error" });
     } finally {
@@ -382,13 +395,12 @@ const ArticleHighlightCard = ({ data, channel, eventId, isAdmin = false, sharedI
   };
 
   const handleJoinClick = () => {
-    if (loadingJoin || checkingRegistration || !canUseArticleAction) return;
+    if (eventActionState.disabled) return;
     if (isJoined) {
       if (isTicketUsed || isTicketBanned) return;
       setOpenCancelDialog(true);
       return;
     }
-    if (isRegistrationClosed) return;
     setOpenJoinDialog(true);
   };
 
@@ -517,16 +529,14 @@ const ArticleHighlightCard = ({ data, channel, eventId, isAdmin = false, sharedI
             <ContributeGuardTooltip required="basic" sx={{ flex: 1, opacity: canUseArticleAction ? 1 : 0.58, filter: canUseArticleAction ? "none" : "grayscale(0.25)" }}>
               <Button
                 fullWidth
-                variant={isJoined && !isTicketUsed ? "outlined" : "contained"}
-                color={isJoined ? (isTicketUsed ? "success" : "error") : "accent"}
-                disabled={loadingJoin || checkingRegistration || !canUseArticleAction || (!isJoined && isRegistrationClosed) || isTicketBanned}
-                sx={isTicketUsed ? { pointerEvents: "none" } : undefined}
+                variant={eventActionState.variant}
+                color={eventActionState.color}
+                disabled={eventActionState.disabled}
+                sx={eventActionState.disabled ? { pointerEvents: "none" } : undefined}
                 onClick={handleJoinClick}
-                startIcon={isJoined ? (isTicketUsed ? <EventAvailableOutlinedIcon /> : <CancelOutlinedIcon />) : <EventAvailableOutlinedIcon />}
+                startIcon={eventActionIcon}
               >
-                {isJoined
-                  ? (isTicketBanned ? t('event:ticket_status_banned') : isTicketUsed ? t('event:status_used') : t('event:cancel_ticket'))
-                  : (isRegistrationClosed ? t('event:registration_closed') : t('event:register_action'))}
+                {t(eventActionState.state === "join" ? "event:register_action" : eventActionState.labelKey)}
               </Button>
             </ContributeGuardTooltip>
           </Stack>
@@ -562,7 +572,7 @@ const ArticleHighlightCard = ({ data, channel, eventId, isAdmin = false, sharedI
           <Button
             variant="contained"
             color="error"
-            startIcon={<CancelOutlinedIcon />}
+            startIcon={<EventBusyOutlinedIcon />}
             disabled={!cancelReason.trim() || loadingJoin}
             onClick={handleConfirmCancel}
           >
@@ -577,7 +587,8 @@ const ArticleHighlightCard = ({ data, channel, eventId, isAdmin = false, sharedI
 
 const ArticlePage = () => {
   const { t } = useTranslation(['common', 'article', 'event', 'donation']);
-  const { channel, id } = useParams();
+  const { slug, channel, id } = useParams();
+  const adminBase = slug ? `/${slug}/admin` : "/admin";
   const { enqueueSnackbar } = useSnackbar();
   const theme = useTheme();
   const { isOrgManager } = useCanContribute();
@@ -669,11 +680,12 @@ const ArticlePage = () => {
   // "Quan tâm" button (ArticleHighlightCard) — two separate controls for the same event_interests
   // row — stay in sync without a reload. Only active for the event channel.
   const isEventChannel = article?.channel === "event";
-  const { canContribute: canToggleEventInterest, isAuthenticated: isAuthedForInterest } = useCanContribute();
-  const [eventInterestState, setEventInterestState] = useState({ isInterested: false, countDelta: 0, loading: false });
+  const queryClient = useQueryClient();
+  const { canUseBasicActions: canToggleEventInterest, isAuthenticated: isAuthedForInterest } = useCanContribute();
+  const [eventInterestState, setEventInterestState] = useState({ isInterested: false, loading: false });
   const eventInterest = {
     isInterested: eventInterestState.isInterested,
-    interestedCount: Math.max(0, (article?.interestedCount ?? 0) + eventInterestState.countDelta),
+    interestedCount: article?.interestedCount ?? 0,
     loading: eventInterestState.loading,
   };
 
@@ -694,13 +706,15 @@ const ArticlePage = () => {
     try {
       if (eventInterestState.isInterested) {
         await eventApi.removeInterest(id);
-        setEventInterestState((prev) => ({ ...prev, isInterested: false, countDelta: prev.countDelta - 1, loading: false }));
+        setEventInterestState((prev) => ({ ...prev, isInterested: false, loading: false }));
         enqueueSnackbar(t('event:unmark_interested_success', { defaultValue: 'Đã hủy quan tâm sự kiện' }), { variant: 'info' });
       } else {
         await eventApi.addInterest(id);
-        setEventInterestState((prev) => ({ ...prev, isInterested: true, countDelta: prev.countDelta + 1, loading: false }));
+        setEventInterestState((prev) => ({ ...prev, isInterested: true, loading: false }));
         enqueueSnackbar(t('event:mark_interested_success', { defaultValue: 'Đã quan tâm sự kiện' }), { variant: 'success' });
       }
+      queryClient.invalidateQueries({ queryKey: ['publishedEvents'] });
+      await queryClient.invalidateQueries({ queryKey: ['article', { channel: 'event', id }], exact: false });
     } catch (err) {
       setEventInterestState((prev) => ({ ...prev, loading: false }));
       throw err;
@@ -827,6 +841,8 @@ const ArticlePage = () => {
           stats: [{ value: article.interestedCount ?? 0, label: t('article:stat_interested') }, { value: article.joinedCount ?? 0, label: t('event:stat_joined') }],
           isRegistered: article.isRegistered,
           registrationEndAt: article.registrationEndAt,
+          startTime: article.eventDate,
+          endTime: article.eventEndDate,
         }
       : resolvedChannel === "donation"
       ? {
@@ -875,7 +891,7 @@ const ArticlePage = () => {
                       color="secondary"
                       size="medium"
                       startIcon={<EditOutlinedIcon />}
-                      onClick={() => navigate(isEventArticle ? `/post/event/${id}` : `/admin/article/${resolvedChannel}/${id}/edit`)}
+                      onClick={() => navigate(isEventArticle ? `/post/event/${id}` : `${adminBase}/article/${resolvedChannel}/${id}/edit`)}
                       sx={{ textTransform: "none", fontWeight: 700 }}
                     >
                       {isEventArticle ? t('event:edit_event') : t('article:edit_article')}
@@ -884,7 +900,7 @@ const ArticlePage = () => {
                       variant="outlined"
                       size="medium"
                       startIcon={isEventArticle ? <EventOutlinedIcon /> : <ArticleOutlinedIcon />}
-                      onClick={() => navigate(isEventArticle ? "/admin/events" : "/admin/article")}
+                      onClick={() => navigate(isEventArticle ? `${adminBase}/events` : `${adminBase}/article`)}
                       sx={{ textTransform: "none", fontWeight: 700 }}
                     >
                       {isEventArticle ? t('admin:manage_events') : t('admin:manage_articles')}

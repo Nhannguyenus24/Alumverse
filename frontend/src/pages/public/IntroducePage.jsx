@@ -166,8 +166,8 @@ const IntroducePage = () => {
                   sx={{
                     p: 2.5,
                     borderRadius: 3,
-                    bgcolor: alpha(theme.palette.success.main, 0.03),
-                    border: `1px solid ${alpha(theme.palette.success.main, 0.18)}`,
+                    bgcolor: alpha(theme.palette.secondary.main, theme.palette.mode === "dark" ? 0.16 : 0.04),
+                    border: `1px solid ${alpha(theme.palette.secondary.main, theme.palette.mode === "dark" ? 0.38 : 0.18)}`,
                     display: "flex",
                     flexDirection: "column",
                     width: "100%",
@@ -175,10 +175,10 @@ const IntroducePage = () => {
                   }}
                 >
                   <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1.5 }}>
-                    <Avatar sx={{ bgcolor: "success.main", width: 34, height: 34 }}>
+                    <Avatar sx={{ bgcolor: "secondary.main", color: "secondary.contrastText", width: 34, height: 34 }}>
                       <VisibilityRoundedIcon sx={{ fontSize: 19, color: "#fff" }} />
                     </Avatar>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "success.main", fontSize: "1.05rem" }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "secondary.main", fontSize: "1.05rem" }}>
                       {t('intro_vision')}
                     </Typography>
                   </Stack>
@@ -189,6 +189,7 @@ const IntroducePage = () => {
                       fontWeight: 500,
                       lineHeight: 1.65,
                       textAlign: "justify",
+                      whiteSpace: "pre-line",
                       flex: 1,
                       fontSize: "0.92rem",
                     }}
@@ -231,6 +232,7 @@ const IntroducePage = () => {
                       fontWeight: 500,
                       lineHeight: 1.65,
                       textAlign: "justify",
+                      whiteSpace: "pre-line",
                       flex: 1,
                       fontSize: "0.92rem",
                     }}
@@ -250,8 +252,8 @@ const IntroducePage = () => {
                   sx={{
                     p: 2.5,
                     borderRadius: 3,
-                    bgcolor: alpha(theme.palette.error.main, 0.03),
-                    border: `1px solid ${alpha(theme.palette.error.main, 0.18)}`,
+                    bgcolor: alpha(theme.palette.accent.main, theme.palette.mode === "dark" ? 0.15 : 0.06),
+                    border: `1px solid ${alpha(theme.palette.accent.main, theme.palette.mode === "dark" ? 0.42 : 0.24)}`,
                     display: "flex",
                     flexDirection: "column",
                     width: "100%",
@@ -259,10 +261,10 @@ const IntroducePage = () => {
                   }}
                 >
                   <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1.5 }}>
-                    <Avatar sx={{ bgcolor: "error.main", width: 34, height: 34 }}>
-                      <FavoriteRoundedIcon sx={{ fontSize: 19, color: "#fff" }} />
+                    <Avatar sx={{ bgcolor: "accent.main", color: "accent.contrastText", width: 34, height: 34 }}>
+                      <FavoriteRoundedIcon sx={{ fontSize: 19 }} />
                     </Avatar>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "error.dark", fontSize: "1.05rem" }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "accent.dark", fontSize: "1.05rem" }}>
                       {t('intro_core_values')}
                     </Typography>
                   </Stack>
@@ -273,6 +275,7 @@ const IntroducePage = () => {
                       fontWeight: 500,
                       lineHeight: 1.65,
                       textAlign: "justify",
+                      whiteSpace: "pre-line",
                       flex: 1,
                       fontSize: "0.92rem",
                     }}
@@ -327,27 +330,33 @@ const IntroducePage = () => {
 
   const renderLeaders = () => (
     <Box>
-      {renderHTML(introduction?.leadersContent)}
       {introduction?.leaders && introduction.leaders.length > 0 && (
-        <Box sx={{ mt: 4 }}>
-          <Typography variant="h6" color="primary" fontWeight={700} sx={{ mb: 3 }}>
-            {t('intro_leaders_title')}
-          </Typography>
+        <Box>
           <Stack spacing={2}>
             {introduction.leaders.map((leader, index) => (
               <ScrollReveal key={index} delay={getStaggerDelay(index)}>
                 <Paper
                   sx={{
-                    p: 2,
+                    p: { xs: 2, sm: 2.5 },
                     display: 'flex',
-                    alignItems: 'center',
-                    gap: 3,
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 2, sm: 3 },
                     width: '100%',
                     borderRadius: 2,
+                    border: '1px solid',
+                    borderColor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.22 : 0.12),
+                    boxShadow: 'none',
                     transition: 'all 0.3s',
+                    '&:hover': {
+                      borderColor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.34 : 0.2),
+                      boxShadow: theme.palette.mode === 'dark'
+                        ? `0 18px 40px ${alpha(theme.palette.common.black, 0.26)}, 0 0 0 1px ${alpha(theme.palette.common.white, 0.06)}`
+                        : `0 16px 42px ${alpha(theme.palette.primary.main, 0.12)}`,
+                    },
                   }}
                 >
-                  <Box sx={{ width: 100, height: 100, flexShrink: 0 }}>
+                  <Box sx={{ width: { xs: 112, sm: 124 }, height: { xs: 112, sm: 124 }, flexShrink: 0 }}>
                     <Box
                       component="img"
                       src={leader.image || "/default_avatar.png"}
@@ -355,29 +364,43 @@ const IntroducePage = () => {
                       sx={{
                         width: '100%',
                         height: '100%',
-                        borderRadius: 2,
+                        borderRadius: '50%',
                         objectFit: "cover",
-                        border: '1px solid',
-                        borderColor: 'grey.200'
+                        border: '3px solid',
+                        borderColor: 'background.paper',
+                        boxShadow: `0 0 0 1px ${alpha(theme.palette.primary.main, 0.18)}, 0 8px 24px ${alpha(theme.palette.common.black, 0.12)}`,
                       }}
                     />
                   </Box>
-                  <Box sx={{ flex: 1 }}>
-                    <Typography variant="subtitle1" fontWeight={700} color="primary.main">
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography variant="h6" fontWeight={800} color="primary.main" sx={{ lineHeight: 1.25, fontSize: { xs: '1.12rem', sm: '1.2rem' } }}>
                       {leader.name}
                     </Typography>
                     {leader.positions && (
-                      <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600, mt: 0.5 }}>
+                      <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600, mt: 0.25, fontSize: '0.96rem', lineHeight: 1.4 }}>
                         {leader.positions}
                       </Typography>
                     )}
                     {leader.email && (
-                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                      <Typography variant="body2" color="text.secondary" sx={{ display: 'block', mt: 0.25, fontSize: '0.92rem', lineHeight: 1.4 }}>
                         {leader.email}
                       </Typography>
                     )}
                     {leader.content && (
-                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{
+                          display: 'block',
+                          mt: 1.75,
+                          whiteSpace: 'pre-line',
+                          textAlign: 'justify',
+                          lineHeight: 1.65,
+                          fontSize: '0.92rem',
+                          overflowWrap: 'break-word',
+                          wordBreak: 'break-word',
+                        }}
+                      >
                         {leader.content}
                       </Typography>
                     )}
@@ -393,28 +416,33 @@ const IntroducePage = () => {
 
   const renderMembers = () => (
     <Box>
-      {renderHTML(introduction?.teamMembersContent)}
       {introduction?.teamMembers && introduction.teamMembers.length > 0 && (
-        <Box sx={{ mt: 4 }}>
-          <Typography variant="h6" color="primary" fontWeight={700} sx={{ mb: 3 }}>
-            {t('intro_team_title')}
-          </Typography>
+        <Box>
           <Stack spacing={2}>
             {introduction.teamMembers.map((member, index) => (
               <ScrollReveal key={index} delay={getStaggerDelay(index)}>
                 <Paper
                   sx={{
-                    p: 2,
+                    p: { xs: 2, sm: 2.5 },
                     display: 'flex',
-                    alignItems: 'center',
-                    gap: 3,
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 2, sm: 3 },
                     width: '100%',
                     borderRadius: 2,
+                    border: '1px solid',
+                    borderColor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.22 : 0.12),
+                    boxShadow: 'none',
                     transition: 'all 0.3s',
-                    '&:hover': { boxShadow: 4 }
+                    '&:hover': {
+                      borderColor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.34 : 0.2),
+                      boxShadow: theme.palette.mode === 'dark'
+                        ? `0 18px 40px ${alpha(theme.palette.common.black, 0.26)}, 0 0 0 1px ${alpha(theme.palette.common.white, 0.06)}`
+                        : `0 16px 42px ${alpha(theme.palette.primary.main, 0.12)}`,
+                    }
                   }}
                 >
-                  <Box sx={{ width: 100, height: 100, flexShrink: 0 }}>
+                  <Box sx={{ width: { xs: 112, sm: 124 }, height: { xs: 112, sm: 124 }, flexShrink: 0 }}>
                     <Box
                       component="img"
                       src={member.image || "/default_avatar.png"}
@@ -422,29 +450,43 @@ const IntroducePage = () => {
                       sx={{
                         width: '100%',
                         height: '100%',
-                        borderRadius: 2,
+                        borderRadius: '50%',
                         objectFit: "cover",
-                        border: '1px solid',
-                        borderColor: 'grey.200'
+                        border: '3px solid',
+                        borderColor: 'background.paper',
+                        boxShadow: `0 0 0 1px ${alpha(theme.palette.primary.main, 0.18)}, 0 8px 24px ${alpha(theme.palette.common.black, 0.12)}`,
                       }}
                     />
                   </Box>
-                  <Box sx={{ flex: 1 }}>
-                    <Typography variant="subtitle1" fontWeight={700} color="primary.main">
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography variant="h6" fontWeight={800} color="primary.main" sx={{ lineHeight: 1.25, fontSize: { xs: '1.12rem', sm: '1.2rem' } }}>
                       {member.name}
                     </Typography>
                     {member.positions && (
-                      <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+                      <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600, mt: 0.25, fontSize: '0.96rem', lineHeight: 1.4 }}>
                         {member.positions}
                       </Typography>
                     )}
                     {member.email && (
-                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                      <Typography variant="body2" color="text.secondary" sx={{ display: 'block', mt: 0.25, fontSize: '0.92rem', lineHeight: 1.4 }}>
                         {member.email}
                       </Typography>
                     )}
                     {member.content && (
-                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{
+                          display: 'block',
+                          mt: 1.75,
+                          whiteSpace: 'pre-line',
+                          textAlign: 'justify',
+                          lineHeight: 1.65,
+                          fontSize: '0.92rem',
+                          overflowWrap: 'break-word',
+                          wordBreak: 'break-word',
+                        }}
+                      >
                         {member.content}
                       </Typography>
                     )}

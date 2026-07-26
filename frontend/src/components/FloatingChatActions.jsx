@@ -3,8 +3,10 @@ import { Box } from '@mui/material';
 import { useLocation, useParams } from 'react-router';
 
 import ChatFloatingButton from './ChatFloatingButton';
+import SurveyFloatingButton from './survey/SurveyFloatingButton';
 import { getNormalizedPathname } from '../utils/pathUtils';
 import { useFeatureEnabled } from '../hooks/useFeatureFlags';
+import { useAuth } from '../hooks/useAuth';
 
 const HIDDEN_PATHS = ['/chat'];
 const FitBot = lazy(() => import('./FitBot'));
@@ -14,6 +16,7 @@ export default function FloatingChatActions() {
   const { slug } = useParams();
   const normalizedPath = getNormalizedPathname(location.pathname, slug);
   const fitbotEnabled = useFeatureEnabled('fitbot');
+  const { isAuthenticated } = useAuth();
   const [activeWidget, setActiveWidget] = useState(null);
 
   const openMessages = useCallback(() => setActiveWidget('messages'), []);
@@ -28,6 +31,19 @@ export default function FloatingChatActions() {
 
   return (
     <>
+      {isAuthenticated && (
+        <Box
+          sx={{
+            position: 'fixed',
+            bottom: fitbotEnabled ? 160 : 90,
+            right: 20,
+            zIndex: 999,
+          }}
+        >
+          <SurveyFloatingButton />
+        </Box>
+      )}
+
       <Box
         sx={{
           position: 'fixed',

@@ -87,6 +87,10 @@ public class ChatConversationRequestService {
     private Mono<ConversationRequestConnectionStatusResponse> buildConnectionStatusResponse(
             ChatConversationRequest request,
             Long currentMemberId) {
+        if (request.getStatus() == ConversationRequestStatus.DISCONNECTED) {
+            return Mono.just(new ConversationRequestConnectionStatusResponse(null, null, null, false));
+        }
+
         return chatMessageRepository
                 .findLatestByGroupIdAndSenderMemberId(request.getChatGroupId(), currentMemberId)
                 .map(message -> toConnectionStatusResponse(request, message, currentMemberId))
@@ -335,6 +339,8 @@ public class ChatConversationRequestService {
      *       the current sender/receiver, because the direction may have reversed (e.g., the
      *       original target now initiates). See docs/CONVERSATION_REQUEST_DESIGN.md for rationale.
      *   </li>
+     *   <li>DISCONNECTED → allow an immediate new request after a block/unblock severed a prior
+     *       connection. This is not a rejection, so no cooldown applies.</li>
      * </ul>
      */
     private Mono<Long> handleExistingRequest(
@@ -363,9 +369,11 @@ public class ChatConversationRequestService {
                     "These two members are already connected"));
         }
 
-        if (status == ConversationRequestStatus.REJECTED) {
+        if (status == ConversationRequestStatus.REJECTED || status == ConversationRequestStatus.DISCONNECTED) {
             LocalDateTime cooldownUntil = existing.getCooldownUntil();
-            boolean cooldownStillActive = cooldownUntil != null && LocalDateTime.now().isBefore(cooldownUntil);
+            boolean cooldownStillActive = status == ConversationRequestStatus.REJECTED
+                    && cooldownUntil != null
+                    && LocalDateTime.now().isBefore(cooldownUntil);
             if (cooldownStillActive) {
                 return Mono.error(new ApplicationException(
                         ErrorCode.CONVERSATION_REQUEST_COOLDOWN_ACTIVE,
@@ -490,8 +498,9 @@ public class ChatConversationRequestService {
      * Grants a member pair an ACCEPTED conversation immediately, skipping the normal
      * request/respond handshake. Used when another flow (e.g. peer verification) already
      * establishes the relationship and messaging access should follow without an extra
-     * accept step. Silently no-ops when the pair is blocked or still under an active
-     * rejection cooldown, mirroring how those cases are treated as "not connectable" elsewhere.
+     * accept step. Silently no-ops when the pair is blocked, still under an active
+     * rejection cooldown, or was explicitly disconnected by a block/unblock cycle,
+     * mirroring how those cases are treated as "not connectable" elsewhere.
      */
     public Mono<Void> autoAcceptConversationRequest(
             Long requesterMemberId,
@@ -545,6 +554,10 @@ public class ChatConversationRequestService {
         ConversationRequestStatus status = existing.getStatus();
 
         if (status == ConversationRequestStatus.ACCEPTED) {
+            return Mono.empty();
+        }
+
+        if (status == ConversationRequestStatus.DISCONNECTED) {
             return Mono.empty();
         }
 

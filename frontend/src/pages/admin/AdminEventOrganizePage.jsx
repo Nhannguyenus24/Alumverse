@@ -16,7 +16,7 @@ import {
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import { useParams } from 'react-router';
+import { useOutletContext, useParams } from 'react-router';
 import Page from '../../components/Page';
 import SearchBar from '../../components/SearchBar';
 import { useDebounce } from '../../hooks/useDebounce';
@@ -40,6 +40,7 @@ const AdminEventOrganizePage = () => {
   const { t } = useTranslation(['admin', 'event', 'common']);
   const { eventId } = useParams();
   const orgNavigate = useOrgNavigate();
+  const { adminBase = '/admin' } = useOutletContext();
 
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 400);
@@ -124,7 +125,7 @@ const AdminEventOrganizePage = () => {
       <Container maxWidth="lg" sx={{ py: 3 }}>
         <Stack spacing={3}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <IconButton onClick={() => orgNavigate('/admin/events')} color="primary">
+            <IconButton onClick={() => orgNavigate(`${adminBase}/events`)} color="primary">
               <ArrowBackIcon />
             </IconButton>
             <Box>

@@ -30,7 +30,7 @@ public interface ChatConversationRequestRepository extends R2dbcRepository<ChatC
 
     String SEARCH_WHERE = """
             WHERE ccr.target_member_id = :currentUserId
-              AND ccr.status <> 'ACCEPTED'
+              AND ccr.status IN ('PENDING', 'REJECTED')
               AND u.status = 'ACTIVE'
               AND (:fullName IS NULL OR LOWER(u.full_name) LIKE LOWER(:fullName))
               AND (:status IS NULL OR ccr.status = :status)

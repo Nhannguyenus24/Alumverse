@@ -71,7 +71,7 @@ const statusOf = (article) => {
 };
 
 const AdminArticleRequestsPage = () => {
-  const { setBreadcrumbs } = useOutletContext();
+  const { setBreadcrumbs, adminBase = '/admin' } = useOutletContext();
   const { t } = useTranslation('admin');
   const toOrgPath = useOrgPath();
   const { enqueueSnackbar } = useSnackbar();
@@ -122,7 +122,7 @@ const AdminArticleRequestsPage = () => {
     window.open(toOrgPath(path), '_blank', 'noopener,noreferrer');
   };
 
-  const openEdit = (a) => openInNewTab(`/admin/article/${a.channel}/${idOf(a)}/edit`);
+  const openEdit = (a) => openInNewTab(`${adminBase}/article/${a.channel}/${idOf(a)}/edit`);
   const openView = (a) => openInNewTab(`/article/${a.channel}/${idOf(a)}`);
 
   const handleApprove = async (article) => {

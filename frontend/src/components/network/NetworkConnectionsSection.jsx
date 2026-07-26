@@ -22,7 +22,7 @@ import {
   ScrollRevealItem,
 } from '../animations/ScrollReveal';
 
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 15;
 
 const NetworkConnectionsSection = ({ enableBlock = true }) => {
   const { t } = useTranslation(['network', 'common']);
@@ -169,7 +169,8 @@ const NetworkConnectionsSection = ({ enableBlock = true }) => {
         )}
         confirmText={t('network:block')}
         cancelText={t('common:cancel')}
-        confirmColor="primary"
+        titleColor="error.main"
+        confirmColor="error"
         loading={isBlocking}
         onConfirm={() => blockUser()}
         onCancel={() => setBlockTarget(null)}

@@ -7,23 +7,34 @@ import {
   Typography,
   Button,
   Card,
+  Divider,
   useTheme,
   useMediaQuery,
+  Skeleton,
 } from "@mui/material";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import ForumOutlinedIcon from "@mui/icons-material/ForumOutlined";
+import MenuBookOutlinedIcon from "@mui/icons-material/MenuBookOutlined";
+import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
+import WorkOutlineOutlinedIcon from "@mui/icons-material/WorkOutlineOutlined";
 import Page from "../../components/Page";
 import { usePublishedAchievements } from "../../hooks/articles/usePublishedAchievements";
 import { usePublishedAlumniPosts } from "../../hooks/articles/usePublishedAlumniPosts";
+import { usePublishedEvents } from "../../hooks/articles/usePublishedEvents";
 import { usePublishedNews } from "../../hooks/news/usePublishedNews";
 import { normalizeNews } from "../../hooks/articles/normalizeArticle";
 import { toCardShape } from "../../hooks/articles/toCardShape";
+import { toEventCardShape } from "../../hooks/articles/toEventCardShape";
 import Logo from "../../components/Logo";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
+import { useAuth } from "../../hooks/useAuth";
 import { keyframes } from "@emotion/react";
 import { alpha } from "@mui/material/styles";
 import apiClient from "../../utils/axios";
 import ArticleCard from "../../components/articles/ArticleCard";
 import useOrganizationStore from "../../stores/organizationStore";
+import { HEADER_HEIGHT } from "../../constants/layout";
 
 const HERO_LOGO = "/alumverse_logo/Logo_White.svg";
 
@@ -72,7 +83,7 @@ const mainSectionTitleSx = {
 
 const marqueeTitleSx = {
   mb: { xs: 2.5, md: 3.5 },
-  fontSize: { xs: "1.35rem", sm: "1.55rem", md: "1.9rem" },
+  fontSize: { xs: "1.45rem", sm: "1.7rem", md: "2.1rem" },
   fontWeight: 800,
 };
 
@@ -119,13 +130,200 @@ const buildPagedCards = (items, pageSize = 2) => {
   const pages = [];
   for (let i = 0; i < items.length; i += pageSize) {
     const group = items.slice(i, i + pageSize);
-    if (group.length < pageSize && items.length > group.length) {
-      group.push(...items.slice(0, pageSize - group.length));
-    }
-    pages.push(group);
+    if (group.length === pageSize) pages.push(group);
   }
   return pages;
 };
+
+const getHomeNewsLimit = (count) => {
+  if (count >= 6) return 6;
+  if (count >= 3) return 3;
+  return count;
+};
+
+const getEvenCardLimit = (count, max = 6) => {
+  const capped = Math.min(count, max);
+  return capped < 2 ? capped : capped - (capped % 2);
+};
+
+const HomeSectionHeader = ({
+  eyebrow,
+  title,
+  description,
+  actionLabel,
+  onAction,
+  align = "center",
+  titleColor = "primary.main",
+  actionColor = "primary",
+}) => (
+  <Stack
+    direction={{ xs: "column", md: align === "split" ? "row" : "column" }}
+    spacing={{ xs: 2, md: 3 }}
+    alignItems={{ xs: "stretch", md: align === "split" ? "flex-end" : "center" }}
+    justifyContent="space-between"
+    sx={{ mb: { xs: 3.5, md: 5 } }}
+  >
+    <Box sx={{ textAlign: { xs: "center", md: align === "split" ? "left" : "center" }, maxWidth: 760 }}>
+      {eyebrow && (
+        <Typography
+          variant="overline"
+          sx={{ color: "accent.main", fontWeight: 800, lineHeight: 1.6 }}
+        >
+          {eyebrow}
+        </Typography>
+      )}
+      <Typography variant="h1" color={titleColor} sx={{ ...mainSectionTitleSx, mb: description ? 1.5 : 0 }}>
+        {title}
+      </Typography>
+      {description && (
+        <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.65 }}>
+          {description}
+        </Typography>
+      )}
+    </Box>
+    {actionLabel && (
+      <Button
+        variant="contained"
+        color={actionColor}
+        endIcon={<ArrowForwardIcon />}
+        onClick={onAction}
+        sx={{ alignSelf: { xs: "center", md: "flex-end" }, px: 2.5, fontWeight: 800 }}
+      >
+        {actionLabel}
+      </Button>
+    )}
+  </Stack>
+);
+
+const HomeEventImage = ({ src, alt, sx }) => (
+  <Box
+    component="img"
+    src={src}
+    alt={alt}
+    sx={{
+      width: "100%",
+      height: "100%",
+      objectFit: "cover",
+      display: "block",
+      transition: "transform 0.35s ease",
+      ...sx,
+    }}
+  />
+);
+
+const EventFeaturedCard = ({ event, onClick }) => (
+  <Card
+    elevation={0}
+    onClick={onClick}
+    sx={{
+      height: "100%",
+      minHeight: { xs: 275, md: 325 },
+      maxWidth: { md: 510 },
+      borderRadius: 2,
+      overflow: "hidden",
+      cursor: "pointer",
+      position: "relative",
+      bgcolor: "transparent",
+      boxShadow: "none",
+      "&:hover img": { transform: "scale(1.045)" },
+      "&:hover h3": { transform: "translateX(4px)" },
+    }}
+  >
+    <Box sx={{ height: { xs: 185, md: 220 }, overflow: "hidden", borderRadius: 2 }}>
+      <HomeEventImage src={event.image} alt={event.title} />
+    </Box>
+    <Stack spacing={0.8} sx={{ mt: 1.5 }}>
+      {event.date && (
+        <Typography variant="body2" sx={{ color: alpha("#fff", 0.82), lineHeight: 1.5 }}>
+          {event.date}
+        </Typography>
+      )}
+      <Typography
+        variant="h3"
+        sx={{
+          color: "#fff",
+          fontWeight: 800,
+          lineHeight: 1.22,
+          fontSize: { xs: "1.3rem", md: "1.58rem" },
+          transition: "transform 0.25s ease",
+        }}
+      >
+        {event.title}
+      </Typography>
+      {event.organizer && (
+        <Typography variant="body2" sx={{ color: alpha("#fff", 0.76), lineHeight: 1.55 }}>
+          {event.organizer}
+        </Typography>
+      )}
+    </Stack>
+  </Card>
+);
+
+const FeatureStep = ({ number, title, description }) => (
+  <Stack direction="row" spacing={1.5} alignItems="flex-start">
+    <Typography variant="h5" sx={{ color: "primary.main", fontWeight: 800, minWidth: 38 }}>
+      {number}
+    </Typography>
+    <Box>
+      <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary" }}>
+        {title}
+      </Typography>
+      <Typography variant="body2" sx={{ color: "text.secondary", lineHeight: 1.7 }}>
+        {description}
+      </Typography>
+    </Box>
+  </Stack>
+);
+
+const GatewayCard = ({ icon, color = "secondary", title, description, bullets, cta, onClick }) => (
+  <Card
+    elevation={0}
+    sx={{
+      p: { xs: 2.5, md: 3 },
+      borderRadius: 2,
+      border: 1,
+      borderColor: "divider",
+      bgcolor: "background.paper",
+      height: "100%",
+      display: "flex",
+      flexDirection: "column",
+      gap: 2,
+      transition: "transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease",
+      "&:hover": {
+        transform: "translateY(-6px)",
+        borderColor: `${color}.main`,
+        boxShadow: "0 18px 34px rgba(15, 23, 42, 0.12)",
+      },
+    }}
+  >
+    <Box>
+      <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1.25 }}>
+        <Box sx={{ width: 52, height: 52, borderRadius: 2, display: "grid", placeItems: "center", bgcolor: (theme) => alpha(theme.palette[color].main, theme.palette.mode === "dark" ? 0.2 : 0.1), color: `${color}.main` }}>
+          {icon}
+        </Box>
+        <Typography variant="h3" color={`${color}.main`} sx={{ fontWeight: 800 }}>
+          {title}
+        </Typography>
+      </Stack>
+      <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.75 }}>
+        {description}
+      </Typography>
+    </Box>
+    <Stack spacing={1}>
+      {bullets.map((item) => (
+        <Stack direction="row" spacing={1} alignItems="center" key={item}>
+          <CheckCircleOutlineIcon sx={{ fontSize: 18, color: `${color}.main` }} />
+          <Typography variant="body2" sx={{ fontWeight: 700, color: "text.primary" }}>
+            {item}
+          </Typography>
+        </Stack>
+      ))}
+    </Stack>
+    <Button variant="contained" color={color} endIcon={<ArrowForwardIcon />} onClick={onClick} sx={{ mt: "auto", alignSelf: { xs: "flex-start", sm: "flex-end" }, fontWeight: 800 }}>
+      {cta}
+    </Button>
+  </Card>
+);
 
 const getExploreItems = (t) => [
   {
@@ -171,11 +369,15 @@ const HomePage = () => {
   const { t } = useTranslation(['home', 'common']);
   const { achievements } = usePublishedAchievements(0, 6);
   const { articles: alumniArticles } = usePublishedAlumniPosts(0, 6);
+  const { events: upcomingEvents, isPending: eventsPending } = usePublishedEvents("upcoming", 0, 3);
   const { news: rawNews } = usePublishedNews(0, 6);
   const [featuredPage, setFeaturedPage] = useState(0);
+  const [eventPage, setEventPage] = useState(0);
   const [organizations, setOrganizations] = useState([]);
   const navigate = useOrgNavigate();
+  const { isAuthenticated } = useAuth();
   const { organization } = useOrganizationStore();
+  const exploreSectionRef = useRef(null);
 
   useEffect(() => {
     const fetchOrgs = async () => {
@@ -193,36 +395,63 @@ const HomePage = () => {
     fetchOrgs();
   }, []);
 
+  const exploreItems = getExploreItems(t);
+  const theme = useTheme();
+  const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
+  const handleExploreClick = () => {
+    const section = exploreSectionRef.current;
+    if (!section) return;
+
+    const headerOffset = isDesktop ? HEADER_HEIGHT.md : HEADER_HEIGHT.xs;
+    const targetTop = section.getBoundingClientRect().top + window.scrollY - headerOffset;
+
+    window.scrollTo({
+      top: Math.max(targetTop, 0),
+      behavior: "smooth",
+    });
+  };
+  const newsCards = rawNews
+    .map(normalizeNews)
+    .filter(Boolean)
+    .map(toCardShape)
+    .filter(Boolean);
+  const visibleNewsCards = newsCards.slice(0, getHomeNewsLimit(newsCards.length));
+  const eventCards = upcomingEvents.map(toEventCardShape).filter(Boolean);
+  const visibleEvent = eventCards[eventPage] ?? eventCards[0] ?? null;
+  const featuredArticleGroups = useMemo(() => {
+    const combined = [...alumniArticles, ...achievements]
+      .filter(Boolean)
+      .sort((left, right) => new Date(right.updatedAt ?? right.createdAt ?? right.publishedAt ?? 0) - new Date(left.updatedAt ?? left.createdAt ?? left.publishedAt ?? 0))
+      .map(toCardShape)
+      .filter(Boolean);
+
+    return buildPagedCards(combined.slice(0, getEvenCardLimit(combined.length)), 2);
+  }, [achievements, alumniArticles]);
+  const visibleFeaturedArticles = featuredArticleGroups[featuredPage] ?? featuredArticleGroups[0] ?? [];
+
   useEffect(() => {
-    const pageCount = Math.ceil(Math.min(achievements.length + alumniArticles.length, 6) / 2);
+    const pageCount = featuredArticleGroups.length;
     if (pageCount <= 1) return undefined;
     const timer = window.setInterval(() => {
       setFeaturedPage((current) => (current + 1) % pageCount);
     }, 3600);
     return () => window.clearInterval(timer);
-  }, [achievements.length, alumniArticles.length]);
+  }, [featuredArticleGroups.length]);
 
-  const exploreItems = getExploreItems(t);
-  const theme = useTheme();
-  const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
-  const newsCards = rawNews.map(normalizeNews).filter(Boolean).map(toCardShape).filter(Boolean);
-  const featuredArticleGroups = useMemo(() => {
-    const combined = [...alumniArticles, ...achievements]
-      .filter(Boolean)
-      .sort((left, right) => new Date(right.updatedAt ?? right.createdAt ?? right.publishedAt ?? 0) - new Date(left.updatedAt ?? left.createdAt ?? left.publishedAt ?? 0))
-      .slice(0, 6)
-      .map(toCardShape)
-      .filter(Boolean);
-
-    return buildPagedCards(combined, 2);
-  }, [achievements, alumniArticles]);
-  const visibleFeaturedArticles = featuredArticleGroups[featuredPage] ?? featuredArticleGroups[0] ?? [];
+  useEffect(() => {
+    const pageCount = eventCards.length;
+    if (pageCount <= 1) return undefined;
+    const timer = window.setInterval(() => {
+      setEventPage((current) => (current + 1) % pageCount);
+    }, 4200);
+    return () => window.clearInterval(timer);
+  }, [eventCards.length]);
   const repeatedPartners = [...PARTNER_LOGOS, ...PARTNER_LOGOS];
   const softSectionBg = theme.palette.mode === "dark"
     ? "background.paper"
     : alpha(theme.palette.primary.main, 0.035);
   const plainSectionBg = "background.default";
-  const featuredAlumniBg = theme.palette.mode === "dark" ? "primary.dark" : "primary.main";
+  const featuredAlumniBg = "accent.main";
 
   const activeHeroSlides = useMemo(() => {
     if (!organization) return HERO_SLIDES;
@@ -234,7 +463,9 @@ const HomePage = () => {
         if (Array.isArray(b?.hero_slides) && b.hero_slides.length > 0) customSlides = b.hero_slides;
         else if (Array.isArray(b?.heroSlides) && b.heroSlides.length > 0) customSlides = b.heroSlides;
       }
-    } catch (e) {}
+    } catch {
+      customSlides = null;
+    }
 
     if (!customSlides && organization.featuresConfig) {
       try {
@@ -242,7 +473,9 @@ const HomePage = () => {
         const b = f?.brand_config || f?.brandConfig;
         if (Array.isArray(b?.hero_slides) && b.hero_slides.length > 0) customSlides = b.hero_slides;
         else if (Array.isArray(b?.heroSlides) && b.heroSlides.length > 0) customSlides = b.heroSlides;
-      } catch (e) {}
+      } catch {
+        customSlides = null;
+      }
     }
 
     if (customSlides && customSlides.length > 0) {
@@ -374,24 +607,45 @@ const HomePage = () => {
                 </Typography>
               </RevealBox>
               <RevealBox delay={220} sx={{ display: "flex", justifyContent: { xs: "center", md: "flex-start" } }}>
-                <Button
-                  onClick={() => navigate("/introduction")}
-                  variant="outlined"
-                  size="large"
-                  sx={{
-                    borderColor: "#fff",
-                    color: "#fff",
-                    fontWeight: 600,
-                    px: { xs: 2.5, md: 3 },
-                    "&:hover": {
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ width: { xs: "100%", sm: "auto" } }}>
+                  <Button
+                    onClick={() => navigate("/introduction")}
+                    variant="outlined"
+                    size="large"
+                    sx={{
+                      width: { xs: "100%", sm: 150 },
                       borderColor: "#fff",
                       color: "#fff",
-                      backgroundColor: "rgba(255,255,255,0.1)",
-                    },
-                  }}
-                >
-                  {t("home:hero_intro_btn")}
-                </Button>
+                      fontWeight: 700,
+                      px: { xs: 2.5, md: 3 },
+                      "&:hover": {
+                        borderColor: "#fff",
+                        color: "#fff",
+                        backgroundColor: "rgba(255,255,255,0.14)",
+                      },
+                    }}
+                  >
+                    {t("home:hero_intro_btn")}
+                  </Button>
+                  <Button
+                    onClick={handleExploreClick}
+                    variant="contained"
+                    size="large"
+                    sx={{
+                      width: { xs: "100%", sm: 150 },
+                      bgcolor: "#fff",
+                      color: "secondary.main",
+                      fontWeight: 700,
+                      px: { xs: 2.5, md: 3 },
+                      "&:hover": {
+                        bgcolor: "#fff",
+                        color: "secondary.main",
+                      },
+                    }}
+                  >
+                    {t("home:hero_explore_btn")}
+                  </Button>
+                </Stack>
               </RevealBox>
             </Box>
             {isDesktop && (
@@ -425,7 +679,7 @@ const HomePage = () => {
       </Box>
 
       {/* Khám phá */}
-      <Box sx={{ py: { xs: 7, sm: 9, md: 12 }, backgroundColor: softSectionBg }}>
+      <Box ref={exploreSectionRef} sx={{ py: { xs: 7, sm: 9, md: 12 }, backgroundColor: softSectionBg }}>
         <Container sx={{ px: { xs: 2, sm: 3 } }}>
           <RevealBox>
             <Typography
@@ -550,6 +804,284 @@ const HomePage = () => {
         </Container>
       </Box>
 
+      {/* Sự kiện nổi bật */}
+      <Box sx={{ py: { xs: 5.5, sm: 7, md: 8 }, backgroundColor: "primary.main" }}>
+        <Container sx={{ px: { xs: 2, sm: 3 } }}>
+          {eventsPending ? (
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", md: "minmax(0, 1.28fr) minmax(0, 0.72fr)" },
+                gap: { xs: 3, md: 6.5 },
+                alignItems: "center",
+                minHeight: { xs: 270, md: 300 },
+              }}
+            >
+              <Stack spacing={2}>
+                <Skeleton variant="text" sx={{ width: "70%", height: 64 }} />
+                <Skeleton variant="text" sx={{ width: "100%", height: 28 }} />
+                <Skeleton variant="text" sx={{ width: "85%", height: 28 }} />
+                <Skeleton variant="rounded" sx={{ width: 180, height: 44, borderRadius: 1 }} />
+              </Stack>
+              <Skeleton variant="rounded" sx={{ height: { xs: 245, md: 280 }, borderRadius: 2 }} />
+            </Box>
+          ) : visibleEvent ? (
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", md: "minmax(0, 1.28fr) minmax(0, 0.72fr)" },
+                gap: { xs: 3, md: 6.5 },
+                alignItems: "center",
+              }}
+            >
+              <RevealBox>
+                <Stack
+                  spacing={2.25}
+                  sx={{
+                    textAlign: { xs: "center", md: "left" },
+                    alignItems: { xs: "center", md: "flex-start" },
+                  }}
+                >
+                  <Typography
+                    variant="h1"
+                    sx={{
+                      ...mainSectionTitleSx,
+                      mb: 0,
+                      color: "#fff",
+                    }}
+                  >
+                    {t("home:events_title")}
+                  </Typography>
+                  <Typography variant="body1" sx={{ maxWidth: 640, lineHeight: 1.65, color: alpha("#fff", 0.88) }}>
+                    {t("home:events_desc")}
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    color="inherit"
+                    endIcon={<ArrowForwardIcon />}
+                    onClick={() => navigate("/events")}
+                    sx={{
+                      px: 2.5,
+                      fontWeight: 800,
+                      bgcolor: "#fff",
+                      color: "primary.main",
+                      "&:hover": { bgcolor: "#fff", color: "primary.main" },
+                    }}
+                  >
+                    {t("home:events_all_cta")}
+                  </Button>
+                </Stack>
+              </RevealBox>
+              <RevealBox
+                key={`${eventPage}-${visibleEvent.id}`}
+                delay={120}
+                revealAnimation={alumniFlipIn}
+                sx={{ display: "flex", justifyContent: { xs: "center", md: "flex-end" } }}
+              >
+                <EventFeaturedCard
+                  event={visibleEvent}
+                  onClick={() => navigate(`/article/event/${visibleEvent.id}`)}
+                />
+              </RevealBox>
+            </Box>
+          ) : (
+            <RevealBox>
+              <Card
+                elevation={0}
+                sx={{
+                  minHeight: 220,
+                  borderRadius: 2,
+                  border: 1,
+                  borderColor: "divider",
+                  bgcolor: "background.paper",
+                  display: "grid",
+                  placeItems: "center",
+                  textAlign: "center",
+                  px: 3,
+                }}
+              >
+                <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 560, lineHeight: 1.8 }}>
+                  {t("home:events_empty")}
+                </Typography>
+              </Card>
+            </RevealBox>
+          )}
+        </Container>
+      </Box>
+
+      {/* Kết nối và đồng hành */}
+      <Box sx={{ py: { xs: 7, sm: 9, md: 12 }, backgroundColor: "background.paper" }}>
+        <Container sx={{ px: { xs: 2, sm: 3 } }}>
+          <RevealBox>
+            <Box sx={{ maxWidth: 820, ml: "auto", mb: { xs: 3.5, md: 5 }, textAlign: { xs: "center", md: "right" } }}>
+              <Typography variant="h1" color="accent.main" sx={{ ...mainSectionTitleSx, mb: 1.5 }}>
+                {t("home:connection_title_line_1")}
+                <Box component="span" sx={{ display: "block" }}>
+                  {t("home:connection_title_line_2")}
+                </Box>
+              </Typography>
+              <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.65 }}>
+                {t("home:connection_desc")}
+              </Typography>
+            </Box>
+          </RevealBox>
+          <Stack spacing={{ xs: 2.5, md: 3 }}>
+            <RevealBox revealAnimation={alumniFlipIn}>
+              <Card
+                elevation={0}
+                sx={{
+                  p: { xs: 2.5, md: 3.5 },
+                  borderRadius: 2,
+                  border: 1,
+                  borderColor: (theme) => alpha(theme.palette.primary.main, theme.palette.mode === "dark" ? 0.36 : 0.18),
+                  bgcolor: (theme) => alpha(theme.palette.primary.main, theme.palette.mode === "dark" ? 0.16 : 0.06),
+                  height: "100%",
+                }}
+              >
+                <Box
+                  sx={{
+                    display: "grid",
+                    gridTemplateColumns: { xs: "1fr", md: "minmax(0, 0.85fr) minmax(0, 1.15fr)" },
+                    gap: { xs: 2.5, md: 4 },
+                    alignItems: "center",
+                  }}
+                >
+                  <Box>
+                    <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1 }}>
+                      <SchoolOutlinedIcon sx={{ color: "primary.main", fontSize: 34 }} />
+                      <Typography variant="h3" color="primary.main" sx={{ fontWeight: 800 }}>
+                        {t("home:mentorship_label")}
+                      </Typography>
+                    </Stack>
+                    <Typography variant="subtitle1" color="primary.main" sx={{ fontWeight: 800, mb: 1 }}>
+                      {t("home:mentorship_preview_title")}
+                    </Typography>
+                    <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.65, mb: 2.5 }}>
+                      {t("home:mentorship_preview_desc")}
+                    </Typography>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      endIcon={<ArrowForwardIcon />}
+                      onClick={() => navigate("/mentorship")}
+                      sx={{ fontWeight: 800 }}
+                    >
+                      {isAuthenticated ? t("home:mentorship_auth_cta") : t("home:mentorship_guest_cta")}
+                    </Button>
+                  </Box>
+                  <Stack spacing={2} divider={<Divider flexItem />}>
+                    <FeatureStep number="01" title={t("home:mentorship_step_1_title")} description={t("home:mentorship_step_1_desc")} />
+                    <FeatureStep number="02" title={t("home:mentorship_step_2_title")} description={t("home:mentorship_step_2_desc")} />
+                    <FeatureStep number="03" title={t("home:mentorship_step_3_title")} description={t("home:mentorship_step_3_desc")} />
+                  </Stack>
+                </Box>
+              </Card>
+            </RevealBox>
+            <RevealBox delay={100} revealAnimation={alumniFlipIn}>
+              <Card
+                elevation={0}
+                sx={{
+                  p: { xs: 2.5, md: 3 },
+                  borderRadius: 2,
+                  border: 1,
+                  borderColor: (theme) => alpha(theme.palette.secondary.main, theme.palette.mode === "dark" ? 0.34 : 0.16),
+                  bgcolor: "background.paper",
+                  height: "100%",
+                }}
+              >
+                <Stack spacing={2.25}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                    <ForumOutlinedIcon sx={{ color: "secondary.main", fontSize: 34, flexShrink: 0 }} />
+                    <Box>
+                      <Typography variant="h3" color="secondary.main" sx={{ fontWeight: 800 }}>
+                        {t("home:forum_preview_title")}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7 }}>
+                        {t("home:forum_preview_desc")}
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(3, minmax(0, 1fr))" }, gap: 2 }}>
+                    {[
+                      ["forum_category_study", "warning"],
+                      ["forum_category_career", "accent"],
+                      ["forum_category_alumni", "primary"],
+                    ].map(([key, color]) => (
+                      <Card
+                        key={key}
+                        elevation={0}
+                        sx={{
+                          p: 2,
+                          borderRadius: 2,
+                          border: 1,
+                          borderColor: "divider",
+                          bgcolor: "background.default",
+                          minHeight: 150,
+                          transition: "transform 0.22s ease, border-color 0.22s ease",
+                          "&:hover": { transform: "translateY(-5px)", borderColor: `${color}.main` },
+                        }}
+                      >
+                        <Stack spacing={1.25}>
+                          <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: `${color}.main`, flexShrink: 0 }} />
+                          <Box>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary" }}>
+                              {t(`home:${key}_title`)}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.65 }}>
+                              {t(`home:${key}_desc`)}
+                            </Typography>
+                          </Box>
+                        </Stack>
+                      </Card>
+                    ))}
+                  </Box>
+                  <Button variant="contained" color="secondary" endIcon={<ArrowForwardIcon />} onClick={() => navigate("/forum")} sx={{ alignSelf: "flex-start", fontWeight: 800 }}>
+                    {t("home:forum_preview_cta")}
+                  </Button>
+                </Stack>
+              </Card>
+            </RevealBox>
+          </Stack>
+        </Container>
+      </Box>
+
+      {/* Phát triển cùng AlumVerse */}
+      <Box sx={{ py: { xs: 7, sm: 9, md: 12 }, backgroundColor: softSectionBg }}>
+        <Container sx={{ px: { xs: 2, sm: 3 } }}>
+          <RevealBox>
+            <HomeSectionHeader
+              title={t("home:development_title")}
+              description={t("home:development_desc")}
+              titleColor="secondary.main"
+            />
+          </RevealBox>
+          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))" }, gap: { xs: 2, md: 3 } }}>
+            <RevealBox revealAnimation={alumniFlipIn}>
+              <GatewayCard
+                icon={<MenuBookOutlinedIcon />}
+                color="primary"
+                title={t("home:learning_gateway_title")}
+                description={t("home:learning_gateway_desc")}
+                bullets={[t("home:learning_bullet_docs"), t("home:learning_bullet_subjects"), t("home:learning_bullet_orientation")]}
+                cta={t("home:learning_gateway_cta")}
+                onClick={() => navigate("/development/academics")}
+              />
+            </RevealBox>
+            <RevealBox delay={100} revealAnimation={alumniFlipIn}>
+              <GatewayCard
+                icon={<WorkOutlineOutlinedIcon />}
+                color="accent"
+                title={t("home:jobs_gateway_title")}
+                description={t("home:jobs_gateway_desc")}
+                bullets={[t("home:jobs_bullet_posts"), t("home:jobs_bullet_internship"), t("home:jobs_bullet_apply")]}
+                cta={t("home:jobs_gateway_cta")}
+                onClick={() => navigate("/development/jobs")}
+              />
+            </RevealBox>
+          </Box>
+        </Container>
+      </Box>
+
       {/* Tin tức */}
       <Box sx={{ py: { xs: 7, sm: 9, md: 12 }, backgroundColor: plainSectionBg }}>
         <Container sx={{ px: { xs: 2, sm: 3 } }}>
@@ -579,7 +1111,7 @@ const HomePage = () => {
             useFlexGap
             spacing={{ xs: 2, sm: 3 }}
           >
-            {newsCards.map((article, index) => (
+            {visibleNewsCards.map((article, index) => (
                 <RevealBox
                   key={article.id}
                   delay={index * 90}
@@ -635,7 +1167,10 @@ const HomePage = () => {
                     textAlign: { xs: "center", md: "left" },
                   }}
                 >
-                  {t("home:section_featured_alumni")}
+                  {t("home:section_featured_alumni_line_1")}
+                  <Box component="span" sx={{ display: "block" }}>
+                    {t("home:section_featured_alumni_line_2")}
+                  </Box>
                 </Typography>
               </RevealBox>
               <RevealBox delay={100}>
@@ -646,12 +1181,14 @@ const HomePage = () => {
               <RevealBox delay={180}>
                 <Button
                   variant="contained"
-                  color="accent"
                   endIcon={<ArrowForwardIcon />}
                   onClick={() => navigate("/honors/achievements")}
                   sx={{
                     px: 2.5,
                     fontWeight: 700,
+                    bgcolor: "#fff",
+                    color: "accent.main",
+                    "&:hover": { bgcolor: "#fff", color: "accent.main" },
                   }}
                 >
                   {t("home:featured_alumni_cta")}
@@ -769,7 +1306,7 @@ const HomePage = () => {
 
       {/* Các tổ chức trên hệ thống */}
       {organizations.length > 0 && (
-        <Box sx={{ py: { xs: 8, sm: 10, md: 12 }, backgroundColor: plainSectionBg, overflow: "hidden" }}>
+        <Box sx={{ py: { xs: 8, sm: 10, md: 12 }, backgroundColor: "background.paper", overflow: "hidden" }}>
           <Container sx={{ px: { xs: 2, sm: 3 } }}>
             <RevealBox>
               <Typography
@@ -804,13 +1341,21 @@ const HomePage = () => {
                 }}
               >
                 {[...organizations, ...organizations].map((org, idx) => (
+                  (() => {
+                    const departmentName = String(org.departmentName || '').trim();
+                    const displayName = String(org.name || '').trim();
+                    const slugName = String(org.slug || '').trim();
+                    const primaryName = departmentName || displayName;
+                    const secondaryName = slugName || (departmentName ? displayName : '');
+
+                    return (
                   <Card
                     key={`${org.id}-${idx}`}
                     component="a"
                     href={`/${org.slug}`}
                     sx={{
-                      width: 220,
-                      minHeight: 130,
+                      width: { xs: 240, sm: 260 },
+                      minHeight: 168,
                       display: "flex",
                       flexDirection: "column",
                       alignItems: "center",
@@ -830,35 +1375,52 @@ const HomePage = () => {
                     }}
                   >
                     {org.logoUrl ? (
-                      <>
-                        <Box
-                          component="img"
-                          src={org.logoUrl}
-                          alt={org.name}
-                          sx={{ height: 60, maxWidth: "100%", objectFit: "contain", mb: 1.5 }}
-                        />
+                      <Box
+                        component="img"
+                        src={org.logoUrl}
+                        alt={displayName}
+                        sx={{ height: 64, maxWidth: "100%", objectFit: "contain", mb: 1.25 }}
+                      />
+                    ) : (
+                      <Logo disabledLink sx={{ width: 64, height: 64, mb: 1.25 }} />
+                    )}
+                    <Typography
+                      variant="subtitle1"
+                      textAlign="center"
+                      fontWeight={800}
+                      color="text.primary"
+                      sx={{
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                        lineHeight: 1.25,
+                      }}
+                    >
+                      {primaryName}
+                    </Typography>
+                    {secondaryName && (
                         <Typography
-                          variant="body2"
+                          variant="caption"
                           textAlign="center"
                           fontWeight={600}
-                          color="text.secondary"
-                          sx={{
-                            display: "-webkit-box",
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: "vertical",
-                            overflow: "hidden",
-                            lineHeight: 1.4,
-                          }}
-                        >
-                          {org.name}
-                        </Typography>
-                      </>
-                    ) : (
-                      <Typography variant="subtitle1" textAlign="center" fontWeight={600} color="primary.main">
-                        {org.name}
+                        color="text.secondary"
+                        sx={{
+                          display: "-webkit-box",
+                          WebkitLineClamp: 1,
+                          WebkitBoxOrient: "vertical",
+                          overflow: "hidden",
+                          lineHeight: 1.35,
+                          mt: 0.5,
+                          maxWidth: "100%",
+                        }}
+                      >
+                        {secondaryName}
                       </Typography>
                     )}
                   </Card>
+                    );
+                  })()
                 ))}
               </Box>
             </Box>

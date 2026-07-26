@@ -67,7 +67,7 @@ const NetworkBlockedMemberCard = ({
           <ContributeGuardTooltip required="basic" placement="left">
             <Button
               variant="outlined"
-              color="inherit"
+              color="error"
               size="small"
               type="button"
               onClick={handleUnblock}
