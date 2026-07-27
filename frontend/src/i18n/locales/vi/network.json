@@ -247,6 +247,17 @@
     "access_blocked_title": "Cần xác minh cựu sinh viên để trò chuyện",
     "message_too_long": "Tin nhắn không được vượt quá {{max}} ký tự.",
     "char_count": "{{count}}/{{max}}",
-    "char_count_hint": "giới hạn ký tự"
+    "char_count_hint": "giới hạn ký tự",
+    "typing_one": "{{name}} đang soạn tin...",
+    "typing_two": "{{name1}} và {{name2}} đang soạn tin...",
+    "typing_others": "{{name}} và {{count}} người khác đang soạn tin...",
+    "mention_all": "Tất cả mọi người",
+    "mention_all_hint": "Thông báo cho mọi người trong nhóm",
+    "gif_picker": "Chọn ảnh GIF",
+    "gif_search_placeholder": "Tìm ảnh GIF trên GIPHY",
+    "gif_error": "Không tải được GIF. Vui lòng thử lại.",
+    "gif_empty": "Không tìm thấy GIF phù hợp.",
+    "gif_powered_by": "Cung cấp bởi GIPHY",
+    "preview_gif": "[GIF]"
   }
 }

@@ -151,6 +151,7 @@ public class ChatWebSocketHandler implements WebSocketHandler {
             return switch (type) {
                 case "JOIN_GROUP" -> handleJoinGroup(session, memberId, json);
                 case "SEND_MESSAGE" -> handleSendMessage(session, memberId, json);
+                case "TYPING" -> handleTyping(session, memberId, json);
                 case "LEAVE_GROUP" -> handleLeaveGroup(session, json);
                 default -> {
                     log.warn("Unknown message type: {}", type);
@@ -210,6 +211,49 @@ public class ChatWebSocketHandler implements WebSocketHandler {
                     log.error("Error sending message", error);
                     return sendError(session, "Failed to send message: " + error.getMessage());
                 });
+    }
+
+    /**
+     * Relay a lightweight "is typing" signal to every other live session in the group.
+     * Purely ephemeral: nothing is persisted and no SSE fan-out happens, so it stays cheap
+     * even under rapid keystrokes. The sender's own session is excluded.
+     */
+    private Mono<Void> handleTyping(WebSocketSession session, Long memberId, JsonNode json) {
+        Long groupId = json.get("groupId").asLong();
+        boolean isTyping = json.has("isTyping") && json.get("isTyping").asBoolean();
+
+        Set<WebSocketSession> sessions = groupToSessions.get(groupId);
+        if (sessions == null || sessions.isEmpty()) {
+            return Mono.empty();
+        }
+
+        int senderId = memberId.intValue();
+        UserDisplayInfo cached = senderInfoCache.getIfPresent(senderId);
+        Mono<UserDisplayInfo> senderInfoMono = cached != null
+                ? Mono.just(cached)
+                : userProfileRepository.findDisplayInfoByUserId(senderId)
+                        .defaultIfEmpty(UserDisplayInfo.builder().userId(senderId).build())
+                        .doOnNext(info -> senderInfoCache.put(senderId, info));
+
+        return senderInfoMono.flatMap(senderInfo -> {
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("groupId", groupId);
+            payload.put("memberId", memberId);
+            payload.put("senderName", senderInfo.getFullName());
+            payload.put("isTyping", isTyping);
+
+            String eventJson = JsonUtils.toJson(Map.of(
+                    "type", "TYPING",
+                    "payload", payload
+            ));
+
+            return Mono.fromRunnable(() -> sessions.forEach(peer -> {
+                if (peer != session && peer.isOpen()) {
+                    peer.send(Mono.just(peer.textMessage(eventJson)))
+                            .subscribe(null, error -> log.error("Error sending typing signal to session {}", peer.getId(), error));
+                }
+            })).then();
+        });
     }
 
     /**
