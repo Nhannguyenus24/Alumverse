@@ -46,6 +46,7 @@ public final class ArticleTopicCatalog {
             ),
             Channel.ACHIEVEMENT, Set.of(
                     "faculty_honor",
+                    "student_honor",
                     "research",
                     "research_publication",
                     "competition_award",

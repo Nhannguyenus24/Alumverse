@@ -47,6 +47,7 @@ export const getTopicsByChannel = (t) => ({
   ],
   achievement: [
     { value: 'faculty_honor', label: t('article:topics.faculty_honor') },
+    { value: 'student_honor', label: t('article:topics.student_honor') },
     { value: 'research', label: t('article:topics.research') },
     { value: 'research_publication', label: t('article:topics.research_publication') },
     { value: 'competition_award', label: t('article:topics.competition_award') },
