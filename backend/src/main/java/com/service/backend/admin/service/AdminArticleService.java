@@ -215,7 +215,7 @@ public class AdminArticleService {
                                 updated.getMemberId(),
                                 "Bài vinh danh đã được duyệt",
                                 "Bài viết \"" + updated.getTitle() + "\" đã được duyệt và hiển thị công khai.",
-                                "/honors/achievements"
+                                "/article/achievement/" + updated.getId()
                         );
                     } else if (Status.PENDING.equals(status)) {
                         notificationService.createNotificationAsync(
@@ -245,7 +245,7 @@ public class AdminArticleService {
                                 updated.getUploaderMemberId(),
                                 "Cơ hội học tập đã được duyệt",
                                 "Bài viết \"" + updated.getTitle() + "\" đã được duyệt và hiển thị công khai.",
-                                "/development/academics"
+                                "/article/learning/" + updated.getId()
                         );
                     } else if (Status.PENDING.equals(status)) {
                         notificationService.createNotificationAsync(

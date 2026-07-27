@@ -16,7 +16,7 @@ import { formatDate } from "../../utils/dateFormatter";
 const CAMPAIGN_DESCRIPTION_MAX_CHARS = 120;
 const LOGO_FALLBACK_URL = "https://placehold.co/800x450/eef3ff/0f3a7a?text=Fund";
 
-const ArticleDonationCard = ({ campaign, onNavigate, onEdit, onClose, isAdmin }) => {
+const ArticleDonationCard = ({ campaign, onNavigate, onEdit, onClose, isAdmin, fallbackImage = null }) => {
   const { t } = useTranslation(['common', 'donation']);
   const now = dayjs();
   const startTime = campaign.timeStarted ? dayjs(campaign.timeStarted) : null;
@@ -86,7 +86,7 @@ const ArticleDonationCard = ({ campaign, onNavigate, onEdit, onClose, isAdmin })
       >
         <Box
           component="img"
-          src={campaign.logoUrl || LOGO_FALLBACK_URL}
+          src={campaign.logoUrl || fallbackImage || LOGO_FALLBACK_URL}
           alt={campaign.name}
           sx={{
             width: "100%",

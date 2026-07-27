@@ -20,6 +20,7 @@ import { ContributeGuardTooltip } from '../../components/ContributeGuard';
 import { usePublishedAchievements } from '../../hooks/articles/usePublishedAchievements';
 import { usePublishedAlumniPosts } from '../../hooks/articles/usePublishedAlumniPosts';
 import { toCardShape } from '../../hooks/articles/toCardShape';
+import { useOrganization } from '../../hooks/useOrganization';
 import apiClient from '../../utils/axios';
 import { deleteArticleByChannel, getArticleAdminEditPath } from '../../utils/articleAdminActions';
 import {
@@ -28,6 +29,7 @@ import {
   getArticleFilterConfig,
 } from '../../utils/articleListFilters';
 import { getHonorsSidebarItems } from '../../constants/honorsNav';
+import { getOrganizationHeroBannerUrl } from '../../utils/organizationBrand';
 import {
   ScrollReveal,
   ScrollRevealGroup,
@@ -40,6 +42,8 @@ const HonorsPage = () => {
   const navigate = useOrgNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const queryClient = useQueryClient();
+  const { organization } = useOrganization();
+  const cardFallbackImage = useMemo(() => getOrganizationHeroBannerUrl(organization), [organization]);
   const { isAuthenticated } = useAuth();
   const { canContribute, isOrgManager } = useCanContribute();
   const isAdmin = isAuthenticated && isOrgManager;
@@ -62,11 +66,11 @@ const HonorsPage = () => {
   );
 
   const [featured, ...rest] = filteredArticles;
-  const featuredCard = featured ? toCardShape(featured) : null;
+  const featuredCard = featured ? toCardShape(featured, cardFallbackImage) : null;
   const visibleAlumniArticles = rest.filter((article) => article.channel === 'alumni').slice(0, 9);
   const visibleAchievementArticles = rest.filter((article) => article.channel === 'achievement').slice(0, 9);
-  const alumniCards = visibleAlumniArticles.map(toCardShape);
-  const achievementCards = visibleAchievementArticles.map(toCardShape);
+  const alumniCards = visibleAlumniArticles.map((article) => toCardShape(article, cardFallbackImage));
+  const achievementCards = visibleAchievementArticles.map((article) => toCardShape(article, cardFallbackImage));
 
   const openArticle = (article) => {
     if (!article?.id) return;

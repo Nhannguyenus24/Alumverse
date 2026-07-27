@@ -10,11 +10,13 @@ const formatDateRange = (start, end) => {
   return `${sText} - ${eText}`;
 };
 
-export const toEventCardShape = (event) => {
+const resolveCardImage = (primary, fallback) => primary || fallback || "/placeholder-image.png";
+
+export const toEventCardShape = (event, fallbackImage = null) => {
   if (!event) return null;
   const raw = event.content ?? "";
   const plain = normalizePreviewText(raw);
-  const description = plain.length > 180 ? `${plain.slice(0, 180)}…` : plain;
+  const description = plain.length > 260 ? `${plain.slice(0, 260)}…` : plain;
 
   return {
     id: event.id,
@@ -29,6 +31,6 @@ export const toEventCardShape = (event) => {
     startTime: event.startTime ?? event.eventDate,
     endTime: event.endTime ?? event.eventEndDate,
     description,
-    image: event.thumbnailUrl ?? "/placeholder-image.png",
+    image: resolveCardImage(event.thumbnailUrl, fallbackImage),
   };
 };

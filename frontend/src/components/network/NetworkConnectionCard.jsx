@@ -145,7 +145,7 @@ const NetworkConnectionCard = ({
                   </ListItemIcon>
                   <ListItemText
                     primary={t('network:block_user')}
-                    primaryTypographyProps={{ variant: 'body2' }}
+                    primaryTypographyProps={{ variant: 'body2', sx: { color: 'error.main' } }}
                   />
                 </MenuItem>
               )}

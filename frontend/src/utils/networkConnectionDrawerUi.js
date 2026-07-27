@@ -91,6 +91,7 @@ export function resolveConnectionDrawerState(connectionStatus, t) {
 
   if (status === CONVERSATION_REQUEST_STATUS.REJECTED) {
     const cooldownExpired = isCooldownExpired(cooldownUntil);
+    const rejectedByCurrentUser = connectionStatus?.requestDirection === 'REJECTED_INCOMING';
 
     if (cooldownExpired) {
       return {
@@ -109,7 +110,12 @@ export function resolveConnectionDrawerState(connectionStatus, t) {
     return {
       banner: {
         severity: 'warning',
-        text: t('network:drawer_banner_rejected', { datetime: formatDateTime(cooldownUntil, '') }),
+        text: t(
+          rejectedByCurrentUser
+            ? 'network:drawer_banner_rejected_by_me'
+            : 'network:drawer_banner_rejected_by_peer',
+          { datetime: formatDateTime(cooldownUntil, '') },
+        ),
       },
       canCompose: false,
       singleMessageOnly: false,

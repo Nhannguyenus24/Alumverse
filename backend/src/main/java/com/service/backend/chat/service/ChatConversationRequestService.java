@@ -81,14 +81,14 @@ public class ChatConversationRequestService {
         return chatConversationRequestRepository
                 .findByMemberPair(memberLowId, memberHighId)
                 .flatMap(request -> buildConnectionStatusResponse(request, currentMemberId))
-                .defaultIfEmpty(new ConversationRequestConnectionStatusResponse(null, null, null, false));
+                .defaultIfEmpty(new ConversationRequestConnectionStatusResponse(null, null, null, null, false));
     }
 
     private Mono<ConversationRequestConnectionStatusResponse> buildConnectionStatusResponse(
             ChatConversationRequest request,
             Long currentMemberId) {
         if (request.getStatus() == ConversationRequestStatus.DISCONNECTED) {
-            return Mono.just(new ConversationRequestConnectionStatusResponse(null, null, null, false));
+            return Mono.just(new ConversationRequestConnectionStatusResponse(null, null, null, null, false));
         }
 
         return chatMessageRepository
@@ -109,7 +109,23 @@ public class ChatConversationRequestService {
                 request.getStatus(),
                 request.getCooldownUntil(),
                 message != null ? toLatestMessageResponse(message) : null,
+                resolveRequestDirection(request, currentMemberId),
                 incoming);
+    }
+
+    private String resolveRequestDirection(ChatConversationRequest request, Long currentMemberId) {
+        if (request.getStatus() == ConversationRequestStatus.PENDING) {
+            return currentMemberId.equals(request.getTargetMemberId()) ? "INCOMING" : "OUTGOING";
+        }
+        if (request.getStatus() == ConversationRequestStatus.REJECTED) {
+            return currentMemberId.equals(request.getTargetMemberId())
+                    ? "REJECTED_INCOMING"
+                    : "REJECTED_OUTGOING";
+        }
+        if (request.getStatus() == ConversationRequestStatus.ACCEPTED) {
+            return "ACCEPTED";
+        }
+        return null;
     }
 
     private ConversationRequestLatestMessageResponse toLatestMessageResponse(ChatMessage message) {
@@ -196,11 +212,45 @@ public class ChatConversationRequestService {
                                     saved.getRequesterMemberId(),
                                     saved.getTargetMemberId())
                                     .thenReturn(saved))
+                            .flatMap(acceptedRequest -> notifyRequesterOfAcceptedRequest(
+                                    acceptedRequest.getRequesterMemberId(),
+                                    acceptedRequest.getTargetMemberId())
+                                    .thenReturn(acceptedRequest))
                             .doOnSuccess(updated -> log.info(
                                     "Conversation request accepted: id={}, requester={}, target={}",
                                     updated.getId(),
                                     updated.getRequesterMemberId(),
                                     updated.getTargetMemberId()));
+                });
+    }
+
+    /**
+     * Notifies the original requester that the recipient accepted their connection request.
+     * Rejections intentionally stay silent; the rejected state is only surfaced in chat/cooldown UI.
+     * Best-effort so a notification failure cannot make the accept action fail.
+     */
+    private Mono<Void> notifyRequesterOfAcceptedRequest(Long requesterMemberId, Long accepterMemberId) {
+        return userProfileRepository.findDisplayInfoByUserId(accepterMemberId.intValue())
+                .map(info -> StringUtils.hasText(info.getFullName())
+                        ? info.getFullName().trim()
+                        : "Người dùng " + accepterMemberId)
+                .defaultIfEmpty("Người dùng " + accepterMemberId)
+                .doOnNext(accepterName -> {
+                    String title = "Yêu cầu kết nối đã được chấp nhận";
+                    String messageText = accepterName + " đã chấp nhận yêu cầu kết nối của bạn.";
+                    String link = "/network/connections";
+                    notificationService.createNotificationAsync(requesterMemberId.intValue(), title, messageText, link);
+                    sseService.sendToUser(requesterMemberId, "connection-request-accepted", Map.of(
+                            "title", title,
+                            "message", messageText,
+                            "link", link,
+                            "accepterMemberId", accepterMemberId));
+                })
+                .then()
+                .onErrorResume(error -> {
+                    log.warn("Failed to notify requester {} that connection request was accepted by {}",
+                            requesterMemberId, accepterMemberId, error);
+                    return Mono.empty();
                 });
     }
 
@@ -428,7 +478,11 @@ public class ChatConversationRequestService {
                                 "Chat group not found for conversation request: " + saved.getChatGroupId())))
                         .flatMap(group -> addBothMembersToGroup(
                                 group, saved.getRequesterMemberId(), saved.getTargetMemberId())
-                                .thenReturn(saved.getId())))
+                                .thenReturn(saved))
+                        .flatMap(acceptedRequest -> notifyRequesterOfAcceptedRequest(
+                                acceptedRequest.getRequesterMemberId(),
+                                currentMemberId)
+                                .thenReturn(acceptedRequest.getId())))
                 .doOnSuccess(id -> log.info(
                         "Conversation auto-connected via mutual request: id={}, requester={}, acceptingSender={}",
                         id, existing.getRequesterMemberId(), currentMemberId));

@@ -3,7 +3,6 @@ import {
   createBrowserRouter,
   Navigate,
   Outlet,
-  useLocation,
 } from "react-router";
 import { Box, CircularProgress } from "@mui/material";
 import MainLayout from "../layouts/MainLayout";
@@ -29,6 +28,9 @@ if (typeof window !== "undefined") {
 
 // Public pages
 const HomePage = Loadable(lazy(() => import("../pages/public/HomePage")));
+const OrganizationSelectionPage = Loadable(
+  lazy(() => import("../pages/public/OrganizationSelectionPage")),
+);
 const IntroducePage = Loadable(
   lazy(() => import("../pages/public/IntroducePage")),
 );
@@ -1332,7 +1334,7 @@ export const router = createBrowserRouter([
   },
   {
     path: "/",
-    element: <Navigate to="/404" replace />,
+    element: <OrganizationSelectionPage />,
   },
   {
     path: "/404",

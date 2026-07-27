@@ -133,11 +133,11 @@ const NetworkIncomingRequestsPage = () => {
           confirmText: t('incoming_accept_dialog_confirm'),
           confirmColor: 'primary',
         }
-      : {
+        : {
           title: t('incoming_reject_dialog_title'),
           message: t('incoming_reject_dialog_message'),
           confirmText: t('incoming_reject_dialog_confirm'),
-          confirmColor: 'primary',
+          confirmColor: 'warning',
         };
 
   const detailRequest =

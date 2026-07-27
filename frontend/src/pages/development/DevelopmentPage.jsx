@@ -19,6 +19,7 @@ import { ContributeGuardTooltip } from '../../components/ContributeGuard';
 import { usePublishedJobs } from '../../hooks/articles/usePublishedJobs';
 import { usePublishedLearning } from '../../hooks/articles/usePublishedLearning';
 import { toCardShape } from '../../hooks/articles/toCardShape';
+import { useOrganization } from '../../hooks/useOrganization';
 import apiClient from '../../utils/axios';
 import { deleteArticleByChannel, getArticleAdminEditPath } from '../../utils/articleAdminActions';
 import {
@@ -27,6 +28,7 @@ import {
   getArticleFilterConfig,
 } from '../../utils/articleListFilters';
 import { getDevelopmentSidebarItems } from '../../constants/developmentNav';
+import { getOrganizationHeroBannerUrl } from '../../utils/organizationBrand';
 import {
   ScrollRevealGroup,
   ScrollRevealItem,
@@ -45,6 +47,7 @@ const PreviewSection = ({
   isAdmin = false,
   onEdit,
   onDelete,
+  fallbackImage = null,
 }) => (
   <ScrollRevealGroup stagger={0.08}>
     <ScrollRevealItem sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
@@ -87,7 +90,7 @@ const PreviewSection = ({
         }}
       >
         {articles.map((article, i) => {
-          const card = toCardShape(article);
+          const card = toCardShape(article, fallbackImage);
           return (
             <ScrollRevealItem
               key={article.id ?? i}
@@ -114,6 +117,8 @@ const DevelopmentPage = () => {
   const navigate = useOrgNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const queryClient = useQueryClient();
+  const { organization } = useOrganization();
+  const cardFallbackImage = useMemo(() => getOrganizationHeroBannerUrl(organization), [organization]);
   const { isAuthenticated } = useAuth();
   const { canContribute, isOrgManager } = useCanContribute();
   const isAdmin = isAuthenticated && isOrgManager;
@@ -305,6 +310,7 @@ const DevelopmentPage = () => {
                 isAdmin={isAdmin}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
+                fallbackImage={cardFallbackImage}
               />
 
               {/* JOBS SECTION */}
@@ -321,6 +327,7 @@ const DevelopmentPage = () => {
                 isAdmin={isAdmin}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
+                fallbackImage={cardFallbackImage}
               />
 
       <AdminConfirmDeleteDialog

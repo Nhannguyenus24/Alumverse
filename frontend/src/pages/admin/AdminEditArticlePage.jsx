@@ -20,7 +20,7 @@ import {
   MAX_JSON_PAYLOAD_BYTES,
   validateImageFile,
 } from '../../utils/imageUtils';
-import { extractMainImageCaption, withMainImageCaption } from '../../utils/articleContentCaption';
+import { extractMainImageCaption } from '../../utils/articleContentCaption';
 import { useNotification } from '../../hooks/useNotification';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { normalizeArticleTopicForChannel } from '../../utils/articleTopics';
@@ -42,8 +42,6 @@ const articleContent = (a) =>
 
 const articleThumbnail = (a) =>
   a?.thumbnailUrl ?? a?.imageUrl ?? a?.bannerUrl ?? a?.logoUrl ?? null;
-
-const CAPTION_REQUIRED_CHANNELS = new Set(['news', 'alumni', 'achievement', 'job', 'learning']);
 
 const AdminEditArticlePage = () => {
   const { t } = useTranslation(['admin', 'article']);
@@ -71,7 +69,6 @@ const AdminEditArticlePage = () => {
   const [coverPreview, setCoverPreview] = useState(null);
   const [coverPositionY, setCoverPositionY] = useState(50);
   const [url, setUrl] = useState('');
-  const [mainImageCaption, setMainImageCaption] = useState('');
 
   useEffect(() => {
     if (!article || isOrgMismatch) return;
@@ -79,7 +76,6 @@ const AdminEditArticlePage = () => {
     setTitle(article.title ?? '');
     const parsedContent = extractMainImageCaption(articleContent(article));
     setContent(parsedContent.content);
-    setMainImageCaption(parsedContent.caption);
     setCoverPreview(articleThumbnail(article));
     setTopic(normalizeArticleTopicForChannel(channel, article.topic ?? article.type ?? ''));
     setUrl(article.url || article.linkUrl || '');
@@ -117,11 +113,6 @@ const AdminEditArticlePage = () => {
         return;
       }
     }
-    if (CAPTION_REQUIRED_CHANNELS.has(channel) && (coverFile || articleThumbnail(article)) && !mainImageCaption.trim()) {
-      showError(t('article:main_image_caption_required'));
-      return;
-    }
-
     try {
       const thumbnailBase64 = coverFile ? await fileToBase64(coverFile) : null;
       if (thumbnailBase64 && getJsonPayloadByteSize({ base64String: thumbnailBase64 }) > MAX_JSON_PAYLOAD_BYTES) {
@@ -130,7 +121,7 @@ const AdminEditArticlePage = () => {
       }
       const payload = {
         title: title.trim(),
-        content: withMainImageCaption(content.trim(), mainImageCaption),
+        content: content.trim(),
         // Send the raw image inline; the backend converts it to WebP and stores it. When no new
         // image is picked (thumbnailBase64 is null), the backend keeps the existing thumbnail.
         thumbnailBase64,
@@ -229,8 +220,6 @@ const AdminEditArticlePage = () => {
               url={url}
               setUrl={setUrl}
               mainImagePreview={coverPreview}
-              mainImageCaption={mainImageCaption}
-              setMainImageCaption={setMainImageCaption}
             />
 
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, pt: 2, mt: 3 }}>

@@ -15,6 +15,7 @@ public class ConversationRequestConnectionStatusResponse {
     private ConversationRequestStatus status;
     private LocalDateTime cooldownUntil;
     private ConversationRequestLatestMessageResponse latestMessage;
+    private String requestDirection;
     /**
      * True when there is a PENDING request that the OTHER member sent TO the current user
      * (i.e. the current user is the target). The UI uses this to let the current user send

@@ -34,8 +34,8 @@ const FeaturedArticleCard = ({
         sx={{
           position: 'relative',
           width: { xs: '100%', md: '45%' },
-          height: { xs: 180, sm: 220, md: 'auto' },
-          minHeight: { xs: 180, sm: 220, md: 250 },
+          height: { xs: 180, sm: 220, md: isAdmin ? 300 : 252 },
+          aspectRatio: { md: '16 / 10' },
           alignSelf: { md: 'stretch' },
           borderRadius: 2,
           overflow: 'hidden',
@@ -86,7 +86,7 @@ const FeaturedArticleCard = ({
           display: 'flex',
           flexDirection: 'column',
           minWidth: 0,
-          minHeight: { md: 250 },
+          minHeight: { md: isAdmin ? 300 : 252 },
         }}
       >
         {/* TITLE + ARROW */}
@@ -152,10 +152,10 @@ const FeaturedArticleCard = ({
         <Box
           sx={{
             mt: 'auto',
-            pt: { xs: 1.25, md: 2.5 },
+            pt: { xs: 1.25, md: isAdmin ? 2 : 1.5 },
             display: 'flex',
             flexDirection: 'column',
-            gap: { xs: 1.25, md: 2 },
+            gap: { xs: 1.25, md: isAdmin ? 1.5 : 1 },
           }}
         >
           <Box

@@ -7,6 +7,7 @@ export function truncateText(text, maxChars = 120) {
 
 export function normalizePreviewText(text) {
   return String(text ?? "")
+    .replace(/<[^>]*data-main-image-caption=["']true["'][^>]*>[\s\S]*?<\/[^>]+>/gi, " ")
     .replace(/&amp;nbsp;|&nbsp;|&#160;|\u00a0/gi, " ")
     .replace(/<[^>]+>/g, " ")
     .replace(/\s+/g, " ")
