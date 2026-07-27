@@ -12,8 +12,10 @@ function getWsUrl() {
  * - JOIN_GROUP { groupId }
  * - LEAVE_GROUP { groupId }
  * - SEND_MESSAGE { groupId, content, chatType?, messageType?, metadata? }
+ * - TYPING { groupId, isTyping }
  * Receives:
  * - MESSAGE_CREATED { payload: { id, groupId, senderMemberId, senderFullName, senderAvatarUrl, content, ... } }
+ * - TYPING { payload: { groupId, memberId, senderName, isTyping } }
  * - ERROR { message }
  */
 export function useChatWebSocket({ token, onEvent, onReconnect }) {
@@ -213,6 +215,25 @@ export function useChatWebSocket({ token, onEvent, onReconnect }) {
     [sendJson],
   );
 
+  // Ephemeral "is typing" ping. Never queued in the outbox: a stale typing
+  // signal that arrives after the socket reconnects is worthless (the peer's
+  // indicator auto-expires), so we simply drop it when the socket isn't open.
+  const sendTyping = useCallback(({ groupId, isTyping }) => {
+    if (groupId == null) return false;
+    const ws = wsRef.current;
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(
+        JSON.stringify({
+          type: "TYPING",
+          groupId: Number(groupId),
+          isTyping: Boolean(isTyping),
+        }),
+      );
+      return true;
+    }
+    return false;
+  }, []);
+
   return {
     status,
     isOpen: status === "open",
@@ -220,6 +241,7 @@ export function useChatWebSocket({ token, onEvent, onReconnect }) {
     joinGroup,
     leaveGroup,
     sendMessage,
+    sendTyping,
   };
 }
 

@@ -247,6 +247,17 @@
     "access_blocked_title": "Alumni verification required to chat",
     "message_too_long": "Message must not exceed {{max}} characters.",
     "char_count": "{{count}}/{{max}}",
-    "char_count_hint": "character limit"
+    "char_count_hint": "character limit",
+    "typing_one": "{{name}} is typing...",
+    "typing_two": "{{name1}} and {{name2}} are typing...",
+    "typing_others": "{{name}} and {{count}} others are typing...",
+    "mention_all": "Everyone",
+    "mention_all_hint": "Notify everyone in the group",
+    "gif_picker": "Pick a GIF",
+    "gif_search_placeholder": "Search GIPHY",
+    "gif_error": "Couldn't load GIFs. Please try again.",
+    "gif_empty": "No matching GIFs found.",
+    "gif_powered_by": "Powered by GIPHY",
+    "preview_gif": "[GIF]"
   }
 }
