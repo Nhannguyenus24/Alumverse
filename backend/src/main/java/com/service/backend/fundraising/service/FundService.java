@@ -566,12 +566,14 @@ public class FundService {
                     }
 
                     // Ignore donor_member_id from the client; bind donations to the token user.
-                    return userRepository.findById(donorMemberId)
-                            .switchIfEmpty(Mono.error(new ApplicationException(
-                                    ErrorCode.USER_NOT_FOUND,
-                                    "User not found with id: " + donorMemberId
-                            )))
-                            .flatMap(user -> {
+                    // Existence-only check: the user row is never read, so avoid a full SELECT *.
+                    return userRepository.existsById(donorMemberId)
+                            .flatMap(exists -> {
+                                if (!Boolean.TRUE.equals(exists)) {
+                                    return Mono.error(new ApplicationException(
+                                            ErrorCode.USER_NOT_FOUND,
+                                            "User not found with id: " + donorMemberId));
+                                }
                                 FundDonations donation = FundDonations.builder()
                                         .fundId(fundId)
                                         .donorMemberId(donorMemberId)

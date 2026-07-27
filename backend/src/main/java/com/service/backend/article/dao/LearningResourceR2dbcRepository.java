@@ -51,6 +51,9 @@ public interface LearningResourceR2dbcRepository extends R2dbcRepository<Learnin
     @Query("SELECT COUNT(*) FROM learning_resources WHERE type = :type AND status = 'APPROVED'")
     Mono<Long> countAllApprovedByType(String type);
 
+    @Query("SELECT * FROM learning_resources WHERE type = :type AND status = 'APPROVED' ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
+    Flux<LearningResource> findAllApprovedByType(String type, int limit, int offset);
+
     @Modifying
     @Query("UPDATE learning_resources SET status = :status, updated_at = CURRENT_TIMESTAMP WHERE id = :id")
     Mono<Integer> updateStatus(Integer id, Status status);

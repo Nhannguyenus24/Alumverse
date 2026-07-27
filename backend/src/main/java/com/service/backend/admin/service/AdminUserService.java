@@ -81,7 +81,7 @@ public class AdminUserService {
                         page,
                         size,
                         this::enrichUserResponses))
-                .doOnSuccess(r -> logger.info("getAllUsers result: {}", JsonUtils.toJson(r)))
+                .doOnSuccess(r -> logger.debug("getAllUsers result: {}", JsonUtils.toJson(r)))
                 .doOnError(error -> logger.error("Error fetching users with filters: {}", error.getMessage()));
     }
 
@@ -369,7 +369,7 @@ public class AdminUserService {
         return adminUserRepository.findById(userId)
                 .map(this::mapToUserResponse)
                 .flatMap(this::enrichOne)
-                .doOnSuccess(user -> logger.info("getUserById result: {}", JsonUtils.toJson(user)))
+                .doOnSuccess(user -> logger.debug("getUserById result: {}", JsonUtils.toJson(user)))
                 .doOnError(error -> logger.error("Error fetching user: {}", error.getMessage()));
     }
 
@@ -384,7 +384,7 @@ public class AdminUserService {
         if (isStatusOnlyPatch(request)) {
             return adminUserRepository.updateUserStatusById(userId, request.getStatus().getValue())
                     .flatMap(count -> count > 0 ? getUserById(userId) : Mono.empty())
-                    .doOnSuccess(u -> logger.info("updateUser status-only result: {}", JsonUtils.toJson(u)))
+                    .doOnSuccess(u -> logger.debug("updateUser status-only result: {}", JsonUtils.toJson(u)))
                     .doOnError(e -> logger.error("Error updating user status {}", e.getMessage()));
         }
 
@@ -441,7 +441,7 @@ public class AdminUserService {
                         });
                 })
                 .flatMap(saved -> applyProfileAndOrg(userId, request).then(getUserById(userId)))
-                .doOnSuccess(u -> logger.info("updateUser result: {}", JsonUtils.toJson(u)))
+                .doOnSuccess(u -> logger.debug("updateUser result: {}", JsonUtils.toJson(u)))
                 .doOnError(e -> logger.error("Error updating user {}", e.getMessage()));
     }
 
@@ -641,7 +641,7 @@ public class AdminUserService {
                 page,
                 size
         )
-         .doOnSuccess(r -> logger.info("getVerificationRequests: org={}, pendingOnly={}, requestType={}, result={}", organizationId, pendingOnly, type, JsonUtils.toJson(r)))
+         .doOnSuccess(r -> logger.debug("getVerificationRequests: org={}, pendingOnly={}, requestType={}, result={}", organizationId, pendingOnly, type, JsonUtils.toJson(r)))
          .doOnError(e -> logger.error("Error fetching verification requests: {}", e.getMessage()));
     }
 
@@ -758,7 +758,7 @@ public class AdminUserService {
                         .verificationRequests(tuple.getT2())
                         .adminActions(tuple.getT3())
                         .build())
-                .doOnSuccess(r -> logger.info("getUserActivity result: {}", JsonUtils.toJson(r)));
+                .doOnSuccess(r -> logger.debug("getUserActivity result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<PaginatedResponse<AdminAuditLog>> getAdminActionLogs(
@@ -784,7 +784,7 @@ public class AdminUserService {
                     adminAuditLogRepository.countAdminActionLogsByOrganization(organizationId, adminUserId, targetUserId, action),
                     page,
                     size)
-                    .doOnSuccess(r -> logger.info("getAdminActionLogs (org={}) result: {}", organizationId, JsonUtils.toJson(r)))
+                    .doOnSuccess(r -> logger.debug("getAdminActionLogs (org={}) result: {}", organizationId, JsonUtils.toJson(r)))
                     .doOnError(e -> logger.error("Error fetching admin action logs for org {}", e.getMessage()));
         }
         return PaginationHelper.paginate(
@@ -792,7 +792,7 @@ public class AdminUserService {
                 adminAuditLogRepository.countAdminActionLogs(adminUserId, targetUserId, action),
                 page,
                 size)
-                .doOnSuccess(r -> logger.info("getAdminActionLogs result: {}", JsonUtils.toJson(r)))
+                .doOnSuccess(r -> logger.debug("getAdminActionLogs result: {}", JsonUtils.toJson(r)))
                 .doOnError(e -> logger.error("Error fetching admin action logs: {}", e.getMessage()));
     }
 

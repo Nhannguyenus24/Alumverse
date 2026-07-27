@@ -19,6 +19,7 @@ import com.service.backend.shared.enums.Status;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.utils.PaginationHelper;
+import com.service.backend.shared.utils.SecurityUtils;
 import com.service.backend.user.dao.EducationChangeRequestRepository;
 import com.service.backend.user.dao.UserOrganizationMemberRepository;
 import com.service.backend.user.service.NotificationService;
@@ -91,6 +92,9 @@ public class AdminEducationService {
                                 "Yêu cầu này đã được xử lý trước đó"));
                     }
 
+                    // Tenant isolation: a STAFF may only review requests belonging to their own org.
+                    return SecurityUtils.assertSameOrganizationOrAdmin(request.getOrganizationId())
+                            .then(Mono.defer(() -> {
                     Mono<Void> actionMono = "APPROVED".equals(upperDecision)
                             ? applyEducationData(request)
                             : sendRejectionNotification(request, dto.getAdminNote());
@@ -102,6 +106,7 @@ public class AdminEducationService {
                         request.setReviewedAt(LocalDateTime.now());
                         return educationChangeRequestRepository.save(request);
                     }));
+                            }));
                 })
                 .map(r -> true)
                 .doOnSuccess(r -> log.info("Education request {} reviewed: {}", requestId, upperDecision));

@@ -164,17 +164,24 @@ public final class SecurityUtils {
         if (organizationId == null) {
             return Mono.just(false);
         }
-        return getCurrentUserRole()
-                .flatMap(role -> {
+        return Mono.zip(
+                        getCurrentUserRole(),
+                        getCurrentVerificationLevel().defaultIfEmpty(0),
+                        getCurrentOrganizationId().defaultIfEmpty(-1)
+                )
+                .map(ctx -> {
+                    String role = ctx.getT1();
+                    Integer level = ctx.getT2();
+                    Integer currentOrgId = ctx.getT3();
                     if ("ADMIN".equalsIgnoreCase(role)) {
-                        return Mono.just(true);
+                        return true;
                     }
-                    if ("STAFF".equalsIgnoreCase(role)) {
-                        return getCurrentOrganizationId()
-                                .map(organizationId::equals)
-                                .defaultIfEmpty(false);
-                    }
-                    return Mono.just(false);
+                    // STAFF may only administer their OWN org, and must be at ADMIN verification
+                    // level (4) — mirrors canManageContentOrganization so a low-level STAFF cannot
+                    // reach organization-admin operations.
+                    return "STAFF".equalsIgnoreCase(role)
+                            && level >= 4
+                            && organizationId.equals(currentOrgId);
                 })
                 .defaultIfEmpty(false)
                 .onErrorReturn(false);
@@ -191,6 +198,24 @@ public final class SecurityUtils {
                         : Mono.<Void>error(new ApplicationException(
                                 ErrorCode.FORBIDDEN,
                                 "You can only manage your own organization")));
+    }
+
+    /**
+     * Tenant-isolation guard for admin/moderation actions on org-scoped targets: ADMIN may act on
+     * any organization; every other role may act ONLY on the organization carried by their token.
+     * Stops cross-tenant manipulation (e.g. a STAFF/MODERATOR of org A moderating org B's data).
+     * Fail-closed: an unauthenticated/roleless caller is rejected.
+     */
+    public static Mono<Void> assertSameOrganizationOrAdmin(Integer organizationId) {
+        return Mono.zip(getCurrentUserRole(), getCurrentOrganizationId().defaultIfEmpty(-1))
+                .flatMap(t -> {
+                    boolean ok = "ADMIN".equalsIgnoreCase(t.getT1())
+                            || (organizationId != null && organizationId.equals(t.getT2()));
+                    return ok
+                            ? Mono.<Void>empty()
+                            : Mono.<Void>error(new ApplicationException(ErrorCode.FORBIDDEN, "You can only manage data in your own organization"));
+                })
+                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.FORBIDDEN, "You can only manage data in your own organization")));
     }
 
     /**
