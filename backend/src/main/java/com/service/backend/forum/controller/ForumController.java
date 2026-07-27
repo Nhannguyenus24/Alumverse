@@ -134,11 +134,13 @@ public class ForumController {
             @RequestParam Integer categoryId,
             @Parameter(description = "Keyword to search topics by title")
             @RequestParam(required = false) String keyword,
+            @Parameter(description = "Sort order: 'most_viewed' or default (newest first)", example = "most_viewed")
+            @RequestParam(required = false) String sortBy,
             @Parameter(example = "0")
             @RequestParam(defaultValue = "0") int page,
             @Parameter(example = "10")
             @RequestParam(defaultValue = "10") int size) {
-        return forumService.findTopicsByCategoryId(categoryId, keyword, page, size)
+        return forumService.findTopicsByCategoryId(categoryId, keyword, sortBy, page, size)
                 .map(response -> ResponseEntity.ok(new ApiResponse<>("Topics retrieved successfully", response)));
     }
 

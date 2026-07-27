@@ -219,14 +219,18 @@ public class ForumService {
                 .doOnError(error -> log.error("Error finding forum topic by title: {}", title, error));
     }
 
-    public Mono<PaginatedResponse<ForumTopicDTO>> findTopicsByCategoryId(Integer categoryId, String keyword, int page, int size) {
+    public Mono<PaginatedResponse<ForumTopicDTO>> findTopicsByCategoryId(Integer categoryId, String keyword, String sortBy, int page, int size) {
         long offset = (long) page * size;
+        boolean mostViewed = "most_viewed".equalsIgnoreCase(sortBy);
+        Flux<ForumTopic> topicsFlux = mostViewed
+                ? forumTopicRepository.findActiveByCategoryIdOrderByViewCount(categoryId, keyword, size, offset)
+                : forumTopicRepository.findActiveByCategoryIdWithPagination(categoryId, keyword, size, offset);
         return PaginationHelper.paginate(
-                forumTopicRepository.findActiveByCategoryIdWithPagination(categoryId, keyword, size, offset),
+                topicsFlux,
                 forumTopicRepository.countActiveByCategoryId(categoryId, keyword),
                 page, size,
                 this::enrichTopicsWithPostCount)
-                .doOnSuccess(result -> log.info("findTopicsByCategoryId with keyword {} result: {}", keyword,  JsonUtils.toJson(result)))
+                .doOnSuccess(result -> log.info("findTopicsByCategoryId with keyword {} sortBy {} result: {}", keyword, sortBy, JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error finding forum topics for category ID: {}", categoryId, error));
     }
 
