@@ -87,7 +87,7 @@ public class OrganizationService {
                         .leaders(List.of())
                         .teamMembers(List.of())
                         .build()))
-                .doOnSuccess(r -> logger.info("getIntroduction result: {}", JsonUtils.toJson(r))))
+                .doOnSuccess(r -> logger.debug("getIntroduction result: {}", JsonUtils.toJson(r))))
                 .doOnError(error -> logger.error("Failed to fetch introduction for organization id {}: {}", orgaId, error.getMessage()));
     }
 
@@ -163,7 +163,7 @@ public class OrganizationService {
 
                     return schoolFeedbackRepository.save(feedback);
                 })
-                .doOnSuccess(feedback -> logger.info("createSchoolFeedback result: {}", JsonUtils.toJson(feedback)))
+                .doOnSuccess(feedback -> logger.debug("createSchoolFeedback result: {}", JsonUtils.toJson(feedback)))
                 .doOnError(error -> logger.error("Failed to create school feedback for organization id {}: {}", organizationId, error.getMessage()));
     }
 

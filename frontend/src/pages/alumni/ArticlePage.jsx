@@ -799,8 +799,8 @@ const ArticlePage = () => {
           isLoading: eventComments.isPending,
           isSubmitting: creatingEventComment,
           isDeleting: deletingEventComment,
-          onCreate: (content) => createEventComment({ eventId: id, payload: { authorMemberId: currentUserId, content } }),
-          onReply: (commentId, content) => replyToEventComment({ eventId: id, commentId, payload: { authorMemberId: currentUserId, content } }),
+          onCreate: (content) => createEventComment({ eventId: id, payload: { content } }),
+          onReply: (commentId, content) => replyToEventComment({ eventId: id, commentId, payload: { content } }),
           onUpdate: (commentId, content) => updateEventComment({ eventId: id, commentId, payload: { content } }),
           onDelete: (commentId) => deleteEventComment({ eventId: id, commentId }),
         }
@@ -810,8 +810,8 @@ const ArticlePage = () => {
           isLoading: newsComments.isPending,
           isSubmitting: creatingNewsComment,
           isDeleting: deletingNewsComment,
-          onCreate: (content) => createNewsComment({ newsId: id, payload: { authorMemberId: currentUserId, content } }),
-          onReply: (commentId, content) => replyToNewsComment({ newsId: id, commentId, payload: { authorMemberId: currentUserId, content } }),
+          onCreate: (content) => createNewsComment({ newsId: id, payload: { content } }),
+          onReply: (commentId, content) => replyToNewsComment({ newsId: id, commentId, payload: { content } }),
           onUpdate: (commentId, content) => updateNewsComment({ newsId: id, commentId, payload: { content } }),
           onDelete: (commentId) => deleteNewsComment({ newsId: id, commentId }),
         }
@@ -821,8 +821,8 @@ const ArticlePage = () => {
           isLoading: alumniPostComments.isPending,
           isSubmitting: creatingAlumniPostComment,
           isDeleting: deletingAlumniPostComment,
-          onCreate: (content) => createAlumniPostComment({ alumniPostId: id, payload: { authorMemberId: currentUserId, content } }),
-          onReply: (commentId, content) => replyToAlumniPostComment({ alumniPostId: id, commentId, payload: { authorMemberId: currentUserId, content } }),
+          onCreate: (content) => createAlumniPostComment({ alumniPostId: id, payload: { content } }),
+          onReply: (commentId, content) => replyToAlumniPostComment({ alumniPostId: id, commentId, payload: { content } }),
           onUpdate: (commentId, content) => updateAlumniPostComment({ alumniPostId: id, commentId, payload: { content } }),
           onDelete: (commentId) => deleteAlumniPostComment({ alumniPostId: id, commentId }),
         }

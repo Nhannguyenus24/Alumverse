@@ -110,7 +110,7 @@ public interface ForumTopicRepository extends R2dbcRepository<ForumTopic, Intege
            "UNION " +
            "SELECT fp.author_member_id AS member_id FROM forum_posts fp " +
            "JOIN forum_topics ft2 ON fp.topic_id = ft2.id " +
-           "WHERE ft2.category_id = :categoryId AND fp.is_banned = false AND fp.author_member_id IS NOT NULL" +
+           "WHERE ft2.category_id = :categoryId AND fp.is_banned = false AND fp.is_hidden = false AND fp.author_member_id IS NOT NULL" +
            ") participants")
     Mono<Long> countDistinctParticipantsByCategoryId(@Param("categoryId") Integer categoryId);
 
@@ -123,7 +123,7 @@ public interface ForumTopicRepository extends R2dbcRepository<ForumTopic, Intege
            "UNION " +
            "SELECT fp.author_member_id AS member_id FROM forum_posts fp " +
            "JOIN forum_topics ft2 ON fp.topic_id = ft2.id " +
-           "WHERE ft2.category_id = :categoryId AND ft2.status = 'ACTIVE' AND fp.is_banned = false AND fp.author_member_id IS NOT NULL" +
+           "WHERE ft2.category_id = :categoryId AND ft2.status = 'ACTIVE' AND fp.is_banned = false AND fp.is_hidden = false AND fp.author_member_id IS NOT NULL" +
            ") participants")
     Mono<Long> countActiveDistinctParticipantsByCategoryId(@Param("categoryId") Integer categoryId);
 
@@ -152,7 +152,7 @@ public interface ForumTopicRepository extends R2dbcRepository<ForumTopic, Intege
            "UNION " +
            "SELECT ft2.category_id AS category_id, fp.author_member_id AS member_id FROM forum_posts fp " +
            "JOIN forum_topics ft2 ON fp.topic_id = ft2.id " +
-           "WHERE ft2.category_id IN (:categoryIds) AND fp.is_banned = false AND fp.author_member_id IS NOT NULL" +
+           "WHERE ft2.category_id IN (:categoryIds) AND fp.is_banned = false AND fp.is_hidden = false AND fp.author_member_id IS NOT NULL" +
            ") participants GROUP BY category_id")
     Flux<IdCountDTO> countDistinctParticipantsByCategoryIds(@Param("categoryIds") Collection<Integer> categoryIds);
 
@@ -165,7 +165,7 @@ public interface ForumTopicRepository extends R2dbcRepository<ForumTopic, Intege
            "UNION " +
            "SELECT ft2.category_id AS category_id, fp.author_member_id AS member_id FROM forum_posts fp " +
            "JOIN forum_topics ft2 ON fp.topic_id = ft2.id " +
-           "WHERE ft2.status = 'ACTIVE' AND ft2.category_id IN (:categoryIds) AND fp.is_banned = false AND fp.author_member_id IS NOT NULL" +
+           "WHERE ft2.status = 'ACTIVE' AND ft2.category_id IN (:categoryIds) AND fp.is_banned = false AND fp.is_hidden = false AND fp.author_member_id IS NOT NULL" +
            ") participants GROUP BY category_id")
     Flux<IdCountDTO> countActiveDistinctParticipantsByCategoryIds(@Param("categoryIds") Collection<Integer> categoryIds);
 

@@ -92,7 +92,7 @@ public class UserService {
                             startVerificationOcr(requestId, request.getOrganizationId(), firstFileUrl, files);
                         }
                     }))
-                    .flatMap(v -> userOrganizationMemberRepository.updateVerificationLevelByOrgAndUser(
+                    .flatMap(v -> userOrganizationMemberRepository.updateVerificationLevelIfLowerByOrgAndUser(
                             request.getOrganizationId(), currentUserId.intValue(), 1))
                     .then();
         });
@@ -255,7 +255,7 @@ public class UserService {
 
                                 return Mono.when(
                                         saveRequest,
-                                        userOrganizationMemberRepository.updateVerificationLevelByOrgAndUser(organizationId, targetMember.getUserId(), 1)
+                                        userOrganizationMemberRepository.updateVerificationLevelIfLowerByOrgAndUser(organizationId, targetMember.getUserId(), 1)
                                 );
                             });
                 })
@@ -307,6 +307,10 @@ public class UserService {
 
     @Transactional
     public Mono<Void> directVerify(Long currentUserId, Integer organizationId, Integer targetUserId) {
+        // A verifier must not verify themselves — that would let a trusted verifier self-promote.
+        if (targetUserId != null && targetUserId.equals(currentUserId.intValue())) {
+            return Mono.error(new ApplicationException(ErrorCode.FORBIDDEN, "You cannot verify yourself"));
+        }
         return Mono.zip(
                 userOrganizationMemberRepository.findByOrganizationIdAndUserId(organizationId, currentUserId.intValue()),
                 userOrganizationMemberRepository.findByOrganizationIdAndUserId(organizationId, targetUserId))
@@ -318,6 +322,19 @@ public class UserService {
                         return Mono.error(new ApplicationException(ErrorCode.FORBIDDEN, "Only trusted verifiers can perform direct verification"));
                     }
 
+                    // Assign the canonical level (STUDENT if still studying, else VERIFIED) instead of
+                    // incrementing — a raw +1 could push the level past ADMIN (4) on repeated calls.
+                    // Mirrors acceptPeerVerification.
+                    Mono<Integer> applyVerificationLevel = userOrganizationMemberRepository
+                            .isStudyingMemberByOrgAndUser(organizationId, targetUserId)
+                            .defaultIfEmpty(false)
+                            .flatMap(studying -> userOrganizationMemberRepository.updateVerificationLevelByOrgAndUser(
+                                    organizationId,
+                                    targetMember.getUserId(),
+                                    Boolean.TRUE.equals(studying)
+                                            ? VerificationLevel.STUDENT
+                                            : VerificationLevel.VERIFIED));
+
                     return Mono.when(
                             peerVerificationRepository.save(PeerVerification.builder()
                                     .organizationId(organizationId)
@@ -325,10 +342,7 @@ public class UserService {
                                     .verifierMemberId(verifierMember.getUserId())
                                     .status(Status.ACCEPTED)
                                     .build()),
-                            Mono.defer(() -> {
-                                targetMember.setVerificationLevel(targetMember.getVerificationLevel() + 1);
-                                return userOrganizationMemberRepository.save(targetMember);
-                            })
+                            applyVerificationLevel
                     );
                 })
                 .then();
@@ -366,7 +380,7 @@ public class UserService {
                     }
                     return profile;
                 })
-                .doOnSuccess(r -> logger.info("getMyProfile result: {}", JsonUtils.toJson(r)));
+                .doOnSuccess(r -> logger.debug("getMyProfile result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<Void> changeMyPassword(Long currentUserId, String oldPassword, String newPassword) {
@@ -411,9 +425,16 @@ public class UserService {
                     } else {
                         profile.setVerificationLevel(isMember && profile.getVerificationLevel() != null ? profile.getVerificationLevel() : 0);
                     }
+                    // Strip PII from the unauthenticated public profile: this endpoint is @PublicEndpoint,
+                    // so email/phone/dob/studentId must not be exposed to anonymous scrapers. The same DTO
+                    // and query are reused by the authenticated getMyProfile, which is left untouched.
+                    profile.setEmail(null);
+                    profile.setPhone(null);
+                    profile.setDob(null);
+                    profile.setStudentId(null);
                     return profile;
                 })
-                .doOnSuccess(r -> logger.info("getPublicProfile result: {}", JsonUtils.toJson(r)));
+                .doOnSuccess(r -> logger.debug("getPublicProfile result: {}", JsonUtils.toJson(r)));
     }
 
     @Transactional
@@ -473,14 +494,14 @@ public class UserService {
                         .userAgent(history.getUserAgent())
                         .build())
                 .collectList()
-                .doOnSuccess(r -> logger.info("getMyLoginHistory result: {}", JsonUtils.toJson(r)));
+                .doOnSuccess(r -> logger.debug("getMyLoginHistory result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<NotificationSettingsResponse> getMyNotificationSettings(Long currentUserId) {
         return userNotificationSettingsRepository.findById(currentUserId.intValue())
                 .map(this::toNotificationResponse)
                 .defaultIfEmpty(defaultNotificationSettings(currentUserId.intValue()))
-                .doOnSuccess(r -> logger.info("getMyNotificationSettings result: {}", JsonUtils.toJson(r)));
+                .doOnSuccess(r -> logger.debug("getMyNotificationSettings result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<NotificationSettingsResponse> updateMyNotificationSettings(
@@ -517,7 +538,7 @@ public class UserService {
                     return userNotificationSettingsRepository.save(existing);
                 })
                 .map(this::toNotificationResponse)
-                .doOnSuccess(r -> logger.info("updateMyNotificationSettings result: {}", JsonUtils.toJson(r)));
+                .doOnSuccess(r -> logger.debug("updateMyNotificationSettings result: {}", JsonUtils.toJson(r)));
     }
 
     @Transactional
@@ -608,7 +629,7 @@ public class UserService {
                         return res;
                     });
         })
-        .doOnSuccess(r -> logger.info("getMyOrganizationMember result: {}", JsonUtils.toJson(r)));
+        .doOnSuccess(r -> logger.debug("getMyOrganizationMember result: {}", JsonUtils.toJson(r)));
     }
 
     private NotificationSettingsResponse toNotificationResponse(UserNotificationSettings settings) {

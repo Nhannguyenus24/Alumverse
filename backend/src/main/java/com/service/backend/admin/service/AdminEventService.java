@@ -109,14 +109,14 @@ public class AdminEventService {
                         eventRepo.findEventsByOrganization(organizationId, size, offset),
                         eventRepo.countEventsByOrganization(organizationId),
                         page, size)
-                    .doOnSuccess(r -> log.info("getAllEvents (org={}) result: {}", organizationId, JsonUtils.toJson(r)))
+                    .doOnSuccess(r -> log.debug("getAllEvents (org={}) result: {}", organizationId, JsonUtils.toJson(r)))
                     .doOnError(error -> log.error("Error fetching events for org {}", organizationId, error));
         }
         return PaginationHelper.paginate(
                     eventRepo.findAllEventsWithPagination(size, offset),
                     eventRepo.countAllEvents(),
                     page, size)
-                .doOnSuccess(r -> log.info("getAllEvents result: {}", JsonUtils.toJson(r)))
+                .doOnSuccess(r -> log.debug("getAllEvents result: {}", JsonUtils.toJson(r)))
                 .doOnError(error -> log.error("Error fetching all events", error));
     }
 
@@ -127,14 +127,14 @@ public class AdminEventService {
                         eventRepo.searchEventsByOrganization(organizationId, keyword, size, offset),
                         eventRepo.countSearchEventsByOrganization(organizationId, keyword),
                         page, size)
-                    .doOnSuccess(r -> log.info("searchAllEvents (org={}) result: {}", organizationId, JsonUtils.toJson(r)))
+                    .doOnSuccess(r -> log.debug("searchAllEvents (org={}) result: {}", organizationId, JsonUtils.toJson(r)))
                     .doOnError(error -> log.error("Error searching events for org {}", organizationId, error));
         }
         return PaginationHelper.paginate(
                     eventRepo.searchAllEvents(keyword, size, offset),
                     eventRepo.countSearchAllEvents(keyword),
                     page, size)
-                .doOnSuccess(r -> log.info("searchAllEvents result: {}", JsonUtils.toJson(r)))
+                .doOnSuccess(r -> log.debug("searchAllEvents result: {}", JsonUtils.toJson(r)))
                 .doOnError(error -> log.error("Error searching events with keyword {}", keyword, error));
     }
 
@@ -145,14 +145,14 @@ public class AdminEventService {
                         eventRepo.findEventsByOrganizationAndPublishStatus(organizationId, isPublished, size, offset),
                         eventRepo.countEventsByOrganizationAndPublishStatus(organizationId, isPublished),
                         page, size)
-                    .doOnSuccess(r -> log.info("getEventsByPublishStatus (org={}) result: {}", organizationId, JsonUtils.toJson(r)))
+                    .doOnSuccess(r -> log.debug("getEventsByPublishStatus (org={}) result: {}", organizationId, JsonUtils.toJson(r)))
                     .doOnError(error -> log.error("Error fetching events by status for org {}", organizationId, error));
         }
         return PaginationHelper.paginate(
                     eventRepo.findEventsByPublishStatus(isPublished, size, offset),
                     eventRepo.countEventsByPublishStatus(isPublished),
                     page, size)
-                .doOnSuccess(r -> log.info("getEventsByPublishStatus result: {}", JsonUtils.toJson(r)))
+                .doOnSuccess(r -> log.debug("getEventsByPublishStatus result: {}", JsonUtils.toJson(r)))
                 .doOnError(error -> log.error("Error fetching events by publish status {}", isPublished, error));
     }
 
@@ -160,7 +160,7 @@ public class AdminEventService {
         return eventRepo.findById(eventId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND,
                         "Event not found with id: " + eventId)))
-                .doOnSuccess(e -> log.info("getEventById result: {}", JsonUtils.toJson(e)));
+                .doOnSuccess(e -> log.debug("getEventById result: {}", JsonUtils.toJson(e)));
     }
 
     public Mono<Event> updateEvent(Long eventId, UpdateEventRequest request) {
@@ -188,7 +188,7 @@ public class AdminEventService {
                             return eventRepo.save(existing);
                         })))
                 .delayUntil(e -> evictEventCaches())
-                .doOnSuccess(e -> log.info("updateEvent result: {}", JsonUtils.toJson(e)))
+                .doOnSuccess(e -> log.debug("updateEvent result: {}", JsonUtils.toJson(e)))
                 .doOnError(error -> log.error("Error updating event ID: {}", eventId, error));
     }
 
@@ -211,7 +211,7 @@ public class AdminEventService {
                         .then(eventRepo.publishEvent(eventId))
                         .then(eventRepo.findById(eventId)))
                 .delayUntil(e -> evictEventCaches())
-                .doOnSuccess(e -> log.info("publishEvent result: {}", JsonUtils.toJson(e)));
+                .doOnSuccess(e -> log.debug("publishEvent result: {}", JsonUtils.toJson(e)));
     }
 
     public Mono<Event> unpublishEvent(Long eventId) {
@@ -222,7 +222,7 @@ public class AdminEventService {
                         .then(eventRepo.unpublishEvent(eventId))
                         .then(eventRepo.findById(eventId)))
                 .delayUntil(e -> evictEventCaches())
-                .doOnSuccess(e -> log.info("unpublishEvent result: {}", JsonUtils.toJson(e)));
+                .doOnSuccess(e -> log.debug("unpublishEvent result: {}", JsonUtils.toJson(e)));
     }
 
     public Mono<PaginatedResponse<EventTicket>> getTicketsByEvent(Long eventId, int page, int size) {
@@ -245,7 +245,7 @@ public class AdminEventService {
                                         return pageItems;
                                     }));
                 })))
-                .doOnSuccess(r -> log.info("getTicketsByEvent result: {}", JsonUtils.toJson(r)));
+                .doOnSuccess(r -> log.debug("getTicketsByEvent result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<EventTicket> cancelTicket(String ticketCode, String reason) {
@@ -290,7 +290,7 @@ public class AdminEventService {
                                             : "Vé của bạn cho \"%s\" đã được quản trị viên khôi phục.", null));
                 })
                 .delayUntil(t -> evictEventCaches())
-                .doOnSuccess(t -> log.info("undoTicket result: {}", JsonUtils.toJson(t)));
+                .doOnSuccess(t -> log.debug("undoTicket result: {}", JsonUtils.toJson(t)));
     }
 
     public Mono<EventTicket> banTicket(String ticketCode, String reason) {
@@ -327,7 +327,7 @@ public class AdminEventService {
                             interestRepo.countByEventId(eventId),
                             page, size);
                 })))
-                .doOnSuccess(r -> log.info("getInterestsByEvent result: {}", JsonUtils.toJson(r)));
+                .doOnSuccess(r -> log.debug("getInterestsByEvent result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<EventStatisticsDTO> getEventStatistics() {
@@ -384,7 +384,7 @@ public class AdminEventService {
                         stats.setTopEventsByInterest(tuple.getT4());
                         return stats;
                     })
-                    .doOnSuccess(s -> log.info("getEventStatistics result: {}", JsonUtils.toJson(s)))
+                    .doOnSuccess(s -> log.debug("getEventStatistics result: {}", JsonUtils.toJson(s)))
                     .doOnError(error -> log.error("Error fetching event statistics", error));
         });
     }

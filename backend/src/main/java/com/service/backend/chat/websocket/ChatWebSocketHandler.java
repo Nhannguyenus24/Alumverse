@@ -20,6 +20,10 @@ import reactor.core.publisher.Mono;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.enums.ErrorCode;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -44,6 +48,13 @@ public class ChatWebSocketHandler implements WebSocketHandler {
 
     // Map: groupId -> Set of WebSocketSession
     private final Map<Long, Set<WebSocketSession>> groupToSessions = new ConcurrentHashMap<>();
+
+    // Cache sender display info (name/avatar) to avoid a DB round-trip on every single message.
+    // Display info changes rarely, so a short TTL is an acceptable staleness trade-off.
+    private final Cache<Integer, UserDisplayInfo> senderInfoCache = Caffeine.newBuilder()
+            .maximumSize(10_000)
+            .expireAfterWrite(Duration.ofMinutes(5))
+            .build();
 
     public ChatWebSocketHandler(
             ChatService chatService,
@@ -183,13 +194,18 @@ public class ChatWebSocketHandler implements WebSocketHandler {
         String metadata = json.has("metadata") ? json.get("metadata").toString() : null;
 
         return chatService.sendMessage(groupId, memberId, content, messageType, metadata)
-                .flatMap(savedMessage -> userProfileRepository
-                        .findDisplayInfoByUserId(savedMessage.getSenderMemberId().intValue()) // N + 1 query cho nay ne, co thoi gian thi sua
-                        .defaultIfEmpty(UserDisplayInfo.builder()
-                                .userId(savedMessage.getSenderMemberId().intValue())
-                                .build())
-                        .flatMap(senderInfo -> broadcastMessage(groupId, savedMessage, senderInfo)
-                                .then(notifyNewMessageViaSse(groupId, memberId, savedMessage, senderInfo))))
+                .flatMap(savedMessage -> {
+                    int senderId = savedMessage.getSenderMemberId().intValue();
+                    UserDisplayInfo cached = senderInfoCache.getIfPresent(senderId);
+                    Mono<UserDisplayInfo> senderInfoMono = cached != null
+                            ? Mono.just(cached)
+                            : userProfileRepository.findDisplayInfoByUserId(senderId)
+                                    .defaultIfEmpty(UserDisplayInfo.builder().userId(senderId).build())
+                                    .doOnNext(info -> senderInfoCache.put(senderId, info));
+                    return senderInfoMono
+                            .flatMap(senderInfo -> broadcastMessage(groupId, savedMessage, senderInfo)
+                                    .then(notifyNewMessageViaSse(groupId, memberId, savedMessage, senderInfo)));
+                })
                 .onErrorResume(error -> {
                     log.error("Error sending message", error);
                     return sendError(session, "Failed to send message: " + error.getMessage());
