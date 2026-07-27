@@ -173,7 +173,7 @@ public class EventService {
         String cacheKey = "upcoming_events_org_" + organizationId + "_page_" + page + "_limit_" + limit;
         return cacheUtils.getOrCompute(CacheNames.EVENT, cacheKey, java.time.Duration.ofMinutes(5), () ->
                 this.findUpcomingEvents(organizationId, page, limit)
-                        .doOnNext(res -> log.info("Fetched {} upcoming events for organization {}: {}", res.getItems().size(), organizationId, JsonUtils.toJson(res.getItems())))
+                        .doOnNext(res -> log.debug("Fetched {} upcoming events for organization {}: {}", res.getItems().size(), organizationId, JsonUtils.toJson(res.getItems())))
         );
     }
 
@@ -908,7 +908,17 @@ public class EventService {
     public Mono<EventStatisticsResponse> getEventStatistics(Long eventId) {
         return this.findEventById(eventId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId)))
-                .flatMap(e -> this.daoGetEventStatistics(eventId));
+                .flatMap(e -> {
+                    // This endpoint is public; a draft (unpublished) event's stats must not leak.
+                    // Only a manager of the owning org may see stats for an unpublished event.
+                    if (Boolean.TRUE.equals(e.getIsPublished())) {
+                        return this.daoGetEventStatistics(eventId);
+                    }
+                    return SecurityUtils.canManageContentOrganization(e.getOrganizationId())
+                            .flatMap(canManage -> Boolean.TRUE.equals(canManage)
+                                    ? this.daoGetEventStatistics(eventId)
+                                    : Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId)));
+                });
     }
 
     private Mono<Void> assertEventOpenForRegistration(Event event) {

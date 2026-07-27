@@ -39,7 +39,7 @@ public interface ChatGroupMemberRepository extends R2dbcRepository<ChatGroupMemb
             SELECT
                 cg.id                                                                   AS id,
                 CASE WHEN cg.type = 'PRIVATE' THEN u.full_name ELSE cg.title END        AS name,
-                CASE WHEN cg.type = 'PRIVATE' THEN u.avatar_url  ELSE NULL END         AS avatar_url,
+                CASE WHEN cg.type = 'PRIVATE' THEN u.avatar_url  ELSE cg.avatar_url END AS avatar_url,
                 lm.content                                                              AS preview,
                 lm.created_at                                                           AS updated_at,
                 cg.type                                                                 AS type

@@ -32,7 +32,10 @@ public class MentorshipHubService {
                                 .map(session -> MentorshipHubStatsResponse.UpcomingSessionDto.builder()
                                         .sessionId(session.getId())
                                         .mentorName(session.getMentorName())
-                                        .menteeName(session.getMenteeName())
+                                        // menteeName is intentionally omitted: this hub is visible to every
+                                        // org member, and exposing who each mentor is meeting leaks a private
+                                        // mentor–mentee relationship. The mentor name + time remain as a teaser.
+                                        .menteeName(null)
                                         .sessionTime(session.getSessionTime())
                                         .status(session.getStatus())
                                         .build())

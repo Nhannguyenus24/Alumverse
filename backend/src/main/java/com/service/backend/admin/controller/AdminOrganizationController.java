@@ -170,8 +170,8 @@ public class AdminOrganizationController {
     public Mono<ResponseEntity<ApiResponse<OrganizationIntroductionResponse>>> upsertIntroduction(
             @PathVariable Integer organizationId,
             @Valid @RequestBody UpsertOrganizationIntroductionRequest request) {
-        return SecurityUtils.resolveOrganizationId(organizationId)
-                .flatMap(resolvedOrgId -> organizationService.upsertIntroduction(resolvedOrgId, request))
+        return SecurityUtils.assertCanAdministerOrganization(organizationId)
+                .then(organizationService.upsertIntroduction(organizationId, request))
                 .map(intro -> ResponseEntity.ok(
                         new ApiResponse<>("Introduction saved successfully", intro)));
     }

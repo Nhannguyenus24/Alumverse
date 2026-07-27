@@ -144,9 +144,13 @@ const AddGroupMemberDialog = ({ open, onClose, groupId, existingMemberIds = [], 
           </Alert>
         ) : (
           <>
-            <Typography variant="caption" color="text.secondary">
-              {t('network:remaining_slots', { count: remainingSlots, max: MAX_GROUP_SIZE })}
-            </Typography>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              dangerouslySetInnerHTML={{
+                __html: t('network:remaining_slots', { count: remainingSlots, max: MAX_GROUP_SIZE })
+              }}
+            />
 
             <TextField
               placeholder={t('network:search_friends_placeholder')}

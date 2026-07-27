@@ -20,6 +20,7 @@ import org.springframework.web.server.ServerWebExchange;
 import io.swagger.v3.oas.annotations.Parameter;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.enums.ErrorCode;
+import com.service.backend.shared.utils.SecurityUtils;
 import com.service.backend.auth.service.RecaptchaService;
 import com.service.backend.auth.dto.ChangePasswordRequest;
 import com.service.backend.auth.dto.GoogleLoginRequest;
@@ -62,6 +63,20 @@ public class AuthController {
         this.authService = authService;
         this.jwtUtils = jwtUtils;
         this.recaptchaService = recaptchaService;
+    }
+
+    /**
+     * Guards account-mutating endpoints that take a {@code {userId}} path variable: the caller must
+     * be authenticated AND the path id must match the JWT identity, otherwise 403. Prevents IDOR
+     * (acting on another user's account). {@code action} is a cold Mono — its side effects only run
+     * once the ownership check passes.
+     */
+    private <T> Mono<ResponseEntity<ApiResponse<T>>> requireSelf(Integer userId, Mono<ResponseEntity<ApiResponse<T>>> action) {
+        return SecurityUtils.getCurrentUserId()
+                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.FORBIDDEN)))
+                .filter(current -> userId != null && current.longValue() == userId.longValue())
+                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.FORBIDDEN, "You can only modify your own account")))
+                .flatMap(ignored -> action);
     }
 
     private ResponseCookie buildRefreshTokenCookie(String value, long maxAgeMs) {
@@ -146,13 +161,14 @@ public class AuthController {
     /**
      * Change user password
      */
+    @PrivateEndpoint
     @PutMapping("/password/{userId}")
     public Mono<ResponseEntity<ApiResponse<Boolean>>> changePassword(
             @Parameter(example = "123")
             @PathVariable @Min(value = 1, message = "User ID must be greater than 0") Integer userId,
             @Valid @RequestBody ChangePasswordRequest request) {
-        return authService.changePassword(userId, request.getOldPassword(), request.getNewPassword())
-                .thenReturn(ResponseEntity.ok(new ApiResponse<>("Password changed successfully", true)));
+        return requireSelf(userId, authService.changePassword(userId, request.getOldPassword(), request.getNewPassword())
+                .thenReturn(ResponseEntity.ok(new ApiResponse<>("Password changed successfully", true))));
     }
 
     /**
@@ -248,48 +264,52 @@ public class AuthController {
     /**
      * Request OTP to change email (sent to old email)
      */
+    @PrivateEndpoint
     @PostMapping("/change-email/{userId}/request-otp-old")
     public Mono<ResponseEntity<ApiResponse<Boolean>>> requestChangeEmailOtpOld(
             @Parameter(example = "123")
             @PathVariable @Min(value = 1, message = "User ID must be greater than 0") Integer userId) {
-        return authService.requestChangeEmailOtpOld(userId)
-                .thenReturn(ResponseEntity.ok(new ApiResponse<>("OTP sent to old email successfully", true)));
+        return requireSelf(userId, authService.requestChangeEmailOtpOld(userId)
+                .thenReturn(ResponseEntity.ok(new ApiResponse<>("OTP sent to old email successfully", true))));
     }
 
     /**
      * Verify OTP sent to old email for changing email
      */
+    @PrivateEndpoint
     @PostMapping("/change-email/{userId}/verify-otp-old")
     public Mono<ResponseEntity<ApiResponse<Boolean>>> verifyChangeEmailOtpOld(
             @Parameter(example = "123")
             @PathVariable @Min(value = 1, message = "User ID must be greater than 0") Integer userId,
             @Valid @RequestBody VerifyOldEmailOtpRequest request) {
-        return authService.verifyChangeEmailOtpOld(userId, request.getOtp())
-                .thenReturn(ResponseEntity.ok(new ApiResponse<>("Old email verified successfully", true)));
+        return requireSelf(userId, authService.verifyChangeEmailOtpOld(userId, request.getOtp())
+                .thenReturn(ResponseEntity.ok(new ApiResponse<>("Old email verified successfully", true))));
     }
 
     /**
      * Request OTP to new email
      */
+    @PrivateEndpoint
     @PostMapping("/change-email/{userId}/request-otp-new")
     public Mono<ResponseEntity<ApiResponse<Boolean>>> requestChangeEmailOtpNew(
             @Parameter(example = "123")
             @PathVariable @Min(value = 1, message = "User ID must be greater than 0") Integer userId,
             @Valid @RequestBody SendOtpRequest request) {
-        return authService.requestChangeEmailOtpNew(userId, request.getEmail())
-                .thenReturn(ResponseEntity.ok(new ApiResponse<>("OTP sent to new email successfully", true)));
+        return requireSelf(userId, authService.requestChangeEmailOtpNew(userId, request.getEmail())
+                .thenReturn(ResponseEntity.ok(new ApiResponse<>("OTP sent to new email successfully", true))));
     }
 
     /**
      * Verify OTP sent to new email and update email
      */
+    @PrivateEndpoint
     @PostMapping("/change-email/{userId}/verify-otp-new")
     public Mono<ResponseEntity<ApiResponse<Boolean>>> verifyChangeEmailOtpNew(
             @Parameter(example = "123")
             @PathVariable @Min(value = 1, message = "User ID must be greater than 0") Integer userId,
             @Valid @RequestBody VerifyOtpRequest request) {
-        return authService.verifyChangeEmailOtpNew(userId, request.getEmail(), request.getOtp())
-                .thenReturn(ResponseEntity.ok(new ApiResponse<>("Email updated successfully", true)));
+        return requireSelf(userId, authService.verifyChangeEmailOtpNew(userId, request.getEmail(), request.getOtp())
+                .thenReturn(ResponseEntity.ok(new ApiResponse<>("Email updated successfully", true))));
     }
 
     private String extractUserAgent(ServerWebExchange exchange) {

@@ -211,6 +211,9 @@
   "unblock_user": "Unblock user",
   "block_user": "Block user",
   "view_group_members": "View group members",
+  "view_profile": "View profile",
+  "message_status_sent": "Sent",
+  "message_status_seen": "Seen",
   "you_blocked_user": "You have blocked {{name}}. You cannot send them messages.",
   "cannot_message_user": "You cannot message {{name}}.",
   "blocked_placeholder": "You have blocked this user. Unblock to send messages.",
@@ -247,6 +250,17 @@
     "access_blocked_title": "Alumni verification required to chat",
     "message_too_long": "Message must not exceed {{max}} characters.",
     "char_count": "{{count}}/{{max}}",
-    "char_count_hint": "character limit"
+    "char_count_hint": "character limit",
+    "typing_one": "{{name}} is typing...",
+    "typing_two": "{{name1}} and {{name2}} are typing...",
+    "typing_others": "{{name}} and {{count}} others are typing...",
+    "mention_all": "Everyone",
+    "mention_all_hint": "Notify everyone in the group",
+    "gif_picker": "Pick a GIF",
+    "gif_search_placeholder": "Search GIPHY",
+    "gif_error": "Couldn't load GIFs. Please try again.",
+    "gif_empty": "No matching GIFs found.",
+    "gif_powered_by": "Powered by GIPHY",
+    "preview_gif": "[GIF]"
   }
 }

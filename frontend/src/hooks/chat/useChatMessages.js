@@ -88,6 +88,22 @@ export function useChatMessages(groupId) {
     });
   }, []);
 
+  // Flip the seen flag on messages a peer has now read (created at or before `readAt`, or all
+  // loaded messages when `readAt` is missing). Used to turn "Sent" into "Seen" live.
+  const markPeerSeen = useCallback((readAt) => {
+    const readTime = readAt ? new Date(readAt).getTime() : null;
+    setMessages((prev) => {
+      let changed = false;
+      const next = prev.map((m) => {
+        if (m.seenByPeer) return m;
+        if (readTime != null && new Date(m.createdAt).getTime() > readTime) return m;
+        changed = true;
+        return { ...m, seenByPeer: true };
+      });
+      return changed ? next : prev;
+    });
+  }, []);
+
   // Re-fetches the newest messages and merges them in, deduped by id.
   // Used after a WebSocket reconnect to pick up messages sent by others
   // while this client was fully offline (a gap re-JOIN alone can't close,
@@ -109,5 +125,5 @@ export function useChatMessages(groupId) {
       .catch(() => {});
   }, [groupId]);
 
-  return { messages, isLoading, isLoadingMore, hasMore, loadMore, appendMessage, resyncMessages };
+  return { messages, isLoading, isLoadingMore, hasMore, loadMore, appendMessage, resyncMessages, markPeerSeen };
 }

@@ -1,18 +1,24 @@
-import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import { keyframes } from '@mui/material/styles';
 import { ScrollReveal } from '../animations/ScrollReveal';
 import {
   alpha,
   Alert,
+  Avatar,
   Box,
   Button,
   CircularProgress,
+  ClickAwayListener,
   IconButton,
   InputAdornment,
   ListItemIcon,
   ListItemText,
   MenuItem,
+  MenuList,
+  Paper,
+  Popper,
   TextField,
   Tooltip,
   Typography,
@@ -24,20 +30,26 @@ import LockOpenOutlinedIcon from '@mui/icons-material/LockOpen';
 import SendIcon from '@mui/icons-material/Send';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
+import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
+import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined';
 
 import Scrollbar from '../Scrollbar';
 import ChatEmojiPickerButton from '../ChatEmojiPickerButton';
+import ChatGifPickerButton from '../ChatGifPickerButton';
 import { insertTextAtInputSelection } from '../../utils/insertTextAtInputSelection';
 import ConfirmDialog from '../ConfirmDialog';
 import IconButtonMenu from '../IconButtonMenu';
 import GroupMembersDrawer from './GroupMembersDrawer';
 import { useChatMessages } from '../../hooks/chat/useChatMessages';
+import { useGroupMembers } from '../../hooks/chat/useGroupMembers';
 import { applyIncomingMessageToChatLists } from '../../hooks/chat/invalidateChatQueries';
 import { useGroupBlockedMembersContext } from '../../hooks/chat/useGroupBlockedMembersContext';
 import { usePeerActiveStatus } from '../../hooks/chat/usePeerActiveStatus';
 import { useChatWebSocket } from '../../hooks/mentorship/useChatWebSocket';
 import { useBlockUser } from '../../hooks/network/useBlockUser';
 import { useNotification } from '../../hooks/useNotification';
+import { useNetworkMemberProfileNavigation } from '../../hooks/network/useNetworkMemberProfileNavigation';
+import { CHAT_SEEN_EVENT } from '../../hooks/useServerSentEvents';
 import useAuthStore from '../../stores/authStore';
 import ChatAvatar from '../ChatAvatar';
 import { buildGroupBlockedMembersBannerMessage } from '../../utils/formatBlockedMemberNames';
@@ -64,15 +76,91 @@ import {
 
 const SCROLL_TOP_THRESHOLD = 8;
 const URL_REGEX = /(https?:\/\/[^\s]+)/g;
+const TYPING_STALE_MS = 4000;
+const TYPING_IDLE_MS = 2500;
+const MENTION_MAX_CANDIDATES = 6;
+// Sentinel id for the synthetic "@all" (tag everyone) picker entry.
+const ALL_MENTION_ID = '__all__';
+// The literal token inserted into the draft / persisted in metadata for @all.
+const ALL_MENTION_NAME = 'all';
 
-function renderMessageContent(content, isOwn) {
+// Three dots that bounce up in sequence — the Facebook-style "is typing" motion.
+const typingBounce = keyframes`
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-4px); opacity: 1; }
+`;
+
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// Mentions are stored in the message metadata (a JSON string from the REST API,
+// an already-parsed object from the live WebSocket broadcast) as { mentions: [...] }.
+function parseMentions(metadata) {
+  if (!metadata) return [];
+  let obj = metadata;
+  if (typeof metadata === 'string') {
+    try {
+      obj = JSON.parse(metadata);
+    } catch {
+      return [];
+    }
+  }
+  return Array.isArray(obj?.mentions) ? obj.mentions : [];
+}
+
+// Finds the @mention token the caret is currently sitting in, if any. The token
+// starts at an '@' that is at the very start of the text or preceded by whitespace,
+// and runs up to the caret (spaces allowed, since names contain them).
+function getMentionToken(text, caret) {
+  const upto = text.slice(0, caret);
+  const at = upto.lastIndexOf('@');
+  if (at === -1) return null;
+  if (at > 0 && !/\s/.test(text[at - 1])) return null;
+  const query = upto.slice(at + 1);
+  if (query.includes('\n')) return null;
+  return { start: at, query };
+}
+
+function renderMessageContent(content, isOwn, mentions) {
   if (!content) return null;
+
+  const names = (mentions ?? [])
+    .map((m) => m?.name)
+    .filter(Boolean)
+    // Longest first so "@An Nguyen" wins over a shorter "@An" prefix.
+    .sort((a, b) => b.length - a.length);
+  const mentionRegex = names.length
+    ? new RegExp(`(@(?:${names.map(escapeRegExp).join('|')}))`, 'g')
+    : null;
+
+  const mentionSx = isOwn
+    ? { fontWeight: 700 }
+    : { fontWeight: 600, color: 'primary.main' };
+
+  let key = 0;
+  const renderWithMentions = (text) => {
+    if (!mentionRegex) return text;
+    return text.split(mentionRegex).map((chunk) => {
+      if (chunk && chunk.startsWith('@') && names.includes(chunk.slice(1))) {
+        key += 1;
+        return (
+          <Box key={`m-${key}`} component="span" sx={mentionSx}>
+            {chunk}
+          </Box>
+        );
+      }
+      key += 1;
+      return <Fragment key={`t-${key}`}>{chunk}</Fragment>;
+    });
+  };
+
   const parts = content.split(URL_REGEX);
   return parts.map((part, index) => {
     if (part.match(URL_REGEX)) {
       return (
         <Link
-          key={index}
+          key={`u-${index}`}
           href={part}
           target="_blank"
           rel="noopener noreferrer"
@@ -88,7 +176,7 @@ function renderMessageContent(content, isOwn) {
         </Link>
       );
     }
-    return <Fragment key={index}>{part}</Fragment>;
+    return <Fragment key={`p-${index}`}>{renderWithMentions(part)}</Fragment>;
   });
 }
 
@@ -99,6 +187,7 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
   const { showError } = useNotification();
   const [draft, setDraft] = useState('');
   const draftInputRef = useRef(null);
+  const inputAreaRef = useRef(null);
   const fileInputRef = useRef(null);
   const [isUploadingAttachment, setIsUploadingAttachment] = useState(false);
   const [membersDrawerOpen, setMembersDrawerOpen] = useState(false);
@@ -112,6 +201,10 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
   const blockedByMe = Boolean(activeChat?.blockedByMe);
   const blockedByPeer = Boolean(activeChat?.blockedByPeer);
 
+  // Open the chat partner's profile — used from both the header avatar and the options menu.
+  const { navigateToProfile } = useNetworkMemberProfileNavigation(peerMemberId);
+  const canViewPeerProfile = isPrivateChat && peerMemberId != null;
+
   const { peerActive } = usePeerActiveStatus(peerMemberId, {
     enabled: isPrivateChat && !blockedByMe && !blockedByPeer,
   });
@@ -124,7 +217,7 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
     onSuccess: () => setBlockConfirmOpen(false),
   });
 
-  const { messages, isLoading, isLoadingMore, hasMore, loadMore, appendMessage, resyncMessages } = useChatMessages(
+  const { messages, isLoading, isLoadingMore, hasMore, loadMore, appendMessage, resyncMessages, markPeerSeen } = useChatMessages(
     activeChat?.id ?? null,
   );
 
@@ -140,11 +233,95 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
     ? buildGroupBlockedMembersBannerMessage(blockedMembersInGroup, isGroupOwner, t)
     : null;
 
+  // --- @Mention (group chats only) ---
+  const { members: groupMembers } = useGroupMembers(activeChat?.id ?? null, {
+    enabled: isGroupChat && activeChat?.id != null,
+  });
+  // mentionQuery === null means the picker is closed.
+  const [mentionQuery, setMentionQuery] = useState(null);
+  const [mentionIndex, setMentionIndex] = useState(0);
+  // Members the user actually picked in this draft; used to tag the outgoing message.
+  const [selectedMentions, setSelectedMentions] = useState([]);
+
+  const mentionCandidates = useMemo(() => {
+    if (mentionQuery == null) return [];
+    const q = mentionQuery.toLowerCase();
+    const others = groupMembers.filter((m) => m.memberId !== currentUserId);
+    const list = others
+      .filter((m) => (m.fullName ?? '').toLowerCase().includes(q))
+      .slice(0, MENTION_MAX_CANDIDATES);
+    // Offer "@all" (tag everyone) at the top when the query is empty or looks like
+    // it targets everyone, and there are at least two other members to address.
+    const allLabel = t('network:chat.mention_all', 'Tất cả mọi người').toLowerCase();
+    const wantsAll =
+      q === '' || 'all'.startsWith(q) || 'everyone'.startsWith(q) || allLabel.startsWith(q);
+    if (wantsAll && others.length > 1) {
+      return [
+        {
+          memberId: ALL_MENTION_ID,
+          fullName: t('network:chat.mention_all', 'Tất cả mọi người'),
+          isAll: true,
+        },
+        ...list,
+      ];
+    }
+    return list;
+  }, [mentionQuery, groupMembers, currentUserId, t]);
+  const mentionOpen = mentionQuery != null && mentionCandidates.length > 0;
+
+  // --- Typing indicator ---
+  // Map of memberId -> display name for peers currently typing in the open chat.
+  const [typingUsers, setTypingUsers] = useState({});
+  const typingTimersRef = useRef({});
+  const activeChatIdRef = useRef(activeChat?.id ?? null);
+  useEffect(() => { activeChatIdRef.current = activeChat?.id ?? null; }, [activeChat?.id]);
+
+  const clearTypingUsers = useCallback(() => {
+    Object.values(typingTimersRef.current).forEach((timer) => window.clearTimeout(timer));
+    typingTimersRef.current = {};
+    setTypingUsers({});
+  }, []);
+
+  // Records/refreshes a peer's typing state. Each active peer gets a stale-timer so
+  // the indicator disappears even if the "stopped typing" signal is lost.
+  const handleTypingSignal = useCallback((memberId, name, isTyping) => {
+    const timers = typingTimersRef.current;
+    if (timers[memberId]) {
+      window.clearTimeout(timers[memberId]);
+      delete timers[memberId];
+    }
+    if (!isTyping) {
+      setTypingUsers((prev) => {
+        if (!(memberId in prev)) return prev;
+        const next = { ...prev };
+        delete next[memberId];
+        return next;
+      });
+      return;
+    }
+    setTypingUsers((prev) => ({ ...prev, [memberId]: name || `User ${memberId}` }));
+    timers[memberId] = window.setTimeout(() => {
+      delete timers[memberId];
+      setTypingUsers((prev) => {
+        const next = { ...prev };
+        delete next[memberId];
+        return next;
+      });
+    }, TYPING_STALE_MS);
+  }, []);
+
   // --- WebSocket ---
   const appendMessageRef = useRef(appendMessage);
   useEffect(() => { appendMessageRef.current = appendMessage; }, [appendMessage]);
 
   const handleWsEvent = useCallback((event) => {
+    if (event.type === 'TYPING') {
+      const p = event.payload ?? {};
+      if (p.memberId === currentUserId) return;
+      if (String(p.groupId) !== String(activeChatIdRef.current)) return;
+      handleTypingSignal(p.memberId, p.senderName, p.isTyping);
+      return;
+    }
     if (event.type !== 'MESSAGE_CREATED') return;
     const p = event.payload;
     appendMessageRef.current({
@@ -167,7 +344,7 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
       createdAt: p.createdAt,
       markUnread: false,
     });
-  }, [queryClient]);
+  }, [queryClient, currentUserId, handleTypingSignal]);
 
   const resyncMessagesRef = useRef(resyncMessages);
   useEffect(() => { resyncMessagesRef.current = resyncMessages; }, [resyncMessages]);
@@ -176,7 +353,7 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
     resyncMessagesRef.current?.();
   }, []);
 
-  const { joinGroup, leaveGroup, sendMessage: wsSendMessage, isOpen } = useChatWebSocket({
+  const { joinGroup, leaveGroup, sendMessage: wsSendMessage, sendTyping, isOpen } = useChatWebSocket({
     token,
     onEvent: handleWsEvent,
     onReconnect: handleWsReconnect,
@@ -203,6 +380,26 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
     const timer = window.setTimeout(() => setMembersDrawerOpen(false), 0);
     return () => window.clearTimeout(timer);
   }, [activeChat?.id]);
+
+  // Reset per-conversation transient UI when switching chats: drop any peers'
+  // typing indicators, close the mention picker and forget pending mentions.
+  useEffect(() => {
+    clearTypingUsers();
+    setMentionQuery(null);
+    setSelectedMentions([]);
+  }, [activeChat?.id, clearTypingUsers]);
+
+  // When a peer reads the open conversation, flip our sent messages to "seen" in real time.
+  useEffect(() => {
+    const handleChatSeen = (event) => {
+      const detail = event.detail ?? {};
+      if (String(detail.groupId) !== String(activeChatIdRef.current)) return;
+      if (detail.readerMemberId === currentUserId) return;
+      markPeerSeen(detail.readAt);
+    };
+    window.addEventListener(CHAT_SEEN_EVENT, handleChatSeen);
+    return () => window.removeEventListener(CHAT_SEEN_EVENT, handleChatSeen);
+  }, [markPeerSeen, currentUserId]);
 
   // --- Scroll ---
   const scrollRef = useRef(null);
@@ -265,6 +462,76 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
   const charCount = draft.length;
   const atLengthLimit = charCount >= MAX_MESSAGE_LENGTH;
 
+  // --- Typing: broadcast our own "is typing" (throttled to one true/false pair per burst) ---
+  const typingSentRef = useRef(false);
+  const typingIdleTimerRef = useRef(null);
+
+  const stopTyping = useCallback(() => {
+    if (typingIdleTimerRef.current) {
+      window.clearTimeout(typingIdleTimerRef.current);
+      typingIdleTimerRef.current = null;
+    }
+    if (typingSentRef.current && activeChat?.id != null) {
+      typingSentRef.current = false;
+      sendTyping({ groupId: activeChat.id, isTyping: false });
+    }
+  }, [activeChat?.id, sendTyping]);
+
+  const notifyTyping = useCallback(() => {
+    if (activeChat?.id == null || !isOpen || isMessagingBlocked) return;
+    if (!typingSentRef.current) {
+      typingSentRef.current = true;
+      sendTyping({ groupId: activeChat.id, isTyping: true });
+    }
+    if (typingIdleTimerRef.current) window.clearTimeout(typingIdleTimerRef.current);
+    typingIdleTimerRef.current = window.setTimeout(() => {
+      typingIdleTimerRef.current = null;
+      typingSentRef.current = false;
+      sendTyping({ groupId: activeChat.id, isTyping: false });
+    }, TYPING_IDLE_MS);
+  }, [activeChat?.id, isOpen, isMessagingBlocked, sendTyping]);
+
+  // Stop broadcasting typing when switching away or unmounting.
+  useEffect(() => stopTyping, [stopTyping]);
+
+  // --- Mention picker: detect the @token at the caret and pick a member ---
+  const detectMention = useCallback((value, caret) => {
+    if (!isGroupChat) {
+      setMentionQuery(null);
+      return;
+    }
+    const token = getMentionToken(value, caret ?? value.length);
+    setMentionQuery(token ? token.query : null);
+    setMentionIndex(0);
+  }, [isGroupChat]);
+
+  const handleSelectMention = useCallback((member) => {
+    if (!member) return;
+    const input = draftInputRef.current;
+    const caret = input?.selectionStart ?? draft.length;
+    const token = getMentionToken(draft, caret);
+    if (!token) return;
+    const mentionText = member.isAll ? `@${ALL_MENTION_NAME} ` : `@${member.fullName} `;
+    const mentionEntry = member.isAll
+      ? { memberId: ALL_MENTION_ID, name: ALL_MENTION_NAME }
+      : { memberId: member.memberId, name: member.fullName };
+    const before = draft.slice(0, token.start);
+    const after = draft.slice(caret);
+    const next = before + mentionText + after;
+    setDraft(next);
+    setSelectedMentions((prev) =>
+      prev.some((m) => m.memberId === mentionEntry.memberId)
+        ? prev
+        : [...prev, mentionEntry],
+    );
+    setMentionQuery(null);
+    const caretPos = (before + mentionText).length;
+    requestAnimationFrame(() => {
+      input?.focus();
+      input?.setSelectionRange(caretPos, caretPos);
+    });
+  }, [draft]);
+
   const handleSend = useCallback(() => {
     const text = draft.trim();
     if (!text || !activeChat?.id || !isOpen || isMessagingBlocked) return;
@@ -272,15 +539,48 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
       showError(t('network:chat.message_too_long', { max: MAX_MESSAGE_LENGTH }));
       return;
     }
-    wsSendMessage({ groupId: activeChat.id, content: text, chatType: activeChat?.type });
+    // Only tag members whose @name survived edits and is still present in the text.
+    const mentions = selectedMentions.filter((m) => text.includes(`@${m.name}`));
+    wsSendMessage({
+      groupId: activeChat.id,
+      content: text,
+      chatType: activeChat?.type,
+      messageType: 'TEXT',
+      metadata: mentions.length ? { mentions } : null,
+    });
     setDraft('');
-  }, [draft, activeChat, isOpen, isMessagingBlocked, wsSendMessage, showError, t]);
+    setSelectedMentions([]);
+    setMentionQuery(null);
+    stopTyping();
+  }, [draft, activeChat, isOpen, isMessagingBlocked, selectedMentions, wsSendMessage, showError, t, stopTyping]);
 
   const handleKeyDown = useCallback((event) => {
+    if (mentionOpen) {
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        setMentionIndex((i) => (i + 1) % mentionCandidates.length);
+        return;
+      }
+      if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        setMentionIndex((i) => (i - 1 + mentionCandidates.length) % mentionCandidates.length);
+        return;
+      }
+      if (event.key === 'Enter' || event.key === 'Tab') {
+        event.preventDefault();
+        handleSelectMention(mentionCandidates[mentionIndex]);
+        return;
+      }
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setMentionQuery(null);
+        return;
+      }
+    }
     if (event.key !== 'Enter' || event.shiftKey) return;
     event.preventDefault();
     handleSend();
-  }, [handleSend]);
+  }, [mentionOpen, mentionCandidates, mentionIndex, handleSelectMention, handleSend]);
 
   const handleEmojiSelect = useCallback((emoji) => {
     if (draft.length + emoji.length > MAX_MESSAGE_LENGTH) {
@@ -289,6 +589,18 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
     }
     insertTextAtInputSelection(draftInputRef, setDraft, emoji);
   }, [draft.length, showError, t]);
+
+  const handleGifSelect = useCallback((gif) => {
+    if (!gif?.url || !activeChat?.id || !isOpen || isMessagingBlocked) return;
+    wsSendMessage({
+      groupId: activeChat.id,
+      content: gif.url,
+      chatType: activeChat?.type,
+      messageType: 'IMAGE',
+      metadata: { fileName: gif.title ? `${gif.title}.gif` : 'giphy.gif', gif: true },
+    });
+    stopTyping();
+  }, [activeChat?.id, activeChat?.type, isOpen, isMessagingBlocked, wsSendMessage, stopTyping]);
 
   const isAttachDisabled = isInputDisabled || isUploadingAttachment;
 
@@ -382,14 +694,51 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
               <ArrowBackIcon />
             </IconButton>
           ) : null}
-          <ChatAvatar
-            avatarUrl={activeChat?.avatarUrl}
-            name={activeChat?.name}
-            size={40}
-            variant={activeChat?.type === 'GROUP' ? 'group' : 'user'}
-          />
+          <Box
+            {...(canViewPeerProfile
+              ? {
+                  role: 'button',
+                  tabIndex: 0,
+                  'aria-label': t('network:view_profile'),
+                  onClick: navigateToProfile,
+                  onKeyDown: (event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      navigateToProfile();
+                    }
+                  },
+                  sx: { display: 'flex', flexShrink: 0, cursor: 'pointer', borderRadius: '50%' },
+                }
+              : { sx: { display: 'flex', flexShrink: 0 } })}
+          >
+            <ChatAvatar
+              avatarUrl={activeChat?.avatarUrl}
+              name={activeChat?.name}
+              size={40}
+              variant={activeChat?.type === 'GROUP' ? 'group' : 'user'}
+            />
+          </Box>
           <Box sx={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 0.25 }}>
-            <Typography variant="subtitle1" fontWeight={700} lineHeight={1.2} noWrap>
+            <Typography
+              variant="subtitle1"
+              fontWeight={700}
+              lineHeight={1.2}
+              noWrap
+              {...(canViewPeerProfile
+                ? {
+                    role: 'button',
+                    tabIndex: 0,
+                    onClick: navigateToProfile,
+                    onKeyDown: (event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        navigateToProfile();
+                      }
+                    },
+                    sx: { cursor: 'pointer', '&:hover': { textDecoration: 'underline' } },
+                  }
+                : {})}
+            >
               {activeChat?.name ?? 'Network Chat'}
             </Typography>
             {activeChat?.type === 'GROUP' && (
@@ -405,35 +754,50 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
             buttonAriaLabel={t('network:chat_options_aria')}
           >
             {({ close }) => (
-              blockedByMe ? (
-                <MenuItem
-                  disabled={isBlockActionPending || !canUseBasicActions}
-                  onClick={() => {
-                    close();
-                    if (!canUseBasicActions) return;
-                    unblockUser();
-                  }}
-                >
-                  <ListItemIcon sx={{ minWidth: 36 }}>
-                    <LockOpenOutlinedIcon fontSize="small" color="error" />
-                  </ListItemIcon>
-                  <ListItemText primary={t('network:unblock_user')} primaryTypographyProps={{ variant: 'body2' }} />
-                </MenuItem>
-              ) : (
-                <MenuItem
-                  disabled={isBlockActionPending || !canUseBasicActions}
-                  onClick={() => {
-                    close();
-                    if (!canUseBasicActions) return;
-                    setBlockConfirmOpen(true);
-                  }}
-                >
-                  <ListItemIcon sx={{ minWidth: 36 }}>
-                    <BlockOutlinedIcon fontSize="small" color="error" />
-                  </ListItemIcon>
-                  <ListItemText primary={t('network:block_user')} primaryTypographyProps={{ variant: 'body2' }} />
-                </MenuItem>
-              )
+              <Fragment>
+                {canViewPeerProfile ? (
+                  <MenuItem
+                    onClick={() => {
+                      close();
+                      navigateToProfile();
+                    }}
+                  >
+                    <ListItemIcon sx={{ minWidth: 36 }}>
+                      <PersonOutlineOutlinedIcon fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText primary={t('network:view_profile')} primaryTypographyProps={{ variant: 'body2' }} />
+                  </MenuItem>
+                ) : null}
+                {blockedByMe ? (
+                  <MenuItem
+                    disabled={isBlockActionPending || !canUseBasicActions}
+                    onClick={() => {
+                      close();
+                      if (!canUseBasicActions) return;
+                      unblockUser();
+                    }}
+                  >
+                    <ListItemIcon sx={{ minWidth: 36 }}>
+                      <LockOpenOutlinedIcon fontSize="small" color="error" />
+                    </ListItemIcon>
+                    <ListItemText primary={t('network:unblock_user')} primaryTypographyProps={{ variant: 'body2' }} />
+                  </MenuItem>
+                ) : (
+                  <MenuItem
+                    disabled={isBlockActionPending || !canUseBasicActions}
+                    onClick={() => {
+                      close();
+                      if (!canUseBasicActions) return;
+                      setBlockConfirmOpen(true);
+                    }}
+                  >
+                    <ListItemIcon sx={{ minWidth: 36 }}>
+                      <BlockOutlinedIcon fontSize="small" color="error" />
+                    </ListItemIcon>
+                    <ListItemText primary={t('network:block_user')} primaryTypographyProps={{ variant: 'body2' }} />
+                  </MenuItem>
+                )}
+              </Fragment>
             )}
           </IconButtonMenu>
         ) : isPrivateChat ? null : (
@@ -570,6 +934,9 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
         {!isLoading &&
           messages.map((msg, index) => {
             const isOwn = msg.senderMemberId === currentUserId;
+            // Show a sent/seen indicator instead of the timestamp on my own latest message
+            // in a private chat, so I can tell whether the peer has read it.
+            const showReadStatus = isPrivateChat && isOwn && index === messages.length - 1;
             const prev = messages[index - 1];
             const showDateSeparator =
               !prev || !isSameCalendarDay(prev.createdAt, msg.createdAt);
@@ -642,7 +1009,7 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
                           whiteSpace: 'pre-wrap',
                         }}
                       >
-                        {renderMessageContent(msg.content, isOwn)}
+                        {renderMessageContent(msg.content, isOwn, parseMentions(msg.metadata))}
                       </Typography>
                     </Box>
                   )}
@@ -659,7 +1026,9 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
                       whiteSpace: 'nowrap',
                     }}
                   >
-                    {formatChatTime(msg.createdAt)}
+                    {showReadStatus
+                      ? (msg.seenByPeer ? t('message_status_seen') : t('message_status_sent'))
+                      : formatChatTime(msg.createdAt)}
                   </Typography>
                 </Box>
               </Box>
@@ -667,6 +1036,55 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
             );
           })}
       </Scrollbar>
+
+      {/* Typing indicator — Facebook-style bouncing dots */}
+      {Object.keys(typingUsers).length > 0 && (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0, px: 2, pt: 0.5 }}>
+          <Box
+            sx={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              px: 1.25,
+              py: 0.75,
+              borderRadius: 999,
+              bgcolor: (theme) => alpha(theme.palette.text.primary, theme.palette.mode === 'dark' ? 0.1 : 0.06),
+            }}
+          >
+            {[0, 1, 2].map((dot) => (
+              <Box
+                key={dot}
+                component="span"
+                sx={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: '50%',
+                  bgcolor: 'text.secondary',
+                  animation: `${typingBounce} 1.2s ${dot * 0.16}s infinite ease-in-out`,
+                }}
+              />
+            ))}
+          </Box>
+          <Typography variant="caption" color="text.secondary" noWrap>
+            {(() => {
+              const names = Object.values(typingUsers);
+              if (names.length === 1) {
+                return t('network:chat.typing_one', '{{name}} đang soạn tin...', { name: names[0] });
+              }
+              if (names.length === 2) {
+                return t('network:chat.typing_two', '{{name1}} và {{name2}} đang soạn tin...', {
+                  name1: names[0],
+                  name2: names[1],
+                });
+              }
+              return t('network:chat.typing_others', '{{name}} và {{count}} người khác đang soạn tin...', {
+                name: names[0],
+                count: names.length - 1,
+              });
+            })()}
+          </Typography>
+        </Box>
+      )}
 
       {/* Character counter — shown as the message nears / reaches the limit */}
       {charCount > MAX_MESSAGE_LENGTH * 0.8 && (
@@ -685,6 +1103,7 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
 
       {/* Input area */}
       <Box
+        ref={inputAreaRef}
         sx={{
           flexShrink: 0,
           px: 2,
@@ -698,6 +1117,45 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
           gap: 1,
         }}
       >
+        {/* @Mention picker */}
+        <Popper
+          open={mentionOpen}
+          anchorEl={inputAreaRef.current}
+          placement="top-start"
+          style={{ zIndex: 1300, width: inputAreaRef.current?.offsetWidth }}
+          modifiers={[{ name: 'offset', options: { offset: [0, 8] } }]}
+        >
+          <ClickAwayListener onClickAway={() => setMentionQuery(null)}>
+            <Paper elevation={6} sx={{ maxHeight: 260, overflowY: 'auto', borderRadius: 2, py: 0.5 }}>
+              <MenuList dense disablePadding>
+                {mentionCandidates.map((member, idx) => (
+                  <MenuItem
+                    key={member.memberId}
+                    selected={idx === mentionIndex}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => handleSelectMention(member)}
+                    sx={{ gap: 1.25, px: 1.5, py: 0.75 }}
+                  >
+                    {member.isAll ? (
+                      <Avatar sx={{ width: 28, height: 28, bgcolor: 'primary.main' }}>
+                        <GroupsOutlinedIcon sx={{ fontSize: 18 }} />
+                      </Avatar>
+                    ) : (
+                      <ChatAvatar avatarUrl={member.avatarUrl} name={member.fullName} size={28} />
+                    )}
+                    <ListItemText
+                      primary={member.fullName}
+                      secondary={member.isAll ? t('network:chat.mention_all_hint', 'Thông báo cho mọi người trong nhóm') : undefined}
+                      primaryTypographyProps={{ variant: 'body2', noWrap: true, fontWeight: member.isAll ? 600 : 400 }}
+                      secondaryTypographyProps={{ variant: 'caption', noWrap: true }}
+                    />
+                  </MenuItem>
+                ))}
+              </MenuList>
+            </Paper>
+          </ClickAwayListener>
+        </Popper>
+
         <input
           ref={fileInputRef}
           type="file"
@@ -749,13 +1207,18 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
             }
             value={draft}
             onChange={(event) => {
-              const val = event.target.value;
-              if (val.length > MAX_MESSAGE_LENGTH) {
-                setDraft(val.slice(0, MAX_MESSAGE_LENGTH));
+              const rawVal = event.target.value;
+              const caret = event.target.selectionStart ?? rawVal.length;
+              let val = rawVal;
+              if (rawVal.length > MAX_MESSAGE_LENGTH) {
+                val = rawVal.slice(0, MAX_MESSAGE_LENGTH);
+                setDraft(val);
                 showError(t('network:chat.paste_limit_exceeded', 'Văn bản vượt quá giới hạn {{max}} ký tự và đã bị cắt bớt.', { max: MAX_MESSAGE_LENGTH }));
               } else {
                 setDraft(val);
               }
+              detectMention(val, Math.min(caret, val.length));
+              notifyTyping();
             }}
             onKeyDown={handleKeyDown}
             disabled={isInputDisabled}
@@ -763,7 +1226,7 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
             size="small"
             sx={{
               '& .MuiOutlinedInput-root': {
-                borderRadius: 999,
+                borderRadius: 1,
                 minHeight: 48,
                 alignItems: 'center',
                 pr: 1,
@@ -779,7 +1242,11 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
             }}
             InputProps={{
               endAdornment: (
-                <InputAdornment position="end">
+                <InputAdornment position="end" sx={{ gap: 0.25 }}>
+                  <ChatGifPickerButton
+                    disabled={isInputDisabled}
+                    onGifSelect={handleGifSelect}
+                  />
                   <ChatEmojiPickerButton
                     disabled={isInputDisabled}
                     onEmojiSelect={handleEmojiSelect}

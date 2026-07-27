@@ -141,7 +141,7 @@ public class AuthService {
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND)))
                 .doOnSuccess(u -> {
                     recordLoginMetric("EMAIL", "success");
-                    logger.info("loginByEmail result: {}", JsonUtils.toJson(u));
+                    logger.debug("loginByEmail result: {}", JsonUtils.toJson(u));
                 })
                 .doOnError(error -> {
                     recordLoginMetric("EMAIL", "failure");
@@ -169,7 +169,7 @@ public class AuthService {
                 )
                 .doOnSuccess(u -> {
                     recordLoginMetric("GOOGLE", "success");
-                    logger.info("loginWithGoogle result: {}", JsonUtils.toJson(u));
+                    logger.debug("loginWithGoogle result: {}", JsonUtils.toJson(u));
                 })
                 .doOnError(error -> {
                     recordLoginMetric("GOOGLE", "failure");

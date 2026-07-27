@@ -382,7 +382,7 @@ class FundServiceTest {
                     .status(Status.PENDING)
                     .build();
 
-            when(userRepository.findById(5)).thenReturn(Mono.just(user));
+            when(userRepository.existsById(5)).thenReturn(Mono.just(true));
             when(fundDonationsRepository.save(any())).thenReturn(Mono.just(savedDonation));
 
             StepVerifier.create(fundService.createFundDonation(request).contextWrite(userContext(5)))
@@ -402,7 +402,7 @@ class FundServiceTest {
                     .amount(new BigDecimal("100000"))
                     .build();
 
-            when(userRepository.findById(99)).thenReturn(Mono.empty());
+            when(userRepository.existsById(99)).thenReturn(Mono.just(false));
 
             StepVerifier.create(fundService.createFundDonation(request).contextWrite(userContext(99)))
                     .expectErrorMatches(err -> err instanceof ApplicationException &&

@@ -35,7 +35,7 @@ public class AuditService {
                     page,
                     size
             )
-             .doOnSuccess(r -> logger.info("getLoginHistories (org={}) result: {}", organizationId, JsonUtils.toJson(r)))
+             .doOnSuccess(r -> logger.debug("getLoginHistories (org={}) result: {}", organizationId, JsonUtils.toJson(r)))
              .doOnError(e -> logger.error("Error fetching login histories for org {}", e.getMessage()));
         }
         return PaginationHelper.paginate(
@@ -44,7 +44,7 @@ public class AuditService {
                 page,
                 size
         )
-         .doOnSuccess(r -> logger.info("getLoginHistories result: {}", JsonUtils.toJson(r)))
+         .doOnSuccess(r -> logger.debug("getLoginHistories result: {}", JsonUtils.toJson(r)))
          .doOnError(e -> logger.error("Error fetching login histories: {}", e.getMessage()));
     }
 
@@ -56,7 +56,7 @@ public class AuditService {
                 page,
                 size
         )
-         .doOnSuccess(r -> logger.info("getLoginHistoriesByUser result: {}", JsonUtils.toJson(r)))
+         .doOnSuccess(r -> logger.debug("getLoginHistoriesByUser result: {}", JsonUtils.toJson(r)))
          .doOnError(e -> logger.error("Error fetching login histories for user {}", e.getMessage()));
     }
 
@@ -76,14 +76,14 @@ public class AuditService {
             stats.put("dailyStats", t.getT2());
             return stats;
         })
-        .doOnSuccess(r -> logger.info("getLoginStats result: {}", JsonUtils.toJson(r)))
+        .doOnSuccess(r -> logger.debug("getLoginStats result: {}", JsonUtils.toJson(r)))
         .doOnError(e -> logger.error("Error fetching login stats: {}", e.getMessage()));
     }
 
     public Mono<List<SuspiciousLoginInfo>> getSuspiciousLogins() {
         return auditRepository.findSuspiciousLogins()
                 .collectList()
-                .doOnSuccess(r -> logger.info("getSuspiciousLogins result: {}", JsonUtils.toJson(r)))
+                .doOnSuccess(r -> logger.debug("getSuspiciousLogins result: {}", JsonUtils.toJson(r)))
                 .doOnError(e -> logger.error("Error fetching suspicious logins: {}", e.getMessage()));
     }
 }
