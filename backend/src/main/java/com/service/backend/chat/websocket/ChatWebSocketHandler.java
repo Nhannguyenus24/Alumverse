@@ -323,7 +323,9 @@ public class ChatWebSocketHandler implements WebSocketHandler {
                 : "Một thành viên";
         String title = senderName + " đã nhắc đến bạn";
         String body = buildMentionPreview(message.getContent());
-        String link = "/network";
+        // Deep-link straight to the conversation the mention happened in. ChatPage reads
+        // the chatId query param and opens that conversation on load.
+        String link = "/chat?chatId=" + groupId;
 
         return recipients
                 .filter(recipientId -> recipientId != null && !senderMemberId.equals(recipientId))
