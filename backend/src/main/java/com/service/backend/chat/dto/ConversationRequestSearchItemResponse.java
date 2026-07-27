@@ -15,9 +15,11 @@ public class ConversationRequestSearchItemResponse {
 
     private Long id;
     private Long requesterMemberId;
+    private Long peerMemberId;
     private String fullName;
     private String avatarUrl;
     private String status;
+    private String requestDirection;
     private String message;
     private LocalDateTime messageCreatedAt;
 }

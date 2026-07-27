@@ -3,6 +3,7 @@ import {
   Box,
   Button,
   Card,
+  Chip,
   CircularProgress,
   Stack,
   Typography,
@@ -27,9 +28,22 @@ const NetworkIncomingRequestCard = ({
   const { t } = useTranslation('network');
   const { canUseBasicActions } = useCanContribute();
   const previewMessage = request.message ?? '';
-  const isPending = request.status === CONVERSATION_REQUEST_STATUS.PENDING;
+  const isIncomingPending =
+    request.status === CONVERSATION_REQUEST_STATUS.PENDING
+    && request.requestDirection === 'INCOMING';
+  const peerMemberId = request.peerMemberId ?? request.requesterMemberId;
   const { navigateToProfile, stopActionPropagation } =
-    useNetworkMemberProfileNavigation(request.requesterMemberId);
+    useNetworkMemberProfileNavigation(peerMemberId);
+
+  const statusLabel = (() => {
+    if (request.status === CONVERSATION_REQUEST_STATUS.REJECTED) {
+      return t('incoming_status_rejected');
+    }
+    if (request.requestDirection === 'OUTGOING') {
+      return t('incoming_status_sent');
+    }
+    return t('incoming_status_pending');
+  })();
 
   const handleCardClick = () => {
     onViewDetail?.(request);
@@ -70,6 +84,23 @@ const NetworkIncomingRequestCard = ({
     stopActionPropagation(event);
     if (!canUseBasicActions) return;
     onReject?.(request.id);
+  };
+
+  const statusChipSx = (theme) => {
+    const isRejected = request.status === CONVERSATION_REQUEST_STATUS.REJECTED;
+    const palette = isRejected ? theme.palette.warning : theme.palette.primary;
+
+    return {
+      flexShrink: 0,
+      alignSelf: { xs: 'flex-start', sm: 'center' },
+      fontWeight: 700,
+      color: palette.main,
+      borderColor: palette.main,
+      bgcolor: 'transparent',
+      '&:hover': {
+        bgcolor: 'transparent',
+      },
+    };
   };
 
   return (
@@ -135,7 +166,7 @@ const NetworkIncomingRequestCard = ({
           </Box>
         </Stack>
 
-        {isPending ? (
+        {isIncomingPending ? (
           <Stack
             direction={{ xs: 'row', sm: 'column' }}
             spacing={1}
@@ -170,7 +201,14 @@ const NetworkIncomingRequestCard = ({
               </Button>
             </ContributeGuardTooltip>
           </Stack>
-        ) : null}
+        ) : (
+          <Chip
+            label={statusLabel}
+            size="small"
+            variant="outlined"
+            sx={statusChipSx}
+          />
+        )}
       </Stack>
     </Card>
   );

@@ -12,6 +12,7 @@ import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { usePublishedNews } from '../../hooks/news/usePublishedNews';
 import { normalizeNews } from '../../hooks/articles/normalizeArticle';
 import { toCardShape } from '../../hooks/articles/toCardShape';
+import { useOrganization } from '../../hooks/useOrganization';
 import { useAuth } from '../../hooks/useAuth';
 import { useCanContribute } from '../../hooks/useCanContribute';
 import { useSnackbar } from 'notistack';
@@ -24,6 +25,7 @@ import {
   paginateArticles,
 } from '../../utils/articleListFilters';
 import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
+import { getOrganizationHeroBannerUrl } from '../../utils/organizationBrand';
 import {
   ScrollReveal,
   ScrollRevealGroup,
@@ -39,6 +41,8 @@ const ActivitiesPage = () => {
   const navigate = useOrgNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const queryClient = useQueryClient();
+  const { organization } = useOrganization();
+  const cardFallbackImage = useMemo(() => getOrganizationHeroBannerUrl(organization), [organization]);
 
   const [page, setPage] = useState(0);
   const { news: rawNews } = usePublishedNews(0, ARTICLE_FETCH_LIMIT);
@@ -56,11 +60,11 @@ const ActivitiesPage = () => {
     [listNews, page],
   );
 
-  const featuredCard = featured ? toCardShape(featured) : null;
+  const featuredCard = featured ? toCardShape(featured, cardFallbackImage) : null;
   const suggestionArticles = pageNews.slice(0, NEWS_SECTION_LIMIT);
   const dailyArticles = pageNews.slice(NEWS_SECTION_LIMIT, NEWS_SECTION_LIMIT * 2);
-  const suggestionCards = suggestionArticles.map(toCardShape);
-  const dailyCards = dailyArticles.map(toCardShape);
+  const suggestionCards = suggestionArticles.map((article) => toCardShape(article, cardFallbackImage));
+  const dailyCards = dailyArticles.map((article) => toCardShape(article, cardFallbackImage));
 
   const openArticle = (article) => {
     if (!article?.id) return;

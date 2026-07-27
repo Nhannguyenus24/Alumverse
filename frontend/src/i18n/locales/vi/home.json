@@ -1,6 +1,10 @@
 {
   "page_title": "AlumVerse - Hệ thống kết nối Sinh viên & Cựu sinh viên",
   "page_meta_desc": "AlumVerse - Hệ thống kết nối Sinh viên & Cựu sinh viên, Trường Đại học Khoa học Tự nhiên, ĐHQG-HCM",
+  "org_selection_page_title": "AlumVerse",
+  "org_selection_title": "Chào mừng bạn đến với AlumVerse!",
+  "org_selection_desc": "Nền tảng kết nối Sinh viên & Cựu sinh viên, Trường Đại học Khoa học Tự nhiên, ĐHQG-HCM. Hãy lựa chọn khoa, đơn vị hay tổ chức đang có mặt trên AlumVerse để kết nối cộng đồng, chia sẻ hoạt động và mở rộng cơ hội hợp tác.",
+  "org_selection_load_error": "Chưa thể tải danh sách tổ chức. Vui lòng thử lại sau.",
   "hero_body": "Nền tảng kết nối Sinh viên & Cựu sinh viên, Trường Đại học Khoa học Tự nhiên, ĐHQG-HCM.",
   "hero_intro_btn": "Giới thiệu",
   "hero_explore_btn": "Khám phá",

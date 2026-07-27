@@ -30,7 +30,6 @@ import LinkIcon from "@mui/icons-material/Link";
 import EventAvailableOutlinedIcon from "@mui/icons-material/EventAvailableOutlined";
 import EventBusyOutlinedIcon from "@mui/icons-material/EventBusyOutlined";
 import Page from "../../components/Page";
-import useOrganizationStore from "../../stores/organizationStore";
 import { useOrganization } from "../../hooks/useOrganization";
 import { useArticleById } from "../../hooks/articles/useArticleById";
 import DOMPurify from "dompurify";
@@ -45,6 +44,7 @@ import { ContributeGuardTooltip, VerificationRequiredAlert } from "../../compone
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
 import { findCancelableTicketForEvent, getEventActionState, getEventRegisteredState } from "../../utils/eventRegistration";
 import { extractMainImageCaption } from "../../utils/articleContentCaption";
+import { getOrganizationHeroBannerUrl } from "../../utils/organizationBrand";
 import { usePublicProfile } from "../../hooks/profile/usePublicProfile";
 import {
   ScrollReveal,
@@ -599,11 +599,10 @@ const ArticlePage = () => {
     enabled: Boolean(authorId) && article?.channel !== "donation",
   });
 
-  const { cleanContent, mainImageCaption } = useMemo(() => {
+  const { cleanContent } = useMemo(() => {
     const parsedContent = extractMainImageCaption(article?.content ?? "");
     return {
       cleanContent: normalizeRichTextHtml(parsedContent.content || ""),
-      mainImageCaption: parsedContent.caption,
     };
   }, [article]);
   
@@ -727,27 +726,7 @@ const ArticlePage = () => {
 
   const { organization } = useOrganization();
   const currentOrgId = organization?.id ?? null;
-  const orgHeroBannerUrl = useMemo(() => {
-    if (!organization) return null;
-    let url = null;
-
-    try {
-      if (organization.brandConfig) {
-        const b = typeof organization.brandConfig === 'string' ? JSON.parse(organization.brandConfig) : organization.brandConfig;
-        url = b?.hero_banner_url || b?.heroBannerUrl;
-      }
-    } catch (e) {}
-
-    if (!url && organization.featuresConfig) {
-      try {
-        const f = typeof organization.featuresConfig === 'string' ? JSON.parse(organization.featuresConfig) : organization.featuresConfig;
-        const b = f?.brand_config || f?.brandConfig;
-        url = b?.hero_banner_url || b?.heroBannerUrl;
-      } catch (e) {}
-    }
-
-    return url || organization?.heroBannerUrl || organization?.hero_banner_url || null;
-  }, [organization]);
+  const orgHeroBannerUrl = useMemo(() => getOrganizationHeroBannerUrl(organization), [organization]);
 
   const articleOrgId = article?.organizationId ?? article?.organization_id;
   const isOrgMismatch = Boolean(
@@ -958,14 +937,6 @@ const ArticlePage = () => {
               {article.thumbnailUrl && (
                 <ScrollRevealItem sx={{ display: "flex", flexDirection: "column", alignItems: "center", mt: { xs: 2, md: 3 }, mb: { xs: 5, md: 6 } }}>
                   <Box component="img" src={article.thumbnailUrl} alt={article.title} sx={{ display: "block", width: "100%", height: "auto", objectFit: "contain", borderRadius: 1 }} />
-                  {mainImageCaption && (
-                    <Typography
-                      variant="caption"
-                      sx={{ color: "text.secondary", mt: 1, fontStyle: "italic", textAlign: "center", maxWidth: "100%" }}
-                    >
-                      {mainImageCaption}
-                    </Typography>
-                  )}
                 </ScrollRevealItem>
               )}
 

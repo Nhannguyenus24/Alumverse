@@ -161,6 +161,7 @@ const NetworkMessageDrawer = ({
               : CONVERSATION_REQUEST_STATUS.PENDING,
             cooldownUntil: null,
             latestMessage: null,
+            requestDirection: wasIncoming ? 'ACCEPTED' : 'OUTGOING',
           });
         }
       },

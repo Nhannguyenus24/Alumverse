@@ -35,6 +35,7 @@ import apiClient from "../../utils/axios";
 import ArticleCard from "../../components/articles/ArticleCard";
 import useOrganizationStore from "../../stores/organizationStore";
 import { HEADER_HEIGHT } from "../../constants/layout";
+import { getOrganizationHeroBannerUrl } from "../../utils/organizationBrand";
 
 const HERO_LOGO = "/alumverse_logo/Logo_White.svg";
 
@@ -392,6 +393,7 @@ const HomePage = () => {
   const navigate = useOrgNavigate();
   const { isAuthenticated } = useAuth();
   const { organization } = useOrganizationStore();
+  const cardFallbackImage = useMemo(() => getOrganizationHeroBannerUrl(organization), [organization]);
   const exploreSectionRef = useRef(null);
 
   useEffect(() => {
@@ -428,20 +430,20 @@ const HomePage = () => {
   const newsCards = rawNews
     .map(normalizeNews)
     .filter(Boolean)
-    .map(toCardShape)
+    .map((article) => toCardShape(article, cardFallbackImage))
     .filter(Boolean);
   const visibleNewsCards = newsCards.slice(0, getHomeNewsLimit(newsCards.length));
-  const eventCards = upcomingEvents.map(toEventCardShape).filter(Boolean);
+  const eventCards = upcomingEvents.map((event) => toEventCardShape(event, cardFallbackImage)).filter(Boolean);
   const visibleEvent = eventCards[eventPage] ?? eventCards[0] ?? null;
   const featuredArticleGroups = useMemo(() => {
     const combined = [...alumniArticles, ...achievements]
       .filter(Boolean)
       .sort((left, right) => new Date(right.updatedAt ?? right.createdAt ?? right.publishedAt ?? 0) - new Date(left.updatedAt ?? left.createdAt ?? left.publishedAt ?? 0))
-      .map(toCardShape)
+      .map((article) => toCardShape(article, cardFallbackImage))
       .filter(Boolean);
 
     return buildPagedCards(combined.slice(0, getEvenCardLimit(combined.length)), 2);
-  }, [achievements, alumniArticles]);
+  }, [achievements, alumniArticles, cardFallbackImage]);
   const visibleFeaturedArticles = featuredArticleGroups[featuredPage] ?? featuredArticleGroups[0] ?? [];
 
   useEffect(() => {

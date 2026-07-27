@@ -2,11 +2,13 @@
 // ArticleCard / FeaturedArticleCard components expect: { title, description, date, image }
 import { normalizePreviewText } from "../../utils/text";
 
-export const toCardShape = (article) => {
+const resolveCardImage = (primary, fallback) => primary || fallback || "/placeholder-image.png";
+
+export const toCardShape = (article, fallbackImage = null) => {
   if (!article) return null;
   const raw = article.content ?? "";
   const plain = normalizePreviewText(raw);
-  const description = plain.length > 180 ? `${plain.slice(0, 180)}…` : plain;
+  const description = plain.length > 260 ? `${plain.slice(0, 260)}…` : plain;
   const displayDate = article.updatedAt ?? article.createdAt ?? article.publishedAt;
   const date = displayDate
     ? new Date(displayDate).toLocaleDateString("vi-VN")
@@ -17,7 +19,7 @@ export const toCardShape = (article) => {
     title: normalizePreviewText(article.title),
     description,
     date,
-    image: article.thumbnailUrl ?? "/placeholder-image.png",
+    image: resolveCardImage(article.thumbnailUrl, fallbackImage),
     url: article.url || article.linkUrl,
   };
 };

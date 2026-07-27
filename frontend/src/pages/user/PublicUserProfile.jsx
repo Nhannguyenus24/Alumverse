@@ -7,6 +7,7 @@ import {
   Typography,
 } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
+import WcIcon from '@mui/icons-material/Wc';
 import EmailIcon from '@mui/icons-material/Email';
 import WorkIcon from '@mui/icons-material/Work';
 import BusinessIcon from '@mui/icons-material/Business';
@@ -28,12 +29,13 @@ import { resolveProfileRoleLabel } from '../../utils/profileRoleUtils';
 import { resolveMediaUrl } from '../../utils/imageUtils';
 import { getPublicContactEmail } from '../../utils/profileContactLinks';
 import { ScrollReveal } from '../../components/animations/ScrollReveal';
+import { GENDER_LABEL_KEYS, normalizeGender } from '../../constants/gender';
 
 const DEFAULT_COVER =
   'https://ethnasia.com/cdn/shop/articles/sean-o-KMn4VEeEPR8-unsplash_edited.jpg?v=1621585619';
 
 const PublicUserProfile = ({ userId, navigate }) => {
-  const { t } = useTranslation('profile');
+  const { t } = useTranslation(['profile', 'settings']);
   const profileQuery = usePublicProfile(userId);
   const { checkStatus } = useCheckConversationRequestStatus();
   const currentMemberId = useNetworkCurrentMemberId();
@@ -110,8 +112,12 @@ const PublicUserProfile = ({ userId, navigate }) => {
 
   const hasBio = !!profile.bio?.trim();
   const contactEmail = getPublicContactEmail(profile.links);
+  const normalizedGender = normalizeGender(profile.gender);
+  const genderLabel = profile.gender
+    ? t(`settings:${GENDER_LABEL_KEYS[normalizedGender]}`)
+    : '';
   const personalFields = [
-    { icon: PersonIcon, label: t('full_name'), value: profile.fullName },
+    { icon: WcIcon, label: t('settings:label_gender'), value: genderLabel },
     contactEmail ? { icon: EmailIcon, label: t('contact_email', { defaultValue: 'Email liên hệ' }), value: contactEmail } : null,
     { icon: WorkIcon, label: t('current_job'), value: profile.currentJobTitle },
     { icon: BusinessIcon, label: t('company'), value: profile.currentCompany },

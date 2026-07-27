@@ -53,7 +53,8 @@ public final class ArticleTopicCatalog {
                     "career_milestone",
                     "startup_investment",
                     "international_honor",
-                    "social_contribution_award"
+                    "social_contribution_award",
+                    "achievement_hall_of_fame"
             ),
             Channel.JOB, Set.of(
                     "internship",
