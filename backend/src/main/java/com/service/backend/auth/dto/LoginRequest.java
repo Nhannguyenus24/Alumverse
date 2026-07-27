@@ -31,8 +31,8 @@ public class LoginRequest {
     @Schema(example = "true")
     private boolean rememberMe;
 
-    // Optional: the web client sends a token (verified in RecaptchaService);
-    // the mobile client has no reCAPTCHA widget and omits it (verification is
-    // skipped when blank).
+    // reCAPTCHA token, verified in RecaptchaService on the web /login route.
+    // The mobile client uses /auth/mobile/login, which skips verification, so
+    // this field is unused there.
     private String recaptchaToken;
 }

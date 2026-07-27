@@ -308,7 +308,7 @@ public class EventService {
         );
         return emailService.sendHtmlEmail(
                 invitation.getEmail(),
-                "[Alumniverse] Lời mời tham gia: " + event.getTitle(),
+                "[AlumVerse] Lời mời tham gia: " + event.getTitle(),
                 "eventInvitation",
                 vars
         );
@@ -564,7 +564,7 @@ public class EventService {
                     );
                     return emailService.sendHtmlEmailWithInlineImage(
                             recipientEmail,
-                            "[Alumniverse] Vé tham dự: " + event.getTitle(),
+                            "[AlumVerse] Vé tham dự: " + event.getTitle(),
                             "eventTicket",
                             vars,
                             "ticketQr",
@@ -589,7 +589,7 @@ public class EventService {
                     );
                     return emailService.sendHtmlEmail(
                         recipientEmail,
-                        "[Alumniverse] Vé đã bị hủy: " + event.getTitle(),
+                        "[AlumVerse] Vé đã bị hủy: " + event.getTitle(),
                         "eventTicketCancelled",
                         vars
                     );
