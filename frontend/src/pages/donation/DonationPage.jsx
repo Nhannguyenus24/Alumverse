@@ -24,6 +24,7 @@ import DonationCloseDialog from "../../components/donation/DonationCloseDialog";
 import StatsBanner from "../../components/StatsBanner";
 import AlumniContentLayout from "../../layouts/AlumniContentLayout";
 import { DEFAULT_DONATION_FILTERS, getDonationFilterConfig } from "../../constants/donationConfig";
+import { getOrganizationHeroBannerUrl } from "../../utils/organizationBrand";
 
 const DEFAULT_ADMIN_STATS = { totalCurrentAmount: 0, totalFunds: 0, totalDonations: 0, totalDonationsAmountThisMonth: 0 };
 
@@ -47,7 +48,9 @@ export default function DonationPage() {
   const { enqueueSnackbar } = useSnackbar();
   const { isAuthenticated } = useAuth();
   const { isOrgManager } = useCanContribute();
-  const organizationId = useOrganizationStore((state) => state.organization?.id ?? null);
+  const organization = useOrganizationStore((state) => state.organization);
+  const organizationId = organization?.id ?? null;
+  const cardFallbackImage = useMemo(() => getOrganizationHeroBannerUrl(organization), [organization]);
   const isAdmin = isAuthenticated && isOrgManager;
 
   const [featuredCampaign, setFeaturedCampaign] = useState(null);
@@ -239,6 +242,7 @@ export default function DonationPage() {
                   onNavigate={() => navigate(`/donations/${featuredCampaign.id}`)}
                   onEdit={() => navigate(`/donations/${featuredCampaign.id}/edit`)}
                   onClose={() => setCloseDialogCampaign(featuredCampaign)}
+                  fallbackImage={cardFallbackImage}
                 />
               </ScrollReveal>
             )}
@@ -255,6 +259,7 @@ export default function DonationPage() {
                         onNavigate={() => navigate(`/donations/${campaign.id}`)}
                         onEdit={() => navigate(`/donations/${campaign.id}/edit`)}
                         onClose={() => setCloseDialogCampaign(campaign)}
+                        fallbackImage={cardFallbackImage}
                       />
                     </ScrollRevealItem>
                   ))}

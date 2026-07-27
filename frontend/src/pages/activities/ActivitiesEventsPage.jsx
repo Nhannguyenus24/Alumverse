@@ -13,6 +13,7 @@ import AlumniContentLayout from '../../layouts/AlumniContentLayout';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { usePublishedEvents } from '../../hooks/articles/usePublishedEvents';
 import { toEventCardShape } from '../../hooks/articles/toEventCardShape';
+import { useOrganization } from '../../hooks/useOrganization';
 import { useAuth } from '../../hooks/useAuth';
 import { useCanContribute } from '../../hooks/useCanContribute';
 import { eventApi } from '../../utils/api';
@@ -23,6 +24,7 @@ import {
   paginateArticles,
 } from '../../utils/articleListFilters';
 import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
+import { getOrganizationHeroBannerUrl } from '../../utils/organizationBrand';
 import {
   ScrollReveal,
   ScrollRevealGroup,
@@ -37,6 +39,8 @@ const ActivitiesPage = () => {
   const navigate = useOrgNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const queryClient = useQueryClient();
+  const { organization } = useOrganization();
+  const cardFallbackImage = useMemo(() => getOrganizationHeroBannerUrl(organization), [organization]);
 
   const [upcomingPage, setUpcomingPage] = useState(0);
   const [ongoingPage, setOngoingPage] = useState(0);
@@ -76,10 +80,10 @@ const ActivitiesPage = () => {
     [filteredPastEvents, pastPage],
   );
 
-  const featuredCard = featured ? toEventCardShape(featured) : null;
-  const upcomingCards = pagedUpcomingEvents.map(toEventCardShape);
-  const ongoingCards = pagedOngoingEvents.map(toEventCardShape);
-  const pastCards = pagedPastEvents.map(toEventCardShape);
+  const featuredCard = featured ? toEventCardShape(featured, cardFallbackImage) : null;
+  const upcomingCards = pagedUpcomingEvents.map((event) => toEventCardShape(event, cardFallbackImage));
+  const ongoingCards = pagedOngoingEvents.map((event) => toEventCardShape(event, cardFallbackImage));
+  const pastCards = pagedPastEvents.map((event) => toEventCardShape(event, cardFallbackImage));
 
   const openArticle = (article) => {
     if (!article?.id) return;

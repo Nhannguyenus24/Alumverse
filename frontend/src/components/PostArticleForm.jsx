@@ -33,8 +33,6 @@ const PostArticleForm = ({
   url,
   setUrl,
   mainImagePreview,
-  mainImageCaption,
-  setMainImageCaption,
   donationData = {},
   handleDonationInputChange,
   eventData = {},
@@ -48,7 +46,6 @@ const PostArticleForm = ({
 
   const topicsByChannel = useMemo(() => getTopicsByChannel(t), [t]);
   const requiresImageCaptions = CAPTION_REQUIRED_CHANNELS.has(channel);
-  const showMainImageCaption = requiresImageCaptions && Boolean(mainImagePreview);
 
   const fundReceivingOptions = useMemo(
     () => fundReceivingInfos.map((i) => ({
@@ -348,18 +345,6 @@ const PostArticleForm = ({
               borderRadius: 1,
             }}
           />
-          {showMainImageCaption && (
-            <TextField
-              fullWidth
-              size="small"
-              label={t('article:main_image_caption_label')}
-              placeholder={t('article:image_caption_placeholder')}
-              helperText={t('article:main_image_caption_helper')}
-              value={mainImageCaption ?? ''}
-              onChange={(e) => setMainImageCaption?.(e.target.value)}
-              sx={{ mt: 1.5 }}
-            />
-          )}
         </ScrollRevealItem>
       )}
 

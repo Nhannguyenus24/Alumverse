@@ -19,6 +19,7 @@ import { useCanContribute } from '../../hooks/useCanContribute';
 import { ContributeGuardTooltip } from '../../components/ContributeGuard';
 import { usePublishedAlumniPosts } from '../../hooks/articles/usePublishedAlumniPosts';
 import { toCardShape } from '../../hooks/articles/toCardShape';
+import { useOrganization } from '../../hooks/useOrganization';
 import apiClient from '../../utils/axios';
 import { deleteArticleByChannel, getArticleAdminEditPath } from '../../utils/articleAdminActions';
 import {
@@ -28,6 +29,7 @@ import {
   paginateArticles,
 } from '../../utils/articleListFilters';
 import { getHonorsSidebarItems } from '../../constants/honorsNav';
+import { getOrganizationHeroBannerUrl } from '../../utils/organizationBrand';
 import {
   ScrollReveal,
   ScrollRevealGroup,
@@ -42,6 +44,8 @@ const HonorsAlumniPage = () => {
   const navigate = useOrgNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const queryClient = useQueryClient();
+  const { organization } = useOrganization();
+  const cardFallbackImage = useMemo(() => getOrganizationHeroBannerUrl(organization), [organization]);
   const { isAuthenticated } = useAuth();
   const { canContribute, isOrgManager } = useCanContribute();
   const isAdmin = isAuthenticated && isOrgManager;
@@ -62,8 +66,8 @@ const HonorsAlumniPage = () => {
     () => paginateArticles(rest, page, HONORS_LIST_PAGE_SIZE),
     [rest, page],
   );
-  const featuredCard = featured ? toCardShape(featured) : null;
-  const cards = pagedArticles.map(toCardShape);
+  const featuredCard = featured ? toCardShape(featured, cardFallbackImage) : null;
+  const cards = pagedArticles.map((article) => toCardShape(article, cardFallbackImage));
 
   const openArticle = (article) => {
     if (!article?.id) return;

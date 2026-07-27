@@ -195,8 +195,8 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
         sx={{
           position: 'relative',
           width: { xs: '100%', md: '45%' },
-          height: { xs: 180, sm: 220, md: 'auto' },
-          minHeight: { xs: 180, sm: 220, md: 260 },
+          height: { xs: 180, sm: 220, md: 320 },
+          aspectRatio: { md: '16 / 10' },
           alignSelf: { md: 'stretch' },
           borderRadius: 2,
           overflow: 'hidden',
@@ -241,7 +241,7 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
       </Box>
 
       {/* CONTENT */}
-      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: { md: 260 } }}>
+      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: { md: 320 } }}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 0.5, md: 1 } }}>
           <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 600 }}>
             {article.date}
@@ -293,6 +293,7 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
             WebkitBoxOrient: 'vertical',
             overflow: 'hidden',
             lineHeight: { xs: 1.4, md: 1.6 },
+            minHeight: { xs: '4.2em', md: '4.8em' },
           }}
         >
           {article.description}

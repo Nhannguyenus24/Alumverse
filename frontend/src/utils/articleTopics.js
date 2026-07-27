@@ -55,6 +55,7 @@ export const getTopicsByChannel = (t) => ({
     { value: 'startup_investment', label: t('article:topics.startup_investment') },
     { value: 'international_honor', label: t('article:topics.international_honor') },
     { value: 'social_contribution_award', label: t('article:topics.social_contribution_award') },
+    { value: 'achievement_hall_of_fame', label: t('article:topics.achievement_hall_of_fame') },
   ],
   learning: [
     { value: 'scholarships', label: t('article:topics.scholarships') },

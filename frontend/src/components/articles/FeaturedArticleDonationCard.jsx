@@ -16,7 +16,7 @@ import { formatDate } from "../../utils/dateFormatter";
 const LOGO_FALLBACK_URL = "https://placehold.co/1200x700/eef3ff/0f3a7a?text=Fund";
 const CAMPAIGN_DESCRIPTION_MAX_CHARS = 220;
 
-const FeaturedArticleDonationCard = ({ campaign, article, onNavigate, onEdit, onClose, isAdmin }) => {
+const FeaturedArticleDonationCard = ({ campaign, article, onNavigate, onEdit, onClose, isAdmin, fallbackImage = null }) => {
   const { t } = useTranslation(['common', 'donation']);
   const data = campaign || article;
 
@@ -94,7 +94,7 @@ const FeaturedArticleDonationCard = ({ campaign, article, onNavigate, onEdit, on
       >
         <Box
           component="img"
-          src={data?.logoUrl || data?.image || LOGO_FALLBACK_URL}
+          src={data?.logoUrl || data?.image || fallbackImage || LOGO_FALLBACK_URL}
           alt={data?.name || data?.title}
           sx={{
             width: "100%",

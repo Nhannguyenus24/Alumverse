@@ -14,7 +14,7 @@ import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { eventApi } from '../../utils/api';
 import useOrganizationStore from '../../stores/organizationStore';
 import { useEventQuestions, mapQuestionToApi } from '../../hooks/events/useEventQuestions';
-import { extractMainImageCaption, withMainImageCaption } from '../../utils/articleContentCaption';
+import { extractMainImageCaption } from '../../utils/articleContentCaption';
 
 const normalizeQuestions = (questions = []) =>
   questions
@@ -121,7 +121,6 @@ const PostEventPage = () => {
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [mainImageCaption, setMainImageCaption] = useState('');
   const [topic, setTopic] = useState('');
   const [registrationQuestions, setRegistrationQuestions] = useState([]);
   const [eventData, setEventData] = useState(emptyEventData);
@@ -154,7 +153,6 @@ const PostEventPage = () => {
     const parsedContent = extractMainImageCaption(existingEvent.description || '');
     setTitle(existingEvent.title || '');
     setContent(parsedContent.content);
-    setMainImageCaption(parsedContent.caption);
     setTopic(existingEvent.topic || '');
     setEventData({
       location: existingEvent.location || '',
@@ -179,7 +177,7 @@ const PostEventPage = () => {
     const targetOrgId = isEditMode && existingOrgId ? existingOrgId : organizationId;
     return {
       title: title.trim(),
-      description: withMainImageCaption(content.trim(), mainImageCaption),
+      description: content.trim(),
       topic: topic || null,
       bannerBase64,
       location: eventData.location || null,
@@ -203,10 +201,6 @@ const PostEventPage = () => {
     }
     if (!eventData.startDate || !eventData.endDate) {
       showError(t('error_time_required'));
-      return;
-    }
-    if ((coverFile || coverPreview) && !mainImageCaption.trim()) {
-      showError(t('article:main_image_caption_required'));
       return;
     }
     const questionValidationError = getQuestionValidationError(registrationQuestions, t);
@@ -306,8 +300,6 @@ const PostEventPage = () => {
         registrationQuestions={registrationQuestions}
         setRegistrationQuestions={setRegistrationQuestions}
         mainImagePreview={coverPreview}
-        mainImageCaption={mainImageCaption}
-        setMainImageCaption={setMainImageCaption}
         showSourceUrl={false}
       />
     </PostArticleShell>

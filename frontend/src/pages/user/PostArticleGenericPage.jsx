@@ -18,7 +18,6 @@ import { useNotification } from '../../hooks/useNotification';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useState } from 'react';
 import { useCanContribute } from '../../hooks/useCanContribute';
-import { withMainImageCaption } from '../../utils/articleContentCaption';
 import useOrganizationStore from '../../stores/organizationStore';
 
 /**
@@ -163,7 +162,6 @@ const PostArticleGenericPage = () => {
   const [content, setContent] = useState('');
   const [topic, setTopic] = useState('');
   const [url, setUrl] = useState('');
-  const [mainImageCaption, setMainImageCaption] = useState('');
 
   const allHooks = useAllHooks();
   const config = CHANNEL_CONFIG[channel];
@@ -187,10 +185,6 @@ const PostArticleGenericPage = () => {
       showError(t('error_topic_required', { defaultValue: 'Vui lòng chọn chủ đề' }));
       return;
     }
-    if (coverFile && !mainImageCaption.trim()) {
-      showError(t('main_image_caption_required'));
-      return;
-    }
     if (coverFile) {
       const imageValidation = validateImageFile(coverFile);
       if (!imageValidation.valid) {
@@ -211,7 +205,7 @@ const PostArticleGenericPage = () => {
       // Send the raw image inline; the backend converts it to WebP and stores it in one request.
       const payload = config.buildPayload({
         title: title.trim(),
-        content: withMainImageCaption(content.trim(), mainImageCaption),
+        content: content.trim(),
         topic,
         url: url.trim(),
         imageBase64,
@@ -262,8 +256,6 @@ const PostArticleGenericPage = () => {
         url={url}
         setUrl={setUrl}
         mainImagePreview={coverPreview}
-        mainImageCaption={mainImageCaption}
-        setMainImageCaption={setMainImageCaption}
         showSourceUrl
       />
     </PostArticleShell>

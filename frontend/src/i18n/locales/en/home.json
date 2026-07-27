@@ -1,6 +1,10 @@
 {
   "page_title": "AlumVerse - Alumni & Student Connection System",
   "page_meta_desc": "AlumVerse - Alumni & Student Connection System, VNU-HCM University of Science.",
+  "org_selection_page_title": "AlumVerse",
+  "org_selection_title": "Welcome to AlumVerse!",
+  "org_selection_desc": "A platform for student and alumni connection, VNU-HCM University of Science. Choose the faculty, unit, or organization on AlumVerse to connect your community, share activities, and expand collaboration opportunities.",
+  "org_selection_load_error": "Unable to load the organization list. Please try again later.",
   "hero_body": "A platform for student and alumni connection, VNU-HCM University of Science.",
   "hero_intro_btn": "Introduction",
   "hero_explore_btn": "Explore",

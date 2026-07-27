@@ -17,6 +17,7 @@ import { useCanContribute } from '../../hooks/useCanContribute';
 import { ContributeGuardTooltip } from '../../components/ContributeGuard';
 import { usePublishedJobs } from '../../hooks/articles/usePublishedJobs';
 import { toCardShape } from '../../hooks/articles/toCardShape';
+import { useOrganization } from '../../hooks/useOrganization';
 import apiClient from '../../utils/axios';
 import { deleteArticleByChannel, getArticleAdminEditPath } from '../../utils/articleAdminActions';
 import {
@@ -26,6 +27,7 @@ import {
   paginateArticles,
 } from '../../utils/articleListFilters';
 import { getDevelopmentSidebarItems } from '../../constants/developmentNav';
+import { getOrganizationHeroBannerUrl } from '../../utils/organizationBrand';
 import {
   ScrollReveal,
   ScrollRevealGroup,
@@ -40,6 +42,8 @@ const DevelopmentJobsPage = () => {
   const navigate = useOrgNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const queryClient = useQueryClient();
+  const { organization } = useOrganization();
+  const cardFallbackImage = useMemo(() => getOrganizationHeroBannerUrl(organization), [organization]);
   const { isAuthenticated } = useAuth();
   const { canContribute, isOrgManager } = useCanContribute();
   const isAdmin = isAuthenticated && isOrgManager;
@@ -61,8 +65,8 @@ const DevelopmentJobsPage = () => {
     [rest, page],
   );
 
-  const featuredCard = featured ? toCardShape(featured) : null;
-  const cards = pagedJobs.map(toCardShape);
+  const featuredCard = featured ? toCardShape(featured, cardFallbackImage) : null;
+  const cards = pagedJobs.map((article) => toCardShape(article, cardFallbackImage));
 
   const openArticle = (article) => {
     if (!article?.id) return;
