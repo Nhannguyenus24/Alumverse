@@ -23,6 +23,11 @@ function getPreviewText(previewText, t) {
   if (!previewText) return '';
   const urlRegex = /^https?:\/\/[^\s]+$/;
   if (urlRegex.test(previewText)) {
+    // GIFs (e.g. from Giphy) live on external CDNs, so classify them by extension
+    // regardless of host before the backend-hosted-media checks below.
+    if (previewText.toLowerCase().match(/\.gif(\?.*)?$/)) {
+      return t('network:chat.preview_gif', '[GIF]');
+    }
     const backendUrl = import.meta.env.VITE_API_BASE_URL || '';
     if (backendUrl && previewText.startsWith(backendUrl)) {
       const lowerText = previewText.toLowerCase();
