@@ -63,6 +63,13 @@ export const VERIFICATION_OCR_READY_EVENT = 'alumverse:verification-ocr-ready';
  */
 export const NOTIFICATIONS_UPDATED_EVENT = 'alumverse:notifications-updated';
 
+/**
+ * DOM event phát khi một thành viên khác đã đọc cuộc trò chuyện (backend gửi `chat-seen`).
+ * Panel chat đang mở lắng nghe sự kiện này để lật trạng thái tin nhắn cuối của mình từ
+ * "Đã gửi" sang "Đã xem" ngay lập tức. detail: { groupId, readerMemberId, readAt }.
+ */
+export const CHAT_SEEN_EVENT = 'alumverse:chat-seen';
+
 export const useServerSentEvents = ({ onNotify } = {}) => {
   const token = useAuthStore((state) => state.token);
   const queryClient = useQueryClient();
@@ -183,6 +190,14 @@ export const useServerSentEvents = ({ onNotify } = {}) => {
       resetChatUnreadInLists(queryClient, data.groupId);
     };
 
+    // A peer read the conversation — re-broadcast as a DOM event so the open chat panel can
+    // flip the sender's latest message from "Sent" to "Seen" without a refetch.
+    const handleChatSeen = (event) => {
+      const data = parseEvent(event);
+      if (!data || data.groupId == null) return;
+      window.dispatchEvent(new CustomEvent(CHAT_SEEN_EVENT, { detail: data }));
+    };
+
     const handleEventReminder = (event) => {
       const data = parseEvent(event);
       if (!data) return;
@@ -223,6 +238,7 @@ export const useServerSentEvents = ({ onNotify } = {}) => {
     source.addEventListener('user-banned', handleUserBanned);
     source.addEventListener('new-message', handleNewMessage);
     source.addEventListener('chat-read', handleChatRead);
+    source.addEventListener('chat-seen', handleChatSeen);
     source.addEventListener('verification-ocr-ready', handleVerificationOcrReady);
     source.addEventListener('event-reminder', handleEventReminder);
     source.addEventListener('connection-request', handleConnectionRequest);
@@ -253,6 +269,7 @@ export const useServerSentEvents = ({ onNotify } = {}) => {
       source.removeEventListener('user-banned', handleUserBanned);
       source.removeEventListener('new-message', handleNewMessage);
       source.removeEventListener('chat-read', handleChatRead);
+      source.removeEventListener('chat-seen', handleChatSeen);
       source.removeEventListener('verification-ocr-ready', handleVerificationOcrReady);
       source.removeEventListener('event-reminder', handleEventReminder);
       source.removeEventListener('connection-request', handleConnectionRequest);
