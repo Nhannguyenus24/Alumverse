@@ -69,7 +69,7 @@ public class ForumNotificationTask {
                                     if (topic != null) {
                                         String title = "New updates in forum topic: " + topic.getTitle();
                                         String message = "There are new comments in the topic you subscribed to. Check it out!";
-                                        String link = "/forum/topics/" + topic.getId();
+                                        String link = "/forum/topic/" + topic.getId();
 
                                         notificationService.createNotificationAsync(subscription.getMemberId(), title, message, link);
                                         subIdsToUpdate.add(subscription.getId());

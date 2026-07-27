@@ -598,13 +598,13 @@ public class ForumService {
                     return SecurityUtils.assertCanSubmitContributorContent(topic.getOrganizationId())
                             .then(Mono.defer(() -> {
                                 if (existingSubscriptionOpt.isPresent()) {
-                                    log.info("Removing existing subscription from topic ID: {}, member: {}",
+                                    log.debug("Removing existing subscription from topic ID: {}, member: {}",
                                             request.getTopicId(), memberId);
                                     return forumTopicSubscriptionRepository.deleteByTopicIdAndMemberId(
                                             request.getTopicId(), memberId)
                                             .then(Mono.empty());
                                 }
-                                log.info("Creating new subscription for topic ID: {}, member: {}",
+                                log.debug("Creating new subscription for topic ID: {}, member: {}",
                                         request.getTopicId(), memberId);
                                 ForumTopicSubscription subscription = ForumTopicSubscription.builder()
                                         .topicId(request.getTopicId())
