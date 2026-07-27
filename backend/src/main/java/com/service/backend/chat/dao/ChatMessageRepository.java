@@ -22,7 +22,13 @@ public interface ChatMessageRepository extends R2dbcRepository<ChatMessage, Long
                    cm.edited_at,
                    cm.deleted_at,
                    u.full_name    AS sender_full_name,
-                   u.avatar_url   AS sender_avatar_url
+                   u.avatar_url   AS sender_avatar_url,
+                   NOT EXISTS (
+                       SELECT 1 FROM chat_group_members cgm
+                       WHERE cgm.group_id = cm.group_id
+                         AND cgm.member_id <> cm.sender_member_id
+                         AND (cgm.last_read_at IS NULL OR cgm.last_read_at < cm.created_at)
+                   ) AS seen_by_peer
             FROM chat_messages cm
             LEFT JOIN users u ON u.id = cm.sender_member_id
             WHERE cm.group_id = :groupId

@@ -31,6 +31,7 @@ import SendIcon from '@mui/icons-material/Send';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
+import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined';
 
 import Scrollbar from '../Scrollbar';
 import ChatEmojiPickerButton from '../ChatEmojiPickerButton';
@@ -47,6 +48,8 @@ import { usePeerActiveStatus } from '../../hooks/chat/usePeerActiveStatus';
 import { useChatWebSocket } from '../../hooks/mentorship/useChatWebSocket';
 import { useBlockUser } from '../../hooks/network/useBlockUser';
 import { useNotification } from '../../hooks/useNotification';
+import { useNetworkMemberProfileNavigation } from '../../hooks/network/useNetworkMemberProfileNavigation';
+import { CHAT_SEEN_EVENT } from '../../hooks/useServerSentEvents';
 import useAuthStore from '../../stores/authStore';
 import ChatAvatar from '../ChatAvatar';
 import { buildGroupBlockedMembersBannerMessage } from '../../utils/formatBlockedMemberNames';
@@ -132,7 +135,7 @@ function renderMessageContent(content, isOwn, mentions) {
     : null;
 
   const mentionSx = isOwn
-    ? { fontWeight: 700, textDecoration: 'underline' }
+    ? { fontWeight: 700 }
     : { fontWeight: 600, color: 'primary.main' };
 
   let key = 0;
@@ -198,6 +201,10 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
   const blockedByMe = Boolean(activeChat?.blockedByMe);
   const blockedByPeer = Boolean(activeChat?.blockedByPeer);
 
+  // Open the chat partner's profile — used from both the header avatar and the options menu.
+  const { navigateToProfile } = useNetworkMemberProfileNavigation(peerMemberId);
+  const canViewPeerProfile = isPrivateChat && peerMemberId != null;
+
   const { peerActive } = usePeerActiveStatus(peerMemberId, {
     enabled: isPrivateChat && !blockedByMe && !blockedByPeer,
   });
@@ -210,7 +217,7 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
     onSuccess: () => setBlockConfirmOpen(false),
   });
 
-  const { messages, isLoading, isLoadingMore, hasMore, loadMore, appendMessage, resyncMessages } = useChatMessages(
+  const { messages, isLoading, isLoadingMore, hasMore, loadMore, appendMessage, resyncMessages, markPeerSeen } = useChatMessages(
     activeChat?.id ?? null,
   );
 
@@ -381,6 +388,18 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
     setMentionQuery(null);
     setSelectedMentions([]);
   }, [activeChat?.id, clearTypingUsers]);
+
+  // When a peer reads the open conversation, flip our sent messages to "seen" in real time.
+  useEffect(() => {
+    const handleChatSeen = (event) => {
+      const detail = event.detail ?? {};
+      if (String(detail.groupId) !== String(activeChatIdRef.current)) return;
+      if (detail.readerMemberId === currentUserId) return;
+      markPeerSeen(detail.readAt);
+    };
+    window.addEventListener(CHAT_SEEN_EVENT, handleChatSeen);
+    return () => window.removeEventListener(CHAT_SEEN_EVENT, handleChatSeen);
+  }, [markPeerSeen, currentUserId]);
 
   // --- Scroll ---
   const scrollRef = useRef(null);
@@ -675,14 +694,51 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
               <ArrowBackIcon />
             </IconButton>
           ) : null}
-          <ChatAvatar
-            avatarUrl={activeChat?.avatarUrl}
-            name={activeChat?.name}
-            size={40}
-            variant={activeChat?.type === 'GROUP' ? 'group' : 'user'}
-          />
+          <Box
+            {...(canViewPeerProfile
+              ? {
+                  role: 'button',
+                  tabIndex: 0,
+                  'aria-label': t('network:view_profile'),
+                  onClick: navigateToProfile,
+                  onKeyDown: (event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      navigateToProfile();
+                    }
+                  },
+                  sx: { display: 'flex', flexShrink: 0, cursor: 'pointer', borderRadius: '50%' },
+                }
+              : { sx: { display: 'flex', flexShrink: 0 } })}
+          >
+            <ChatAvatar
+              avatarUrl={activeChat?.avatarUrl}
+              name={activeChat?.name}
+              size={40}
+              variant={activeChat?.type === 'GROUP' ? 'group' : 'user'}
+            />
+          </Box>
           <Box sx={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 0.25 }}>
-            <Typography variant="subtitle1" fontWeight={700} lineHeight={1.2} noWrap>
+            <Typography
+              variant="subtitle1"
+              fontWeight={700}
+              lineHeight={1.2}
+              noWrap
+              {...(canViewPeerProfile
+                ? {
+                    role: 'button',
+                    tabIndex: 0,
+                    onClick: navigateToProfile,
+                    onKeyDown: (event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        navigateToProfile();
+                      }
+                    },
+                    sx: { cursor: 'pointer', '&:hover': { textDecoration: 'underline' } },
+                  }
+                : {})}
+            >
               {activeChat?.name ?? 'Network Chat'}
             </Typography>
             {activeChat?.type === 'GROUP' && (
@@ -698,35 +754,50 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
             buttonAriaLabel={t('network:chat_options_aria')}
           >
             {({ close }) => (
-              blockedByMe ? (
-                <MenuItem
-                  disabled={isBlockActionPending || !canUseBasicActions}
-                  onClick={() => {
-                    close();
-                    if (!canUseBasicActions) return;
-                    unblockUser();
-                  }}
-                >
-                  <ListItemIcon sx={{ minWidth: 36 }}>
-                    <LockOpenOutlinedIcon fontSize="small" color="error" />
-                  </ListItemIcon>
-                  <ListItemText primary={t('network:unblock_user')} primaryTypographyProps={{ variant: 'body2' }} />
-                </MenuItem>
-              ) : (
-                <MenuItem
-                  disabled={isBlockActionPending || !canUseBasicActions}
-                  onClick={() => {
-                    close();
-                    if (!canUseBasicActions) return;
-                    setBlockConfirmOpen(true);
-                  }}
-                >
-                  <ListItemIcon sx={{ minWidth: 36 }}>
-                    <BlockOutlinedIcon fontSize="small" color="error" />
-                  </ListItemIcon>
-                  <ListItemText primary={t('network:block_user')} primaryTypographyProps={{ variant: 'body2' }} />
-                </MenuItem>
-              )
+              <Fragment>
+                {canViewPeerProfile ? (
+                  <MenuItem
+                    onClick={() => {
+                      close();
+                      navigateToProfile();
+                    }}
+                  >
+                    <ListItemIcon sx={{ minWidth: 36 }}>
+                      <PersonOutlineOutlinedIcon fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText primary={t('network:view_profile')} primaryTypographyProps={{ variant: 'body2' }} />
+                  </MenuItem>
+                ) : null}
+                {blockedByMe ? (
+                  <MenuItem
+                    disabled={isBlockActionPending || !canUseBasicActions}
+                    onClick={() => {
+                      close();
+                      if (!canUseBasicActions) return;
+                      unblockUser();
+                    }}
+                  >
+                    <ListItemIcon sx={{ minWidth: 36 }}>
+                      <LockOpenOutlinedIcon fontSize="small" color="error" />
+                    </ListItemIcon>
+                    <ListItemText primary={t('network:unblock_user')} primaryTypographyProps={{ variant: 'body2' }} />
+                  </MenuItem>
+                ) : (
+                  <MenuItem
+                    disabled={isBlockActionPending || !canUseBasicActions}
+                    onClick={() => {
+                      close();
+                      if (!canUseBasicActions) return;
+                      setBlockConfirmOpen(true);
+                    }}
+                  >
+                    <ListItemIcon sx={{ minWidth: 36 }}>
+                      <BlockOutlinedIcon fontSize="small" color="error" />
+                    </ListItemIcon>
+                    <ListItemText primary={t('network:block_user')} primaryTypographyProps={{ variant: 'body2' }} />
+                  </MenuItem>
+                )}
+              </Fragment>
             )}
           </IconButtonMenu>
         ) : isPrivateChat ? null : (
@@ -863,6 +934,9 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
         {!isLoading &&
           messages.map((msg, index) => {
             const isOwn = msg.senderMemberId === currentUserId;
+            // Show a sent/seen indicator instead of the timestamp on my own latest message
+            // in a private chat, so I can tell whether the peer has read it.
+            const showReadStatus = isPrivateChat && isOwn && index === messages.length - 1;
             const prev = messages[index - 1];
             const showDateSeparator =
               !prev || !isSameCalendarDay(prev.createdAt, msg.createdAt);
@@ -952,7 +1026,9 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
                       whiteSpace: 'nowrap',
                     }}
                   >
-                    {formatChatTime(msg.createdAt)}
+                    {showReadStatus
+                      ? (msg.seenByPeer ? t('message_status_seen') : t('message_status_sent'))
+                      : formatChatTime(msg.createdAt)}
                   </Typography>
                 </Box>
               </Box>
@@ -1150,7 +1226,7 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
             size="small"
             sx={{
               '& .MuiOutlinedInput-root': {
-                borderRadius: 999,
+                borderRadius: 1,
                 minHeight: 48,
                 alignItems: 'center',
                 pr: 1,
