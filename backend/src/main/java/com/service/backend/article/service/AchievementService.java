@@ -171,7 +171,7 @@ public class AchievementService {
             int offset = page * limit;
             return PaginationHelper.paginate(
                     achievementRepository.findDetailsByStatusAndOrganizationId(status, organizationId, limit, offset)
-                            .doOnNext(item -> log.info("Fetched achievement with status {} and org {}: {}", status, organizationId, JsonUtils.toJson(item)))
+                            .doOnNext(item -> log.debug("Fetched achievement with status {} and org {}: {}", status, organizationId, JsonUtils.toJson(item)))
                             .map(AchievementResponse::from),
                     achievementRepository.countByStatusAndOrganizationId(status, organizationId),
                     page, limit

@@ -20,13 +20,20 @@ public class RecaptchaService {
     @Value("${google.recaptcha.secret-key}")
     private String recaptchaSecret;
 
+    @Value("${google.recaptcha.enabled:true}")
+    private boolean recaptchaEnabled;
+
     public RecaptchaService(WebClient.Builder webClientBuilder) {
         this.webClient = webClientBuilder.baseUrl("https://www.google.com/recaptcha/api").build();
     }
 
     public Mono<Boolean> verifyRecaptcha(String recaptchaResponse) {
-        if (recaptchaResponse == null || recaptchaResponse.isEmpty()) {
+        if (!recaptchaEnabled) {
             return Mono.just(true);
+        }
+        if (recaptchaResponse == null || recaptchaResponse.isEmpty()) {
+            logger.warn("reCAPTCHA token missing/blank while verification is enabled - rejecting");
+            return Mono.just(false);
         }
 
         return webClient.post()

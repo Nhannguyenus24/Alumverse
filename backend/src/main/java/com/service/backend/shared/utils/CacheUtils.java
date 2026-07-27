@@ -58,7 +58,7 @@ public class CacheUtils {
                     Cache<String, Object> cache = caches.get(cacheName);
                     if (cache != null) {
                         cache.put(key, value);
-                        log.info("Cached value for cache: {} with key: {}", cacheName, key);
+                        log.debug("Cached value for cache: {} with key: {}", cacheName, key);
                     } else {
                         log.warn("Cache not found: {}, creating default cache", cacheName);
                         Cache<String, Object> newCache = getOrCreateCache(cacheName, Duration.ofMinutes(10));
@@ -119,15 +119,15 @@ public class CacheUtils {
             T cached = (T) cache.getIfPresent(key);
 
             if (cached != null) {
-                log.info("Cache hit for cache: {} with key: {}", cacheName, key);
+                log.debug("Cache hit for cache: {} with key: {}", cacheName, key);
                 return Mono.just(cached);
             }
 
-            log.info("Cache miss for cache: {} with key: {}", cacheName, key);
+            log.debug("Cache miss for cache: {} with key: {}", cacheName, key);
             return supplier.get()
                     .doOnNext(value -> {
                         cache.put(key, value);
-                        log.info("Cached value for cache: {} with key: {}", cacheName, key);
+                        log.debug("Cached value for cache: {} with key: {}", cacheName, key);
                     });
         });
     }
@@ -145,7 +145,7 @@ public class CacheUtils {
         return Mono.fromRunnable(() -> {
                     Cache<String, Object> cache = getOrCreateCache(cacheName, ttl);
                     cache.put(key, value);
-                    log.info("Cached value with TTL for cache: {} with key: {}, TTL: {}", cacheName, key, ttl);
+                    log.debug("Cached value with TTL for cache: {} with key: {}, TTL: {}", cacheName, key, ttl);
                 })
                 .then();
     }

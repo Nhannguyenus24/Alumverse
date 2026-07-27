@@ -82,7 +82,7 @@ class UserServiceTest {
 
             when(fileUploadService.uploadBase64File("base64", "proof.png")).thenReturn(Mono.just("http://files/proof.png"));
             when(authRepository.insertVerificationRequest(1, 7, "http://files/proof.png", "IMAGE")).thenReturn(Mono.just(10));
-            when(userOrganizationMemberRepository.updateVerificationLevelByOrgAndUser(1, 7, 1)).thenReturn(Mono.just(1));
+            when(userOrganizationMemberRepository.updateVerificationLevelIfLowerByOrgAndUser(1, 7, 1)).thenReturn(Mono.just(1));
             when(fileUploadService.getLocalPath("http://files/proof.png")).thenReturn("/tmp/proof.png");
             when(ocrService.extractTextFromFile("/tmp/proof.png")).thenReturn(Mono.just("Họ tên: Nguyễn Văn A\nMSSV: 22123456\nNgành: Công nghệ thông tin"));
             when(authRepository.updateVerificationDocumentAndAiSummary(eq(10), eq("http://files/proof.png"), eq("IMAGE"), anyString()))
@@ -126,7 +126,7 @@ class UserServiceTest {
 
             when(fileUploadService.uploadBase64File("b1", "f1.png")).thenReturn(Mono.just("http://files/f1.png"));
             when(authRepository.insertVerificationRequest(1, 7, "http://files/f1.png", "IMAGE")).thenReturn(Mono.just(10));
-            when(userOrganizationMemberRepository.updateVerificationLevelByOrgAndUser(1, 7, 1)).thenReturn(Mono.just(1));
+            when(userOrganizationMemberRepository.updateVerificationLevelIfLowerByOrgAndUser(1, 7, 1)).thenReturn(Mono.just(1));
             when(fileUploadService.getLocalPath("http://files/f1.png")).thenReturn("/tmp/f1.png");
             when(ocrService.extractTextFromFile("/tmp/f1.png")).thenReturn(Mono.just("UNREADABLE"));
             when(fileUploadService.uploadBase64File("b2", "f2.png")).thenReturn(Mono.just("http://files/f2.png"));
@@ -154,7 +154,7 @@ class UserServiceTest {
 
             when(fileUploadService.uploadBase64File("b1", "f1.png")).thenReturn(Mono.just("http://files/f1.png"));
             when(authRepository.insertVerificationRequest(1, 7, "http://files/f1.png", "IMAGE")).thenReturn(Mono.just(10));
-            when(userOrganizationMemberRepository.updateVerificationLevelByOrgAndUser(1, 7, 1)).thenReturn(Mono.just(1));
+            when(userOrganizationMemberRepository.updateVerificationLevelIfLowerByOrgAndUser(1, 7, 1)).thenReturn(Mono.just(1));
             when(fileUploadService.getLocalPath("http://files/f1.png")).thenReturn("/tmp/f1.png");
             when(ocrService.extractTextFromFile("/tmp/f1.png")).thenReturn(Mono.just("UNREADABLE"));
             when(fileUploadService.uploadBase64File("b2", "f2.png")).thenReturn(Mono.just("http://files/f2.png"));

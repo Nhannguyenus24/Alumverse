@@ -19,6 +19,7 @@ import com.service.backend.shared.entity.AlumniPostComment;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.PaginationHelper;
+import com.service.backend.shared.utils.SecurityUtils;
 import com.service.backend.user.dao.UserProfileRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -48,18 +49,23 @@ public class AlumniPostCommentService {
     }
 
     public Mono<AlumniPostCommentDTO> createComment(CreateAlumniPostCommentRequest request) {
-        return alumniPostRepository.findById(request.getAlumniPostId())
-                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.ALUMNI_POST_NOT_FOUND)))
-                .flatMap(post -> {
-                    AlumniPostComment comment = AlumniPostComment.builder()
-                            .alumniPostId(request.getAlumniPostId())
-                            .authorMemberId(request.getAuthorMemberId())
-                            .content(request.getContent())
-                            .parentCommentId(request.getParentCommentId())
-                            .isHidden(false)
-                            .build();
-                    return alumniPostCommentRepository.save(comment);
-                })
+        // Author is taken from the authenticated principal, never from the client body, to prevent
+        // impersonation (posting a comment under someone else's id).
+        return SecurityUtils.getCurrentUserId()
+                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.FORBIDDEN)))
+                .map(Long::intValue)
+                .flatMap(authorMemberId -> alumniPostRepository.findById(request.getAlumniPostId())
+                        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.ALUMNI_POST_NOT_FOUND)))
+                        .flatMap(post -> {
+                            AlumniPostComment comment = AlumniPostComment.builder()
+                                    .alumniPostId(request.getAlumniPostId())
+                                    .authorMemberId(authorMemberId)
+                                    .content(request.getContent())
+                                    .parentCommentId(request.getParentCommentId())
+                                    .isHidden(false)
+                                    .build();
+                            return alumniPostCommentRepository.save(comment);
+                        }))
                 .flatMap(this::convertToDTO)
                 .doOnError(error -> log.error("Error creating comment for alumni post ID: {}", request.getAlumniPostId(), error));
     }
@@ -72,10 +78,11 @@ public class AlumniPostCommentService {
     public Mono<AlumniPostCommentDTO> updateComment(Integer id, UpdateAlumniPostCommentRequest request) {
         return alumniPostCommentRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.ALUMNI_POST_COMMENT_NOT_FOUND)))
-                .flatMap(comment -> {
-                    comment.setContent(request.getContent());
-                    return alumniPostCommentRepository.save(comment);
-                })
+                .flatMap(comment -> assertCommentOwnerOrAdmin(comment.getAuthorMemberId())
+                        .then(Mono.defer(() -> {
+                            comment.setContent(request.getContent());
+                            return alumniPostCommentRepository.save(comment);
+                        })))
                 .flatMap(this::convertToDTO)
                 .doOnError(error -> log.error("Error updating alumni post comment ID: {}", id, error));
     }
@@ -84,8 +91,25 @@ public class AlumniPostCommentService {
     public Mono<Void> deleteComment(Integer id) {
         return alumniPostCommentRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.ALUMNI_POST_COMMENT_NOT_FOUND)))
-                .flatMap(comment -> alumniPostCommentRepository.deleteById(id))
+                .flatMap(comment -> assertCommentOwnerOrAdmin(comment.getAuthorMemberId())
+                        .then(alumniPostCommentRepository.deleteById(id)))
                 .doOnError(error -> log.error("Error deleting alumni post comment ID: {}", id, error));
+    }
+
+    /**
+     * Only the comment's author or an ADMIN may modify/delete it (prevents IDOR).
+     */
+    private Mono<Void> assertCommentOwnerOrAdmin(Integer authorMemberId) {
+        return Mono.zip(
+                        SecurityUtils.getCurrentUserId().map(Long::intValue).defaultIfEmpty(-1),
+                        SecurityUtils.hasRole("ADMIN"))
+                .flatMap(t -> {
+                    boolean owner = authorMemberId != null && authorMemberId.equals(t.getT1());
+                    boolean admin = Boolean.TRUE.equals(t.getT2());
+                    return (owner || admin)
+                            ? Mono.empty()
+                            : Mono.error(new ApplicationException(ErrorCode.FORBIDDEN, "You can only modify your own comment"));
+                });
     }
 
     private Mono<List<AlumniPostCommentDTO>> enrichComments(List<AlumniPostComment> comments) {

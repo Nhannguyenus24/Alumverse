@@ -70,7 +70,7 @@ public class AdminArticleService {
                     newsRepository.findByOrganizationIdWithPagination(organizationId, limit, offset).map(NewsResponse::from),
                     newsRepository.countByOrganizationId(organizationId), page, limit,
                     NewsResponse::getAuthorMemberId, NewsResponse::setSubmitterName, NewsResponse::setSubmitterRole, NewsResponse::setUserSubmitted
-            ).doOnSuccess(r -> log.info("getAllNews (org={}) result: {}", organizationId, JsonUtils.toJson(r)));
+            ).doOnSuccess(r -> log.debug("getAllNews (org={}) result: {}", organizationId, JsonUtils.toJson(r)));
         }
         if (keyword != null && !keyword.trim().isEmpty()) {
             String kw = keyword.trim();
@@ -78,13 +78,13 @@ public class AdminArticleService {
                     newsRepository.searchAllByTitleWithPagination(kw, limit, offset).map(NewsResponse::from),
                     newsRepository.countAllSearchByTitle(kw), page, limit,
                     NewsResponse::getAuthorMemberId, NewsResponse::setSubmitterName, NewsResponse::setSubmitterRole, NewsResponse::setUserSubmitted
-            ).doOnSuccess(r -> log.info("searchAllNews result: {}", JsonUtils.toJson(r)));
+            ).doOnSuccess(r -> log.debug("searchAllNews result: {}", JsonUtils.toJson(r)));
         }
         return paginateWithSubmitter(
                 newsRepository.findAllWithPagination(limit, offset).map(NewsResponse::from),
                 newsRepository.count(), page, limit,
                 NewsResponse::getAuthorMemberId, NewsResponse::setSubmitterName, NewsResponse::setSubmitterRole, NewsResponse::setUserSubmitted
-        ).doOnSuccess(r -> log.info("getAllNews result: {}", JsonUtils.toJson(r)));
+        ).doOnSuccess(r -> log.debug("getAllNews result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<PaginatedResponse<AlumniPostResponse>> getAllAlumniPosts(Integer organizationId, String keyword, int page, int limit) {
@@ -94,7 +94,7 @@ public class AdminArticleService {
                     alumniPostRepository.findByOrganizationIdWithPagination(organizationId, limit, offset).map(AlumniPostResponse::from),
                     alumniPostRepository.countByOrganizationId(organizationId), page, limit,
                     AlumniPostResponse::getAuthorMemberId, AlumniPostResponse::setSubmitterName, AlumniPostResponse::setSubmitterRole, AlumniPostResponse::setUserSubmitted
-            ).doOnSuccess(r -> log.info("getAllAlumniPosts (org={}) result: {}", organizationId, JsonUtils.toJson(r)));
+            ).doOnSuccess(r -> log.debug("getAllAlumniPosts (org={}) result: {}", organizationId, JsonUtils.toJson(r)));
         }
         if (keyword != null && !keyword.trim().isEmpty()) {
             String kw = keyword.trim();
@@ -102,13 +102,13 @@ public class AdminArticleService {
                     alumniPostRepository.searchAllByTitleWithPagination(kw, limit, offset).map(AlumniPostResponse::from),
                     alumniPostRepository.countAllSearchByTitle(kw), page, limit,
                     AlumniPostResponse::getAuthorMemberId, AlumniPostResponse::setSubmitterName, AlumniPostResponse::setSubmitterRole, AlumniPostResponse::setUserSubmitted
-            ).doOnSuccess(r -> log.info("searchAllAlumniPosts result: {}", JsonUtils.toJson(r)));
+            ).doOnSuccess(r -> log.debug("searchAllAlumniPosts result: {}", JsonUtils.toJson(r)));
         }
         return paginateWithSubmitter(
                 alumniPostRepository.findAllWithPagination(limit, offset).map(AlumniPostResponse::from),
                 alumniPostRepository.count(), page, limit,
                 AlumniPostResponse::getAuthorMemberId, AlumniPostResponse::setSubmitterName, AlumniPostResponse::setSubmitterRole, AlumniPostResponse::setUserSubmitted
-        ).doOnSuccess(r -> log.info("getAllAlumniPosts result: {}", JsonUtils.toJson(r)));
+        ).doOnSuccess(r -> log.debug("getAllAlumniPosts result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<PaginatedResponse<AchievementResponse>> getAllAchievements(Integer organizationId, String keyword, int page, int limit) {
@@ -120,13 +120,13 @@ public class AdminArticleService {
                         achievementRepository.searchByOrganizationAndTitle(organizationId, kw, limit, offset).map(AchievementResponse::from),
                         achievementRepository.countSearchByOrganizationAndTitle(organizationId, kw), page, limit,
                         AchievementResponse::getMemberId, AchievementResponse::setSubmitterName, AchievementResponse::setSubmitterRole, AchievementResponse::setUserSubmitted
-                ).doOnSuccess(r -> log.info("searchAchievements (org={}) result: {}", organizationId, JsonUtils.toJson(r)));
+                ).doOnSuccess(r -> log.debug("searchAchievements (org={}) result: {}", organizationId, JsonUtils.toJson(r)));
             }
             return paginateWithSubmitter(
                     achievementRepository.findByOrganizationIdWithPagination(organizationId, limit, offset).map(AchievementResponse::from),
                     achievementRepository.countByOrganizationId(organizationId), page, limit,
                     AchievementResponse::getMemberId, AchievementResponse::setSubmitterName, AchievementResponse::setSubmitterRole, AchievementResponse::setUserSubmitted
-            ).doOnSuccess(r -> log.info("getAllAchievements (org={}) result: {}", organizationId, JsonUtils.toJson(r)));
+            ).doOnSuccess(r -> log.debug("getAllAchievements (org={}) result: {}", organizationId, JsonUtils.toJson(r)));
         }
         if (keyword != null && !keyword.trim().isEmpty()) {
             String kw = keyword.trim();
@@ -134,13 +134,13 @@ public class AdminArticleService {
                     achievementRepository.searchAllByTitleWithPagination(kw, limit, offset).map(AchievementResponse::from),
                     achievementRepository.countAllSearchByTitle(kw), page, limit,
                     AchievementResponse::getMemberId, AchievementResponse::setSubmitterName, AchievementResponse::setSubmitterRole, AchievementResponse::setUserSubmitted
-            ).doOnSuccess(r -> log.info("searchAllAchievements result: {}", JsonUtils.toJson(r)));
+            ).doOnSuccess(r -> log.debug("searchAllAchievements result: {}", JsonUtils.toJson(r)));
         }
         return paginateWithSubmitter(
                 achievementRepository.findAllWithPagination(limit, offset).map(AchievementResponse::from),
                 achievementRepository.count(), page, limit,
                 AchievementResponse::getMemberId, AchievementResponse::setSubmitterName, AchievementResponse::setSubmitterRole, AchievementResponse::setUserSubmitted
-        ).doOnSuccess(r -> log.info("getAllAchievements result: {}", JsonUtils.toJson(r)));
+        ).doOnSuccess(r -> log.debug("getAllAchievements result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<PaginatedResponse<JobResponse>> getAllJobs(Integer organizationId, String keyword, int page, int limit) {
@@ -150,7 +150,7 @@ public class AdminArticleService {
                     jobRepository.findByOrganizationIdWithPagination(organizationId, limit, offset).map(JobResponse::from),
                     jobRepository.countByOrganizationId(organizationId), page, limit,
                     JobResponse::getPosterMemberId, JobResponse::setSubmitterName, JobResponse::setSubmitterRole, JobResponse::setUserSubmitted
-            ).doOnSuccess(r -> log.info("getAllJobs (org={}) result: {}", organizationId, JsonUtils.toJson(r)));
+            ).doOnSuccess(r -> log.debug("getAllJobs (org={}) result: {}", organizationId, JsonUtils.toJson(r)));
         }
         if (keyword != null && !keyword.trim().isEmpty()) {
             String kw = keyword.trim();
@@ -158,13 +158,13 @@ public class AdminArticleService {
                     jobRepository.searchAllByTitleWithPagination(kw, limit, offset).map(JobResponse::from),
                     jobRepository.countAllSearchByTitle(kw), page, limit,
                     JobResponse::getPosterMemberId, JobResponse::setSubmitterName, JobResponse::setSubmitterRole, JobResponse::setUserSubmitted
-            ).doOnSuccess(r -> log.info("searchAllJobs result: {}", JsonUtils.toJson(r)));
+            ).doOnSuccess(r -> log.debug("searchAllJobs result: {}", JsonUtils.toJson(r)));
         }
         return paginateWithSubmitter(
                 jobRepository.findAllWithPagination(limit, offset).map(JobResponse::from),
                 jobRepository.count(), page, limit,
                 JobResponse::getPosterMemberId, JobResponse::setSubmitterName, JobResponse::setSubmitterRole, JobResponse::setUserSubmitted
-        ).doOnSuccess(r -> log.info("getAllJobs result: {}", JsonUtils.toJson(r)));
+        ).doOnSuccess(r -> log.debug("getAllJobs result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<PaginatedResponse<LearningResourceResponse>> getAllLearningResources(Integer organizationId, String keyword, int page, int limit) {
@@ -174,7 +174,7 @@ public class AdminArticleService {
                     learningResourceRepository.findByOrganizationIdWithPagination(organizationId, limit, offset).map(LearningResourceResponse::from),
                     learningResourceRepository.countByOrganizationId(organizationId), page, limit,
                     LearningResourceResponse::getUploaderMemberId, LearningResourceResponse::setSubmitterName, LearningResourceResponse::setSubmitterRole, LearningResourceResponse::setUserSubmitted
-            ).doOnSuccess(r -> log.info("getAllLearningResources (org={}) result: {}", organizationId, JsonUtils.toJson(r)));
+            ).doOnSuccess(r -> log.debug("getAllLearningResources (org={}) result: {}", organizationId, JsonUtils.toJson(r)));
         }
         if (keyword != null && !keyword.trim().isEmpty()) {
             String kw = keyword.trim();
@@ -182,13 +182,13 @@ public class AdminArticleService {
                     learningResourceRepository.searchAllByTitleWithPagination(kw, limit, offset).map(LearningResourceResponse::from),
                     learningResourceRepository.countAllSearchByTitle(kw), page, limit,
                     LearningResourceResponse::getUploaderMemberId, LearningResourceResponse::setSubmitterName, LearningResourceResponse::setSubmitterRole, LearningResourceResponse::setUserSubmitted
-            ).doOnSuccess(r -> log.info("searchAllLearningResources result: {}", JsonUtils.toJson(r)));
+            ).doOnSuccess(r -> log.debug("searchAllLearningResources result: {}", JsonUtils.toJson(r)));
         }
         return paginateWithSubmitter(
                 learningResourceRepository.findAllWithPagination(limit, offset).map(LearningResourceResponse::from),
                 learningResourceRepository.count(), page, limit,
                 LearningResourceResponse::getUploaderMemberId, LearningResourceResponse::setSubmitterName, LearningResourceResponse::setSubmitterRole, LearningResourceResponse::setUserSubmitted
-        ).doOnSuccess(r -> log.info("getAllLearningResources result: {}", JsonUtils.toJson(r)));
+        ).doOnSuccess(r -> log.debug("getAllLearningResources result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<PaginatedResponse<FundListItemResponse>> getAllFunds(Integer organizationId, String keyword, int page, int limit) {
@@ -198,7 +198,7 @@ public class AdminArticleService {
                 fundRepository.findFiltered(organizationId, kw, null, null, null, null, limit, offset).map(FundListItemResponse::from),
                 fundRepository.countFiltered(organizationId, kw, null, null, null, null),
                 page, limit
-        ).doOnSuccess(r -> log.info("getAllFunds result (org={}, keyword={}): {}", organizationId, kw, JsonUtils.toJson(r)));
+        ).doOnSuccess(r -> log.debug("getAllFunds result (org={}, keyword={}): {}", organizationId, kw, JsonUtils.toJson(r)));
     }
 
     public Mono<AchievementResponse> updateAchievementStatus(Integer id, Status status) {

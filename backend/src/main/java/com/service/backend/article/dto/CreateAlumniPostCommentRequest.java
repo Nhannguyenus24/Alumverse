@@ -1,8 +1,6 @@
 package com.service.backend.article.dto;
 
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -15,8 +13,6 @@ public class CreateAlumniPostCommentRequest {
 
     private Integer alumniPostId;
 
-    @NotNull(message = "Author member ID is required")
-    @Min(value = 1, message = "Author member ID must be greater than 0")
     private Integer authorMemberId;
 
     @NotBlank(message = "Content is required")

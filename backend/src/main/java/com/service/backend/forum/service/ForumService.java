@@ -140,7 +140,7 @@ public class ForumService {
                 }))
                 .flatMap(this::convertToCategoryDTOWithStats)
                 .delayUntil(res -> cacheUtils.clear(CacheNames.FORUM_CATEGORY))
-                .doOnSuccess(result -> log.info("createCategory result: {}", JsonUtils.toJson(result)))
+                .doOnSuccess(result -> log.debug("createCategory result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error creating forum category: {}", request.getName(), error));
     }
 
@@ -162,7 +162,7 @@ public class ForumService {
                         })))
                 .flatMap(this::convertToCategoryDTOWithStats)
                 .delayUntil(res -> cacheUtils.clear(CacheNames.FORUM_CATEGORY))
-                .doOnSuccess(result -> log.info("updateCategory result: {}", JsonUtils.toJson(result)))
+                .doOnSuccess(result -> log.debug("updateCategory result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error updating forum category ID: {}", id, error));
     }
 
@@ -173,7 +173,7 @@ public class ForumService {
                     log.warn("Forum category not found with ID: {}", id);
                     return Mono.error(new ApplicationException(ErrorCode.FORUM_CATEGORY_NOT_FOUND));
                 }))
-                .doOnSuccess(result -> log.info("findCategoryById result: {}", JsonUtils.toJson(result)))
+                .doOnSuccess(result -> log.debug("findCategoryById result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error finding forum category ID: {}", id, error));
     }
 
@@ -202,7 +202,7 @@ public class ForumService {
                     log.warn("Forum topic not found with ID: {}", id);
                     return Mono.error(new ApplicationException(ErrorCode.FORUM_TOPIC_NOT_FOUND));
                 }))
-                .doOnSuccess(result -> log.info("findTopicById result: {}", JsonUtils.toJson(result)))
+                .doOnSuccess(result -> log.debug("findTopicById result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error finding forum topic ID: {}", id, error));
     }
 
@@ -211,7 +211,7 @@ public class ForumService {
                 .flatMap(this::convertToTopicDTOWithPostCount)
                 .doOnSuccess(result -> {
                     if (result != null) {
-                        log.info("findTopicByTitle result: {}", JsonUtils.toJson(result));
+                        log.debug("findTopicByTitle result: {}", JsonUtils.toJson(result));
                     } else {
                         log.warn("Forum topic not found with title: {}", title);
                     }
@@ -230,7 +230,7 @@ public class ForumService {
                 forumTopicRepository.countActiveByCategoryId(categoryId, keyword),
                 page, size,
                 this::enrichTopicsWithPostCount)
-                .doOnSuccess(result -> log.info("findTopicsByCategoryId with keyword {} sortBy {} result: {}", keyword, sortBy, JsonUtils.toJson(result)))
+                .doOnSuccess(result -> log.debug("findTopicsByCategoryId with keyword {} sortBy {} result: {}", keyword, sortBy, JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error finding forum topics for category ID: {}", categoryId, error));
     }
 
@@ -298,7 +298,7 @@ public class ForumService {
                         }))
                 .flatMap(this::convertToTopicDTOWithPostCount)
                 .delayUntil(res -> cacheUtils.clear(CacheNames.FORUM_CATEGORY))
-                .doOnSuccess(result -> log.info("createTopic result: {}", JsonUtils.toJson(result)))
+                .doOnSuccess(result -> log.debug("createTopic result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error creating forum topic: {}", request.getTitle(), error));
     }
 
@@ -331,7 +331,7 @@ public class ForumService {
                         })))
                 .flatMap(this::convertToTopicDTOWithPostCount)
                 .delayUntil(res -> cacheUtils.clear(CacheNames.FORUM_CATEGORY))
-                .doOnSuccess(result -> log.info("updateTopic result: {}", JsonUtils.toJson(result)))
+                .doOnSuccess(result -> log.debug("updateTopic result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error updating forum topic ID: {}", id, error));
     }
     public Mono<Void> deleteTopic(Integer topicId) {
@@ -411,7 +411,7 @@ public class ForumService {
                                                 .collect(Collectors.toList()));
                             }));
         })
-                .doOnSuccess(result -> log.info("findPostsByTopicId result: {}", JsonUtils.toJson(result)))
+                .doOnSuccess(result -> log.debug("findPostsByTopicId result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error finding forum posts for topic ID: {}", topicId, error));
     }
 
@@ -458,7 +458,7 @@ public class ForumService {
                             .thenReturn(post);
                 })
                 .map(this::convertToPostDTO)
-                .doOnSuccess(result -> log.info("createPost result: {}", JsonUtils.toJson(result)))
+                .doOnSuccess(result -> log.debug("createPost result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error creating forum post for topic ID: {}", request.getTopicId(), error));
     }
 
@@ -483,7 +483,7 @@ public class ForumService {
                             return forumPostRepository.save(post);
                         })))
                 .map(this::convertToPostDTO)
-                .doOnSuccess(result -> log.info("updatePost result: {}", JsonUtils.toJson(result)))
+                .doOnSuccess(result -> log.debug("updatePost result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error updating forum post ID: {}", id, error));
     }
 
@@ -504,9 +504,11 @@ public class ForumService {
     public Mono<ForumPostReportDTO> reportPost(Integer postId, CreateForumPostReportRequest request) {
         return currentMemberId().flatMap(reporterMemberId -> forumPostRepository.findById(postId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.FORUM_POST_NOT_FOUND)))
-                .flatMap(post -> forumTopicRepository.findById(post.getTopicId())
-                        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.FORUM_TOPIC_NOT_FOUND)))
-                        .flatMap(topic -> SecurityUtils.assertCanSubmitContributorContent(topic.getOrganizationId())))
+                .flatMap(post -> (Boolean.TRUE.equals(post.getIsBanned()) || Boolean.TRUE.equals(post.getIsHidden())
+                        ? Mono.<Void>error(new ApplicationException(ErrorCode.FORUM_POST_NOT_FOUND))
+                        : forumTopicRepository.findById(post.getTopicId())
+                                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.FORUM_TOPIC_NOT_FOUND)))
+                                .flatMap(topic -> SecurityUtils.assertCanSubmitContributorContent(topic.getOrganizationId()))))
                 .then(Mono.defer(() -> {
                         ForumPostReport report = ForumPostReport.builder()
                             .postId(postId)
@@ -517,7 +519,7 @@ public class ForumService {
                     return forumPostReportRepository.save(report);
                 }))
                 .map(this::convertToReportDTO)
-                .doOnSuccess(r -> log.info("reportPost result: {}", JsonUtils.toJson(r))));
+                .doOnSuccess(r -> log.debug("reportPost result: {}", JsonUtils.toJson(r))));
     }
 
     // ========== REACTION METHODS (LIKE/DISLIKE) ==========
@@ -530,7 +532,9 @@ public class ForumService {
                             log.error("Post not found with ID: {}", request.getPostId());
                             return Mono.error(new ApplicationException(ErrorCode.FORUM_POST_NOT_FOUND));
                         }))
-                        .flatMap(post -> forumTopicRepository.findById(post.getTopicId())
+                        .flatMap(post -> (Boolean.TRUE.equals(post.getIsBanned()) || Boolean.TRUE.equals(post.getIsHidden())
+                                ? Mono.<ForumPostReaction>error(new ApplicationException(ErrorCode.FORUM_POST_NOT_FOUND))
+                                : forumTopicRepository.findById(post.getTopicId())
                                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.FORUM_TOPIC_NOT_FOUND)))
                                 .flatMap(topic -> SecurityUtils.assertCanSubmitContributorContent(topic.getOrganizationId()))
                                 .then(forumPostReactionRepository.findByPostIdAndMemberId(
@@ -549,9 +553,9 @@ public class ForumService {
                                                     .memberId(memberId)
                                                     .build();
                                             return forumPostReactionRepository.save(reaction);
-                                        }))))
+                                        })))))
                 .map(this::convertToReactionDTO)
-                .doOnSuccess(result -> log.info("reactToPost result: {}", JsonUtils.toJson(result)))
+                .doOnSuccess(result -> log.debug("reactToPost result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error toggling like for post ID: {}", request.getPostId(), error));
     }
 
@@ -562,7 +566,7 @@ public class ForumService {
                     map.put("likes", count);
                     return map;
                 })
-                .doOnSuccess(result -> log.info("getPostReactionCounts result: {}", JsonUtils.toJson(result)))
+                .doOnSuccess(result -> log.debug("getPostReactionCounts result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error getting like count for post ID: {}", postId, error));
     }
 
@@ -610,7 +614,7 @@ public class ForumService {
                             }));
                 }))
                 .map(this::convertToSubscriptionDTO)
-                .doOnSuccess(result -> log.info("subscribeToTopic result: {}", JsonUtils.toJson(result)))
+                .doOnSuccess(result -> log.debug("subscribeToTopic result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error toggling subscription for topic ID: {}", request.getTopicId(), error));
     }
 

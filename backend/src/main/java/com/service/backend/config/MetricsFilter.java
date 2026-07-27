@@ -24,6 +24,11 @@ public class MetricsFilter implements WebFilter {
 
     private final MeterRegistry meterRegistry;
 
+    // Pre-compiled once instead of recompiling a Pattern per path segment on every request.
+    private static final java.util.regex.Pattern NUMERIC_SEGMENT = java.util.regex.Pattern.compile("\\d+");
+    private static final java.util.regex.Pattern UUID_SEGMENT = java.util.regex.Pattern.compile(
+            "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}");
+
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
         String method = exchange.getRequest().getMethod().toString();
@@ -121,8 +126,10 @@ public class MetricsFilter implements WebFilter {
 
         for (String segment : segments) {
             if (!segment.isEmpty()) {
-                // If segment is numeric, replace with {id}
-                if (segment.matches("\\d+")) {
+                // Collapse id-like segments (numeric ids and UUIDs) to {id} so tag cardinality
+                // stays bounded — otherwise every distinct id spawns a new time series in the
+                // MeterRegistry (heap growth) and a new Prometheus label.
+                if (NUMERIC_SEGMENT.matcher(segment).matches() || UUID_SEGMENT.matcher(segment).matches()) {
                     normalized.append("/{id}");
                 } else {
                     normalized.append("/").append(segment);

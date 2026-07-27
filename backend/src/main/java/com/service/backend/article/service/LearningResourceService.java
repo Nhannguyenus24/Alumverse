@@ -165,10 +165,7 @@ public class LearningResourceService {
                                 page, limit)))
                 .switchIfEmpty(Mono.defer(() -> cacheUtils.getOrCompute(CacheNames.LEARNING_RESOURCE,
                         "type_" + resourceType + "_global_p" + page + "_l" + limit, LIST_TTL, () -> PaginationHelper.paginate(
-                                learningResourceRepository.findAll()
-                                        .filter(r -> resourceType != null && resourceType.equalsIgnoreCase(r.getType()) && Status.APPROVED.equals(r.getStatus()))
-                                        .skip(offset)
-                                        .take(limit)
+                                learningResourceRepository.findAllApprovedByType(resourceType, limit, offset)
                                         .map(LearningResourceResponse::from),
                                 learningResourceRepository.countAllApprovedByType(resourceType),
                                 page, limit))));

@@ -42,6 +42,10 @@ import reactor.core.publisher.Mono;
 public class AdminOrganizationService {
     private static final Logger logger = LoggerFactory.getLogger(AdminOrganizationService.class);
     private static final String ORG_CACHE = com.service.backend.shared.utils.CacheNames.ORGANIZATION;
+    // Bound concurrent base64 uploads to the external image service. flatMapSequential's default
+    // concurrency is 256, so a single introduction upsert could fire hundreds of concurrent uploads
+    // (buffering many large blobs) → socket/throttling/OOM risk. Ordering is still preserved.
+    private static final int IMAGE_UPLOAD_CONCURRENCY = 4;
 
     private final OrganizationRepository organizationRepository;
     private final SchoolFeedbackRepository schoolFeedbackRepository;
@@ -60,13 +64,13 @@ public class AdminOrganizationService {
                 page,
                 size
         )
-        .doOnSuccess(r -> logger.info("getAllOrganizations result: {}", JsonUtils.toJson(r)))
+        .doOnSuccess(r -> logger.debug("getAllOrganizations result: {}", JsonUtils.toJson(r)))
         .doOnError(error -> logger.error("Failed to fetch organizations - search: {}, page: {}, size: {}, error: {}", search, page, size, error.getMessage()));
     }
 
     public Mono<Organization> getOrganizationById(Integer organizationId) {
         return organizationRepository.findById(organizationId)
-                .doOnSuccess(org -> logger.info("getOrganizationById result: {}", JsonUtils.toJson(org)))
+                .doOnSuccess(org -> logger.debug("getOrganizationById result: {}", JsonUtils.toJson(org)))
                 .doOnError(error -> logger.error("Failed to fetch organization - ID: {},  error: {}", organizationId, error.getMessage()));
     }
 
@@ -104,7 +108,7 @@ public class AdminOrganizationService {
 
     public Mono<Organization> getOrganizationBySlug(String slug) {
         return organizationRepository.findBySlug(slug)
-                .doOnSuccess(org -> logger.info("getOrganizationBySlug result: {}", JsonUtils.toJson(org)))
+                .doOnSuccess(org -> logger.debug("getOrganizationBySlug result: {}", JsonUtils.toJson(org)))
                 .doOnError(error -> logger.error("Failed to fetch organization - slug: {}", error.getMessage()));
     }
 
@@ -124,7 +128,7 @@ public class AdminOrganizationService {
                         request.getDepartmentName()
                 ))
                 .delayUntil(res -> cacheUtils.clear(ORG_CACHE))
-                .doOnSuccess(saved -> logger.info("createOrganization result: {}", JsonUtils.toJson(saved)))
+                .doOnSuccess(saved -> logger.debug("createOrganization result: {}", JsonUtils.toJson(saved)))
                 .doOnError(error -> logger.error("Failed to create organization: {}", error.getMessage()));
     }
 
@@ -154,7 +158,7 @@ public class AdminOrganizationService {
                          .delayUntil(res -> cacheUtils.clear(ORG_CACHE));
                     });
                 })
-                .doOnSuccess(saved -> logger.info("updateOrganization result: {}", JsonUtils.toJson(saved)))
+                .doOnSuccess(saved -> logger.debug("updateOrganization result: {}", JsonUtils.toJson(saved)))
                 .doOnError(error -> logger.error("Failed to update organization - ID: {}", error.getMessage()));
     }
 
@@ -177,7 +181,7 @@ public class AdminOrganizationService {
                 page,
                 size
         )
-                .doOnSuccess(r -> logger.info("getSchoolFeedbacks result: {}", JsonUtils.toJson(r)))
+                .doOnSuccess(r -> logger.debug("getSchoolFeedbacks result: {}", JsonUtils.toJson(r)))
                 .doOnError(error -> logger.error("Failed to fetch school feedbacks: {}", error.getMessage()));
     }
 
@@ -247,7 +251,7 @@ public class AdminOrganizationService {
                 })
                 .map(this::toResponse)
                 .delayUntil(res -> cacheUtils.clear(ORG_CACHE))
-                .doOnSuccess(r -> logger.info("upsertIntroduction result: {}", JsonUtils.toJson(r)))
+                .doOnSuccess(r -> logger.debug("upsertIntroduction result: {}", JsonUtils.toJson(r)))
                 .doOnError(error -> logger.error("Failed to upsert introduction for organization: {}", error.getMessage()));
     }
 
@@ -313,7 +317,7 @@ public class AdminOrganizationService {
             return Mono.just(List.of());
         }
         return Flux.fromIterable(base64Images)
-                .flatMapSequential(img -> imageService.uploadBase64IfPresent(img).defaultIfEmpty(img != null ? img : ""))
+                .flatMapSequential(img -> imageService.uploadBase64IfPresent(img).defaultIfEmpty(img != null ? img : ""), IMAGE_UPLOAD_CONCURRENCY)
                 .filter(s -> !s.isBlank())
                 .collectList();
     }
@@ -329,7 +333,7 @@ public class AdminOrganizationService {
                     org.setFeaturesConfig(JsonUtils.toJson(config));
                     return saveOrganizationFields(org).thenReturn(config);
                 })
-                .doOnSuccess(r -> logger.info("updateConfig result: {}", JsonUtils.toJson(r)));
+                .doOnSuccess(r -> logger.debug("updateConfig result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<FeatureConfig.SiteIdentity> getSiteIdentity(Integer organizationId) {
@@ -345,7 +349,7 @@ public class AdminOrganizationService {
                     org.setFeaturesConfig(JsonUtils.toJson(config));
                     return saveOrganizationFields(org).thenReturn(config);
                 })
-                .doOnSuccess(r -> logger.info("updateSiteIdentity result: {}", JsonUtils.toJson(r)));
+                .doOnSuccess(r -> logger.debug("updateSiteIdentity result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<FeatureConfig.BrandConfig> getBrandConfig(Integer organizationId) {
@@ -361,7 +365,7 @@ public class AdminOrganizationService {
                     org.setFeaturesConfig(JsonUtils.toJson(config));
                     return saveOrganizationFields(org).thenReturn(config);
                 })
-                .doOnSuccess(r -> logger.info("updateBrandConfig result: {}", JsonUtils.toJson(r)));
+                .doOnSuccess(r -> logger.debug("updateBrandConfig result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<Map<String, FeatureConfig.Feature>> getFeatures(Integer organizationId) {
@@ -383,7 +387,7 @@ public class AdminOrganizationService {
                     return saveOrganizationFields(org).thenReturn(config);
                 })
                 .doOnSuccess(r -> {
-                    logger.info("updateFeatures result: {}", JsonUtils.toJson(r));
+                    logger.debug("updateFeatures result: {}", JsonUtils.toJson(r));
                     notifyFeatureChanged(organizationId, r);
                 });
     }
@@ -406,7 +410,7 @@ public class AdminOrganizationService {
                     return saveOrganizationFields(org).thenReturn(config);
                 })
                 .doOnSuccess(r -> {
-                    logger.info("updateFeature result: {}", JsonUtils.toJson(r));
+                    logger.debug("updateFeature result: {}", JsonUtils.toJson(r));
                     notifyFeatureChanged(organizationId, r);
                 });
     }
@@ -429,7 +433,7 @@ public class AdminOrganizationService {
                     return saveOrganizationFields(org).thenReturn(config);
                 })
                 .doOnSuccess(r -> {
-                    logger.info("toggleFeature result: {}", JsonUtils.toJson(r));
+                    logger.debug("toggleFeature result: {}", JsonUtils.toJson(r));
                     notifyFeatureChanged(organizationId, r);
                 });
     }
@@ -455,7 +459,7 @@ public class AdminOrganizationService {
                     org.setFeaturesConfig(JsonUtils.toJson(config));
                     return saveOrganizationFields(org).thenReturn(config);
                 })
-                .doOnSuccess(r -> logger.info("updatePrivacySettings result: {}", JsonUtils.toJson(r)));
+                .doOnSuccess(r -> logger.debug("updatePrivacySettings result: {}", JsonUtils.toJson(r)));
     }
 
     private Mono<Organization> requireOrganization(Integer organizationId) {
@@ -667,7 +671,7 @@ public class AdminOrganizationService {
                     return imageService.uploadBase64IfPresent(img)
                             .map(url -> { member.setImage(url); return member; })
                             .defaultIfEmpty(member);
-                })
+                }, IMAGE_UPLOAD_CONCURRENCY)
                 .collectList();
     }
 }
