@@ -2,10 +2,12 @@ package com.service.backend.chat.websocket;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.service.backend.shared.entity.ChatMessage;
+import com.service.backend.shared.entity.ChatGroupMember;
 import com.service.backend.chat.dao.ChatGroupMemberRepository;
 import com.service.backend.chat.service.ChatService;
 import com.service.backend.shared.dao.UserDisplayInfo;
 import com.service.backend.user.dao.UserProfileRepository;
+import com.service.backend.user.service.NotificationService;
 import com.service.backend.shared.service.SseService;
 import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.utils.JwtUtils;
@@ -13,10 +15,13 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Gauge;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.web.reactive.socket.WebSocketHandler;
 import org.springframework.web.reactive.socket.WebSocketMessage;
 import org.springframework.web.reactive.socket.WebSocketSession;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.enums.ErrorCode;
 
@@ -24,7 +29,9 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -40,8 +47,14 @@ public class ChatWebSocketHandler implements WebSocketHandler {
     private final ChatService chatService;
     private final ChatGroupMemberRepository chatGroupMemberRepository;
     private final UserProfileRepository userProfileRepository;
+    private final NotificationService notificationService;
     private final JwtUtils jwtUtils;
     private final SseService sseService;
+
+    // Sentinel memberId used by the client to represent an "@all" (mention everyone) token.
+    private static final String ALL_MENTION_SENTINEL = "__all__";
+    // Keep the notification body short; a mention notification is a teaser, not the full message.
+    private static final int MENTION_PREVIEW_MAX_LENGTH = 120;
 
     // Map: sessionId -> memberId
     private final Map<String, Long> sessionToMember = new ConcurrentHashMap<>();
@@ -60,12 +73,14 @@ public class ChatWebSocketHandler implements WebSocketHandler {
             ChatService chatService,
             ChatGroupMemberRepository chatGroupMemberRepository,
             UserProfileRepository userProfileRepository,
+            NotificationService notificationService,
             JwtUtils jwtUtils,
             SseService sseService,
             MeterRegistry meterRegistry) {
         this.chatService = chatService;
         this.chatGroupMemberRepository = chatGroupMemberRepository;
         this.userProfileRepository = userProfileRepository;
+        this.notificationService = notificationService;
         this.jwtUtils = jwtUtils;
         this.sseService = sseService;
 
@@ -204,8 +219,18 @@ public class ChatWebSocketHandler implements WebSocketHandler {
                                     .defaultIfEmpty(UserDisplayInfo.builder().userId(senderId).build())
                                     .doOnNext(info -> senderInfoCache.put(senderId, info));
                     return senderInfoMono
-                            .flatMap(senderInfo -> broadcastMessage(groupId, savedMessage, senderInfo)
-                                    .then(notifyNewMessageViaSse(groupId, memberId, savedMessage, senderInfo)));
+                            .flatMap(senderInfo -> {
+                                // Notify @mentioned members in the background: fire-and-forget on a
+                                // separate scheduler so resolving/persisting mention notifications
+                                // (which may hit the DB for @all) never delays message delivery.
+                                notifyMentionedMembers(groupId, memberId, savedMessage, senderInfo)
+                                        .subscribeOn(Schedulers.boundedElastic())
+                                        .subscribe(null, error -> log.warn(
+                                                "Failed to notify mentioned members for message {}",
+                                                savedMessage.getId(), error));
+                                return broadcastMessage(groupId, savedMessage, senderInfo)
+                                        .then(notifyNewMessageViaSse(groupId, memberId, savedMessage, senderInfo));
+                            });
                 })
                 .onErrorResume(error -> {
                     log.error("Error sending message", error);
@@ -274,6 +299,99 @@ public class ChatWebSocketHandler implements WebSocketHandler {
                 .filter(member -> !senderMemberId.equals(member.getMemberId()))
                 .doOnNext(member -> sseService.sendToUser(member.getMemberId(), "new-message", payload))
                 .then();
+    }
+
+    /**
+     * Send an in-app + push notification to every member @mentioned in the message.
+     * The sender is never notified about their own mention, and "@all" is expanded to
+     * every other group member. Best-effort: any failure is logged and swallowed so it
+     * can never affect message delivery.
+     */
+    private Mono<Void> notifyMentionedMembers(Long groupId, Long senderMemberId,
+            ChatMessage message, UserDisplayInfo senderInfo) {
+        MentionTargets targets = parseMentionTargets(message.getMetadata());
+        if (!targets.mentionAll() && targets.memberIds().isEmpty()) {
+            return Mono.empty();
+        }
+
+        Flux<Long> recipients = targets.mentionAll()
+                ? chatGroupMemberRepository.findByGroupId(groupId).map(ChatGroupMember::getMemberId)
+                : Flux.fromIterable(targets.memberIds());
+
+        String senderName = StringUtils.hasText(senderInfo.getFullName())
+                ? senderInfo.getFullName().trim()
+                : "Một thành viên";
+        String title = senderName + " đã nhắc đến bạn";
+        String body = buildMentionPreview(message.getContent());
+        // Deep-link straight to the conversation the mention happened in. ChatPage reads
+        // the chatId query param and opens that conversation on load.
+        String link = "/chat?chatId=" + groupId;
+
+        return recipients
+                .filter(recipientId -> recipientId != null && !senderMemberId.equals(recipientId))
+                .distinct()
+                .doOnNext(recipientId ->
+                        notificationService.createNotificationAsync(recipientId.intValue(), title, body, link))
+                .then();
+    }
+
+    /**
+     * Extract mention targets from the message metadata JSON ({@code {"mentions":[{"memberId":..,"name":..}]}}).
+     * A memberId equal to the {@code "__all__"} sentinel expands to the whole group; numeric ids are
+     * concrete recipients. Anything unparseable yields empty targets.
+     */
+    private MentionTargets parseMentionTargets(String metadata) {
+        // ChatService persists the literal string "null" when no metadata was provided.
+        if (metadata == null || metadata.isBlank() || "null".equals(metadata)) {
+            return new MentionTargets(false, List.of());
+        }
+        try {
+            JsonNode root = JsonUtils.fromJson(metadata, JsonNode.class);
+            JsonNode mentions = root == null ? null : root.get("mentions");
+            if (mentions == null || !mentions.isArray()) {
+                return new MentionTargets(false, List.of());
+            }
+            boolean mentionAll = false;
+            List<Long> memberIds = new ArrayList<>();
+            for (JsonNode mention : mentions) {
+                JsonNode idNode = mention.get("memberId");
+                if (idNode == null) {
+                    continue;
+                }
+                if (idNode.isNumber()) {
+                    memberIds.add(idNode.asLong());
+                    continue;
+                }
+                String raw = idNode.asText();
+                if (ALL_MENTION_SENTINEL.equals(raw)) {
+                    mentionAll = true;
+                } else {
+                    try {
+                        memberIds.add(Long.parseLong(raw));
+                    } catch (NumberFormatException ignored) {
+                        // Non-numeric, non-sentinel id — skip it.
+                    }
+                }
+            }
+            return new MentionTargets(mentionAll, memberIds);
+        } catch (Exception e) {
+            log.warn("Failed to parse mention metadata: {}", metadata, e);
+            return new MentionTargets(false, List.of());
+        }
+    }
+
+    private static String buildMentionPreview(String content) {
+        if (!StringUtils.hasText(content)) {
+            return "";
+        }
+        String trimmed = content.trim();
+        return trimmed.length() <= MENTION_PREVIEW_MAX_LENGTH
+                ? trimmed
+                : trimmed.substring(0, MENTION_PREVIEW_MAX_LENGTH) + "…";
+    }
+
+    /** Parsed mention recipients: either the whole group ({@code mentionAll}) and/or explicit member ids. */
+    private record MentionTargets(boolean mentionAll, List<Long> memberIds) {
     }
 
     private Mono<Void> handleLeaveGroup(WebSocketSession session, JsonNode json) {

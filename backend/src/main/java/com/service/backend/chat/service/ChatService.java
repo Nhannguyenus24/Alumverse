@@ -206,19 +206,27 @@ public class ChatService {
      * Mark a chat group as read for the current member (stamps last_read_at = now), which
      * zeroes the conversation's unread count on the next list fetch. Emits a `chat-read`
      * SSE event to the member's own connections so other open tabs clear the unread marker
-     * for this conversation in real time.
+     * for this conversation in real time. Also emits a `chat-seen` event to every other
+     * member so a sender's "Sent" indicator flips to "Seen" live.
      */
     public Mono<Void> markGroupAsRead(Long groupId, Long memberId) {
         if (groupId == null || memberId == null) {
             return Mono.error(new ApplicationException(ErrorCode.RESOURCES_NOT_FOUND, "Group ID and member ID must not be null"));
         }
 
+        LocalDateTime readAt = LocalDateTime.now();
         return chatGroupMemberRepository.findByGroupIdAndMemberId(groupId, memberId)
                 .switchIfEmpty(Mono.error(new ApplicationException(
                         ErrorCode.CHAT_USER_NOT_GROUP_MEMBER,
                         "Current user is not a member of this chat group")))
-                .flatMap(ignored -> chatGroupMemberRepository.markAsRead(groupId, memberId, LocalDateTime.now()))
+                .flatMap(ignored -> chatGroupMemberRepository.markAsRead(groupId, memberId, readAt))
                 .doOnSuccess(ignored -> sseService.sendToUser(memberId, "chat-read", Map.of("groupId", groupId)))
+                .thenMany(chatGroupMemberRepository.findByGroupId(groupId)
+                        .filter(member -> !memberId.equals(member.getMemberId()))
+                        .doOnNext(member -> sseService.sendToUser(member.getMemberId(), "chat-seen", Map.of(
+                                "groupId", groupId,
+                                "readerMemberId", memberId,
+                                "readAt", readAt))))
                 .then();
     }
 
