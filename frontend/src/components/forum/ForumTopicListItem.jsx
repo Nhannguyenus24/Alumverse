@@ -68,7 +68,7 @@ const ForumTopicListItem = ({ topic, onClick, onAuthorClick }) => {
         }}
       >
         <Box sx={{ display: 'flex', gap: { xs: 2, md: 3 } }}>
-          <Box sx={{ textAlign: 'center', minWidth: { xs: 48, sm: 72 } }}>
+          <Box sx={{ textAlign: 'center', minWidth: { xs: 48, sm: 72 }, width: { md: 72 } }}>
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
               {t('forum:views')}
             </Typography>
@@ -76,7 +76,7 @@ const ForumTopicListItem = ({ topic, onClick, onAuthorClick }) => {
               {topic.viewCount ?? 0}
             </Typography>
           </Box>
-          <Box sx={{ textAlign: 'center', minWidth: { xs: 48, sm: 72 } }}>
+          <Box sx={{ textAlign: 'center', minWidth: { xs: 48, sm: 72 }, width: { md: 72 } }}>
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
               {t('forum:discussions')}
             </Typography>
@@ -91,7 +91,8 @@ const ForumTopicListItem = ({ topic, onClick, onAuthorClick }) => {
             alignItems: 'center',
             gap: 1,
             minWidth: { xs: 'auto', sm: 140 },
-            justifyContent: { xs: 'flex-start', md: 'flex-end' },
+            width: { md: 180 },
+            justifyContent: { xs: 'flex-start', md: 'flex-start' },
           }}
         >
           <Avatar
@@ -114,7 +115,7 @@ const ForumTopicListItem = ({ topic, onClick, onAuthorClick }) => {
           >
             {getInitial(authorName) || <PersonIcon sx={{ fontSize: 18 }} />}
           </Avatar>
-          <Box sx={{ textAlign: 'left', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 0.2 }}>
+          <Box sx={{ textAlign: 'left', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 0.2, flex: 1, overflow: 'hidden' }}>
             <Typography
               variant="body2"
               fontWeight={600}
@@ -129,11 +130,14 @@ const ForumTopicListItem = ({ topic, onClick, onAuthorClick }) => {
                 fontSize: { xs: '0.825rem', md: '0.875rem' },
                 cursor: onAuthorClick && topic.createdByMemberId ? 'pointer' : 'default',
                 '&:hover': onAuthorClick && topic.createdByMemberId ? { textDecoration: 'underline' } : {},
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
               }}
             >
               {authorName}
             </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.1 }}>
+            <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {formatRelativeTimeVi(topic.createdAt)}
             </Typography>
           </Box>
