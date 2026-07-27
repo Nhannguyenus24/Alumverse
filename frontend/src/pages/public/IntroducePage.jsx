@@ -337,7 +337,7 @@ const IntroducePage = () => {
               <ScrollReveal key={index} delay={getStaggerDelay(index)}>
                 <Paper
                   sx={{
-                    p: { xs: 2, sm: 2.5 },
+                    p: { xs: 1.75, sm: 2.25 },
                     display: 'flex',
                     flexDirection: { xs: 'column', sm: 'row' },
                     alignItems: { xs: 'flex-start', sm: 'center' },
@@ -356,7 +356,7 @@ const IntroducePage = () => {
                     },
                   }}
                 >
-                  <Box sx={{ width: { xs: 112, sm: 124 }, height: { xs: 112, sm: 124 }, flexShrink: 0 }}>
+                  <Box sx={{ width: { xs: 120, sm: 132 }, height: { xs: 120, sm: 132 }, flexShrink: 0 }}>
                     <Box
                       component="img"
                       src={leader.image || "/default_avatar.png"}
@@ -366,9 +366,6 @@ const IntroducePage = () => {
                         height: '100%',
                         borderRadius: '50%',
                         objectFit: "cover",
-                        border: '3px solid',
-                        borderColor: 'background.paper',
-                        boxShadow: `0 0 0 1px ${alpha(theme.palette.primary.main, 0.18)}, 0 8px 24px ${alpha(theme.palette.common.black, 0.12)}`,
                       }}
                     />
                   </Box>
@@ -423,7 +420,7 @@ const IntroducePage = () => {
               <ScrollReveal key={index} delay={getStaggerDelay(index)}>
                 <Paper
                   sx={{
-                    p: { xs: 2, sm: 2.5 },
+                    p: { xs: 1.75, sm: 2.25 },
                     display: 'flex',
                     flexDirection: { xs: 'column', sm: 'row' },
                     alignItems: { xs: 'flex-start', sm: 'center' },
@@ -442,7 +439,7 @@ const IntroducePage = () => {
                     }
                   }}
                 >
-                  <Box sx={{ width: { xs: 112, sm: 124 }, height: { xs: 112, sm: 124 }, flexShrink: 0 }}>
+                  <Box sx={{ width: { xs: 120, sm: 132 }, height: { xs: 120, sm: 132 }, flexShrink: 0 }}>
                     <Box
                       component="img"
                       src={member.image || "/default_avatar.png"}
@@ -452,9 +449,6 @@ const IntroducePage = () => {
                         height: '100%',
                         borderRadius: '50%',
                         objectFit: "cover",
-                        border: '3px solid',
-                        borderColor: 'background.paper',
-                        boxShadow: `0 0 0 1px ${alpha(theme.palette.primary.main, 0.18)}, 0 8px 24px ${alpha(theme.palette.common.black, 0.12)}`,
                       }}
                     />
                   </Box>
