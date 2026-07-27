@@ -41,6 +41,20 @@ public interface ForumTopicRepository extends R2dbcRepository<ForumTopic, Intege
     );
 
     /**
+     * Find ACTIVE forum topics by category id with pagination and keyword, ordered by most viewed.
+     * PENDING (awaiting approval) and INACTIVE (hidden) topics are excluded. Ties broken by newest.
+     */
+    @Query("SELECT * FROM forum_topics WHERE category_id = :categoryId AND status = 'ACTIVE' " +
+           "AND (:keyword IS NULL OR LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           "ORDER BY view_count DESC, created_at DESC LIMIT :limit OFFSET :offset")
+    Flux<ForumTopic> findActiveByCategoryIdOrderByViewCount(
+            @Param("categoryId") Integer categoryId,
+            @Param("keyword") String keyword,
+            @Param("limit") int limit,
+            @Param("offset") long offset
+    );
+
+    /**
      * Count ACTIVE topics by category id with keyword (public listing).
      */
     @Query("SELECT COUNT(*) FROM forum_topics WHERE category_id = :categoryId AND status = 'ACTIVE' " +

@@ -2,12 +2,17 @@ import {
   Box,
   Button,
   Container,
+  InputAdornment,
+  MenuItem,
+  Pagination,
   Stack,
+  TextField,
   Typography,
   Tooltip,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import AddCommentOutlinedIcon from "@mui/icons-material/AddCommentOutlined";
+import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import Page from "../../components/Page";
 import Breadcrumb from "../../components/Breadcrumb";
 import ForumFilterPanel from "../../components/forum/ForumFilterPanel";
@@ -15,7 +20,10 @@ import ForumTopicListItem from "../../components/forum/ForumTopicListItem";
 import AlumniContentLayout from "../../layouts/AlumniContentLayout";
 
 import { useOrganization } from "../../hooks/useOrganization";
-import { useForumCategoryLogic } from "../../hooks/forum/useForumCategoryLogic";
+import {
+  useForumCategoryLogic,
+  FORUM_TOPIC_SORT_OPTIONS,
+} from "../../hooks/forum/useForumCategoryLogic";
 import { useCanContribute } from "../../hooks/useCanContribute";
 import { useOrgPath } from "../../hooks/useOrgNavigate";
 import {
@@ -40,6 +48,14 @@ const ForumCategoryPage = () => {
     pageTitle,
     handleFilterChange,
     navigate,
+    searchKeyword,
+    setSearchKeyword,
+    debouncedKeyword,
+    sortBy,
+    setSortBy,
+    page,
+    setPage,
+    pageInfo,
   } = useForumCategoryLogic(organizationId);
 
   const toOrgPath = useOrgPath();
@@ -211,6 +227,55 @@ const ForumCategoryPage = () => {
             </Box>
           </ScrollReveal>
 
+          <ScrollReveal
+            sx={{
+              px: { xs: 1.5, sm: 2, md: 3 },
+              py: { xs: 1.5, md: 2 },
+              borderBottom: 1,
+              borderColor: "divider",
+            }}
+          >
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: { xs: "column", sm: "row" },
+                gap: 1.5,
+                alignItems: { xs: "stretch", sm: "center" },
+              }}
+            >
+              <TextField
+                value={searchKeyword}
+                onChange={(e) => setSearchKeyword(e.target.value)}
+                placeholder={t("search_topic_placeholder")}
+                size="small"
+                fullWidth
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchOutlinedIcon sx={{ fontSize: 20 }} />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{ flex: 1 }}
+              />
+              <TextField
+                select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                size="small"
+                label={t("sort_by")}
+                sx={{ minWidth: { xs: "100%", sm: 200 } }}
+              >
+                <MenuItem value={FORUM_TOPIC_SORT_OPTIONS.NEWEST}>
+                  {t("sort_newest")}
+                </MenuItem>
+                <MenuItem value={FORUM_TOPIC_SORT_OPTIONS.MOST_VIEWED}>
+                  {t("sort_most_viewed")}
+                </MenuItem>
+              </TextField>
+            </Box>
+          </ScrollReveal>
+
           <Box>
             {topicsPending && !topics?.length ? (
               <Box sx={{ px: 3, py: 4 }}>
@@ -221,7 +286,9 @@ const ForumCategoryPage = () => {
             ) : !topics?.length ? (
               <Box sx={{ px: 3, py: 4 }}>
                 <Typography color="text.secondary">
-                  {t("no_topics_in_category")}
+                  {debouncedKeyword
+                    ? t("no_topics_for_keyword", { keyword: debouncedKeyword })
+                    : t("no_topics_in_category")}
                 </Typography>
               </Box>
             ) : (
@@ -241,6 +308,23 @@ const ForumCategoryPage = () => {
               ))
             )}
           </Box>
+
+          {(pageInfo?.totalPage ?? 0) > 1 && (
+            <ScrollReveal
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                py: { xs: 2, md: 3 },
+              }}
+            >
+              <Pagination
+                color="primary"
+                count={pageInfo.totalPage}
+                page={page + 1}
+                onChange={(_, value) => setPage(value - 1)}
+              />
+            </ScrollReveal>
+          )}
         </Box>
       </Stack>
     </AlumniContentLayout>
