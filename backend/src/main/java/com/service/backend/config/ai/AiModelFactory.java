@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,6 +18,7 @@ public class AiModelFactory {
     private static final Logger log = LoggerFactory.getLogger(AiModelFactory.class);
 
     private static final String OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
+    private static final Duration MODEL_TIMEOUT = Duration.ofSeconds(300);
 
     private final AiModelsProperties properties;
 
@@ -98,11 +100,15 @@ public class AiModelFactory {
                     .apiKey(apiKey)
                     .modelName(modelName)
                     .temperature(temperature)
+                    .timeout(MODEL_TIMEOUT)
+                    .maxRetries(1)
                     .build();
             case "gemini" -> GoogleAiGeminiChatModel.builder()
                     .apiKey(apiKey)
                     .modelName(modelName)
                     .temperature(temperature)
+                    .timeout(MODEL_TIMEOUT)
+                    .maxRetries(1)
                     .build();
             default -> throw new IllegalArgumentException("Unknown AI provider type: " + providerType);
         };
