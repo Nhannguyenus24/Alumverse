@@ -206,6 +206,7 @@ public class EventController {
 
     // ─── Step 2.1: Confirm invitation ─────────────────────────────────────────
 
+    @PublicEndpoint
     @PostMapping("/invitations/confirm")
     public Mono<ResponseEntity<ApiResponse<EventTicket>>> confirmInvitation(
             @RequestParam @NotBlank String token) {

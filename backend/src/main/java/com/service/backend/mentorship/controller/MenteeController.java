@@ -2,6 +2,7 @@ package com.service.backend.mentorship.controller;
 
 import com.service.backend.mentorship.dto.*;
 import com.service.backend.mentorship.service.SkillService;
+import com.service.backend.shared.annotations.PublicEndpoint;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.mentorship.service.MenteeService;
 import com.service.backend.shared.dto.ApiResponse;
@@ -34,6 +35,7 @@ public class MenteeController {
     private final SkillService skillService;
 
     @GetMapping("/mentors")
+    @PublicEndpoint
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<MentorProfileResponse>>>> getApprovedMentors(
             @RequestParam(required = false) Integer organizationId,
             @RequestParam(defaultValue = "0") @Min(0) int page,
@@ -44,6 +46,7 @@ public class MenteeController {
     }
 
     @GetMapping("/mentors/{mentorMemberId}")
+    @PublicEndpoint
     public Mono<ResponseEntity<ApiResponse<MentorProfileResponse>>> getMentorProfile(
             @RequestParam(required = false) Integer organizationId,
             @PathVariable @Min(1) Integer mentorMemberId) {
@@ -53,6 +56,7 @@ public class MenteeController {
     }
 
     @GetMapping("/mentors/search")
+    @PublicEndpoint
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<MentorProfileResponse>>>> searchMentors(
             @RequestParam(required = false) Integer organizationId,
             @RequestParam @NotBlank String keyword,
@@ -64,6 +68,7 @@ public class MenteeController {
     }
 
     @GetMapping("/mentors/filter")
+    @PublicEndpoint
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<MentorProfileResponse>>>> filterMentors(
             @RequestParam(required = false) Integer organizationId,
             @RequestParam(required = false) String search,
@@ -80,6 +85,7 @@ public class MenteeController {
     }
 
     @GetMapping("/skills")
+    @PublicEndpoint
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<SkillResponse>>>> searchSkills(
             @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") @Min(0) int page,
@@ -90,6 +96,7 @@ public class MenteeController {
     }
 
     @GetMapping("/mentors/{mentorMemberId}/expertise")
+    @PublicEndpoint
     public Mono<ResponseEntity<ApiResponse<List<MentorExpertiseResponse>>>> getMentorExpertise(
             @RequestParam(required = false) Integer organizationId,
             @PathVariable @Min(1) Integer mentorMemberId) {
@@ -209,6 +216,7 @@ public class MenteeController {
     }
 
     @GetMapping("/mentors/{mentorMemberId}/feedbacks")
+    @PublicEndpoint
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<SessionFeedbackResponse>>>> getMentorFeedbacks(
             @PathVariable @Min(1) Integer mentorMemberId,
             @RequestParam(required = false) Integer organizationId,

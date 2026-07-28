@@ -16,7 +16,9 @@ class ApiEndpoints {
       '/api/organizations/$orgId/trusted-verifiers';
 
   // --- Auth ---
-  static const String authLogin = '/api/auth/login';
+  // Mobile-specific login route: skips the reCAPTCHA verification that the web
+  // /api/auth/login enforces (the app has no reCAPTCHA widget).
+  static const String authLogin = '/api/auth/mobile/login';
   static const String authRegister = '/api/auth/register';
   static const String authRefresh = '/api/auth/refresh';
   static const String authLogout = '/api/auth/logout';

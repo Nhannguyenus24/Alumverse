@@ -6,10 +6,12 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import LinkIcon from '@mui/icons-material/Link';
 import { useTranslation } from 'react-i18next';
 import { getCardTitleFontSize } from '../../utils/text';
+import { toPlainText } from '../../utils/stringUtils';
 
 const ArticleCard = ({ article, isAdmin = false, onEdit, stretch = true }) => {
   const { t } = useTranslation(['common']);
   const [hovered, setHovered] = useState(false);
+  const description = toPlainText(article.description);
 
   return (
     <Box
@@ -119,7 +121,7 @@ const ArticleCard = ({ article, isAdmin = false, onEdit, stretch = true }) => {
             wordBreak: 'break-word',
           }}
         >
-          {article.description}
+          {description}
         </Typography>
 
         {/* BOTTOM SECTION */}

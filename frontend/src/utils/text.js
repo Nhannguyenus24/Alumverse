@@ -9,6 +9,11 @@ export function normalizePreviewText(text) {
   return String(text ?? "")
     .replace(/<[^>]*data-main-image-caption=["']true["'][^>]*>[\s\S]*?<\/[^>]+>/gi, " ")
     .replace(/&amp;nbsp;|&nbsp;|&#160;|\u00a0/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
     .replace(/<[^>]+>/g, " ")
     .replace(/\s+/g, " ")
     .trim();

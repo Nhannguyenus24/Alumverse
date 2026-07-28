@@ -122,6 +122,24 @@ public class AuthController {
     }
 
     /**
+     * Login user from a mobile client.
+     * Identical to {@link #login} but skips reCAPTCHA verification: the mobile
+     * app has no reCAPTCHA widget, so it cannot produce a token. Kept as a
+     * separate route (rather than making the token optional on /login) so the
+     * web flow always enforces the challenge.
+     */
+    @PostMapping("/mobile/login")
+    public Mono<ResponseEntity<ApiResponse<LoginResponse>>> mobileLogin(
+            @Valid @RequestBody LoginRequest request,
+            ServerWebExchange exchange) {
+        String userAgent = extractUserAgent(exchange);
+        String loginIp = extractRemoteAddress(exchange);
+
+        return authService.loginByEmail(request.getEmail(), request.getPassword(), request.getOrganizationId(), userAgent, loginIp)
+                .flatMap(user -> buildLoginResponse(user, request.getOrganizationId(), request.isRememberMe()));
+    }
+
+    /**
      * Login user with Google ID token
      */
     @PostMapping("/google-login")

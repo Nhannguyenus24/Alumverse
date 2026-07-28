@@ -59,11 +59,11 @@ const MentorshipHubActions = ({ tone = 'default' }) => {
     );
   }
 
-  // Logged in but email not verified yet.
+  // Logged in but not yet verified enough to participate.
   if (access.needsEmailVerification) {
     return (
       <Button variant="contained" color="accent" onClick={() => navigate('/organization-registration')}>
-        {t('mentorship:verify_email_to_start')}
+        {t('mentorship:verify_academic_to_join')}
       </Button>
     );
   }
