@@ -10,6 +10,7 @@ import MenuBookIcon from '@mui/icons-material/MenuBook';
 import WorkIcon from '@mui/icons-material/Work';
 
 import ArticleCard from '../../components/articles/ArticleCard';
+import FeaturedArticleCard from '../../components/articles/FeaturedArticleCard';
 import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
 import AlumniContentLayout from '../../layouts/AlumniContentLayout';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
@@ -30,6 +31,7 @@ import {
 import { getDevelopmentSidebarItems } from '../../constants/developmentNav';
 import { getOrganizationHeroBannerUrl } from '../../utils/organizationBrand';
 import {
+  ScrollReveal,
   ScrollRevealGroup,
   ScrollRevealItem,
 } from '../../components/animations/ScrollReveal';
@@ -147,12 +149,14 @@ const DevelopmentPage = () => {
     () => applyArticleFilters([...academics, ...jobs], filterValues),
     [academics, jobs, filterValues],
   );
-  const visibleAcademics = filteredDevelopmentArticles
+  const [featured, ...rest] = filteredDevelopmentArticles;
+  const featuredCard = featured ? toCardShape(featured, cardFallbackImage) : null;
+  const visibleAcademics = rest
     .filter((article) => article.channel === 'learning')
-    .slice(0, 9);
-  const visibleJobs = filteredDevelopmentArticles
+    .slice(0, 6);
+  const visibleJobs = rest
     .filter((article) => article.channel === 'job')
-    .slice(0, 9);
+    .slice(0, 6);
 
   const openArticle = (article) => {
     if (!article?.id) return;
@@ -295,6 +299,18 @@ const DevelopmentPage = () => {
                   </Paper>
                 </ScrollRevealItem>
               </ScrollRevealGroup>
+
+              {/* FEATURED ARTICLE */}
+              {featuredCard && (
+                <ScrollReveal sx={{ cursor: 'pointer' }} onClick={() => openArticle(featured)}>
+                  <FeaturedArticleCard
+                    article={featuredCard}
+                    isAdmin={isAdmin}
+                    onEdit={() => handleEdit(featured)}
+                    onDelete={() => handleDelete(featured)}
+                  />
+                </ScrollReveal>
+              )}
 
               {/* ACADEMICS SECTION */}
               <PreviewSection

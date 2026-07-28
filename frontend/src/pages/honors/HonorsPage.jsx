@@ -67,8 +67,8 @@ const HonorsPage = () => {
 
   const [featured, ...rest] = filteredArticles;
   const featuredCard = featured ? toCardShape(featured, cardFallbackImage) : null;
-  const visibleAlumniArticles = rest.filter((article) => article.channel === 'alumni').slice(0, 9);
-  const visibleAchievementArticles = rest.filter((article) => article.channel === 'achievement').slice(0, 9);
+  const visibleAlumniArticles = rest.filter((article) => article.channel === 'alumni').slice(0, 6);
+  const visibleAchievementArticles = rest.filter((article) => article.channel === 'achievement').slice(0, 6);
   const alumniCards = visibleAlumniArticles.map((article) => toCardShape(article, cardFallbackImage));
   const achievementCards = visibleAchievementArticles.map((article) => toCardShape(article, cardFallbackImage));
 

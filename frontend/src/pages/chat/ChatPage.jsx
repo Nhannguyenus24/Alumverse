@@ -183,6 +183,49 @@ const ChatPage = () => {
   // Clear the active-chat marker when leaving the chat page.
   useEffect(() => () => useActiveChatStore.getState().setActiveChatId(null), []);
 
+  useEffect(() => {
+    const { documentElement, body } = document;
+    const root = document.getElementById('root');
+    const scrollY = window.scrollY;
+    const previous = {
+      htmlOverflow: documentElement.style.overflow,
+      htmlHeight: documentElement.style.height,
+      htmlOverscrollBehavior: documentElement.style.overscrollBehavior,
+      bodyOverflow: body.style.overflow,
+      bodyHeight: body.style.height,
+      bodyPosition: body.style.position,
+      bodyTop: body.style.top,
+      bodyWidth: body.style.width,
+      bodyOverscrollBehavior: body.style.overscrollBehavior,
+      rootHeight: root?.style.height ?? '',
+    };
+
+    documentElement.style.overflow = 'hidden';
+    documentElement.style.height = '100%';
+    documentElement.style.overscrollBehavior = 'none';
+    body.style.overflow = 'hidden';
+    body.style.height = '100%';
+    body.style.position = 'fixed';
+    body.style.top = `-${scrollY}px`;
+    body.style.width = '100%';
+    body.style.overscrollBehavior = 'none';
+    if (root) root.style.height = '100%';
+
+    return () => {
+      documentElement.style.overflow = previous.htmlOverflow;
+      documentElement.style.height = previous.htmlHeight;
+      documentElement.style.overscrollBehavior = previous.htmlOverscrollBehavior;
+      body.style.overflow = previous.bodyOverflow;
+      body.style.height = previous.bodyHeight;
+      body.style.position = previous.bodyPosition;
+      body.style.top = previous.bodyTop;
+      body.style.width = previous.bodyWidth;
+      body.style.overscrollBehavior = previous.bodyOverscrollBehavior;
+      if (root) root.style.height = previous.rootHeight;
+      window.scrollTo({ top: scrollY, left: 0, behavior: 'auto' });
+    };
+  }, []);
+
   const isPending = groupPending || privatePending;
   const isFetching = groupFetching || privateFetching;
   const isError = groupError || privateError;
@@ -231,11 +274,36 @@ const ChatPage = () => {
             xs: `calc(100dvh - ${HEADER_HEIGHT.xs}px)`,
             md: `calc(100dvh - ${HEADER_HEIGHT.md}px)`,
           },
+          maxHeight: {
+            xs: `calc(100dvh - ${HEADER_HEIGHT.xs}px)`,
+            md: `calc(100dvh - ${HEADER_HEIGHT.md}px)`,
+          },
           minHeight: 0,
           width: '100%',
           position: 'relative',
           bgcolor: 'background.default',
           overflow: 'hidden',
+          overscrollBehavior: 'none',
+          '@supports (height: 100svh)': {
+            height: {
+              xs: `calc(100svh - ${HEADER_HEIGHT.xs}px)`,
+              md: `calc(100svh - ${HEADER_HEIGHT.md}px)`,
+            },
+            maxHeight: {
+              xs: `calc(100svh - ${HEADER_HEIGHT.xs}px)`,
+              md: `calc(100svh - ${HEADER_HEIGHT.md}px)`,
+            },
+          },
+          '@supports (height: 100dvh)': {
+            height: {
+              xs: `calc(100dvh - ${HEADER_HEIGHT.xs}px)`,
+              md: `calc(100dvh - ${HEADER_HEIGHT.md}px)`,
+            },
+            maxHeight: {
+              xs: `calc(100dvh - ${HEADER_HEIGHT.xs}px)`,
+              md: `calc(100dvh - ${HEADER_HEIGHT.md}px)`,
+            },
+          },
         }}
       >
         <Box

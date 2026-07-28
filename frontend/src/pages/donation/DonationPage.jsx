@@ -20,6 +20,7 @@ import useOrganizationStore from "../../stores/organizationStore";
 import { fundApi } from "../../utils/api";
 import ArticleDonationCard from "../../components/articles/ArticleDonationCard";
 import FeaturedArticleDonationCard from "../../components/articles/FeaturedArticleDonationCard";
+import AppPagination from "../../components/AppPagination";
 import DonationCloseDialog from "../../components/donation/DonationCloseDialog";
 import StatsBanner from "../../components/StatsBanner";
 import AlumniContentLayout from "../../layouts/AlumniContentLayout";
@@ -38,6 +39,15 @@ function toIsoStartOfDay(value) {
 
 function toIsoEndOfDay(value) {
   return dayjs(value).endOf("day").format("YYYY-MM-DDTHH:mm:ss");
+}
+
+function isFundClosed(campaign) {
+  if (!campaign) return false;
+  const now = dayjs();
+  const startTime = campaign.timeStarted ? dayjs(campaign.timeStarted) : null;
+  const endTime = campaign.timeEnded ? dayjs(campaign.timeEnded) : null;
+  return Boolean(startTime && endTime && startTime.isValid() && endTime.isValid()) &&
+    startTime.isBefore(endTime) && endTime.isBefore(now);
 }
 
 export default function DonationPage() {
@@ -123,7 +133,16 @@ export default function DonationPage() {
           const pagedData = payload?.data;
           const items = pagedData?.items ?? [];
 
-          const [featured, ...rest] = items;
+          const sortedItems = [...items].sort((a, b) => {
+            const aClosed = isFundClosed(a);
+            const bClosed = isFundClosed(b);
+            if (aClosed !== bClosed) return aClosed ? 1 : -1;
+            const aTime = dayjs(a.timeStarted || a.createdAt || 0).valueOf();
+            const bTime = dayjs(b.timeStarted || b.createdAt || 0).valueOf();
+            return bTime - aTime;
+          });
+
+          const [featured, ...rest] = sortedItems;
           const start = (page - 1) * gridPageSize;
           setFeaturedCampaign(featured ?? null);
           setCampaigns(rest.slice(start, start + gridPageSize));
@@ -249,8 +268,6 @@ export default function DonationPage() {
 
             {campaigns.length > 0 && (
               <ScrollRevealGroup stagger={0.08}>
-                <ScrollRevealItem><Typography variant="h4" fontWeight={700} mb={3}>{t("donation:open_funds")}</Typography></ScrollRevealItem>
-
                 <ScrollRevealGroup stagger={0.08} sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", md: "1fr 1fr 1fr" }, gap: 4 }}>
                   {campaigns.map((campaign) => (
                     <ScrollRevealItem key={campaign.id} sx={{ cursor: "pointer", display: "flex", minWidth: 0 }}>
@@ -267,11 +284,11 @@ export default function DonationPage() {
               </ScrollRevealGroup>
             )}
 
-            {(featuredCampaign || campaigns.length > 0) && (
-              <ScrollReveal><Stack direction="row" justifyContent="center" alignItems="center" sx={{ mt: 3.5 }}>
-                  <Pagination count={pageCount || 1} page={page} onChange={handlePageChange} color="primary" shape="rounded" size="large" sx={{ "& .MuiPaginationItem-root": { fontWeight: 700, minWidth: 38, height: 38 } }} />
-              </Stack></ScrollReveal>
-            )}
+            <AppPagination
+              count={pageCount || 1}
+              page={page}
+              onChange={handlePageChange}
+            />
     </AlumniContentLayout>
   );
 }
