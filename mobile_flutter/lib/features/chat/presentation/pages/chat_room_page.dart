@@ -188,6 +188,7 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
               },
             ),
           ),
+          _TypingIndicator(groupId: args.groupId),
           // When private messaging is blocked the composer is hidden; the
           // banner above already explains why (and offers unblock if we blocked).
           if (!privateBlocked)
@@ -236,6 +237,120 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
                   ? ChatBlockedBanner.group(ctx)
                   : const SizedBox.shrink(),
       orElse: () => const SizedBox.shrink(),
+    );
+  }
+}
+
+/// "X is typing..." row with Facebook-style bouncing dots, fed by
+/// [ChatMessagesNotifier.typingUsers].
+class _TypingIndicator extends ConsumerStatefulWidget {
+  const _TypingIndicator({required this.groupId});
+
+  final int groupId;
+
+  @override
+  ConsumerState<_TypingIndicator> createState() => _TypingIndicatorState();
+}
+
+class _TypingIndicatorState extends ConsumerState<_TypingIndicator>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1200),
+  )..repeat();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final notifier = ref.watch(chatMessagesProvider(widget.groupId).notifier);
+    return StreamBuilder<Map<int, String>>(
+      stream: notifier.typingUsers,
+      builder: (context, snapshot) {
+        final names = snapshot.data?.values.toList() ?? const [];
+        if (names.isEmpty) return const SizedBox.shrink();
+        final label =
+            names.length == 1
+                ? 'chat.typing_one'.tr(namedArgs: {'name': names[0]})
+                : 'chat.typing_others'.tr(
+                  namedArgs: {'name': names[0], 'count': '${names.length - 1}'},
+                );
+        return Align(
+          alignment: Alignment.centerLeft,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _BouncingDots(controller: _controller),
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Three dots that bounce up in sequence (mirrors the web's `typingBounce`
+/// keyframes: translateY(-4px) + full opacity at 30% of each 1.2s cycle,
+/// staggered by 0.16s per dot).
+class _BouncingDots extends AnimatedWidget {
+  const _BouncingDots({required AnimationController controller})
+    : super(listenable: controller);
+
+  AnimationController get _controller => listenable as AnimationController;
+
+  double _offsetFor(int dot) {
+    final t = (_controller.value - dot * 0.16 / 1.2) % 1.0;
+    final phase = t < 0 ? t + 1.0 : t;
+    // 0 -> 0.25 (30% of cycle) rises, then eases back down by 0.6 (60%).
+    if (phase < 0.25) return -4 * (phase / 0.25);
+    if (phase < 0.6) return -4 * (1 - (phase - 0.25) / 0.35);
+    return 0;
+  }
+
+  double _opacityFor(int dot) {
+    final offset = _offsetFor(dot);
+    return 0.4 + 0.6 * (offset / -4).clamp(0.0, 1.0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(3, (dot) {
+        return Padding(
+          padding: EdgeInsets.only(left: dot == 0 ? 0 : 3),
+          child: Transform.translate(
+            offset: Offset(0, _offsetFor(dot)),
+            child: Opacity(
+              opacity: _opacityFor(dot),
+              child: Container(
+                width: 6,
+                height: 6,
+                decoration: const BoxDecoration(
+                  color: AppColors.textSecondary,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+          ),
+        );
+      }),
     );
   }
 }

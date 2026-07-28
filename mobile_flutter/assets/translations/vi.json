@@ -819,6 +819,8 @@
     "title": "Tin nhắn",
     "new_message": "Tin nhắn mới",
     "type_message": "Nhập tin nhắn...",
+    "typing_one": "{name} đang soạn tin...",
+    "typing_others": "{name} và {count} người khác đang soạn tin...",
     "no_conversations": "Chưa có cuộc trò chuyện",
     "empty_desc": "Kết nối với mọi người trong mục Kết nối để bắt đầu trò chuyện.",
     "create_group": "Tạo nhóm chat",
