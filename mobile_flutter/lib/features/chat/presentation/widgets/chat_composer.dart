@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:easy_localization/easy_localization.dart';
@@ -36,11 +37,18 @@ class ChatComposer extends ConsumerStatefulWidget {
   ConsumerState<ChatComposer> createState() => _ChatComposerState();
 }
 
+// Auto-sends "stopped typing" after this long without a keystroke (mirrors
+// the web client's TYPING_IDLE_MS).
+const _typingIdleTimeout = Duration(milliseconds: 2500);
+
 class _ChatComposerState extends ConsumerState<ChatComposer> {
   final TextEditingController _controller = TextEditingController();
   bool _canSend = false;
   bool _isUploading = false;
   int _charCount = 0;
+
+  bool _typingSent = false;
+  Timer? _typingIdleTimer;
 
   @override
   void initState() {
@@ -51,13 +59,38 @@ class _ChatComposerState extends ConsumerState<ChatComposer> {
       if (_controller.text.length != _charCount) {
         setState(() => _charCount = _controller.text.length);
       }
+      _notifyTyping();
     });
   }
 
   @override
   void dispose() {
+    _stopTyping();
     _controller.dispose();
     super.dispose();
+  }
+
+  void _notifyTyping() {
+    if (!widget.enabled) return;
+    final notifier = ref.read(chatMessagesProvider(widget.groupId).notifier);
+    if (!_typingSent) {
+      _typingSent = true;
+      notifier.sendTyping(true);
+    }
+    _typingIdleTimer?.cancel();
+    _typingIdleTimer = Timer(_typingIdleTimeout, () {
+      _typingSent = false;
+      notifier.sendTyping(false);
+    });
+  }
+
+  void _stopTyping() {
+    _typingIdleTimer?.cancel();
+    _typingIdleTimer = null;
+    if (_typingSent) {
+      _typingSent = false;
+      ref.read(chatMessagesProvider(widget.groupId).notifier).sendTyping(false);
+    }
   }
 
   void _submit() {
@@ -72,6 +105,7 @@ class _ChatComposerState extends ConsumerState<ChatComposer> {
       );
       return;
     }
+    _stopTyping();
     widget.onSend(text);
     _controller.clear();
   }
