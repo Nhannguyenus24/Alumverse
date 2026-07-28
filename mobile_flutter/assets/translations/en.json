@@ -819,6 +819,8 @@
     "title": "Messages",
     "new_message": "New message",
     "type_message": "Type a message...",
+    "typing_one": "{name} is typing...",
+    "typing_others": "{name} and {count} others are typing...",
     "no_conversations": "No conversations yet",
     "empty_desc": "Connect with people in the Network section to start chatting.",
     "create_group": "Create group chat",

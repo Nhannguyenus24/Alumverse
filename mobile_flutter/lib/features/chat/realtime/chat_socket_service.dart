@@ -139,6 +139,13 @@ class ChatSocketService {
     }
   }
 
+  /// Fire-and-forget typing ping — no outbox queuing, since a stale typing
+  /// signal delivered after a reconnect is worthless (matches the web client).
+  void sendTyping({required int groupId, required bool isTyping}) {
+    if (status.value != ChatSocketStatus.open) return;
+    _rawSend(ChatSocketOutbound.typing(groupId: groupId, isTyping: isTyping));
+  }
+
   void _rawSend(Map<String, dynamic> frame) {
     _channel?.sink.add(jsonEncode(frame));
   }
