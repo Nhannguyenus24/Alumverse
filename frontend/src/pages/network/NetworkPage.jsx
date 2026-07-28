@@ -22,6 +22,7 @@ import SearchBar from '../../components/SearchBar';
 import NetworkSearchMemberCard from '../../components/network/NetworkSearchMemberCard';
 import NetworkMessageDrawer from '../../components/network/NetworkMessageDrawer';
 import ConfirmDialog from '../../components/ConfirmDialog';
+import AppPagination from '../../components/AppPagination';
 import usePaginationScrollToTop from '../../hooks/usePaginationScrollToTop';
 import DynamicFilterBar from '../../components/DynamicFilterBar';
 import { useNetworkMembers } from '../../hooks/network/useNetworkMembers';
@@ -464,26 +465,12 @@ const NetworkMemberDirectory = () => {
         </ScrollRevealGroup>
       ) : null}
 
-      {pageCount > 0 ? (
-        <ScrollReveal><Stack direction="row" justifyContent="center" alignItems="center">
-          <Pagination
-            count={pageCount}
-            page={safePage}
-            onChange={handlePageChange}
-            color="primary"
-            shape="rounded"
-            size="large"
-            disabled={isFetching}
-            sx={{
-              '& .MuiPaginationItem-root': {
-                fontWeight: 700,
-                minWidth: 38,
-                height: 38,
-              },
-            }}
-          />
-        </Stack></ScrollReveal>
-      ) : null}
+      <AppPagination
+        count={pageCount}
+        page={safePage}
+        onChange={handlePageChange}
+        disabled={isFetching}
+      />
 
       <NetworkMessageDrawer
         open={isMessageDrawerOpen}

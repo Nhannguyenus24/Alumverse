@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 
 import ArticleEventCard from '../../components/articles/ArticleEventCard';
 import FeaturedArticleEventCard from '../../components/articles/FeaturedArticleEventCard';
+import AppPagination from '../../components/AppPagination';
 import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
 import AlumniContentLayout from '../../layouts/AlumniContentLayout';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
@@ -199,16 +200,11 @@ const ActivitiesPage = () => {
                       </ScrollRevealItem>
                     ))}
                   </ScrollRevealGroup>
-                  {(upcomingPageInfo?.totalPage ?? 0) > 1 && (
-                    <ScrollRevealItem sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-                      <Pagination
-                        color="primary"
-                        count={upcomingPageInfo.totalPage}
-                        page={upcomingPage + 1}
-                        onChange={(_, value) => setUpcomingPage(value - 1)}
-                      />
-                    </ScrollRevealItem>
-                  )}
+                  <AppPagination
+                    count={upcomingPageInfo?.totalPage ?? 1}
+                    page={upcomingPage + 1}
+                    onChange={(_, value) => setUpcomingPage(value - 1)}
+                  />
                 </ScrollRevealGroup>
               )}
 
@@ -244,16 +240,11 @@ const ActivitiesPage = () => {
                       </ScrollRevealItem>
                     ))}
                   </ScrollRevealGroup>
-                  {(ongoingPageInfo?.totalPage ?? 0) > 1 && (
-                    <ScrollRevealItem sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-                      <Pagination
-                        color="primary"
-                        count={ongoingPageInfo.totalPage}
-                        page={ongoingPage + 1}
-                        onChange={(_, value) => setOngoingPage(value - 1)}
-                      />
-                    </ScrollRevealItem>
-                  )}
+                  <AppPagination
+                    count={ongoingPageInfo?.totalPage ?? 1}
+                    page={ongoingPage + 1}
+                    onChange={(_, value) => setOngoingPage(value - 1)}
+                  />
                 </ScrollRevealGroup>
               )}
 
@@ -289,16 +280,11 @@ const ActivitiesPage = () => {
                       </ScrollRevealItem>
                     ))}
                   </ScrollRevealGroup>
-                  {(pastPageInfo?.totalPage ?? 0) > 1 && (
-                    <ScrollRevealItem sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-                      <Pagination
-                        color="primary"
-                        count={pastPageInfo.totalPage}
-                        page={pastPage + 1}
-                        onChange={(_, value) => setPastPage(value - 1)}
-                      />
-                    </ScrollRevealItem>
-                  )}
+                  <AppPagination
+                    count={pastPageInfo?.totalPage ?? 1}
+                    page={pastPage + 1}
+                    onChange={(_, value) => setPastPage(value - 1)}
+                  />
                 </ScrollRevealGroup>
               )}
 

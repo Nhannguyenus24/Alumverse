@@ -12,6 +12,7 @@ import { useTranslation } from "react-i18next";
 import { normalizePreviewText, truncateText, getCardTitleFontSize } from "../../utils/text";
 import { formatCurrency } from "../../utils/numberFormatter";
 import { formatDate } from "../../utils/dateFormatter";
+import { toPlainText } from "../../utils/stringUtils";
 
 const CAMPAIGN_DESCRIPTION_MAX_CHARS = 120;
 const LOGO_FALLBACK_URL = "https://placehold.co/800x450/eef3ff/0f3a7a?text=Fund";
@@ -31,6 +32,7 @@ const ArticleDonationCard = ({ campaign, onNavigate, onEdit, onClose, isAdmin, f
   const endedAt = formatDate(campaign.timeEnded);
   
   const [hovered, setHovered] = useState(false);
+  const description = toPlainText(campaign.descriptionShort || "");
 
   return (
     <Box
@@ -177,7 +179,7 @@ const ArticleDonationCard = ({ campaign, onNavigate, onEdit, onClose, isAdmin, f
             overflow: 'hidden',
           }}
       >
-        {truncateText(campaign.descriptionShort || "", CAMPAIGN_DESCRIPTION_MAX_CHARS)}
+        {truncateText(description, CAMPAIGN_DESCRIPTION_MAX_CHARS)}
       </Typography>
 
       {/* ADMIN PROGRESS */}
