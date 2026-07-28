@@ -11,6 +11,7 @@ import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 
 import FeaturedArticleCard from '../../components/articles/FeaturedArticleCard';
 import ArticleCard from '../../components/articles/ArticleCard';
+import AppPagination from '../../components/AppPagination';
 import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
 import AlumniContentLayout from '../../layouts/AlumniContentLayout';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
@@ -177,16 +178,11 @@ const HonorsAchievementsPage = () => {
                 </ScrollRevealGroup>
               )}
 
-              {(pageInfo?.totalPage ?? 0) > 1 && (
-                <ScrollReveal sx={{ display: 'flex', justifyContent: 'center' }}>
-                  <Pagination
-                    color="primary"
-                    count={pageInfo.totalPage}
-                    page={page + 1}
-                    onChange={(_, value) => setPage(value - 1)}
-                  />
-                </ScrollReveal>
-              )}
+              <AppPagination
+                count={pageInfo?.totalPage ?? 1}
+                page={page + 1}
+                onChange={(_, value) => setPage(value - 1)}
+              />
 
       <AdminConfirmDeleteDialog
         open={!!deleteTarget}

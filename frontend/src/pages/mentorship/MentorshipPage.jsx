@@ -290,7 +290,7 @@ const HubContent = () => {
 const MentorshipPage = () => {
   const { t } = useTranslation(['nav', 'mentorship']);
   const access = useMentorshipAccessState();
-  const showGuestLanding = access.isGuest || access.needsEmailVerification;
+  const showGuestLanding = access.isGuest;
 
   return (
     <AlumniContentLayout

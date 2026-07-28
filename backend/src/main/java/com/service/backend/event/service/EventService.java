@@ -53,6 +53,9 @@ public class EventService {
     private final EventQrService eventQrService;
     private final UserProfileRepository userProfileRepository;
 
+    @org.springframework.beans.factory.annotation.Value("${app.frontend.base-url}")
+    private String frontendBaseUrl;
+
     /**
      * Concurrency bound for bulk email loops. flatMap defaults to 256 in-flight subscriptions,
      * which can overwhelm the SMTP server and the shared boundedElastic pool when blasting many
@@ -291,8 +294,8 @@ public class EventService {
                 .flatMap(inv -> sendInvitationEmail(event, inv)
                         .then(notifyInvitation(event, inv))
                         .onErrorResume(e -> {
-                            log.warn("Failed to send invitation for event {} invitation {}: {}",
-                                    event.getId(), inv.getId(), e.getMessage());
+                            log.error("Failed to send invitation for event {} invitation {} (email={}): {}",
+                                    event.getId(), inv.getId(), inv.getEmail(), e.getMessage(), e);
                             return Mono.empty();
                         }), BULK_EMAIL_CONCURRENCY)
                 .subscribe();
@@ -308,7 +311,7 @@ public class EventService {
         );
         return emailService.sendHtmlEmail(
                 invitation.getEmail(),
-                "[Alumniverse] Lời mời tham gia: " + event.getTitle(),
+                "[AlumVerse] Lời mời tham gia: " + event.getTitle(),
                 "eventInvitation",
                 vars
         );
@@ -564,7 +567,7 @@ public class EventService {
                     );
                     return emailService.sendHtmlEmailWithInlineImage(
                             recipientEmail,
-                            "[Alumniverse] Vé tham dự: " + event.getTitle(),
+                            "[AlumVerse] Vé tham dự: " + event.getTitle(),
                             "eventTicket",
                             vars,
                             "ticketQr",
@@ -589,7 +592,7 @@ public class EventService {
                     );
                     return emailService.sendHtmlEmail(
                         recipientEmail,
-                        "[Alumniverse] Vé đã bị hủy: " + event.getTitle(),
+                        "[AlumVerse] Vé đã bị hủy: " + event.getTitle(),
                         "eventTicketCancelled",
                         vars
                     );
@@ -1058,6 +1061,20 @@ public class EventService {
                             : "/" + slug + "/my-tickets";
                 })
                 .defaultIfEmpty(ticketCode != null ? "/my-tickets?ticket=" + ticketCode : "/my-tickets");
+    }
+
+    /** Absolute link (kèm domain FE) cho nút xác nhận lời mời trong email — khác {@link #buildTicketLink}
+     *  vốn trả path tương đối cho điều hướng nội bộ FE, vì link email được mở ngoài ngữ cảnh trình duyệt. */
+    private Mono<String> buildInvitationConfirmLink(Event event, String token) {
+        if (event.getOrganizationId() == null) {
+            return Mono.just(frontendBaseUrl + "/events/confirm-invitation?token=" + token);
+        }
+        return organizationRepository.findById(event.getOrganizationId().intValue())
+                .map(org -> {
+                    String slug = org.getSlug() != null ? org.getSlug() : String.valueOf(event.getOrganizationId());
+                    return frontendBaseUrl + "/" + slug + "/events/confirm-invitation?token=" + token;
+                })
+                .defaultIfEmpty(frontendBaseUrl + "/events/confirm-invitation?token=" + token);
     }
 
 // ─── Event CRUD ───────────────────────────────────────────────────────────
