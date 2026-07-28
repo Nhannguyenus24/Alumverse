@@ -496,6 +496,7 @@ public class ForumService {
                 }))
                 .flatMap(post -> assertPostOwnerOrManager(post)
                         .then(forumPostReactionRepository.deleteByPostId(id))
+                        .then(forumPostRepository.clearAnswerReferences(id))
                         .then(forumPostRepository.deleteById(id)))
                 .doOnSuccess(v -> log.info("deletePost: postId={} deleted", id))
                 .doOnError(error -> log.error("Error deleting forum post ID: {}", id, error));
