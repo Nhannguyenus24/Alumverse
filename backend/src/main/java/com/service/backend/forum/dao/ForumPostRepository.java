@@ -34,6 +34,13 @@ public interface ForumPostRepository extends R2dbcRepository<ForumPost, Integer>
     Mono<Void> deleteByTopicId(Integer topicId);
 
     /**
+     * Detach replies that answer a given post by clearing their answer_to_post_id.
+     * Used before deleting a post to avoid violating the answer_to_post_id foreign key.
+     */
+    @Query("UPDATE forum_posts SET answer_to_post_id = NULL WHERE answer_to_post_id = :postId")
+    Mono<Void> clearAnswerReferences(@Param("postId") Integer postId);
+
+    /**
      * Count posts by topic id (excluding banned)
      */
     @Query("SELECT COUNT(*) FROM forum_posts WHERE topic_id = :topicId AND is_banned = false AND is_hidden = false")
