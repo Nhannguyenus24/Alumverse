@@ -1,7 +1,17 @@
 import { Box, Typography, Stack, Avatar } from '@mui/material';
 import StarIcon from '@mui/icons-material/Star';
+import { usePublicProfile } from '../../hooks/profile/usePublicProfile';
+import { formatDateTime } from '../../utils/dateFormatter';
 
-const MentorshipReviewCard = ({ avatar, name, date, rating, content }) => {
+const MentorshipReviewCard = ({ review }) => {
+  const { data: menteeProfile } = usePublicProfile(review?.menteeMemberId);
+
+  const displayName = review?.menteeName || menteeProfile?.fullName || `Mentee #${review?.menteeMemberId}`;
+  const displayAvatar = review?.menteeAvatarUrl || menteeProfile?.avatarUrl || '';
+  const displayDate = review?.createdAt ? formatDateTime(review.createdAt) : '--';
+  const rating = review?.rating || 0;
+  const content = review?.comment || '';
+
   return (
     <Box
       sx={{
@@ -21,13 +31,13 @@ const MentorshipReviewCard = ({ avatar, name, date, rating, content }) => {
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Avatar src={avatar} sx={{ width: 48, height: 48 }} />
+          <Avatar src={displayAvatar} sx={{ width: 48, height: 48 }} />
           <Stack justifyContent="center"> 
             <Typography fontWeight={700}>
-              {name}
+              {displayName}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              {date}
+              {displayDate}
             </Typography>
           </Stack>
         </Box>
