@@ -27,6 +27,7 @@ import { findCancelableTicketForEvent, getEventActionState, getEventRegisteredSt
 import { getFeaturedTitleFontSize } from '../../utils/text';
 import { useCanContribute } from '../../hooks/useCanContribute';
 import { ContributeGuardTooltip } from '../ContributeGuard';
+import { toPlainText } from '../../utils/stringUtils';
 
 const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
   const { t } = useTranslation(['common', 'event']);
@@ -43,6 +44,7 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
   const [hovered, setHovered] = useState(false);
   const [openJoinDialog, setOpenJoinDialog] = useState(false);
   const [openCancelDialog, setOpenCancelDialog] = useState(false);
+  const description = toPlainText(article.description);
   const [cancelReason, setCancelReason] = useState('');
   const { data: questions = [] } = useEventQuestions(article?.id, !isAdmin && canUseBasicActions && Boolean(article?.id));
 
@@ -296,7 +298,7 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
             minHeight: { xs: '4.2em', md: '4.8em' },
           }}
         >
-          {article.description}
+          {description}
         </Typography>
 
         {/* ACTION BUTTONS */}

@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 
 import FeaturedArticleCard from '../../components/articles/FeaturedArticleCard';
 import ArticleCard from '../../components/articles/ArticleCard';
+import AppPagination from '../../components/AppPagination';
 import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
 import AlumniContentLayout from '../../layouts/AlumniContentLayout';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
@@ -32,8 +33,7 @@ import {
   ScrollRevealItem,
 } from '../../components/animations/ScrollReveal';
 
-const NEWS_SECTION_PAGE_SIZE = 18;
-const NEWS_SECTION_LIMIT = 9;
+const NEWS_SECTION_PAGE_SIZE = 15;
 
 const ActivitiesPage = () => {
   const { t } = useTranslation(['nav', 'article']);
@@ -61,10 +61,7 @@ const ActivitiesPage = () => {
   );
 
   const featuredCard = featured ? toCardShape(featured, cardFallbackImage) : null;
-  const suggestionArticles = pageNews.slice(0, NEWS_SECTION_LIMIT);
-  const dailyArticles = pageNews.slice(NEWS_SECTION_LIMIT, NEWS_SECTION_LIMIT * 2);
-  const suggestionCards = suggestionArticles.map((article) => toCardShape(article, cardFallbackImage));
-  const dailyCards = dailyArticles.map((article) => toCardShape(article, cardFallbackImage));
+  const listCards = pageNews.map((article) => toCardShape(article, cardFallbackImage));
 
   const openArticle = (article) => {
     if (!article?.id) return;
@@ -145,89 +142,38 @@ const ActivitiesPage = () => {
                 </ScrollReveal>
               )}
 
-              {/* NEWS SECTION */}
-              {suggestionCards.length > 0 && (
-                <ScrollRevealGroup stagger={0.08}>
-                  <ScrollRevealItem>
-                    <Typography variant="h4" fontWeight={700} mb={3}>
-                      {t('article:suggestions')}
-                    </Typography>
-                  </ScrollRevealItem>
-
-                  <ScrollRevealGroup
-                    stagger={0.08}
-                    sx={{
-                      display: 'grid',
-                      gridTemplateColumns: {
-                        xs: '1fr',
-                        sm: '1fr 1fr',
-                        md: '1fr 1fr 1fr',
-                      },
-                      gap: 4,
-                    }}
-                  >
-                    {suggestionCards.map((card, i) => (
-                      <ScrollRevealItem key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(suggestionArticles[i])}>
-                        <ArticleCard
-                          article={card}
-                          isAdmin={isAdmin}
-                          onEdit={() => handleEdit(suggestionArticles[i])}
-                          onDelete={() => handleDelete(suggestionArticles[i])}
-                        />
-                      </ScrollRevealItem>
-                    ))}
-                  </ScrollRevealGroup>
+              {/* NEWS LIST GRID */}
+              {listCards.length > 0 && (
+                <ScrollRevealGroup
+                  stagger={0.08}
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: {
+                      xs: '1fr',
+                      sm: '1fr 1fr',
+                      md: '1fr 1fr 1fr',
+                    },
+                    gap: 4,
+                  }}
+                >
+                  {listCards.map((card, i) => (
+                    <ScrollRevealItem key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(pageNews[i])}>
+                      <ArticleCard
+                        article={card}
+                        isAdmin={isAdmin}
+                        onEdit={() => handleEdit(pageNews[i])}
+                        onDelete={() => handleDelete(pageNews[i])}
+                      />
+                    </ScrollRevealItem>
+                  ))}
                 </ScrollRevealGroup>
               )}
 
-              {/* NEWS SECTION */}
-              {dailyCards.length > 0 && (
-                <ScrollRevealGroup stagger={0.08}>
-                  <ScrollRevealItem>
-                    <Typography variant="h4" fontWeight={700} mb={3}>
-                      {t('article:daily')}
-                    </Typography>
-                  </ScrollRevealItem>
-                  <ScrollRevealGroup
-                    stagger={0.08}
-                    sx={{
-                      display: 'grid',
-                      gridTemplateColumns: {
-                        xs: '1fr',
-                        sm: '1fr 1fr',
-                        md: '1fr 1fr 1fr',
-                      },
-                      gap: 4,
-                    }}
-                  >
-                    {dailyCards.map((card, i) => (
-                      <ScrollRevealItem
-                        key={card.id ?? i}
-                        sx={{ cursor: 'pointer' }}
-                        onClick={() => openArticle(dailyArticles[i])}
-                      >
-                        <ArticleCard
-                          article={card}
-                          isAdmin={isAdmin}
-                          onEdit={() => handleEdit(dailyArticles[i])}
-                          onDelete={() => handleDelete(dailyArticles[i])}
-                        />
-                      </ScrollRevealItem>
-                    ))}
-                  </ScrollRevealGroup>
-                </ScrollRevealGroup>
-              )}
-
-              {(pageInfo?.totalPage ?? 0) > 1 && (
-                <ScrollReveal sx={{ display: 'flex', justifyContent: 'center' }}>
-                  <Pagination
-                    color="primary"
-                    count={pageInfo.totalPage}
-                    page={page + 1}
-                    onChange={(_, value) => setPage(value - 1)}
-                  />
-                </ScrollReveal>
-              )}
+              <AppPagination
+                count={pageInfo?.totalPage ?? 1}
+                page={page + 1}
+                onChange={(_, value) => setPage(value - 1)}
+              />
 
       <AdminConfirmDeleteDialog
         open={!!deleteTarget}

@@ -6,6 +6,7 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import LinkIcon from '@mui/icons-material/Link';
 import { getFeaturedTitleFontSize } from '../../utils/text';
+import { toPlainText } from '../../utils/stringUtils';
 
 const FeaturedArticleCard = ({
   article,
@@ -14,6 +15,7 @@ const FeaturedArticleCard = ({
 }) => {
   const { t } = useTranslation(['common']);
   const [hovered, setHovered] = useState(false);
+  const description = toPlainText(article.description);
 
   return (
     <Box
@@ -145,7 +147,7 @@ const FeaturedArticleCard = ({
             wordBreak: 'break-word',
           }}
         >
-          {article.description}
+          {description}
         </Typography>
 
         {/* BOTTOM SECTION */}
