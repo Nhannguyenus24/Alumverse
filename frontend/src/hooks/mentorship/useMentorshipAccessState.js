@@ -43,7 +43,7 @@ export const useMentorshipAccessState = () => {
   const canParticipateInMentorship = canUseMentorship && !isOrgManager;
 
   const mentorProfileQuery = useMyMentorProfile({
-    enabled: isLoggedIn && !isOrgManager && !orgMemberQuery.isLoading,
+    enabled: canParticipateInMentorship && !isOrgManager && !orgMemberQuery.isLoading,
   });
   const mentorStatus = mentorProfileQuery.data?.status ?? null;
   const mentorMemberId = mentorProfileQuery.data?.memberId ?? null;
@@ -83,7 +83,7 @@ export const useMentorshipAccessState = () => {
   // A submitted-but-pending mentor profile still needs admin approval first.
   const hasJoinedMentorship = canParticipateInMentorship && !isMentorPending && (hasMenteeProfile || isMentorApproved);
 
-  const canPreviewMentors = isLoggedIn && (isGlobalAdmin || level >= 1);
+  const canPreviewMentors = isLoggedIn;
 
   const isLoading =
     (isLoggedIn && !isOrgManager && mentorProfileQuery.isLoading) ||

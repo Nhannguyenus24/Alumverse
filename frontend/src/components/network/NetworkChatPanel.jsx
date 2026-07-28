@@ -898,6 +898,10 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
           display: 'flex',
           flexDirection: 'column',
           gap: 1.5,
+          overflowX: 'hidden',
+          overflowY: 'auto',
+          overscrollBehavior: 'contain',
+          WebkitOverflowScrolling: 'touch',
         }}
       >
         {/* Load more indicator */}

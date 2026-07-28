@@ -270,7 +270,6 @@ const mentorshipRouteChildren = [
   {
     index: true,
     element: <MentorshipPage />,
-    handle: { hideFooter: true },
   },
   {
     path: "browse",
