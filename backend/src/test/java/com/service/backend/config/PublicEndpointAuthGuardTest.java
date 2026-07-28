@@ -50,7 +50,8 @@ class PublicEndpointAuthGuardTest {
     /** Individually-public write endpoints, declared "METHOD pattern". */
     private static final Set<String> ALLOWED_PUBLIC_WRITES = Set.of(
             "POST /api/organizations/{organizationId}/feedbacks", // anonymous org feedback
-            "POST /api/fund-donations"                             // public donation creation
+            "POST /api/fund-donations",                            // public donation creation
+            "POST /api/events/invitations/confirm"                 // identity resolved via invitation token, not session
     );
 
     @Test
