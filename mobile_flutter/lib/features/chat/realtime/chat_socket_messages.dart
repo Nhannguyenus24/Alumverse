@@ -57,4 +57,9 @@ class ChatSocketOutbound {
     'messageType': messageType,
     'metadata': metadata,
   };
+
+  static Map<String, dynamic> typing({
+    required int groupId,
+    required bool isTyping,
+  }) => {'type': 'TYPING', 'groupId': groupId, 'isTyping': isTyping};
 }
