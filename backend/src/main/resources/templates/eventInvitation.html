@@ -43,7 +43,7 @@
         </div>
 
         <div class="action-button">
-            <a th:href="@{'/events/confirm?token=' + ${confirmToken}}"><!--#region key="buttonLabel" label="Nhãn nút xác nhận" type="text"-->Xác nhận tham gia<!--#endregion--></a>
+            <a th:href="${confirmUrl}"><!--#region key="buttonLabel" label="Nhãn nút xác nhận" type="text"-->Xác nhận tham gia<!--#endregion--></a>
         </div>
 
         <div class="note"><!--#region key="note" label="Ghi chú hiệu lực" type="html"-->

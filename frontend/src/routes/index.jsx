@@ -212,6 +212,9 @@ const HonorsRequestAchievementsPage = Loadable(
 const ActivitiesEventsPage = Loadable(
   lazy(() => import("../pages/activities/ActivitiesEventsPage")),
 );
+const EventConfirmInvitationPage = Loadable(
+  lazy(() => import("../pages/activities/EventConfirmInvitationPage")),
+);
 const ActivitiesNewsPage = Loadable(
   lazy(() => import("../pages/activities/ActivitiesNewsPage")),
 );
@@ -477,6 +480,10 @@ export const router = createBrowserRouter([
             <ActivitiesEventsPage />
           </FeatureRoute>
         ),
+      },
+      {
+        path: "events/confirm-invitation",
+        element: <EventConfirmInvitationPage />,
       },
       {
         path: "news",
