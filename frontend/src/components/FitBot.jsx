@@ -300,7 +300,8 @@ const streamSSEResponse = async (userMessage, onChunk, onComplete, onError, sign
   try {
     const requestBody = {
       question: userMessage,
-      top_k: 10,
+      top_k: 7,
+      model: "gemini-2.5-flash",
       use_reranker: false
     };
 
