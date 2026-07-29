@@ -295,7 +295,7 @@ const SUGGESTION_KEYS = [
 
 // SSE response handler using fetch
 const streamSSEResponse = async (userMessage, onChunk, onComplete, onError, signal) => {
-  const apiEndpoint = '/api/fitbot/stream-query';
+  const apiEndpoint = 'http://167.99.79.46/api/query';
 
   try {
     const requestBody = {
