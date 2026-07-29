@@ -43,7 +43,9 @@ const AdminSurveyBuilderDialog = ({ open, onClose, survey, onSaved }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [startAt, setStartAt] = useState('');
-  const [durationMinutes, setDurationMinutes] = useState(1440);
+  const [durationDays, setDurationDays] = useState(1);
+  const [durationHours, setDurationHours] = useState(0);
+  const [durationMins, setDurationMins] = useState(0);
   const [allowMultiple, setAllowMultiple] = useState(false);
   const [questions, setQuestions] = useState([emptyQuestion()]);
   const [saving, setSaving] = useState(false);
@@ -54,7 +56,10 @@ const AdminSurveyBuilderDialog = ({ open, onClose, survey, onSaved }) => {
       setTitle(survey.title || '');
       setDescription(survey.description || '');
       setStartAt(toInputValue(survey.startAt));
-      setDurationMinutes(survey.durationMinutes || 1440);
+      const totalMins = survey.durationMinutes || 1440;
+      setDurationDays(Math.floor(totalMins / 1440));
+      setDurationHours(Math.floor((totalMins % 1440) / 60));
+      setDurationMins(totalMins % 60);
       setAllowMultiple(Boolean(survey.allowMultiple));
       setQuestions(
         (survey.questions || []).map((q) => ({
@@ -70,7 +75,9 @@ const AdminSurveyBuilderDialog = ({ open, onClose, survey, onSaved }) => {
       setTitle('');
       setDescription('');
       setStartAt('');
-      setDurationMinutes(1440);
+      setDurationDays(1);
+      setDurationHours(0);
+      setDurationMins(0);
       setAllowMultiple(false);
       setQuestions([emptyQuestion()]);
     }
@@ -92,7 +99,8 @@ const AdminSurveyBuilderDialog = ({ open, onClose, survey, onSaved }) => {
   const validate = () => {
     if (!title.trim()) return t('survey:err_title_required');
     if (!startAt) return t('survey:err_start_required');
-    if (!durationMinutes || durationMinutes < 1) return t('survey:err_duration_required');
+    const totalMins = Number(durationDays) * 1440 + Number(durationHours) * 60 + Number(durationMins);
+    if (!totalMins || totalMins < 1) return t('survey:err_duration_required');
     if (questions.length === 0) return t('survey:err_min_one_question');
     for (const q of questions) {
       if (!q.text.trim()) return t('survey:err_question_text_required');
@@ -108,7 +116,7 @@ const AdminSurveyBuilderDialog = ({ open, onClose, survey, onSaved }) => {
     description: description.trim() || null,
     organizationId: survey?.organizationId ?? organization?.id,
     startAt: fromInputValue(startAt),
-    durationMinutes: Number(durationMinutes),
+    durationMinutes: Number(durationDays) * 1440 + Number(durationHours) * 60 + Number(durationMins),
     allowMultiple,
     questions: questions.map((q) => ({
       id: q.id,
@@ -187,10 +195,23 @@ const AdminSurveyBuilderDialog = ({ open, onClose, survey, onSaved }) => {
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                label={t('survey:field_duration')} type="number" value={durationMinutes} disabled={readOnly}
-                onChange={(e) => setDurationMinutes(e.target.value)} fullWidth inputProps={{ min: 1 }}
-              />
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                {t('survey:field_duration')}
+              </Typography>
+              <Stack direction="row" spacing={1}>
+                <TextField
+                  label={t('survey:field_days', { defaultValue: 'Ngày' })} type="number" value={durationDays} disabled={readOnly}
+                  onChange={(e) => setDurationDays(e.target.value)} fullWidth inputProps={{ min: 0 }} size="small"
+                />
+                <TextField
+                  label={t('survey:field_hours', { defaultValue: 'Giờ' })} type="number" value={durationHours} disabled={readOnly}
+                  onChange={(e) => setDurationHours(e.target.value)} fullWidth inputProps={{ min: 0, max: 23 }} size="small"
+                />
+                <TextField
+                  label={t('survey:field_minutes', { defaultValue: 'Phút' })} type="number" value={durationMins} disabled={readOnly}
+                  onChange={(e) => setDurationMins(e.target.value)} fullWidth inputProps={{ min: 0, max: 59 }} size="small"
+                />
+              </Stack>
             </Grid>
           </Grid>
           <FormControlLabel
