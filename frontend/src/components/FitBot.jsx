@@ -297,7 +297,7 @@ const SUGGESTION_KEYS = [
 // single JSON body ({ answer, sources }), so we do a plain JSON POST that
 // mirrors the working curl request rather than SSE streaming.
 const streamSSEResponse = async (userMessage, onChunk, onComplete, onError, signal) => {
-  const apiEndpoint = 'http://167.99.79.46/api/query';
+  const apiEndpoint = '/fitbot-api/api/query';
 
   try {
     const requestBody = {
