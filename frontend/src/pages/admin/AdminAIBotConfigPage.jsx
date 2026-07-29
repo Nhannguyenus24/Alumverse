@@ -19,6 +19,7 @@ import { useSnackbar } from 'notistack';
 import { AdminAiProvidersContent } from './AdminAiProvidersPage';
 import AdminFitBotKnowledgeContent from './AdminFitBotKnowledgePage';
 import apiClient from '../../utils/axios';
+import useAuthStore from '../../stores/authStore';
 
 const FITBOT_API_URL = import.meta.env.VITE_FITBOT_API_URL || '/fitbot-api';
 
@@ -155,16 +156,71 @@ const AdminAIBotConfigPage = () => {
   const handleAskBot = async () => {
     if (!question.trim()) return;
     setAsking(true);
-    setBotResponse(null);
+    setBotResponse({ answer: '', sources: [] });
     try {
-      const response = await apiClient.post('/fitbot/query', {
-        question,
-        top_k: 7,
-        use_reranker: false,
+      const token = useAuthStore.getState().token;
+      const res = await fetch(`${FITBOT_API_URL}/api/query`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+          'ngrok-skip-browser-warning': 'true'
+        },
+        body: JSON.stringify({
+          question,
+          top_k: 7,
+          model: 'gemini-2.5-flash',
+          use_reranker: false,
+        })
       });
-      setBotResponse(response?.data?.data ?? response?.data ?? null);
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let done = false;
+      let buffer = '';
+      let currentAnswer = '';
+      let currentSources = [];
+
+      while (!done) {
+        const { value, done: readerDone } = await reader.read();
+        done = readerDone;
+        if (value) {
+          buffer += decoder.decode(value, { stream: true });
+          let newlineIndex;
+          while ((newlineIndex = buffer.indexOf('\n\n')) >= 0) {
+            const eventStr = buffer.slice(0, newlineIndex);
+            buffer = buffer.slice(newlineIndex + 2);
+            
+            const lines = eventStr.split('\n');
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                const dataStr = line.slice(6).trim();
+                if (dataStr === '[DONE]') {
+                  done = true;
+                  break;
+                }
+                try {
+                  const data = JSON.parse(dataStr);
+                  if (data.answer) {
+                    currentAnswer += data.answer;
+                    setBotResponse({ answer: currentAnswer, sources: currentSources });
+                  }
+                  if (data.sources) {
+                    currentSources = data.sources;
+                    setBotResponse({ answer: currentAnswer, sources: currentSources });
+                  }
+                } catch (e) {
+                  // Ignore JSON parse errors for incomplete data chunks just in case
+                  console.warn('Failed to parse SSE data', e, dataStr);
+                }
+              }
+            }
+          }
+        }
+      }
     } catch (error) {
-      setBotResponse({ answer: t('bot_error_prefix') + error.message });
+      setBotResponse({ answer: t('bot_error_prefix') + error.message, sources: [] });
     } finally {
       setAsking(false);
     }

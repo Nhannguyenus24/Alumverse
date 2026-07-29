@@ -32,7 +32,10 @@
   "field_title": "Tiêu đề",
   "field_description": "Mô tả",
   "field_start_at": "Thời gian bắt đầu (dự kiến)",
-  "field_duration": "Thời lượng (phút)",
+  "field_duration": "Thời gian public sau khi bắt đầu",
+  "field_days": "Ngày",
+  "field_hours": "Giờ",
+  "field_minutes": "Phút",
   "field_allow_multiple": "Cho phép người dùng nộp nhiều lần",
 
   "questions": "Câu hỏi",
