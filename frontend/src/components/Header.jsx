@@ -42,6 +42,15 @@ const PRIVILEGED_ROLE_LABELS = {
   STAFF: 'Staff',
 };
 
+const HREF_TO_ARTICLE_MAP = {
+  '/events': '/article/event',
+  '/news': '/article/news',
+  '/honors/alumni': '/article/alumni',
+  '/honors/achievements': '/article/achievement',
+  '/development/academics': '/article/learning',
+  '/development/jobs': '/article/job',
+};
+
 const HEADER_TOOLTIP_SLOT_PROPS = {
   popper: {
     modifiers: [
@@ -174,20 +183,10 @@ const Header = () => {
       paths.push('/chat');
     }
 
-    // Add corresponding article paths for highlight
-    const hrefToArticleMap = {
-      '/events': '/article/event',
-      '/news': '/article/news',
-      '/honors/alumni': '/article/alumni',
-      '/honors/achievements': '/article/achievement',
-      '/development/academics': '/article/learning',
-      '/development/jobs': '/article/job',
-    };
-
     const extraPaths = [];
     paths.forEach((p) => {
-      if (hrefToArticleMap[p]) {
-        extraPaths.push(hrefToArticleMap[p]);
+      if (HREF_TO_ARTICLE_MAP[p]) {
+        extraPaths.push(HREF_TO_ARTICLE_MAP[p]);
       }
     });
     paths.push(...extraPaths);
@@ -341,7 +340,7 @@ const Header = () => {
                         >
                           {visibleChildren.map((child) => {
                             const isChildLocked = child.requiresAuth && !isAuthenticated;
-                            const childArticlePath = hrefToArticleMap[child.href];
+                            const childArticlePath = HREF_TO_ARTICLE_MAP[child.href];
                             const isChildActive = normalizedPath === child.href || normalizedPath.startsWith(`${child.href}/`) ||
                                                   (childArticlePath && (normalizedPath === childArticlePath || normalizedPath.startsWith(`${childArticlePath}/`)));
                             const activeColor = isTransparent ? '#FFFFFF' : 'primary.main';
