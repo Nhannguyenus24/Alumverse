@@ -57,7 +57,7 @@ const ForumAlumniCreateTopicPage = () => {
   );
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const { showSuccess, showError, showWarning } = useNotification();
+  const { showError, showWarning, showInfo } = useNotification();
   const categoriesErrorShownRef = useRef(false);
   const { createTopic, isPending: createTopicPending } = useCreateForumTopic();
   const { createPost } = useCreateForumPost();
@@ -212,7 +212,7 @@ const ForumAlumniCreateTopicPage = () => {
             t("forum:opening_post_error_prefix");
         }
       }
-      showSuccess(t("forum:success_create_topic"));
+      showInfo(t("forum:success_create_topic"));
       if (openingPostError) {
         showWarning(
           `${t("forum:opening_post_error_prefix")} ${openingPostError}`,
@@ -401,12 +401,14 @@ const ForumAlumniCreateTopicPage = () => {
               >
                 <TextField
                   fullWidth
+                  required
                   variant="outlined"
                   size="small"
                   label={t("forum:topic_title_label")}
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder={t("forum:topic_title_label")}
+                  inputProps={{ maxLength: 150 }}
                   sx={{
                     "& .MuiInputBase-input": {
                       fontSize: { xs: "1.05rem", md: "1.1rem" },

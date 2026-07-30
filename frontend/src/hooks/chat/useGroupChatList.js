@@ -4,13 +4,13 @@ import { chatApi } from '../../utils/api';
 
 const BACKEND_PAGE_SIZE = 5;
 
-export function useGroupChatList({ searchQuery = '', page = 1 }) {
+export function useGroupChatList({ searchQuery = '', page = 1, pageSize = BACKEND_PAGE_SIZE }) {
   const backendPage = Math.max(0, page - 1);
 
   const query = useQuery({
-    queryKey: ['groupChatList', searchQuery, backendPage],
+    queryKey: ['groupChatList', searchQuery, backendPage, pageSize],
     queryFn: () =>
-      chatApi.listGroupChats({ text: searchQuery, page: backendPage, size: BACKEND_PAGE_SIZE }),
+      chatApi.listGroupChats({ text: searchQuery, page: backendPage, size: pageSize }),
     refetchOnMount: 'always',
   });
 

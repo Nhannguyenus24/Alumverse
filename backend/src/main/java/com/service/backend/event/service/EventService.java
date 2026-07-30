@@ -1,5 +1,6 @@
 package com.service.backend.event.service;
 
+import com.service.backend.article.validation.ArticleTopicCatalog;
 import com.service.backend.shared.entity.*;
 import com.service.backend.user.dao.UserProfileRepository;
 import com.service.backend.event.dao.EventR2dbcRepository;
@@ -52,6 +53,9 @@ public class EventService {
     private final EventQrService eventQrService;
     private final UserProfileRepository userProfileRepository;
 
+    @org.springframework.beans.factory.annotation.Value("${app.frontend.base-url}")
+    private String frontendBaseUrl;
+
     /**
      * Concurrency bound for bulk email loops. flatMap defaults to 256 in-flight subscriptions,
      * which can overwhelm the SMTP server and the shared boundedElastic pool when blasting many
@@ -62,6 +66,7 @@ public class EventService {
     // ─── Event CRUD ───────────────────────────────────────────────────────────
 
     public Mono<Event> createEvent(CreateEventRequest request) {
+        String topic = ArticleTopicCatalog.requireValid(ArticleTopicCatalog.Channel.EVENT, request.getTopic());
         Mono<Integer> organizationIdMono = SecurityUtils.resolveOrganizationId(request.getOrganizationId())
                 .switchIfEmpty(Mono.error(new ApplicationException(
                         ErrorCode.BAD_REQUEST,
@@ -86,7 +91,7 @@ public class EventService {
                                         .registrationStartAt(request.getRegistrationStartAt())
                                         .registrationEndAt(request.getRegistrationEndAt())
                                         .maxCapacity(request.getMaxCapacity())
-                                        .topic(request.getTopic())
+                                        .topic(topic)
                                         .requiresCheckIn(Boolean.TRUE.equals(request.getRequiresCheckIn()))
                                         .creatorMemberId(userId)
                                         .organizationId(orgId)
@@ -97,6 +102,9 @@ public class EventService {
     }
 
     public Mono<Event> updateEvent(Long eventId, UpdateEventRequest request) {
+        String topic = request.getTopic() != null
+                ? ArticleTopicCatalog.requireValid(ArticleTopicCatalog.Channel.EVENT, request.getTopic())
+                : null;
         return this.findEventById(eventId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId)))
                 .flatMap(existingEvent -> SecurityUtils.assertCanManageContentOrganization(existingEvent.getOrganizationId())
@@ -113,7 +121,7 @@ public class EventService {
                                             .registrationStartAt(request.getRegistrationStartAt())
                                             .registrationEndAt(request.getRegistrationEndAt())
                                             .maxCapacity(request.getMaxCapacity())
-                                            .topic(request.getTopic() != null ? request.getTopic() : existingEvent.getTopic())
+                                            .topic(request.getTopic() != null ? topic : existingEvent.getTopic())
                                             .requiresCheckIn(request.getRequiresCheckIn() != null ? request.getRequiresCheckIn() : existingEvent.getRequiresCheckIn())
                                             .build();
                                     return this.updateEvent(eventId, updatedEvent);
@@ -168,8 +176,14 @@ public class EventService {
         String cacheKey = "upcoming_events_org_" + organizationId + "_page_" + page + "_limit_" + limit;
         return cacheUtils.getOrCompute(CacheNames.EVENT, cacheKey, java.time.Duration.ofMinutes(5), () ->
                 this.findUpcomingEvents(organizationId, page, limit)
-                        .doOnNext(res -> log.info("Fetched {} upcoming events for organization {}: {}", res.getItems().size(), organizationId, JsonUtils.toJson(res.getItems())))
+                        .doOnNext(res -> log.debug("Fetched {} upcoming events for organization {}: {}", res.getItems().size(), organizationId, JsonUtils.toJson(res.getItems())))
         );
+    }
+
+    public Mono<PaginatedResponse<Event>> getOngoingEvents(Long organizationId, int page, int limit) {
+        String cacheKey = "ongoing_events_org_" + organizationId + "_page_" + page + "_limit_" + limit;
+        return cacheUtils.getOrCompute(CacheNames.EVENT, cacheKey, java.time.Duration.ofMinutes(5), () ->
+                this.findOngoingEvents(organizationId, page, limit));
     }
 
     public Mono<PaginatedResponse<Event>> getPastEvents(Long organizationId, int page, int limit) {
@@ -280,8 +294,8 @@ public class EventService {
                 .flatMap(inv -> sendInvitationEmail(event, inv)
                         .then(notifyInvitation(event, inv))
                         .onErrorResume(e -> {
-                            log.warn("Failed to send invitation for event {} invitation {}: {}",
-                                    event.getId(), inv.getId(), e.getMessage());
+                            log.error("Failed to send invitation for event {} invitation {} (email={}): {}",
+                                    event.getId(), inv.getId(), inv.getEmail(), e.getMessage(), e);
                             return Mono.empty();
                         }), BULK_EMAIL_CONCURRENCY)
                 .subscribe();
@@ -297,7 +311,7 @@ public class EventService {
         );
         return emailService.sendHtmlEmail(
                 invitation.getEmail(),
-                "[Alumniverse] Lời mời tham gia: " + event.getTitle(),
+                "[AlumVerse] Lời mời tham gia: " + event.getTitle(),
                 "eventInvitation",
                 vars
         );
@@ -553,7 +567,7 @@ public class EventService {
                     );
                     return emailService.sendHtmlEmailWithInlineImage(
                             recipientEmail,
-                            "[Alumniverse] Vé tham dự: " + event.getTitle(),
+                            "[AlumVerse] Vé tham dự: " + event.getTitle(),
                             "eventTicket",
                             vars,
                             "ticketQr",
@@ -578,7 +592,7 @@ public class EventService {
                     );
                     return emailService.sendHtmlEmail(
                         recipientEmail,
-                        "[Alumniverse] Vé đã bị hủy: " + event.getTitle(),
+                        "[AlumVerse] Vé đã bị hủy: " + event.getTitle(),
                         "eventTicketCancelled",
                         vars
                     );
@@ -619,7 +633,7 @@ public class EventService {
                                     if (eventEnded && ticket.getStatus() == Status.ISSUED) {
                                         return ticketRepo.expireTicket(ticket.getId())
                                                 .then(evictEventCaches())
-                                                .then(Mono.<EventTicket>error(new ApplicationException(ErrorCode.TICKET_EXPIRED, "Ticket has expired")));
+                                                .then(Mono.error(new ApplicationException(ErrorCode.TICKET_EXPIRED, "Ticket has expired")));
                                     }
                                     if (ticket.getStatus() == Status.CANCELLED || ticket.getStatus() == Status.EXPIRED) {
                                         return Mono.error(new ApplicationException(ErrorCode.TICKET_ALREADY_CANCELLED, "Ticket is cancelled or expired"));
@@ -722,14 +736,6 @@ public class EventService {
     }
 
     // ─── Ticket response mapping (qrToken + attendee enrichment) ──────────────
-
-    /** Map a ticket to a response carrying the encrypted QR token (no attendee lookup). */
-    private Mono<EventTicketDetailResponse> toDetail(EventTicket ticket) {
-        EventTicketDetailResponse.EventTicketDetailResponseBuilder builder = EventTicketDetailResponse.fromTicket(ticket)
-                .qrToken(eventQrService.encodeWithPrefix(ticket.getTicketCode(), ticket.getEventId()));
-        return enrichTicketEventTitle(ticket, builder)
-                .map(EventTicketDetailResponse.EventTicketDetailResponseBuilder::build);
-    }
 
     /** Map a ticket to a response, additionally resolving the holder's profile for verification. */
     private Mono<EventTicketDetailResponse> toDetailWithAttendee(EventTicket ticket) {
@@ -905,7 +911,17 @@ public class EventService {
     public Mono<EventStatisticsResponse> getEventStatistics(Long eventId) {
         return this.findEventById(eventId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId)))
-                .flatMap(e -> this.daoGetEventStatistics(eventId));
+                .flatMap(e -> {
+                    // This endpoint is public; a draft (unpublished) event's stats must not leak.
+                    // Only a manager of the owning org may see stats for an unpublished event.
+                    if (Boolean.TRUE.equals(e.getIsPublished())) {
+                        return this.daoGetEventStatistics(eventId);
+                    }
+                    return SecurityUtils.canManageContentOrganization(e.getOrganizationId())
+                            .flatMap(canManage -> Boolean.TRUE.equals(canManage)
+                                    ? this.daoGetEventStatistics(eventId)
+                                    : Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId)));
+                });
     }
 
     private Mono<Void> assertEventOpenForRegistration(Event event) {
@@ -1047,6 +1063,20 @@ public class EventService {
                 .defaultIfEmpty(ticketCode != null ? "/my-tickets?ticket=" + ticketCode : "/my-tickets");
     }
 
+    /** Absolute link (kèm domain FE) cho nút xác nhận lời mời trong email — khác {@link #buildTicketLink}
+     *  vốn trả path tương đối cho điều hướng nội bộ FE, vì link email được mở ngoài ngữ cảnh trình duyệt. */
+    private Mono<String> buildInvitationConfirmLink(Event event, String token) {
+        if (event.getOrganizationId() == null) {
+            return Mono.just(frontendBaseUrl + "/events/confirm-invitation?token=" + token);
+        }
+        return organizationRepository.findById(event.getOrganizationId().intValue())
+                .map(org -> {
+                    String slug = org.getSlug() != null ? org.getSlug() : String.valueOf(event.getOrganizationId());
+                    return frontendBaseUrl + "/" + slug + "/events/confirm-invitation?token=" + token;
+                })
+                .defaultIfEmpty(frontendBaseUrl + "/events/confirm-invitation?token=" + token);
+    }
+
 // ─── Event CRUD ───────────────────────────────────────────────────────────
 
 
@@ -1106,6 +1136,17 @@ public class EventService {
         return PaginationHelper.paginate(
                 eventRepo.findUpcomingEvents(organizationId, now, limit, offset).collectList(),
                 eventRepo.countUpcomingEvents(organizationId, now),
+                page,
+                limit
+        );
+    }
+
+    private Mono<PaginatedResponse<Event>> findOngoingEvents(Long organizationId, int page, int limit) {
+        int offset = page * limit;
+        LocalDateTime now = LocalDateTime.now();
+        return PaginationHelper.paginate(
+                eventRepo.findOngoingEvents(organizationId, now, limit, offset).collectList(),
+                eventRepo.countOngoingEvents(organizationId, now),
                 page,
                 limit
         );

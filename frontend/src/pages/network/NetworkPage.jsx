@@ -22,6 +22,7 @@ import SearchBar from '../../components/SearchBar';
 import NetworkSearchMemberCard from '../../components/network/NetworkSearchMemberCard';
 import NetworkMessageDrawer from '../../components/network/NetworkMessageDrawer';
 import ConfirmDialog from '../../components/ConfirmDialog';
+import AppPagination from '../../components/AppPagination';
 import usePaginationScrollToTop from '../../hooks/usePaginationScrollToTop';
 import DynamicFilterBar from '../../components/DynamicFilterBar';
 import { useNetworkMembers } from '../../hooks/network/useNetworkMembers';
@@ -48,7 +49,7 @@ import {
   ScrollRevealItem,
 } from '../../components/animations/ScrollReveal';
 
-const PAGE_SIZE = 9;
+const PAGE_SIZE = 15;
 const guestBenefitIcons = [
   GroupsOutlinedIcon,
   ChatBubbleOutlineOutlinedIcon,
@@ -429,14 +430,19 @@ const NetworkMemberDirectory = () => {
               member.connectionStatus === CONVERSATION_REQUEST_STATUS.ACCEPTED;
             const isPending =
               member.connectionStatus === CONVERSATION_REQUEST_STATUS.PENDING;
+            // Incoming pending: this member invited the current user first. Sending back
+            // auto-accepts and connects, so surface "Accept" instead of "Pending".
+            const isIncomingPending = isPending && Boolean(member.incoming);
 
             const messageButtonLabel = isSelf
               ? t('network:this_is_you')
               : isConnected
                 ? t('network:message')
-                : isPending
-                  ? t('network:connect_pending')
-                  : t('network:connect');
+                : isIncomingPending
+                  ? t('network:connect_accept')
+                  : isPending
+                    ? t('network:connect_pending')
+                    : t('network:connect');
 
             return (
               <ScrollRevealItem key={member.userId} sx={{ display: 'flex', width: '100%', minWidth: 0, height: '100%' }}>
@@ -459,26 +465,12 @@ const NetworkMemberDirectory = () => {
         </ScrollRevealGroup>
       ) : null}
 
-      {pageCount > 0 ? (
-        <ScrollReveal><Stack direction="row" justifyContent="center" alignItems="center">
-          <Pagination
-            count={pageCount}
-            page={safePage}
-            onChange={handlePageChange}
-            color="primary"
-            shape="rounded"
-            size="large"
-            disabled={isFetching}
-            sx={{
-              '& .MuiPaginationItem-root': {
-                fontWeight: 700,
-                minWidth: 38,
-                height: 38,
-              },
-            }}
-          />
-        </Stack></ScrollReveal>
-      ) : null}
+      <AppPagination
+        count={pageCount}
+        page={safePage}
+        onChange={handlePageChange}
+        disabled={isFetching}
+      />
 
       <NetworkMessageDrawer
         open={isMessageDrawerOpen}
@@ -501,7 +493,8 @@ const NetworkMemberDirectory = () => {
         )}
         confirmText={t('network:block')}
         cancelText={t('common:cancel')}
-        confirmColor="primary"
+        titleColor="error.main"
+        confirmColor="error"
         loading={isBlocking}
         onConfirm={() => blockUser()}
         onCancel={() => setBlockTarget(null)}

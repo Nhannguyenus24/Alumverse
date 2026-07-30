@@ -5,9 +5,9 @@ import com.service.backend.shared.entity.LearningResource;
 import com.service.backend.article.dto.CreateLearningResourceRequest;
 import com.service.backend.article.dto.UpdateLearningResourceRequest;
 import com.service.backend.article.dto.LearningResourceResponse;
+import com.service.backend.article.validation.ArticleTopicCatalog;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.enums.ErrorCode;
-import com.service.backend.shared.enums.LearningResourceType;
 import com.service.backend.shared.enums.Status;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.PaginationHelper;
@@ -47,6 +47,7 @@ public class LearningResourceService {
     }
 
     public Mono<LearningResourceResponse> create(CreateLearningResourceRequest request) {
+        String type = ArticleTopicCatalog.requireValid(ArticleTopicCatalog.Channel.LEARNING, request.getType());
         return Mono.zip(SecurityUtils.getCurrentUserId(), SecurityUtils.getCurrentUserRole())
                 .flatMap(ctx -> {
                     Long userId = ctx.getT1();
@@ -63,7 +64,7 @@ public class LearningResourceService {
                                         .organizationId(orgId)
                                         .uploaderMemberId(userId.intValue())
                                         .title(request.getTitle())
-                                        .type(LearningResourceType.valueOf(request.getType().toUpperCase()))
+                                        .type(type)
                                         .linkUrl(request.getLinkUrl())
                                         .description(request.getDescription())
                                         .thumbnailUrl(thumbnailUrl.isEmpty() ? null : thumbnailUrl)
@@ -89,6 +90,9 @@ public class LearningResourceService {
     }
 
     public Mono<LearningResourceResponse> update(Integer id, UpdateLearningResourceRequest request) {
+        String type = request.getType() != null
+                ? ArticleTopicCatalog.requireValid(ArticleTopicCatalog.Channel.LEARNING, request.getType())
+                : null;
         return learningResourceRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.LEARNING_RESOURCE_NOT_FOUND, "Learning resource not found with id: " + id)))
                 .flatMap(existing -> SecurityUtils.assertCanManageContentOrganization(existing.getOrganizationId())
@@ -96,7 +100,7 @@ public class LearningResourceService {
                         .map(Optional::of).defaultIfEmpty(Optional.empty())
                         .flatMap(uploadedThumbnail -> {
                             existing.setTitle(request.getTitle());
-                            existing.setType(LearningResourceType.valueOf(request.getType().toUpperCase()));
+                            if (request.getType() != null) existing.setType(type);
                             existing.setLinkUrl(request.getLinkUrl());
                             existing.setDescription(request.getDescription());
                             uploadedThumbnail.ifPresent(newThumbnail -> existing.setThumbnailUrl(newThumbnail.isEmpty() ? null : newThumbnail));
@@ -124,8 +128,12 @@ public class LearningResourceService {
     public Mono<LearningResourceResponse> getPublicById(Integer id, Integer organizationId) {
         return SecurityUtils.resolvePublicOrganizationId(organizationId)
                 .flatMap(orgId -> learningResourceRepository.findById(id)
-                        .filter(resource -> orgId.equals(resource.getOrganizationId())
-                                && Status.APPROVED.equals(resource.getStatus())))
+                        .filter(resource -> orgId.equals(resource.getOrganizationId()))
+                        .flatMap(resource -> Status.APPROVED.equals(resource.getStatus())
+                                ? Mono.just(resource)
+                                : SecurityUtils.canManageContentOrganization(resource.getOrganizationId())
+                                        .filter(Boolean::booleanValue)
+                                        .map(ignored -> resource)))
                 .switchIfEmpty(Mono.error(new ApplicationException(
                         ErrorCode.LEARNING_RESOURCE_NOT_FOUND, "Approved learning resource not found")))
                 .map(LearningResourceResponse::from);
@@ -148,7 +156,7 @@ public class LearningResourceService {
 
     public Mono<PaginatedResponse<LearningResourceResponse>> getByType(String type, int page, int limit) {
         int offset = page * limit;
-        LearningResourceType resourceType = LearningResourceType.valueOf(type.toUpperCase());
+        String resourceType = normalizeType(type);
         return SecurityUtils.getCurrentOrganizationId()
                 .flatMap(orgId -> cacheUtils.getOrCompute(CacheNames.LEARNING_RESOURCE,
                         "type_" + resourceType + "_org_" + orgId + "_p" + page + "_l" + limit, LIST_TTL, () -> PaginationHelper.paginate(
@@ -157,12 +165,9 @@ public class LearningResourceService {
                                 page, limit)))
                 .switchIfEmpty(Mono.defer(() -> cacheUtils.getOrCompute(CacheNames.LEARNING_RESOURCE,
                         "type_" + resourceType + "_global_p" + page + "_l" + limit, LIST_TTL, () -> PaginationHelper.paginate(
-                                learningResourceRepository.findAll()
-                                        .filter(r -> r.getType() == resourceType && Status.APPROVED.equals(r.getStatus()))
-                                        .skip(offset)
-                                        .take(limit)
+                                learningResourceRepository.findAllApprovedByType(resourceType, limit, offset)
                                         .map(LearningResourceResponse::from),
-                                learningResourceRepository.countAllApproved(),
+                                learningResourceRepository.countAllApprovedByType(resourceType),
                                 page, limit))));
     }
 
@@ -179,5 +184,9 @@ public class LearningResourceService {
                                 learningResourceRepository.countSearchResources(orgId, keyword),
                                 page, limit)))
                 .switchIfEmpty(Mono.just(PaginatedResponse.of(java.util.List.of(), 0, page, limit)));
+    }
+
+    private String normalizeType(String type) {
+        return ArticleTopicCatalog.normalize(type);
     }
 }

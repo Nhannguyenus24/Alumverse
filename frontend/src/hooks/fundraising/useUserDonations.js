@@ -5,7 +5,6 @@ const getUserDonations = async (userId, page = 0, limit = 10) => {
   const res = await apiClient.get(`/fund-donations/user/${userId}`, {
     params: { page, limit }
   });
-  console.log('getUserDonations result:', res?.data?.data);
   return res?.data?.data ?? null;
 };
 

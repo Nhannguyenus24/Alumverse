@@ -74,4 +74,3 @@ content = content.replaceAll('stroke="#9c27b0"', 'stroke={chartColors[5]}');
 content = content.replaceAll('stroke="#7b1fa2"', 'stroke={chartColors[6]}');
 
 fs.writeFileSync(path, content);
-console.log("Done updating charts.");

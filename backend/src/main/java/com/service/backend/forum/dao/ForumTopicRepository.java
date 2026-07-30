@@ -41,6 +41,20 @@ public interface ForumTopicRepository extends R2dbcRepository<ForumTopic, Intege
     );
 
     /**
+     * Find ACTIVE forum topics by category id with pagination and keyword, ordered by most viewed.
+     * PENDING (awaiting approval) and INACTIVE (hidden) topics are excluded. Ties broken by newest.
+     */
+    @Query("SELECT * FROM forum_topics WHERE category_id = :categoryId AND status = 'ACTIVE' " +
+           "AND (:keyword IS NULL OR LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           "ORDER BY view_count DESC, created_at DESC LIMIT :limit OFFSET :offset")
+    Flux<ForumTopic> findActiveByCategoryIdOrderByViewCount(
+            @Param("categoryId") Integer categoryId,
+            @Param("keyword") String keyword,
+            @Param("limit") int limit,
+            @Param("offset") long offset
+    );
+
+    /**
      * Count ACTIVE topics by category id with keyword (public listing).
      */
     @Query("SELECT COUNT(*) FROM forum_topics WHERE category_id = :categoryId AND status = 'ACTIVE' " +
@@ -81,6 +95,12 @@ public interface ForumTopicRepository extends R2dbcRepository<ForumTopic, Intege
     );
 
     /**
+     * Count ACTIVE topics by category id for public category statistics.
+     */
+    @Query("SELECT COUNT(*) FROM forum_topics WHERE category_id = :categoryId AND status = 'ACTIVE'")
+    Mono<Long> countActiveByCategoryId(@Param("categoryId") Integer categoryId);
+
+    /**
      * Count distinct discussion participants in a category.
      * Participants include topic creators and post authors under topics in the category.
      */
@@ -90,9 +110,22 @@ public interface ForumTopicRepository extends R2dbcRepository<ForumTopic, Intege
            "UNION " +
            "SELECT fp.author_member_id AS member_id FROM forum_posts fp " +
            "JOIN forum_topics ft2 ON fp.topic_id = ft2.id " +
-           "WHERE ft2.category_id = :categoryId AND fp.is_banned = false AND fp.author_member_id IS NOT NULL" +
+           "WHERE ft2.category_id = :categoryId AND fp.is_banned = false AND fp.is_hidden = false AND fp.author_member_id IS NOT NULL" +
            ") participants")
     Mono<Long> countDistinctParticipantsByCategoryId(@Param("categoryId") Integer categoryId);
+
+    /**
+     * Count distinct participants in ACTIVE topics only for public category statistics.
+     */
+    @Query("SELECT COUNT(DISTINCT member_id) FROM (" +
+           "SELECT ft.created_by_member_id AS member_id FROM forum_topics ft " +
+           "WHERE ft.category_id = :categoryId AND ft.status = 'ACTIVE' AND ft.created_by_member_id IS NOT NULL " +
+           "UNION " +
+           "SELECT fp.author_member_id AS member_id FROM forum_posts fp " +
+           "JOIN forum_topics ft2 ON fp.topic_id = ft2.id " +
+           "WHERE ft2.category_id = :categoryId AND ft2.status = 'ACTIVE' AND fp.is_banned = false AND fp.is_hidden = false AND fp.author_member_id IS NOT NULL" +
+           ") participants")
+    Mono<Long> countActiveDistinctParticipantsByCategoryId(@Param("categoryId") Integer categoryId);
 
     /**
      * Batch variant of {@link #countByCategoryId} with no keyword: topic counts per category
@@ -101,6 +134,13 @@ public interface ForumTopicRepository extends R2dbcRepository<ForumTopic, Intege
     @Query("SELECT category_id as id, COUNT(*) as count FROM forum_topics " +
            "WHERE category_id IN (:categoryIds) GROUP BY category_id")
     Flux<IdCountDTO> countByCategoryIds(@Param("categoryIds") Collection<Integer> categoryIds);
+
+    /**
+     * Batch count of ACTIVE topics per category for public category statistics.
+     */
+    @Query("SELECT category_id as id, COUNT(*) as count FROM forum_topics " +
+           "WHERE status = 'ACTIVE' AND category_id IN (:categoryIds) GROUP BY category_id")
+    Flux<IdCountDTO> countActiveByCategoryIds(@Param("categoryIds") Collection<Integer> categoryIds);
 
     /**
      * Batch variant of {@link #countDistinctParticipantsByCategoryId}: distinct participant
@@ -112,9 +152,22 @@ public interface ForumTopicRepository extends R2dbcRepository<ForumTopic, Intege
            "UNION " +
            "SELECT ft2.category_id AS category_id, fp.author_member_id AS member_id FROM forum_posts fp " +
            "JOIN forum_topics ft2 ON fp.topic_id = ft2.id " +
-           "WHERE ft2.category_id IN (:categoryIds) AND fp.is_banned = false AND fp.author_member_id IS NOT NULL" +
+           "WHERE ft2.category_id IN (:categoryIds) AND fp.is_banned = false AND fp.is_hidden = false AND fp.author_member_id IS NOT NULL" +
            ") participants GROUP BY category_id")
     Flux<IdCountDTO> countDistinctParticipantsByCategoryIds(@Param("categoryIds") Collection<Integer> categoryIds);
+
+    /**
+     * Batch count of distinct participants in ACTIVE topics only for public category statistics.
+     */
+    @Query("SELECT category_id as id, COUNT(DISTINCT member_id) as count FROM (" +
+           "SELECT ft.category_id AS category_id, ft.created_by_member_id AS member_id FROM forum_topics ft " +
+           "WHERE ft.status = 'ACTIVE' AND ft.category_id IN (:categoryIds) AND ft.created_by_member_id IS NOT NULL " +
+           "UNION " +
+           "SELECT ft2.category_id AS category_id, fp.author_member_id AS member_id FROM forum_posts fp " +
+           "JOIN forum_topics ft2 ON fp.topic_id = ft2.id " +
+           "WHERE ft2.status = 'ACTIVE' AND ft2.category_id IN (:categoryIds) AND fp.is_banned = false AND fp.is_hidden = false AND fp.author_member_id IS NOT NULL" +
+           ") participants GROUP BY category_id")
+    Flux<IdCountDTO> countActiveDistinctParticipantsByCategoryIds(@Param("categoryIds") Collection<Integer> categoryIds);
 
     /**
      * Count topics by organization id with keyword

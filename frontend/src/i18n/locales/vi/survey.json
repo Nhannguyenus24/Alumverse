@@ -32,7 +32,10 @@
   "field_title": "Tiêu đề",
   "field_description": "Mô tả",
   "field_start_at": "Thời gian bắt đầu (dự kiến)",
-  "field_duration": "Thời lượng (phút)",
+  "field_duration": "Thời gian public sau khi bắt đầu",
+  "field_days": "Ngày",
+  "field_hours": "Giờ",
+  "field_minutes": "Phút",
   "field_allow_multiple": "Cho phép người dùng nộp nhiều lần",
 
   "questions": "Câu hỏi",
@@ -93,5 +96,6 @@
   "prompt_title": "Bạn có khảo sát đang chờ",
   "prompt_subtitle": "Tổ chức đang có khảo sát dành cho bạn. Bạn có muốn tham gia không?",
   "prompt_join": "Tham gia",
-  "prompt_skip": "Để sau"
+  "prompt_skip": "Để sau",
+  "prompt_tooltip": "Khảo sát đang chờ bạn"
 }

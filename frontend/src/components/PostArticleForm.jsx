@@ -33,8 +33,6 @@ const PostArticleForm = ({
   url,
   setUrl,
   mainImagePreview,
-  mainImageCaption,
-  setMainImageCaption,
   donationData = {},
   handleDonationInputChange,
   eventData = {},
@@ -48,7 +46,6 @@ const PostArticleForm = ({
 
   const topicsByChannel = useMemo(() => getTopicsByChannel(t), [t]);
   const requiresImageCaptions = CAPTION_REQUIRED_CHANNELS.has(channel);
-  const showMainImageCaption = requiresImageCaptions && Boolean(mainImagePreview);
 
   const fundReceivingOptions = useMemo(
     () => fundReceivingInfos.map((i) => ({
@@ -335,32 +332,19 @@ const PostArticleForm = ({
       </ScrollRevealItem>
 
       {mainImagePreview && (
-        <ScrollRevealItem sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 1, mb: 1 }}>
+        <ScrollRevealItem sx={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', mt: 1, mb: 1 }}>
           <Box
             component="img"
             src={mainImagePreview}
             alt={title || 'Main photo preview'}
             sx={{
-              width: 'auto',
-              maxWidth: { xs: '100%', md: '72%' },
+              display: 'block',
+              width: '100%',
               height: 'auto',
               objectFit: 'contain',
-              borderRadius: 2,
-              boxShadow: '0 2px 12px rgba(0,0,0,0.12)',
+              borderRadius: 1,
             }}
           />
-          {showMainImageCaption && (
-            <TextField
-              fullWidth
-              size="small"
-              label={t('article:main_image_caption_label')}
-              placeholder={t('article:image_caption_placeholder')}
-              helperText={t('article:main_image_caption_helper')}
-              value={mainImageCaption ?? ''}
-              onChange={(e) => setMainImageCaption?.(e.target.value)}
-              sx={{ mt: 1.5, maxWidth: { xs: '100%', md: '72%' } }}
-            />
-          )}
         </ScrollRevealItem>
       )}
 

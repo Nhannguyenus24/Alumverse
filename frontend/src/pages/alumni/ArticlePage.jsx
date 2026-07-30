@@ -1,5 +1,6 @@
 import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useParams } from "react-router";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
@@ -26,10 +27,9 @@ import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
 import EventOutlinedIcon from "@mui/icons-material/EventOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import LinkIcon from "@mui/icons-material/Link";
-import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
 import EventAvailableOutlinedIcon from "@mui/icons-material/EventAvailableOutlined";
+import EventBusyOutlinedIcon from "@mui/icons-material/EventBusyOutlined";
 import Page from "../../components/Page";
-import useOrganizationStore from "../../stores/organizationStore";
 import { useOrganization } from "../../hooks/useOrganization";
 import { useArticleById } from "../../hooks/articles/useArticleById";
 import DOMPurify from "dompurify";
@@ -42,8 +42,9 @@ import { useEventQuestions, formatAnswersForApi } from "../../hooks/events/useEv
 import { useCanContribute } from "../../hooks/useCanContribute";
 import { ContributeGuardTooltip, VerificationRequiredAlert } from "../../components/ContributeGuard";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
-import { findCancelableTicketForEvent, getEventRegisteredState } from "../../utils/eventRegistration";
+import { findCancelableTicketForEvent, getEventActionState, getEventRegisteredState } from "../../utils/eventRegistration";
 import { extractMainImageCaption } from "../../utils/articleContentCaption";
+import { getOrganizationHeroBannerUrl } from "../../utils/organizationBrand";
 import { usePublicProfile } from "../../hooks/profile/usePublicProfile";
 import {
   ScrollReveal,
@@ -217,6 +218,7 @@ const normalizeArticleHtml = (html) => {
 const SAVE_ITEM_TYPE_BY_CHANNEL = {
   news: "NEWS",
   alumni: "ALUMNI_POST",
+  achievement: "ACHIEVEMENT",
 };
 
 /** Heart toggle to save ("quan tâm") an article or alumni post via the generic saved-items
@@ -284,6 +286,7 @@ const ArticleHighlightCard = ({ data, channel, eventId, isAdmin = false, sharedI
   const { enqueueSnackbar } = useSnackbar();
   const { t } = useTranslation(['common', 'article', 'event', 'donation', 'admin']);
   const { canContribute, canUseBasicActions } = useCanContribute();
+  const queryClient = useQueryClient();
   const canUseArticleAction = channel === "event" || channel === "donation"
     ? canUseBasicActions
     : canContribute;
@@ -302,7 +305,17 @@ const ArticleHighlightCard = ({ data, channel, eventId, isAdmin = false, sharedI
 
   const isTicketUsed = ["USED", "CHECKED_IN"].includes(String(ticketStatus ?? "").toUpperCase());
   const isTicketBanned = String(ticketStatus ?? "").toUpperCase() === "BANNED";
-  const isRegistrationClosed = Boolean(data.registrationEndAt) && new Date() > new Date(data.registrationEndAt);
+  const eventActionState = getEventActionState({
+    event: data,
+    isJoined,
+    ticketStatus,
+    canUseAction: canUseArticleAction,
+    loading: loadingJoin,
+    checking: checkingRegistration,
+  });
+  const eventActionIcon = eventActionState.icon === "available"
+    ? <EventAvailableOutlinedIcon />
+    : <EventBusyOutlinedIcon />;
 
   const isInterested = sharedInterest ? sharedInterest.isInterested : isInterestedLocal;
   const interestedCount = sharedInterest ? sharedInterest.interestedCount : interestedCountLocal;
@@ -366,11 +379,14 @@ const ArticleHighlightCard = ({ data, channel, eventId, isAdmin = false, sharedI
         await eventApi.removeInterest(eventId);
         setIsInterestedLocal(false);
         setInterestedCountLocal((c) => Math.max(0, c - 1));
+        enqueueSnackbar(t('event:unmark_interested_success', { defaultValue: 'Đã hủy quan tâm sự kiện' }), { variant: 'info' });
       } else {
         await eventApi.addInterest(eventId);
         setIsInterestedLocal(true);
         setInterestedCountLocal((c) => c + 1);
+        enqueueSnackbar(t('event:mark_interested_success', { defaultValue: 'Đã quan tâm sự kiện' }), { variant: 'success' });
       }
+      queryClient.invalidateQueries({ queryKey: ['publishedEvents'] });
     } catch (err) {
       enqueueSnackbar(err?.response?.data?.message || t('common:action_failed'), { variant: "error" });
     } finally {
@@ -379,13 +395,12 @@ const ArticleHighlightCard = ({ data, channel, eventId, isAdmin = false, sharedI
   };
 
   const handleJoinClick = () => {
-    if (loadingJoin || checkingRegistration || !canUseArticleAction) return;
+    if (eventActionState.disabled) return;
     if (isJoined) {
       if (isTicketUsed || isTicketBanned) return;
       setOpenCancelDialog(true);
       return;
     }
-    if (isRegistrationClosed) return;
     setOpenJoinDialog(true);
   };
 
@@ -514,16 +529,14 @@ const ArticleHighlightCard = ({ data, channel, eventId, isAdmin = false, sharedI
             <ContributeGuardTooltip required="basic" sx={{ flex: 1, opacity: canUseArticleAction ? 1 : 0.58, filter: canUseArticleAction ? "none" : "grayscale(0.25)" }}>
               <Button
                 fullWidth
-                variant={isJoined && !isTicketUsed ? "outlined" : "contained"}
-                color={isJoined ? (isTicketUsed ? "success" : "error") : "accent"}
-                disabled={loadingJoin || checkingRegistration || !canUseArticleAction || (!isJoined && isRegistrationClosed) || isTicketBanned}
-                sx={isTicketUsed ? { pointerEvents: "none" } : undefined}
+                variant={eventActionState.variant}
+                color={eventActionState.color}
+                disabled={eventActionState.disabled}
+                sx={eventActionState.disabled ? { pointerEvents: "none" } : undefined}
                 onClick={handleJoinClick}
-                startIcon={isJoined ? (isTicketUsed ? <EventAvailableOutlinedIcon /> : <CancelOutlinedIcon />) : <EventAvailableOutlinedIcon />}
+                startIcon={eventActionIcon}
               >
-                {isJoined
-                  ? (isTicketBanned ? t('event:ticket_status_banned') : isTicketUsed ? t('event:status_used') : t('event:cancel_ticket'))
-                  : (isRegistrationClosed ? t('event:registration_closed') : t('event:register_action'))}
+                {t(eventActionState.state === "join" ? "event:register_action" : eventActionState.labelKey)}
               </Button>
             </ContributeGuardTooltip>
           </Stack>
@@ -559,7 +572,7 @@ const ArticleHighlightCard = ({ data, channel, eventId, isAdmin = false, sharedI
           <Button
             variant="contained"
             color="error"
-            startIcon={<CancelOutlinedIcon />}
+            startIcon={<EventBusyOutlinedIcon />}
             disabled={!cancelReason.trim() || loadingJoin}
             onClick={handleConfirmCancel}
           >
@@ -574,7 +587,8 @@ const ArticleHighlightCard = ({ data, channel, eventId, isAdmin = false, sharedI
 
 const ArticlePage = () => {
   const { t } = useTranslation(['common', 'article', 'event', 'donation']);
-  const { channel, id } = useParams();
+  const { slug, channel, id } = useParams();
+  const adminBase = slug ? `/${slug}/admin` : "/admin";
   const { enqueueSnackbar } = useSnackbar();
   const theme = useTheme();
   const { isOrgManager } = useCanContribute();
@@ -585,11 +599,10 @@ const ArticlePage = () => {
     enabled: Boolean(authorId) && article?.channel !== "donation",
   });
 
-  const { cleanContent, mainImageCaption } = useMemo(() => {
+  const { cleanContent } = useMemo(() => {
     const parsedContent = extractMainImageCaption(article?.content ?? "");
     return {
       cleanContent: normalizeRichTextHtml(parsedContent.content || ""),
-      mainImageCaption: parsedContent.caption,
     };
   }, [article]);
   
@@ -666,13 +679,18 @@ const ArticlePage = () => {
   // "Quan tâm" button (ArticleHighlightCard) — two separate controls for the same event_interests
   // row — stay in sync without a reload. Only active for the event channel.
   const isEventChannel = article?.channel === "event";
-  const { canContribute: canToggleEventInterest, isAuthenticated: isAuthedForInterest } = useCanContribute();
+  const queryClient = useQueryClient();
+  const { canUseBasicActions: canToggleEventInterest, isAuthenticated: isAuthedForInterest } = useCanContribute();
   const [eventInterestState, setEventInterestState] = useState({ isInterested: false, countDelta: 0, loading: false });
   const eventInterest = {
     isInterested: eventInterestState.isInterested,
     interestedCount: Math.max(0, (article?.interestedCount ?? 0) + eventInterestState.countDelta),
     loading: eventInterestState.loading,
   };
+
+  useEffect(() => {
+    setEventInterestState((prev) => ({ ...prev, countDelta: 0 }));
+  }, [article?.interestedCount, id]);
 
   useEffect(() => {
     if (!isEventChannel || !id || !isAuthedForInterest) return undefined;
@@ -692,10 +710,14 @@ const ArticlePage = () => {
       if (eventInterestState.isInterested) {
         await eventApi.removeInterest(id);
         setEventInterestState((prev) => ({ ...prev, isInterested: false, countDelta: prev.countDelta - 1, loading: false }));
+        enqueueSnackbar(t('event:unmark_interested_success', { defaultValue: 'Đã hủy quan tâm sự kiện' }), { variant: 'info' });
       } else {
         await eventApi.addInterest(id);
         setEventInterestState((prev) => ({ ...prev, isInterested: true, countDelta: prev.countDelta + 1, loading: false }));
+        enqueueSnackbar(t('event:mark_interested_success', { defaultValue: 'Đã quan tâm sự kiện' }), { variant: 'success' });
       }
+      queryClient.invalidateQueries({ queryKey: ['publishedEvents'] });
+      await queryClient.invalidateQueries({ queryKey: ['article', { channel: 'event', id }], exact: false });
     } catch (err) {
       setEventInterestState((prev) => ({ ...prev, loading: false }));
       throw err;
@@ -704,27 +726,7 @@ const ArticlePage = () => {
 
   const { organization } = useOrganization();
   const currentOrgId = organization?.id ?? null;
-  const orgHeroBannerUrl = useMemo(() => {
-    if (!organization) return null;
-    let url = null;
-
-    try {
-      if (organization.brandConfig) {
-        const b = typeof organization.brandConfig === 'string' ? JSON.parse(organization.brandConfig) : organization.brandConfig;
-        url = b?.hero_banner_url || b?.heroBannerUrl;
-      }
-    } catch (e) {}
-
-    if (!url && organization.featuresConfig) {
-      try {
-        const f = typeof organization.featuresConfig === 'string' ? JSON.parse(organization.featuresConfig) : organization.featuresConfig;
-        const b = f?.brand_config || f?.brandConfig;
-        url = b?.hero_banner_url || b?.heroBannerUrl;
-      } catch (e) {}
-    }
-
-    return url || organization?.heroBannerUrl || organization?.hero_banner_url || null;
-  }, [organization]);
+  const orgHeroBannerUrl = useMemo(() => getOrganizationHeroBannerUrl(organization), [organization]);
 
   const articleOrgId = article?.organizationId ?? article?.organization_id;
   const isOrgMismatch = Boolean(
@@ -776,8 +778,8 @@ const ArticlePage = () => {
           isLoading: eventComments.isPending,
           isSubmitting: creatingEventComment,
           isDeleting: deletingEventComment,
-          onCreate: (content) => createEventComment({ eventId: id, payload: { authorMemberId: currentUserId, content } }),
-          onReply: (commentId, content) => replyToEventComment({ eventId: id, commentId, payload: { authorMemberId: currentUserId, content } }),
+          onCreate: (content) => createEventComment({ eventId: id, payload: { content } }),
+          onReply: (commentId, content) => replyToEventComment({ eventId: id, commentId, payload: { content } }),
           onUpdate: (commentId, content) => updateEventComment({ eventId: id, commentId, payload: { content } }),
           onDelete: (commentId) => deleteEventComment({ eventId: id, commentId }),
         }
@@ -787,8 +789,8 @@ const ArticlePage = () => {
           isLoading: newsComments.isPending,
           isSubmitting: creatingNewsComment,
           isDeleting: deletingNewsComment,
-          onCreate: (content) => createNewsComment({ newsId: id, payload: { authorMemberId: currentUserId, content } }),
-          onReply: (commentId, content) => replyToNewsComment({ newsId: id, commentId, payload: { authorMemberId: currentUserId, content } }),
+          onCreate: (content) => createNewsComment({ newsId: id, payload: { content } }),
+          onReply: (commentId, content) => replyToNewsComment({ newsId: id, commentId, payload: { content } }),
           onUpdate: (commentId, content) => updateNewsComment({ newsId: id, commentId, payload: { content } }),
           onDelete: (commentId) => deleteNewsComment({ newsId: id, commentId }),
         }
@@ -798,8 +800,8 @@ const ArticlePage = () => {
           isLoading: alumniPostComments.isPending,
           isSubmitting: creatingAlumniPostComment,
           isDeleting: deletingAlumniPostComment,
-          onCreate: (content) => createAlumniPostComment({ alumniPostId: id, payload: { authorMemberId: currentUserId, content } }),
-          onReply: (commentId, content) => replyToAlumniPostComment({ alumniPostId: id, commentId, payload: { authorMemberId: currentUserId, content } }),
+          onCreate: (content) => createAlumniPostComment({ alumniPostId: id, payload: { content } }),
+          onReply: (commentId, content) => replyToAlumniPostComment({ alumniPostId: id, commentId, payload: { content } }),
           onUpdate: (commentId, content) => updateAlumniPostComment({ alumniPostId: id, commentId, payload: { content } }),
           onDelete: (commentId) => deleteAlumniPostComment({ alumniPostId: id, commentId }),
         }
@@ -822,6 +824,8 @@ const ArticlePage = () => {
           stats: [{ value: article.interestedCount ?? 0, label: t('article:stat_interested') }, { value: article.joinedCount ?? 0, label: t('event:stat_joined') }],
           isRegistered: article.isRegistered,
           registrationEndAt: article.registrationEndAt,
+          startTime: article.eventDate,
+          endTime: article.eventEndDate,
         }
       : resolvedChannel === "donation"
       ? {
@@ -870,7 +874,7 @@ const ArticlePage = () => {
                       color="secondary"
                       size="medium"
                       startIcon={<EditOutlinedIcon />}
-                      onClick={() => navigate(isEventArticle ? `/post/event/${id}` : `/admin/article/${resolvedChannel}/${id}/edit`)}
+                      onClick={() => navigate(isEventArticle ? `/post/event/${id}` : `${adminBase}/article/${resolvedChannel}/${id}/edit`)}
                       sx={{ textTransform: "none", fontWeight: 700 }}
                     >
                       {isEventArticle ? t('event:edit_event') : t('article:edit_article')}
@@ -879,7 +883,7 @@ const ArticlePage = () => {
                       variant="outlined"
                       size="medium"
                       startIcon={isEventArticle ? <EventOutlinedIcon /> : <ArticleOutlinedIcon />}
-                      onClick={() => navigate(isEventArticle ? "/admin/events" : "/admin/article")}
+                      onClick={() => navigate(isEventArticle ? `${adminBase}/events` : `${adminBase}/article`)}
                       sx={{ textTransform: "none", fontWeight: 700 }}
                     >
                       {isEventArticle ? t('admin:manage_events') : t('admin:manage_articles')}
@@ -932,15 +936,7 @@ const ArticlePage = () => {
               {/* Thumbnail */}
               {article.thumbnailUrl && (
                 <ScrollRevealItem sx={{ display: "flex", flexDirection: "column", alignItems: "center", mt: { xs: 2, md: 3 }, mb: { xs: 5, md: 6 } }}>
-                  <Box component="img" src={article.thumbnailUrl} alt={article.title} sx={{ width: { xs: "100%", md: "72%" }, aspectRatio: "16 / 10", objectFit: "cover", borderRadius: 2, boxShadow: "0 2px 10px rgba(0,0,0,0.1)" }} />
-                  {mainImageCaption && (
-                    <Typography
-                      variant="caption"
-                      sx={{ color: "text.secondary", mt: 1, fontStyle: "italic", textAlign: "center", maxWidth: { xs: "100%", md: "72%" } }}
-                    >
-                      {mainImageCaption}
-                    </Typography>
-                  )}
+                  <Box component="img" src={article.thumbnailUrl} alt={article.title} sx={{ display: "block", width: "100%", height: "auto", objectFit: "contain", borderRadius: 1 }} />
                 </ScrollRevealItem>
               )}
 
@@ -1018,14 +1014,26 @@ const ArticlePage = () => {
                   "& .ql-align-justify, & [style*='text-align: justify' i]": { textAlign: "justify !important" },
                   "& img, & img.rich-content-image, & img.ql-content-image": {
                     display: "block",
-                    maxWidth: "min(100%, 520px) !important",
-                    width: "auto !important",
+                    maxWidth: "min(100%, 640px) !important",
+                    width: { xs: "100% !important", sm: "auto !important" },
                     height: "auto !important",
                     maxHeight: "560px !important",
                     objectFit: "contain",
-                    mx: "auto",
+                    marginLeft: "auto !important",
+                    marginRight: "auto !important",
                     my: 2,
-                    borderRadius: 2,
+                    borderRadius: 1,
+                  },
+                  "& p > span > img, & li > span > img, & h1 > span > img, & h2 > span > img, & h3 > span > img, & h4 > span > img, & h5 > span > img, & h6 > span > img": {
+                    display: "inline-block !important",
+                    width: "1.1em !important",
+                    height: "1.1em !important",
+                    maxWidth: "1.5em !important",
+                    verticalAlign: "-0.2em !important",
+                    objectFit: "contain",
+                    mx: 0,
+                    my: 0,
+                    borderRadius: 0,
                   },
                   "& p.ql-image-line": {
                     minHeight: 0,

@@ -10,10 +10,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../constants/api_endpoints.dart';
 import '../network/dio_client.dart';
 
-/// Background/terminated message handler. Must be a top-level function.
+/// Background/terminated message handler. Must be a top-level function —
+/// the plugin runs it in its own background isolate.
 @pragma('vm:entry-point')
 Future<void> firebaseBackgroundHandler(RemoteMessage message) async {
-  // Data-only handling could go here; notification payloads are shown by the OS.
+  // Chat/mention pushes carry a `notification` payload and are shown by the OS.
 }
 
 const _channelId = 'high_importance_channel';

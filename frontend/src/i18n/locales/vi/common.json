@@ -54,7 +54,7 @@
   "rows_per_page": "Số dòng mỗi trang:",
   "unread": "Chưa đọc",
   "no_notifications": "Không có thông báo nào",
-  "partners_count": "Hơn 100+ doanh nghiệp liên kết",
+  "partners_count": "Các doanh nghiệp liên kết",
   "author": "Tác giả",
   "content": "Nội dung",
   "created_at": "Ngày tạo",
@@ -112,10 +112,10 @@
   "fitbot_suggestion_clubs": "Hỏi về các câu lạc bộ sinh viên",
   "fitbot_suggestion_internship": "Tìm hiểu về chương trình thực tập",
   "fitbot_suggestion_extracurricular": "Hỏi về các hoạt động ngoại khóa",
-  "fitbot_suggestion_admission_requirements": "Muốn biết điều kiện admission?",
-  "fitbot_suggestion_dormitory": "Hỏi về dormitory và facilities",
-  "fitbot_suggestion_career": "Tìm hiểu về career support",
-  "fitbot_suggestion_admin_office": "Liên hệ với administrative office",
+  "fitbot_suggestion_admission_requirements": "Muốn biết điều kiện tuyển sinh?",
+  "fitbot_suggestion_dormitory": "Hỏi về ký túc xá và cơ sở vật chất",
+  "fitbot_suggestion_career": "Tìm hiểu về hỗ trợ nghề nghiệp",
+  "fitbot_suggestion_admin_office": "Liên hệ với văn phòng hành chính",
   "not_found": "Không tìm thấy",
   "just_now": "Vừa xong",
   "minutes_ago": "{{count}} phút trước",
@@ -137,5 +137,6 @@
   "sse_account_banned": "Tài khoản của bạn đã bị khóa.",
   "sse_event_reminder": "Một sự kiện bạn quan tâm sắp hết hạn đăng ký.",
   "sse_ticket_cancelled": "Vé sự kiện của bạn đã bị huỷ.",
-  "sse_ticket_banned": "Vé sự kiện của bạn đã bị cấm tham gia."
+  "sse_ticket_banned": "Vé sự kiện của bạn đã bị cấm tham gia.",
+  "sse_connection_request": "Bạn có một lời mời kết nối mới."
 }

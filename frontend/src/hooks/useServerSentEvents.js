@@ -9,6 +9,12 @@ import apiClient, {
 import useAuthStore from '../stores/authStore';
 import useOrganizationStore from '../stores/organizationStore';
 import useChatUnreadStore from '../stores/chatUnreadStore';
+import useActiveChatStore from '../stores/activeChatStore';
+import {
+  applyIncomingMessageToChatLists,
+  resetChatUnreadInLists,
+} from './chat/invalidateChatQueries';
+import { chatApi } from '../utils/api';
 import { useNotification } from './useNotification';
 
 /**
@@ -50,6 +56,20 @@ const parseEvent = (event) => {
 /** DOM event phát lại khi backend đọc xong tài liệu của một yêu cầu xác thực. */
 export const VERIFICATION_OCR_READY_EVENT = 'alumverse:verification-ocr-ready';
 
+/**
+ * DOM event phát khi có một thông báo mới đến qua SSE (vd: lời mời kết nối). Chuông
+ * (Notification.jsx) tự fetch/poll nên nó lắng nghe sự kiện này để refetch ngay, giúp
+ * số đếm chưa đọc nhảy tức thì thay vì phải chờ vòng poll kế tiếp.
+ */
+export const NOTIFICATIONS_UPDATED_EVENT = 'alumverse:notifications-updated';
+
+/**
+ * DOM event phát khi một thành viên khác đã đọc cuộc trò chuyện (backend gửi `chat-seen`).
+ * Panel chat đang mở lắng nghe sự kiện này để lật trạng thái tin nhắn cuối của mình từ
+ * "Đã gửi" sang "Đã xem" ngay lập tức. detail: { groupId, readerMemberId, readAt }.
+ */
+export const CHAT_SEEN_EVENT = 'alumverse:chat-seen';
+
 export const useServerSentEvents = ({ onNotify } = {}) => {
   const token = useAuthStore((state) => state.token);
   const queryClient = useQueryClient();
@@ -58,6 +78,27 @@ export const useServerSentEvents = ({ onNotify } = {}) => {
   // Keep onNotify in a ref so changing it never tears down the SSE connection.
   const onNotifyRef = useRef(onNotify);
   onNotifyRef.current = onNotify;
+
+  // Seed the global unread-message badge ONCE per login, right when the app opens. After that
+  // the badge is kept live by the `new-message` SSE events below, so we never poll or refetch
+  // it (a token refresh keeps the same session → still seeded; logout resets it so the next
+  // login re-seeds from the server).
+  const seededUnreadRef = useRef(false);
+  useEffect(() => {
+    if (!token) {
+      seededUnreadRef.current = false;
+      useChatUnreadStore.getState().reset();
+      return;
+    }
+    if (seededUnreadRef.current) return;
+    seededUnreadRef.current = true;
+    chatApi.getUnreadCount()
+      .then((count) => useChatUnreadStore.getState().setUnreadCount(count))
+      .catch(() => {
+        // Let a later token change retry the seed if this initial attempt failed.
+        seededUnreadRef.current = false;
+      });
+  }, [token]);
 
   useEffect(() => {
     if (!token) return undefined;
@@ -101,9 +142,60 @@ export const useServerSentEvents = ({ onNotify } = {}) => {
       }
     };
 
-    const handleNewMessage = () => {
-      useChatUnreadStore.getState().increment();
+    const handleNewMessage = (event) => {
+      const data = parseEvent(event);
+      // Older payload / parse failure: fall back to just bumping the global badge.
+      if (!data || data.groupId == null) {
+        useChatUnreadStore.getState().increment();
+        onNotifyRef.current?.();
+        return;
+      }
+
+      const chatId = data.groupId;
+      const isActive = String(useActiveChatStore.getState().activeChatId) === String(chatId);
+
+      // Live-update the left column (preview + last-message time → re-sort) and flag the
+      // conversation as unread unless the user is currently reading it.
+      const matched = applyIncomingMessageToChatLists(queryClient, {
+        chatId,
+        preview: data.preview,
+        createdAt: data.createdAt,
+        markUnread: !isActive,
+      });
+
+      // Not in any cached page (brand-new chat, or on a page we haven't loaded): refetch
+      // the lists so the conversation shows up.
+      if (!matched) {
+        queryClient.invalidateQueries({ queryKey: ['groupChatList'] });
+        queryClient.invalidateQueries({ queryKey: ['privateChatList'] });
+      }
+      // Keep the header's recent-previews dropdown fresh too.
+      queryClient.invalidateQueries({ queryKey: ['recentChatPreviews'] });
+
+      if (isActive) {
+        // The user is looking at this conversation — keep the server read-state in sync
+        // so the unread count doesn't resurface on the next full refetch.
+        chatApi.markGroupAsRead(chatId).catch(() => {});
+      } else {
+        useChatUnreadStore.getState().increment();
+      }
       onNotifyRef.current?.();
+    };
+
+    // Emitted to the reader's own connections when they mark a conversation read in
+    // another tab; clear the unread marker here so open tabs stay consistent.
+    const handleChatRead = (event) => {
+      const data = parseEvent(event);
+      if (!data || data.groupId == null) return;
+      resetChatUnreadInLists(queryClient, data.groupId);
+    };
+
+    // A peer read the conversation — re-broadcast as a DOM event so the open chat panel can
+    // flip the sender's latest message from "Sent" to "Seen" without a refetch.
+    const handleChatSeen = (event) => {
+      const data = parseEvent(event);
+      if (!data || data.groupId == null) return;
+      window.dispatchEvent(new CustomEvent(CHAT_SEEN_EVENT, { detail: data }));
     };
 
     const handleEventReminder = (event) => {
@@ -121,6 +213,15 @@ export const useServerSentEvents = ({ onNotify } = {}) => {
       window.dispatchEvent(new CustomEvent(VERIFICATION_OCR_READY_EVENT, { detail: data }));
     };
 
+    const handleConnectionRequest = (event) => {
+      const data = parseEvent(event);
+      if (!data) return;
+      showInfo(data.message || i18next.t('common:sse_connection_request'));
+      // Chuông tự quản lý fetch, nên báo nó refetch để số chưa đọc cập nhật ngay.
+      window.dispatchEvent(new CustomEvent(NOTIFICATIONS_UPDATED_EVENT, { detail: data }));
+      onNotifyRef.current?.();
+    };
+
     const handleTicketStatusUpdated = (event) => {
       const data = parseEvent(event);
       if (!data) return;
@@ -136,8 +237,11 @@ export const useServerSentEvents = ({ onNotify } = {}) => {
     source.addEventListener('verification-updated', handleVerificationUpdated);
     source.addEventListener('user-banned', handleUserBanned);
     source.addEventListener('new-message', handleNewMessage);
+    source.addEventListener('chat-read', handleChatRead);
+    source.addEventListener('chat-seen', handleChatSeen);
     source.addEventListener('verification-ocr-ready', handleVerificationOcrReady);
     source.addEventListener('event-reminder', handleEventReminder);
+    source.addEventListener('connection-request', handleConnectionRequest);
     source.addEventListener('ticket-status-updated', handleTicketStatusUpdated);
     source.onerror = () => {
       // readyState CONNECTING nghĩa là EventSource đang tự reconnect (mất mạng tạm thời,
@@ -164,8 +268,11 @@ export const useServerSentEvents = ({ onNotify } = {}) => {
       source.removeEventListener('verification-updated', handleVerificationUpdated);
       source.removeEventListener('user-banned', handleUserBanned);
       source.removeEventListener('new-message', handleNewMessage);
+      source.removeEventListener('chat-read', handleChatRead);
+      source.removeEventListener('chat-seen', handleChatSeen);
       source.removeEventListener('verification-ocr-ready', handleVerificationOcrReady);
       source.removeEventListener('event-reminder', handleEventReminder);
+      source.removeEventListener('connection-request', handleConnectionRequest);
       source.removeEventListener('ticket-status-updated', handleTicketStatusUpdated);
       source.close();
     };

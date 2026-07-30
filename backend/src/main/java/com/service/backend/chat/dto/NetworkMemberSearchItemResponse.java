@@ -20,4 +20,8 @@ public class NetworkMemberSearchItemResponse {
     // chat_conversation_requests (PENDING / ACCEPTED / REJECTED). Null when the
     // two have never exchanged a connection request.
     private String connectionStatus;
+    // True when there is a PENDING request this member sent TO the current user
+    // (current user is the target). The UI shows an "accept/connect" affordance
+    // instead of "waiting", since sending back auto-accepts and connects the pair.
+    private Boolean incoming;
 }

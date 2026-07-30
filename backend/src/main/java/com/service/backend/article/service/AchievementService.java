@@ -5,6 +5,7 @@ import com.service.backend.shared.entity.Achievement;
 import com.service.backend.article.dto.CreateAchievementRequest;
 import com.service.backend.article.dto.UpdateAchievementRequest;
 import com.service.backend.article.dto.AchievementResponse;
+import com.service.backend.article.validation.ArticleTopicCatalog;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.enums.Status;
@@ -34,6 +35,7 @@ public class AchievementService {
     private final NotificationService notificationService;
 
     public Mono<AchievementResponse> create(CreateAchievementRequest request) {
+        String topic = ArticleTopicCatalog.requireValid(ArticleTopicCatalog.Channel.ACHIEVEMENT, request.getTopic());
         return SecurityUtils.getCurrentUserId()
                 .flatMap(userId -> SecurityUtils.resolveContentOrganizationId(request.getOrganizationId())
                         .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.BAD_REQUEST, "Organization ID is required to create achievement")))
@@ -53,7 +55,7 @@ public class AchievementService {
                                             .url(request.getUrl())
                                             .imageUrl(imageUrl.isEmpty() ? null : imageUrl)
                                             .awardedDate(request.getAwardedDate() != null ? request.getAwardedDate() : LocalDate.now())
-                                            .topic(request.getTopic())
+                                            .topic(topic)
                                             .status(initialStatus)
                                             .build();
 
@@ -74,6 +76,9 @@ public class AchievementService {
     }
 
     public Mono<AchievementResponse> update(Integer id, UpdateAchievementRequest request) {
+        String topic = request.getTopic() != null
+                ? ArticleTopicCatalog.requireValid(ArticleTopicCatalog.Channel.ACHIEVEMENT, request.getTopic())
+                : null;
         return achievementRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.ACHIEVEMENT_NOT_FOUND, "Achievement not found with id: " + id)))
                 .flatMap(existing -> SecurityUtils.assertCanManageContentOrganization(existing.getOrganizationId())
@@ -85,7 +90,7 @@ public class AchievementService {
                                     existing.setUrl(request.getUrl());
                                     existing.setImageUrl(imageUrl.isEmpty() ? existing.getImageUrl() : imageUrl);
                                     if (request.getStatus() != null) existing.setStatus(request.getStatus());
-                                    if (request.getTopic() != null) existing.setTopic(request.getTopic());
+                                    if (request.getTopic() != null) existing.setTopic(topic);
                                     return achievementRepository.save(existing);
                                 })))
                 .delayUntil(res -> clearAchievementCaches())
@@ -110,8 +115,12 @@ public class AchievementService {
     public Mono<AchievementResponse> getPublicById(Integer id, Integer organizationId) {
         return SecurityUtils.resolvePublicOrganizationId(organizationId)
                 .flatMap(orgId -> achievementRepository.findById(id)
-                        .filter(achievement -> orgId.equals(achievement.getOrganizationId())
-                                && Status.APPROVED.equals(achievement.getStatus())))
+                        .filter(achievement -> orgId.equals(achievement.getOrganizationId()))
+                        .flatMap(achievement -> Status.APPROVED.equals(achievement.getStatus())
+                                ? Mono.just(achievement)
+                                : SecurityUtils.canManageContentOrganization(achievement.getOrganizationId())
+                                        .filter(Boolean::booleanValue)
+                                        .map(ignored -> achievement)))
                 .switchIfEmpty(Mono.error(new ApplicationException(
                         ErrorCode.ACHIEVEMENT_NOT_FOUND, "Approved achievement not found")))
                 .map(AchievementResponse::from);
@@ -162,7 +171,7 @@ public class AchievementService {
             int offset = page * limit;
             return PaginationHelper.paginate(
                     achievementRepository.findDetailsByStatusAndOrganizationId(status, organizationId, limit, offset)
-                            .doOnNext(item -> log.info("Fetched achievement with status {} and org {}: {}", status, organizationId, JsonUtils.toJson(item)))
+                            .doOnNext(item -> log.debug("Fetched achievement with status {} and org {}: {}", status, organizationId, JsonUtils.toJson(item)))
                             .map(AchievementResponse::from),
                     achievementRepository.countByStatusAndOrganizationId(status, organizationId),
                     page, limit

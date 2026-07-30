@@ -4,9 +4,9 @@ import { Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
 import ConfirmationNumberOutlinedIcon from "@mui/icons-material/ConfirmationNumberOutlined";
+import EventBusyOutlinedIcon from "@mui/icons-material/EventBusyOutlined";
 import { QRCodeSVG } from "qrcode.react";
 
-const CANCEL_TICKET_ICON = "/icons/icon_cancel_ticket.png";
 import { eventApi } from "../utils/api";
 import useOrganizationStore from "../stores/organizationStore";
 import { canCancelEventTicketStatus } from "../utils/eventRegistration";
@@ -82,16 +82,34 @@ const MyTicketCard = ({ ticket, onCancelled, highlighted = false }) => {
         borderColor: highlighted ? "primary.main" : "divider",
         boxShadow: highlighted ? 4 : undefined,
         display: "flex",
+        flexDirection: { xs: "column", sm: "row" },
         overflow: "hidden",
         transition: "all 0.2s ease",
         "&:hover": { borderColor: "primary.main", boxShadow: 2 },
       }}
     >
       {/* TICKET STRIP */}
-      <Box sx={{ width: 36, bgcolor: "primary.main", flexShrink: 0 }} />
+      <Box
+        sx={{
+          width: { xs: "100%", sm: 36 },
+          height: { xs: 8, sm: "auto" },
+          bgcolor: "primary.main",
+          flexShrink: 0,
+        }}
+      />
 
       {/* CONTENT */}
-      <Box sx={{ flex: 1, display: "flex", justifyContent: "space-between", gap: 3, p: 3 }}>
+      <Box
+        sx={{
+          flex: 1,
+          minWidth: 0,
+          display: "flex",
+          flexDirection: { xs: "column", md: "row" },
+          justifyContent: "space-between",
+          gap: { xs: 2, md: 3 },
+          p: { xs: 2, sm: 3 },
+        }}
+      >
 
         {/* LEFT */}
         <Box sx={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 0.5 }}>
@@ -99,7 +117,15 @@ const MyTicketCard = ({ ticket, onCancelled, highlighted = false }) => {
             {formatDate(ticket.registeredAt)}
           </Typography>
 
-          <Typography variant="h4" fontWeight={700}>
+          <Typography
+            variant="h4"
+            fontWeight={700}
+            sx={{
+              fontSize: { xs: "1.18rem", sm: "1.45rem", md: "1.75rem" },
+              lineHeight: { xs: 1.32, md: 1.25 },
+              overflowWrap: "anywhere",
+            }}
+          >
             {eventTitle}
           </Typography>
 
@@ -115,27 +141,42 @@ const MyTicketCard = ({ ticket, onCancelled, highlighted = false }) => {
         {/* RIGHT */}
         <Box
           sx={{
-            minWidth: 180,
+            minWidth: { xs: 0, md: 180 },
+            width: { xs: "100%", md: "auto" },
             display: "flex",
             flexDirection: "column",
-            alignItems: "flex-end",
+            alignItems: { xs: "stretch", md: "flex-end" },
             justifyContent: "space-between",
+            gap: { xs: 1.5, md: 2 },
+            mt: { xs: "auto", md: 0 },
           }}
         >
-          <Stack spacing={1} alignItems="flex-end" sx={{ flexDirection: { xs: "column", md: "row" }, gap: 1 }}>
+          <Stack
+            spacing={1}
+            alignItems={{ xs: "stretch", md: "flex-end" }}
+            sx={{
+              width: { xs: "100%", md: "auto" },
+              flexDirection: { xs: "column", sm: "row" },
+              justifyContent: { xs: "stretch", md: "flex-end" },
+              gap: 1,
+              display: { xs: "grid", sm: "flex" },
+              gridTemplateColumns: {
+                xs: canCancelTicket ? "minmax(0, 1fr) minmax(0, 1fr)" : "1fr",
+                sm: "unset",
+              },
+              "& .MuiButton-root": {
+                width: { xs: "100%", sm: "auto" },
+                minWidth: 0,
+                whiteSpace: "nowrap",
+              },
+            }}
+          >
             {canCancelTicket && (
               <Button
                 variant="outlined"
                 color="error"
                 size="small"
-                startIcon={
-                  <Box
-                    component="img"
-                    src={CANCEL_TICKET_ICON}
-                    alt=""
-                    sx={{ width: 18, height: 18, objectFit: "contain" }}
-                  />
-                }
+                startIcon={<EventBusyOutlinedIcon />}
                 onClick={() => setOpenCancelDialog(true)}
               >
                 {t("event:cancel_ticket")}
@@ -155,7 +196,11 @@ const MyTicketCard = ({ ticket, onCancelled, highlighted = false }) => {
             label={statusCfg.label}
             color={statusCfg.color}
             size="small"
-            sx={{ fontWeight: 700, p: 2 }}
+            sx={{
+              alignSelf: "flex-end",
+              fontWeight: 700,
+              p: 2,
+            }}
           />
         </Box>
       </Box>

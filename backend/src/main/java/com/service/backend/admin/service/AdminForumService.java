@@ -84,7 +84,7 @@ public class AdminForumService {
                                 .transform(this::enrichPosts),
                         forumPostRepository.countPostsCreatedYesterdayByOrganization(organizationId),
                         page, size)
-                    .doOnSuccess(r -> log.info("getNewForumPostsYesterdayWithPagination (org={}) result: {}", organizationId, JsonUtils.toJson(r)))
+                    .doOnSuccess(r -> log.debug("getNewForumPostsYesterdayWithPagination (org={}) result: {}", organizationId, JsonUtils.toJson(r)))
                     .doOnError(error -> log.error("Error fetching yesterday posts for org {}", organizationId, error));
         }
         return PaginationHelper.paginate(
@@ -92,16 +92,23 @@ public class AdminForumService {
                             .transform(this::enrichPosts),
                     forumPostRepository.countPostsCreatedYesterday(),
                     page, size)
-                .doOnSuccess(r -> log.info("getNewForumPostsYesterdayWithPagination result: {}", JsonUtils.toJson(r)))
+                .doOnSuccess(r -> log.debug("getNewForumPostsYesterdayWithPagination result: {}", JsonUtils.toJson(r)))
                 .doOnError(error -> log.error("Error fetching paginated forum posts created yesterday", error));
     }
 
     // ========== BAN/UNBAN POST ==========
 
+    private Mono<Void> assertPostOrgOwnership(Integer topicId) {
+        return forumTopicRepository.findById(topicId)
+                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.FORUM_TOPIC_NOT_FOUND)))
+                .flatMap(topic -> SecurityUtils.assertSameOrganizationOrAdmin(topic.getOrganizationId()));
+    }
+
     public Mono<ForumPostDTO> banForumPost(Integer postId) {
         return SecurityUtils.getCurrentUserId()
                 .flatMap(adminId -> forumPostRepository.findById(postId)
                         .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_POST_NOT_FOUND))))
+                        .flatMap(post -> assertPostOrgOwnership(post.getTopicId()).thenReturn(post))
                         .flatMap(post -> {
                             post.setIsBanned(true);
                             return forumPostRepository.save(post)
@@ -111,7 +118,7 @@ public class AdminForumService {
                         }))
                 .flatMap(this::convertToPostDTO)
                 .delayUntil(r -> cacheUtils.clear(CacheNames.FORUM_CATEGORY))
-                .doOnSuccess(result -> log.info("banForumPost result: {}", JsonUtils.toJson(result)))
+                .doOnSuccess(result -> log.debug("banForumPost result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error banning forum post ID: {}", postId, error));
     }
 
@@ -119,6 +126,7 @@ public class AdminForumService {
         return SecurityUtils.getCurrentUserId()
                 .flatMap(adminId -> forumPostRepository.findById(postId)
                         .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_POST_NOT_FOUND))))
+                        .flatMap(post -> assertPostOrgOwnership(post.getTopicId()).thenReturn(post))
                         .flatMap(post -> {
                             post.setIsBanned(false);
                             return forumPostRepository.save(post)
@@ -128,14 +136,15 @@ public class AdminForumService {
                         }))
                 .flatMap(this::convertToPostDTO)
                 .delayUntil(r -> cacheUtils.clear(CacheNames.FORUM_CATEGORY))
-                .doOnSuccess(result -> log.info("unbanForumPost result: {}", JsonUtils.toJson(result)))
+                .doOnSuccess(result -> log.debug("unbanForumPost result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error unbanning forum post ID: {}", postId, error));
     }
 
     public Mono<Void> deleteForumPost(Integer postId) {
         return forumPostRepository.findById(postId)
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_POST_NOT_FOUND))))
-                .flatMap(post -> forumPostRepository.deleteById(postId))
+                .flatMap(post -> assertPostOrgOwnership(post.getTopicId())
+                        .then(forumPostRepository.deleteById(postId)))
                 .then(cacheUtils.clear(CacheNames.FORUM_CATEGORY))
                 .doOnSuccess(v -> log.info("deleteForumPost: postId={} deleted", postId))
                 .doOnError(error -> log.error("Error deleting forum post ID: {}", postId, error));
@@ -149,7 +158,7 @@ public class AdminForumService {
                                 .transform(this::enrichPosts),
                         forumPostRepository.countBannedPostsByOrganization(organizationId),
                         page, size)
-                    .doOnSuccess(r -> log.info("getBannedPostsWithPagination (org={}) result: {}", organizationId, JsonUtils.toJson(r)))
+                    .doOnSuccess(r -> log.debug("getBannedPostsWithPagination (org={}) result: {}", organizationId, JsonUtils.toJson(r)))
                     .doOnError(error -> log.error("Error fetching banned posts for org {}", organizationId, error));
         }
         return PaginationHelper.paginate(
@@ -157,7 +166,7 @@ public class AdminForumService {
                             .transform(this::enrichPosts),
                     forumPostRepository.countByIsBannedTrue(),
                     page, size)
-                .doOnSuccess(r -> log.info("getBannedPostsWithPagination result: {}", JsonUtils.toJson(r)))
+                .doOnSuccess(r -> log.debug("getBannedPostsWithPagination result: {}", JsonUtils.toJson(r)))
                 .doOnError(error -> log.error("Error fetching banned forum posts", error));
     }
 
@@ -169,7 +178,7 @@ public class AdminForumService {
                                 .transform(this::enrichPosts),
                         forumPostRepository.countHiddenPostsByOrganization(organizationId),
                         page, size)
-                    .doOnSuccess(r -> log.info("getHiddenPostsWithPagination (org={}) result: {}", organizationId, JsonUtils.toJson(r)))
+                    .doOnSuccess(r -> log.debug("getHiddenPostsWithPagination (org={}) result: {}", organizationId, JsonUtils.toJson(r)))
                     .doOnError(error -> log.error("Error fetching hidden posts for org {}", organizationId, error));
         }
         return PaginationHelper.paginate(
@@ -177,7 +186,7 @@ public class AdminForumService {
                             .transform(this::enrichPosts),
                     forumPostRepository.countByIsHiddenTrue(),
                     page, size)
-                .doOnSuccess(r -> log.info("getHiddenPostsWithPagination result: {}", JsonUtils.toJson(r)))
+                .doOnSuccess(r -> log.debug("getHiddenPostsWithPagination result: {}", JsonUtils.toJson(r)))
                 .doOnError(error -> log.error("Error fetching hidden forum posts", error));
     }
 
@@ -190,7 +199,7 @@ public class AdminForumService {
                                 .transform(this::enrichPosts),
                         forumPostRepository.countAllPostsByOrganization(organizationId, kw),
                         page, size)
-                    .doOnSuccess(r -> log.info("getAllPostsWithPagination (org={}) result: {}", organizationId, JsonUtils.toJson(r)))
+                    .doOnSuccess(r -> log.debug("getAllPostsWithPagination (org={}) result: {}", organizationId, JsonUtils.toJson(r)))
                     .doOnError(error -> log.error("Error fetching posts for org {}", organizationId, error));
         }
         return PaginationHelper.paginate(
@@ -198,7 +207,7 @@ public class AdminForumService {
                             .transform(this::enrichPosts),
                     forumPostRepository.countAllPostsWithKeyword(kw),
                     page, size)
-                .doOnSuccess(r -> log.info("getAllPostsWithPagination result (keyword={}): {}", kw, JsonUtils.toJson(r)))
+                .doOnSuccess(r -> log.debug("getAllPostsWithPagination result (keyword={}): {}", kw, JsonUtils.toJson(r)))
                 .doOnError(error -> log.error("Error fetching all forum posts with keyword={}", kw, error));
     }
 
@@ -210,14 +219,14 @@ public class AdminForumService {
                                 .map(this::convertToReportDTO),
                         forumPostReportRepository.countByOrganizationAndStatus(organizationId, Status.PENDING),
                         page, size)
-                    .doOnSuccess(r -> log.info("getPendingReports (org={}) result: {}", organizationId, JsonUtils.toJson(r)));
+                    .doOnSuccess(r -> log.debug("getPendingReports (org={}) result: {}", organizationId, JsonUtils.toJson(r)));
         }
         return PaginationHelper.paginate(
                     forumPostReportRepository.findByStatusWithPagination(Status.PENDING, size, offset)
                             .map(this::convertToReportDTO),
                     forumPostReportRepository.countByStatus(Status.PENDING),
                     page, size)
-                .doOnSuccess(r -> log.info("getPendingReports result: {}", JsonUtils.toJson(r)));
+                .doOnSuccess(r -> log.debug("getPendingReports result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<ForumPostReportDTO> reviewReport(Long reportId, ReviewForumReportRequest request, Integer adminUserId) {
@@ -239,7 +248,7 @@ public class AdminForumService {
                 })
                 .map(this::convertToReportDTO)
                 .delayUntil(r -> cacheUtils.clear(CacheNames.FORUM_CATEGORY))
-                .doOnSuccess(r -> log.info("reviewReport result: {}", JsonUtils.toJson(r)));
+                .doOnSuccess(r -> log.debug("reviewReport result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<ForumPostDTO> updatePostVisibility(Integer postId, Boolean hidden, Integer adminUserId) {
@@ -256,7 +265,7 @@ public class AdminForumService {
                 })
                 .flatMap(this::convertToPostDTO)
                 .delayUntil(r -> cacheUtils.clear(CacheNames.FORUM_CATEGORY))
-                .doOnSuccess(r -> log.info("updatePostVisibility result: {}", JsonUtils.toJson(r)));
+                .doOnSuccess(r -> log.debug("updatePostVisibility result: {}", JsonUtils.toJson(r)));
     }
 
     /** Allowed values for forum topic/category status. */
@@ -284,13 +293,28 @@ public class AdminForumService {
                     topic.setStatus(newStatus);
                     topic.setUpdatedAt(LocalDateTime.now());
                     return forumTopicRepository.save(topic)
+                            .doOnSuccess(saved -> notifyTopicApprovedIfNeeded(saved, before, newStatus))
                             .flatMap(saved -> createAuditLog(adminUserId, topic.getCreatedByMemberId(),
                                     "UPDATE_TOPIC_STATUS", "FORUM_TOPIC", String.valueOf(topicId),
                                     before, newStatus).thenReturn(saved));
                 })
                 .flatMap(this::convertToTopicDTOWithPostCount)
                 .delayUntil(r -> cacheUtils.clear(CacheNames.FORUM_CATEGORY))
-                .doOnSuccess(r -> log.info("updateTopicStatus result: {}", JsonUtils.toJson(r)));
+                .doOnSuccess(r -> log.debug("updateTopicStatus result: {}", JsonUtils.toJson(r)));
+    }
+
+    private void notifyTopicApprovedIfNeeded(ForumTopic topic, String beforeStatus, String newStatus) {
+        if (!Status.PENDING.name().equals(beforeStatus) || !Status.ACTIVE.name().equals(newStatus)) {
+            return;
+        }
+        if (topic.getCreatedByMemberId() == null) {
+            return;
+        }
+        notificationService.createNotificationAsync(
+                topic.getCreatedByMemberId(),
+                "Chủ đề diễn đàn đã được duyệt",
+                "Chủ đề \"" + topic.getTitle() + "\" đã được duyệt và đang hiển thị trên diễn đàn.",
+                "/forum/topic/" + topic.getId());
     }
 
     public Mono<ForumCategoryDTO> updateCategoryStatus(Integer categoryId, String status, Integer adminUserId) {
@@ -313,7 +337,7 @@ public class AdminForumService {
                 })
                 .map(this::convertToCategoryDTO)
                 .delayUntil(r -> cacheUtils.clear(CacheNames.FORUM_CATEGORY))
-                .doOnSuccess(r -> log.info("updateCategoryStatus result: {}", JsonUtils.toJson(r)));
+                .doOnSuccess(r -> log.debug("updateCategoryStatus result: {}", JsonUtils.toJson(r)));
     }
 
     // ========== DELETE TOPIC ==========
@@ -353,7 +377,7 @@ public class AdminForumService {
         return forumCategoryRepository.findById(categoryId)
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_CATEGORY_NOT_FOUND))))
                 .map(this::convertToCategoryDTO)
-                .doOnSuccess(r -> log.info("getCategoryById result: {}", JsonUtils.toJson(r)))
+                .doOnSuccess(r -> log.debug("getCategoryById result: {}", JsonUtils.toJson(r)))
                 .doOnError(error -> log.error("Error fetching category ID: {}", categoryId, error));
     }
 
@@ -373,7 +397,7 @@ public class AdminForumService {
         return forumCategoryRepository.save(category)
                 .map(this::convertToCategoryDTO)
                 .delayUntil(r -> cacheUtils.clear(CacheNames.FORUM_CATEGORY))
-                .doOnSuccess(result -> log.info("createCategory result: {}", JsonUtils.toJson(result)))
+                .doOnSuccess(result -> log.debug("createCategory result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error creating forum category: {}", name, error));
     }
 
@@ -390,7 +414,7 @@ public class AdminForumService {
                 })
                 .map(this::convertToCategoryDTO)
                 .delayUntil(r -> cacheUtils.clear(CacheNames.FORUM_CATEGORY))
-                .doOnSuccess(result -> log.info("updateCategory result: {}", JsonUtils.toJson(result)))
+                .doOnSuccess(result -> log.debug("updateCategory result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error updating category ID: {}", categoryId, error));
     }
 
@@ -437,7 +461,7 @@ public class AdminForumService {
                                 .concatMap(this::convertToTopicDTOWithPostCount),
                         forumTopicRepository.countByOrganizationId(organizationId, kw),
                         page, size)
-                    .doOnSuccess(r -> log.info("getAllTopicsByOrganization result (orgId={}, keyword={}): {}", organizationId, kw, JsonUtils.toJson(r)))
+                    .doOnSuccess(r -> log.debug("getAllTopicsByOrganization result (orgId={}, keyword={}): {}", organizationId, kw, JsonUtils.toJson(r)))
                     .doOnError(error -> log.error("Error fetching topics for organization ID: {} keyword={}", organizationId, kw, error));
         }
         return PaginationHelper.paginate(
@@ -445,7 +469,7 @@ public class AdminForumService {
                             .concatMap(this::convertToTopicDTOWithPostCount),
                     forumTopicRepository.countAll(kw),
                     page, size)
-                .doOnSuccess(r -> log.info("getAllTopicsByOrganization (all orgs, keyword={}): {}", kw, JsonUtils.toJson(r)))
+                .doOnSuccess(r -> log.debug("getAllTopicsByOrganization (all orgs, keyword={}): {}", kw, JsonUtils.toJson(r)))
                 .doOnError(error -> log.error("Error fetching all topics keyword={}", kw, error));
     }
 
@@ -453,7 +477,7 @@ public class AdminForumService {
         return forumTopicRepository.findById(topicId)
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_TOPIC_NOT_FOUND))))
                 .flatMap(this::convertToTopicDTOWithPostCount)
-                .doOnSuccess(r -> log.info("getTopicById result: {}", JsonUtils.toJson(r)))
+                .doOnSuccess(r -> log.debug("getTopicById result: {}", JsonUtils.toJson(r)))
                 .doOnError(error -> log.error("Error fetching topic ID: {}", topicId, error));
     }
 
@@ -478,7 +502,7 @@ public class AdminForumService {
                 })
                 .flatMap(this::convertToTopicDTOWithPostCount)
                 .delayUntil(r -> cacheUtils.clear(CacheNames.FORUM_CATEGORY))
-                .doOnSuccess(result -> log.info("createTopic result: {}", JsonUtils.toJson(result)))
+                .doOnSuccess(result -> log.debug("createTopic result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error creating forum topic: {}", title, error));
     }
 
@@ -494,7 +518,7 @@ public class AdminForumService {
                 })
                 .flatMap(this::convertToTopicDTOWithPostCount)
                 .delayUntil(r -> cacheUtils.clear(CacheNames.FORUM_CATEGORY))
-                .doOnSuccess(result -> log.info("updateTopic result: {}", JsonUtils.toJson(result)))
+                .doOnSuccess(result -> log.debug("updateTopic result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error updating topic ID: {}", topicId, error));
     }
 
@@ -586,7 +610,7 @@ public class AdminForumService {
                     stats.setGhostTopics(tuple.getT4());
                     return stats;
                 })
-                .doOnSuccess(result -> log.info("getForumStatistics result: {}", JsonUtils.toJson(result)))
+                .doOnSuccess(result -> log.debug("getForumStatistics result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error fetching forum statistics", error));
     }
 
@@ -627,7 +651,7 @@ public class AdminForumService {
                             });
                 })
                 .defaultIfEmpty(Collections.emptyList())
-                .doOnSuccess(result -> log.info("getTopContributors result: {}", JsonUtils.toJson(result)))
+                .doOnSuccess(result -> log.debug("getTopContributors result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error fetching top contributors for {}/{}", month, year, error));
     }
 
@@ -667,7 +691,7 @@ public class AdminForumService {
                             });
                 })
                 .defaultIfEmpty(Collections.emptyList())
-                .doOnSuccess(result -> log.info("getOrganizationEngagement result: {}", JsonUtils.toJson(result)))
+                .doOnSuccess(result -> log.debug("getOrganizationEngagement result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error fetching organization engagement rates", error));
     }
 
@@ -692,13 +716,15 @@ public class AdminForumService {
             monthMonos.add(monthMono);
         }
 
-        return Flux.mergeSequential(monthMonos)
+        // Cap concurrency so the 12 months (×3 count queries each) don't all hit the pool at once;
+        // mergeSequential still emits results in month order, so the output is unchanged.
+        return Flux.mergeSequential(monthMonos, 4, 1)
                 .collectList()
                 .map(months -> MonthlyActivityDTO.builder()
                         .year(year)
                         .months(months)
                         .build())
-                .doOnSuccess(result -> log.info("getMonthlyActivityTimeline result: {}", JsonUtils.toJson(result)))
+                .doOnSuccess(result -> log.debug("getMonthlyActivityTimeline result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error fetching monthly activity timeline for year: {}", year, error));
     }
 

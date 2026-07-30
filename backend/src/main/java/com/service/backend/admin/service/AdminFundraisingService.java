@@ -6,6 +6,9 @@ import com.service.backend.fundraising.dao.FundR2dbcRepository;
 import com.service.backend.fundraising.dto.FundDonationListItemResponse;
 import com.service.backend.fundraising.mapper.FundDonationMapper;
 import com.service.backend.shared.entity.Funds;
+import com.service.backend.shared.enums.ErrorCode;
+import com.service.backend.shared.exception.ApplicationException;
+import com.service.backend.shared.utils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,9 +66,12 @@ public class AdminFundraisingService {
     }
 
     public Mono<List<FundDonationListItemResponse>> getAllDonationsByFund(long fundId) {
-        return fundDonationsRepository.findAllByFundId(fundId)
-                .map(FundDonationMapper::toListItemResponse)
-                .collectList()
+        return fundRepository.findById(fundId)
+                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.FUND_NOT_FOUND, "Fund not found with id: " + fundId)))
+                .flatMap(fund -> SecurityUtils.assertSameOrganizationOrAdmin(fund.getOrganizationId())
+                        .thenMany(fundDonationsRepository.findAllByFundId(fundId)
+                                .map(FundDonationMapper::toListItemResponse))
+                        .collectList())
                 .doOnSuccess(r -> log.info("getAllDonationsByFund completed: fundId={}, count={}", fundId, r.size()))
                 .doOnError(e -> log.error("Error fetching all donations for fund: {}", fundId, e));
     }

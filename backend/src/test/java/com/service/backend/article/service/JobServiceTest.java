@@ -5,7 +5,6 @@ import com.service.backend.article.dto.JobResponse;
 import com.service.backend.article.dto.UpdateJobRequest;
 import com.service.backend.shared.entity.Job;
 import com.service.backend.shared.enums.ErrorCode;
-import com.service.backend.shared.enums.JobType;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.service.ImageService;
 import com.service.backend.shared.utils.CacheUtils;
@@ -58,7 +57,7 @@ class JobServiceTest {
                     .id(1)
                     .title("Software Engineer")
                     .companyName("Tech Corp")
-                    .type(JobType.FULL_TIME)
+                    .type("full_time")
                     .isActive(true)
                     .build();
 
@@ -221,19 +220,19 @@ class JobServiceTest {
                     .organizationId(1)
                     .title("Old Title")
                     .companyName("Old Corp")
-                    .type(JobType.FULL_TIME)
+                    .type("full_time")
                     .build();
 
             Job updated = Job.builder()
                     .id(1)
                     .title("New Title")
                     .companyName("New Corp")
-                    .type(JobType.PART_TIME)
+                    .type("part_time")
                     .build();
 
             UpdateJobRequest request = new UpdateJobRequest();
             request.setTitle("New Title");
-            request.setType(JobType.PART_TIME.getValue());
+            request.setType("part_time");
 
             when(jobRepository.findById(1)).thenReturn(Mono.just(existing));
             when(jobRepository.save(any())).thenReturn(Mono.just(updated));

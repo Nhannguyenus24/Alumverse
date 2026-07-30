@@ -4,7 +4,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 import com.service.backend.shared.entity.User;
 
@@ -44,13 +43,18 @@ public class JwtUtils {
             .build();
 
     /**
-     * Revoked refresh token JTI set. Bounded to 100k entries to prevent unbounded growth;
-     * entries are also naturally bounded by the refresh token TTL (7–30 days).
+     * Revoked refresh token JTIs (logout invalidation). A revoked JTI only needs to be remembered
+     * until the token would expire on its own, so entries expire after the refresh-token TTL —
+     * bounding memory instead of growing for the whole process lifetime. Also capped by size.
      */
-    private final ConcurrentHashMap<String, Boolean> revokedJtis = new ConcurrentHashMap<>();
+    private final Cache<String, Boolean> revokedJtis;
 
-    public JwtUtils(String jwtSecret, long accessTokenExpirationMs) {
+    public JwtUtils(String jwtSecret, long accessTokenExpirationMs, long refreshTokenExpirationMs) {
         this.accessTokenExpirationMs = accessTokenExpirationMs;
+        this.revokedJtis = Caffeine.newBuilder()
+                .expireAfterWrite(Duration.ofMillis(refreshTokenExpirationMs))
+                .maximumSize(100_000)
+                .build();
         try {
             byte[] secretKeyBytes = jwtSecret.getBytes();
             this.signer = new MACSigner(secretKeyBytes);
@@ -128,7 +132,7 @@ public class JwtUtils {
 
         // Reject revoked refresh tokens (logout invalidation).
         String jti = claims.getJWTID();
-        if (jti != null && revokedJtis.containsKey(jti)) {
+        if (jti != null && revokedJtis.getIfPresent(jti) != null) {
             throw new ApplicationException(ErrorCode.INVALID_REFRESH_TOKEN, "Token has been revoked");
         }
 

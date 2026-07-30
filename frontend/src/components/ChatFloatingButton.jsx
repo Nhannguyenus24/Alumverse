@@ -66,7 +66,7 @@ const LoginPanel = styled(Paper)(({ theme }) => ({
   width: 320,
   borderRadius: theme.spacing(2),
   boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15)',
-  zIndex: 998,
+  zIndex: 1002,
   overflow: 'hidden',
   animation: `${slideUp} 0.3s ease-out`,
 }));
@@ -80,7 +80,7 @@ const PreviewPanel = styled(Paper)(({ theme }) => ({
   maxHeight: 'calc(100vh - 32px)',
   borderRadius: `${theme.spacing(2)} ${theme.spacing(2)} 0 0`,
   boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15)',
-  zIndex: 998,
+  zIndex: 1002,
   display: 'flex',
   flexDirection: 'column',
   overflow: 'hidden',

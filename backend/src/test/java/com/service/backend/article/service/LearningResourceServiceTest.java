@@ -4,7 +4,6 @@ import com.service.backend.article.dao.LearningResourceR2dbcRepository;
 import com.service.backend.article.dto.UpdateLearningResourceRequest;
 import com.service.backend.shared.entity.LearningResource;
 import com.service.backend.shared.enums.ErrorCode;
-import com.service.backend.shared.enums.LearningResourceType;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.CacheUtils;
 import org.junit.jupiter.api.DisplayName;
@@ -53,7 +52,7 @@ class LearningResourceServiceTest {
                     .id(1)
                     .title("Java for Beginners")
                     .linkUrl("https://example.com/java")
-                    .type(LearningResourceType.COURSE)
+                    .type("online_course")
                     .build();
 
             when(learningResourceRepository.findById(1)).thenReturn(Mono.just(resource));
@@ -61,7 +60,7 @@ class LearningResourceServiceTest {
             StepVerifier.create(learningResourceService.getById(1))
                     .assertNext(dto -> {
                         assertThat(dto.getTitle()).isEqualTo("Java for Beginners");
-                        assertThat(dto.getType()).isEqualTo(LearningResourceType.COURSE);
+                        assertThat(dto.getType()).isEqualTo("online_course");
                     })
                     .verifyComplete();
         }
@@ -129,20 +128,20 @@ class LearningResourceServiceTest {
                     .organizationId(1)
                     .title("Old Title")
                     .linkUrl("http://old.com")
-                    .type(LearningResourceType.COURSE)
+                    .type("online_course")
                     .build();
 
             LearningResource updated = LearningResource.builder()
                     .id(1)
                     .title("New Title")
                     .linkUrl("http://new.com")
-                    .type(LearningResourceType.EBOOK)
+                    .type("masters_doctorate")
                     .build();
 
             UpdateLearningResourceRequest request = new UpdateLearningResourceRequest();
             request.setTitle("New Title");
             request.setLinkUrl("http://new.com");
-            request.setType(LearningResourceType.EBOOK.getValue());
+            request.setType("masters_doctorate");
 
             when(learningResourceRepository.findById(1)).thenReturn(Mono.just(existing));
             when(imageService.uploadBase64IfPresent(any())).thenReturn(Mono.empty());
@@ -153,7 +152,7 @@ class LearningResourceServiceTest {
                             .contextWrite(adminContext()))
                     .assertNext(dto -> {
                         assertThat(dto.getTitle()).isEqualTo("New Title");
-                        assertThat(dto.getType()).isEqualTo(LearningResourceType.EBOOK);
+                        assertThat(dto.getType()).isEqualTo("masters_doctorate");
                     })
                     .verifyComplete();
         }

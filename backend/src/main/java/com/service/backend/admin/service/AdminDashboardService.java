@@ -52,19 +52,18 @@ public class AdminDashboardService {
             Mono<Long> ticketsSoldMono = eventRepo.countAllTickets();
             Mono<Long> totalDonationsMono = fundDonationsRepository.countAll();
             LocalDateTime end = LocalDateTime.now();
+            LocalDateTime start7 = end.minusDays(7);
             LocalDateTime start30 = end.minusDays(30);
             Mono<BigDecimal> donations30Mono = fundDonationsRepository.sumAmountBetween(start30, end)
                     .defaultIfEmpty(BigDecimal.ZERO);
+            Mono<Long> newUsers7Mono = adminUserRepository.countUsersCreatedSince(start7).defaultIfEmpty(0L);
+            Mono<Long> newUsers30Mono = adminUserRepository.countUsersCreatedSince(start30).defaultIfEmpty(0L);
 
             return Mono.zip(totalUsersMono, totalOrgsMono, pendingVerifMono, totalEventsMono,
                     upcomingEventsMono, ticketsSoldMono, totalDonationsMono, donations30Mono)
                     .map(tuple -> {
                         DashboardMetricsDTO dto = new DashboardMetricsDTO();
                         dto.setTotalUsers(tuple.getT1());
-                        Map<String, Long> newUsers = new HashMap<>();
-                        newUsers.put("7d", 0L);
-                        newUsers.put("30d", 0L);
-                        dto.setNewUsers(newUsers);
                         dto.setDailyActive(0L);
                         dto.setTotalOrganizations(tuple.getT2());
                         dto.setPendingVerifications(tuple.getT3());
@@ -75,13 +74,19 @@ public class AdminDashboardService {
                         dto.setDonationsLast30Days(tuple.getT8());
                         return dto;
                     })
-                    .flatMap(dto -> auditRepository.countDailyActive()
-                            .defaultIfEmpty(0L)
-                            .map(dailyActive -> {
-                                dto.setDailyActive(dailyActive);
+                    .flatMap(dto -> Mono.zip(
+                                    auditRepository.countDailyActive().defaultIfEmpty(0L),
+                                    newUsers7Mono,
+                                    newUsers30Mono)
+                            .map(t -> {
+                                dto.setDailyActive(t.getT1());
+                                Map<String, Long> newUsers = new HashMap<>();
+                                newUsers.put("7d", t.getT2());
+                                newUsers.put("30d", t.getT3());
+                                dto.setNewUsers(newUsers);
                                 return dto;
                             }))
-                    .doOnSuccess(dto -> log.info("getMetrics result: {}", JsonUtils.toJson(dto)));
+                    .doOnSuccess(dto -> log.debug("getMetrics result: {}", JsonUtils.toJson(dto)));
         };
 
         return cacheUtils.getOrCompute(CacheNames.ADMIN_METRICS, "global", Duration.ofMinutes(5), supplier);
@@ -106,7 +111,7 @@ public class AdminDashboardService {
         // Activities are read straight from the audit log. No read path ever consulted the previous
         // "admin:activities" cache (write-only dead cache), so it has been removed to avoid the overhead.
         return PaginationHelper.paginate(enrichActivityActors(items), total, page, size)
-                .doOnSuccess(r -> log.info("getActivities result: {}", JsonUtils.toJson(r)));
+                .doOnSuccess(r -> log.debug("getActivities result: {}", JsonUtils.toJson(r)));
     }
 
     private Flux<ActivityItemDTO> enrichActivityActors(Flux<ActivityItemDTO> items) {

@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Box, useMediaQuery, useTheme } from '@mui/material';
 import { useSnackbar } from 'notistack';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router';
+import { useTranslation } from 'react-i18next';
 
 import Page from '../../components/Page';
 import NetworkChatPanel from '../../components/network/NetworkChatPanel';
@@ -10,27 +11,64 @@ import NetworkChatSidebar from '../../components/network/NetworkChatSidebar';
 import CreateGroupChatDialog from '../../components/CreateGroupChatDialog';
 import { useGroupChatList } from '../../hooks/chat/useGroupChatList';
 import { usePrivateChatList } from '../../hooks/chat/usePrivateChatList';
-import { invalidateChatListQueries } from '../../hooks/chat/invalidateChatQueries';
+import {
+  invalidateChatListQueries,
+  resetChatUnreadInLists,
+} from '../../hooks/chat/invalidateChatQueries';
+import useActiveChatStore from '../../stores/activeChatStore';
+import { chatApi } from '../../utils/api';
 import { HEADER_HEIGHT } from '../../constants/layout';
 
-function normalizeGroupChat(item) {
+function getPreviewText(previewText, t) {
+  if (!previewText) return '';
+  const urlRegex = /^https?:\/\/[^\s]+$/;
+  if (urlRegex.test(previewText)) {
+    // GIFs (e.g. from Giphy) live on external CDNs, so classify them by extension
+    // regardless of host before the backend-hosted-media checks below.
+    if (previewText.toLowerCase().match(/\.gif(\?.*)?$/)) {
+      return t('network:chat.preview_gif', '[GIF]');
+    }
+    const backendUrl = import.meta.env.VITE_API_BASE_URL || '';
+    if (backendUrl && previewText.startsWith(backendUrl)) {
+      const lowerText = previewText.toLowerCase();
+      if (lowerText.match(/\.(jpeg|jpg|gif|png|webp|svg)(\?.*)?$/)) {
+        return t('network:chat.preview_image', '[Hình ảnh]');
+      }
+      if (lowerText.match(/\.(mp4|mov|webm|avi)(\?.*)?$/)) {
+        return t('network:chat.preview_video', '[Video]');
+      }
+      if (
+        lowerText.includes('/files/') || 
+        lowerText.match(/\.(pdf|doc|docx|xls|xlsx|ppt|pptx|zip|rar|txt|csv|rtf|7z)(\?.*)?$/)
+      ) {
+        return t('network:chat.preview_file', '[Tập tin]');
+      }
+    }
+    return t('network:chat.preview_link', '[Đường dẫn]');
+  }
+  return previewText;
+}
+
+function normalizeGroupChat(item, t) {
   return {
     id: item.id,
-    name: item.title ?? '(No name)',
+    name: item.title ?? t('network:chat.no_name', '(No name)'),
     avatarUrl: item.avatarUrl ?? null,
-    preview: item.lastMessagePreview ?? '',
+    preview: getPreviewText(item.lastMessagePreview, t),
     lastMessageAt: item.lastMessageAt ?? null,
+    unreadCount: Number(item.unreadCount) || 0,
     type: 'GROUP',
   };
 }
 
-function normalizePrivateChat(item) {
+function normalizePrivateChat(item, t) {
   return {
     id: item.id,
-    name: item.peerFullName ?? item.title ?? '(No name)',
+    name: item.peerFullName ?? item.title ?? t('network:chat.no_name', '(No name)'),
     avatarUrl: item.peerAvatarUrl ?? null,
-    preview: item.lastMessagePreview ?? '',
+    preview: getPreviewText(item.lastMessagePreview, t),
     lastMessageAt: item.lastMessageAt ?? null,
+    unreadCount: Number(item.unreadCount) || 0,
     type: 'PRIVATE',
     peerMemberId: item.peerMemberId,
     blockedByMe: Boolean(item.blockedByMe),
@@ -39,6 +77,7 @@ function normalizePrivateChat(item) {
 }
 
 const ChatPage = () => {
+  const { t } = useTranslation(['network']);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const queryClient = useQueryClient();
@@ -48,37 +87,35 @@ const ChatPage = () => {
   const targetChatId = searchParams.get('chatId');
   const [searchInput, setSearchInput] = useState('');
   const [appliedSearch, setAppliedSearch] = useState('');
-  const [page, setPage] = useState(1);
   const [activeChatId, setActiveChatId] = useState(null);
   const [createGroupOpen, setCreateGroupOpen] = useState(false);
   const { enqueueSnackbar } = useSnackbar();
+  const chatListPageSize = 200;
 
   const {
     items: groupItems,
-    totalPage: groupTotalPage,
     isPending: groupPending,
     isFetching: groupFetching,
     isError: groupError,
     errorMessage: groupErrorMsg,
-  } = useGroupChatList({ searchQuery: appliedSearch, page });
+  } = useGroupChatList({ searchQuery: appliedSearch, page: 1, pageSize: chatListPageSize });
 
   const {
     items: privateItems,
-    totalPage: privateTotalPage,
     isPending: privatePending,
     isFetching: privateFetching,
     isError: privateError,
     errorMessage: privateErrorMsg,
   } = usePrivateChatList({
     searchQuery: appliedSearch,
-    page,
-    pageSize: targetMemberId || targetChatId ? 100 : undefined,
+    page: 1,
+    pageSize: chatListPageSize,
   });
 
   const chats = useMemo(() => {
     const merged = [
-      ...groupItems.map(normalizeGroupChat),
-      ...privateItems.map(normalizePrivateChat),
+      ...groupItems.map(item => normalizeGroupChat(item, t)),
+      ...privateItems.map(item => normalizePrivateChat(item, t)),
     ];
     merged.sort((a, b) => {
       if (!a.lastMessageAt && !b.lastMessageAt) return 0;
@@ -87,37 +124,36 @@ const ChatPage = () => {
       return new Date(b.lastMessageAt) - new Date(a.lastMessageAt);
     });
     return merged;
-  }, [groupItems, privateItems]);
+  }, [groupItems, privateItems, t]);
 
-  const totalPage = Math.max(groupTotalPage, privateTotalPage);
-  const safePage = totalPage === 0 ? 1 : Math.min(page, totalPage);
+  // Deep-link params (memberId/chatId) only SEED the initial selection. We consume
+  // each param value once (tracked via refs) instead of re-applying it on every
+  // render: keeping it in the deps of `activeChatId` made the param override manual
+  // sidebar selection, so clicking another conversation snapped straight back to the
+  // deep-linked one and the user could never switch. The param stays in the URL, while
+  // the sidebar always loads a single large scrollable list so the target chat stays loaded.
+  const consumedMemberIdRef = useRef(null);
+  const consumedChatIdRef = useRef(null);
 
   useEffect(() => {
-    if (totalPage > 0 && page > totalPage) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setPage(totalPage);
-    }
-  }, [totalPage, page]);
-
-  useEffect(() => {
-    if (!targetMemberId) return;
+    if (!targetMemberId || consumedMemberIdRef.current === targetMemberId) return;
     const targetChat = chats.find(
       (chat) => chat.type === 'PRIVATE' && String(chat.peerMemberId) === String(targetMemberId),
     );
-    if (targetChat && activeChatId !== targetChat.id) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setActiveChatId(targetChat.id);
-    }
-  }, [activeChatId, chats, targetMemberId]);
+    if (!targetChat) return;
+    consumedMemberIdRef.current = targetMemberId;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setActiveChatId(targetChat.id);
+  }, [chats, targetMemberId]);
 
   useEffect(() => {
-    if (!targetChatId) return;
+    if (!targetChatId || consumedChatIdRef.current === targetChatId) return;
     const targetChat = chats.find((chat) => String(chat.id) === String(targetChatId));
-    if (targetChat && activeChatId !== targetChat.id) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setActiveChatId(targetChat.id);
-    }
-  }, [activeChatId, chats, targetChatId]);
+    if (!targetChat) return;
+    consumedChatIdRef.current = targetChatId;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setActiveChatId(targetChat.id);
+  }, [chats, targetChatId]);
 
   useEffect(() => {
     if (targetMemberId || targetChatId) return;
@@ -133,6 +169,63 @@ const ChatPage = () => {
     [chats, activeChatId],
   );
 
+  // Keep the global active-chat store in sync so the SSE handler (mounted app-wide, with
+  // no access to this page's state) knows which conversation is open and won't flag its
+  // incoming messages as unread. Also mark the conversation read on the server and clear
+  // its unread marker locally right away when it becomes active.
+  useEffect(() => {
+    useActiveChatStore.getState().setActiveChatId(activeChatId);
+    if (activeChatId == null) return;
+    resetChatUnreadInLists(queryClient, activeChatId);
+    chatApi.markGroupAsRead(activeChatId).catch(() => {});
+  }, [activeChatId, queryClient]);
+
+  // Clear the active-chat marker when leaving the chat page.
+  useEffect(() => () => useActiveChatStore.getState().setActiveChatId(null), []);
+
+  useEffect(() => {
+    const { documentElement, body } = document;
+    const root = document.getElementById('root');
+    const scrollY = window.scrollY;
+    const previous = {
+      htmlOverflow: documentElement.style.overflow,
+      htmlHeight: documentElement.style.height,
+      htmlOverscrollBehavior: documentElement.style.overscrollBehavior,
+      bodyOverflow: body.style.overflow,
+      bodyHeight: body.style.height,
+      bodyPosition: body.style.position,
+      bodyTop: body.style.top,
+      bodyWidth: body.style.width,
+      bodyOverscrollBehavior: body.style.overscrollBehavior,
+      rootHeight: root?.style.height ?? '',
+    };
+
+    documentElement.style.overflow = 'hidden';
+    documentElement.style.height = '100%';
+    documentElement.style.overscrollBehavior = 'none';
+    body.style.overflow = 'hidden';
+    body.style.height = '100%';
+    body.style.position = 'fixed';
+    body.style.top = `-${scrollY}px`;
+    body.style.width = '100%';
+    body.style.overscrollBehavior = 'none';
+    if (root) root.style.height = '100%';
+
+    return () => {
+      documentElement.style.overflow = previous.htmlOverflow;
+      documentElement.style.height = previous.htmlHeight;
+      documentElement.style.overscrollBehavior = previous.htmlOverscrollBehavior;
+      body.style.overflow = previous.bodyOverflow;
+      body.style.height = previous.bodyHeight;
+      body.style.position = previous.bodyPosition;
+      body.style.top = previous.bodyTop;
+      body.style.width = previous.bodyWidth;
+      body.style.overscrollBehavior = previous.bodyOverscrollBehavior;
+      if (root) root.style.height = previous.rootHeight;
+      window.scrollTo({ top: scrollY, left: 0, behavior: 'auto' });
+    };
+  }, []);
+
   const isPending = groupPending || privatePending;
   const isFetching = groupFetching || privateFetching;
   const isError = groupError || privateError;
@@ -146,12 +239,7 @@ const ChatPage = () => {
 
   const handleSearchSubmit = useCallback(() => {
     setAppliedSearch(searchInput.trim());
-    setPage(1);
   }, [searchInput]);
-
-  const handlePageChange = useCallback((_, value) => {
-    setPage(value);
-  }, []);
 
   const handleGroupCreated = useCallback((createdGroup) => {
     if (createdGroup?.id) {
@@ -186,11 +274,36 @@ const ChatPage = () => {
             xs: `calc(100dvh - ${HEADER_HEIGHT.xs}px)`,
             md: `calc(100dvh - ${HEADER_HEIGHT.md}px)`,
           },
+          maxHeight: {
+            xs: `calc(100dvh - ${HEADER_HEIGHT.xs}px)`,
+            md: `calc(100dvh - ${HEADER_HEIGHT.md}px)`,
+          },
           minHeight: 0,
           width: '100%',
           position: 'relative',
           bgcolor: 'background.default',
           overflow: 'hidden',
+          overscrollBehavior: 'none',
+          '@supports (height: 100svh)': {
+            height: {
+              xs: `calc(100svh - ${HEADER_HEIGHT.xs}px)`,
+              md: `calc(100svh - ${HEADER_HEIGHT.md}px)`,
+            },
+            maxHeight: {
+              xs: `calc(100svh - ${HEADER_HEIGHT.xs}px)`,
+              md: `calc(100svh - ${HEADER_HEIGHT.md}px)`,
+            },
+          },
+          '@supports (height: 100dvh)': {
+            height: {
+              xs: `calc(100dvh - ${HEADER_HEIGHT.xs}px)`,
+              md: `calc(100dvh - ${HEADER_HEIGHT.md}px)`,
+            },
+            maxHeight: {
+              xs: `calc(100dvh - ${HEADER_HEIGHT.xs}px)`,
+              md: `calc(100dvh - ${HEADER_HEIGHT.md}px)`,
+            },
+          },
         }}
       >
         <Box
@@ -213,9 +326,6 @@ const ChatPage = () => {
               searchValue={searchInput}
               onSearchChange={setSearchInput}
               onSearchSubmit={handleSearchSubmit}
-              page={safePage}
-              totalPage={totalPage}
-              onPageChange={handlePageChange}
               isPending={isPending}
               isFetching={isFetching}
             />

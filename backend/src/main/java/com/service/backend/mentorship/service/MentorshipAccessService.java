@@ -33,7 +33,7 @@ public class MentorshipAccessService {
 
     private Mono<Boolean> isGlobalMentorshipReviewerRole() {
         return SecurityUtils.getCurrentUserRole()
-                .map(role -> "ADMIN".equalsIgnoreCase(role))
+                .map("ADMIN"::equalsIgnoreCase)
                 .defaultIfEmpty(false)
                 .onErrorReturn(false);
     }

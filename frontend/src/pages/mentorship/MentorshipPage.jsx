@@ -14,6 +14,7 @@ import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
 import AlumniContentLayout from '../../layouts/AlumniContentLayout';
 import MentorshipHubActions from '../../components/mentorship/MentorshipHubActions';
 import MentorshipMentorListSection from '../../components/mentorship/MentorshipMentorListSection';
+import MentorshipStatsLoader from '../../components/mentorship/MentorshipStatsLoader';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useMentorshipAccessState } from '../../hooks/mentorship/useMentorshipAccessState';
 import { getMentorshipStats } from '../../constants/mentorshipNav';
@@ -23,6 +24,7 @@ import {
   ScrollRevealGroup,
   ScrollRevealItem,
 } from '../../components/animations/ScrollReveal';
+import { useParams } from 'react-router';
 
 const getBenefits = (t) => [
   {
@@ -51,8 +53,10 @@ const getSteps = (t) => [
 /** Full marketing landing — guest & level 0 only */
 const GuestLandingContent = () => {
   const { t } = useTranslation(['nav', 'mentorship']);
+  const { slug } = useParams();
   const access = useMentorshipAccessState();
   const navigate = useOrgNavigate();
+  const adminBase = slug ? `/${slug}/admin` : '/admin';
   const isAdmin = access.isOrgManager;
 
   return (
@@ -106,7 +110,7 @@ const GuestLandingContent = () => {
         <MentorshipHubActions tone="onPrimary" />
       </ScrollRevealItem>
 
-      <ScrollRevealItem><StatsBanner items={getMentorshipStats(t)} /></ScrollRevealItem>
+      <ScrollRevealItem><MentorshipStatsLoader /></ScrollRevealItem>
 
       <ScrollRevealItem>
         <Typography variant="h4" fontWeight={700} mb={3}>
@@ -209,7 +213,7 @@ const GuestLandingContent = () => {
         <Stack direction="row" spacing={1.5} justifyContent="center" flexWrap="wrap" useFlexGap>
           <MentorshipHubActions />
           {isAdmin && (
-            <Button color="primary" variant="outlined" startIcon={<GroupsOutlinedIcon />} onClick={() => navigate('/admin/mentorship')}>
+            <Button color="primary" variant="outlined" startIcon={<GroupsOutlinedIcon />} onClick={() => navigate(`${adminBase}/mentorship`)}>
               {t('mentorship:manage_mentors')}
             </Button>
           )}
@@ -227,8 +231,10 @@ const GuestLandingContent = () => {
 /** Hub header + mentor list — level 1 & 2 */
 const HubContent = () => {
   const { t } = useTranslation(['nav', 'mentorship']);
+  const { slug } = useParams();
   const access = useMentorshipAccessState();
   const navigate = useOrgNavigate();
+  const adminBase = slug ? `/${slug}/admin` : '/admin';
   const isAdmin = access.isOrgManager;
 
   return (
@@ -264,7 +270,7 @@ const HubContent = () => {
           <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
             {!isAdmin && <MentorshipHubActions />}
             {isAdmin && (
-              <Button color="primary" variant="outlined" startIcon={<GroupsOutlinedIcon />} onClick={() => navigate('/admin/mentorship')}>
+              <Button color="primary" variant="outlined" startIcon={<GroupsOutlinedIcon />} onClick={() => navigate(`${adminBase}/mentorship`)}>
                 {t('mentorship:manage_mentors')}
               </Button>
             )}
@@ -275,7 +281,7 @@ const HubContent = () => {
         </Typography>
       </Stack></ScrollRevealItem>
 
-      <ScrollRevealItem><StatsBanner items={getMentorshipStats(t)} /></ScrollRevealItem>
+      <ScrollRevealItem><MentorshipStatsLoader /></ScrollRevealItem>
       <MentorshipMentorListSection />
     </ScrollRevealGroup>
   );
@@ -284,7 +290,7 @@ const HubContent = () => {
 const MentorshipPage = () => {
   const { t } = useTranslation(['nav', 'mentorship']);
   const access = useMentorshipAccessState();
-  const showGuestLanding = access.isGuest || access.needsEmailVerification;
+  const showGuestLanding = access.isGuest;
 
   return (
     <AlumniContentLayout

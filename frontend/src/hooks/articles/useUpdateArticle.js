@@ -59,6 +59,7 @@ const buildPayload = (channel, input) => {
         title,
         description: content,
         type: topic ?? null,
+        isReferral: topic === 'internal_referral',
         thumbnailBase64: thumbnailBase64 ?? null,
         ...rest,
       };
@@ -67,8 +68,8 @@ const buildPayload = (channel, input) => {
         title,
         description: content,
         type: topic ?? null,
+        linkUrl: rest.url ?? rest.linkUrl ?? null,
         thumbnailBase64: thumbnailBase64 ?? null,
-        ...rest,
       };
     default:
       return {

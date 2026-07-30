@@ -33,7 +33,7 @@ import { useUpdateSessionStatus } from '../../hooks/mentorship/useUpdateSessionS
 import { useMyMentorProfile } from '../../hooks/mentorship/useMyMentorProfile';
 import { useMyMentorFeedbacks } from '../../hooks/mentorship/useMyMentorFeedbacks';
 import { useJoinSession } from '../../hooks/mentorship/useJoinSession';
-import { formatDate } from '../../utils/dateFormatter';
+
 import { resolveMediaUrl } from '../../utils/imageUtils';
 import { formatRating } from '../../utils/numberFormatter';
 import {
@@ -402,11 +402,7 @@ const MentorshipDashboardPage = () => {
               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
                 {feedbacks.map((review, index) => (
                   <ScrollReveal key={review.id} delay={getStaggerDelay(index, 0.06)}><MentorshipReviewCard
-                    name={review.menteeName ?? `Mentee #${review.menteeMemberId}`}
-                    date={formatDate(review.createdAt, '')}
-                    avatar={review.menteeAvatarUrl ?? ''}
-                    rating={review.rating}
-                    content={review.comment ?? ''}
+                    review={review}
                   /></ScrollReveal>
                 ))}
               </Box>

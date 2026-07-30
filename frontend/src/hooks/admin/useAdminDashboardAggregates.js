@@ -63,7 +63,7 @@ const useAdminDashboardAggregates = (allUsers, allPosts, organizations) => {
       }
     });
 
-    const userGrowthDays = 14;
+    const userGrowthDays = 30;
     const userGrowthSeries = [];
     for (let i = userGrowthDays - 1; i >= 0; i -= 1) {
       const dayStart = startOfLocalDay(now - i * MS_DAY);
@@ -128,7 +128,21 @@ const useAdminDashboardAggregates = (allUsers, allPosts, organizations) => {
     const totalOrganizations = orgs.length;
     let activeOrganizations = 0;
     let inactiveOrganizations = 0;
-    orgs.forEach((o) => {
+
+    const orgMemberCounts = {};
+    allUsers.forEach((u) => {
+      const oid = u.organizationId || u.organization_id;
+      if (oid) {
+        orgMemberCounts[oid] = (orgMemberCounts[oid] || 0) + 1;
+      }
+    });
+
+    const enrichedOrgs = orgs.map((o) => ({
+      ...o,
+      members: orgMemberCounts[o.id] || 0
+    }));
+
+    enrichedOrgs.forEach((o) => {
       if (String(o.status || 'ACTIVE').toUpperCase() === 'ACTIVE') {
         activeOrganizations += 1;
       } else {
@@ -136,11 +150,11 @@ const useAdminDashboardAggregates = (allUsers, allPosts, organizations) => {
       }
     });
 
-    const topOrganizationsByMembers = [...orgs]
+    const topOrganizationsByMembers = [...enrichedOrgs]
       .sort((a, b) => (Number(b.members) || 0) - (Number(a.members) || 0))
       .slice(0, 5);
 
-    const activeOrganizationsList = orgs
+    const activeOrganizationsList = enrichedOrgs
       .filter((o) => String(o.status || 'ACTIVE').toUpperCase() === 'ACTIVE')
       .slice(0, 6);
 

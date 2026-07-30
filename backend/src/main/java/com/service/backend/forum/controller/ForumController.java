@@ -102,6 +102,17 @@ public class ForumController {
     // ========== TOPIC ENDPOINTS ==========
 
     /**
+     * Find forum topic by id
+     */
+    @PublicEndpoint
+    @GetMapping("/topic/{id}")
+    public Mono<ResponseEntity<ApiResponse<ForumTopicDTO>>> getTopicById(
+            @PathVariable @Min(value = 1, message = "Topic ID must be greater than 0") Integer id) {
+        return forumService.findTopicById(id)
+                .map(topic -> ResponseEntity.ok(new ApiResponse<>("Topic retrieved successfully", topic)));
+    }
+
+    /**
      * Find forum topic by title
      */
     @PublicEndpoint
@@ -123,11 +134,13 @@ public class ForumController {
             @RequestParam Integer categoryId,
             @Parameter(description = "Keyword to search topics by title")
             @RequestParam(required = false) String keyword,
+            @Parameter(description = "Sort order: 'most_viewed' or default (newest first)", example = "most_viewed")
+            @RequestParam(required = false) String sortBy,
             @Parameter(example = "0")
             @RequestParam(defaultValue = "0") int page,
             @Parameter(example = "10")
             @RequestParam(defaultValue = "10") int size) {
-        return forumService.findTopicsByCategoryId(categoryId, keyword, page, size)
+        return forumService.findTopicsByCategoryId(categoryId, keyword, sortBy, page, size)
                 .map(response -> ResponseEntity.ok(new ApiResponse<>("Topics retrieved successfully", response)));
     }
 

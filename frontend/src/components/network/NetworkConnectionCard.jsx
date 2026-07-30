@@ -62,6 +62,8 @@ const NetworkConnectionCard = ({
         border: '1px solid',
         borderColor: 'divider',
         boxShadow: 'none',
+        display: 'flex',
+        alignItems: 'center',
         transition: 'transform 0.2s',
         ...networkCardClickableSx,
         '&:hover': { transform: 'translateY(-2px)' },
@@ -72,8 +74,9 @@ const NetworkConnectionCard = ({
         spacing={{ xs: 1.5, sm: 2 }}
         alignItems={{ xs: 'stretch', sm: 'center' }}
         justifyContent="space-between"
+        sx={{ width: '100%', minHeight: 72 }}
       >
-        <Stack direction="row" spacing={1.5} sx={{ flex: 1, minWidth: 0 }}>
+        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ flex: 1, minWidth: 0 }}>
           <Avatar src={connection.avatarUrl} sx={{ width: 56, height: 56, flexShrink: 0 }} />
 
           <Box sx={{ minWidth: 0, flex: 1 }}>
@@ -138,11 +141,11 @@ const NetworkConnectionCard = ({
                   }}
                 >
                   <ListItemIcon sx={{ minWidth: 36 }}>
-                    <BlockOutlinedIcon fontSize="small" color="primary" />
+                    <BlockOutlinedIcon fontSize="small" color="error" />
                   </ListItemIcon>
                   <ListItemText
                     primary={t('network:block_user')}
-                    primaryTypographyProps={{ variant: 'body2' }}
+                    primaryTypographyProps={{ variant: 'body2', sx: { color: 'error.main' } }}
                   />
                 </MenuItem>
               )}

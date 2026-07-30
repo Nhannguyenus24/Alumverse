@@ -39,7 +39,6 @@ export const useOrganization = ({ enabled = true } = {}) => {
   }, [enabled, slug, currentSlug, loading, organization, error, fetchOrganization]);
 
   const isOrganizationNotFound = statusCode === 404;
-  const isServerError = statusCode >= 500;
 
   const refetch = useCallback(() => {
     return enabled && slug ? fetchOrganization(slug) : Promise.resolve();
@@ -51,9 +50,8 @@ export const useOrganization = ({ enabled = true } = {}) => {
     loading,
     error,
     isOrganizationNotFound,
-    isServerError,
     fetchOrganization,
     refetch,
     reset,
-  }), [slug, organization, loading, error, isOrganizationNotFound, isServerError, fetchOrganization, refetch, reset]);
+  }), [slug, organization, loading, error, isOrganizationNotFound, fetchOrganization, refetch, reset]);
 };

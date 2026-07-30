@@ -158,7 +158,7 @@ const NetworkBlockedMembersSection = () => {
         message={t('unblock_user_confirm', { name: unblockTarget?.fullName ?? t('member_fallback_name') })}
         confirmText={t('unblock')}
         cancelText={t('cancel')}
-        confirmColor="primary"
+        confirmColor="error"
         loading={isUnblocking}
         onConfirm={() => unblockUser()}
         onCancel={() => setUnblockTarget(null)}

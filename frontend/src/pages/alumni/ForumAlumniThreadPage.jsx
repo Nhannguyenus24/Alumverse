@@ -49,6 +49,7 @@ import { useUpdateForumTopicStatus } from "../../hooks/forum/useUpdateForumTopic
 import { useSubscribeToTopic } from "../../hooks/forum/useSubscribeToTopic";
 import { useForumTopicSubscriptionStatus } from "../../hooks/forum/useForumTopicSubscriptionStatus";
 import { useReportForumPost } from "../../hooks/forum/useReportForumPost";
+import { useForumTopic } from "../../hooks/forum/useForumTopic";
 import { useNotification } from "../../hooks/useNotification";
 import { useOrganization } from "../../hooks/useOrganization";
 import { useOrgNavigate, useOrgPath } from "../../hooks/useOrgNavigate";
@@ -510,6 +511,7 @@ const ForumAlumniThreadPage = () => {
       ? s.trim().toUpperCase()
       : "ACTIVE";
   });
+  
   const [currentPage, setCurrentPage] = useState(() => {
     const p = parseInt(pageId, 10);
     return !isNaN(p) && p > 0 ? p - 1 : 0;
@@ -530,6 +532,16 @@ const ForumAlumniThreadPage = () => {
     isPending: postsPending,
     isError: postsError,
   } = useForumPosts(topicId, memberId, currentPage, 10);
+  const { topic: fetchedTopic } = useForumTopic(
+    !location.state?.topicSummary && topicId ? topicId : null
+  );
+
+  useEffect(() => {
+    if (fetchedTopic?.status) {
+      setTopicStatus(fetchedTopic.status.trim().toUpperCase());
+    }
+  }, [fetchedTopic]);
+
   const { createPost, isPending: createPending } = useCreateForumPost();
   const { answerToPost, isPending: answerPending } = useAnswerToForumPost();
   const {
@@ -605,7 +617,7 @@ const ForumAlumniThreadPage = () => {
   }, []);
 
   const thread = useMemo(() => {
-    const topicSummary = location.state?.topicSummary;
+    const topicSummary = location.state?.topicSummary || fetchedTopic;
     const titleFromSummary =
       typeof topicSummary?.title === "string" && topicSummary.title.trim()
         ? topicSummary.title.trim()
@@ -657,20 +669,20 @@ const ForumAlumniThreadPage = () => {
     return {
       title,
       authorName:
-        topicSummary !== undefined
+        topicSummary != null
           ? authorFromTopic
           : (authorFromPost ?? FALLBACK_THREAD.authorName),
       authorMemberId:
-        topicSummary !== undefined
+        topicSummary != null
           ? topicSummary.createdByMemberId
           : (firstPost?.authorMemberId ?? null),
       authorAvatarUrl:
-        topicSummary !== undefined
+        topicSummary != null
           ? topicSummary.authorAvatarUrl
           : (firstPost?.authorAvatarUrl ?? null),
       role: "Alumni",
       createdAt:
-        topicSummary !== undefined
+        topicSummary != null
           ? createdFromTopic
           : (createdFromPost ?? FALLBACK_THREAD.createdAt),
     };
@@ -681,6 +693,7 @@ const ForumAlumniThreadPage = () => {
     threadTitleOverride,
     user?.id,
     t,
+    fetchedTopic,
   ]);
 
   const replies = useMemo(
@@ -1082,17 +1095,33 @@ const ForumAlumniThreadPage = () => {
   }, [filters, selectedFilterIdFromState]);
 
   const activeCategory = useMemo(() => {
-    const categoryId = location.state?.topicSummary?.categoryId;
+    const categoryId = location.state?.topicSummary?.categoryId || fetchedTopic?.categoryId;
     if (categoryId != null) {
-      return categories?.find((c) => c.id === categoryId) ?? null;
+      const cat = categories?.find((c) => c.id === categoryId);
+      if (cat) return cat;
+      if (fetchedTopic?.categoryName && fetchedTopic?.categoryId === categoryId) {
+        return {
+          id: fetchedTopic.categoryId,
+          name: fetchedTopic.categoryName,
+          parentId: fetchedTopic.parentCategoryId,
+        };
+      }
     }
     return null;
-  }, [categories, location.state?.topicSummary?.categoryId]);
+  }, [categories, location.state?.topicSummary?.categoryId, fetchedTopic]);
 
   const parentCategory = useMemo(() => {
     if (!activeCategory?.parentId) return null;
-    return categories?.find((c) => c.id === activeCategory.parentId) ?? null;
-  }, [activeCategory, categories]);
+    const pCat = categories?.find((c) => c.id === activeCategory.parentId);
+    if (pCat) return pCat;
+    if (fetchedTopic?.parentCategoryName && fetchedTopic?.parentCategoryId === activeCategory.parentId) {
+      return {
+        id: fetchedTopic.parentCategoryId,
+        name: fetchedTopic.parentCategoryName,
+      };
+    }
+    return null;
+  }, [activeCategory, categories, fetchedTopic]);
 
   const breadcrumbItems = useMemo(() => {
     const items = [];
@@ -1270,7 +1299,10 @@ const ForumAlumniThreadPage = () => {
                 fontWeight={800}
                 sx={{
                   fontSize: { xs: "1.2rem", sm: "1.4rem", md: "1.6rem" },
+                  lineHeight: 1.22,
                   wordBreak: "break-word",
+                  flex: 1,
+                  minWidth: 0,
                 }}
               >
                 {thread.title}
@@ -1285,14 +1317,15 @@ const ForumAlumniThreadPage = () => {
                     },
                     gap: 1,
                     width: "100%",
-                    maxWidth: { xs: 300, sm: 360 },
-                    minWidth: { xs: 240, sm: 320 },
+                    maxWidth: { xs: 320, sm: 390 },
+                    minWidth: { xs: 260, sm: 350 },
+                    flexShrink: 0,
                   }}
                 >
                   <Button
                     fullWidth
                     variant="outlined"
-                    color={isSubscribed ? "primary" : "secondary"}
+                    color="primary"
                     size="small"
                     startIcon={
                       <NotificationsNoneOutlinedIcon sx={{ fontSize: 18 }} />
@@ -1302,6 +1335,8 @@ const ForumAlumniThreadPage = () => {
                     sx={{
                       whiteSpace: "nowrap",
                       minWidth: 0,
+                      height: 40,
+                      "& .MuiButton-startIcon": { flexShrink: 0 },
                     }}
                   >
                     {isSubscribed
@@ -1334,12 +1369,17 @@ const ForumAlumniThreadPage = () => {
                       <Button
                         fullWidth
                         variant="contained"
-                        color="primary"
+                        color="accent"
                         size="small"
                         startIcon={<ReplyOutlinedIcon sx={{ fontSize: 18 }} />}
                         onClick={focusReplyEditor}
                         disabled={isGuest}
-                        sx={{ whiteSpace: "nowrap" }}
+                        sx={{
+                          whiteSpace: "nowrap",
+                          minWidth: 0,
+                          height: 40,
+                          "& .MuiButton-startIcon": { flexShrink: 0 },
+                        }}
                       >
                         {t("forum:reply")}
                       </Button>
@@ -1390,13 +1430,14 @@ const ForumAlumniThreadPage = () => {
                 <Box
                   sx={{
                     display: "flex",
-                    flexWrap: "wrap",
+                    flexWrap: { xs: "wrap", sm: "nowrap" },
                     gap: 1,
                     justifyContent: { xs: "flex-start", sm: "flex-end" },
+                    flexShrink: 0,
                   }}
                 >
                   <Button
-                    variant={isSubscribed ? "contained" : "outlined"}
+                    variant="outlined"
                     color="primary"
                     size="small"
                     startIcon={
@@ -1404,6 +1445,12 @@ const ForumAlumniThreadPage = () => {
                     }
                     onClick={handleToggleSubscription}
                     disabled={subStatusPending || subTogglePending}
+                    sx={{
+                      minWidth: 118,
+                      height: 40,
+                      whiteSpace: "nowrap",
+                      "& .MuiButton-startIcon": { flexShrink: 0 },
+                    }}
                   >
                     {isSubscribed
                       ? t("forum:subscribed")
@@ -1420,11 +1467,17 @@ const ForumAlumniThreadPage = () => {
                     <span>
                       <Button
                         variant="contained"
-                        color="primary"
+                        color="accent"
                         size="small"
                         startIcon={<ReplyOutlinedIcon sx={{ fontSize: 18 }} />}
                         onClick={focusReplyEditor}
                         disabled={isGuest}
+                        sx={{
+                          minWidth: 104,
+                          height: 40,
+                          whiteSpace: "nowrap",
+                          "& .MuiButton-startIcon": { flexShrink: 0 },
+                        }}
                       >
                         {t("forum:reply")}
                       </Button>

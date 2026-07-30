@@ -78,8 +78,9 @@ const normalizeDonationContent = (html) => {
 
 export default function DonationArticlePage() {
   const { t } = useTranslation('donation');
-  const { id } = useParams();
+  const { slug, id } = useParams();
   const navigate = useOrgNavigate();
+  const adminBase = slug ? `/${slug}/admin` : "/admin";
   const { isAuthenticated } = useAuth();
   const { isOrgManager } = useCanContribute();
   const isAdmin = isAuthenticated && isOrgManager;
@@ -186,7 +187,7 @@ export default function DonationArticlePage() {
                       color="primary"
                       size="medium"
                       startIcon={<VolunteerActivismOutlinedIcon />}
-                      onClick={() => navigate("/admin/donations")}
+                      onClick={() => navigate(`${adminBase}/donations`)}
                       sx={{ textTransform: "none", fontWeight: 700 }}
                     >
                       {t('manage_fund')}

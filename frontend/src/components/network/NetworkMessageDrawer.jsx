@@ -152,10 +152,16 @@ const NetworkMessageDrawer = ({
         setDraft('');
         if (drawerState.singleMessageOnly) {
           setSentInSession(true);
+          // Replying to an incoming request auto-accepts it → now connected. Any other
+          // single-message send (first message / post-cooldown re-send) becomes pending.
+          const wasIncoming = (statusOverride ?? connectionStatus)?.incoming;
           setStatusOverride({
-            status: CONVERSATION_REQUEST_STATUS.PENDING,
+            status: wasIncoming
+              ? CONVERSATION_REQUEST_STATUS.ACCEPTED
+              : CONVERSATION_REQUEST_STATUS.PENDING,
             cooldownUntil: null,
             latestMessage: null,
+            requestDirection: wasIncoming ? 'ACCEPTED' : 'OUTGOING',
           });
         }
       },

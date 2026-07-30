@@ -8,6 +8,7 @@ import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import TopTabFilter from '../components/mentorship/TopTabFilter';
 import CoverUpload from '../components/CoverUpload';
+import { HEADER_HEIGHT } from '../constants/layout';
 import {
   ScrollReveal,
   ScrollRevealGroup,
@@ -17,6 +18,11 @@ import {
 const profileSurfaceColor = (theme) => (
   theme.palette.mode === 'dark' ? theme.palette.background.default : theme.palette.background.paper
 );
+
+const profileViewportMinHeight = {
+  xs: `calc(100dvh - ${HEADER_HEIGHT.xs}px)`,
+  md: `calc(100dvh - ${HEADER_HEIGHT.md}px)`,
+};
 
 const ProfileLayout = ({
   user,
@@ -34,6 +40,7 @@ const ProfileLayout = ({
   children,
   avatarSlot,
   contentSx,
+  rootSx,
   disableMediaEditing = false,
 }) => {
   const { t } = useTranslation('profile');
@@ -84,7 +91,7 @@ const ProfileLayout = ({
   const isEditMode = (mode === 'mentorEdit' || mode === 'userEdit') && !disableMediaEditing;
 
   return (
-    <Box sx={{ pb: 6, backgroundColor: 'background.default' }}>
+    <Box sx={{ minHeight: profileViewportMinHeight, pb: 6, backgroundColor: 'background.default', ...rootSx }}>
       {/* ================= COVER ================= */}
       <Box>
         <ScrollReveal direction="none" duration={0.78} amount={0.05}>

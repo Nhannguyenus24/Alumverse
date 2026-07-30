@@ -81,7 +81,7 @@ public class AdminUserService {
                         page,
                         size,
                         this::enrichUserResponses))
-                .doOnSuccess(r -> logger.info("getAllUsers result: {}", JsonUtils.toJson(r)))
+                .doOnSuccess(r -> logger.debug("getAllUsers result: {}", JsonUtils.toJson(r)))
                 .doOnError(error -> logger.error("Error fetching users with filters: {}", error.getMessage()));
     }
 
@@ -135,6 +135,10 @@ public class AdminUserService {
                                                   String status) {
         String upperStatus = status == null ? "ACTIVE" : status.toUpperCase();
         boolean trustedVerifier = isTrustedVerifier != null && isTrustedVerifier;
+        // Chuẩn hoá student_id rỗng thành null: Postgres cho phép nhiều NULL trong unique
+        // constraint (organization_id, student_id) nhưng chuỗi rỗng "" thì bị coi là trùng.
+        // Nhờ đó STAFF/USER không điền MSSV sẽ không đụng uk_organization_members_student_id.
+        String normalizedStudentId = StringUtils.hasText(studentId) ? studentId.trim() : null;
         String facultyJson = JsonUtils.toJson(faculty);
         String startedYearJson = JsonUtils.toJson(startedYear);
         String graduatedYearJson = JsonUtils.toJson(graduatedYear);
@@ -233,7 +237,7 @@ public class AdminUserService {
                     ? adminUserRepository.updateOrganizationMemberByUserId(
                         organizationId,
                         actualUserId,
-                        studentId,
+                        normalizedStudentId,
                         facultyJson,
                         startedYearJson,
                         graduatedYearJson,
@@ -247,7 +251,7 @@ public class AdminUserService {
                     : adminUserRepository.createOrganizationMember(
                         organizationId,
                         actualUserId,
-                        studentId,
+                        normalizedStudentId,
                         facultyJson,
                         startedYearJson,
                         graduatedYearJson,
@@ -264,6 +268,12 @@ public class AdminUserService {
                         : Mono.empty())
                 .doOnSuccess(success -> logger.info("createOrganizationMember: userId={}, organizationId={}, success={}", actualUserId, organizationId, success))
                 .doOnError(error -> logger.error("Error adding user {} to organization {}: {}", actualUserId, organizationId, error.getMessage()))
+                .onErrorMap(org.springframework.dao.DuplicateKeyException.class, e -> {
+                    if (e.getMessage() != null && e.getMessage().contains("uk_organization_members_student_id")) {
+                        return new ApplicationException(ErrorCode.STUDENT_ID_ALREADY_EXISTS, "Mã số sinh viên này đã được sử dụng trong tổ chức");
+                    }
+                    return new ApplicationException(ErrorCode.RESOURCES_DUPLICATE, "Dữ liệu bị trùng lặp");
+                })
             );
         });
     }
@@ -359,7 +369,7 @@ public class AdminUserService {
         return adminUserRepository.findById(userId)
                 .map(this::mapToUserResponse)
                 .flatMap(this::enrichOne)
-                .doOnSuccess(user -> logger.info("getUserById result: {}", JsonUtils.toJson(user)))
+                .doOnSuccess(user -> logger.debug("getUserById result: {}", JsonUtils.toJson(user)))
                 .doOnError(error -> logger.error("Error fetching user: {}", error.getMessage()));
     }
 
@@ -374,7 +384,7 @@ public class AdminUserService {
         if (isStatusOnlyPatch(request)) {
             return adminUserRepository.updateUserStatusById(userId, request.getStatus().getValue())
                     .flatMap(count -> count > 0 ? getUserById(userId) : Mono.empty())
-                    .doOnSuccess(u -> logger.info("updateUser status-only result: {}", JsonUtils.toJson(u)))
+                    .doOnSuccess(u -> logger.debug("updateUser status-only result: {}", JsonUtils.toJson(u)))
                     .doOnError(e -> logger.error("Error updating user status {}", e.getMessage()));
         }
 
@@ -431,7 +441,7 @@ public class AdminUserService {
                         });
                 })
                 .flatMap(saved -> applyProfileAndOrg(userId, request).then(getUserById(userId)))
-                .doOnSuccess(u -> logger.info("updateUser result: {}", JsonUtils.toJson(u)))
+                .doOnSuccess(u -> logger.debug("updateUser result: {}", JsonUtils.toJson(u)))
                 .doOnError(e -> logger.error("Error updating user {}", e.getMessage()));
     }
 
@@ -631,7 +641,7 @@ public class AdminUserService {
                 page,
                 size
         )
-         .doOnSuccess(r -> logger.info("getVerificationRequests: org={}, pendingOnly={}, requestType={}, result={}", organizationId, pendingOnly, type, JsonUtils.toJson(r)))
+         .doOnSuccess(r -> logger.debug("getVerificationRequests: org={}, pendingOnly={}, requestType={}, result={}", organizationId, pendingOnly, type, JsonUtils.toJson(r)))
          .doOnError(e -> logger.error("Error fetching verification requests: {}", e.getMessage()));
     }
 
@@ -748,7 +758,7 @@ public class AdminUserService {
                         .verificationRequests(tuple.getT2())
                         .adminActions(tuple.getT3())
                         .build())
-                .doOnSuccess(r -> logger.info("getUserActivity result: {}", JsonUtils.toJson(r)));
+                .doOnSuccess(r -> logger.debug("getUserActivity result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<PaginatedResponse<AdminAuditLog>> getAdminActionLogs(
@@ -774,7 +784,7 @@ public class AdminUserService {
                     adminAuditLogRepository.countAdminActionLogsByOrganization(organizationId, adminUserId, targetUserId, action),
                     page,
                     size)
-                    .doOnSuccess(r -> logger.info("getAdminActionLogs (org={}) result: {}", organizationId, JsonUtils.toJson(r)))
+                    .doOnSuccess(r -> logger.debug("getAdminActionLogs (org={}) result: {}", organizationId, JsonUtils.toJson(r)))
                     .doOnError(e -> logger.error("Error fetching admin action logs for org {}", e.getMessage()));
         }
         return PaginationHelper.paginate(
@@ -782,7 +792,7 @@ public class AdminUserService {
                 adminAuditLogRepository.countAdminActionLogs(adminUserId, targetUserId, action),
                 page,
                 size)
-                .doOnSuccess(r -> logger.info("getAdminActionLogs result: {}", JsonUtils.toJson(r)))
+                .doOnSuccess(r -> logger.debug("getAdminActionLogs result: {}", JsonUtils.toJson(r)))
                 .doOnError(e -> logger.error("Error fetching admin action logs: {}", e.getMessage()));
     }
 

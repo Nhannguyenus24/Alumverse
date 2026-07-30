@@ -22,4 +22,5 @@ public class GroupChatListItemResponse {
     private Long memberCount;
     private String lastMessagePreview;
     private LocalDateTime lastMessageAt;
+    private Long unreadCount;
 }

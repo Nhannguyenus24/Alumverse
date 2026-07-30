@@ -153,4 +153,23 @@ public interface MentorshipSessionR2dbcRepository extends R2dbcRepository<Mentor
     @Query("UPDATE mentorship_sessions SET meeting_link_reminded_at = :now WHERE id = :id")
     Mono<Integer> markMeetingLinkReminded(Integer id, java.time.LocalDateTime now);
 
+    @Query("SELECT COUNT(*) FROM mentorship_sessions ms " +
+            "JOIN mentor_availabilities ma ON ms.availability_id = ma.id " +
+            "JOIN organization_members om ON ma.mentor_member_id = om.user_id " +
+            "WHERE om.organization_id = :organizationId")
+    Mono<Long> countAllByOrganizationId(Integer organizationId);
+
+    @Query("SELECT ms.id, mu.full_name AS mentor_name, u.full_name AS mentee_name, " +
+            "ma.start_time AS session_time, ms.status " +
+            "FROM mentorship_sessions ms " +
+            "JOIN mentor_availabilities ma ON ms.availability_id = ma.id " +
+            "JOIN organization_members menter ON ma.mentor_member_id = menter.user_id " +
+            "JOIN users mu ON mu.id = menter.user_id " +
+            "LEFT JOIN users u ON u.id = ms.mentee_member_id " +
+            "WHERE ms.status = 'CONFIRMED' AND ma.start_time > :now " +
+            "AND menter.organization_id = :organizationId " +
+            "ORDER BY ma.start_time LIMIT :limit")
+    Flux<UpcomingSessionProjection> findUpcomingSessions(
+            java.time.LocalDateTime now, Integer organizationId, int limit);
+
 }

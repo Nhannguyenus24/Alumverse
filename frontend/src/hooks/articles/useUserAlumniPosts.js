@@ -6,7 +6,6 @@ const getUserAlumniPosts = async (userId, organizationId, page = 0, limit = 10) 
   const res = await apiClient.get(`/articles/alumni-posts/user/${userId}`, {
     params: { page, limit, organizationId }
   });
-  console.log('getUserAlumniPosts result:', res?.data?.data);
   return res?.data?.data ?? null;
 };
 

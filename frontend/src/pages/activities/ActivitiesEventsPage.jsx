@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useParams } from 'react-router';
 import { Box, Button, Pagination, Typography } from '@mui/material';
 import { useSnackbar } from 'notistack';
 
@@ -7,11 +8,13 @@ import { useTranslation } from 'react-i18next';
 
 import ArticleEventCard from '../../components/articles/ArticleEventCard';
 import FeaturedArticleEventCard from '../../components/articles/FeaturedArticleEventCard';
+import AppPagination from '../../components/AppPagination';
 import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
 import AlumniContentLayout from '../../layouts/AlumniContentLayout';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { usePublishedEvents } from '../../hooks/articles/usePublishedEvents';
 import { toEventCardShape } from '../../hooks/articles/toEventCardShape';
+import { useOrganization } from '../../hooks/useOrganization';
 import { useAuth } from '../../hooks/useAuth';
 import { useCanContribute } from '../../hooks/useCanContribute';
 import { eventApi } from '../../utils/api';
@@ -22,21 +25,29 @@ import {
   paginateArticles,
 } from '../../utils/articleListFilters';
 import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
+import { getOrganizationHeroBannerUrl } from '../../utils/organizationBrand';
 import {
   ScrollReveal,
   ScrollRevealGroup,
   ScrollRevealItem,
 } from '../../components/animations/ScrollReveal';
 
+const EVENT_SECTION_PAGE_SIZE = 6;
+
 const ActivitiesPage = () => {
   const { t } = useTranslation(['nav', 'event']);
+  const { slug } = useParams();
   const navigate = useOrgNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const queryClient = useQueryClient();
+  const { organization } = useOrganization();
+  const cardFallbackImage = useMemo(() => getOrganizationHeroBannerUrl(organization), [organization]);
 
   const [upcomingPage, setUpcomingPage] = useState(0);
+  const [ongoingPage, setOngoingPage] = useState(0);
   const [pastPage, setPastPage] = useState(0);
   const { events: upcomingEvents } = usePublishedEvents('upcoming', 0, ARTICLE_FETCH_LIMIT);
+  const { events: ongoingEvents } = usePublishedEvents('ongoing', 0, ARTICLE_FETCH_LIMIT);
   const { events: pastEvents } = usePublishedEvents('past', 0, ARTICLE_FETCH_LIMIT);
 
   const [filters, setFilters] = useState({ all: true });
@@ -48,23 +59,32 @@ const ActivitiesPage = () => {
     () => applyArticleFilters(upcomingEvents, filters),
     [upcomingEvents, filters],
   );
+  const filteredOngoingEvents = useMemo(
+    () => applyArticleFilters(ongoingEvents, filters),
+    [ongoingEvents, filters],
+  );
   const filteredPastEvents = useMemo(
     () => applyArticleFilters(pastEvents, filters),
     [pastEvents, filters],
   );
+  const [featured, ...upcomingRest] = filteredUpcomingEvents;
   const { items: pagedUpcomingEvents, pageInfo: upcomingPageInfo } = useMemo(
-    () => paginateArticles(filteredUpcomingEvents, upcomingPage, 7),
-    [filteredUpcomingEvents, upcomingPage],
+    () => paginateArticles(upcomingRest, upcomingPage, EVENT_SECTION_PAGE_SIZE),
+    [upcomingRest, upcomingPage],
+  );
+  const { items: pagedOngoingEvents, pageInfo: ongoingPageInfo } = useMemo(
+    () => paginateArticles(filteredOngoingEvents, ongoingPage, EVENT_SECTION_PAGE_SIZE),
+    [filteredOngoingEvents, ongoingPage],
   );
   const { items: pagedPastEvents, pageInfo: pastPageInfo } = useMemo(
-    () => paginateArticles(filteredPastEvents, pastPage, 6),
+    () => paginateArticles(filteredPastEvents, pastPage, EVENT_SECTION_PAGE_SIZE),
     [filteredPastEvents, pastPage],
   );
 
-  const [featured, ...upcomingRest] = pagedUpcomingEvents;
-  const featuredCard = featured ? toEventCardShape(featured) : null;
-  const upcomingCards = upcomingRest.slice(0, 6).map(toEventCardShape);
-  const pastCards = pagedPastEvents.slice(0, 6).map(toEventCardShape);
+  const featuredCard = featured ? toEventCardShape(featured, cardFallbackImage) : null;
+  const upcomingCards = pagedUpcomingEvents.map((event) => toEventCardShape(event, cardFallbackImage));
+  const ongoingCards = pagedOngoingEvents.map((event) => toEventCardShape(event, cardFallbackImage));
+  const pastCards = pagedPastEvents.map((event) => toEventCardShape(event, cardFallbackImage));
 
   const openArticle = (article) => {
     if (!article?.id) return;
@@ -74,6 +94,7 @@ const ActivitiesPage = () => {
   const { isAuthenticated } = useAuth();
   const { isOrgManager } = useCanContribute();
   const isAdmin = isAuthenticated && isOrgManager;
+  const adminBase = slug ? `/${slug}/admin` : '/admin';
 
   const handleEdit = (event) => {
     navigate(`/post/event/${event.id}`);
@@ -110,7 +131,7 @@ const ActivitiesPage = () => {
           variant="outlined"
           color="primary"
           startIcon={<EventNoteOutlinedIcon />}
-          onClick={() => navigate('/admin/events')}
+          onClick={() => navigate(`${adminBase}/events`)}
         >
           {t('event:manage_events')}
         </Button>
@@ -121,6 +142,7 @@ const ActivitiesPage = () => {
         onChange: (next) => {
           setFilters(next);
           setUpcomingPage(0);
+          setOngoingPage(0);
           setPastPage(0);
         },
       }}
@@ -129,6 +151,7 @@ const ActivitiesPage = () => {
         onChange: (val) => {
           setFilters((prev) => ({ ...prev, search: val }));
           setUpcomingPage(0);
+          setOngoingPage(0);
           setPastPage(0);
         },
       }}
@@ -167,26 +190,61 @@ const ActivitiesPage = () => {
                     }}
                   >
                     {upcomingCards.map((card, i) => (
-                      <ScrollRevealItem key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(upcomingRest[i])}>
+                      <ScrollRevealItem key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(pagedUpcomingEvents[i])}>
                         <ArticleEventCard
                           article={card}
                           isAdmin={isAdmin}
-                          onEdit={() => handleEdit(upcomingRest[i])}
-                          onDelete={() => handleDelete(upcomingRest[i])}
+                          onEdit={() => handleEdit(pagedUpcomingEvents[i])}
+                          onDelete={() => handleDelete(pagedUpcomingEvents[i])}
                         />
                       </ScrollRevealItem>
                     ))}
                   </ScrollRevealGroup>
-                  {(upcomingPageInfo?.totalPage ?? 0) > 1 && (
-                    <ScrollRevealItem sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-                      <Pagination
-                        color="primary"
-                        count={upcomingPageInfo.totalPage}
-                        page={upcomingPage + 1}
-                        onChange={(_, value) => setUpcomingPage(value - 1)}
-                      />
-                    </ScrollRevealItem>
-                  )}
+                  <AppPagination
+                    count={upcomingPageInfo?.totalPage ?? 1}
+                    page={upcomingPage + 1}
+                    onChange={(_, value) => setUpcomingPage(value - 1)}
+                  />
+                </ScrollRevealGroup>
+              )}
+
+              {/* ONGOING */}
+              {ongoingCards.length > 0 && (
+                <ScrollRevealGroup stagger={0.08}>
+                  <ScrollRevealItem>
+                    <Typography variant="h4" fontWeight={700} mb={3}>
+                      {t('event:ongoing')}
+                    </Typography>
+                  </ScrollRevealItem>
+
+                  <ScrollRevealGroup
+                    stagger={0.08}
+                    sx={{
+                      display: 'grid',
+                      gridTemplateColumns: {
+                        xs: '1fr',
+                        sm: '1fr 1fr',
+                        md: '1fr 1fr 1fr',
+                      },
+                      gap: 4,
+                    }}
+                  >
+                    {ongoingCards.map((card, i) => (
+                      <ScrollRevealItem key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(pagedOngoingEvents[i])}>
+                        <ArticleEventCard
+                          article={card}
+                          isAdmin={isAdmin}
+                          onEdit={() => handleEdit(pagedOngoingEvents[i])}
+                          onDelete={() => handleDelete(pagedOngoingEvents[i])}
+                        />
+                      </ScrollRevealItem>
+                    ))}
+                  </ScrollRevealGroup>
+                  <AppPagination
+                    count={ongoingPageInfo?.totalPage ?? 1}
+                    page={ongoingPage + 1}
+                    onChange={(_, value) => setOngoingPage(value - 1)}
+                  />
                 </ScrollRevealGroup>
               )}
 
@@ -222,16 +280,11 @@ const ActivitiesPage = () => {
                       </ScrollRevealItem>
                     ))}
                   </ScrollRevealGroup>
-                  {(pastPageInfo?.totalPage ?? 0) > 1 && (
-                    <ScrollRevealItem sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-                      <Pagination
-                        color="primary"
-                        count={pastPageInfo.totalPage}
-                        page={pastPage + 1}
-                        onChange={(_, value) => setPastPage(value - 1)}
-                      />
-                    </ScrollRevealItem>
-                  )}
+                  <AppPagination
+                    count={pastPageInfo?.totalPage ?? 1}
+                    page={pastPage + 1}
+                    onChange={(_, value) => setPastPage(value - 1)}
+                  />
                 </ScrollRevealGroup>
               )}
 

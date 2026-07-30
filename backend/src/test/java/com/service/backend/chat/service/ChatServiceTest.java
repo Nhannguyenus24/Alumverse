@@ -36,6 +36,7 @@ class ChatServiceTest {
     @Mock private ChatGroupMemberRepository chatGroupMemberRepository;
     @Mock private ChatMessageRepository chatMessageRepository;
     @Mock private UserBlockService userBlockService;
+    @Mock private com.service.backend.shared.service.SseService sseService;
 
     @InjectMocks
     private ChatService chatService;

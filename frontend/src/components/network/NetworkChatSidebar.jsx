@@ -3,7 +3,6 @@ import {
   Box,
   CircularProgress,
   IconButton,
-  Pagination,
   Stack,
   Tooltip,
   Typography,
@@ -24,9 +23,6 @@ const NetworkChatSidebar = ({
   searchValue = '',
   onSearchChange,
   onSearchSubmit,
-  page = 1,
-  totalPage = 0,
-  onPageChange,
   isPending = false,
   isFetching = false,
 }) => {
@@ -143,11 +139,18 @@ const NetworkChatSidebar = ({
         ) : (
           chats.map((chat) => {
             const active = chat.id === activeChatId;
+            const unreadCount = active ? 0 : chat.unreadCount ?? 0;
+            const hasUnread = unreadCount > 0;
             return (
               <Box
                 key={chat.id}
                 role="button"
                 tabIndex={0}
+                aria-label={
+                  hasUnread
+                    ? t('chat_unread_conversation', { name: chat.name, count: unreadCount })
+                    : chat.name
+                }
                 onClick={() => onSelectChat(chat.id)}
                 onKeyDown={(event) => {
                   if (event.key === 'Enter' || event.key === ' ') {
@@ -172,46 +175,51 @@ const NetworkChatSidebar = ({
                   size={42}
                   variant={chat.type === 'GROUP' ? 'group' : 'user'}
                 />
-                <Box sx={{ minWidth: 0 }}>
-                  <Typography variant="subtitle2" fontWeight={600} noWrap>
+                <Box sx={{ minWidth: 0, flex: 1 }}>
+                  <Typography
+                    variant="subtitle2"
+                    fontWeight={hasUnread ? 800 : 600}
+                    color={hasUnread ? 'text.primary' : undefined}
+                    noWrap
+                  >
                     {chat.name}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary" noWrap>
+                  <Typography
+                    variant="body2"
+                    color={hasUnread ? 'text.primary' : 'text.secondary'}
+                    fontWeight={hasUnread ? 600 : 400}
+                    noWrap
+                  >
                     {chat.preview}
                   </Typography>
                 </Box>
+                {hasUnread ? (
+                  <Box
+                    sx={{
+                      flexShrink: 0,
+                      minWidth: 20,
+                      height: 20,
+                      px: 0.75,
+                      borderRadius: 999,
+                      bgcolor: 'primary.main',
+                      color: 'primary.contrastText',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '0.7rem',
+                      fontWeight: 700,
+                      lineHeight: 1,
+                    }}
+                  >
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </Box>
+                ) : null}
               </Box>
             );
           })
         )}
       </Scrollbar>
 
-      {totalPage > 1 ? (
-        <Box
-          sx={{
-            borderTop: 1,
-            borderColor: 'divider',
-            py: 1,
-            display: 'flex',
-            justifyContent: 'center',
-          }}
-        >
-          <Pagination
-            count={totalPage}
-            page={page}
-            onChange={onPageChange}
-            color="primary"
-            shape="rounded"
-            size="small"
-            disabled={isFetching}
-            sx={{
-              '& .MuiPaginationItem-root': {
-                fontWeight: 700,
-              },
-            }}
-          />
-        </Box>
-      ) : null}
     </ScrollReveal>
   );
 };

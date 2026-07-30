@@ -23,6 +23,7 @@ import Chart from '../../components/Chart';
 import { useAdminSystemContext, useAdminUsersContext, useAdminForumContext } from '../../stores/AdminStore';
 import useAdminDashboardAggregates from '../../hooks/admin/useAdminDashboardAggregates';
 import useAdminDashboardData from '../../hooks/admin/useAdminDashboardData';
+import { getUsers, getAllPosts } from '../../utils/api';
 import { useAuth } from '../../hooks/useAuth';
 import { useMyProfile } from '../../hooks/profile/useMyProfile';
 
@@ -34,9 +35,36 @@ const AdminDashboardPage = () => {
   const isAdmin = user?.role === 'ADMIN';
   const { loading: systemLoading, organizations } = useAdminSystemContext();
   const { loading: dashboardLoading, metrics, timeline, reload } = useAdminDashboardData();
-  const loading = systemLoading || dashboardLoading;
-  const { allUsers } = useAdminUsersContext();
-  const { allPosts, statistics } = useAdminForumContext();
+  const { allUsers: paginatedUsers } = useAdminUsersContext();
+  const { allPosts: paginatedPosts, statistics } = useAdminForumContext();
+  
+  const [allUsers, setAllUsers] = useState([]);
+  const [allPosts, setAllPosts] = useState([]);
+  const [fetchingAll, setFetchingAll] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    setFetchingAll(true);
+    Promise.all([
+      getUsers(0, 10000, '', 'ALL', 'ALL', null).catch(() => ({ data: { data: [] } })),
+      getAllPosts('', 0, 10000, null).catch(() => ({ data: { data: [] } }))
+    ]).then(([usersRes, postsRes]) => {
+      if (!mounted) return;
+      
+      const usersData = usersRes?.data?.data ?? usersRes?.data ?? usersRes ?? [];
+      const postsData = postsRes?.data?.data ?? postsRes?.data ?? postsRes ?? [];
+      
+      const parsedUsers = Array.isArray(usersData) ? usersData : (usersData?.items || usersData?.content || []);
+      const parsedPosts = Array.isArray(postsData) ? postsData : (postsData?.items || postsData?.content || []);
+
+      setAllUsers(parsedUsers);
+      setAllPosts(parsedPosts);
+      setFetchingAll(false);
+    });
+    return () => { mounted = false; };
+  }, []);
+
+  const loading = systemLoading || dashboardLoading || fetchingAll;
   const aggregates = useAdminDashboardAggregates(allUsers, allPosts, organizations);
   const { setBreadcrumbs, adminBase } = useOutletContext();
   const displayName =
@@ -76,6 +104,24 @@ const AdminDashboardPage = () => {
     setSectionRefreshKey((k) => k + 1);
     setLastRefreshed(new Date());
     setRefreshing(true);
+    
+    // Also re-fetch all users and posts when refresh is clicked
+    setFetchingAll(true);
+    Promise.all([
+      getUsers(0, 10000, '', 'ALL', 'ALL', null).catch(() => ({ data: { data: [] } })),
+      getAllPosts('', 0, 10000, null).catch(() => ({ data: { data: [] } }))
+    ]).then(([usersRes, postsRes]) => {
+      const usersData = usersRes?.data?.data ?? usersRes?.data ?? usersRes ?? [];
+      const postsData = postsRes?.data?.data ?? postsRes?.data ?? postsRes ?? [];
+      
+      const parsedUsers = Array.isArray(usersData) ? usersData : (usersData?.items || usersData?.content || []);
+      const parsedPosts = Array.isArray(postsData) ? postsData : (postsData?.items || postsData?.content || []);
+
+      setAllUsers(parsedUsers);
+      setAllPosts(parsedPosts);
+      setFetchingAll(false);
+    });
+
     setTimeout(() => setRefreshing(false), 800);
   }, [reload]);
 
@@ -87,12 +133,21 @@ const AdminDashboardPage = () => {
     return () => clearInterval(intervalRef.current);
   }, [refreshInterval, handleRefresh]);
 
-  const { chartData, totalUsers, pendingPosts, totalOrgs } = useMemo(() => ({
-    chartData: Array.isArray(timeline) ? timeline : [],
-    totalUsers: metrics?.totalUsers ?? aggregates.user.totalUsers,
-    pendingPosts: metrics?.pendingPosts ?? metrics?.postsAwaitingModerationCount ?? aggregates.forum.pending,
-    totalOrgs: organizations?.length ?? 0,
-  }), [timeline, metrics, aggregates, organizations]);
+  const { chartData, totalUsers, pendingPosts, totalOrgs, memberTrend } = useMemo(() => {
+    const total = metrics?.totalUsers ?? aggregates.user.totalUsers;
+    const newUsers30 = Number(metrics?.newUsers?.['30d'] ?? 0);
+    // Real 30-day growth: new members over the prior member base. null hides the chip
+    // when there is no history to compare against (avoids showing a fabricated number).
+    const priorBase = Number(total) - newUsers30;
+    const trend = priorBase > 0 ? Math.round((newUsers30 / priorBase) * 100) : null;
+    return {
+      chartData: Array.isArray(timeline) ? timeline : [],
+      totalUsers: total,
+      pendingPosts: metrics?.pendingPosts ?? metrics?.postsAwaitingModerationCount ?? aggregates.forum.pending,
+      totalOrgs: organizations?.length ?? 0,
+      memberTrend: trend,
+    };
+  }, [timeline, metrics, aggregates, organizations]);
 
   const donationsFormatted = useMemo(() => {
     const val = metrics?.donationsLast30Days ?? 0;
@@ -197,7 +252,7 @@ const AdminDashboardPage = () => {
             label={t('admin:total_members')}
             value={totalUsers.toLocaleString()}
             icon={<PeopleAltOutlinedIcon />}
-            trend={12}
+            trend={memberTrend}
           />
           <AdminDashboardMetricTile
             label={t('admin:posts_pending_moderation')}
@@ -209,7 +264,6 @@ const AdminDashboardPage = () => {
             label={t('admin:organizations_units')}
             value={totalOrgs}
             icon={<BusinessCenterOutlinedIcon />}
-            trend={2}
           />
         </Stack>
         <Stack

@@ -69,16 +69,6 @@ public class MentorService {
         return userProfileRepository.updateUserWorkInfo(memberId, title, company);
     }
 
-    private Mono<MentorshipSessionResponse> enrich(MentorshipSession session) {
-        return enrichAll(List.of(session)).map(list -> list.get(0));
-    }
-
-    /**
-     * Enrich a single session when its availability is already loaded — skips the redundant
-     * availability re-fetch that {@link #enrich(MentorshipSession)} would perform. The response
-     * only reads mentorMemberId/startTime/endTime from availability, none of which change during
-     * the session mutations that use this.
-     */
     private Mono<MentorshipSessionResponse> enrich(MentorshipSession session, MentorAvailability availability) {
         List<MentorshipSessionResponse> list = new ArrayList<>(1);
         list.add(availability != null

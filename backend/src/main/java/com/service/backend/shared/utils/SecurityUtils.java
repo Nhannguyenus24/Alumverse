@@ -157,6 +157,68 @@ public final class SecurityUtils {
     }
 
     /**
+     * Whether the current user may administer the given organization.
+     * ADMIN: any organization. STAFF: only their own organization (from the JWT).
+     */
+    public static Mono<Boolean> canAdministerOrganization(Integer organizationId) {
+        if (organizationId == null) {
+            return Mono.just(false);
+        }
+        return Mono.zip(
+                        getCurrentUserRole(),
+                        getCurrentVerificationLevel().defaultIfEmpty(0),
+                        getCurrentOrganizationId().defaultIfEmpty(-1)
+                )
+                .map(ctx -> {
+                    String role = ctx.getT1();
+                    Integer level = ctx.getT2();
+                    Integer currentOrgId = ctx.getT3();
+                    if ("ADMIN".equalsIgnoreCase(role)) {
+                        return true;
+                    }
+                    // STAFF may only administer their OWN org, and must be at ADMIN verification
+                    // level (4) — mirrors canManageContentOrganization so a low-level STAFF cannot
+                    // reach organization-admin operations.
+                    return "STAFF".equalsIgnoreCase(role)
+                            && level >= 4
+                            && organizationId.equals(currentOrgId);
+                })
+                .defaultIfEmpty(false)
+                .onErrorReturn(false);
+    }
+
+    /**
+     * Ensures the current user may administer the given organization, otherwise FORBIDDEN.
+     * ADMIN: any organization. STAFF: only their own organization.
+     */
+    public static Mono<Void> assertCanAdministerOrganization(Integer organizationId) {
+        return canAdministerOrganization(organizationId)
+                .flatMap(allowed -> allowed
+                        ? Mono.<Void>empty()
+                        : Mono.<Void>error(new ApplicationException(
+                                ErrorCode.FORBIDDEN,
+                                "You can only manage your own organization")));
+    }
+
+    /**
+     * Tenant-isolation guard for admin/moderation actions on org-scoped targets: ADMIN may act on
+     * any organization; every other role may act ONLY on the organization carried by their token.
+     * Stops cross-tenant manipulation (e.g. a STAFF/MODERATOR of org A moderating org B's data).
+     * Fail-closed: an unauthenticated/roleless caller is rejected.
+     */
+    public static Mono<Void> assertSameOrganizationOrAdmin(Integer organizationId) {
+        return Mono.zip(getCurrentUserRole(), getCurrentOrganizationId().defaultIfEmpty(-1))
+                .flatMap(t -> {
+                    boolean ok = "ADMIN".equalsIgnoreCase(t.getT1())
+                            || (organizationId != null && organizationId.equals(t.getT2()));
+                    return ok
+                            ? Mono.<Void>empty()
+                            : Mono.<Void>error(new ApplicationException(ErrorCode.FORBIDDEN, "You can only manage data in your own organization"));
+                })
+                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.FORBIDDEN, "You can only manage data in your own organization")));
+    }
+
+    /**
      * Resolves the effective organizationId for the current user.
      * STAFF: always returns their own organizationId from the JWT (ignores requestedOrgId).
      * ADMIN: returns Mono.just(requestedOrgId) if non-null, else Mono.empty() (meaning "all orgs").

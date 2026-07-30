@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
+import { useParams } from 'react-router';
 import { Box, Button, CircularProgress, ListItemIcon, ListItemText, Menu, MenuItem, Paper, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { useSnackbar } from 'notistack';
@@ -9,6 +10,7 @@ import MenuBookIcon from '@mui/icons-material/MenuBook';
 import WorkIcon from '@mui/icons-material/Work';
 
 import ArticleCard from '../../components/articles/ArticleCard';
+import FeaturedArticleCard from '../../components/articles/FeaturedArticleCard';
 import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
 import AlumniContentLayout from '../../layouts/AlumniContentLayout';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
@@ -18,6 +20,7 @@ import { ContributeGuardTooltip } from '../../components/ContributeGuard';
 import { usePublishedJobs } from '../../hooks/articles/usePublishedJobs';
 import { usePublishedLearning } from '../../hooks/articles/usePublishedLearning';
 import { toCardShape } from '../../hooks/articles/toCardShape';
+import { useOrganization } from '../../hooks/useOrganization';
 import apiClient from '../../utils/axios';
 import { deleteArticleByChannel, getArticleAdminEditPath } from '../../utils/articleAdminActions';
 import {
@@ -26,7 +29,9 @@ import {
   getArticleFilterConfig,
 } from '../../utils/articleListFilters';
 import { getDevelopmentSidebarItems } from '../../constants/developmentNav';
+import { getOrganizationHeroBannerUrl } from '../../utils/organizationBrand';
 import {
+  ScrollReveal,
   ScrollRevealGroup,
   ScrollRevealItem,
 } from '../../components/animations/ScrollReveal';
@@ -44,6 +49,7 @@ const PreviewSection = ({
   isAdmin = false,
   onEdit,
   onDelete,
+  fallbackImage = null,
 }) => (
   <ScrollRevealGroup stagger={0.08}>
     <ScrollRevealItem sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
@@ -86,7 +92,7 @@ const PreviewSection = ({
         }}
       >
         {articles.map((article, i) => {
-          const card = toCardShape(article);
+          const card = toCardShape(article, fallbackImage);
           return (
             <ScrollRevealItem
               key={article.id ?? i}
@@ -109,12 +115,16 @@ const PreviewSection = ({
 
 const DevelopmentPage = () => {
   const { t } = useTranslation(['dev', 'mentorship', 'common']);
+  const { slug } = useParams();
   const navigate = useOrgNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const queryClient = useQueryClient();
+  const { organization } = useOrganization();
+  const cardFallbackImage = useMemo(() => getOrganizationHeroBannerUrl(organization), [organization]);
   const { isAuthenticated } = useAuth();
   const { canContribute, isOrgManager } = useCanContribute();
   const isAdmin = isAuthenticated && isOrgManager;
+  const adminBase = slug ? `/${slug}/admin` : '/admin';
   const sidebar = getDevelopmentSidebarItems(t);
   const filters = useMemo(() => getArticleFilterConfig(t, ['learning', 'job']), [t]);
 
@@ -139,12 +149,14 @@ const DevelopmentPage = () => {
     () => applyArticleFilters([...academics, ...jobs], filterValues),
     [academics, jobs, filterValues],
   );
-  const visibleAcademics = filteredDevelopmentArticles
+  const [featured, ...rest] = filteredDevelopmentArticles;
+  const featuredCard = featured ? toCardShape(featured, cardFallbackImage) : null;
+  const visibleAcademics = rest
     .filter((article) => article.channel === 'learning')
-    .slice(0, 3);
-  const visibleJobs = filteredDevelopmentArticles
+    .slice(0, 6);
+  const visibleJobs = rest
     .filter((article) => article.channel === 'job')
-    .slice(0, 3);
+    .slice(0, 6);
 
   const openArticle = (article) => {
     if (!article?.id) return;
@@ -152,7 +164,7 @@ const DevelopmentPage = () => {
   };
 
   const handleEdit = (article) => {
-    const editPath = getArticleAdminEditPath(article);
+    const editPath = getArticleAdminEditPath(article, adminBase);
     if (editPath) navigate(editPath);
   };
 
@@ -187,7 +199,7 @@ const DevelopmentPage = () => {
           variant="outlined"
           color="primary"
           startIcon={<WorkIcon />}
-          onClick={() => navigate('/admin/article')}
+          onClick={() => navigate(`${adminBase}/article`)}
         >
           {t('dev:manage_opportunities')}
         </Button>
@@ -205,6 +217,14 @@ const DevelopmentPage = () => {
             anchorEl={submitAnchorEl}
             open={Boolean(submitAnchorEl)}
             onClose={() => setSubmitAnchorEl(null)}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+            PaperProps={{
+              sx: {
+                mt: 1,
+                minWidth: submitAnchorEl?.offsetWidth || 240,
+              },
+            }}
           >
             <MenuItem onClick={() => { setSubmitAnchorEl(null); navigate('/post/learning'); }}>
               <ListItemIcon><MenuBookIcon fontSize="small" /></ListItemIcon>
@@ -280,6 +300,18 @@ const DevelopmentPage = () => {
                 </ScrollRevealItem>
               </ScrollRevealGroup>
 
+              {/* FEATURED ARTICLE */}
+              {featuredCard && (
+                <ScrollReveal sx={{ cursor: 'pointer' }} onClick={() => openArticle(featured)}>
+                  <FeaturedArticleCard
+                    article={featuredCard}
+                    isAdmin={isAdmin}
+                    onEdit={() => handleEdit(featured)}
+                    onDelete={() => handleDelete(featured)}
+                  />
+                </ScrollReveal>
+              )}
+
               {/* ACADEMICS SECTION */}
               <PreviewSection
                 title={t('dev:academics')}
@@ -294,6 +326,7 @@ const DevelopmentPage = () => {
                 isAdmin={isAdmin}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
+                fallbackImage={cardFallbackImage}
               />
 
               {/* JOBS SECTION */}
@@ -310,6 +343,7 @@ const DevelopmentPage = () => {
                 isAdmin={isAdmin}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
+                fallbackImage={cardFallbackImage}
               />
 
       <AdminConfirmDeleteDialog

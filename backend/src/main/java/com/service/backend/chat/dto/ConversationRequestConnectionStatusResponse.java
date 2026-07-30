@@ -15,13 +15,11 @@ public class ConversationRequestConnectionStatusResponse {
     private ConversationRequestStatus status;
     private LocalDateTime cooldownUntil;
     private ConversationRequestLatestMessageResponse latestMessage;
-
+    private String requestDirection;
     /**
-     * Whether the target member is verified (verification_level &gt;= 2) in the requester's
-     * current organization. False means a new/resent request would be rejected by the backend
-     * gate in {@code ChatConversationRequestService.createConversationRequest} — the frontend
-     * uses this to block composing and warn the user as soon as the drawer opens, instead of
-     * waiting for the send to fail.
+     * True when there is a PENDING request that the OTHER member sent TO the current user
+     * (i.e. the current user is the target). The UI uses this to let the current user send
+     * back, which auto-accepts and connects the pair instead of stacking a second request.
      */
-    private boolean targetVerified;
+    private boolean incoming;
 }

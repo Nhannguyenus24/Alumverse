@@ -22,7 +22,13 @@ public interface ChatMessageRepository extends R2dbcRepository<ChatMessage, Long
                    cm.edited_at,
                    cm.deleted_at,
                    u.full_name    AS sender_full_name,
-                   u.avatar_url   AS sender_avatar_url
+                   u.avatar_url   AS sender_avatar_url,
+                   NOT EXISTS (
+                       SELECT 1 FROM chat_group_members cgm
+                       WHERE cgm.group_id = cm.group_id
+                         AND cgm.member_id <> cm.sender_member_id
+                         AND (cgm.last_read_at IS NULL OR cgm.last_read_at < cm.created_at)
+                   ) AS seen_by_peer
             FROM chat_messages cm
             LEFT JOIN users u ON u.id = cm.sender_member_id
             WHERE cm.group_id = :groupId
@@ -59,5 +65,23 @@ public interface ChatMessageRepository extends R2dbcRepository<ChatMessage, Long
     @Modifying
     @Query("DELETE FROM chat_messages WHERE group_id = :groupId")
     Mono<Void> deleteByGroupId(Long groupId);
+
+    /**
+     * Total unread messages for a member across every chat they belong to (private + group):
+     * messages from someone else, not deleted, newer than the member's last_read_at for that
+     * group (or all of them when they have never read it). Mirrors the per-chat unread_count
+     * in {@code ChatGroupRepository} so the global badge and the list stay consistent.
+     */
+    @Query("""
+            SELECT COUNT(*)
+            FROM chat_messages cm
+            JOIN chat_group_members cgm
+              ON cgm.group_id = cm.group_id
+             AND cgm.member_id = :memberId
+            WHERE cm.sender_member_id <> :memberId
+              AND cm.deleted_at IS NULL
+              AND (cgm.last_read_at IS NULL OR cm.created_at > cgm.last_read_at)
+            """)
+    Mono<Long> countUnreadForMember(Long memberId);
 }
 

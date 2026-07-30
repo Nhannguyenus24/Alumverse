@@ -11,16 +11,11 @@ const RequireSlugRoute = ({ children }) => {
 
   const isBlockedErrorPath = isBlockedOrgFetchPath(pathname);
 
-  const { organization, loading, isOrganizationNotFound, isServerError, error } = useOrganization({ enabled: !isBlockedErrorPath });
+  const { organization, loading, isOrganizationNotFound, error } = useOrganization({ enabled: !isBlockedErrorPath });
 
   // If slug is missing in URL, it's not a valid organization-prefixed route
   if (!slug) {
     return <Navigate to="/404" replace state={{ from: pathname }} />;
-  }
-
-  // Handle server errors (500+)
-  if (isServerError) {
-    return <Navigate to="/500" replace state={{ from: pathname }} />;
   }
 
   /**

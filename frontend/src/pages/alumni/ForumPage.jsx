@@ -1,5 +1,6 @@
 import { Box, Button, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
+import { useParams } from "react-router";
 import { useOrganization } from "../../hooks/useOrganization";
 import { useNotification } from "../../hooks/useNotification";
 import { useCanContribute } from "../../hooks/useCanContribute";
@@ -17,7 +18,9 @@ import { ScrollReveal } from "../../components/animations/ScrollReveal";
 
 const ForumPage = () => {
   const { t } = useTranslation(["forum", "common"]);
+  const { slug } = useParams();
   const navigate = useOrgNavigate();
+  const adminBase = slug ? `/${slug}/admin` : "/admin";
   const { organization } = useOrganization();
   const notification = useNotification();
   const { isOrgManager } = useCanContribute();
@@ -135,7 +138,7 @@ const ForumPage = () => {
                 variant="outlined"
                 color="primary"
                 startIcon={<AdminPanelSettingsOutlinedIcon />}
-                onClick={() => navigate("/admin/forum/categories")}
+                onClick={() => navigate(`${adminBase}/forum/categories`)}
               >
                 {t("forum:manage_forum", { defaultValue: "Quản lý diễn đàn" })}
               </Button>

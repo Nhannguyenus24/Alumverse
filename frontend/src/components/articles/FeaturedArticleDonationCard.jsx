@@ -12,11 +12,12 @@ import { useTranslation } from "react-i18next";
 import { normalizePreviewText, truncateText, getFeaturedTitleFontSize } from "../../utils/text";
 import { formatCurrency } from "../../utils/numberFormatter";
 import { formatDate } from "../../utils/dateFormatter";
+import { toPlainText } from "../../utils/stringUtils";
 
 const LOGO_FALLBACK_URL = "https://placehold.co/1200x700/eef3ff/0f3a7a?text=Fund";
 const CAMPAIGN_DESCRIPTION_MAX_CHARS = 220;
 
-const FeaturedArticleDonationCard = ({ campaign, article, onNavigate, onEdit, onClose, isAdmin }) => {
+const FeaturedArticleDonationCard = ({ campaign, article, onNavigate, onEdit, onClose, isAdmin, fallbackImage = null }) => {
   const { t } = useTranslation(['common', 'donation']);
   const data = campaign || article;
 
@@ -32,6 +33,7 @@ const FeaturedArticleDonationCard = ({ campaign, article, onNavigate, onEdit, on
   const progressValue = Math.min(100, Math.round(((data?.currentAmount ?? 0) / Math.max(data?.targetAmount ?? 1, 1)) * 100));
   const startedAt = formatDate(data?.timeStarted);
   const endedAt = formatDate(data?.timeEnded);
+  const description = toPlainText(data?.descriptionShort || data?.description || "");
 
   const [hovered, setHovered] = useState(false);
 
@@ -94,7 +96,7 @@ const FeaturedArticleDonationCard = ({ campaign, article, onNavigate, onEdit, on
       >
         <Box
           component="img"
-          src={data?.logoUrl || data?.image || LOGO_FALLBACK_URL}
+          src={data?.logoUrl || data?.image || fallbackImage || LOGO_FALLBACK_URL}
           alt={data?.name || data?.title}
           sx={{
             width: "100%",
@@ -199,9 +201,7 @@ const FeaturedArticleDonationCard = ({ campaign, article, onNavigate, onEdit, on
           }}
         >
           {truncateText(
-            data?.descriptionShort ||
-            data?.description ||
-            "",
+            description,
             CAMPAIGN_DESCRIPTION_MAX_CHARS
           )}
         </Typography>

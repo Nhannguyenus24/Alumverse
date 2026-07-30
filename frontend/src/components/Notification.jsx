@@ -14,6 +14,7 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import { formatTimeAgoVi } from "../utils/dateFormatter";
 import { notificationApi } from "../utils/api";
 import { useOrgNavigate } from "../hooks/useOrgNavigate";
+import { NOTIFICATIONS_UPDATED_EVENT } from "../hooks/useServerSentEvents";
 import useAuthStore from "../stores/authStore";
 import useNotificationUnreadStore from "../stores/notificationUnreadStore";
 
@@ -25,6 +26,23 @@ const isPeerVerificationNotification = (notification) => {
   );
 };
 
+const getSeenStorageKey = (user) => {
+  const userKey = user?.id ?? user?.email ?? user?.username ?? "anonymous";
+  return `alumverse:notifications:lastSeenAt:${userKey}`;
+};
+
+const readLastSeenAt = (user) => {
+  if (typeof window === "undefined") return 0;
+  const value = window.localStorage.getItem(getSeenStorageKey(user));
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const getNotificationTimestamp = (notification) => {
+  const value = Date.parse(notification?.createdAt);
+  return Number.isFinite(value) ? value : 0;
+};
+
 const Notification = ({ headerTextColor = "text.primary" }) => {
   const { t } = useTranslation(['notification', 'common']);
   const navigate = useOrgNavigate();
@@ -33,6 +51,8 @@ const Notification = ({ headerTextColor = "text.primary" }) => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
   const token = useAuthStore((state) => state.token);
+  const user = useAuthStore((state) => state.user);
+  const [lastSeenAt, setLastSeenAt] = useState(() => readLastSeenAt(useAuthStore.getState().user));
 
   const open = Boolean(anchorEl);
 
@@ -61,14 +81,32 @@ const Notification = ({ headerTextColor = "text.primary" }) => {
     // Set up polling every 2 minutes. Local dev often points to the shared
     // production API, so keeping this modest helps avoid rate-limit noise.
     const interval = setInterval(fetchNotifications, 120000);
-    return () => clearInterval(interval);
+
+    // Realtime SSE notifications (vd: lời mời kết nối) phát sự kiện này để chuông
+    // refetch ngay, không phải chờ vòng poll kế tiếp.
+    const handleRealtimeUpdate = () => fetchNotifications();
+    window.addEventListener(NOTIFICATIONS_UPDATED_EVENT, handleRealtimeUpdate);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener(NOTIFICATIONS_UPDATED_EVENT, handleRealtimeUpdate);
+    };
   }, [fetchNotifications, token]);
+
+  useEffect(() => {
+    setLastSeenAt(readLastSeenAt(user));
+  }, [user]);
 
   const handleOpen = useCallback((event) => {
     setAnchorEl(event.currentTarget);
+    const seenAt = Date.now();
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(getSeenStorageKey(user), String(seenAt));
+    }
+    setLastSeenAt(seenAt);
     // Refresh notifications when opening
     if (token) fetchNotifications();
-  }, [fetchNotifications, token]);
+  }, [fetchNotifications, token, user]);
 
   const handleClose = useCallback(() => {
     setAnchorEl(null);
@@ -117,11 +155,16 @@ const Notification = ({ headerTextColor = "text.primary" }) => {
     [notifications]
   );
 
-  // Mirror the count into the global store so the favicon red-dot can react.
+  const hasNewSinceLastSeen = useMemo(
+    () => notifications.some((notif) => getNotificationTimestamp(notif) > lastSeenAt),
+    [lastSeenAt, notifications]
+  );
+
+  // Mirror the bell dot state into the global store so the favicon can react.
   const setUnreadStoreCount = useNotificationUnreadStore((s) => s.setCount);
   useEffect(() => {
-    setUnreadStoreCount(unreadCount);
-  }, [unreadCount, setUnreadStoreCount]);
+    setUnreadStoreCount(hasNewSinceLastSeen ? 1 : 0);
+  }, [hasNewSinceLastSeen, setUnreadStoreCount]);
 
   return (
     <>
@@ -146,7 +189,7 @@ const Notification = ({ headerTextColor = "text.primary" }) => {
           >
             <NotificationsOutlinedIcon />
           </IconButton>
-          {unreadCount > 0 && (
+          {hasNewSinceLastSeen && (
             <Box
               sx={{
                 position: "absolute",

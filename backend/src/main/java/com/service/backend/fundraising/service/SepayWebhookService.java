@@ -72,7 +72,11 @@ public class SepayWebhookService {
             throw new ApplicationException(ErrorCode.FORBIDDEN, "Invalid Authorization header format");
         }
         String incomingApiKey = authorizationHeader.substring(AUTH_PREFIX.length()).trim();
-        if (!sepayApiKey.equals(incomingApiKey)) {
+        // Constant-time comparison to avoid leaking the key length/prefix via timing side-channels.
+        boolean matches = java.security.MessageDigest.isEqual(
+                sepayApiKey.getBytes(java.nio.charset.StandardCharsets.UTF_8),
+                incomingApiKey.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        if (!matches) {
             log.warn("SePay webhook api key mismatch");
             throw new ApplicationException(ErrorCode.FORBIDDEN, "Invalid SePay api key");
         }

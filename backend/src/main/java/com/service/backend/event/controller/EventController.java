@@ -101,6 +101,18 @@ public class EventController {
     }
 
     @PublicEndpoint
+    @GetMapping("/ongoing")
+    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<Event>>>> getOngoingEvents(
+            @RequestParam(required = false) Long organizationId,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "10") @Min(1) int limit) {
+        Mono<PaginatedResponse<Event>> result = organizationId != null
+                ? eventService.getOngoingEvents(organizationId, page, limit)
+                : Mono.just(PaginatedResponse.of(java.util.List.of(), 0, page, limit));
+        return result.map(e -> ResponseEntity.ok(new ApiResponse<>("Ongoing events retrieved successfully", e)));
+    }
+
+    @PublicEndpoint
     @GetMapping("/past")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<Event>>>> getPastEvents(
             @RequestParam Long organizationId,
@@ -194,6 +206,7 @@ public class EventController {
 
     // ─── Step 2.1: Confirm invitation ─────────────────────────────────────────
 
+    @PublicEndpoint
     @PostMapping("/invitations/confirm")
     public Mono<ResponseEntity<ApiResponse<EventTicket>>> confirmInvitation(
             @RequestParam @NotBlank String token) {

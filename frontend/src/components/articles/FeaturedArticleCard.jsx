@@ -6,6 +6,7 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import LinkIcon from '@mui/icons-material/Link';
 import { getFeaturedTitleFontSize } from '../../utils/text';
+import { toPlainText } from '../../utils/stringUtils';
 
 const FeaturedArticleCard = ({
   article,
@@ -14,6 +15,7 @@ const FeaturedArticleCard = ({
 }) => {
   const { t } = useTranslation(['common']);
   const [hovered, setHovered] = useState(false);
+  const description = toPlainText(article.description);
 
   return (
     <Box
@@ -34,8 +36,8 @@ const FeaturedArticleCard = ({
         sx={{
           position: 'relative',
           width: { xs: '100%', md: '45%' },
-          height: { xs: 180, sm: 220, md: 'auto' },
-          minHeight: { xs: 180, sm: 220, md: 250 },
+          height: { xs: 180, sm: 220, md: isAdmin ? 300 : 252 },
+          aspectRatio: { md: '16 / 10' },
           alignSelf: { md: 'stretch' },
           borderRadius: 2,
           overflow: 'hidden',
@@ -86,7 +88,7 @@ const FeaturedArticleCard = ({
           display: 'flex',
           flexDirection: 'column',
           minWidth: 0,
-          minHeight: { md: 250 },
+          minHeight: { md: isAdmin ? 300 : 252 },
         }}
       >
         {/* TITLE + ARROW */}
@@ -105,7 +107,9 @@ const FeaturedArticleCard = ({
               fontSize: getFeaturedTitleFontSize(article.title),
               color: hovered ? 'primary.main' : 'text.primary',
               transition: 'color 0.2s ease',
-              wordBreak: 'break-word',
+              lineHeight: { xs: 1.22, md: 1.18 },
+              overflowWrap: 'break-word',
+              wordBreak: 'normal',
             }}
           >
             {article.title}
@@ -128,26 +132,32 @@ const FeaturedArticleCard = ({
 
         {/* DESCRIPTION */}
         <Typography
+          variant="body1"
           sx={{
             mt: { xs: 0.75, md: 2 },
             display: '-webkit-box',
-            WebkitLineClamp: (article.title || '').length > 75 ? 2 : 3,
+            WebkitLineClamp: 3,
             WebkitBoxOrient: 'vertical',
             overflow: 'hidden',
-            lineHeight: { xs: 1.4, md: 1.6 },
+            color: 'text.secondary',
+            lineHeight: { xs: 1.45, md: 1.55 },
+            minHeight: { xs: '4.35em', md: '4.65em' },
+            textAlign: 'left',
+            overflowWrap: 'break-word',
+            wordBreak: 'break-word',
           }}
         >
-          {article.description}
+          {description}
         </Typography>
 
         {/* BOTTOM SECTION */}
         <Box
           sx={{
             mt: 'auto',
-            pt: { xs: 1.25, md: 2.5 },
+            pt: { xs: 1.25, md: isAdmin ? 2 : 1.5 },
             display: 'flex',
             flexDirection: 'column',
-            gap: { xs: 1.25, md: 2 },
+            gap: { xs: 1.25, md: isAdmin ? 1.5 : 1 },
           }}
         >
           <Box

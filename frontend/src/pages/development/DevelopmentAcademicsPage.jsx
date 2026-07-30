@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
+import { useParams } from 'react-router';
 import { Box, Button, Pagination, Typography } from '@mui/material';
 import { useSnackbar } from 'notistack';
 
@@ -9,6 +10,7 @@ import WorkIcon from '@mui/icons-material/Work';
 
 import FeaturedArticleCard from '../../components/articles/FeaturedArticleCard';
 import ArticleCard from '../../components/articles/ArticleCard';
+import AppPagination from '../../components/AppPagination';
 import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
 import AlumniContentLayout from '../../layouts/AlumniContentLayout';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
@@ -17,30 +19,37 @@ import { useCanContribute } from '../../hooks/useCanContribute';
 import { ContributeGuardTooltip } from '../../components/ContributeGuard';
 import { usePublishedLearning } from '../../hooks/articles/usePublishedLearning';
 import { toCardShape } from '../../hooks/articles/toCardShape';
+import { useOrganization } from '../../hooks/useOrganization';
 import apiClient from '../../utils/axios';
 import { deleteArticleByChannel, getArticleAdminEditPath } from '../../utils/articleAdminActions';
 import {
   ARTICLE_FETCH_LIMIT,
-  ARTICLE_PAGE_SIZE,
   applyArticleFilters,
   getArticleFilterConfig,
   paginateArticles,
 } from '../../utils/articleListFilters';
 import { getDevelopmentSidebarItems } from '../../constants/developmentNav';
+import { getOrganizationHeroBannerUrl } from '../../utils/organizationBrand';
 import {
   ScrollReveal,
   ScrollRevealGroup,
   ScrollRevealItem,
 } from '../../components/animations/ScrollReveal';
 
+const DEVELOPMENT_LIST_PAGE_SIZE = 12;
+
 const DevelopmentAcademicsPage = () => {
   const { t } = useTranslation(['dev', 'mentorship', 'common']);
+  const { slug } = useParams();
   const navigate = useOrgNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const queryClient = useQueryClient();
+  const { organization } = useOrganization();
+  const cardFallbackImage = useMemo(() => getOrganizationHeroBannerUrl(organization), [organization]);
   const { isAuthenticated } = useAuth();
   const { canContribute, isOrgManager } = useCanContribute();
   const isAdmin = isAuthenticated && isOrgManager;
+  const adminBase = slug ? `/${slug}/admin` : '/admin';
   const sidebar = getDevelopmentSidebarItems(t);
   const filters = useMemo(() => getArticleFilterConfig(t, ['learning']), [t]);
 
@@ -55,14 +64,14 @@ const DevelopmentAcademicsPage = () => {
     () => applyArticleFilters(resources, filterValues),
     [resources, filterValues],
   );
+  const [featured, ...rest] = filteredResources;
   const { items: pagedResources, pageInfo } = useMemo(
-    () => paginateArticles(filteredResources, page, ARTICLE_PAGE_SIZE),
-    [filteredResources, page],
+    () => paginateArticles(rest, page, DEVELOPMENT_LIST_PAGE_SIZE),
+    [rest, page],
   );
 
-  const [featured, ...rest] = pagedResources;
-  const featuredCard = featured ? toCardShape(featured) : null;
-  const cards = rest.slice(0, 9).map(toCardShape);
+  const featuredCard = featured ? toCardShape(featured, cardFallbackImage) : null;
+  const cards = pagedResources.map((article) => toCardShape(article, cardFallbackImage));
 
   const openArticle = (article) => {
     if (!article?.id) return;
@@ -70,7 +79,7 @@ const DevelopmentAcademicsPage = () => {
   };
 
   const handleEdit = (article) => {
-    const editPath = getArticleAdminEditPath(article);
+    const editPath = getArticleAdminEditPath(article, adminBase);
     if (editPath) navigate(editPath);
   };
 
@@ -100,7 +109,7 @@ const DevelopmentAcademicsPage = () => {
       description={t('dev:academics_desc')}
       uppercaseTitle
       actions={isAdmin ? (
-        <Button variant="outlined" color="primary" startIcon={<WorkIcon />} onClick={() => navigate('/admin/article')}>
+        <Button variant="outlined" color="primary" startIcon={<WorkIcon />} onClick={() => navigate(`${adminBase}/article`)}>
           {t('dev:manage_opportunities')}
         </Button>
       ) : (
@@ -162,12 +171,12 @@ const DevelopmentAcademicsPage = () => {
                     }}
                   >
                     {cards.map((card, i) => (
-                      <ScrollRevealItem key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(rest[i])}>
+                      <ScrollRevealItem key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(pagedResources[i])}>
                         <ArticleCard
                           article={card}
                           isAdmin={isAdmin}
-                          onEdit={() => handleEdit(rest[i])}
-                          onDelete={() => handleDelete(rest[i])}
+                          onEdit={() => handleEdit(pagedResources[i])}
+                          onDelete={() => handleDelete(pagedResources[i])}
                         />
                       </ScrollRevealItem>
                     ))}
@@ -175,16 +184,11 @@ const DevelopmentAcademicsPage = () => {
                 </ScrollRevealGroup>
               )}
 
-              {(pageInfo?.totalPage ?? 0) > 1 && (
-                <ScrollReveal sx={{ display: 'flex', justifyContent: 'center' }}>
-                  <Pagination
-                    color="primary"
-                    count={pageInfo.totalPage}
-                    page={page + 1}
-                    onChange={(_, value) => setPage(value - 1)}
-                  />
-                </ScrollReveal>
-              )}
+              <AppPagination
+                count={pageInfo?.totalPage ?? 1}
+                page={page + 1}
+                onChange={(_, value) => setPage(value - 1)}
+              />
 
       <AdminConfirmDeleteDialog
         open={!!deleteTarget}

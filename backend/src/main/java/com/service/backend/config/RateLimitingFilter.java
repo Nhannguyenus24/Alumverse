@@ -10,6 +10,7 @@ import lombok.Getter;
 import org.jspecify.annotations.NonNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpMethod;
+import org.springframework.core.Ordered;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
@@ -26,8 +27,8 @@ import com.service.backend.shared.exception.ApplicationException;
 import java.time.Duration;
 
 @Component
-public class RateLimitingFilter implements WebFilter {
-    
+public class RateLimitingFilter implements WebFilter, Ordered {
+
     private final ObjectMapper objectMapper;
     private final MeterRegistry meterRegistry;
 
@@ -36,10 +37,21 @@ public class RateLimitingFilter implements WebFilter {
         this.meterRegistry = meterRegistry;
     }
 
+    /**
+     * Run before Spring Security's WebFilterChainProxy (order -100) so a flood is throttled at the
+     * very edge, before it can drive authentication/authorization work. Unordered WebFilters
+     * otherwise default to LOWEST_PRECEDENCE (after security), which defeats the purpose.
+     */
+    @Override
+    public int getOrder() {
+        return Ordered.HIGHEST_PRECEDENCE;
+    }
+
     @Getter
     private enum RateLimitPlan {
         AUTH(5, Duration.ofMinutes(1)),      // Các API nhạy cảm: 5 requests / phút
         UPLOAD(5, Duration.ofMinutes(1)),   // Các API upload file: 5 requests / phút
+        FEEDBACK(3, Duration.ofMinutes(1)),  // Feedback công khai (khách vãng lai): 3 requests / phút chống spam
         DEFAULT(100, Duration.ofMinutes(1)); // API thông thường: 100 requests / phút
 
         private final Bandwidth limit;
@@ -99,6 +111,11 @@ public class RateLimitingFilter implements WebFilter {
     private RateLimitPlan determinePlan(String path) {
         if (path.startsWith("/api/auth/") || path.startsWith("/api/v1/auth/")) {
             return RateLimitPlan.AUTH;
+        }
+        // Public guest feedback form (POST /api/organizations/{id}/feedbacks) — throttle hard per IP
+        // to curb anonymous spam. Excludes admin listing endpoints under /admin/.
+        if (path.endsWith("/feedbacks") && !path.contains("/admin/")) {
+            return RateLimitPlan.FEEDBACK;
         }
         if (path.contains("/upload") || path.contains("/images")) {
             return RateLimitPlan.UPLOAD;

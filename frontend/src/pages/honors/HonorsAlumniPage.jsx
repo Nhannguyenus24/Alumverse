@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
+import { useParams } from 'react-router';
 import { Box, Button, Pagination, Typography } from '@mui/material';
 import { useSnackbar } from 'notistack';
 
@@ -10,6 +11,7 @@ import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 
 import FeaturedArticleCard from '../../components/articles/FeaturedArticleCard';
 import ArticleCard from '../../components/articles/ArticleCard';
+import AppPagination from '../../components/AppPagination';
 import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
 import AlumniContentLayout from '../../layouts/AlumniContentLayout';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
@@ -18,30 +20,37 @@ import { useCanContribute } from '../../hooks/useCanContribute';
 import { ContributeGuardTooltip } from '../../components/ContributeGuard';
 import { usePublishedAlumniPosts } from '../../hooks/articles/usePublishedAlumniPosts';
 import { toCardShape } from '../../hooks/articles/toCardShape';
+import { useOrganization } from '../../hooks/useOrganization';
 import apiClient from '../../utils/axios';
 import { deleteArticleByChannel, getArticleAdminEditPath } from '../../utils/articleAdminActions';
 import {
   ARTICLE_FETCH_LIMIT,
-  ARTICLE_PAGE_SIZE,
   applyArticleFilters,
   getArticleFilterConfig,
   paginateArticles,
 } from '../../utils/articleListFilters';
 import { getHonorsSidebarItems } from '../../constants/honorsNav';
+import { getOrganizationHeroBannerUrl } from '../../utils/organizationBrand';
 import {
   ScrollReveal,
   ScrollRevealGroup,
   ScrollRevealItem,
 } from '../../components/animations/ScrollReveal';
 
+const HONORS_LIST_PAGE_SIZE = 12;
+
 const HonorsAlumniPage = () => {
   const { t } = useTranslation(['honors', 'common']);
+  const { slug } = useParams();
   const navigate = useOrgNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const queryClient = useQueryClient();
+  const { organization } = useOrganization();
+  const cardFallbackImage = useMemo(() => getOrganizationHeroBannerUrl(organization), [organization]);
   const { isAuthenticated } = useAuth();
   const { canContribute, isOrgManager } = useCanContribute();
   const isAdmin = isAuthenticated && isOrgManager;
+  const adminBase = slug ? `/${slug}/admin` : '/admin';
   const sidebar = getHonorsSidebarItems(t);
   const filters = useMemo(() => getArticleFilterConfig(t, ['alumni']), [t]);
 
@@ -53,14 +62,13 @@ const HonorsAlumniPage = () => {
   const [deleting, setDeleting] = useState(false);
 
   const filteredArticles = useMemo(() => applyArticleFilters(articles, filterValues), [articles, filterValues]);
+  const [featured, ...rest] = filteredArticles;
   const { items: pagedArticles, pageInfo } = useMemo(
-    () => paginateArticles(filteredArticles, page, ARTICLE_PAGE_SIZE),
-    [filteredArticles, page],
+    () => paginateArticles(rest, page, HONORS_LIST_PAGE_SIZE),
+    [rest, page],
   );
-
-  const [featured, ...rest] = pagedArticles;
-  const featuredCard = featured ? toCardShape(featured) : null;
-  const cards = rest.slice(0, 9).map(toCardShape);
+  const featuredCard = featured ? toCardShape(featured, cardFallbackImage) : null;
+  const cards = pagedArticles.map((article) => toCardShape(article, cardFallbackImage));
 
   const openArticle = (article) => {
     if (!article?.id) return;
@@ -68,7 +76,7 @@ const HonorsAlumniPage = () => {
   };
 
   const handleEdit = (article) => {
-    const editPath = getArticleAdminEditPath(article);
+    const editPath = getArticleAdminEditPath(article, adminBase);
     if (editPath) navigate(editPath);
   };
 
@@ -108,7 +116,7 @@ const HonorsAlumniPage = () => {
           </Button>
         </ContributeGuardTooltip>
       ) : isAdmin ? (
-        <Button variant="outlined" color="primary" startIcon={<EmojiEventsIcon />} onClick={() => navigate('/admin/article')}>
+        <Button variant="outlined" color="primary" startIcon={<EmojiEventsIcon />} onClick={() => navigate(`${adminBase}/article`)}>
           {t('honors:manage_honors')}
         </Button>
       ) : null}
@@ -154,12 +162,12 @@ const HonorsAlumniPage = () => {
                     }}
                   >
                     {cards.map((card, i) => (
-                      <ScrollRevealItem key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(rest[i])}>
+                      <ScrollRevealItem key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(pagedArticles[i])}>
                         <ArticleCard
                           article={card}
                           isAdmin={isAdmin}
-                          onEdit={() => handleEdit(rest[i])}
-                          onDelete={() => handleDelete(rest[i])}
+                          onEdit={() => handleEdit(pagedArticles[i])}
+                          onDelete={() => handleDelete(pagedArticles[i])}
                         />
                       </ScrollRevealItem>
                     ))}
@@ -167,16 +175,11 @@ const HonorsAlumniPage = () => {
                 </ScrollRevealGroup>
               )}
 
-              {(pageInfo?.totalPage ?? 0) > 1 && (
-                <ScrollReveal sx={{ display: 'flex', justifyContent: 'center' }}>
-                  <Pagination
-                    color="primary"
-                    count={pageInfo.totalPage}
-                    page={page + 1}
-                    onChange={(_, value) => setPage(value - 1)}
-                  />
-                </ScrollReveal>
-              )}
+              <AppPagination
+                count={pageInfo?.totalPage ?? 1}
+                page={page + 1}
+                onChange={(_, value) => setPage(value - 1)}
+              />
 
       <AdminConfirmDeleteDialog
         open={!!deleteTarget}

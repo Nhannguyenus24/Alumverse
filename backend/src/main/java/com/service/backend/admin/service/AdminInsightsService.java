@@ -63,6 +63,27 @@ public class AdminInsightsService {
         return total;
     }
 
+    /**
+     * Sum counts for every numeric verification-level key {@code >= minLevel}. The
+     * distribution keys are the raw {@code verification_level} values cast to text
+     * ("0".."4"); membership is verified at level {@code >= 2} across the codebase, and
+     * levels can exceed 2, so exact-key matching would silently drop higher levels.
+     */
+    private static long atLeastLevel(Map<String, Long> map, int minLevel) {
+        long total = 0;
+        for (Map.Entry<String, Long> e : map.entrySet()) {
+            if (e.getKey() == null || e.getValue() == null) continue;
+            try {
+                if (Integer.parseInt(e.getKey().trim()) >= minLevel) {
+                    total += e.getValue();
+                }
+            } catch (NumberFormatException ignored) {
+                // non-numeric key (e.g. "unknown") is not a verification level
+            }
+        }
+        return total;
+    }
+
     // ----------------------------- funnels -----------------------------
 
     public Mono<FunnelStatsDTO> getFunnels() {
@@ -98,10 +119,10 @@ public class AdminInsightsService {
                     Map<String, Long> mentorMap = t.getT7();
                     Map<String, Long> sessMap = t.getT8();
 
-                    // Verification: total active members -> requested (level >= 1) -> accepted (level 2)
+                    // Verification: total active members -> requested (level >= 1) -> accepted (level >= 2)
                     long members = sum(verifMap);
-                    long requested = get(verifMap, "1", "2");
-                    long accepted = get(verifMap, "2");
+                    long requested = atLeastLevel(verifMap, 1);
+                    long accepted = atLeastLevel(verifMap, 2);
 
                     // Donation: total -> success (failed/pending shown as separate stages)
                     long donTotal = sum(donMap);
@@ -182,7 +203,7 @@ public class AdminInsightsService {
         Mono<List<StatPoint>> dailyLogins = auditRepository.getDailyLoginStats()
                 .map(p -> sp(p.getDate() == null ? "" : p.getDate().toString(), p.getCount() == null ? 0L : p.getCount()))
                 .collectList();
-        Mono<List<StatPoint>> loginsByMethod = auditRepository.getLoginMethodStats()
+        Mono<List<StatPoint>> loginsByMethod = auditRepository.getLoginMethodStatsLast30Days()
                 .map(p -> sp(p.getMethod() == null ? "unknown" : p.getMethod(), p.getCount() == null ? 0L : p.getCount()))
                 .collectList();
 

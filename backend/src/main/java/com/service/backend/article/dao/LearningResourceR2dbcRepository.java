@@ -1,7 +1,6 @@
 package com.service.backend.article.dao;
 
 import com.service.backend.shared.entity.LearningResource;
-import com.service.backend.shared.enums.LearningResourceType;
 import com.service.backend.shared.enums.Status;
 import org.springframework.data.r2dbc.repository.Modifying;
 import org.springframework.data.r2dbc.repository.Query;
@@ -29,10 +28,10 @@ public interface LearningResourceR2dbcRepository extends R2dbcRepository<Learnin
     Mono<Long> countAllSearchByTitle(String keyword);
 
     @Query("SELECT * FROM learning_resources WHERE organization_id = :organizationId AND type = :type AND status = 'APPROVED' ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
-    Flux<LearningResource> findByType(Integer organizationId, LearningResourceType type, int limit, int offset);
+    Flux<LearningResource> findByType(Integer organizationId, String type, int limit, int offset);
 
     @Query("SELECT COUNT(*) FROM learning_resources WHERE organization_id = :organizationId AND type = :type AND status = 'APPROVED'")
-    Mono<Long> countByType(Integer organizationId, LearningResourceType type);
+    Mono<Long> countByType(Integer organizationId, String type);
 
     @Query("SELECT * FROM learning_resources WHERE organization_id = :organizationId AND status = 'APPROVED' AND (LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(description) LIKE LOWER(CONCAT('%', :keyword, '%'))) ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
     Flux<LearningResource> searchResources(Integer organizationId, String keyword, int limit, int offset);
@@ -48,6 +47,12 @@ public interface LearningResourceR2dbcRepository extends R2dbcRepository<Learnin
 
     @Query("SELECT COUNT(*) FROM learning_resources WHERE status = 'APPROVED'")
     Mono<Long> countAllApproved();
+
+    @Query("SELECT COUNT(*) FROM learning_resources WHERE type = :type AND status = 'APPROVED'")
+    Mono<Long> countAllApprovedByType(String type);
+
+    @Query("SELECT * FROM learning_resources WHERE type = :type AND status = 'APPROVED' ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
+    Flux<LearningResource> findAllApprovedByType(String type, int limit, int offset);
 
     @Modifying
     @Query("UPDATE learning_resources SET status = :status, updated_at = CURRENT_TIMESTAMP WHERE id = :id")

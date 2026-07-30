@@ -2,7 +2,7 @@ import { useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import useNotificationUnreadStore from '../stores/notificationUnreadStore';
 
-const SOUND_SRC = '/sounds/notification.wav';
+const SOUND_SRC = '/sounds/message-noti.mp3';
 const FAVICON_SRC = '/alumverse_logo/Logo_Main.png';
 const FLASH_INTERVAL_MS = 1000;
 

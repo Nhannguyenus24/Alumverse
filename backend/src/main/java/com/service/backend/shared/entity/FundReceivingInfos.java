@@ -28,4 +28,10 @@ public class FundReceivingInfos {
 
     @Column("is_active")
     private boolean isActive;
+
+    @Column("organization_id")
+    private Integer organizationId;
+
+    @Column("description")
+    private String description;
 }

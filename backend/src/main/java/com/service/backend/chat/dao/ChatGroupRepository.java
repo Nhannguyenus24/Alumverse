@@ -41,6 +41,13 @@ public interface ChatGroupRepository extends R2dbcRepository<ChatGroup, Long> {
                 u.avatar_url AS peer_avatar_url,
                 lm.content AS last_message_preview,
                 lm.created_at AS last_message_at,
+                (
+                    SELECT COUNT(1) FROM chat_messages cm
+                    WHERE cm.group_id = cg.id
+                      AND cm.deleted_at IS NULL
+                      AND cm.sender_member_id <> :memberId
+                      AND (my_cgm.last_read_at IS NULL OR cm.created_at > my_cgm.last_read_at)
+                ) AS unread_count,
                 EXISTS (
                     SELECT 1 FROM user_blocks ub
                     WHERE ub.blocker_member_id = :memberId AND ub.blocked_member_id = peer_cgm.member_id
@@ -93,7 +100,14 @@ public interface ChatGroupRepository extends R2dbcRepository<ChatGroup, Long> {
                 cg.updated_at AS updated_at,
                 (SELECT COUNT(1) FROM chat_group_members WHERE group_id = cg.id) AS member_count,
                 lm.content AS last_message_preview,
-                lm.created_at AS last_message_at
+                lm.created_at AS last_message_at,
+                (
+                    SELECT COUNT(1) FROM chat_messages cm
+                    WHERE cm.group_id = cg.id
+                      AND cm.deleted_at IS NULL
+                      AND cm.sender_member_id <> :memberId
+                      AND (my_cgm.last_read_at IS NULL OR cm.created_at > my_cgm.last_read_at)
+                ) AS unread_count
             FROM chat_group_members my_cgm
             JOIN chat_groups cg ON cg.id = my_cgm.group_id
             LEFT JOIN LATERAL (

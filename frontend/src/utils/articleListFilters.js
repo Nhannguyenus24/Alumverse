@@ -22,15 +22,25 @@ const getArticleTopicCandidates = (article) => {
   const type = normalizeComparable(article?.type);
   const candidates = [directTopic, type].filter(Boolean);
 
+  // Map legacy achievement topics to newly standardized topics
+  if (article?.channel === 'achievement') {
+    if (directTopic === 'award') candidates.push('competition_award', 'international_honor');
+    if (directTopic === 'achievement_scholarship') candidates.push('prestigious_scholarship');
+    if (directTopic === 'career_achievement') candidates.push('career_milestone');
+    if (directTopic === 'science_research') candidates.push('research_publication');
+    if (directTopic === 'international') candidates.push('international_honor');
+  }
+
   if (article?.channel === 'job') {
     if (article?.isReferral || article?.isReferral === true) candidates.push('internal_referral');
     if (type === 'contract') candidates.push('remote');
   }
 
   if (article?.channel === 'learning') {
-    if (type === 'course') candidates.push('online_course', 'certificate');
+    if (directTopic === 'masters' || directTopic === 'doctorate') candidates.push('masters_doctorate');
+    if (type === 'course') candidates.push('online_course', 'certificate', 'special_session');
     if (type === 'other') {
-      candidates.push('study_abroad', 'masters', 'student_exchange', 'research', 'achievement_scholarship');
+      candidates.push('study_abroad', 'bachelor', 'masters_doctorate', 'masters', 'doctorate', 'student_exchange', 'research', 'scholarships', 'special_session');
     }
   }
 
@@ -55,7 +65,7 @@ export const getArticleFilterConfig = (t, channels = []) => [
   {
     type: 'dropdown',
     key: 'topic',
-    label: t('article:topic', { defaultValue: 'Chủ đề' }),
+    label: t('article:topic'),
     multiple: true,
     options: getTopicOptionsForChannels(t, channels),
   },
@@ -63,21 +73,21 @@ export const getArticleFilterConfig = (t, channels = []) => [
     type: 'topics',
     key: 'sort',
     single: true,
-    label: t('article:sort', { defaultValue: 'Sắp xếp' }),
+    label: t('article:sort'),
     options: [
-      { value: 'newest', label: t('article:sort_newest', { defaultValue: 'Mới nhất' }) },
-      { value: 'oldest', label: t('article:sort_oldest', { defaultValue: 'Cũ nhất' }) },
+      { value: 'newest', label: t('article:sort_newest') },
+      { value: 'oldest', label: t('article:sort_oldest') },
     ],
   },
   {
     type: 'date',
     key: 'fromDate',
-    label: t('article:from_date', { defaultValue: 'Từ ngày' }),
+    label: t('article:from_date'),
   },
   {
     type: 'date',
     key: 'toDate',
-    label: t('article:to_date', { defaultValue: 'Đến ngày' }),
+    label: t('article:to_date'),
   },
 ];
 

@@ -24,16 +24,37 @@ public interface ChatConversationRequestRepository extends R2dbcRepository<ChatC
 
     String SEARCH_FROM_JOIN = """
             FROM chat_conversation_requests ccr
-            JOIN users u             ON u.id        = ccr.requester_member_id
-            JOIN chat_messages cm    ON cm.id        = ccr.last_request_message_id
+            JOIN users u ON u.id = CASE
+                WHEN ccr.requester_member_id = :currentUserId THEN ccr.target_member_id
+                ELSE ccr.requester_member_id
+            END
+            JOIN chat_messages cm ON cm.id = ccr.last_request_message_id
             """;
 
     String SEARCH_WHERE = """
-            WHERE ccr.target_member_id = :currentUserId
-              AND ccr.status <> 'ACCEPTED'
+            WHERE (ccr.target_member_id = :currentUserId OR ccr.requester_member_id = :currentUserId)
+              AND (
+                    ccr.status = 'PENDING'
+                    OR (ccr.status = 'REJECTED' AND ccr.target_member_id = :currentUserId)
+                  )
               AND u.status = 'ACTIVE'
               AND (:fullName IS NULL OR LOWER(u.full_name) LIKE LOWER(:fullName))
-              AND (:status IS NULL OR ccr.status = :status)
+              AND (
+                    :status IS NULL
+                    OR (:status = 'PENDING' AND ccr.status = 'PENDING' AND ccr.target_member_id = :currentUserId)
+                    OR (:status = 'SENT' AND ccr.status = 'PENDING' AND ccr.requester_member_id = :currentUserId)
+                    OR (:status = 'REJECTED' AND ccr.status = 'REJECTED' AND ccr.target_member_id = :currentUserId)
+                  )
+            """;
+
+    String SEARCH_ORDER = """
+            ORDER BY CASE
+                WHEN ccr.status = 'PENDING' AND ccr.target_member_id = :currentUserId THEN 0
+                WHEN ccr.status = 'PENDING' AND ccr.requester_member_id = :currentUserId THEN 1
+                WHEN ccr.status = 'REJECTED' THEN 2
+                ELSE 3
+            END,
+            cm.created_at DESC
             """;
 
     @Query("""
@@ -47,13 +68,22 @@ public interface ChatConversationRequestRepository extends R2dbcRepository<ChatC
     @Query("""
             SELECT ccr.id,
                    ccr.requester_member_id,
+                   CASE
+                       WHEN ccr.requester_member_id = :currentUserId THEN ccr.target_member_id
+                       ELSE ccr.requester_member_id
+                   END AS peer_member_id,
                    u.full_name,
                    u.avatar_url,
                    ccr.status,
+                   CASE
+                       WHEN ccr.status = 'PENDING' AND ccr.target_member_id = :currentUserId THEN 'INCOMING'
+                       WHEN ccr.status = 'PENDING' AND ccr.requester_member_id = :currentUserId THEN 'OUTGOING'
+                       WHEN ccr.status = 'REJECTED' AND ccr.target_member_id = :currentUserId THEN 'REJECTED_INCOMING'
+                   END AS request_direction,
                    cm.content       AS message,
                    cm.created_at    AS message_created_at
             """ + SEARCH_FROM_JOIN + SEARCH_WHERE + """
-            ORDER BY cm.created_at DESC
+            """ + SEARCH_ORDER + """
             LIMIT :limit OFFSET :offset
             """)
     Flux<ConversationRequestSearchItemResponse> searchIncomingRequests(

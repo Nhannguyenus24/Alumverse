@@ -47,6 +47,14 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
     Mono<Long> countAllUsers();
 
     /**
+     * Count users created on or after the given instant (for the "new users" metric).
+     * @param since lower bound (inclusive) on users.created_at
+     * @return Mono of matching user count
+     */
+    @Query("SELECT COUNT(*) FROM users WHERE created_at >= :since")
+    Mono<Long> countUsersCreatedSince(@Param("since") LocalDateTime since);
+
+    /**
      * Watch user with peer verifications (get users who verified this user)
      * @param userId The target user ID
      * @return Flux of verifier user data
@@ -555,7 +563,7 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
             SUM(CASE WHEN u."status" = 'DELETED' THEN 1 ELSE 0 END) AS deleted_users
         FROM users u
         WHERE CAST(:organizationId AS INTEGER) IS NULL OR EXISTS (
-            SELECT 1 FROM organization_members om 
+            SELECT 1 FROM organization_members om
             WHERE om.user_id = u.id AND om.organization_id = :organizationId
         )
     """)

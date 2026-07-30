@@ -28,6 +28,10 @@ public interface ChatGroupMemberRepository extends R2dbcRepository<ChatGroupMemb
     Mono<Void> updateRoleToOwnerByGroupIdAndMemberId(Long groupId, Long memberId);
 
     @Modifying
+    @Query("UPDATE chat_group_members SET last_read_at = :readAt WHERE group_id = :groupId AND member_id = :memberId")
+    Mono<Integer> markAsRead(Long groupId, Long memberId, java.time.LocalDateTime readAt);
+
+    @Modifying
     @Query("DELETE FROM chat_group_members WHERE group_id = :groupId")
     Mono<Void> deleteByGroupId(Long groupId);
 
@@ -35,7 +39,7 @@ public interface ChatGroupMemberRepository extends R2dbcRepository<ChatGroupMemb
             SELECT
                 cg.id                                                                   AS id,
                 CASE WHEN cg.type = 'PRIVATE' THEN u.full_name ELSE cg.title END        AS name,
-                CASE WHEN cg.type = 'PRIVATE' THEN u.avatar_url  ELSE NULL END         AS avatar_url,
+                CASE WHEN cg.type = 'PRIVATE' THEN u.avatar_url  ELSE cg.avatar_url END AS avatar_url,
                 lm.content                                                              AS preview,
                 lm.created_at                                                           AS updated_at,
                 cg.type                                                                 AS type

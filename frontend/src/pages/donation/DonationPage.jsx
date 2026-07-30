@@ -11,6 +11,7 @@ import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
 import dayjs from "dayjs";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
+import { useParams } from "react-router";
 import { useAuth } from "../../hooks/useAuth";
 import { useCanContribute } from "../../hooks/useCanContribute";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
@@ -19,10 +20,12 @@ import useOrganizationStore from "../../stores/organizationStore";
 import { fundApi } from "../../utils/api";
 import ArticleDonationCard from "../../components/articles/ArticleDonationCard";
 import FeaturedArticleDonationCard from "../../components/articles/FeaturedArticleDonationCard";
+import AppPagination from "../../components/AppPagination";
 import DonationCloseDialog from "../../components/donation/DonationCloseDialog";
 import StatsBanner from "../../components/StatsBanner";
 import AlumniContentLayout from "../../layouts/AlumniContentLayout";
 import { DEFAULT_DONATION_FILTERS, getDonationFilterConfig } from "../../constants/donationConfig";
+import { getOrganizationHeroBannerUrl } from "../../utils/organizationBrand";
 
 const DEFAULT_ADMIN_STATS = { totalCurrentAmount: 0, totalFunds: 0, totalDonations: 0, totalDonationsAmountThisMonth: 0 };
 
@@ -38,13 +41,26 @@ function toIsoEndOfDay(value) {
   return dayjs(value).endOf("day").format("YYYY-MM-DDTHH:mm:ss");
 }
 
+function isFundClosed(campaign) {
+  if (!campaign) return false;
+  const now = dayjs();
+  const startTime = campaign.timeStarted ? dayjs(campaign.timeStarted) : null;
+  const endTime = campaign.timeEnded ? dayjs(campaign.timeEnded) : null;
+  return Boolean(startTime && endTime && startTime.isValid() && endTime.isValid()) &&
+    startTime.isBefore(endTime) && endTime.isBefore(now);
+}
+
 export default function DonationPage() {
   const { t } = useTranslation(["donation", "common"]);
+  const { slug } = useParams();
   const navigate = useOrgNavigate();
+  const adminBase = slug ? `/${slug}/admin` : "/admin";
   const { enqueueSnackbar } = useSnackbar();
   const { isAuthenticated } = useAuth();
   const { isOrgManager } = useCanContribute();
-  const organizationId = useOrganizationStore((state) => state.organization?.id ?? null);
+  const organization = useOrganizationStore((state) => state.organization);
+  const organizationId = organization?.id ?? null;
+  const cardFallbackImage = useMemo(() => getOrganizationHeroBannerUrl(organization), [organization]);
   const isAdmin = isAuthenticated && isOrgManager;
 
   const [featuredCampaign, setFeaturedCampaign] = useState(null);
@@ -61,7 +77,8 @@ export default function DonationPage() {
   const [adminStats, setAdminStats] = useState(DEFAULT_ADMIN_STATS);
   const warningSetRef = useRef(new Set());
 
-  const gridPageSize = 4;
+  const gridPageSize = 9;
+  const fundFetchLimit = 200;
   const handlePageChange = usePaginationScrollToTop({ currentPage: page, setPage });
 
   const donationFilters = useMemo(() => getDonationFilterConfig(t), [t]);
@@ -94,7 +111,7 @@ export default function DonationPage() {
       setErrorMessage("");
 
       const params = {
-        page: page - 1, limit: gridPageSize,
+        page: 0, limit: fundFetchLimit,
         organizationId: organizationId != null ? String(organizationId) : undefined,
         q: search.trim() || undefined,
         targetAmountMin: filters.amountMin || undefined, targetAmountMax: filters.amountMax || undefined,
@@ -116,19 +133,21 @@ export default function DonationPage() {
           const pagedData = payload?.data;
           const items = pagedData?.items ?? [];
 
-          if (page === 1) {
-            if (items.length > 0) {
-              setFeaturedCampaign(items[0]);
-              setCampaigns(items.slice(1));
-            } else {
-              setFeaturedCampaign(null);
-              setCampaigns([]);
-            }
-          } else {
-            setCampaigns(items);
-          }
+          const sortedItems = [...items].sort((a, b) => {
+            const aClosed = isFundClosed(a);
+            const bClosed = isFundClosed(b);
+            if (aClosed !== bClosed) return aClosed ? 1 : -1;
+            const aTime = dayjs(a.timeStarted || a.createdAt || 0).valueOf();
+            const bTime = dayjs(b.timeStarted || b.createdAt || 0).valueOf();
+            return bTime - aTime;
+          });
 
-          const totalItems = Number(pagedData?.totalItem ?? 0);
+          const [featured, ...rest] = sortedItems;
+          const start = (page - 1) * gridPageSize;
+          setFeaturedCampaign(featured ?? null);
+          setCampaigns(rest.slice(start, start + gridPageSize));
+
+          const totalItems = Number(pagedData?.totalItem ?? items.length);
           const adjustedTotalItems = Math.max(totalItems - 1, 0);
           setPageCount(Math.max(1, Math.ceil(adjustedTotalItems / gridPageSize)));
         })
@@ -143,7 +162,7 @@ export default function DonationPage() {
       return () => { ignore = true; };
     }, 300);
     return () => clearTimeout(debounce);
-  }, [filters, search, enqueueSnackbar, organizationId, page, refreshToken]);
+  }, [filters, search, enqueueSnackbar, organizationId, page, refreshToken, t]);
 
   const adminBannerItems = useMemo(() => [
     { value: `${formatCurrency(adminStats.totalCurrentAmount)} VND`, label: t("donation:stats_total_raised") },
@@ -191,7 +210,7 @@ export default function DonationPage() {
           <Button variant="contained" startIcon={<AddCircleOutlineIcon />} onClick={() => navigate("/post/donation")} sx={{ textTransform: "none", fontWeight: 700 }}>
             {t("donation:create_fund")}
           </Button>
-          <Button variant="outlined" color="primary" startIcon={<FormatListBulletedIcon />} onClick={() => navigate("/admin/donations")} sx={{ textTransform: "none", fontWeight: 700 }}>
+          <Button variant="outlined" color="primary" startIcon={<FormatListBulletedIcon />} onClick={() => navigate(`${adminBase}/donations`)} sx={{ textTransform: "none", fontWeight: 700 }}>
             {t("donation:manage_funds")}
           </Button>
         </Stack>
@@ -242,14 +261,13 @@ export default function DonationPage() {
                   onNavigate={() => navigate(`/donations/${featuredCampaign.id}`)}
                   onEdit={() => navigate(`/donations/${featuredCampaign.id}/edit`)}
                   onClose={() => setCloseDialogCampaign(featuredCampaign)}
+                  fallbackImage={cardFallbackImage}
                 />
               </ScrollReveal>
             )}
 
             {campaigns.length > 0 && (
               <ScrollRevealGroup stagger={0.08}>
-                <ScrollRevealItem><Typography variant="h4" fontWeight={700} mb={3}>{t("donation:open_funds")}</Typography></ScrollRevealItem>
-
                 <ScrollRevealGroup stagger={0.08} sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", md: "1fr 1fr 1fr" }, gap: 4 }}>
                   {campaigns.map((campaign) => (
                     <ScrollRevealItem key={campaign.id} sx={{ cursor: "pointer", display: "flex", minWidth: 0 }}>
@@ -258,6 +276,7 @@ export default function DonationPage() {
                         onNavigate={() => navigate(`/donations/${campaign.id}`)}
                         onEdit={() => navigate(`/donations/${campaign.id}/edit`)}
                         onClose={() => setCloseDialogCampaign(campaign)}
+                        fallbackImage={cardFallbackImage}
                       />
                     </ScrollRevealItem>
                   ))}
@@ -265,11 +284,11 @@ export default function DonationPage() {
               </ScrollRevealGroup>
             )}
 
-            {(featuredCampaign || campaigns.length > 0) && (
-              <ScrollReveal><Stack direction="row" justifyContent="center" alignItems="center" sx={{ mt: 3.5 }}>
-                  <Pagination count={pageCount || 1} page={page} onChange={handlePageChange} color="primary" shape="rounded" size="large" sx={{ "& .MuiPaginationItem-root": { fontWeight: 700, minWidth: 38, height: 38 } }} />
-              </Stack></ScrollReveal>
-            )}
+            <AppPagination
+              count={pageCount || 1}
+              page={page}
+              onChange={handlePageChange}
+            />
     </AlumniContentLayout>
   );
 }

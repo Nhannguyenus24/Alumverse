@@ -130,9 +130,12 @@ const NetworkSearchMemberCard = ({
                 }}
               >
                 <ListItemIcon sx={{ minWidth: 36 }}>
-                  <BlockOutlinedIcon fontSize="small" color="primary" />
+                  <BlockOutlinedIcon fontSize="small" color="error" />
                 </ListItemIcon>
-                <ListItemText primary={t('block_user_menu_label')} primaryTypographyProps={{ variant: 'body2' }} />
+                <ListItemText
+                  primary={t('block_user_menu_label')}
+                  primaryTypographyProps={{ variant: 'body2', sx: { color: 'error.main' } }}
+                />
               </MenuItem>
             )}
           </IconButtonMenu>

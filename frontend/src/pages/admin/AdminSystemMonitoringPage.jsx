@@ -76,6 +76,9 @@ const QUERIES = {
   emailLatency: '(sum(rate(email_send_time_seconds_sum[5m])) / sum(rate(email_send_time_seconds_count[5m]))) * 1000',
   ocrLatency: '(sum(rate(ocr_processing_time_seconds_sum[5m])) / sum(rate(ocr_processing_time_seconds_count[5m]))) * 1000',
   imageLatency: '(sum(rate(image_processing_time_seconds_sum[5m])) / sum(rate(image_processing_time_seconds_count[5m]))) * 1000',
+  imageLatencyP50: 'histogram_quantile(0.50, sum(rate(image_processing_time_seconds_bucket[5m])) by (le)) * 1000',
+  imageLatencyP95: 'histogram_quantile(0.95, sum(rate(image_processing_time_seconds_bucket[5m])) by (le)) * 1000',
+  imageLatencyP99: 'histogram_quantile(0.99, sum(rate(image_processing_time_seconds_bucket[5m])) by (le)) * 1000',
   fileUploadLatency: '(sum(rate(file_upload_processing_time_seconds_sum[5m])) / sum(rate(file_upload_processing_time_seconds_count[5m]))) * 1000',
   storageSize: 'sum(image_storage_size_bytes) / 1024 / 1024',
 
@@ -84,17 +87,11 @@ const QUERIES = {
   heapUtilPct: 'sum(jvm_memory_used_bytes{area="heap"}) / sum(jvm_memory_max_bytes{area="heap"}) * 100',
   systemLoad: 'system_load_average_1m',
   cpuCount: 'system_cpu_count',
-  logErrors: 'sum(increase(logback_events_total{level="error"}[5m]))',
-  logWarns: 'sum(increase(logback_events_total{level="warn"}[5m]))',
   gcCount: 'sum(rate(jvm_gc_pause_seconds_count[5m]))',
   fdUsagePct: 'process_files_open_files / process_max_file_descriptors * 100',
   dbSaturationPct: 'sum(r2dbc_pool_acquired_connections) / sum(r2dbc_pool_max_allocated_connections) * 100',
 
   // --- Tier 3: newly added backend metrics ---
-  authLoginSuccess: 'sum(increase(auth_login_total{result="success"}[5m]))',
-  authLoginFailure: 'sum(increase(auth_login_total{result="failure"}[5m]))',
-  authRefreshSuccess: 'sum(increase(auth_token_refresh_total{result="success"}[5m]))',
-  authRefreshFailure: 'sum(increase(auth_token_refresh_total{result="failure"}[5m]))',
   rateLimitRejected: 'sum(increase(ratelimit_rejected_total[5m]))',
   wsActiveSessions: 'sum(chat_websocket_active_sessions)',
   wsActiveGroups: 'sum(chat_websocket_active_groups)',
@@ -102,7 +99,6 @@ const QUERIES = {
   // --- SSE (real-time push) metrics ---
   sseActiveConnections: 'sum(sse_active_connections)',
   sseActiveUsers: 'sum(sse_active_users)',
-  sseEventsRate: 'sum(increase(sse_events_sent_total[5m]))',
 
   // --- AI (LLM) latency metrics ---
   aiLatencyAvg: '(sum(rate(ai_generate_time_seconds_sum[5m])) / sum(rate(ai_generate_time_seconds_count[5m]))) * 1000',
@@ -200,7 +196,7 @@ const fetchPrometheusRange = async (query, start, end, step) => {
   try {
     const res = await axios.get(PROMETHEUS_URL_RANGE, {
       params: { query, start, end, step: `${step}s` },
-      timeout: 10000
+      timeout: 60000
     });
     if (res.data && res.data.data && res.data.data.result.length > 0) {
       return res.data.data.result[0].values;
@@ -216,7 +212,7 @@ const fetchPrometheusRangeMultiple = async (query, start, end, step) => {
   try {
     const res = await axios.get(PROMETHEUS_URL_RANGE, {
       params: { query, start, end, step: `${step}s` },
-      timeout: 10000
+      timeout: 60000
     });
     if (res.data && res.data.data && res.data.data.result) {
       return res.data.data.result;
@@ -232,7 +228,7 @@ const fetchPrometheusInstant = async (query, time) => {
   try {
     const res = await axios.get(PROMETHEUS_URL_INSTANT, {
       params: { query, time },
-      timeout: 10000
+      timeout: 60000
     });
     if (res.data && res.data.data && res.data.data.result.length > 0) {
       return res.data.data.result;
@@ -297,6 +293,7 @@ const AdminSystemMonitoringPage = () => {
   const [availableStatusCodes, setAvailableStatusCodes] = useState([]);
   const [availableSseEvents, setAvailableSseEvents] = useState([]);
   const [availableEmailTemplates, setAvailableEmailTemplates] = useState([]);
+  const [availableCronjobs, setAvailableCronjobs] = useState([]);
   const [isolatedSeries, setIsolatedSeries] = useState({});
   const [error, setError] = useState(null);
 
@@ -394,6 +391,9 @@ const AdminSystemMonitoringPage = () => {
         emailLatData,
         ocrLatData,
         imageLatData,
+        imageLatP50Data,
+        imageLatP95Data,
+        imageLatP99Data,
         fileUploadLatData,
         storageSizeData,
         memNonHeapData,
@@ -432,7 +432,9 @@ const AdminSystemMonitoringPage = () => {
         aiLatP95Data,
         aiLatP99Data,
         aiCallRateData,
-        emailByTemplateRes
+        emailByTemplateRes,
+        cronjobExecutionsRes,
+        cronjobDurationRes
       ] = await Promise.all([
         fetchPrometheusRange(QUERIES.requestRate, start, end, step),
         fetchPrometheusRange(QUERIES.errorRate, start, end, step),
@@ -453,21 +455,24 @@ const AdminSystemMonitoringPage = () => {
         fetchPrometheusRange(QUERIES.emailLatency, start, end, step),
         fetchPrometheusRange(QUERIES.ocrLatency, start, end, step),
         fetchPrometheusRange(QUERIES.imageLatency, start, end, step),
+        fetchPrometheusRange(QUERIES.imageLatencyP50, start, end, step),
+        fetchPrometheusRange(QUERIES.imageLatencyP95, start, end, step),
+        fetchPrometheusRange(QUERIES.imageLatencyP99, start, end, step),
         fetchPrometheusRange(QUERIES.fileUploadLatency, start, end, step),
         fetchPrometheusRange(QUERIES.storageSize, start, end, step),
         fetchPrometheusRange(QUERIES.memoryNonHeap, start, end, step),
         fetchPrometheusRange(QUERIES.heapUtilPct, start, end, step),
         fetchPrometheusRange(QUERIES.systemLoad, start, end, step),
         fetchPrometheusRange(QUERIES.cpuCount, start, end, step),
-        fetchPrometheusRange(QUERIES.logErrors, start, end, step),
-        fetchPrometheusRange(QUERIES.logWarns, start, end, step),
+        fetchPrometheusRange(`sum(increase(logback_events_total{level="error"}[${step}s]))`, start, end, step),
+        fetchPrometheusRange(`sum(increase(logback_events_total{level="warn"}[${step}s]))`, start, end, step),
         fetchPrometheusRange(QUERIES.gcCount, start, end, step),
         fetchPrometheusRange(QUERIES.fdUsagePct, start, end, step),
         fetchPrometheusRange(QUERIES.dbSaturationPct, start, end, step),
-        fetchPrometheusRange(QUERIES.authLoginSuccess, start, end, step),
-        fetchPrometheusRange(QUERIES.authLoginFailure, start, end, step),
-        fetchPrometheusRange(QUERIES.authRefreshSuccess, start, end, step),
-        fetchPrometheusRange(QUERIES.authRefreshFailure, start, end, step),
+        fetchPrometheusRange(`sum(increase(auth_login_total{result="success"}[${step}s]))`, start, end, step),
+        fetchPrometheusRange(`sum(increase(auth_login_total{result="failure"}[${step}s]))`, start, end, step),
+        fetchPrometheusRange(`sum(increase(auth_token_refresh_total{result="success"}[${step}s]))`, start, end, step),
+        fetchPrometheusRange(`sum(increase(auth_token_refresh_total{result="failure"}[${step}s]))`, start, end, step),
         fetchPrometheusRange(QUERIES.rateLimitRejected, start, end, step),
         fetchPrometheusRange(QUERIES.wsActiveSessions, start, end, step),
         fetchPrometheusRange(QUERIES.wsActiveGroups, start, end, step),
@@ -475,7 +480,7 @@ const AdminSystemMonitoringPage = () => {
         fetchPrometheusInstant(`topk(50, sum by (error_code) (increase(api_errors_count_total[${rangeSeconds}s])))`, end),
         fetchPrometheusInstant(`sum by (path, method) (increase(http_endpoint_latency_seconds_sum[${rangeSeconds}s])) / sum by (path, method) (increase(http_endpoint_latency_seconds_count[${rangeSeconds}s])) * 1000`, end),
         fetchPrometheusInstant(`max by (path, method) (max_over_time(http_endpoint_latency_seconds_max[${rangeSeconds}s])) * 1000`, end),
-        fetchPrometheusRangeMultiple(`sum by (error_code) (increase(api_errors_count_total[5m]))`, start, end, step),
+        fetchPrometheusRangeMultiple(`sum by (error_code) (increase(api_errors_count_total[${step}s]))`, start, end, step),
         fetchPrometheusRangeMultiple(`sum by (status) (rate(http_endpoint_requests_total[5m]))`, start, end, step),
         fetchPrometheusInstant(`sum(http_endpoint_requests_total)`, end),
         fetchPrometheusInstant(`sum(http_endpoint_errors_total)`, end),
@@ -484,14 +489,16 @@ const AdminSystemMonitoringPage = () => {
         fetchPrometheusInstant(QUERIES.sseActiveUsers, end),
         fetchPrometheusRange(QUERIES.sseActiveConnections, start, end, step),
         fetchPrometheusRange(QUERIES.sseActiveUsers, start, end, step),
-        fetchPrometheusRange(QUERIES.sseEventsRate, start, end, step),
-        fetchPrometheusRangeMultiple(`sum by (event) (increase(sse_events_sent_total[5m]))`, start, end, step),
+        fetchPrometheusRange(`sum(increase(sse_events_sent_total[${step}s]))`, start, end, step),
+        fetchPrometheusRangeMultiple(`sum by (event) (increase(sse_events_sent_total[${step}s]))`, start, end, step),
         fetchPrometheusRange(QUERIES.aiLatencyAvg, start, end, step),
         fetchPrometheusRange(QUERIES.aiLatencyP50, start, end, step),
         fetchPrometheusRange(QUERIES.aiLatencyP95, start, end, step),
         fetchPrometheusRange(QUERIES.aiLatencyP99, start, end, step),
         fetchPrometheusRange(QUERIES.aiCallRate, start, end, step),
-        fetchPrometheusRangeMultiple(`sum by (template) (increase(email_send_count_total[5m]))`, start, end, step)
+        fetchPrometheusRangeMultiple(`sum by (template) (increase(email_send_count_total[${step}s]))`, start, end, step),
+        fetchPrometheusRangeMultiple(`sum by (job_name) (increase(cronjob_execution_time_seconds_count[${step}s]))`, start, end, step),
+        fetchPrometheusRangeMultiple(`sum by (job_name) (increase(cronjob_execution_time_seconds_sum[${step}s])) / sum by (job_name) (increase(cronjob_execution_time_seconds_count[${step}s])) * 1000`, start, end, step)
       ]);
 
       // Merge time-series data
@@ -529,6 +536,9 @@ const AdminSystemMonitoringPage = () => {
       processSeries(emailLatData, 'emailLat');
       processSeries(ocrLatData, 'ocrLat');
       processSeries(imageLatData, 'imageLat');
+      processSeries(imageLatP50Data, 'imageLatP50');
+      processSeries(imageLatP95Data, 'imageLatP95');
+      processSeries(imageLatP99Data, 'imageLatP99');
       processSeries(fileUploadLatData, 'fileUploadLat');
       processSeries(storageSizeData, 'storageSize');
       // Tier 2: JVM / system metrics
@@ -641,6 +651,43 @@ const AdminSystemMonitoringPage = () => {
         });
       }
       setAvailableEmailTemplates(Array.from(emailTemplatesSet));
+
+      const cronjobsSet = new Set();
+      if (cronjobExecutionsRes) {
+        cronjobExecutionsRes.forEach(seriesObj => {
+          const jobName = seriesObj.metric.job_name || 'UNKNOWN';
+          const key = `cron_exec_${jobName}`;
+          cronjobsSet.add(jobName);
+
+          seriesObj.values.forEach(([timestamp, value]) => {
+            const t = parseInt(timestamp, 10);
+            if (!mergedMap.has(t)) {
+              mergedMap.set(t, { time: t, timeFormatted: dayjs(t * 1000).format(formatString) });
+            }
+            let numVal = parseFloat(value);
+            if (isNaN(numVal)) numVal = 0;
+            mergedMap.get(t)[key] = numVal;
+          });
+        });
+      }
+      if (cronjobDurationRes) {
+        cronjobDurationRes.forEach(seriesObj => {
+          const jobName = seriesObj.metric.job_name || 'UNKNOWN';
+          const key = `cron_dur_${jobName}`;
+          cronjobsSet.add(jobName);
+
+          seriesObj.values.forEach(([timestamp, value]) => {
+            const t = parseInt(timestamp, 10);
+            if (!mergedMap.has(t)) {
+              mergedMap.set(t, { time: t, timeFormatted: dayjs(t * 1000).format(formatString) });
+            }
+            let numVal = parseFloat(value);
+            if (isNaN(numVal)) numVal = 0;
+            mergedMap.get(t)[key] = numVal;
+          });
+        });
+      }
+      setAvailableCronjobs(Array.from(cronjobsSet));
 
       const mergedArray = Array.from(mergedMap.values()).sort((a, b) => a.time - b.time);
       setChartData(mergedArray);
@@ -842,6 +889,11 @@ const AdminSystemMonitoringPage = () => {
 
         {chartData.length > 0 && (
           <Stack spacing={3}>
+
+            {/* --- SECTION: HỆ THỐNG --- */}
+            <Typography variant="h5" sx={{ fontWeight: 800, mt: 2, mb: 1, color: 'primary.main', borderBottom: '2px solid', borderColor: 'divider', pb: 1 }}>
+              Hệ thống
+            </Typography>
             {/* Summary Stats */}
             <Stack spacing={3}>
               <Box sx={monitoringMetricGridSx}>
@@ -886,7 +938,242 @@ const AdminSystemMonitoringPage = () => {
               </Box>
             </Stack>
 
-            {/* Top Endpoints & Exceptions Tables */}
+            <Box sx={monitoringPanelGridSx}>
+              {/* CPU Usage */}
+              <AdminSectionPanel
+                title={t('admin:system_monitoring.cpu_usage_pct')}
+                subtitle={t('admin:system_monitoring.cpu_usage_desc')}
+                sx={monitoringPanelSx}
+              >
+                <Box sx={monitoringChartBoxSx}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData}>
+                      <CartesianGrid {...gridProps} />
+                      <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
+                      <YAxis domain={[0, 100]} {...axisProps} width={45} />
+                      <RechartsTooltip content={renderTooltip} />
+                      <Legend onClick={(e) => handleLegendClick('cpu', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
+                      <Line type="monotone" dot={false} dataKey="cpuSys" name={t("admin:system_monitoring.system_cpu")} stroke={chartColors[0]} strokeWidth={2.5} hide={isolatedSeries['cpu'] && isolatedSeries['cpu'] !== 'cpuSys'} />
+                      <Line type="monotone" dot={false} dataKey="cpuProc" name={t("admin:system_monitoring.jvm_cpu")} stroke={chartColors[1]} strokeWidth={2.5} hide={isolatedSeries['cpu'] && isolatedSeries['cpu'] !== 'cpuProc'} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Box>
+              </AdminSectionPanel>
+              {/* Memory Usage */}
+              <AdminSectionPanel
+                title={t('admin:system_monitoring.memory_usage_mb')}
+                subtitle={t('admin:system_monitoring.memory_usage_desc')}
+                sx={monitoringPanelSx}
+              >
+                <Box sx={monitoringChartBoxSx}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData}>
+                      <CartesianGrid {...gridProps} />
+                      <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
+                      <YAxis {...axisProps} width={45} />
+                      <RechartsTooltip content={renderTooltip} />
+                      <Legend onClick={(e) => handleLegendClick('memory', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
+                      <Line type="monotone" dot={false} dataKey="memHeap" name={t("admin:system_monitoring.jvm_heap_used")} stroke={chartColors[3]} strokeWidth={2.5} hide={isolatedSeries['memory'] && isolatedSeries['memory'] !== 'memHeap'} />
+                      <Line type="monotone" dot={false} dataKey="memNonHeap" name={t("admin:system_monitoring.jvm_nonheap_used")} stroke={chartColors[4]} strokeWidth={2.5} hide={isolatedSeries['memory'] && isolatedSeries['memory'] !== 'memNonHeap'} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Box>
+              </AdminSectionPanel>
+            </Box>
+            <Box sx={monitoringPanelGridSx}>
+              {/* GC Pause Time */}
+              <AdminSectionPanel
+                title={t('admin:system_monitoring.gc_pause_time_ms')}
+                subtitle={t('admin:system_monitoring.gc_pause_time_desc')}
+                sx={monitoringPanelSx}
+              >
+                <Box sx={monitoringChartBoxSx}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData}>
+                      <CartesianGrid {...gridProps} />
+                      <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
+                      <YAxis {...axisProps} width={45} />
+                      <RechartsTooltip content={renderTooltip} />
+                      <Legend />
+                      <Line type="monotone" dot={false} dataKey="gcPause" name={t("admin:system_monitoring.gc_pause_time")} stroke={chartColors[5]} strokeWidth={2.5} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Box>
+              </AdminSectionPanel>
+              {/* GC Collections Rate (Tier 2) */}
+              <AdminSectionPanel
+                title={t('admin:system_monitoring.gc_collections')}
+                subtitle={t('admin:system_monitoring.gc_collections_desc')}
+                sx={monitoringPanelSx}
+              >
+                <Box sx={monitoringChartBoxSx}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData}>
+                      <CartesianGrid {...gridProps} />
+                      <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
+                      <YAxis {...axisProps} width={45} />
+                      <RechartsTooltip content={renderTooltip} />
+                      <Legend />
+                      <Line type="monotone" dot={false} dataKey="gcCount" name={t("admin:system_monitoring.gc_collections")} stroke={chartColors[6]} strokeWidth={2.5} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Box>
+              </AdminSectionPanel>
+            </Box>
+            <Box sx={monitoringPanelGridSx}>
+              {/* Resource Utilization % (Tier 2) */}
+              <AdminSectionPanel
+                title={t('admin:system_monitoring.resource_utilization')}
+                subtitle={t('admin:system_monitoring.resource_utilization_desc')}
+                sx={monitoringPanelSx}
+              >
+                <Box sx={monitoringChartBoxSx}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData}>
+                      <CartesianGrid {...gridProps} />
+                      <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
+                      <YAxis domain={[0, 100]} {...axisProps} width={45} />
+                      <RechartsTooltip content={renderTooltip} />
+                      <Legend onClick={(e) => handleLegendClick('util', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
+                      <Line type="monotone" dot={false} dataKey="heapUtil" name={t("admin:system_monitoring.heap_utilization")} stroke={theme.palette.error.main} strokeWidth={2.5} hide={isolatedSeries['util'] && isolatedSeries['util'] !== 'heapUtil'} />
+                      <Line type="monotone" dot={false} dataKey="fdUsage" name={t("admin:system_monitoring.fd_usage")} stroke={theme.palette.warning.main} strokeWidth={2.5} hide={isolatedSeries['util'] && isolatedSeries['util'] !== 'fdUsage'} />
+                      <Line type="monotone" dot={false} dataKey="dbSaturation" name={t("admin:system_monitoring.db_saturation")} stroke={theme.palette.info.main} strokeWidth={2.5} hide={isolatedSeries['util'] && isolatedSeries['util'] !== 'dbSaturation'} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Box>
+              </AdminSectionPanel>
+              {/* System Load Average (Tier 2) */}
+              <AdminSectionPanel
+                title={t('admin:system_monitoring.system_load')}
+                subtitle={t('admin:system_monitoring.system_load_desc')}
+                sx={monitoringPanelSx}
+              >
+                <Box sx={monitoringChartBoxSx}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData}>
+                      <CartesianGrid {...gridProps} />
+                      <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
+                      <YAxis {...axisProps} width={45} />
+                      <RechartsTooltip content={renderTooltip} />
+                      <Legend onClick={(e) => handleLegendClick('load', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
+                      <Line type="monotone" dot={false} dataKey="systemLoad" name={t("admin:system_monitoring.load_1m")} stroke={theme.palette.primary.main} strokeWidth={2.5} hide={isolatedSeries['load'] && isolatedSeries['load'] !== 'systemLoad'} />
+                      <Line type="monotone" dot={false} dataKey="cpuCount" name={t("admin:system_monitoring.cpu_count")} stroke={theme.palette.text.secondary} strokeWidth={1} strokeDasharray="4 4" hide={isolatedSeries['load'] && isolatedSeries['load'] !== 'cpuCount'} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Box>
+              </AdminSectionPanel>
+            </Box>
+            <Box sx={monitoringPanelGridSx}>
+            {/* JVM Threads */}
+            <Card elevation={0} sx={cardSx}>
+              <CardContent>
+                <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2, color: 'primary.main' }}>{t('admin:system_monitoring.jvm_threads', 'JVM Threads')}</Typography>
+                <Box sx={{ height: 300 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData}>
+                      <CartesianGrid {...gridProps} />
+                      <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
+                      <YAxis {...axisProps} width={45} />
+                      <RechartsTooltip content={renderTooltip} />
+                      <Legend onClick={(e) => handleLegendClick('threads', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
+                      <Line type="monotone" dot={false} dataKey="threadsCurrent" name={t("admin:system_monitoring.threads_current", "Current Threads")} stroke={theme.palette.info.main} strokeWidth={2.5} hide={isolatedSeries['threads'] && isolatedSeries['threads'] !== 'threadsCurrent'} />
+                      <Line type="monotone" dot={false} dataKey="threadsDaemon" name={t("admin:system_monitoring.threads_daemon", "Daemon Threads")} stroke={theme.palette.secondary.main} strokeWidth={2.5} hide={isolatedSeries['threads'] && isolatedSeries['threads'] !== 'threadsDaemon'} />
+                      <Line type="monotone" dot={false} dataKey="threadsPeak" name={t("admin:system_monitoring.threads_peak", "Peak Threads")} stroke={theme.palette.error.main} strokeWidth={2.5} hide={isolatedSeries['threads'] && isolatedSeries['threads'] !== 'threadsPeak'} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Box>
+              </CardContent>
+            </Card>
+            {/* DB Connection Pool */}
+            <Card elevation={0} sx={cardSx}>
+              <CardContent>
+                <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2, color: 'primary.main' }}>{t('admin:system_monitoring.db_connections', 'Database Connections (R2DBC)')}</Typography>
+                <Box sx={{ height: 300 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={chartData}>{renderDefs()}
+                      <CartesianGrid {...gridProps} />
+                      <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
+                      <YAxis {...axisProps} width={45} />
+                      <RechartsTooltip content={renderTooltip} />
+                      <Legend onClick={(e) => handleLegendClick('db', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
+                      <Area type="monotone" dataKey="dbActive" name={t("admin:system_monitoring.db_active", "Active")} stackId="1" stroke={theme.palette.success.main} fill={theme.palette.success.light} fillOpacity={0.6} hide={isolatedSeries['db'] && isolatedSeries['db'] !== 'dbActive'} />
+                      <Area type="monotone" dataKey="dbIdle" name={t("admin:system_monitoring.db_idle", "Idle")} stackId="1" stroke={theme.palette.info.main} fill={theme.palette.info.light} fillOpacity={0.6} hide={isolatedSeries['db'] && isolatedSeries['db'] !== 'dbIdle'} />
+                      <Area type="monotone" dataKey="dbPending" name={t("admin:system_monitoring.db_pending", "Pending")} stackId="1" stroke={theme.palette.warning.main} fill={theme.palette.warning.light} fillOpacity={0.6} hide={isolatedSeries['db'] && isolatedSeries['db'] !== 'dbPending'} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </Box>
+              </CardContent>
+            </Card>
+            </Box>
+            <Box sx={monitoringPanelGridSx}>
+              {/* Storage Size (Tier 1) */}
+              <AdminSectionPanel
+                title={t('admin:system_monitoring.storage_size')}
+                subtitle={t('admin:system_monitoring.storage_size_desc')}
+                sx={monitoringPanelSx}
+              >
+                <Box sx={monitoringChartBoxSx}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={chartData}>{renderDefs()}
+                      <CartesianGrid {...gridProps} />
+                      <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
+                      <YAxis {...axisProps} width={45} />
+                      <RechartsTooltip content={renderTooltip} />
+                      <Legend />
+                      <Area type="monotone" dataKey="storageSize" name={t("admin:system_monitoring.storage_size_mb")} stroke={theme.palette.success.main} fill="url(#area-success)" strokeWidth={2.5} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </Box>
+              </AdminSectionPanel>
+            </Box>
+            {/* Data Table */}
+            <AdminSectionPanel
+              title={t('admin:system_monitoring.detailed_metrics_data')}
+              subtitle={t('admin:system_monitoring.detailed_metrics_data_desc')}
+              sx={monitoringPanelSx}
+            >
+                <TableContainer component={Paper} sx={{ ...adminTableContainerSx, maxHeight: 420 }}>
+                  <Table stickyHeader size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell sx={adminTableHeadCellSx}>{t('admin:system_monitoring.time')}</TableCell>
+                        <TableCell align="right" sx={adminTableHeadCellSx}>{t('admin:system_monitoring.req_rate')}</TableCell>
+                        <TableCell align="right" sx={adminTableHeadCellSx}>{t('admin:system_monitoring.avg_latency_ms')}</TableCell>
+                        <TableCell align="right" sx={adminTableHeadCellSx}>{t('admin:system_monitoring.p50_latency_ms')}</TableCell>
+                        <TableCell align="right" sx={adminTableHeadCellSx}>{t('admin:system_monitoring.p99_latency_ms')}</TableCell>
+                        <TableCell align="right" sx={adminTableHeadCellSx}>{t('admin:system_monitoring.http_errors_s')}</TableCell>
+                        <TableCell align="right" sx={adminTableHeadCellSx}>{t('admin:system_monitoring.app_errors')}</TableCell>
+                        <TableCell align="right" sx={adminTableHeadCellSx}>{t('admin:system_monitoring.sys_cpu_pct')}</TableCell>
+                        <TableCell align="right" sx={adminTableHeadCellSx}>{t('admin:system_monitoring.jvm_cpu_pct')}</TableCell>
+                        <TableCell align="right" sx={adminTableHeadCellSx}>{t('admin:system_monitoring.heap_mb')}</TableCell>
+                        <TableCell align="right" sx={adminTableHeadCellSx}>{t('admin:system_monitoring.gc_pause_ms')}</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {[...chartData].reverse().map((row, idx) => (
+                        <TableRow key={idx} hover>
+                          <TableCell>{row.timeFormatted}</TableCell>
+                          <TableCell align="right">{row.reqRate?.toFixed(2) || 0}</TableCell>
+                          <TableCell align="right">{row.latAvg?.toFixed(2) || 0}</TableCell>
+                          <TableCell align="right">{row.latP50?.toFixed(2) || 0}</TableCell>
+                          <TableCell align="right">{row.latP99?.toFixed(2) || 0}</TableCell>
+                          <TableCell align="right">{row.errRate?.toFixed(2) || 0}</TableCell>
+                          <TableCell align="right">{row.appErr?.toFixed(2) || 0}</TableCell>
+                          <TableCell align="right">{row.cpuSys?.toFixed(2) || 0}</TableCell>
+                          <TableCell align="right">{row.cpuProc?.toFixed(2) || 0}</TableCell>
+                          <TableCell align="right">{row.memHeap?.toFixed(2) || 0}</TableCell>
+                          <TableCell align="right">{row.gcPause?.toFixed(2) || 0}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+            </AdminSectionPanel>
+
+            {/* --- SECTION: API --- */}
+            <Typography variant="h5" sx={{ fontWeight: 800, mt: 4, mb: 1, color: 'primary.main', borderBottom: '2px solid', borderColor: 'divider', pb: 1 }}>
+              API
+            </Typography>
             <Box sx={monitoringPanelGridSx}>
               <AdminSectionPanel
                 title={t('admin:system_monitoring.endpoints_request_volume')}
@@ -921,37 +1208,6 @@ const AdminSystemMonitoringPage = () => {
                     </Table>
                   </TableContainer>
               </AdminSectionPanel>
-
-              <AdminSectionPanel
-                title={t('admin:system_monitoring.app_exceptions_breakdown')}
-                subtitle={t('admin:system_monitoring.app_exceptions_breakdown_desc')}
-                sx={monitoringPanelSx}
-              >
-                  <TableContainer component={Paper} sx={adminTableContainerSx}>
-                    <Table stickyHeader size="small">
-                      <TableHead>
-                        <TableRow>
-                          <TableCell sx={adminTableHeadCellSx}>{t('admin:system_monitoring.error_code_exception')}</TableCell>
-                          <TableCell align="right" sx={adminTableHeadCellSx}>{t('admin:system_monitoring.occurrences')}</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {exceptionStats.length === 0 && (
-                          <TableRow><TableCell colSpan={2} align="center">{t('admin:system_monitoring.no_data')}</TableCell></TableRow>
-                        )}
-                        {exceptionStats.map((row, idx) => (
-                          <TableRow key={idx} hover>
-                            <TableCell sx={{ color: 'error.main', fontWeight: 'bold' }}>{row.errorCode}</TableCell>
-                            <TableCell align="right">{row.count.toFixed(0)}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-              </AdminSectionPanel>
-            </Box>
-
-            <Box sx={monitoringPanelGridSx}>
               {/* Request Volume */}
               <AdminSectionPanel
                 title={t('admin:system_monitoring.request_rate_req_s')}
@@ -971,7 +1227,8 @@ const AdminSystemMonitoringPage = () => {
                   </ResponsiveContainer>
                 </Box>
               </AdminSectionPanel>
-
+            </Box>
+            <Box sx={monitoringPanelGridSx}>
               {/* Latency */}
               <AdminSectionPanel
                 title={t('admin:system_monitoring.latency_ms')}
@@ -994,27 +1251,6 @@ const AdminSystemMonitoringPage = () => {
                   </ResponsiveContainer>
                 </Box>
               </AdminSectionPanel>
-
-              {/* Error Rate */}
-              <AdminSectionPanel
-                title={t('admin:system_monitoring.http_error_rate_s')}
-                subtitle={t('admin:system_monitoring.http_error_rate_desc')}
-                sx={monitoringPanelSx}
-              >
-                <Box sx={monitoringChartBoxSx}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={chartData}>{renderDefs()}
-                      <CartesianGrid {...gridProps} />
-                      <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
-                      <YAxis {...axisProps} width={45} />
-                      <RechartsTooltip content={renderTooltip} />
-                      <Legend />
-                      <Area type="monotone" dataKey="errRate" name={t("admin:system_monitoring.http_errors")} stroke={theme.palette.error.main} fill="url(#area-error)" strokeWidth={2.5} />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </Box>
-              </AdminSectionPanel>
-
               {/* HTTP Status Breakdown Timeline */}
               {availableStatusCodes.length > 0 && (
                 <AdminSectionPanel
@@ -1058,257 +1294,8 @@ const AdminSystemMonitoringPage = () => {
                   </Box>
                 </AdminSectionPanel>
               )}
-
-              {/* Exceptions Breakdown Timeline */}
-              {availableErrorCodes.length > 0 && (
-                <AdminSectionPanel
-                  title={t('admin:system_monitoring.app_exceptions_timeline')}
-                  subtitle={t('admin:system_monitoring.app_exceptions_timeline_desc')}
-                  sx={monitoringPanelSx}
-                >
-                  <Box sx={monitoringChartBoxSx}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={chartData}>{renderDefs()}
-                        <CartesianGrid {...gridProps} />
-                        <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
-                        <YAxis {...axisProps} width={45} />
-                        <RechartsTooltip content={renderTooltip} />
-                        <Legend onClick={(e) => handleLegendClick('exceptions', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
-                        {availableErrorCodes.map((code, idx) => {
-                          const dataKey = `err_${code}`;
-                          const isIsolated = isolatedSeries['exceptions'];
-                          return (
-                            <Area 
-                              key={code} 
-                              type="monotone" 
-                              dataKey={dataKey} 
-                              name={code} 
-                              stackId="1"
-                              stroke={chartColors[idx % chartColors.length]} 
-                              fill={chartColors[idx % chartColors.length]} 
-                              fillOpacity={0.6} 
-                              hide={isIsolated && isIsolated !== dataKey}
-                            />
-                          );
-                        })}
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </Box>
-                </AdminSectionPanel>
-              )}
-
-              {/* CPU Usage */}
-              <AdminSectionPanel
-                title={t('admin:system_monitoring.cpu_usage_pct')}
-                subtitle={t('admin:system_monitoring.cpu_usage_desc')}
-                sx={monitoringPanelSx}
-              >
-                <Box sx={monitoringChartBoxSx}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chartData}>
-                      <CartesianGrid {...gridProps} />
-                      <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
-                      <YAxis domain={[0, 100]} {...axisProps} width={45} />
-                      <RechartsTooltip content={renderTooltip} />
-                      <Legend onClick={(e) => handleLegendClick('cpu', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
-                      <Line type="monotone" dot={false} dataKey="cpuSys" name={t("admin:system_monitoring.system_cpu")} stroke={chartColors[0]} strokeWidth={2.5} hide={isolatedSeries['cpu'] && isolatedSeries['cpu'] !== 'cpuSys'} />
-                      <Line type="monotone" dot={false} dataKey="cpuProc" name={t("admin:system_monitoring.jvm_cpu")} stroke={chartColors[1]} strokeWidth={2.5} hide={isolatedSeries['cpu'] && isolatedSeries['cpu'] !== 'cpuProc'} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </Box>
-              </AdminSectionPanel>
-
-              {/* Memory Usage */}
-              <AdminSectionPanel
-                title={t('admin:system_monitoring.memory_usage_mb')}
-                subtitle={t('admin:system_monitoring.memory_usage_desc')}
-                sx={monitoringPanelSx}
-              >
-                <Box sx={monitoringChartBoxSx}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chartData}>
-                      <CartesianGrid {...gridProps} />
-                      <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
-                      <YAxis {...axisProps} width={45} />
-                      <RechartsTooltip content={renderTooltip} />
-                      <Legend onClick={(e) => handleLegendClick('memory', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
-                      <Line type="monotone" dot={false} dataKey="memHeap" name={t("admin:system_monitoring.jvm_heap_used")} stroke={chartColors[3]} strokeWidth={2.5} hide={isolatedSeries['memory'] && isolatedSeries['memory'] !== 'memHeap'} />
-                      <Line type="monotone" dot={false} dataKey="memNonHeap" name={t("admin:system_monitoring.jvm_nonheap_used")} stroke={chartColors[4]} strokeWidth={2.5} hide={isolatedSeries['memory'] && isolatedSeries['memory'] !== 'memNonHeap'} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </Box>
-              </AdminSectionPanel>
-
-              {/* GC Pause Time */}
-              <AdminSectionPanel
-                title={t('admin:system_monitoring.gc_pause_time_ms')}
-                subtitle={t('admin:system_monitoring.gc_pause_time_desc')}
-                sx={monitoringPanelSx}
-              >
-                <Box sx={monitoringChartBoxSx}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chartData}>
-                      <CartesianGrid {...gridProps} />
-                      <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
-                      <YAxis {...axisProps} width={45} />
-                      <RechartsTooltip content={renderTooltip} />
-                      <Legend />
-                      <Line type="monotone" dot={false} dataKey="gcPause" name={t("admin:system_monitoring.gc_pause_time")} stroke={chartColors[5]} strokeWidth={2.5} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </Box>
-              </AdminSectionPanel>
-
-              {/* GC Collections Rate (Tier 2) */}
-              <AdminSectionPanel
-                title={t('admin:system_monitoring.gc_collections')}
-                subtitle={t('admin:system_monitoring.gc_collections_desc')}
-                sx={monitoringPanelSx}
-              >
-                <Box sx={monitoringChartBoxSx}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chartData}>
-                      <CartesianGrid {...gridProps} />
-                      <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
-                      <YAxis {...axisProps} width={45} />
-                      <RechartsTooltip content={renderTooltip} />
-                      <Legend />
-                      <Line type="monotone" dot={false} dataKey="gcCount" name={t("admin:system_monitoring.gc_collections")} stroke={chartColors[6]} strokeWidth={2.5} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </Box>
-              </AdminSectionPanel>
-
-              {/* Resource Utilization % (Tier 2) */}
-              <AdminSectionPanel
-                title={t('admin:system_monitoring.resource_utilization')}
-                subtitle={t('admin:system_monitoring.resource_utilization_desc')}
-                sx={monitoringPanelSx}
-              >
-                <Box sx={monitoringChartBoxSx}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chartData}>
-                      <CartesianGrid {...gridProps} />
-                      <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
-                      <YAxis domain={[0, 100]} {...axisProps} width={45} />
-                      <RechartsTooltip content={renderTooltip} />
-                      <Legend onClick={(e) => handleLegendClick('util', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
-                      <Line type="monotone" dot={false} dataKey="heapUtil" name={t("admin:system_monitoring.heap_utilization")} stroke={theme.palette.error.main} strokeWidth={2.5} hide={isolatedSeries['util'] && isolatedSeries['util'] !== 'heapUtil'} />
-                      <Line type="monotone" dot={false} dataKey="fdUsage" name={t("admin:system_monitoring.fd_usage")} stroke={theme.palette.warning.main} strokeWidth={2.5} hide={isolatedSeries['util'] && isolatedSeries['util'] !== 'fdUsage'} />
-                      <Line type="monotone" dot={false} dataKey="dbSaturation" name={t("admin:system_monitoring.db_saturation")} stroke={theme.palette.info.main} strokeWidth={2.5} hide={isolatedSeries['util'] && isolatedSeries['util'] !== 'dbSaturation'} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </Box>
-              </AdminSectionPanel>
-
-              {/* System Load Average (Tier 2) */}
-              <AdminSectionPanel
-                title={t('admin:system_monitoring.system_load')}
-                subtitle={t('admin:system_monitoring.system_load_desc')}
-                sx={monitoringPanelSx}
-              >
-                <Box sx={monitoringChartBoxSx}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chartData}>
-                      <CartesianGrid {...gridProps} />
-                      <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
-                      <YAxis {...axisProps} width={45} />
-                      <RechartsTooltip content={renderTooltip} />
-                      <Legend onClick={(e) => handleLegendClick('load', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
-                      <Line type="monotone" dot={false} dataKey="systemLoad" name={t("admin:system_monitoring.load_1m")} stroke={theme.palette.primary.main} strokeWidth={2.5} hide={isolatedSeries['load'] && isolatedSeries['load'] !== 'systemLoad'} />
-                      <Line type="monotone" dot={false} dataKey="cpuCount" name={t("admin:system_monitoring.cpu_count")} stroke={theme.palette.text.secondary} strokeWidth={1} strokeDasharray="4 4" hide={isolatedSeries['load'] && isolatedSeries['load'] !== 'cpuCount'} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </Box>
-              </AdminSectionPanel>
-
-              {/* Log Events Rate (Tier 2) */}
-              <AdminSectionPanel
-                title={t('admin:system_monitoring.log_events')}
-                subtitle={t('admin:system_monitoring.log_events_desc')}
-                sx={monitoringPanelSx}
-              >
-                <Box sx={monitoringChartBoxSx}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={chartData}>{renderDefs()}
-                      <CartesianGrid {...gridProps} />
-                      <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
-                      <YAxis {...axisProps} width={45} />
-                      <RechartsTooltip content={renderTooltip} />
-                      <Legend onClick={(e) => handleLegendClick('logs', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
-                      <Area type="monotone" dataKey="logWarns" name={t("admin:system_monitoring.log_warn")} stackId="1" stroke={theme.palette.warning.main} fill={theme.palette.warning.light} fillOpacity={0.5} hide={isolatedSeries['logs'] && isolatedSeries['logs'] !== 'logWarns'} />
-                      <Area type="monotone" dataKey="logErrors" name={t("admin:system_monitoring.log_error")} stackId="1" stroke={theme.palette.error.main} fill={theme.palette.error.light} fillOpacity={0.5} hide={isolatedSeries['logs'] && isolatedSeries['logs'] !== 'logErrors'} />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </Box>
-              </AdminSectionPanel>
-
-              {/* Background I/O Latency (Tier 1) */}
-              <AdminSectionPanel
-                title={t('admin:system_monitoring.io_latency')}
-                subtitle={t('admin:system_monitoring.io_latency_desc')}
-                sx={monitoringPanelSx}
-              >
-                <Box sx={monitoringChartBoxSx}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chartData}>
-                      <CartesianGrid {...gridProps} />
-                      <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
-                      <YAxis {...axisProps} width={45} />
-                      <RechartsTooltip content={renderTooltip} />
-                      <Legend onClick={(e) => handleLegendClick('io', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
-                      <Line type="monotone" dot={false} dataKey="emailLat" name={t("admin:system_monitoring.email_latency")} stroke={chartColors[0]} strokeWidth={2.5} hide={isolatedSeries['io'] && isolatedSeries['io'] !== 'emailLat'} />
-                      <Line type="monotone" dot={false} dataKey="ocrLat" name={t("admin:system_monitoring.ocr_latency")} stroke={chartColors[1]} strokeWidth={2.5} hide={isolatedSeries['io'] && isolatedSeries['io'] !== 'ocrLat'} />
-                      <Line type="monotone" dot={false} dataKey="imageLat" name={t("admin:system_monitoring.image_latency")} stroke={chartColors[2]} strokeWidth={2.5} hide={isolatedSeries['io'] && isolatedSeries['io'] !== 'imageLat'} />
-                      <Line type="monotone" dot={false} dataKey="fileUploadLat" name={t("admin:system_monitoring.file_upload_latency")} stroke={chartColors[3]} strokeWidth={2.5} hide={isolatedSeries['io'] && isolatedSeries['io'] !== 'fileUploadLat'} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </Box>
-              </AdminSectionPanel>
-
-              {/* Storage Size (Tier 1) */}
-              <AdminSectionPanel
-                title={t('admin:system_monitoring.storage_size')}
-                subtitle={t('admin:system_monitoring.storage_size_desc')}
-                sx={monitoringPanelSx}
-              >
-                <Box sx={monitoringChartBoxSx}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={chartData}>{renderDefs()}
-                      <CartesianGrid {...gridProps} />
-                      <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
-                      <YAxis {...axisProps} width={45} />
-                      <RechartsTooltip content={renderTooltip} />
-                      <Legend />
-                      <Area type="monotone" dataKey="storageSize" name={t("admin:system_monitoring.storage_size_mb")} stroke={theme.palette.success.main} fill="url(#area-success)" strokeWidth={2.5} />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </Box>
-              </AdminSectionPanel>
-
-              {/* Authentication Events (Tier 3) */}
-              <AdminSectionPanel
-                title={t('admin:system_monitoring.auth_events')}
-                subtitle={t('admin:system_monitoring.auth_events_desc')}
-                sx={monitoringPanelSx}
-              >
-                <Box sx={monitoringChartBoxSx}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chartData}>
-                      <CartesianGrid {...gridProps} />
-                      <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
-                      <YAxis {...axisProps} width={45} />
-                      <RechartsTooltip content={renderTooltip} />
-                      <Legend onClick={(e) => handleLegendClick('auth', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
-                      <Line type="monotone" dot={false} dataKey="authLoginSuccess" name={t("admin:system_monitoring.login_success")} stroke={theme.palette.success.main} strokeWidth={2.5} hide={isolatedSeries['auth'] && isolatedSeries['auth'] !== 'authLoginSuccess'} />
-                      <Line type="monotone" dot={false} dataKey="authLoginFailure" name={t("admin:system_monitoring.login_failure")} stroke={theme.palette.error.main} strokeWidth={2.5} hide={isolatedSeries['auth'] && isolatedSeries['auth'] !== 'authLoginFailure'} />
-                      <Line type="monotone" dot={false} dataKey="authRefreshSuccess" name={t("admin:system_monitoring.refresh_success")} stroke={theme.palette.info.main} strokeWidth={2.5} hide={isolatedSeries['auth'] && isolatedSeries['auth'] !== 'authRefreshSuccess'} />
-                      <Line type="monotone" dot={false} dataKey="authRefreshFailure" name={t("admin:system_monitoring.refresh_failure")} stroke={theme.palette.warning.main} strokeWidth={2.5} hide={isolatedSeries['auth'] && isolatedSeries['auth'] !== 'authRefreshFailure'} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </Box>
-              </AdminSectionPanel>
-
+            </Box>
+            <Box sx={monitoringPanelGridSx}>
               {/* Rate Limit Rejections (Tier 3) */}
               <AdminSectionPanel
                 title={t('admin:system_monitoring.ratelimit_rejections')}
@@ -1328,7 +1315,6 @@ const AdminSystemMonitoringPage = () => {
                   </ResponsiveContainer>
                 </Box>
               </AdminSectionPanel>
-
               {/* Active WebSocket Connections (Tier 3) */}
               <AdminSectionPanel
                 title={t('admin:system_monitoring.websocket_connections')}
@@ -1349,7 +1335,8 @@ const AdminSystemMonitoringPage = () => {
                   </ResponsiveContainer>
                 </Box>
               </AdminSectionPanel>
-
+            </Box>
+            <Box sx={monitoringPanelGridSx}>
               {/* Active SSE Connections (real-time push) */}
               <AdminSectionPanel
                 title={t('admin:system_monitoring.sse_connections', 'SSE Connections')}
@@ -1370,7 +1357,6 @@ const AdminSystemMonitoringPage = () => {
                   </ResponsiveContainer>
                 </Box>
               </AdminSectionPanel>
-
               {/* SSE Events Pushed by type (feature-toggled / verification / ban / new-message) */}
               <AdminSectionPanel
                 title={t('admin:system_monitoring.sse_events', 'Total SSE Events Pushed')}
@@ -1410,7 +1396,193 @@ const AdminSystemMonitoringPage = () => {
                   </ResponsiveContainer>
                 </Box>
               </AdminSectionPanel>
+            </Box>
 
+            {/* --- SECTION: CÁC LỖI --- */}
+            <Typography variant="h5" sx={{ fontWeight: 800, mt: 4, mb: 1, color: 'primary.main', borderBottom: '2px solid', borderColor: 'divider', pb: 1 }}>
+              Các lỗi
+            </Typography>
+            <Box sx={monitoringPanelGridSx}>
+              <AdminSectionPanel
+                title={t('admin:system_monitoring.app_exceptions_breakdown')}
+                subtitle={t('admin:system_monitoring.app_exceptions_breakdown_desc')}
+                sx={monitoringPanelSx}
+              >
+                  <TableContainer component={Paper} sx={adminTableContainerSx}>
+                    <Table stickyHeader size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell sx={adminTableHeadCellSx}>{t('admin:system_monitoring.error_code_exception')}</TableCell>
+                          <TableCell align="right" sx={adminTableHeadCellSx}>{t('admin:system_monitoring.occurrences')}</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {exceptionStats.length === 0 && (
+                          <TableRow><TableCell colSpan={2} align="center">{t('admin:system_monitoring.no_data')}</TableCell></TableRow>
+                        )}
+                        {exceptionStats.map((row, idx) => (
+                          <TableRow key={idx} hover>
+                            <TableCell sx={{ color: 'error.main', fontWeight: 'bold' }}>{row.errorCode}</TableCell>
+                            <TableCell align="right">{row.count.toFixed(0)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+              </AdminSectionPanel>
+              {/* Error Rate */}
+              <AdminSectionPanel
+                title={t('admin:system_monitoring.http_error_rate_s')}
+                subtitle={t('admin:system_monitoring.http_error_rate_desc')}
+                sx={monitoringPanelSx}
+              >
+                <Box sx={monitoringChartBoxSx}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={chartData}>{renderDefs()}
+                      <CartesianGrid {...gridProps} />
+                      <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
+                      <YAxis {...axisProps} width={45} />
+                      <RechartsTooltip content={renderTooltip} />
+                      <Legend />
+                      <Area type="monotone" dataKey="errRate" name={t("admin:system_monitoring.http_errors")} stroke={theme.palette.error.main} fill="url(#area-error)" strokeWidth={2.5} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </Box>
+              </AdminSectionPanel>
+            </Box>
+            <Box sx={monitoringPanelGridSx}>
+              {/* Exceptions Breakdown Timeline */}
+              {availableErrorCodes.length > 0 && (
+                <AdminSectionPanel
+                  title={t('admin:system_monitoring.app_exceptions_timeline')}
+                  subtitle={t('admin:system_monitoring.app_exceptions_timeline_desc')}
+                  sx={monitoringPanelSx}
+                >
+                  <Box sx={monitoringChartBoxSx}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={chartData}>{renderDefs()}
+                        <CartesianGrid {...gridProps} />
+                        <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
+                        <YAxis {...axisProps} width={45} />
+                        <RechartsTooltip content={renderTooltip} />
+                        <Legend onClick={(e) => handleLegendClick('exceptions', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
+                        {availableErrorCodes.map((code, idx) => {
+                          const dataKey = `err_${code}`;
+                          const isIsolated = isolatedSeries['exceptions'];
+                          return (
+                            <Area 
+                              key={code} 
+                              type="monotone" 
+                              dataKey={dataKey} 
+                              name={code} 
+                              stackId="1"
+                              stroke={chartColors[idx % chartColors.length]} 
+                              fill={chartColors[idx % chartColors.length]} 
+                              fillOpacity={0.6} 
+                              hide={isIsolated && isIsolated !== dataKey}
+                            />
+                          );
+                        })}
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </Box>
+                </AdminSectionPanel>
+              )}
+              {/* Log Events Rate (Tier 2) */}
+              <AdminSectionPanel
+                title={t('admin:system_monitoring.log_events')}
+                subtitle={t('admin:system_monitoring.log_events_desc')}
+                sx={monitoringPanelSx}
+              >
+                <Box sx={monitoringChartBoxSx}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={chartData}>{renderDefs()}
+                      <CartesianGrid {...gridProps} />
+                      <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
+                      <YAxis {...axisProps} width={45} />
+                      <RechartsTooltip content={renderTooltip} />
+                      <Legend onClick={(e) => handleLegendClick('logs', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
+                      <Area type="monotone" dataKey="logWarns" name={t("admin:system_monitoring.log_warn")} stackId="1" stroke={theme.palette.warning.main} fill={theme.palette.warning.light} fillOpacity={0.5} hide={isolatedSeries['logs'] && isolatedSeries['logs'] !== 'logWarns'} />
+                      <Area type="monotone" dataKey="logErrors" name={t("admin:system_monitoring.log_error")} stackId="1" stroke={theme.palette.error.main} fill={theme.palette.error.light} fillOpacity={0.5} hide={isolatedSeries['logs'] && isolatedSeries['logs'] !== 'logErrors'} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </Box>
+              </AdminSectionPanel>
+            </Box>
+
+            {/* --- SECTION: CÁC CHỨC NĂNG ĐẶC BIỆT --- */}
+            <Typography variant="h5" sx={{ fontWeight: 800, mt: 4, mb: 1, color: 'primary.main', borderBottom: '2px solid', borderColor: 'divider', pb: 1 }}>
+              Các chức năng đặc biệt
+            </Typography>
+            <Box sx={monitoringPanelGridSx}>
+              {/* Authentication Events (Tier 3) */}
+              <AdminSectionPanel
+                title={t('admin:system_monitoring.auth_events')}
+                subtitle={t('admin:system_monitoring.auth_events_desc')}
+                sx={monitoringPanelSx}
+              >
+                <Box sx={monitoringChartBoxSx}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData}>
+                      <CartesianGrid {...gridProps} />
+                      <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
+                      <YAxis {...axisProps} width={45} />
+                      <RechartsTooltip content={renderTooltip} />
+                      <Legend onClick={(e) => handleLegendClick('auth', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
+                      <Line type="monotone" dot={false} dataKey="authLoginSuccess" name={t("admin:system_monitoring.login_success")} stroke={theme.palette.success.main} strokeWidth={2.5} hide={isolatedSeries['auth'] && isolatedSeries['auth'] !== 'authLoginSuccess'} />
+                      <Line type="monotone" dot={false} dataKey="authLoginFailure" name={t("admin:system_monitoring.login_failure")} stroke={theme.palette.error.main} strokeWidth={2.5} hide={isolatedSeries['auth'] && isolatedSeries['auth'] !== 'authLoginFailure'} />
+                      <Line type="monotone" dot={false} dataKey="authRefreshSuccess" name={t("admin:system_monitoring.refresh_success")} stroke={theme.palette.info.main} strokeWidth={2.5} hide={isolatedSeries['auth'] && isolatedSeries['auth'] !== 'authRefreshSuccess'} />
+                      <Line type="monotone" dot={false} dataKey="authRefreshFailure" name={t("admin:system_monitoring.refresh_failure")} stroke={theme.palette.warning.main} strokeWidth={2.5} hide={isolatedSeries['auth'] && isolatedSeries['auth'] !== 'authRefreshFailure'} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Box>
+              </AdminSectionPanel>
+              {/* Background I/O Latency (Tier 1) */}
+              <AdminSectionPanel
+                title={t('admin:system_monitoring.io_latency')}
+                subtitle={t('admin:system_monitoring.io_latency_desc')}
+                sx={monitoringPanelSx}
+              >
+                <Box sx={monitoringChartBoxSx}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData}>
+                      <CartesianGrid {...gridProps} />
+                      <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
+                      <YAxis {...axisProps} width={45} />
+                      <RechartsTooltip content={renderTooltip} />
+                      <Legend onClick={(e) => handleLegendClick('io', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
+                      <Line type="monotone" dot={false} dataKey="emailLat" name={t("admin:system_monitoring.email_latency")} stroke={chartColors[0]} strokeWidth={2.5} hide={isolatedSeries['io'] && isolatedSeries['io'] !== 'emailLat'} />
+                      <Line type="monotone" dot={false} dataKey="ocrLat" name={t("admin:system_monitoring.ocr_latency")} stroke={chartColors[1]} strokeWidth={2.5} hide={isolatedSeries['io'] && isolatedSeries['io'] !== 'ocrLat'} />
+                      <Line type="monotone" dot={false} dataKey="imageLat" name={t("admin:system_monitoring.image_latency")} stroke={chartColors[2]} strokeWidth={2.5} hide={isolatedSeries['io'] && isolatedSeries['io'] !== 'imageLat'} />
+                      <Line type="monotone" dot={false} dataKey="fileUploadLat" name={t("admin:system_monitoring.file_upload_latency")} stroke={chartColors[3]} strokeWidth={2.5} hide={isolatedSeries['io'] && isolatedSeries['io'] !== 'fileUploadLat'} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Box>
+              </AdminSectionPanel>
+            </Box>
+            <Box sx={monitoringPanelGridSx}>
+              {/* Image Processing Time (Tier 1) */}
+              <AdminSectionPanel
+                title={t('admin:system_monitoring.image_processing_time', 'Image Processing Time (ms)')}
+                subtitle={t('admin:system_monitoring.image_processing_time_desc', 'Latency of image decode, resize and WebP conversion.')}
+                sx={monitoringPanelSx}
+              >
+                <Box sx={monitoringChartBoxSx}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData}>
+                      <CartesianGrid {...gridProps} />
+                      <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
+                      <YAxis {...axisProps} width={45} />
+                      <RechartsTooltip content={renderTooltip} />
+                      <Legend onClick={(e) => handleLegendClick('imageLatency', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
+                      <Line type="monotone" dot={false} dataKey="imageLat" name={t("admin:system_monitoring.avg_latency")} stroke={theme.palette.success.main} strokeWidth={2.5} hide={isolatedSeries['imageLatency'] && isolatedSeries['imageLatency'] !== 'imageLat'} />
+                      <Line type="monotone" dot={false} dataKey="imageLatP50" name={t("admin:system_monitoring.p50_latency")} stroke={theme.palette.info.main} strokeWidth={2.5} hide={isolatedSeries['imageLatency'] && isolatedSeries['imageLatency'] !== 'imageLatP50'} />
+                      <Line type="monotone" dot={false} dataKey="imageLatP95" name={t("admin:system_monitoring.p95_latency")} stroke={theme.palette.secondary.main} strokeWidth={2.5} hide={isolatedSeries['imageLatency'] && isolatedSeries['imageLatency'] !== 'imageLatP95'} />
+                      <Line type="monotone" dot={false} dataKey="imageLatP99" name={t("admin:system_monitoring.p99_latency")} stroke={theme.palette.warning.main} strokeWidth={2.5} hide={isolatedSeries['imageLatency'] && isolatedSeries['imageLatency'] !== 'imageLatP99'} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Box>
+              </AdminSectionPanel>
               {/* AI Service Latency (LLM generate calls) */}
               <AdminSectionPanel
                 title={t('admin:system_monitoring.ai_latency', 'AI Service Latency (ms)')}
@@ -1433,7 +1605,8 @@ const AdminSystemMonitoringPage = () => {
                   </ResponsiveContainer>
                 </Box>
               </AdminSectionPanel>
-
+            </Box>
+            <Box sx={monitoringPanelGridSx}>
               {/* Email Sends by Template (per-template counter rate) */}
               <AdminSectionPanel
                 title={t('admin:system_monitoring.email_by_template', 'Email Sends by Template')}
@@ -1474,91 +1647,65 @@ const AdminSystemMonitoringPage = () => {
                 </Box>
               </AdminSectionPanel>
             </Box>
-
-            {/* JVM Threads */}
-            <Card elevation={0} sx={cardSx}>
-              <CardContent>
-                <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2, color: 'primary.main' }}>{t('admin:system_monitoring.jvm_threads', 'JVM Threads')}</Typography>
-                <Box sx={{ height: 300 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chartData}>
-                      <CartesianGrid {...gridProps} />
-                      <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
-                      <YAxis {...axisProps} width={45} />
-                      <RechartsTooltip content={renderTooltip} />
-                      <Legend onClick={(e) => handleLegendClick('threads', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
-                      <Line type="monotone" dot={false} dataKey="threadsCurrent" name={t("admin:system_monitoring.threads_current", "Current Threads")} stroke={theme.palette.info.main} strokeWidth={2.5} hide={isolatedSeries['threads'] && isolatedSeries['threads'] !== 'threadsCurrent'} />
-                      <Line type="monotone" dot={false} dataKey="threadsDaemon" name={t("admin:system_monitoring.threads_daemon", "Daemon Threads")} stroke={theme.palette.secondary.main} strokeWidth={2.5} hide={isolatedSeries['threads'] && isolatedSeries['threads'] !== 'threadsDaemon'} />
-                      <Line type="monotone" dot={false} dataKey="threadsPeak" name={t("admin:system_monitoring.threads_peak", "Peak Threads")} stroke={theme.palette.error.main} strokeWidth={2.5} hide={isolatedSeries['threads'] && isolatedSeries['threads'] !== 'threadsPeak'} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </Box>
-              </CardContent>
-            </Card>
-
-            {/* DB Connection Pool */}
-            <Card elevation={0} sx={cardSx}>
-              <CardContent>
-                <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2, color: 'primary.main' }}>{t('admin:system_monitoring.db_connections', 'Database Connections (R2DBC)')}</Typography>
-                <Box sx={{ height: 300 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={chartData}>{renderDefs()}
-                      <CartesianGrid {...gridProps} />
-                      <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(unix) => dayjs(unix * 1000).format(chartFormat)} {...axisProps} />
-                      <YAxis {...axisProps} width={45} />
-                      <RechartsTooltip content={renderTooltip} />
-                      <Legend onClick={(e) => handleLegendClick('db', e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
-                      <Area type="monotone" dataKey="dbActive" name={t("admin:system_monitoring.db_active", "Active")} stackId="1" stroke={theme.palette.success.main} fill={theme.palette.success.light} fillOpacity={0.6} hide={isolatedSeries['db'] && isolatedSeries['db'] !== 'dbActive'} />
-                      <Area type="monotone" dataKey="dbIdle" name={t("admin:system_monitoring.db_idle", "Idle")} stackId="1" stroke={theme.palette.info.main} fill={theme.palette.info.light} fillOpacity={0.6} hide={isolatedSeries['db'] && isolatedSeries['db'] !== 'dbIdle'} />
-                      <Area type="monotone" dataKey="dbPending" name={t("admin:system_monitoring.db_pending", "Pending")} stackId="1" stroke={theme.palette.warning.main} fill={theme.palette.warning.light} fillOpacity={0.6} hide={isolatedSeries['db'] && isolatedSeries['db'] !== 'dbPending'} />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </Box>
-              </CardContent>
-            </Card>
-
-            {/* Data Table */}
-            <AdminSectionPanel
-              title={t('admin:system_monitoring.detailed_metrics_data')}
-              subtitle={t('admin:system_monitoring.detailed_metrics_data_desc')}
-              sx={monitoringPanelSx}
-            >
-                <TableContainer component={Paper} sx={{ ...adminTableContainerSx, maxHeight: 420 }}>
-                  <Table stickyHeader size="small">
-                    <TableHead>
-                      <TableRow>
-                        <TableCell sx={adminTableHeadCellSx}>{t('admin:system_monitoring.time')}</TableCell>
-                        <TableCell align="right" sx={adminTableHeadCellSx}>{t('admin:system_monitoring.req_rate')}</TableCell>
-                        <TableCell align="right" sx={adminTableHeadCellSx}>{t('admin:system_monitoring.avg_latency_ms')}</TableCell>
-                        <TableCell align="right" sx={adminTableHeadCellSx}>{t('admin:system_monitoring.p50_latency_ms')}</TableCell>
-                        <TableCell align="right" sx={adminTableHeadCellSx}>{t('admin:system_monitoring.p99_latency_ms')}</TableCell>
-                        <TableCell align="right" sx={adminTableHeadCellSx}>{t('admin:system_monitoring.http_errors_s')}</TableCell>
-                        <TableCell align="right" sx={adminTableHeadCellSx}>{t('admin:system_monitoring.app_errors')}</TableCell>
-                        <TableCell align="right" sx={adminTableHeadCellSx}>{t('admin:system_monitoring.sys_cpu_pct')}</TableCell>
-                        <TableCell align="right" sx={adminTableHeadCellSx}>{t('admin:system_monitoring.jvm_cpu_pct')}</TableCell>
-                        <TableCell align="right" sx={adminTableHeadCellSx}>{t('admin:system_monitoring.heap_mb')}</TableCell>
-                        <TableCell align="right" sx={adminTableHeadCellSx}>{t('admin:system_monitoring.gc_pause_ms')}</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {[...chartData].reverse().map((row, idx) => (
-                        <TableRow key={idx} hover>
-                          <TableCell>{row.timeFormatted}</TableCell>
-                          <TableCell align="right">{row.reqRate?.toFixed(2) || 0}</TableCell>
-                          <TableCell align="right">{row.latAvg?.toFixed(2) || 0}</TableCell>
-                          <TableCell align="right">{row.latP50?.toFixed(2) || 0}</TableCell>
-                          <TableCell align="right">{row.latP99?.toFixed(2) || 0}</TableCell>
-                          <TableCell align="right">{row.errRate?.toFixed(2) || 0}</TableCell>
-                          <TableCell align="right">{row.appErr?.toFixed(2) || 0}</TableCell>
-                          <TableCell align="right">{row.cpuSys?.toFixed(2) || 0}</TableCell>
-                          <TableCell align="right">{row.cpuProc?.toFixed(2) || 0}</TableCell>
-                          <TableCell align="right">{row.memHeap?.toFixed(2) || 0}</TableCell>
-                          <TableCell align="right">{row.gcPause?.toFixed(2) || 0}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
+            <AdminSectionPanel title="Cronjobs Execution Monitoring" icon={<TimerOutlinedIcon />} defaultExpanded>
+              <Box sx={monitoringPanelGridSx}>
+                <Card sx={cardSx}>
+                  <CardContent>
+                    <Typography variant="h6" sx={{ fontSize: 14, fontWeight: 700, mb: 2 }}>Execution Count by Job</Typography>
+                    <Box sx={monitoringChartBoxSx}>
+                      {availableCronjobs.length > 0 ? (
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+                            {renderDefs()}
+                            <CartesianGrid {...gridProps} />
+                            <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(t) => dayjs(t * 1000).format(chartFormat)} {...axisProps} />
+                            <YAxis {...axisProps} />
+                            <RechartsTooltip content={renderTooltip} />
+                            <Legend wrapperStyle={{ fontSize: 12 }} onClick={(e) => handleLegendClick('cron_exec', e.dataKey)} />
+                            {availableCronjobs.map((jobName, idx) => {
+                              const dataKey = `cron_exec_${jobName}`;
+                              const isHidden = isolatedSeries['cron_exec'] && isolatedSeries['cron_exec'] !== dataKey;
+                              return (
+                                <Line key={jobName} type="monotone" dataKey={dataKey} name={jobName} stroke={isHidden ? theme.palette.action.disabled : chartColors[idx % chartColors.length]} strokeWidth={isHidden ? 1 : 2} dot={false} isAnimationActive={false} />
+                              );
+                            })}
+                          </LineChart>
+                        </ResponsiveContainer>
+                      ) : (
+                        <Box sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Typography color="text.secondary">No cronjob data</Typography></Box>
+                      )}
+                    </Box>
+                  </CardContent>
+                </Card>
+                <Card sx={cardSx}>
+                  <CardContent>
+                    <Typography variant="h6" sx={{ fontSize: 14, fontWeight: 700, mb: 2 }}>Average Duration (ms) by Job</Typography>
+                    <Box sx={monitoringChartBoxSx}>
+                      {availableCronjobs.length > 0 ? (
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+                            {renderDefs()}
+                            <CartesianGrid {...gridProps} />
+                            <XAxis dataKey="time" type="number" scale="time" domain={['dataMin', 'dataMax']} ticks={chartTicks} tickFormatter={(t) => dayjs(t * 1000).format(chartFormat)} {...axisProps} />
+                            <YAxis {...axisProps} />
+                            <RechartsTooltip content={renderTooltip} />
+                            <Legend wrapperStyle={{ fontSize: 12 }} onClick={(e) => handleLegendClick('cron_dur', e.dataKey)} />
+                            {availableCronjobs.map((jobName, idx) => {
+                              const dataKey = `cron_dur_${jobName}`;
+                              const isHidden = isolatedSeries['cron_dur'] && isolatedSeries['cron_dur'] !== dataKey;
+                              return (
+                                <Line key={jobName} type="monotone" dataKey={dataKey} name={jobName} stroke={isHidden ? theme.palette.action.disabled : chartColors[(idx + 5) % chartColors.length]} strokeWidth={isHidden ? 1 : 2} dot={false} isAnimationActive={false} />
+                              );
+                            })}
+                          </LineChart>
+                        </ResponsiveContainer>
+                      ) : (
+                        <Box sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Typography color="text.secondary">No cronjob data</Typography></Box>
+                      )}
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Box>
             </AdminSectionPanel>
           </Stack>
         )}

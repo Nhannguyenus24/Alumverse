@@ -47,6 +47,7 @@ const ContactPage = () => {
     { value: 'admissions', label: t('subject_admissions') },
     { value: 'alumni', label: t('subject_alumni') },
     { value: 'partnership', label: t('subject_partnership') },
+    { value: 'system_error', label: t('subject_system_error') },
     { value: 'other', label: t('subject_other') },
   ];
 

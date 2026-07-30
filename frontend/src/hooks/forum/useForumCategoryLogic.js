@@ -1,10 +1,18 @@
-import { useMemo, useCallback, useEffect, useRef } from 'react';
+import { useMemo, useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useLocation } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useOrgNavigate } from '../useOrgNavigate';
 import { useForumCategories } from './useForumCategories';
 import { useForumTopics } from './useForumTopics';
+import { useDebounce } from '../useDebounce';
 import { useNotification } from '../useNotification';
+
+export const FORUM_TOPIC_SORT_OPTIONS = {
+  NEWEST: 'newest',
+  MOST_VIEWED: 'most_viewed',
+};
+
+export const FORUM_TOPICS_PAGE_SIZE = 20;
 
 export const useForumCategoryLogic = (organizationId) => {
   const { t } = useTranslation('forum');
@@ -22,7 +30,41 @@ export const useForumCategoryLogic = (organizationId) => {
     return Number.isFinite(n) && n > 0 ? n : null;
   }, [categoryIdParam]);
 
-  const { topics, isPending: topicsPending, isError } = useForumTopics(categoryId, '', 0, 50);
+  // Search topics by title (debounced), sort control (newest vs. most viewed), and pagination.
+  const [searchKeyword, setSearchKeyword] = useState('');
+  const [sortBy, setSortBy] = useState(FORUM_TOPIC_SORT_OPTIONS.NEWEST);
+  const [page, setPage] = useState(0);
+  const debouncedKeyword = useDebounce(searchKeyword.trim(), 400);
+
+  // Render-phase resets (React's recommended alternative to setState inside an effect).
+  // Navigating to a different category clears the search box and sort order.
+  const [trackedCategoryId, setTrackedCategoryId] = useState(categoryId);
+  if (categoryId !== trackedCategoryId) {
+    setTrackedCategoryId(categoryId);
+    setSearchKeyword('');
+    setSortBy(FORUM_TOPIC_SORT_OPTIONS.NEWEST);
+  }
+
+  // Any change to the effective result set (category, keyword, or sort) returns to page 1.
+  const resultKey = `${categoryId}|${debouncedKeyword}|${sortBy}`;
+  const [trackedResultKey, setTrackedResultKey] = useState(resultKey);
+  if (resultKey !== trackedResultKey) {
+    setTrackedResultKey(resultKey);
+    setPage(0);
+  }
+
+  const {
+    topics,
+    pageInfo,
+    isPending: topicsPending,
+    isError,
+  } = useForumTopics(
+    categoryId,
+    debouncedKeyword,
+    sortBy,
+    page,
+    FORUM_TOPICS_PAGE_SIZE
+  );
 
   useEffect(() => {
     if (categoryId != null) {
@@ -122,5 +164,13 @@ export const useForumCategoryLogic = (organizationId) => {
     pageTitle,
     handleFilterChange,
     navigate,
+    searchKeyword,
+    setSearchKeyword,
+    debouncedKeyword,
+    sortBy,
+    setSortBy,
+    page,
+    setPage,
+    pageInfo,
   };
 };

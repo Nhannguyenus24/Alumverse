@@ -53,6 +53,7 @@ export const getNetworkIncomingRequestFilterConfig = (t) => [
     multiple: false,
     options: [
       { value: 'PENDING', label: t('incoming_status_pending') },
+      { value: 'SENT', label: t('incoming_status_sent') },
       { value: 'REJECTED', label: t('incoming_status_rejected') },
     ],
   },

@@ -10,23 +10,27 @@ const formatDateRange = (start, end) => {
   return `${sText} - ${eText}`;
 };
 
-export const toEventCardShape = (event) => {
+const resolveCardImage = (primary, fallback) => primary || fallback || "/placeholder-image.png";
+
+export const toEventCardShape = (event, fallbackImage = null) => {
   if (!event) return null;
   const raw = event.content ?? "";
   const plain = normalizePreviewText(raw);
-  const description = plain.length > 180 ? `${plain.slice(0, 180)}…` : plain;
+  const description = plain.length > 260 ? `${plain.slice(0, 260)}…` : plain;
 
   return {
     id: event.id,
     channel: event.channel ?? "event",
     title: normalizePreviewText(event.title),
-    date: formatDateRange(event.eventDate, event.eventEndDate),
+    date: formatDateRange(event.eventDate ?? event.startTime, event.eventEndDate ?? event.endTime),
     organizer: event.organizer ?? event.location ?? "",
     participants: event.joinedCount ?? 0,
     interested: event.interestedCount ?? 0,
     isRegistered: event.isRegistered ?? event.registered ?? event.hasRegistered ?? false,
     registrationEndAt: event.registrationEndAt,
+    startTime: event.startTime ?? event.eventDate,
+    endTime: event.endTime ?? event.eventEndDate,
     description,
-    image: event.thumbnailUrl ?? "/placeholder-image.png",
+    image: resolveCardImage(event.thumbnailUrl, fallbackImage),
   };
 };

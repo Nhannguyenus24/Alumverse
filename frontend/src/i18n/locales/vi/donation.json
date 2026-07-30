@@ -156,6 +156,8 @@
   "checkout_dialog_desc": "Vui lòng quét mã QR bên dưới để hoàn tất đóng góp.",
   "checkout_qr_alt": "Mã QR thanh toán",
   "checkout_qr_failed": "Không thể hiển thị QR trực tiếp. Bạn vui lòng mở liên kết thanh toán.",
+  "checkout_dialog_done": "Hoàn tất",
+  "checkout_dialog_close": "Đóng",
   "donate_button": "Quyên góp",
   "channel_label": "Quyên góp",
   "stat_donors": "người quyên góp",

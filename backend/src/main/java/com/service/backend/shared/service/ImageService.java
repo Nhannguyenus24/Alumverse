@@ -105,7 +105,10 @@ public class ImageService {
                     .fromBytes(imageBytes)
                     .output(WebpWriter.DEFAULT, targetPath);
 
-            sample.stop(meterRegistry.timer("image.processing.time"));
+            sample.stop(Timer.builder("image.processing.time")
+                    .publishPercentiles(0.5, 0.95, 0.99)
+                    .publishPercentileHistogram(true)
+                    .register(meterRegistry));
             return domain + fileName;
 
         } catch (IllegalArgumentException e) {
@@ -159,10 +162,7 @@ public class ImageService {
         if (value.startsWith("http://") || value.startsWith("https://") || value.startsWith("/") || value.startsWith("blob:")) {
             return true;
         }
-        if (value.contains(".") || value.contains("/") || value.length() < 100) {
-            return true;
-        }
-        return false;
+        return value.contains(".") || value.contains("/") || value.length() < 100;
     }
 
     public Mono<String> uploadBase64IfPresent(String base64String) {

@@ -1,9 +1,16 @@
 package com.service.backend.chat.service;
 
+import com.service.backend.chat.dao.ChatConversationRequestRepository;
+import com.service.backend.chat.dao.ChatGroupMemberRepository;
+import com.service.backend.chat.dao.ChatGroupRepository;
 import com.service.backend.chat.dao.UserBlockRepository;
+import com.service.backend.shared.entity.ChatConversationRequest;
+import com.service.backend.shared.entity.ChatGroup;
 import com.service.backend.shared.entity.UserBlock;
+import com.service.backend.shared.enums.ConversationRequestStatus;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
+import org.mockito.ArgumentCaptor;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -25,6 +32,9 @@ import static org.mockito.Mockito.*;
 class UserBlockServiceTest {
 
     @Mock private UserBlockRepository userBlockRepository;
+    @Mock private ChatConversationRequestRepository chatConversationRequestRepository;
+    @Mock private ChatGroupRepository chatGroupRepository;
+    @Mock private ChatGroupMemberRepository chatGroupMemberRepository;
 
     @InjectMocks
     private UserBlockService userBlockService;
@@ -74,6 +84,9 @@ class UserBlockServiceTest {
             when(userBlockRepository.countAnyBlockBetweenMembers(1L, 2L))
                     .thenReturn(Mono.just(0L));
             when(userBlockRepository.save(any())).thenReturn(Mono.just(savedBlock));
+            // No existing connection between the pair — sever is a no-op.
+            when(chatConversationRequestRepository.findByMemberPair(1L, 2L)).thenReturn(Mono.empty());
+            when(chatGroupRepository.findPrivateChatBetweenMembers(1L, 2L)).thenReturn(Mono.empty());
 
             StepVerifier.create(userBlockService.blockUser(1L, 2L))
                     .assertNext(block -> {
@@ -81,6 +94,42 @@ class UserBlockServiceTest {
                         assertThat(block.getBlockedMemberId()).isEqualTo(2L);
                     })
                     .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("should sever an existing ACCEPTED connection when blocking")
+        void blockUser_seversExistingConnection() {
+            UserBlock savedBlock = UserBlock.builder()
+                    .id(1L).blockerMemberId(1L).blockedMemberId(2L)
+                    .createdAt(LocalDateTime.now()).build();
+            ChatConversationRequest connection = ChatConversationRequest.builder()
+                    .id(9L).memberLowId(1L).memberHighId(2L)
+                    .requesterMemberId(1L).targetMemberId(2L)
+                    .chatGroupId(77L)
+                    .status(ConversationRequestStatus.ACCEPTED)
+                    .cooldownUntil(LocalDateTime.now().plusDays(1))
+                    .build();
+            ChatGroup privateGroup = ChatGroup.builder().id(77L).build();
+
+            when(userBlockRepository.countByBlockerMemberIdAndBlockedMemberId(1L, 2L)).thenReturn(Mono.just(0L));
+            when(userBlockRepository.countAnyBlockBetweenMembers(1L, 2L)).thenReturn(Mono.just(0L));
+            when(userBlockRepository.save(any())).thenReturn(Mono.just(savedBlock));
+            when(chatConversationRequestRepository.findByMemberPair(1L, 2L)).thenReturn(Mono.just(connection));
+            when(chatConversationRequestRepository.save(any())).thenAnswer(inv -> Mono.just(inv.getArgument(0)));
+            when(chatGroupRepository.findPrivateChatBetweenMembers(1L, 2L)).thenReturn(Mono.just(privateGroup));
+            when(chatGroupMemberRepository.deleteByGroupId(77L)).thenReturn(Mono.empty());
+
+            StepVerifier.create(userBlockService.blockUser(1L, 2L))
+                    .assertNext(block -> assertThat(block.getBlockedMemberId()).isEqualTo(2L))
+                    .verifyComplete();
+
+            // Connection downgraded to DISCONNECTED with cleared cooldown.
+            ArgumentCaptor<ChatConversationRequest> captor = ArgumentCaptor.forClass(ChatConversationRequest.class);
+            verify(chatConversationRequestRepository).save(captor.capture());
+            assertThat(captor.getValue().getStatus()).isEqualTo(ConversationRequestStatus.DISCONNECTED);
+            assertThat(captor.getValue().getCooldownUntil()).isNull();
+            // Both members removed from the shared private chat group.
+            verify(chatGroupMemberRepository).deleteByGroupId(77L);
         }
     }
 

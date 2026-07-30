@@ -131,13 +131,16 @@ const AnimatedAvatar = styled(Avatar, {
 })(({ isAnimating, theme }) => ({
   width: 60,
   height: 60,
-  backgroundColor: theme.palette.primary.main,
+  backgroundColor: theme.palette.primary.lighter,
   animation: isAnimating ? `${pulse} 1.5s ease-in-out infinite` : 'none',
   transition: 'transform 0.2s',
   '&:hover': {
     transform: 'scale(1.1)',
   },
-  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+  border: `1px solid ${theme.palette.divider}`,
+  boxShadow: theme.palette.mode === 'dark'
+    ? '0 4px 14px rgba(0, 0, 0, 0.45)'
+    : '0 4px 12px rgba(0, 0, 0, 0.15)',
 }));
 
 const SuggestionBubble = styled(Paper)(({ theme }) => ({
@@ -290,115 +293,40 @@ const SUGGESTION_KEYS = [
   'fitbot_suggestion_admin_office',
 ];
 
-// SSE response handler using fetch
+// Query the RAG API and return the answer. The endpoint responds with a
+// single JSON body ({ answer, sources }), so we do a plain JSON POST that
+// mirrors the working curl request rather than SSE streaming.
 const streamSSEResponse = async (userMessage, onChunk, onComplete, onError, signal) => {
-  const apiEndpoint = '/api/fitbot/stream-query';
+  const apiEndpoint = '/fitbot-api/api/query';
 
   try {
     const requestBody = {
       question: userMessage,
-      top_k: 10,
-      use_reranker: false
+      top_k: 7,
+      model: 'gemini-2.5-flash',
+      use_reranker: false,
     };
 
     const response = await fetch(apiEndpoint, {
       method: 'POST',
       headers: {
-        'accept': 'text/event-stream, application/json',
-        'Content-Type': 'application/json', 
-        'ngrok-skip-browser-warning': 'true',
+        accept: 'application/json',
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify(requestBody),
-      signal: signal
+      signal,
     });
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const contentType = response.headers.get('content-type') || '';
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder('utf-8');
-    
-    // If not streaming, just read all and return
-    if (contentType.includes('application/json')) {
-      let result = '';
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        result += decoder.decode(value, { stream: true });
-      }
-      try {
-        const data = JSON.parse(result);
-        let answer = '';
-        if (Array.isArray(data)) {
-          answer = data.map(item => item.content || item.text || item.answer || '').join('');
-        } else {
-          answer = data.answer || data.response || data.text || data.content || (data.message ? data.message.content : '');
-        }
-        if (!answer && typeof data === 'string') {
-          answer = data;
-        }
-        if (answer) onChunk(answer);
-      } catch {
-        onChunk(result);
-      }
-      onComplete();
-      return;
-    }
+    const data = await response.json();
+    const answer = typeof data === 'string'
+      ? data
+      : (data.answer || data.response || data.text || data.content || '');
 
-    // SSE streaming handling
-    let buffer = '';
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop() || ''; // Keep the incomplete line
-
-      for (const line of lines) {
-        if (line.trim() === '') continue;
-        if (line.startsWith('data:')) {
-          const dataStr = line.slice(5).trim();
-          if (dataStr === '[DONE]') {
-            continue;
-          }
-          try {
-            const data = JSON.parse(dataStr);
-            let textChunk = '';
-            if (Array.isArray(data)) {
-              textChunk = data.map(item => item.content || item.text || item.answer || '').join('');
-            } else if (data.type === 'sources' || (data.sources && Array.isArray(data.sources))) {
-              textChunk = ''; // Không hiển thị nguồn tham khảo
-            } else {
-              textChunk = data.answer || data.response || data.text || data.content || (data.message ? data.message.content : '');
-            }
-            if (!textChunk && typeof data === 'string') {
-              textChunk = data;
-            }
-            if (textChunk) onChunk(textChunk);
-          } catch {
-            onChunk(dataStr);
-          }
-        }
-      }
-    }
-    
-    // Process remaining buffer
-    if (buffer.startsWith('data:')) {
-      const dataStr = buffer.slice(5).trim();
-      if (dataStr && dataStr !== '[DONE]') {
-        try {
-          const data = JSON.parse(dataStr);
-          const textChunk = data.answer || data.response || data.text || data.content || (data.message ? data.message.content : '') || dataStr;
-          if (textChunk) onChunk(textChunk);
-        } catch {
-          onChunk(dataStr);
-        }
-      }
-    }
-
+    if (answer) onChunk(answer);
     onComplete();
   } catch (error) {
     if (error.name !== 'AbortError') {

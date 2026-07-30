@@ -60,7 +60,7 @@ import {
   getMentorshipProfileOnlyTabs,
 } from '../../constants/mentorshipNav';
 import { useTranslation } from 'react-i18next';
-import { formatDate } from '../../utils/dateFormatter';
+
 import { formatRating } from '../../utils/numberFormatter';
 import { resolveProfileRoleLabel } from '../../utils/profileRoleUtils';
 import { resolveMediaUrl } from '../../utils/imageUtils';
@@ -276,11 +276,7 @@ const ReviewsSection = ({
         <Stack spacing={3}>
           {feedbacks.map((review) => (
             <ScrollReveal key={review.id}><MentorshipReviewCard
-              name={review.menteeName ?? 'Mentee'}
-              date={formatDate(review.createdAt, '')}
-              avatar={review.menteeAvatarUrl ?? ''}
-              rating={review.rating}
-              content={review.comment ?? ''}
+              review={review}
             /></ScrollReveal>
           ))}
         </Stack>

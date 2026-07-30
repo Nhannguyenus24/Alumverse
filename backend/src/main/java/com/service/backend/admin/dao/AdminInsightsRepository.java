@@ -32,7 +32,10 @@ public interface AdminInsightsRepository extends R2dbcRepository<Event, Long> {
     @Query("SELECT COALESCE(SUM(max_capacity), 0) FROM events")
     Mono<Long> sumEventCapacity();
 
-    @Query("SELECT COUNT(*) FROM event_tickets WHERE status <> 'CANCELLED'")
+    // A registration only counts when the ticket is in a live state, mirroring the
+    // canonical definition used across the event module (EventR2dbcRepository) so the
+    // funnel does not inflate "registered" with REJECTED / EXPIRED / PENDING tickets.
+    @Query("SELECT COUNT(*) FROM event_tickets WHERE status IN ('ISSUED', 'ACTIVE', 'USED', 'CHECKED_IN')")
     Mono<Long> countActiveTickets();
 
     @Query("SELECT COUNT(*) FROM event_tickets WHERE checked_in_at IS NOT NULL")
@@ -133,7 +136,7 @@ public interface AdminInsightsRepository extends R2dbcRepository<Event, Long> {
     // ================== Platform: org comparison =====================
 
     @Query("SELECT o.id AS org_id, o.name AS name, " +
-           "(SELECT COUNT(*) FROM organization_members m WHERE m.organization_id = o.id) AS members, " +
+           "(SELECT COUNT(*) FROM organization_members m WHERE m.organization_id = o.id AND m.status = 'ACTIVE') AS members, " +
            "(SELECT COUNT(*) FROM events e WHERE e.organization_id = o.id) AS events, " +
            "(SELECT COUNT(*) FROM forum_topics ft WHERE ft.organization_id = o.id) AS topics, " +
            "(SELECT COUNT(*) FROM jobs j WHERE j.organization_id = o.id) AS jobs " +

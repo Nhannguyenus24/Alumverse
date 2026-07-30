@@ -369,10 +369,20 @@ export const chatApi = {
 		return unwrap(response);
 	},
 
+	async getUnreadCount() {
+		const response = await apiClient.get('/chat/unread-count');
+		return Number(unwrap(response)) || 0;
+	},
+
 	async getMessages(groupId, page = 0, size = 10) {
 		const response = await apiClient.get(`/chat/groups/${groupId}/messages`, {
 			params: { page, size },
 		});
+		return unwrap(response);
+	},
+
+	async markGroupAsRead(groupId) {
+		const response = await apiClient.post(`/chat/groups/${groupId}/read`);
 		return unwrap(response);
 	},
 
@@ -1370,6 +1380,10 @@ const mentorshipApi = {
 	uploadCvFile({ base64String, fileName }) {
 		return apiClient.post(`${BASE_MENTOR}/cv/upload`, { base64String, fileName });
 	},
+
+	getHubStats(limit = 5) {
+		return apiClient.get('/mentorship/hub/stats', { params: { limit } });
+	},
 };
 
 export const {
@@ -1412,6 +1426,7 @@ export const {
 	updateSessionMeetingLink: updateMentorSessionMeetingLink,
 	getMyMentorFeedbacks,
 	uploadCvFile,
+	getHubStats,
 } = mentorshipApi;
 
 export const notificationApi = {

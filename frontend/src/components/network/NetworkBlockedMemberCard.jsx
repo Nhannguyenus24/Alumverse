@@ -45,7 +45,7 @@ const NetworkBlockedMemberCard = ({
         alignItems={{ xs: 'stretch', sm: 'center' }}
         justifyContent="space-between"
       >
-        <Stack direction="row" spacing={1.5} sx={{ flex: 1, minWidth: 0 }}>
+        <Stack direction="row" spacing={1.5} sx={{ flex: 1, minWidth: 0 }} alignItems="center">
           <Avatar src={member.avatarUrl} sx={{ width: 56, height: 56, flexShrink: 0 }} />
 
           <Box sx={{ minWidth: 0, flex: 1 }}>
@@ -67,7 +67,7 @@ const NetworkBlockedMemberCard = ({
           <ContributeGuardTooltip required="basic" placement="left">
             <Button
               variant="outlined"
-              color="inherit"
+              color="error"
               size="small"
               type="button"
               onClick={handleUnblock}

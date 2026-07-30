@@ -8,13 +8,13 @@ import PostArticleForm from '../../components/PostArticleForm';
 import PostArticleShell from '../../components/PostArticleShell';
 import useCoverUpload from '../../hooks/useCoverUpload';
 import { useCreateEvent } from '../../hooks/news/useCreateEvent';
-import { fileToCroppedCoverBase64 } from '../../utils/imageUtils';
+import { fileToBase64 } from '../../utils/imageUtils';
 import { useNotification } from '../../hooks/useNotification';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { eventApi } from '../../utils/api';
 import useOrganizationStore from '../../stores/organizationStore';
 import { useEventQuestions, mapQuestionToApi } from '../../hooks/events/useEventQuestions';
-import { extractMainImageCaption, withMainImageCaption } from '../../utils/articleContentCaption';
+import { extractMainImageCaption } from '../../utils/articleContentCaption';
 
 const normalizeQuestions = (questions = []) =>
   questions
@@ -100,9 +100,10 @@ const emptyEventData = {
 };
 
 const PostEventPage = () => {
-  const { id: eventIdParam } = useParams();
+  const { slug, id: eventIdParam } = useParams();
   const eventId = eventIdParam ? Number(eventIdParam) : null;
   const isEditMode = Boolean(eventId && !Number.isNaN(eventId));
+  const adminBase = slug ? `/${slug}/admin` : '/admin';
 
   const navigate = useOrgNavigate();
   const { t } = useTranslation(['event', 'article']);
@@ -112,7 +113,6 @@ const PostEventPage = () => {
   const {
     coverFile,
     coverPreview,
-    coverCroppedPreview,
     coverPositionY,
     handleCoverUpload,
     setCoverPreview,
@@ -121,7 +121,6 @@ const PostEventPage = () => {
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [mainImageCaption, setMainImageCaption] = useState('');
   const [topic, setTopic] = useState('');
   const [registrationQuestions, setRegistrationQuestions] = useState([]);
   const [eventData, setEventData] = useState(emptyEventData);
@@ -154,7 +153,6 @@ const PostEventPage = () => {
     const parsedContent = extractMainImageCaption(existingEvent.description || '');
     setTitle(existingEvent.title || '');
     setContent(parsedContent.content);
-    setMainImageCaption(parsedContent.caption);
     setTopic(existingEvent.topic || '');
     setEventData({
       location: existingEvent.location || '',
@@ -175,11 +173,11 @@ const PostEventPage = () => {
   };
 
   const buildPayload = async () => {
-    const bannerBase64 = coverFile ? await fileToCroppedCoverBase64(coverFile, coverPositionY) : null;
+    const bannerBase64 = coverFile ? await fileToBase64(coverFile) : null;
     const targetOrgId = isEditMode && existingOrgId ? existingOrgId : organizationId;
     return {
       title: title.trim(),
-      description: withMainImageCaption(content.trim(), mainImageCaption),
+      description: content.trim(),
       topic: topic || null,
       bannerBase64,
       location: eventData.location || null,
@@ -205,10 +203,6 @@ const PostEventPage = () => {
       showError(t('error_time_required'));
       return;
     }
-    if ((coverFile || coverPreview) && !mainImageCaption.trim()) {
-      showError(t('article:main_image_caption_required'));
-      return;
-    }
     const questionValidationError = getQuestionValidationError(registrationQuestions, t);
     if (questionValidationError) {
       showError(questionValidationError);
@@ -227,7 +221,7 @@ const PostEventPage = () => {
           showError(qErr.response?.data?.message ?? t('post_questions_failed'));
         }
         showSuccess(t('update_success'));
-        navigate(`/admin/events/${eventId}`);
+        navigate(`${adminBase}/events/${eventId}`);
         return;
       }
 
@@ -244,7 +238,7 @@ const PostEventPage = () => {
       }
 
       showSuccess(t('post_success'));
-      navigate(result?.id ? `/admin/events/${result.id}` : '/admin/events');
+      navigate(result?.id ? `${adminBase}/events/${result.id}` : `${adminBase}/events`);
     } catch (err) {
       showError(err.response?.data?.message ?? err.message ?? (isEditMode ? t('update_failed') : t('post_failed')));
     } finally {
@@ -270,7 +264,7 @@ const PostEventPage = () => {
         <Typography variant="body1" color="text.secondary" sx={{ mb: 3, maxWidth: 500 }}>
           {t('event_not_in_org_desc', { defaultValue: 'Sự kiện này thuộc về một tổ chức khác và không thể chỉnh sửa từ đường dẫn này.' })}
         </Typography>
-        <Button variant="outlined" onClick={() => navigate('/admin/events')}>
+        <Button variant="outlined" onClick={() => navigate(`${adminBase}/events`)}>
           {t('back_to_events', { defaultValue: 'Quay lại danh sách sự kiện' })}
         </Button>
       </Box>
@@ -286,7 +280,7 @@ const PostEventPage = () => {
       onCoverChange={handleCoverUpload}
       coverPositionY={coverPositionY}
       onCoverPositionYChange={setCoverPositionY}
-      onCancel={() => navigate(isEditMode ? `/admin/events/${eventId}` : -1)}
+      onCancel={() => navigate(isEditMode ? `${adminBase}/events/${eventId}` : -1)}
       onSubmit={handleSubmit}
       isPending={isPending}
       submitLabel={isEditMode ? t('update_submit_label') : t('post_submit_label')}
@@ -305,9 +299,7 @@ const PostEventPage = () => {
         handleEventInputChange={handleEventInputChange}
         registrationQuestions={registrationQuestions}
         setRegistrationQuestions={setRegistrationQuestions}
-        mainImagePreview={coverCroppedPreview ?? coverPreview}
-        mainImageCaption={mainImageCaption}
-        setMainImageCaption={setMainImageCaption}
+        mainImagePreview={coverPreview}
         showSourceUrl={false}
       />
     </PostArticleShell>

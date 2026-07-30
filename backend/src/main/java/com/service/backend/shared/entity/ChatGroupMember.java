@@ -34,5 +34,8 @@ public class ChatGroupMember {
     @CreatedDate
     @Column("joined_at")
     private LocalDateTime joinedAt;
+
+    @Column("last_read_at")
+    private LocalDateTime lastReadAt;
 }
 

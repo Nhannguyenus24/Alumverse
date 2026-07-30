@@ -3,7 +3,6 @@ import {
   createBrowserRouter,
   Navigate,
   Outlet,
-  useLocation,
 } from "react-router";
 import { Box, CircularProgress } from "@mui/material";
 import MainLayout from "../layouts/MainLayout";
@@ -29,6 +28,9 @@ if (typeof window !== "undefined") {
 
 // Public pages
 const HomePage = Loadable(lazy(() => import("../pages/public/HomePage")));
+const OrganizationSelectionPage = Loadable(
+  lazy(() => import("../pages/public/OrganizationSelectionPage")),
+);
 const IntroducePage = Loadable(
   lazy(() => import("../pages/public/IntroducePage")),
 );
@@ -210,6 +212,9 @@ const HonorsRequestAchievementsPage = Loadable(
 const ActivitiesEventsPage = Loadable(
   lazy(() => import("../pages/activities/ActivitiesEventsPage")),
 );
+const EventConfirmInvitationPage = Loadable(
+  lazy(() => import("../pages/activities/EventConfirmInvitationPage")),
+);
 const ActivitiesNewsPage = Loadable(
   lazy(() => import("../pages/activities/ActivitiesNewsPage")),
 );
@@ -265,7 +270,6 @@ const mentorshipRouteChildren = [
   {
     index: true,
     element: <MentorshipPage />,
-    handle: { hideFooter: true },
   },
   {
     path: "browse",
@@ -475,6 +479,10 @@ export const router = createBrowserRouter([
             <ActivitiesEventsPage />
           </FeatureRoute>
         ),
+      },
+      {
+        path: "events/confirm-invitation",
+        element: <EventConfirmInvitationPage />,
       },
       {
         path: "news",
@@ -805,7 +813,7 @@ export const router = createBrowserRouter([
           {
             path: "organizations",
             element: (
-              <ProtectedRoute allowedRoles={["ADMIN"]}>
+              <ProtectedRoute allowedRoles={["ADMIN", "STAFF"]}>
                 <AdminOrganizationsPage />
               </ProtectedRoute>
             ),
@@ -1332,7 +1340,7 @@ export const router = createBrowserRouter([
   },
   {
     path: "/",
-    element: <Navigate to="/404" replace />,
+    element: <OrganizationSelectionPage />,
   },
   {
     path: "/404",

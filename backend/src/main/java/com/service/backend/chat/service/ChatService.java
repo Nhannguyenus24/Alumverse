@@ -18,9 +18,12 @@ import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.enums.ChatRole;
 import com.service.backend.shared.enums.ChatType;
 import com.service.backend.shared.exception.ApplicationException;
+import com.service.backend.shared.service.SseService;
 import com.service.backend.shared.validation.ChatMessageLimits;
 import com.service.backend.shared.utils.PaginationHelper;
 import org.springframework.stereotype.Service;
+
+import java.util.Map;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -40,17 +43,20 @@ public class ChatService {
     private final ChatGroupMemberRepository chatGroupMemberRepository;
     private final ChatMessageRepository chatMessageRepository;
     private final UserBlockService userBlockService;
+    private final SseService sseService;
 
     public ChatService(
         ChatGroupRepository cGRepo,
         ChatGroupMemberRepository cGMRepo,
         ChatMessageRepository cMRepo,
-        UserBlockService userBlockService
+        UserBlockService userBlockService,
+        SseService sseService
     ) {
         this.chatGroupMemberRepository = cGMRepo;
         this.chatGroupRepository = cGRepo;
         this.chatMessageRepository = cMRepo;
         this.userBlockService = userBlockService;
+        this.sseService = sseService;
     }
 
     public Mono<ChatGroup> getPrivateChat(Long memberAId, Long memberBId) {
@@ -75,6 +81,18 @@ public class ChatService {
                 .collectList()
                 .zipWith(chatGroupRepository.countPrivateChats(memberId, text))
                 .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size));
+    }
+
+    /**
+     * Total unread messages for the member across all their chats. Used to seed the global
+     * message badge on initial load; realtime SSE {@code new-message} events keep it fresh
+     * afterwards, so the client does not need to poll this.
+     */
+    public Mono<Long> getUnreadCount(Long memberId) {
+        if (memberId == null) {
+            return Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND, "Member ID must not be null"));
+        }
+        return chatMessageRepository.countUnreadForMember(memberId).defaultIfEmpty(0L);
     }
 
     public Mono<PaginatedResponse<GroupChatListItemResponse>> getListGroupChatsWithSummary(
@@ -182,6 +200,34 @@ public class ChatService {
                         ErrorCode.CHAT_USER_NOT_GROUP_MEMBER,
                         "Current user is not a member of this chat group")))
                 .thenMany(chatMessageRepository.findByGroupIdWithSenderInfoAndPagination(groupId, limit, offset));
+    }
+
+    /**
+     * Mark a chat group as read for the current member (stamps last_read_at = now), which
+     * zeroes the conversation's unread count on the next list fetch. Emits a `chat-read`
+     * SSE event to the member's own connections so other open tabs clear the unread marker
+     * for this conversation in real time. Also emits a `chat-seen` event to every other
+     * member so a sender's "Sent" indicator flips to "Seen" live.
+     */
+    public Mono<Void> markGroupAsRead(Long groupId, Long memberId) {
+        if (groupId == null || memberId == null) {
+            return Mono.error(new ApplicationException(ErrorCode.RESOURCES_NOT_FOUND, "Group ID and member ID must not be null"));
+        }
+
+        LocalDateTime readAt = LocalDateTime.now();
+        return chatGroupMemberRepository.findByGroupIdAndMemberId(groupId, memberId)
+                .switchIfEmpty(Mono.error(new ApplicationException(
+                        ErrorCode.CHAT_USER_NOT_GROUP_MEMBER,
+                        "Current user is not a member of this chat group")))
+                .flatMap(ignored -> chatGroupMemberRepository.markAsRead(groupId, memberId, readAt))
+                .doOnSuccess(ignored -> sseService.sendToUser(memberId, "chat-read", Map.of("groupId", groupId)))
+                .thenMany(chatGroupMemberRepository.findByGroupId(groupId)
+                        .filter(member -> !memberId.equals(member.getMemberId()))
+                        .doOnNext(member -> sseService.sendToUser(member.getMemberId(), "chat-seen", Map.of(
+                                "groupId", groupId,
+                                "readerMemberId", memberId,
+                                "readAt", readAt))))
+                .then();
     }
 
     /**

@@ -28,6 +28,7 @@ public interface NetworkMemberSearchRepository
             WHERE (:filterByOrg = FALSE OR om.organization_id IN (:organizationIds))
               AND om.status = 'ACTIVE'
               AND u.status = 'ACTIVE'
+              AND u.role NOT IN ('ADMIN', 'STAFF')
               AND u.id <> :currentUserId
               AND NOT EXISTS (
                 SELECT 1 FROM user_blocks ub
@@ -63,7 +64,8 @@ public interface NetworkMemberSearchRepository
                        CAST(om.program AS text) AS program,
                        CAST(om.major AS text) AS major,
                        u.avatar_url AS avatar_url,
-                       ccr.status AS connection_status
+                       CASE WHEN ccr.status = 'DISCONNECTED' THEN NULL ELSE ccr.status END AS connection_status,
+                       (ccr.status = 'PENDING' AND ccr.target_member_id = :currentUserId) AS incoming
             """ + SEARCH_FROM_JOIN + SEARCH_CONNECTION_JOIN + SEARCH_WHERE + """
                 ORDER BY om.user_id, om.id ASC
             ) sub

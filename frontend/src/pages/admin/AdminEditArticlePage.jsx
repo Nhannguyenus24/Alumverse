@@ -15,14 +15,15 @@ import CoverUpload from '../../components/CoverUpload';
 import { useArticleById } from '../../hooks/articles/useArticleById';
 import { useUpdateArticle } from '../../hooks/articles/useUpdateArticle';
 import {
-  fileToCroppedCoverBase64,
+  fileToBase64,
   getJsonPayloadByteSize,
   MAX_JSON_PAYLOAD_BYTES,
   validateImageFile,
 } from '../../utils/imageUtils';
-import { extractMainImageCaption, withMainImageCaption } from '../../utils/articleContentCaption';
+import { extractMainImageCaption } from '../../utils/articleContentCaption';
 import { useNotification } from '../../hooks/useNotification';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
+import { normalizeArticleTopicForChannel } from '../../utils/articleTopics';
 
 import useOrganizationStore from '../../stores/organizationStore';
 
@@ -41,8 +42,6 @@ const articleContent = (a) =>
 
 const articleThumbnail = (a) =>
   a?.thumbnailUrl ?? a?.imageUrl ?? a?.bannerUrl ?? a?.logoUrl ?? null;
-
-const CAPTION_REQUIRED_CHANNELS = new Set(['news', 'alumni', 'achievement', 'job', 'learning']);
 
 const AdminEditArticlePage = () => {
   const { t } = useTranslation(['admin', 'article']);
@@ -68,10 +67,8 @@ const AdminEditArticlePage = () => {
   const [topic, setTopic] = useState('');
   const [coverFile, setCoverFile] = useState(null);
   const [coverPreview, setCoverPreview] = useState(null);
-  const [coverCroppedPreview, setCoverCroppedPreview] = useState(null);
   const [coverPositionY, setCoverPositionY] = useState(50);
   const [url, setUrl] = useState('');
-  const [mainImageCaption, setMainImageCaption] = useState('');
 
   useEffect(() => {
     if (!article || isOrgMismatch) return;
@@ -79,40 +76,18 @@ const AdminEditArticlePage = () => {
     setTitle(article.title ?? '');
     const parsedContent = extractMainImageCaption(articleContent(article));
     setContent(parsedContent.content);
-    setMainImageCaption(parsedContent.caption);
     setCoverPreview(articleThumbnail(article));
-    setTopic(article.topic ?? article.type ?? '');
+    setTopic(normalizeArticleTopicForChannel(channel, article.topic ?? article.type ?? ''));
     setUrl(article.url || article.linkUrl || '');
   }, [article, isOrgMismatch]);
 
   useEffect(() => {
     if (!article || isOrgMismatch) return;
     setBreadcrumbs?.([
-      { label: t('admin:articles'), path: `${adminBase}/articles` },
+      { label: t('admin:articles'), path: `${adminBase}/article` },
       { label: t('admin:edit_article_breadcrumb'), active: true },
     ]);
   }, [article, setBreadcrumbs, t, adminBase, isOrgMismatch]);
-
-  useEffect(() => {
-    if (!coverFile) {
-      return undefined;
-    }
-
-    let isCancelled = false;
-    const timeout = window.setTimeout(async () => {
-      try {
-        const nextPreview = await fileToCroppedCoverBase64(coverFile, coverPositionY);
-        if (!isCancelled) setCoverCroppedPreview(nextPreview);
-      } catch {
-        if (!isCancelled) setCoverCroppedPreview(coverPreview);
-      }
-    }, 80);
-
-    return () => {
-      isCancelled = true;
-      window.clearTimeout(timeout);
-    };
-  }, [coverFile, coverPositionY, coverPreview]);
 
   const handleCoverUpload = (event) => {
     const file = event.target.files?.[0];
@@ -138,20 +113,15 @@ const AdminEditArticlePage = () => {
         return;
       }
     }
-    if (CAPTION_REQUIRED_CHANNELS.has(channel) && (coverFile || articleThumbnail(article)) && !mainImageCaption.trim()) {
-      showError(t('article:main_image_caption_required'));
-      return;
-    }
-
     try {
-      const thumbnailBase64 = coverFile ? await fileToCroppedCoverBase64(coverFile, coverPositionY) : null;
+      const thumbnailBase64 = coverFile ? await fileToBase64(coverFile) : null;
       if (thumbnailBase64 && getJsonPayloadByteSize({ base64String: thumbnailBase64 }) > MAX_JSON_PAYLOAD_BYTES) {
         showError(t('article:main_image_too_large'));
         return;
       }
       const payload = {
         title: title.trim(),
-        content: withMainImageCaption(content.trim(), mainImageCaption),
+        content: content.trim(),
         // Send the raw image inline; the backend converts it to WebP and stores it. When no new
         // image is picked (thumbnailBase64 is null), the backend keeps the existing thumbnail.
         thumbnailBase64,
@@ -187,7 +157,7 @@ const AdminEditArticlePage = () => {
         <Typography color="text.secondary">
           {t('admin:article_not_in_org_desc', 'Nội dung này thuộc về một tổ chức khác và không thể chỉnh sửa từ đường dẫn hiện tại.')}
         </Typography>
-        <Button variant="outlined" onClick={() => navigate(`${adminBase}/articles`)}>
+        <Button variant="outlined" onClick={() => navigate(`${adminBase}/article`)}>
           {t('admin:back_to_article_list', 'Quay lại danh sách')}
         </Button>
       </Stack>
@@ -198,7 +168,7 @@ const AdminEditArticlePage = () => {
     return (
       <Stack alignItems="center" spacing={2} sx={{ py: 8 }}>
         <Typography color="text.secondary">{t('admin:article_not_found')}</Typography>
-        <Button variant="outlined" onClick={() => navigate(`${adminBase}/articles`)}>
+        <Button variant="outlined" onClick={() => navigate(`${adminBase}/article`)}>
           Back to article list
         </Button>
       </Stack>
@@ -249,15 +219,13 @@ const AdminEditArticlePage = () => {
               setTopic={setTopic}
               url={url}
               setUrl={setUrl}
-              mainImagePreview={coverCroppedPreview ?? coverPreview}
-              mainImageCaption={mainImageCaption}
-              setMainImageCaption={setMainImageCaption}
+              mainImagePreview={coverPreview}
             />
 
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, pt: 2, mt: 3 }}>
               <Button
                 variant="outlined"
-                onClick={() => navigate(`${adminBase}/articles`)}
+                onClick={() => navigate(`${adminBase}/article`)}
                 sx={{ textTransform: 'none', px: 3, fontWeight: 700 }}
               >
                 {t('admin:cancel')}

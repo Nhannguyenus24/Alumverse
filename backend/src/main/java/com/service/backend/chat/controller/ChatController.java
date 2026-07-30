@@ -84,6 +84,19 @@ public class ChatController {
 
 
     /*
+        Total unread messages for the current user across all chats. Used to seed the global
+        message badge on initial page load; afterwards the badge is kept live by SSE, so the
+        client should not poll this endpoint.
+    */
+    @GetMapping("/unread-count")
+    public Mono<ResponseEntity<ApiResponse<Long>>> getUnreadCount() {
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(this.chatService::getUnreadCount)
+                .map(count -> ResponseEntity
+                        .ok(new ApiResponse<>("Unread count retrieved successfully", count)));
+    }
+
+    /*
         Get whether the peer of a private chat is still eligible to receive messages
         (account status ACTIVE or UNVERIFIED). Used by the chat UI, right when a private
         chat is opened, to warn the user and disable the composer if the peer's account
@@ -138,7 +151,22 @@ public class ChatController {
 
 
     /*
-        Create a group chat with a list of member IDs                  
+        Mark a chat group as read for the current user. Stamps last_read_at = now so the
+        conversation's unread count drops to 0 on the next list fetch, and notifies the
+        user's other open tabs via SSE (chat-read) to clear the unread marker in real time.
+    */
+    @PostMapping("/groups/{groupId}/read")
+    public Mono<ResponseEntity<ApiResponse<Void>>> markGroupAsRead(
+            @PathVariable("groupId") @Min(1) Long groupId) {
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(memberId -> this.chatService.markGroupAsRead(groupId, memberId))
+                .thenReturn(ResponseEntity
+                        .ok(new ApiResponse<>("Chat group marked as read", null)));
+    }
+
+
+    /*
+        Create a group chat with a list of member IDs
     */
     @PostMapping("/groups")
     public Mono<ResponseEntity<ApiResponse<ChatGroup>>> createGroupChat(
