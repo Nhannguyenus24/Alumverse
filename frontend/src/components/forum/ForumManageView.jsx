@@ -1,7 +1,6 @@
 import { Box, IconButton, Paper, TextField, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button } from '@mui/material';
 import { useState } from 'react';
 import AddIcon from '@mui/icons-material/Add';
-import SaveIcon from '@mui/icons-material/Save';
 import ForumManageTopicItem from './ForumManageTopicItem';
 import { useTranslation } from 'react-i18next';
 
@@ -90,9 +89,9 @@ const ForumManageView = ({
             size="small"
             onClick={handleAddMainTopic}
             sx={{ color: 'success.main', flexShrink: 0 }}
-            aria-label={t('save_main_topic_aria')}
+            aria-label={t('add_main_topic_aria')}
           >
-            <SaveIcon sx={{ fontSize: 28 }} />
+            <AddIcon sx={{ fontSize: 28 }} />
           </IconButton>
         </Box>
       </Paper>
