@@ -264,6 +264,7 @@ const AdminDashboardPage = () => {
             label={t('admin:organizations_units')}
             value={totalOrgs}
             icon={<BusinessCenterOutlinedIcon />}
+            caption={t('admin:organizations_units_caption')}
           />
         </Stack>
         <Stack

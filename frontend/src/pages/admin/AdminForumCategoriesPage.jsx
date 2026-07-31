@@ -40,7 +40,7 @@ import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteD
 import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetricTile';
 import AdminStatusChip from '../../components/admin/AdminStatusChip';
 import { useAdminForumContext, useAdminSystemContext } from '../../stores/AdminStore';
-import { formatDate } from '../../utils/dateFormatter';
+import { formatDateTime } from '../../utils/dateFormatter';
 
 const CATEGORY_TABLE_COLUMNS = 'minmax(0, 1fr) 320px';
 
@@ -60,6 +60,17 @@ const buildTree = (flatList) => {
     }
   });
   return roots;
+};
+
+const getLatestUpdatedAt = (items) => {
+  if (!Array.isArray(items) || items.length === 0) return null;
+  return items.reduce((latest, item) => {
+    const value = item?.updatedAt;
+    if (!value) return latest;
+    const timestamp = new Date(value).getTime();
+    if (Number.isNaN(timestamp)) return latest;
+    return !latest || timestamp > latest.timestamp ? { timestamp, value } : latest;
+  }, null)?.value ?? null;
 };
 
 const CategoryBranch = ({ node, depth = 0, expanded, toggle, onEdit, onDelete, onToggleStatus, activeOrganization }) => {
@@ -292,11 +303,13 @@ const AdminForumCategoriesPage = () => {
     );
   };
 
+  const latestUpdatedAt = getLatestUpdatedAt(categories);
+
   const stats = {
     total: categories?.length || 0,
     roots: tree.length,
     sub: (categories?.length || 0) - tree.length,
-    lastUpdate: categories?.[0]?.updatedAt ? formatDate(categories[0].updatedAt) : 'N/A'
+    lastUpdate: latestUpdatedAt ? formatDateTime(latestUpdatedAt) : 'N/A',
   };
 
   return (
