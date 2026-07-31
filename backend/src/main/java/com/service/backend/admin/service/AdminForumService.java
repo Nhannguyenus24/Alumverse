@@ -383,18 +383,21 @@ public class AdminForumService {
 
     public Mono<ForumCategoryDTO> createCategory(
             Integer organizationId, String name, String description, Integer parentId) {
-        ForumCategory category =
-            ForumCategory.builder()
-                .parentId(parentId)
-                .organizationId(organizationId)
-                .name(name)
-                .description(description)
-                .status(Status.ACTIVE.name())
-                .createdAt(java.time.LocalDateTime.now())
-                .updatedAt(java.time.LocalDateTime.now())
-                .build();
+        return validateCategoryParent(organizationId, null, parentId)
+                .then(Mono.defer(() -> {
+                    ForumCategory category =
+                        ForumCategory.builder()
+                            .parentId(parentId)
+                            .organizationId(organizationId)
+                            .name(name)
+                            .description(description)
+                            .status(Status.ACTIVE.name())
+                            .createdAt(java.time.LocalDateTime.now())
+                            .updatedAt(java.time.LocalDateTime.now())
+                            .build();
 
-        return forumCategoryRepository.save(category)
+                    return forumCategoryRepository.save(category);
+                }))
                 .map(this::convertToCategoryDTO)
                 .delayUntil(r -> cacheUtils.clear(CacheNames.FORUM_CATEGORY))
                 .doOnSuccess(result -> log.debug("createCategory result: {}", JsonUtils.toJson(result)))
@@ -405,17 +408,57 @@ public class AdminForumService {
             Integer categoryId, String name, String description, Integer parentId) {
         return forumCategoryRepository.findById(categoryId)
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_CATEGORY_NOT_FOUND))))
-                .flatMap(category -> {
+                .flatMap(category -> validateCategoryParent(category.getOrganizationId(), categoryId, parentId)
+                        .then(Mono.defer(() -> {
                     if (name != null) category.setName(name);
                     if (description != null) category.setDescription(description);
                     if (parentId != null) category.setParentId(parentId);
                     category.setUpdatedAt(java.time.LocalDateTime.now());
                     return forumCategoryRepository.save(category);
-                })
+                })))
                 .map(this::convertToCategoryDTO)
                 .delayUntil(r -> cacheUtils.clear(CacheNames.FORUM_CATEGORY))
                 .doOnSuccess(result -> log.debug("updateCategory result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error updating category ID: {}", categoryId, error));
+    }
+
+    private Mono<Void> validateCategoryParent(Integer organizationId, Integer categoryId, Integer parentId) {
+        if (parentId == null) {
+            return Mono.<Void>empty();
+        }
+        if (categoryId != null && parentId.equals(categoryId)) {
+            return Mono.error(new ApplicationException(
+                    ErrorCode.BAD_REQUEST,
+                    "Danh mục không thể chọn chính nó làm danh mục cha"));
+        }
+        Mono<Void> parentIsRoot = forumCategoryRepository.findById(parentId)
+                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.FORUM_CATEGORY_NOT_FOUND)))
+                .flatMap(parent -> {
+                    if (organizationId != null && !organizationId.equals(parent.getOrganizationId())) {
+                        return Mono.error(new ApplicationException(
+                                ErrorCode.BAD_REQUEST,
+                                "Danh mục cha không thuộc tổ chức hiện tại"));
+                    }
+                    if (parent.getParentId() != null) {
+                        return Mono.error(new ApplicationException(
+                                ErrorCode.BAD_REQUEST,
+                                "Chỉ danh mục cấp 1 mới có thể được chọn làm danh mục cha"));
+                    }
+                    return Mono.<Void>empty();
+                });
+
+        if (categoryId == null) {
+            return parentIsRoot;
+        }
+
+        return parentIsRoot.then(
+                forumCategoryRepository.findByParentId(categoryId)
+                        .hasElements()
+                        .flatMap(hasChildren -> Boolean.TRUE.equals(hasChildren)
+                                ? Mono.error(new ApplicationException(
+                                        ErrorCode.BAD_REQUEST,
+                                        "Diễn đàn chỉ hỗ trợ 2 cấp danh mục"))
+                                : Mono.<Void>empty()));
     }
 
     /**

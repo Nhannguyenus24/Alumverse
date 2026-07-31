@@ -209,6 +209,11 @@ const AdminForumCategoriesPage = () => {
   const [modal, setModal] = useState({ open: false, mode: 'create', node: null });
   const [form, setForm] = useState({ name: '', description: '', parentId: '' });
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const parentCategoryOptions = useMemo(
+    () => tree.filter((cat) => !modal.node || cat.id !== modal.node.id),
+    [tree, modal.node],
+  );
+  const editingNodeHasChildren = Boolean(modal.node?.children?.length);
 
   useEffect(() => {
     if (tree.length > 0 && Object.keys(expanded).length === 0) {
@@ -240,6 +245,14 @@ const AdminForumCategoriesPage = () => {
   const handleSave = async () => {
     if (!form.name.trim()) {
       enqueueSnackbar(t('admin:forum_cat_name_required'), { variant: 'warning' });
+      return;
+    }
+    if (form.parentId !== '' && editingNodeHasChildren) {
+      enqueueSnackbar(t('admin:forum_cat_two_level_warning', { defaultValue: 'Diễn đàn chỉ hỗ trợ 2 cấp danh mục. Không thể chuyển danh mục đang có danh mục con thành danh mục con.' }), { variant: 'warning' });
+      return;
+    }
+    if (form.parentId !== '' && !parentCategoryOptions.some((cat) => String(cat.id) === String(form.parentId))) {
+      enqueueSnackbar(t('admin:forum_cat_parent_root_only', { defaultValue: 'Chỉ danh mục cấp 1 mới có thể được chọn làm danh mục cha.' }), { variant: 'warning' });
       return;
     }
     if (modal.mode === 'create') {
@@ -421,11 +434,12 @@ const AdminForumCategoriesPage = () => {
             fullWidth
             value={form.parentId}
             onChange={(e) => setForm(f => ({ ...f, parentId: e.target.value }))}
+            disabled={editingNodeHasChildren}
+            helperText={editingNodeHasChildren ? t('admin:forum_cat_two_level_helper', { defaultValue: 'Danh mục này đang có danh mục con nên phải giữ ở cấp cha.' }) : undefined}
             slotProps={{ inputLabel: { shrink: true } }}
           >
             <MenuItem value="">{t('admin:forum_cat_no_parent')}</MenuItem>
-            {(categories ?? [])
-              .filter(cat => !modal.node || cat.id !== modal.node.id)
+            {parentCategoryOptions
               .map(cat => (
                 <MenuItem key={cat.id} value={cat.id}>
                   {cat.name}

@@ -3,7 +3,6 @@ import ChatBubbleOutlineOutlinedIcon from '@mui/icons-material/ChatBubbleOutline
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import AddIcon from '@mui/icons-material/Add';
-import SaveIcon from '@mui/icons-material/Save';
 import { useTranslation } from 'react-i18next';
 
 const ForumManageTopicItem = ({
@@ -153,9 +152,9 @@ const ForumManageTopicItem = ({
               size="small"
               onClick={() => onAddSubTopic(topic.id)}
               sx={{ color: 'success.main', flexShrink: 0 }}
-              aria-label={t('save_subtopic_aria')}
+              aria-label={t('add_subtopic_aria')}
             >
-              <SaveIcon sx={{ fontSize: 28 }} />
+              <AddIcon sx={{ fontSize: 28 }} />
             </IconButton>
           </Box>
         </Box>
