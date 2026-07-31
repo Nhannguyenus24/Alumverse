@@ -74,7 +74,6 @@ const SurveyPromptModal = () => {
   };
 
   if (!open || pending.length === 0) return null;
-  const primarySurvey = pending[0];
 
   return (
     <Dialog
@@ -150,7 +149,7 @@ const SurveyPromptModal = () => {
                   dangerouslySetInnerHTML={{ __html: normalizePromptDescription(s.description) }}
                 />
               )}
-              <Stack direction="row" spacing={1} alignItems="center" justifyContent="flex-end">
+              <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
                 <Chip
                   size="small"
                   color="accent"
@@ -162,6 +161,9 @@ const SurveyPromptModal = () => {
                     '& .MuiChip-label': { fontWeight: 800 },
                   }}
                 />
+                <Button size="small" variant="contained" onClick={() => join(s.id)}>
+                  {t('survey:prompt_join')}
+                </Button>
               </Stack>
             </Box>
           ))}
@@ -170,9 +172,6 @@ const SurveyPromptModal = () => {
       <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
         <Button variant="outlined" color="secondary" onClick={dismissAll}>
           {t('survey:prompt_skip')}
-        </Button>
-        <Button variant="contained" onClick={() => join(primarySurvey.id)}>
-          {t('survey:prompt_join')}
         </Button>
       </DialogActions>
     </Dialog>
