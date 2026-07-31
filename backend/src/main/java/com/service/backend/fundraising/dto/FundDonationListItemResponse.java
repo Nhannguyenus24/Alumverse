@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 public class FundDonationListItemResponse {
     private Integer id;
     private Integer fundId;
+    private String fundName;
     private Integer donorMemberId;
     private String donorName;
     private BigDecimal amount;
