@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Box,
@@ -17,12 +17,22 @@ import { useUserAlumniPosts } from '../../hooks/articles/useUserAlumniPosts';
 import { useUserDonations } from '../../hooks/fundraising/useUserDonations';
 import { formatDate } from '../../utils/dateFormatter';
 import { formatCurrency } from '../../utils/numberFormatter';
+import AppPagination from '../AppPagination';
 import { ScrollReveal, getStaggerDelay } from '../animations/ScrollReveal';
+
+const DONATIONS_PAGE_SIZE = 5;
 
 const UserHighlights = ({ userId, navigate }) => {
   const { t } = useTranslation(['profile']);
+  const [donationsPage, setDonationsPage] = useState(0);
+  const [donationsPageUserId, setDonationsPageUserId] = useState(userId);
+  if (userId !== donationsPageUserId) {
+    setDonationsPageUserId(userId);
+    setDonationsPage(0);
+  }
+
   const articlesQuery = useUserAlumniPosts(userId, 0, 5, { enabled: Boolean(userId) });
-  const donationsQuery = useUserDonations(userId, 0, 5, { enabled: Boolean(userId) });
+  const donationsQuery = useUserDonations(userId, donationsPage, DONATIONS_PAGE_SIZE, { enabled: Boolean(userId) });
 
   const articles = useMemo(() => articlesQuery.data?.items ?? [], [articlesQuery.data]);
   const donations = useMemo(() => donationsQuery.data?.items ?? [], [donationsQuery.data]);
@@ -81,7 +91,9 @@ const UserHighlights = ({ userId, navigate }) => {
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                       <Box>
                         <Typography variant="subtitle1" fontWeight={700} color="text.primary">
-                          {t('profile:donation_to_fund', { fundId: donation.fundId })}
+                          {t('profile:donation_to_fund', {
+                            fundName: donation.fundName || `#${donation.fundId}`,
+                          })}
                         </Typography>
                         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
                           {formatDate(donation.createdAt)}
@@ -100,6 +112,13 @@ const UserHighlights = ({ userId, navigate }) => {
                 </Card></ScrollReveal>
               ))}
             </Stack>
+            <AppPagination
+              count={donationsQuery.data?.totalPage ?? 1}
+              page={donationsPage + 1}
+              onChange={(_, value) => setDonationsPage(value - 1)}
+              scrollToTop={false}
+              sx={{ mt: 2 }}
+            />
           </Grid>
         )}
       </Grid>
