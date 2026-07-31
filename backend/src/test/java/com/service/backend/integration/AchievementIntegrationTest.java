@@ -101,6 +101,7 @@ public class AchievementIntegrationTest extends BaseIntegrationTest {
         String token = getValidAccessToken("admin_achieve_tc49@example.com", "ADMIN");
 
         CreateAchievementRequest request = CreateAchievementRequest.builder()
+                .topic("student_honor")
                 .organizationId(1)
                 .title("Top Performer " + UUID.randomUUID())
                 .description("Awarded for excellent performance.")
@@ -126,6 +127,7 @@ public class AchievementIntegrationTest extends BaseIntegrationTest {
         String token = getValidAccessToken("user_achieve_tc50@example.com", "USER");
 
         CreateAchievementRequest request = CreateAchievementRequest.builder()
+                .topic("student_honor")
                 .organizationId(1)
                 .title("Best Innovation " + UUID.randomUUID())
                 .description("Innovation award.")
@@ -163,6 +165,7 @@ public class AchievementIntegrationTest extends BaseIntegrationTest {
         String token = getValidAccessToken("admin_achieve_tc52@example.com", "ADMIN");
 
         CreateAchievementRequest request = CreateAchievementRequest.builder()
+                .topic("student_honor")
                 .organizationId(1)
                 .title("Old Achievement Title")
                 .description("Old Desc")
@@ -204,6 +207,7 @@ public class AchievementIntegrationTest extends BaseIntegrationTest {
         String token = getValidAccessToken("admin_achieve_tc53@example.com", "ADMIN");
 
         CreateAchievementRequest request = CreateAchievementRequest.builder()
+                .topic("student_honor")
                 .organizationId(1)
                 .title("Achievement to Delete")
                 .description("Desc")
@@ -245,6 +249,7 @@ public class AchievementIntegrationTest extends BaseIntegrationTest {
 
         // User creates pending achievement
         CreateAchievementRequest request = CreateAchievementRequest.builder()
+                .topic("student_honor")
                 .organizationId(1)
                 .title("Pending Achievement")
                 .build();
