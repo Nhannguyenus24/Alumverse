@@ -59,7 +59,7 @@
   "highlights_title": "Hoạt động nổi bật",
   "posted_articles": "Bài viết đã đăng",
   "donation_history": "Lịch sử quyên góp",
-  "donation_to_fund": "Quyên góp quỹ #{{fundId}}",
+  "donation_to_fund": "Quyên góp quỹ {{fundName}}",
   "not_updated": "Chưa cập nhật",
   "academic_info": "Thông tin học thuật",
   "prev_academic_record": "Trước",
