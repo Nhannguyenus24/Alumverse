@@ -28,6 +28,7 @@ import ReportProblemOutlinedIcon from '@mui/icons-material/ReportProblemOutlined
 import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined';
 import GppBadOutlinedIcon from '@mui/icons-material/GppBadOutlined';
 import { useTranslation } from 'react-i18next';
+import { useOutletContext } from 'react-router';
 
 import AdminStatusChip from '../../components/admin/AdminStatusChip';
 import AdminForumPostDetailDialog from '../../components/admin/AdminForumPostDetailDialog';
@@ -44,6 +45,7 @@ const AdminForumPostsPage = () => {
   const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
   const { t } = useTranslation('admin');
+  const { setBreadcrumbs } = useOutletContext();
   const forumStatusFilterOptions = useMemo(() => getForumStatusFilterOptions(t), [t]);
   const {
     posts,
@@ -75,6 +77,10 @@ const AdminForumPostsPage = () => {
   } = useAdminForumContext();
   const [searchTerm, setSearchTerm] = useState(postsSearch);
   const debouncedSearch = useDebounce(searchTerm, 500);
+
+  useEffect(() => {
+    setBreadcrumbs?.([{ label: t('nav_forum_posts'), active: true }]);
+  }, [setBreadcrumbs, t]);
 
   useEffect(() => {
     setPostsSearch(debouncedSearch);

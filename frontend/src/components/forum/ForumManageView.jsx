@@ -116,8 +116,8 @@ const ForumManageView = ({
         <DialogContent>
           <DialogContentText>
             {deleteDialog.type === 'topic'
-              ? t('forum:confirm_delete_topic_message', { defaultValue: 'Bạn có chắc chắn muốn xoá chủ đề chính này và tất cả chủ đề con của nó không?' })
-              : t('forum:confirm_delete_board_message', { defaultValue: 'Bạn có chắc chắn muốn xoá chủ đề con này không?' })}
+              ? t('forum:confirm_delete_topic_message', { defaultValue: 'Bạn có chắc chắn muốn xoá danh mục cha này và tất cả danh mục con của nó không?' })
+              : t('forum:confirm_delete_board_message', { defaultValue: 'Bạn có chắc chắn muốn xoá danh mục con này không?' })}
           </DialogContentText>
         </DialogContent>
         <DialogActions>
