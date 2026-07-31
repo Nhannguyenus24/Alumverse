@@ -919,14 +919,33 @@ public class AdminForumService {
         return topicsFlux.collectList().flatMapMany(topics -> {
             if (topics.isEmpty()) return Flux.empty();
             Set<Integer> topicIds = topics.stream().map(ForumTopic::getId).filter(Objects::nonNull).collect(Collectors.toSet());
+            Set<Integer> authorIds = topics.stream()
+                    .map(ForumTopic::getCreatedByMemberId)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
             
             Mono<Map<Integer, Long>> postCountMapMono = topicIds.isEmpty() ? Mono.just(new HashMap<>()) :
                     forumPostRepository.countByTopicIds(topicIds).collectMap(IdCountDTO::getId, IdCountDTO::getCount);
+            Mono<Map<Integer, UserDisplayInfo>> authorsMapMono = authorIds.isEmpty() ? Mono.just(new HashMap<>()) :
+                    userProfileRepository.findByUserIds(authorIds);
 
-            return postCountMapMono.flatMapMany(postCountMap -> Flux.fromIterable(topics).map(topic -> {
-                Long postCount = postCountMap.getOrDefault(topic.getId(), 0L);
-                return convertToTopicDTO(topic, postCount);
-            }));
+            return Mono.zip(postCountMapMono, authorsMapMono)
+                    .flatMapMany(tuple -> {
+                        Map<Integer, Long> postCountMap = tuple.getT1();
+                        Map<Integer, UserDisplayInfo> authorsMap = tuple.getT2();
+                        return Flux.fromIterable(topics).map(topic -> {
+                            Long postCount = postCountMap.getOrDefault(topic.getId(), 0L);
+                            ForumTopicDTO dto = convertToTopicDTO(topic, postCount);
+                            UserDisplayInfo author = topic.getCreatedByMemberId() != null
+                                    ? authorsMap.get(topic.getCreatedByMemberId())
+                                    : null;
+                            if (author != null) {
+                                dto.setAuthorName(author.getFullName());
+                                dto.setAuthorAvatarUrl(author.getAvatarUrl());
+                            }
+                            return dto;
+                        });
+                    });
         });
     }
 
