@@ -127,6 +127,7 @@ public class ForumService {
 
     public Mono<ForumCategoryDTO> createCategory(CreateForumCategoryRequest request) {
         return SecurityUtils.assertCanManageContentOrganization(request.getOrganizationId())
+                .then(validateCategoryParent(request.getOrganizationId(), request.getParentId()))
                 .then(Mono.defer(() -> {
                     ForumCategory category = ForumCategory.builder()
                             .parentId(request.getParentId())
@@ -142,6 +143,27 @@ public class ForumService {
                 .delayUntil(res -> cacheUtils.clear(CacheNames.FORUM_CATEGORY))
                 .doOnSuccess(result -> log.debug("createCategory result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error creating forum category: {}", request.getName(), error));
+    }
+
+    private Mono<Void> validateCategoryParent(Integer organizationId, Integer parentId) {
+        if (parentId == null) {
+            return Mono.empty();
+        }
+        return forumCategoryRepository.findById(parentId)
+                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.FORUM_CATEGORY_NOT_FOUND)))
+                .flatMap(parent -> {
+                    if (organizationId != null && !organizationId.equals(parent.getOrganizationId())) {
+                        return Mono.error(new ApplicationException(
+                                ErrorCode.BAD_REQUEST,
+                                "Danh mục cha không thuộc tổ chức hiện tại"));
+                    }
+                    if (parent.getParentId() != null) {
+                        return Mono.error(new ApplicationException(
+                                ErrorCode.BAD_REQUEST,
+                                "Chỉ danh mục cấp 1 mới có thể được chọn làm danh mục cha"));
+                    }
+                    return Mono.empty();
+                });
     }
 
     public Mono<ForumCategoryDTO> updateCategory(Integer id, UpdateForumCategoryRequest request) {

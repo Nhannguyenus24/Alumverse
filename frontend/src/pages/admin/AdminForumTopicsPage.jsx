@@ -125,7 +125,7 @@ const AdminForumTopicsPage = () => {
       ),
     },
     {
-      id: "createdByName",
+      id: "authorName",
       label: t('forum_col_created_by'),
       render: (val, row) => val || row.createdByMemberId || "-",
     },
@@ -364,7 +364,7 @@ const AdminForumTopicsPage = () => {
             </Typography>
             <Typography variant="body2">
               <strong>{t('forum_col_created_by')}:</strong>{" "}
-              {detailTopic.createdByName ||
+              {detailTopic.authorName ||
                 detailTopic.createdByMemberId ||
                 "-"}
             </Typography>

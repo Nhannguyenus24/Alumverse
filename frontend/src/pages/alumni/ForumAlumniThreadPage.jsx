@@ -1147,6 +1147,21 @@ const ForumAlumniThreadPage = () => {
     return items;
   }, [activeCategory, parentCategory, thread.title]);
 
+  const adminTopicActionIconSx = { fontSize: 17 };
+  const adminTopicActionButtonSx = {
+    height: 36,
+    px: 1.35,
+    py: 0.5,
+    fontSize: "0.8125rem",
+    lineHeight: 1.2,
+    minWidth: 0,
+    whiteSpace: "nowrap",
+    "& .MuiButton-startIcon": {
+      flexShrink: 0,
+      mr: 0.6,
+    },
+  };
+
   return (
     <AlumniContentLayout
       variant="forum"
@@ -1287,7 +1302,7 @@ const ForumAlumniThreadPage = () => {
               sx={{
                 display: "flex",
                 flexDirection: { xs: "column", sm: "row" },
-                alignItems: { xs: "flex-start", sm: "center" },
+                alignItems: "flex-start",
                 justifyContent: "space-between",
                 gap: 2,
                 mb: 2,
@@ -1299,7 +1314,7 @@ const ForumAlumniThreadPage = () => {
                 fontWeight={800}
                 sx={{
                   fontSize: { xs: "1.2rem", sm: "1.4rem", md: "1.6rem" },
-                  lineHeight: 1.22,
+                  lineHeight: 1.16,
                   wordBreak: "break-word",
                   flex: 1,
                   minWidth: 0,
@@ -1313,30 +1328,29 @@ const ForumAlumniThreadPage = () => {
                     display: "grid",
                     gridTemplateColumns: {
                       xs: "repeat(2, 1fr)",
-                      sm: "repeat(3, 1fr)",
+                      sm: "repeat(3, max-content)",
                     },
-                    gap: 1,
-                    width: "100%",
-                    maxWidth: { xs: 320, sm: 390 },
-                    minWidth: { xs: 260, sm: 350 },
+                    gap: 0.75,
+                    justifyContent: { xs: "stretch", sm: "end" },
+                    width: { xs: "100%", sm: "auto" },
+                    maxWidth: { xs: 320, sm: "100%" },
+                    minWidth: { xs: 260, sm: 0 },
                     flexShrink: 0,
                   }}
                 >
                   <Button
                     fullWidth
-                    variant="outlined"
+                    variant={isSubscribed ? "contained" : "outlined"}
                     color="primary"
                     size="small"
                     startIcon={
-                      <NotificationsNoneOutlinedIcon sx={{ fontSize: 18 }} />
+                      <NotificationsNoneOutlinedIcon sx={adminTopicActionIconSx} />
                     }
                     onClick={handleToggleSubscription}
                     disabled={subStatusPending || subTogglePending}
                     sx={{
-                      whiteSpace: "nowrap",
-                      minWidth: 0,
-                      height: 40,
-                      "& .MuiButton-startIcon": { flexShrink: 0 },
+                      ...adminTopicActionButtonSx,
+                      minWidth: 112,
                     }}
                   >
                     {isSubscribed
@@ -1348,12 +1362,9 @@ const ForumAlumniThreadPage = () => {
                     variant="contained"
                     color="secondary"
                     size="small"
-                    startIcon={<EditOutlinedIcon sx={{ fontSize: 18 }} />}
+                    startIcon={<EditOutlinedIcon sx={adminTopicActionIconSx} />}
                     onClick={handleOpenEditTopic}
-                    sx={{
-                      whiteSpace: "nowrap",
-                      minWidth: 0,
-                    }}
+                    sx={adminTopicActionButtonSx}
                   >
                     {t("common:edit")}
                   </Button>
@@ -1371,14 +1382,12 @@ const ForumAlumniThreadPage = () => {
                         variant="contained"
                         color="accent"
                         size="small"
-                        startIcon={<ReplyOutlinedIcon sx={{ fontSize: 18 }} />}
+                        startIcon={<ReplyOutlinedIcon sx={adminTopicActionIconSx} />}
                         onClick={focusReplyEditor}
                         disabled={isGuest}
                         sx={{
-                          whiteSpace: "nowrap",
-                          minWidth: 0,
-                          height: 40,
-                          "& .MuiButton-startIcon": { flexShrink: 0 },
+                          ...adminTopicActionButtonSx,
+                          minWidth: 96,
                         }}
                       >
                         {t("forum:reply")}
@@ -1391,11 +1400,14 @@ const ForumAlumniThreadPage = () => {
                     color="error"
                     size="small"
                     startIcon={
-                      <DeleteOutlineOutlinedIcon sx={{ fontSize: 18 }} />
+                      <DeleteOutlineOutlinedIcon sx={adminTopicActionIconSx} />
                     }
                     onClick={handleDeleteTopicClick}
                     disabled={deleteTopicPending}
-                    sx={{ whiteSpace: "nowrap" }}
+                    sx={{
+                      ...adminTopicActionButtonSx,
+                      gridColumn: { sm: 2 },
+                    }}
                   >
                     {deleteTopicPending
                       ? t("forum:deleting")
@@ -1407,8 +1419,11 @@ const ForumAlumniThreadPage = () => {
                     size="small"
                     onClick={handleToggleLock}
                     disabled={topicStatusPending}
-                    startIcon={<LockOutlinedIcon sx={{ fontSize: 18 }} />}
+                    startIcon={<LockOutlinedIcon sx={adminTopicActionIconSx} />}
                     sx={{
+                      ...adminTopicActionButtonSx,
+                      gridColumn: { xs: 2, sm: 3 },
+                      minWidth: 96,
                       bgcolor: isTopicInactive
                         ? "success.main"
                         : "warning.main",
@@ -1420,7 +1435,6 @@ const ForumAlumniThreadPage = () => {
                           ? "success.dark"
                           : "warning.dark",
                       },
-                      whiteSpace: "nowrap",
                     }}
                   >
                     {isTopicInactive ? t("forum:unlock") : t("forum:lock")}
@@ -1437,19 +1451,17 @@ const ForumAlumniThreadPage = () => {
                   }}
                 >
                   <Button
-                    variant="outlined"
+                    variant={isSubscribed ? "contained" : "outlined"}
                     color="primary"
                     size="small"
                     startIcon={
-                      <NotificationsNoneOutlinedIcon sx={{ fontSize: 18 }} />
+                      <NotificationsNoneOutlinedIcon sx={adminTopicActionIconSx} />
                     }
                     onClick={handleToggleSubscription}
                     disabled={subStatusPending || subTogglePending}
                     sx={{
-                      minWidth: 118,
-                      height: 40,
-                      whiteSpace: "nowrap",
-                      "& .MuiButton-startIcon": { flexShrink: 0 },
+                      ...adminTopicActionButtonSx,
+                      minWidth: 112,
                     }}
                   >
                     {isSubscribed
@@ -1469,14 +1481,12 @@ const ForumAlumniThreadPage = () => {
                         variant="contained"
                         color="accent"
                         size="small"
-                        startIcon={<ReplyOutlinedIcon sx={{ fontSize: 18 }} />}
+                        startIcon={<ReplyOutlinedIcon sx={adminTopicActionIconSx} />}
                         onClick={focusReplyEditor}
                         disabled={isGuest}
                         sx={{
-                          minWidth: 104,
-                          height: 40,
-                          whiteSpace: "nowrap",
-                          "& .MuiButton-startIcon": { flexShrink: 0 },
+                          ...adminTopicActionButtonSx,
+                          minWidth: 96,
                         }}
                       >
                         {t("forum:reply")}

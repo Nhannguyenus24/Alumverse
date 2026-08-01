@@ -74,25 +74,46 @@ const ForumAlumniCreateTopicPage = () => {
     categoriesErrorShownRef.current = false;
   }, [categoriesIsError, showError, t]);
 
+  const parentCategories = useMemo(() => {
+    const list = (categories ?? []).filter((category) => category.parentId == null);
+    list.sort((a, b) => (a.name || "").localeCompare(b.name || "", "vi"));
+    return list;
+  }, [categories]);
+
+  const stateParentSubject = useMemo(() => {
+    if (!categories?.length || !stateCategoryId) return "";
+    const stateCategory = categories.find(
+      (category) => String(category.id) === String(stateCategoryId),
+    );
+    return String(stateParentId ?? stateCategory?.parentId ?? stateCategory?.id ?? "");
+  }, [categories, stateCategoryId, stateParentId]);
+
   const filters = useMemo(() => {
-    if (!categories?.length) {
-      return [{ id: "all", label: t("common:all") }];
+    if (categoriesPending && !categories?.length) {
+      return [{ id: "all", label: t("forum:filter_all") }];
     }
     return [
-      { id: "all", label: t("common:all") },
-      ...categories.map((c) => ({ id: `category-${c.id}`, label: c.name })),
+      { id: "all", label: t("forum:filter_all") },
+      ...parentCategories.map((category) => ({
+        id: `parent-${category.id}`,
+        label: category.name,
+      })),
     ];
-  }, [categories, t]);
+  }, [categories, categoriesPending, parentCategories, t]);
 
   const parentSubjectOptions = useMemo(
-    () =>
-      (categories ?? [])
-        .filter((category) => category.parentId == null)
-        .map((category) => ({
-          value: String(category.id),
-          label: category.name,
-        })),
-    [categories],
+    () => {
+      const source = stateParentSubject
+        ? parentCategories.filter(
+            (category) => String(category.id) === stateParentSubject,
+          )
+        : parentCategories;
+      return source.map((category) => ({
+        value: String(category.id),
+        label: category.name,
+      }));
+    },
+    [parentCategories, stateParentSubject],
   );
 
   const resolvedParentSubject =
@@ -130,9 +151,9 @@ const ForumAlumniCreateTopicPage = () => {
   }, [selectedSubSubject, subSubject]);
 
   const selectedSidebarFilterId = filters.some(
-    (f) => f.id === `category-${selectedSubSubject}`,
+    (f) => f.id === `parent-${resolvedParentSubject}`,
   )
-    ? `category-${selectedSubSubject}`
+    ? `parent-${resolvedParentSubject}`
     : "all";
 
   const handleFilterChange = useCallback(
@@ -141,7 +162,7 @@ const ForumAlumniCreateTopicPage = () => {
         navigate("/forum");
         return;
       }
-      if (id?.startsWith("category-")) {
+      if (id?.startsWith("parent-")) {
         navigate("/forum", { state: { selectedFilterId: id } });
         return;
       }
@@ -304,6 +325,7 @@ const ForumAlumniCreateTopicPage = () => {
             disabled={
               categoriesPending ||
               categoriesIsError ||
+              Boolean(stateParentSubject) ||
               !parentSubjectOptions.length
             }
           >

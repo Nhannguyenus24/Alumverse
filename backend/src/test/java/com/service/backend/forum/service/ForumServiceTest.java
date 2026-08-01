@@ -404,6 +404,7 @@ class ForumServiceTest {
             when(forumPostRepository.findById(1)).thenReturn(Mono.just(post));
             when(forumTopicRepository.findById(1)).thenReturn(Mono.just(ForumTopic.builder().id(1).organizationId(1).build()));
             when(forumPostReactionRepository.deleteByPostId(1)).thenReturn(Mono.empty());
+            when(forumPostRepository.clearAnswerReferences(1)).thenReturn(Mono.empty());
             when(forumPostRepository.deleteById(1)).thenReturn(Mono.empty());
 
             StepVerifier.create(forumService.deletePost(1).contextWrite(userContext(5)))
