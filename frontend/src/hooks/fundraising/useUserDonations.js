@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import apiClient from '../../utils/axios';
 
 const getUserDonations = async (userId, page = 0, limit = 10) => {
@@ -13,4 +13,5 @@ export const useUserDonations = (userId, page = 0, limit = 10, { enabled = true 
     queryKey: ['userDonations', userId, page, limit],
     queryFn: () => getUserDonations(userId, page, limit),
     enabled: Boolean(userId) && enabled,
+    placeholderData: keepPreviousData,
   });

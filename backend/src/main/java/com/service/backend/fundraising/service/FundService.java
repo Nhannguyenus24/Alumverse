@@ -666,7 +666,9 @@ public class FundService {
         if (message == null || message.isBlank()) {
             return marker;
         }
-        return message.trim() + " " + marker;
+        // Some banking apps truncate the transfer description. Keep the webhook marker
+        // first so it is preserved even when the donor's optional message is cut off.
+        return marker + " " + message.trim();
     }
 
     private Mono<String> resolveBankCode(String bankCode) {

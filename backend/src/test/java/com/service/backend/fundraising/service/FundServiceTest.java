@@ -82,6 +82,15 @@ class FundServiceTest {
         return ReactiveSecurityContextHolder.withAuthentication(token);
     }
 
+    @Test
+    @DisplayName("puts the donation marker first in the QR transfer description")
+    void buildDescription_keepsDonationMarkerBeforeOptionalMessage() {
+        String description = ReflectionTestUtils.invokeMethod(
+                fundService, "buildDescription", "Quỹ rất có ý nghĩa hãy cố gắng phát huy", 123);
+
+        assertThat(description).isEqualTo("FD123 Quỹ rất có ý nghĩa hãy cố gắng phát huy");
+    }
+
     // ─── getFundDetail ────────────────────────────────────────────────────────
 
     @Nested

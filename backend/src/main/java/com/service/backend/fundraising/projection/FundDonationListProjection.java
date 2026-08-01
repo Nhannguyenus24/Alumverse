@@ -10,6 +10,8 @@ public interface FundDonationListProjection {
 
     Integer getFundId();
 
+    String getFundName();
+
     Integer getDonorMemberId();
 
     String getDonorName();
