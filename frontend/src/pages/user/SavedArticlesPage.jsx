@@ -9,21 +9,26 @@ import { savedItemApi } from "../../utils/api";
 import apiClient from "../../utils/axios";
 import { normalizeAlumniPost, normalizeNews, normalizeAchievement } from "../../hooks/articles/normalizeArticle";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
+import { useOrganization } from "../../hooks/useOrganization";
+
+const orgParams = (organizationId) => (
+  organizationId ? { params: { organizationId } } : undefined
+);
 
 /** itemType -> how to fetch + normalize + route to a saved post. */
 const POST_CHANNELS = {
   NEWS: {
-    fetch: (id) => apiClient.get(`/articles/news/${id}`),
+    fetch: (id, organizationId) => apiClient.get(`/articles/news/${id}`, orgParams(organizationId)),
     normalize: normalizeNews,
     articlePath: (id) => `/article/news/${id}`,
   },
   ALUMNI_POST: {
-    fetch: (id) => apiClient.get(`/articles/alumni-posts/${id}`),
+    fetch: (id, organizationId) => apiClient.get(`/articles/alumni-posts/${id}`, orgParams(organizationId)),
     normalize: normalizeAlumniPost,
     articlePath: (id) => `/article/alumni/${id}`,
   },
   ACHIEVEMENT: {
-    fetch: (id) => apiClient.get(`/articles/achievements/${id}`),
+    fetch: (id, organizationId) => apiClient.get(`/articles/achievements/${id}`, orgParams(organizationId)),
     normalize: normalizeAchievement,
     articlePath: (id) => `/article/achievement/${id}`,
   },
@@ -33,12 +38,15 @@ const SavedArticlesPage = () => {
   const { t } = useTranslation("article");
   const { enqueueSnackbar } = useSnackbar();
   const navigate = useOrgNavigate();
+  const { organization, loading: organizationLoading } = useOrganization();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const load = async () => {
+    if (organizationLoading) return;
     setLoading(true);
     try {
+      const organizationId = organization?.id;
       const pages = await Promise.all(
         Object.keys(POST_CHANNELS).map((itemType) =>
           savedItemApi.listByType(itemType, { page: 0, limit: 50 })
@@ -50,7 +58,7 @@ const SavedArticlesPage = () => {
           const config = POST_CHANNELS[s.itemType];
           if (!config) return { ...s, article: null };
           try {
-            const res = await config.fetch(s.itemId);
+            const res = await config.fetch(s.itemId, organizationId);
             return { ...s, article: config.normalize(res?.data?.data ?? null) };
           } catch {
             return { ...s, article: null };
@@ -68,7 +76,7 @@ const SavedArticlesPage = () => {
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [organization?.id, organizationLoading]);
 
   const handleUnsave = async (itemType, itemId) => {
     try {
