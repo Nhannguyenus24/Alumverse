@@ -29,7 +29,7 @@ export const currentMonthYear = () => {
 };
 
 /** Valid "MM/YYYY" (month 01-12, 4-digit year). Empty allowed (optional). */
-export const isValidMonthYear = (v) => {
+const isValidMonthYear = (v) => {
   const s = (v || '').trim();
   if (!s) return true;
   const m = /^(\d{2})\/(\d{4})$/.exec(s);

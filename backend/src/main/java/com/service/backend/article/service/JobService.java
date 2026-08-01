@@ -235,7 +235,4 @@ public class JobService {
                 .map(JobResponse::from);
     }
 
-    private String normalizeType(String type) {
-        return ArticleTopicCatalog.normalize(type);
-    }
 }

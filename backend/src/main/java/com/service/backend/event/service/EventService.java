@@ -1063,20 +1063,6 @@ public class EventService {
                 .defaultIfEmpty(ticketCode != null ? "/my-tickets?ticket=" + ticketCode : "/my-tickets");
     }
 
-    /** Absolute link (kèm domain FE) cho nút xác nhận lời mời trong email — khác {@link #buildTicketLink}
-     *  vốn trả path tương đối cho điều hướng nội bộ FE, vì link email được mở ngoài ngữ cảnh trình duyệt. */
-    private Mono<String> buildInvitationConfirmLink(Event event, String token) {
-        if (event.getOrganizationId() == null) {
-            return Mono.just(frontendBaseUrl + "/events/confirm-invitation?token=" + token);
-        }
-        return organizationRepository.findById(event.getOrganizationId().intValue())
-                .map(org -> {
-                    String slug = org.getSlug() != null ? org.getSlug() : String.valueOf(event.getOrganizationId());
-                    return frontendBaseUrl + "/" + slug + "/events/confirm-invitation?token=" + token;
-                })
-                .defaultIfEmpty(frontendBaseUrl + "/events/confirm-invitation?token=" + token);
-    }
-
 // ─── Event CRUD ───────────────────────────────────────────────────────────
 
 

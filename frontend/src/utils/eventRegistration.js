@@ -14,7 +14,7 @@ export const getEventRegisteredState = (response) => {
   );
 };
 
-export const NON_CANCELABLE_TICKET_STATUSES = new Set([
+const NON_CANCELABLE_TICKET_STATUSES = new Set([
   "ACTIVE",
   "USED",
   "CHECKED_IN",
