@@ -101,7 +101,7 @@ public class LearningResourceIntegrationTest extends BaseIntegrationTest {
         CreateLearningResourceRequest request = CreateLearningResourceRequest.builder()
                 .organizationId(1)
                 .title("Advanced Java Programming " + UUID.randomUUID())
-                .type("COURSE")
+                .type("online_course")
                 .linkUrl("https://example.com/java-course")
                 .description("A comprehensive guide to advanced Java concepts.")
                 .build();
@@ -126,7 +126,7 @@ public class LearningResourceIntegrationTest extends BaseIntegrationTest {
         CreateLearningResourceRequest request = CreateLearningResourceRequest.builder()
                 .organizationId(1)
                 .title("Spring Boot for Beginners " + UUID.randomUUID())
-                .type("EBOOK")
+                .type("online_course")
                 .linkUrl("https://example.com/spring-boot")
                 .description("Learn Spring Boot from scratch.")
                 .build();
@@ -164,7 +164,7 @@ public class LearningResourceIntegrationTest extends BaseIntegrationTest {
         CreateLearningResourceRequest request = CreateLearningResourceRequest.builder()
                 .organizationId(1)
                 .title("Resource to Get " + UUID.randomUUID())
-                .type("EBOOK")
+                .type("online_course")
                 .linkUrl("https://example.com/article")
                 .description("Description")
                 .build();
@@ -199,7 +199,7 @@ public class LearningResourceIntegrationTest extends BaseIntegrationTest {
         CreateLearningResourceRequest request = CreateLearningResourceRequest.builder()
                 .organizationId(1)
                 .title("Old Resource Title")
-                .type("EBOOK")
+                .type("online_course")
                 .linkUrl("https://example.com/book")
                 .description("Old Desc")
                 .build();
@@ -219,7 +219,7 @@ public class LearningResourceIntegrationTest extends BaseIntegrationTest {
 
         UpdateLearningResourceRequest updateReq = UpdateLearningResourceRequest.builder()
                 .title("New Resource Title")
-                .type("EBOOK")
+                .type("online_course")
                 .linkUrl("https://example.com/new-book")
                 .description("New Desc")
                 .build();
@@ -243,7 +243,7 @@ public class LearningResourceIntegrationTest extends BaseIntegrationTest {
         CreateLearningResourceRequest request = CreateLearningResourceRequest.builder()
                 .organizationId(1)
                 .title("Resource to Delete")
-                .type("VIDEO")
+                .type("online_course")
                 .linkUrl("https://example.com/video")
                 .description("Desc")
                 .build();
@@ -285,7 +285,7 @@ public class LearningResourceIntegrationTest extends BaseIntegrationTest {
         CreateLearningResourceRequest request = CreateLearningResourceRequest.builder()
                 .organizationId(1)
                 .title("Pending Resource")
-                .type("OTHER")
+                .type("online_course")
                 .linkUrl("https://example.com/pending")
                 .build();
 

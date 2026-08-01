@@ -12,6 +12,9 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.utility.MountableFile;
 import java.nio.file.Paths;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
@@ -38,6 +41,17 @@ public abstract class BaseIntegrationTest {
 
     static {
         postgreSQLContainer.start();
+        try (Connection connection = DriverManager.getConnection(
+                postgreSQLContainer.getJdbcUrl(),
+                postgreSQLContainer.getUsername(),
+                postgreSQLContainer.getPassword());
+             java.sql.Statement statement = connection.createStatement()) {
+            // The historical dump predates the chat unread-counter migration.
+            statement.execute("ALTER TABLE chat_group_members ADD COLUMN IF NOT EXISTS last_read_at timestamp without time zone");
+            statement.execute("UPDATE chat_group_members SET last_read_at = CURRENT_TIMESTAMP WHERE last_read_at IS NULL");
+        } catch (SQLException e) {
+            throw new ExceptionInInitializerError(e);
+        }
     }
 
     @DynamicPropertySource

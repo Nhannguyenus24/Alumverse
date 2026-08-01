@@ -341,7 +341,7 @@ public class UserIntegrationTest extends BaseIntegrationTest {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$.data.email").exists() // Public profile returns email in this system
+                .jsonPath("$.data.email").doesNotExist() // Public profile must not expose email
                 .jsonPath("$.data.userId").isEqualTo(targetUserId);
     }
 

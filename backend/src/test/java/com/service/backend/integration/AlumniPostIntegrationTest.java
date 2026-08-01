@@ -114,6 +114,7 @@ public class AlumniPostIntegrationTest extends BaseIntegrationTest {
                 .title("Test AlumniPost Title " + UUID.randomUUID())
                 .slug("test-alumni-post-" + UUID.randomUUID())
                 .content("This is the content of the post")
+                .topic("alumni_profile")
                 .build();
 
         webTestClient.post().uri("/api/articles/alumni-posts")
@@ -137,6 +138,7 @@ public class AlumniPostIntegrationTest extends BaseIntegrationTest {
                 .organizationId(1)
                 .title("Test AlumniPost Title User " + UUID.randomUUID())
                 .content("User content")
+                .topic("alumni_profile")
                 .build();
 
         webTestClient.post().uri("/api/articles/alumni-posts")
@@ -173,6 +175,7 @@ public class AlumniPostIntegrationTest extends BaseIntegrationTest {
                 .organizationId(1)
                 .title("Test AlumniPost Title " + UUID.randomUUID())
                 .content("Content")
+                .topic("alumni_profile")
                 .build();
 
         Map<String, Object> response = webTestClient.post().uri("/api/articles/alumni-posts")
@@ -208,6 +211,7 @@ public class AlumniPostIntegrationTest extends BaseIntegrationTest {
                 .title("Test Slug Title")
                 .slug(slug)
                 .content("Content")
+                .topic("alumni_profile")
                 .build();
 
         webTestClient.post().uri("/api/articles/alumni-posts")
@@ -236,6 +240,7 @@ public class AlumniPostIntegrationTest extends BaseIntegrationTest {
                 .organizationId(1)
                 .title("Title before update")
                 .content("Content before update")
+                .topic("alumni_profile")
                 .build();
 
         Map<String, Object> response = webTestClient.post().uri("/api/articles/alumni-posts")
@@ -254,6 +259,7 @@ public class AlumniPostIntegrationTest extends BaseIntegrationTest {
         UpdateAlumniPostRequest updateReq = UpdateAlumniPostRequest.builder()
                 .title("Title after update")
                 .content("Content after update")
+                .topic("alumni_profile")
                 .build();
 
         webTestClient.put().uri("/api/articles/alumni-posts/" + postId)
@@ -276,6 +282,7 @@ public class AlumniPostIntegrationTest extends BaseIntegrationTest {
                 .organizationId(1)
                 .title("Title to delete")
                 .content("Content")
+                .topic("alumni_profile")
                 .build();
 
         Map<String, Object> response = webTestClient.post().uri("/api/articles/alumni-posts")
@@ -314,6 +321,7 @@ public class AlumniPostIntegrationTest extends BaseIntegrationTest {
                 .organizationId(1)
                 .title("Draft AlumniPost")
                 .content("Content")
+                .topic("alumni_profile")
                 .build();
 
         Map<String, Object> response = webTestClient.post().uri("/api/articles/alumni-posts")
@@ -345,6 +353,7 @@ public class AlumniPostIntegrationTest extends BaseIntegrationTest {
                 .organizationId(1)
                 .title("AlumniPost to Hide")
                 .content("Content")
+                .topic("alumni_profile")
                 .build();
 
         Map<String, Object> response = webTestClient.post().uri("/api/articles/alumni-posts")
@@ -422,6 +431,7 @@ public class AlumniPostIntegrationTest extends BaseIntegrationTest {
                 .organizationId(1)
                 .title("AlumniPost for comment")
                 .content("Content")
+                .topic("alumni_profile")
                 .build();
 
         Map<String, Object> response = webTestClient.post().uri("/api/articles/alumni-posts")
@@ -469,6 +479,7 @@ public class AlumniPostIntegrationTest extends BaseIntegrationTest {
                 .organizationId(1)
                 .title("AlumniPost for comment fetch")
                 .content("Content")
+                .topic("alumni_profile")
                 .build();
 
         Map<String, Object> response = webTestClient.post().uri("/api/articles/alumni-posts")
@@ -527,6 +538,7 @@ public class AlumniPostIntegrationTest extends BaseIntegrationTest {
                 .organizationId(1)
                 .title("AlumniPost for reply")
                 .content("Content")
+                .topic("alumni_profile")
                 .build();
 
         Map<String, Object> response = webTestClient.post().uri("/api/articles/alumni-posts")
@@ -592,6 +604,7 @@ public class AlumniPostIntegrationTest extends BaseIntegrationTest {
                 .organizationId(1)
                 .title("AlumniPost to update comment")
                 .content("Content")
+                .topic("alumni_profile")
                 .build();
 
         Map<String, Object> response = webTestClient.post().uri("/api/articles/alumni-posts")
@@ -653,6 +666,7 @@ public class AlumniPostIntegrationTest extends BaseIntegrationTest {
                 .organizationId(1)
                 .title("AlumniPost to delete comment")
                 .content("Content")
+                .topic("alumni_profile")
                 .build();
 
         Map<String, Object> response = webTestClient.post().uri("/api/articles/alumni-posts")

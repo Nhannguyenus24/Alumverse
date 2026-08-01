@@ -114,6 +114,7 @@ public class NewsIntegrationTest extends BaseIntegrationTest {
                 .title("Test News Title " + UUID.randomUUID())
                 .slug("test-news-" + UUID.randomUUID())
                 .content("This is the content of the news")
+                .topic("school_announcement")
                 .build();
 
         webTestClient.post().uri("/api/articles/news")
@@ -137,6 +138,7 @@ public class NewsIntegrationTest extends BaseIntegrationTest {
                 .organizationId(1)
                 .title("Test News Title User " + UUID.randomUUID())
                 .content("User content")
+                .topic("school_announcement")
                 .build();
 
         webTestClient.post().uri("/api/articles/news")
@@ -171,6 +173,7 @@ public class NewsIntegrationTest extends BaseIntegrationTest {
                 .organizationId(1)
                 .title("Test News Title " + UUID.randomUUID())
                 .content("Content")
+                .topic("school_announcement")
                 .build();
 
         Map<String, Object> response = webTestClient.post().uri("/api/articles/news")
@@ -206,6 +209,7 @@ public class NewsIntegrationTest extends BaseIntegrationTest {
                 .title("Test Slug Title")
                 .slug(slug)
                 .content("Content")
+                .topic("school_announcement")
                 .build();
 
         webTestClient.post().uri("/api/articles/news")
@@ -234,6 +238,7 @@ public class NewsIntegrationTest extends BaseIntegrationTest {
                 .organizationId(1)
                 .title("Title before update")
                 .content("Content before update")
+                .topic("school_announcement")
                 .build();
 
         Map<String, Object> response = webTestClient.post().uri("/api/articles/news")
@@ -252,6 +257,7 @@ public class NewsIntegrationTest extends BaseIntegrationTest {
         UpdateNewsRequest updateReq = UpdateNewsRequest.builder()
                 .title("Title after update")
                 .content("Content after update")
+                .topic("school_announcement")
                 .build();
 
         webTestClient.put().uri("/api/articles/news/" + newsId)
@@ -274,6 +280,7 @@ public class NewsIntegrationTest extends BaseIntegrationTest {
                 .organizationId(1)
                 .title("Title to delete")
                 .content("Content")
+                .topic("school_announcement")
                 .build();
 
         Map<String, Object> response = webTestClient.post().uri("/api/articles/news")
@@ -312,6 +319,7 @@ public class NewsIntegrationTest extends BaseIntegrationTest {
                 .organizationId(1)
                 .title("Draft News")
                 .content("Content")
+                .topic("school_announcement")
                 .build();
 
         Map<String, Object> response = webTestClient.post().uri("/api/articles/news")
@@ -343,6 +351,7 @@ public class NewsIntegrationTest extends BaseIntegrationTest {
                 .organizationId(1)
                 .title("News to Hide")
                 .content("Content")
+                .topic("school_announcement")
                 .build();
 
         Map<String, Object> response = webTestClient.post().uri("/api/articles/news")
@@ -406,6 +415,7 @@ public class NewsIntegrationTest extends BaseIntegrationTest {
                 .organizationId(1)
                 .title("News for comment")
                 .content("Content")
+                .topic("school_announcement")
                 .build();
 
         Map<String, Object> response = webTestClient.post().uri("/api/articles/news")
@@ -453,6 +463,7 @@ public class NewsIntegrationTest extends BaseIntegrationTest {
                 .organizationId(1)
                 .title("News for comment fetch")
                 .content("Content")
+                .topic("school_announcement")
                 .build();
 
         Map<String, Object> response = webTestClient.post().uri("/api/articles/news")
@@ -511,6 +522,7 @@ public class NewsIntegrationTest extends BaseIntegrationTest {
                 .organizationId(1)
                 .title("News for reply")
                 .content("Content")
+                .topic("school_announcement")
                 .build();
 
         Map<String, Object> response = webTestClient.post().uri("/api/articles/news")
@@ -576,6 +588,7 @@ public class NewsIntegrationTest extends BaseIntegrationTest {
                 .organizationId(1)
                 .title("News to update comment")
                 .content("Content")
+                .topic("school_announcement")
                 .build();
 
         Map<String, Object> response = webTestClient.post().uri("/api/articles/news")
@@ -637,6 +650,7 @@ public class NewsIntegrationTest extends BaseIntegrationTest {
                 .organizationId(1)
                 .title("News to delete comment")
                 .content("Content")
+                .topic("school_announcement")
                 .build();
 
         Map<String, Object> response = webTestClient.post().uri("/api/articles/news")

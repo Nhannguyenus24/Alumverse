@@ -140,6 +140,7 @@ public class EventIntegrationTest extends BaseIntegrationTest {
         
         CreateEventRequest request = CreateEventRequest.builder()
                 .title("Admin Event TC55")
+                .topic("workshop")
                 .description("Desc")
                 .organizationId(1)
                 .startTime(LocalDateTime.now().plusDays(1))
@@ -204,6 +205,7 @@ public class EventIntegrationTest extends BaseIntegrationTest {
         
         CreateEventRequest request = CreateEventRequest.builder()
                 .title("Invalid Time")
+                .topic("workshop")
                 .organizationId(1)
                 .startTime(LocalDateTime.now().plusDays(2))
                 .endTime(LocalDateTime.now().plusDays(1)) // End before Start
