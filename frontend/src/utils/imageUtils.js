@@ -360,7 +360,7 @@ const uploadFundDocumentBase64 = async ({ base64String, fileName }) => {
  * backend can resolve the extension and size limit.
  * @returns {object} { uploadFile, isPending, isError, errorMessage }
  */
-export const useUploadFundDocument = () => {
+const useUploadFundDocument = () => {
   const { mutateAsync, isPending, isError, error } = useMutation({
     mutationFn: uploadFundDocumentBase64,
   });

@@ -12,7 +12,7 @@ export const FORUM_TOPIC_SORT_OPTIONS = {
   MOST_VIEWED: 'most_viewed',
 };
 
-export const FORUM_TOPICS_PAGE_SIZE = 20;
+const FORUM_TOPICS_PAGE_SIZE = 20;
 
 export const useForumCategoryLogic = (organizationId) => {
   const { t } = useTranslation('forum');

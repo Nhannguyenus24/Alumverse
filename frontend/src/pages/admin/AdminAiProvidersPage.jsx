@@ -345,6 +345,3 @@ export const AdminAiProvidersContent = ({ showHeader = true }) => {
   );
 };
 
-const AdminAiProvidersPage = () => <AdminAiProvidersContent />;
-
-export default AdminAiProvidersPage;

@@ -344,7 +344,6 @@ const adminMentorshipApi = {
 export const {
 	getAllSessions,
 	getSessionsByStatus,
-	getSessionById: getAdminSessionById,
 	updateSessionStatus,
 	deleteSession,
 	getAllMentorProfiles,
@@ -1425,7 +1424,6 @@ export const {
 	updateSessionStatus: updateMentorSessionStatus,
 	updateSessionMeetingLink: updateMentorSessionMeetingLink,
 	getMyMentorFeedbacks,
-	uploadCvFile,
 	getHubStats,
 } = mentorshipApi;
 
