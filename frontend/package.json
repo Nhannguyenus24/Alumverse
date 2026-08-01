@@ -12,7 +12,8 @@
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
-    "@fontsource/roboto": "^5.2.9",
+    "@fontsource/montserrat": "^5.3.0",
+    "@fontsource/nunito": "^5.3.0",
     "@google-recaptcha/react": "^2.4.2",
     "@hookform/resolvers": "^5.2.2",
     "@iconify/react": "^6.0.2",
