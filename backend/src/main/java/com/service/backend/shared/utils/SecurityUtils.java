@@ -226,7 +226,7 @@ public final class SecurityUtils {
     public static Mono<Integer> resolveOrganizationId(Integer requestedOrgId) {
         return getCurrentUserRole()
                 .flatMap(role -> {
-                    if ("STAFF".equals(role)) {
+                    if ("STAFF".equalsIgnoreCase(role)) {
                         return getCurrentOrganizationId();
                     }
                     return requestedOrgId != null ? Mono.just(requestedOrgId) : Mono.empty();

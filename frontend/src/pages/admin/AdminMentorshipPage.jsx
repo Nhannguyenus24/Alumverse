@@ -128,6 +128,7 @@ const AdminMentorshipPage = () => {
     statusFilter, setStatusFilter, updateSessionStatus, deleteSession,
 
     mentors, mentorTotal, mentorLoading,
+    mentorCounts,
     mentorPage, setMentorPage, mentorRowsPerPage, setMentorRowsPerPage,
     approvalFilter, setApprovalFilter,
     approveMentor, rejectMentor, requestMentorUpdate,
@@ -431,9 +432,10 @@ const AdminMentorshipPage = () => {
   ];
 
   const pendingCount = useMemo(
-    () => (approvalFilter === 'PENDING' ? mentorTotal : statistics?.pendingMentors ?? 0),
-    [approvalFilter, mentorTotal, statistics],
+    () => mentorCounts?.pending ?? 0,
+    [mentorCounts],
   );
+  const mentorListCount = mentorCounts?.all ?? 0;
 
   return (
     <Box>
@@ -454,7 +456,7 @@ const AdminMentorshipPage = () => {
 
       <Tabs value={tab} onChange={(_, v) => changeTab(v)} sx={{ mb: 2 }} variant="scrollable" scrollButtons="auto">
         <Tab value="pending" label={`${t('mentorship_tab_pending')} (${pendingCount})`} />
-        <Tab value="mentors" label={t('mentorship_tab_mentors')} />
+        <Tab value="mentors" label={`${t('mentorship_tab_mentors')} (${mentorListCount})`} />
         <Tab value="mentees" label={`${t('mentorship_tab_mentee_list')} (${menteeTotal})`} />
         <Tab value="sessions" label={`${t('mentorship_tab_sessions')} (${sessionTotal})`} />
         <Tab value="reports" label={`${t('mentorship_tab_reports')} (${reportTotal})`} />

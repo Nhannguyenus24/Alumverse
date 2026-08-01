@@ -119,11 +119,14 @@ public class AdminMentorshipController {
     @GetMapping("/reports")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<AdminMentorshipReportDTO>>>> getReports(
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) Integer organizationId,
             @Parameter(example = "0")
             @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page must be at least 0") int page,
             @Parameter(example = "10")
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Size must be at least 1") int size) {
-        return adminMentorshipService.getReports(status, page, size)
+        return SecurityUtils.resolveOrganizationId(organizationId)
+                .flatMap(resolvedOrgId -> adminMentorshipService.getReports(resolvedOrgId, status, page, size))
+                .switchIfEmpty(adminMentorshipService.getReports(null, status, page, size))
                 .map(p -> ResponseEntity.ok(new ApiResponse<>("Retrieved mentorship reports", p)));
     }
 
@@ -170,8 +173,11 @@ public class AdminMentorshipController {
     @Operation(summary = "Approve a mentor profile")
     @PostMapping("/mentors/{memberId}/approve")
     public Mono<ResponseEntity<ApiResponse<AdminMentorProfileDTO>>> approveMentor(
-            @PathVariable @Min(value = 1, message = "Member ID must be greater than 0") Integer memberId) {
-        return adminMentorshipService.approveMentor(memberId)
+            @PathVariable @Min(value = 1, message = "Member ID must be greater than 0") Integer memberId,
+            @RequestParam(required = false) Integer organizationId) {
+        return SecurityUtils.resolveOrganizationId(organizationId)
+                .flatMap(resolvedOrgId -> adminMentorshipService.approveMentor(memberId, resolvedOrgId))
+                .switchIfEmpty(adminMentorshipService.approveMentor(memberId, null))
                 .map(p -> ResponseEntity.ok(new ApiResponse<>("Mentor approved", p)));
     }
 
@@ -179,8 +185,11 @@ public class AdminMentorshipController {
     @PostMapping("/mentors/{memberId}/reject")
     public Mono<ResponseEntity<ApiResponse<AdminMentorProfileDTO>>> rejectMentor(
             @PathVariable @Min(value = 1, message = "Member ID must be greater than 0") Integer memberId,
+            @RequestParam(required = false) Integer organizationId,
             @Valid @RequestBody MentorApplicationReviewRequest request) {
-        return adminMentorshipService.rejectMentor(memberId, request.getReason())
+        return SecurityUtils.resolveOrganizationId(organizationId)
+                .flatMap(resolvedOrgId -> adminMentorshipService.rejectMentor(memberId, resolvedOrgId, request.getReason()))
+                .switchIfEmpty(adminMentorshipService.rejectMentor(memberId, null, request.getReason()))
                 .map(p -> ResponseEntity.ok(new ApiResponse<>("Mentor application rejected", p)));
     }
 
@@ -188,8 +197,11 @@ public class AdminMentorshipController {
     @PostMapping("/mentors/{memberId}/request-update")
     public Mono<ResponseEntity<ApiResponse<AdminMentorProfileDTO>>> requestMentorUpdate(
             @PathVariable @Min(value = 1, message = "Member ID must be greater than 0") Integer memberId,
+            @RequestParam(required = false) Integer organizationId,
             @Valid @RequestBody MentorApplicationReviewRequest request) {
-        return adminMentorshipService.requestMentorUpdate(memberId, request.getReason())
+        return SecurityUtils.resolveOrganizationId(organizationId)
+                .flatMap(resolvedOrgId -> adminMentorshipService.requestMentorUpdate(memberId, resolvedOrgId, request.getReason()))
+                .switchIfEmpty(adminMentorshipService.requestMentorUpdate(memberId, null, request.getReason()))
                 .map(p -> ResponseEntity.ok(new ApiResponse<>("Mentor application needs update", p)));
     }
 

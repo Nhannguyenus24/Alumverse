@@ -16,6 +16,7 @@ import com.service.backend.shared.entity.MentorAvailability;
 import com.service.backend.shared.entity.MentorProfile;
 import com.service.backend.shared.entity.MentorshipReport;
 import com.service.backend.shared.enums.Status;
+import com.service.backend.shared.enums.VerificationLevel;
 import com.service.backend.shared.entity.MentorshipSession;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.dto.PaginatedResponse;
@@ -80,21 +81,49 @@ public class AdminMentorshipService {
      * org membership is resolved via organization_members. ADMIN may review any mentor; a STAFF may
      * only review a mentor who belongs to the STAFF's own organization. Fail-closed.
      */
-    private Mono<Void> assertCanReviewMember(Integer memberId) {
-        return Mono.zip(SecurityUtils.getCurrentUserRole(), SecurityUtils.getCurrentOrganizationId().defaultIfEmpty(-1))
-                .flatMap(t -> {
-                    if ("ADMIN".equalsIgnoreCase(t.getT1())) {
+    private Mono<Void> assertCanReviewMember(Integer memberId, Integer organizationId) {
+        return SecurityUtils.getCurrentUserRole()
+                .switchIfEmpty(Mono.error(new ApplicationException(
+                        ErrorCode.FORBIDDEN,
+                        "You can only review mentors in your own organization")))
+                .flatMap(role -> {
+                    if ("ADMIN".equalsIgnoreCase(role)) {
                         return Mono.<Void>empty();
                     }
-                    Integer callerOrg = t.getT2();
-                    return userOrganizationMemberRepository.findPrimaryOrgByUserIds(Set.of(memberId))
-                            .map(UserOrganizationMemberRepository.PrimaryOrg::organizationId)
-                            .any(orgId -> orgId != null && orgId.equals(callerOrg))
-                            .flatMap(inOrg -> Boolean.TRUE.equals(inOrg)
-                                    ? Mono.<Void>empty()
-                                    : Mono.<Void>error(new ApplicationException(ErrorCode.FORBIDDEN, "You can only review mentors in your own organization")));
-                })
-                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.FORBIDDEN, "You can only review mentors in your own organization")));
+                    if (!"STAFF".equalsIgnoreCase(role)) {
+                        return Mono.error(new ApplicationException(
+                                ErrorCode.FORBIDDEN,
+                                "You can only review mentors in your own organization"));
+                    }
+                    return Mono.zip(
+                                    SecurityUtils.getCurrentOrganizationId().defaultIfEmpty(-1),
+                                    SecurityUtils.getCurrentVerificationLevel().defaultIfEmpty(0))
+                            .flatMap(context -> {
+                                Integer currentOrgId = context.getT1();
+                                Integer verificationLevel = context.getT2();
+                                if (verificationLevel < VerificationLevel.ADMIN) {
+                                    return Mono.error(new ApplicationException(
+                                            ErrorCode.FORBIDDEN,
+                                            "Only organization staff level 4 can review mentors"));
+                                }
+                                Integer reviewerOrg = organizationId != null ? organizationId : currentOrgId;
+                                if (reviewerOrg == null || reviewerOrg <= 0) {
+                                    return Mono.error(new ApplicationException(
+                                            ErrorCode.FORBIDDEN,
+                                            "You can only review mentors in your own organization"));
+                                }
+                                if (!reviewerOrg.equals(currentOrgId)) {
+                                    return Mono.error(new ApplicationException(
+                                            ErrorCode.FORBIDDEN,
+                                            "You can only review mentors in your own organization"));
+                                }
+                                return userOrganizationMemberRepository.findByOrganizationIdAndUserId(reviewerOrg, memberId)
+                                        .hasElement()
+                                        .flatMap(isMemberInOrg -> Boolean.TRUE.equals(isMemberInOrg)
+                                                ? Mono.<Void>empty()
+                                                : Mono.<Void>error(new ApplicationException(ErrorCode.FORBIDDEN, "You can only review mentors in your own organization")));
+                            });
+                });
     }
 
     public Mono<PaginatedResponse<AdminMentorshipSessionDTO>> getAllSessions(Integer organizationId, int page, int size) {
@@ -186,24 +215,24 @@ public class AdminMentorshipService {
                 .doOnSuccess(r -> log.debug("getMentorProfilesByStatus result: {}", JsonUtils.toJson(r)));
     }
 
-    public Mono<AdminMentorProfileDTO> approveMentor(Integer memberId) {
-        return applyReview(memberId, Status.APPROVED, null);
+    public Mono<AdminMentorProfileDTO> approveMentor(Integer memberId, Integer organizationId) {
+        return applyReview(memberId, organizationId, Status.APPROVED, null);
     }
 
-    public Mono<AdminMentorProfileDTO> rejectMentor(Integer memberId, String reason) {
-        return applyReview(memberId, Status.REJECTED, reason);
+    public Mono<AdminMentorProfileDTO> rejectMentor(Integer memberId, Integer organizationId, String reason) {
+        return applyReview(memberId, organizationId, Status.REJECTED, reason);
     }
 
-    public Mono<AdminMentorProfileDTO> requestMentorUpdate(Integer memberId, String reason) {
-        return applyReview(memberId, Status.NEED_UPDATE, reason);
+    public Mono<AdminMentorProfileDTO> requestMentorUpdate(Integer memberId, Integer organizationId, String reason) {
+        return applyReview(memberId, organizationId, Status.NEED_UPDATE, reason);
     }
 
-    private Mono<AdminMentorProfileDTO> applyReview(Integer memberId, Status targetStatus, String reason) {
+    private Mono<AdminMentorProfileDTO> applyReview(Integer memberId, Integer organizationId, Status targetStatus, String reason) {
         return SecurityUtils.getCurrentUserId()
                 .map(Long::intValue)
                 .defaultIfEmpty(0)
                 .flatMap(reviewerId ->
-                        assertCanReviewMember(memberId).then(
+                        assertCanReviewMember(memberId, organizationId).then(
                         adminMentorshipRepository.findMentorProfileById(memberId)
                                 .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.MENTOR_PROFILE_NOT_FOUND))))
                                 .flatMap(p -> {
@@ -327,15 +356,26 @@ public class AdminMentorshipService {
                         r.getItems() != null ? r.getItems().size() : 0));
     }
 
-    public Mono<PaginatedResponse<AdminMentorshipReportDTO>> getReports(String status, int page, int size) {
+    public Mono<PaginatedResponse<AdminMentorshipReportDTO>> getReports(Integer organizationId, String status, int page, int size) {
         int offset = page * size;
         String upper = StringUtils.hasText(status) ? status.toUpperCase() : null;
-        Flux<MentorshipReport> reports = upper != null
-                ? reportRepo.findReportsByStatus(upper, size, offset)
-                : reportRepo.findAllReports(size, offset);
-        Mono<Long> count = upper != null ? reportRepo.countReportsByStatus(upper) : reportRepo.countAllReports();
+        Flux<MentorshipReport> reports;
+        Mono<Long> count;
+        if (organizationId != null) {
+            reports = upper != null
+                    ? reportRepo.findReportsByOrganizationAndStatus(organizationId, upper, size, offset)
+                    : reportRepo.findReportsByOrganization(organizationId, size, offset);
+            count = upper != null
+                    ? reportRepo.countReportsByOrganizationAndStatus(organizationId, upper)
+                    : reportRepo.countReportsByOrganization(organizationId);
+        } else {
+            reports = upper != null
+                    ? reportRepo.findReportsByStatus(upper, size, offset)
+                    : reportRepo.findAllReports(size, offset);
+            count = upper != null ? reportRepo.countReportsByStatus(upper) : reportRepo.countAllReports();
+        }
         return PaginationHelper.paginate(enrichReports(reports), count, page, size)
-                .doOnSuccess(r -> log.info("getReports (status={}) result size: {}", upper,
+                .doOnSuccess(r -> log.info("getReports (org={}, status={}) result size: {}", organizationId, upper,
                         r.getItems() != null ? r.getItems().size() : 0));
     }
 
