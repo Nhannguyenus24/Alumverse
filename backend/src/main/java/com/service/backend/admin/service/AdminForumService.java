@@ -426,7 +426,7 @@ public class AdminForumService {
         if (parentId == null) {
             return Mono.<Void>empty();
         }
-        if (categoryId != null && parentId.equals(categoryId)) {
+        if (parentId.equals(categoryId)) {
             return Mono.error(new ApplicationException(
                     ErrorCode.BAD_REQUEST,
                     "Danh mục không thể chọn chính nó làm danh mục cha"));

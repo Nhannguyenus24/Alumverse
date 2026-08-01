@@ -106,7 +106,7 @@ export const buildProfileContactLinksPayload = (
   };
 };
 
-export const buildProfileContactLinks = (values, { showContactEmail = true, extras = [] } = {}) =>
+const buildProfileContactLinks = (values, { showContactEmail = true, extras = [] } = {}) =>
   normalizeProfileLinks(buildProfileContactLinksPayload(values, { showContactEmail, extras }));
 
 export const normalizeProfileLinks = (raw) => {

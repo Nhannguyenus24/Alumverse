@@ -1,7 +1,7 @@
 import { getTopicOptionsForChannels } from './articleTopics';
 
 export const ARTICLE_FETCH_LIMIT = 200;
-export const ARTICLE_PAGE_SIZE = 10;
+const ARTICLE_PAGE_SIZE = 10;
 
 const normalizeComparable = (value) => String(value ?? '')
   .trim()

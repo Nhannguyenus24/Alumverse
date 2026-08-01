@@ -7,8 +7,3 @@ export const getAdminMentorshipSessionStatusOptions = (t) => [
   { value: 'Rejected', label: t('mentorship_status_rejected') },
 ];
 
-export const getAdminMentorshipApprovalOptions = (t) => [
-  { value: 'ALL', label: t('mentorship_approval_all') },
-  { value: 'PENDING', label: t('mentorship_approval_pending') },
-  { value: 'APPROVED', label: t('mentorship_approval_approved') },
-];
