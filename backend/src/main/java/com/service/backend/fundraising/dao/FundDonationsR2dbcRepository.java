@@ -19,6 +19,7 @@ public interface FundDonationsR2dbcRepository extends R2dbcRepository<FundDonati
             SELECT
               fd.id AS id,
               fd.fund_id AS fund_id,
+              f.name AS fund_name,
               fd.donor_member_id AS donor_member_id,
               fd.donor_name AS donor_name,
               fd.amount AS amount,
@@ -30,6 +31,7 @@ public interface FundDonationsR2dbcRepository extends R2dbcRepository<FundDonati
               fd.created_at AS created_at,
               u.avatar_url AS avatar_url
             FROM fund_donations fd
+            LEFT JOIN funds f ON f.id = fd.fund_id
             LEFT JOIN users u ON fd.donor_member_id IS NOT NULL AND u.id = fd.donor_member_id
             WHERE fd.fund_id = :fundId
               AND fd.status = 'SUCCESS'
@@ -42,6 +44,7 @@ public interface FundDonationsR2dbcRepository extends R2dbcRepository<FundDonati
             SELECT
               fd.id AS id,
               fd.fund_id AS fund_id,
+              f.name AS fund_name,
               fd.donor_member_id AS donor_member_id,
               fd.donor_name AS donor_name,
               fd.amount AS amount,
@@ -53,6 +56,7 @@ public interface FundDonationsR2dbcRepository extends R2dbcRepository<FundDonati
               fd.created_at AS created_at,
               u.avatar_url AS avatar_url
             FROM fund_donations fd
+            LEFT JOIN funds f ON f.id = fd.fund_id
             LEFT JOIN users u ON fd.donor_member_id IS NOT NULL AND u.id = fd.donor_member_id
             WHERE fd.fund_id = :fundId
               AND fd.status = 'SUCCESS'
@@ -71,6 +75,7 @@ public interface FundDonationsR2dbcRepository extends R2dbcRepository<FundDonati
             SELECT
               fd.id AS id,
               fd.fund_id AS fund_id,
+              f.name AS fund_name,
               fd.donor_member_id AS donor_member_id,
               fd.donor_name AS donor_name,
               fd.amount AS amount,
@@ -82,6 +87,7 @@ public interface FundDonationsR2dbcRepository extends R2dbcRepository<FundDonati
               fd.created_at AS created_at,
               u.avatar_url AS avatar_url
             FROM fund_donations fd
+            LEFT JOIN funds f ON f.id = fd.fund_id
             LEFT JOIN users u ON u.id = fd.donor_member_id
             WHERE fd.donor_member_id = :donorMemberId
               AND fd.status = 'SUCCESS'
@@ -97,6 +103,7 @@ public interface FundDonationsR2dbcRepository extends R2dbcRepository<FundDonati
             SELECT
               fd.id AS id,
               fd.fund_id AS fund_id,
+              f.name AS fund_name,
               fd.donor_member_id AS donor_member_id,
               fd.donor_name AS donor_name,
               fd.amount AS amount,
@@ -108,6 +115,7 @@ public interface FundDonationsR2dbcRepository extends R2dbcRepository<FundDonati
               fd.created_at AS created_at,
               u.avatar_url AS avatar_url
             FROM fund_donations fd
+            LEFT JOIN funds f ON f.id = fd.fund_id
             LEFT JOIN users u ON u.id = fd.donor_member_id
             WHERE fd.donor_member_id = :donorMemberId
               AND fd.status = 'SUCCESS'
@@ -143,6 +151,7 @@ public interface FundDonationsR2dbcRepository extends R2dbcRepository<FundDonati
             SELECT
               fd.id AS id,
               fd.fund_id AS fund_id,
+              f.name AS fund_name,
               fd.donor_member_id AS donor_member_id,
               fd.donor_name AS donor_name,
               fd.amount AS amount,
@@ -154,6 +163,7 @@ public interface FundDonationsR2dbcRepository extends R2dbcRepository<FundDonati
               fd.created_at AS created_at,
               u.avatar_url AS avatar_url
             FROM fund_donations fd
+            LEFT JOIN funds f ON f.id = fd.fund_id
             LEFT JOIN users u ON u.id = fd.donor_member_id
             WHERE fd.fund_id = :fundId
               AND fd.donor_name ILIKE CONCAT('%', :keyword, '%')
@@ -174,6 +184,7 @@ public interface FundDonationsR2dbcRepository extends R2dbcRepository<FundDonati
             SELECT
               fd.id AS id,
               fd.fund_id AS fund_id,
+              f.name AS fund_name,
               fd.donor_member_id AS donor_member_id,
               fd.donor_name AS donor_name,
               fd.amount AS amount,
@@ -185,6 +196,7 @@ public interface FundDonationsR2dbcRepository extends R2dbcRepository<FundDonati
               fd.created_at AS created_at,
               u.avatar_url AS avatar_url
             FROM fund_donations fd
+            LEFT JOIN funds f ON f.id = fd.fund_id
             LEFT JOIN users u ON u.id = fd.donor_member_id
             WHERE fd.fund_id = :fundId
               AND fd.phone ILIKE CONCAT('%', :keyword, '%')
@@ -205,6 +217,7 @@ public interface FundDonationsR2dbcRepository extends R2dbcRepository<FundDonati
             SELECT
               fd.id AS id,
               fd.fund_id AS fund_id,
+              f.name AS fund_name,
               fd.donor_member_id AS donor_member_id,
               fd.donor_name AS donor_name,
               fd.amount AS amount,
@@ -216,6 +229,7 @@ public interface FundDonationsR2dbcRepository extends R2dbcRepository<FundDonati
               fd.created_at AS created_at,
               u.avatar_url AS avatar_url
             FROM fund_donations fd
+            LEFT JOIN funds f ON f.id = fd.fund_id
             LEFT JOIN users u ON u.id = fd.donor_member_id
             WHERE fd.fund_id = :fundId
               AND fd.address ILIKE CONCAT('%', :keyword, '%')
@@ -236,6 +250,7 @@ public interface FundDonationsR2dbcRepository extends R2dbcRepository<FundDonati
             SELECT
               fd.id AS id,
               fd.fund_id AS fund_id,
+              f.name AS fund_name,
               fd.donor_member_id AS donor_member_id,
               fd.donor_name AS donor_name,
               fd.amount AS amount,
@@ -247,6 +262,7 @@ public interface FundDonationsR2dbcRepository extends R2dbcRepository<FundDonati
               fd.created_at AS created_at,
               u.avatar_url AS avatar_url
             FROM fund_donations fd
+            LEFT JOIN funds f ON f.id = fd.fund_id
             LEFT JOIN users u ON u.id = fd.donor_member_id
             WHERE fd.fund_id = :fundId
               AND fd.message ILIKE CONCAT('%', :keyword, '%')
@@ -267,6 +283,7 @@ public interface FundDonationsR2dbcRepository extends R2dbcRepository<FundDonati
             SELECT
               fd.id AS id,
               fd.fund_id AS fund_id,
+              f.name AS fund_name,
               fd.donor_member_id AS donor_member_id,
               fd.donor_name AS donor_name,
               fd.amount AS amount,
@@ -278,6 +295,7 @@ public interface FundDonationsR2dbcRepository extends R2dbcRepository<FundDonati
               fd.created_at AS created_at,
               u.avatar_url AS avatar_url
             FROM fund_donations fd
+            LEFT JOIN funds f ON f.id = fd.fund_id
             LEFT JOIN users u ON u.id = fd.donor_member_id
             WHERE fd.fund_id = :fundId
               AND fd.email ILIKE CONCAT('%', :keyword, '%')

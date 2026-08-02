@@ -40,7 +40,7 @@ import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteD
 import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetricTile';
 import AdminStatusChip from '../../components/admin/AdminStatusChip';
 import { useAdminForumContext, useAdminSystemContext } from '../../stores/AdminStore';
-import { formatDate } from '../../utils/dateFormatter';
+import { formatDateTime } from '../../utils/dateFormatter';
 
 const CATEGORY_TABLE_COLUMNS = 'minmax(0, 1fr) 320px';
 
@@ -60,6 +60,17 @@ const buildTree = (flatList) => {
     }
   });
   return roots;
+};
+
+const getLatestUpdatedAt = (items) => {
+  if (!Array.isArray(items) || items.length === 0) return null;
+  return items.reduce((latest, item) => {
+    const value = item?.updatedAt;
+    if (!value) return latest;
+    const timestamp = new Date(value).getTime();
+    if (Number.isNaN(timestamp)) return latest;
+    return !latest || timestamp > latest.timestamp ? { timestamp, value } : latest;
+  }, null)?.value ?? null;
 };
 
 const CategoryBranch = ({ node, depth = 0, expanded, toggle, onEdit, onDelete, onToggleStatus, activeOrganization }) => {
@@ -209,6 +220,11 @@ const AdminForumCategoriesPage = () => {
   const [modal, setModal] = useState({ open: false, mode: 'create', node: null });
   const [form, setForm] = useState({ name: '', description: '', parentId: '' });
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const parentCategoryOptions = useMemo(
+    () => tree.filter((cat) => !modal.node || cat.id !== modal.node.id),
+    [tree, modal.node],
+  );
+  const editingNodeHasChildren = Boolean(modal.node?.children?.length);
 
   useEffect(() => {
     if (tree.length > 0 && Object.keys(expanded).length === 0) {
@@ -240,6 +256,14 @@ const AdminForumCategoriesPage = () => {
   const handleSave = async () => {
     if (!form.name.trim()) {
       enqueueSnackbar(t('admin:forum_cat_name_required'), { variant: 'warning' });
+      return;
+    }
+    if (form.parentId !== '' && editingNodeHasChildren) {
+      enqueueSnackbar(t('admin:forum_cat_two_level_warning', { defaultValue: 'Diễn đàn chỉ hỗ trợ 2 cấp danh mục. Không thể chuyển danh mục đang có danh mục con thành danh mục con.' }), { variant: 'warning' });
+      return;
+    }
+    if (form.parentId !== '' && !parentCategoryOptions.some((cat) => String(cat.id) === String(form.parentId))) {
+      enqueueSnackbar(t('admin:forum_cat_parent_root_only', { defaultValue: 'Chỉ danh mục cấp 1 mới có thể được chọn làm danh mục cha.' }), { variant: 'warning' });
       return;
     }
     if (modal.mode === 'create') {
@@ -279,11 +303,13 @@ const AdminForumCategoriesPage = () => {
     );
   };
 
+  const latestUpdatedAt = getLatestUpdatedAt(categories);
+
   const stats = {
     total: categories?.length || 0,
     roots: tree.length,
     sub: (categories?.length || 0) - tree.length,
-    lastUpdate: categories?.[0]?.updatedAt ? formatDate(categories[0].updatedAt) : 'N/A'
+    lastUpdate: latestUpdatedAt ? formatDateTime(latestUpdatedAt) : 'N/A',
   };
 
   return (
@@ -421,11 +447,12 @@ const AdminForumCategoriesPage = () => {
             fullWidth
             value={form.parentId}
             onChange={(e) => setForm(f => ({ ...f, parentId: e.target.value }))}
+            disabled={editingNodeHasChildren}
+            helperText={editingNodeHasChildren ? t('admin:forum_cat_two_level_helper', { defaultValue: 'Danh mục này đang có danh mục con nên phải giữ ở cấp cha.' }) : undefined}
             slotProps={{ inputLabel: { shrink: true } }}
           >
             <MenuItem value="">{t('admin:forum_cat_no_parent')}</MenuItem>
-            {(categories ?? [])
-              .filter(cat => !modal.node || cat.id !== modal.node.id)
+            {parentCategoryOptions
               .map(cat => (
                 <MenuItem key={cat.id} value={cat.id}>
                   {cat.name}

@@ -17,6 +17,7 @@ public final class FundDonationMapper {
         return FundDonationListItemResponse.builder()
                 .id(projection.getId())
                 .fundId(projection.getFundId())
+                .fundName(projection.getFundName())
                 .donorMemberId(projection.getDonorMemberId())
                 .donorName(resolveDonorDisplayName(projection.getDonorName()))
                 .amount(projection.getAmount())

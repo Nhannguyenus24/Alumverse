@@ -42,6 +42,15 @@ const PRIVILEGED_ROLE_LABELS = {
   STAFF: 'Staff',
 };
 
+const HREF_TO_ARTICLE_MAP = {
+  '/events': '/article/event',
+  '/news': '/article/news',
+  '/honors/alumni': '/article/alumni',
+  '/honors/achievements': '/article/achievement',
+  '/development/academics': '/article/learning',
+  '/development/jobs': '/article/job',
+};
+
 const HEADER_TOOLTIP_SLOT_PROPS = {
   popper: {
     modifiers: [
@@ -173,6 +182,14 @@ const Header = () => {
     if (item.href === '/network') {
       paths.push('/chat');
     }
+
+    const extraPaths = [];
+    paths.forEach((p) => {
+      if (HREF_TO_ARTICLE_MAP[p]) {
+        extraPaths.push(HREF_TO_ARTICLE_MAP[p]);
+      }
+    });
+    paths.push(...extraPaths);
 
     return paths.some((path) => normalizedPath === path || normalizedPath.startsWith(`${path}/`));
   }, [getVisibleChildren, normalizedPath]);
@@ -323,6 +340,11 @@ const Header = () => {
                         >
                           {visibleChildren.map((child) => {
                             const isChildLocked = child.requiresAuth && !isAuthenticated;
+                            const childArticlePath = HREF_TO_ARTICLE_MAP[child.href];
+                            const isChildActive = normalizedPath === child.href || normalizedPath.startsWith(`${child.href}/`) ||
+                                                  (childArticlePath && (normalizedPath === childArticlePath || normalizedPath.startsWith(`${childArticlePath}/`)));
+                            const activeColor = isTransparent ? '#FFFFFF' : 'primary.main';
+
                             const childButtonContent = (
                               <Button
                                 key={child.label}
@@ -330,7 +352,11 @@ const Header = () => {
                                 to={isChildLocked ? undefined : toOrgPath(child.href)}
                                 disabled={isChildLocked}
                                 sx={{ justifyContent: 'flex-start', textAlign: 'left', px: 2, py: 1,
-                                      textTransform: 'none', color: 'text.primary', width: '100%', fontWeight: 500,
+                                      textTransform: 'none', 
+                                      color: isChildActive ? activeColor : 'text.primary', 
+                                      width: '100%', 
+                                      fontWeight: isChildActive ? 700 : 500,
+                                      bgcolor: isChildActive ? 'action.selected' : 'transparent',
                                       '&:hover': { bgcolor: 'action.hover' } }}
                               >
                                 {child.label}

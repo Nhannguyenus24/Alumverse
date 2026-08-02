@@ -1,7 +1,6 @@
 import { Box, IconButton, Paper, TextField, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button } from '@mui/material';
 import { useState } from 'react';
 import AddIcon from '@mui/icons-material/Add';
-import SaveIcon from '@mui/icons-material/Save';
 import ForumManageTopicItem from './ForumManageTopicItem';
 import { useTranslation } from 'react-i18next';
 
@@ -90,9 +89,9 @@ const ForumManageView = ({
             size="small"
             onClick={handleAddMainTopic}
             sx={{ color: 'success.main', flexShrink: 0 }}
-            aria-label={t('save_main_topic_aria')}
+            aria-label={t('add_main_topic_aria')}
           >
-            <SaveIcon sx={{ fontSize: 28 }} />
+            <AddIcon sx={{ fontSize: 28 }} />
           </IconButton>
         </Box>
       </Paper>
@@ -117,8 +116,8 @@ const ForumManageView = ({
         <DialogContent>
           <DialogContentText>
             {deleteDialog.type === 'topic'
-              ? t('forum:confirm_delete_topic_message', { defaultValue: 'Bạn có chắc chắn muốn xoá chủ đề chính này và tất cả chủ đề con của nó không?' })
-              : t('forum:confirm_delete_board_message', { defaultValue: 'Bạn có chắc chắn muốn xoá chủ đề con này không?' })}
+              ? t('forum:confirm_delete_topic_message', { defaultValue: 'Bạn có chắc chắn muốn xoá danh mục cha này và tất cả danh mục con của nó không?' })
+              : t('forum:confirm_delete_board_message', { defaultValue: 'Bạn có chắc chắn muốn xoá danh mục con này không?' })}
           </DialogContentText>
         </DialogContent>
         <DialogActions>

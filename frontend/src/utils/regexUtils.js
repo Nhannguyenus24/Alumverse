@@ -100,7 +100,7 @@ export const getChangePasswordSchema = (t) => z.object({
 });
 
 /** Change password API payload: backend only accepts oldPassword and newPassword. */
-export const getChangePasswordRequestSchema = (t) => z.object({
+const getChangePasswordRequestSchema = (t) => z.object({
   oldPassword: z.string().min(1, t ? t('auth:old_password_required') : 'Mật khẩu hiện tại là bắt buộc'),
   newPassword: z
     .string()
@@ -111,7 +111,7 @@ export const getChangePasswordRequestSchema = (t) => z.object({
 });
 
 /** @deprecated Use getChangePasswordSchema(t) instead */
-export const changePasswordSchema = getChangePasswordSchema(null);
+const changePasswordSchema = getChangePasswordSchema(null);
 
 /** @deprecated Use getChangePasswordRequestSchema(t) instead */
 export const changePasswordRequestSchema = getChangePasswordRequestSchema(null);
@@ -138,7 +138,7 @@ export const formatDonationAmount = (value) => `${Number(value ?? 0).toLocaleStr
 // --- User Profile Schemas ---
 
 /** Update My Profile: backend UpdateMyProfileRequest */
-export const getUpdateMyProfileSchema = (t) => z.object({
+const getUpdateMyProfileSchema = (t) => z.object({
   fullName: z.string().max(255, t ? t('user:fullname_too_long') : 'Họ tên tối đa 255 ký tự').optional().nullable(),
   phone: z
     .string()
@@ -159,7 +159,7 @@ export const getUpdateMyProfileSchema = (t) => z.object({
 // --- Event Schemas ---
 
 /** Create Event: backend CreateEventRequest */
-export const getCreateEventSchema = (t) => z.object({
+const getCreateEventSchema = (t) => z.object({
   title: z
     .string()
     .min(1, t ? t('event:title_required') : 'Tiêu đề sự kiện là bắt buộc')
@@ -176,7 +176,7 @@ export const getCreateEventSchema = (t) => z.object({
 // --- Forum Schemas ---
 
 /** Create Forum Post: backend CreateForumPostRequest */
-export const getCreateForumPostSchema = (t) => z.object({
+const getCreateForumPostSchema = (t) => z.object({
   topicId: z.number().int().positive(t ? t('common:invalid_id') : 'ID chủ đề không hợp lệ'),
   content: z
     .string()
@@ -186,7 +186,7 @@ export const getCreateForumPostSchema = (t) => z.object({
 });
 
 /** Create Forum Topic: backend CreateForumTopicRequest */
-export const getCreateForumTopicSchema = (t) => z.object({
+const getCreateForumTopicSchema = (t) => z.object({
   categoryId: z.number().int().positive(t ? t('common:invalid_id') : 'ID danh mục không hợp lệ'),
   title: z
     .string()
@@ -203,7 +203,7 @@ export const getCreateForumTopicSchema = (t) => z.object({
 // --- Article Schemas ---
 
 /** Create News Article: backend CreateNewsRequest */
-export const getCreateNewsSchema = (t) => z.object({
+const getCreateNewsSchema = (t) => z.object({
   title: z
     .string()
     .min(1, t ? t('article:title_required') : 'Tiêu đề bài viết là bắt buộc')
@@ -221,7 +221,7 @@ export const getCreateNewsSchema = (t) => z.object({
 // --- Chat/Group Schemas ---
 
 /** Create Group: backend CreateGroupRequest */
-export const getCreateGroupSchema = (t) => z.object({
+const getCreateGroupSchema = (t) => z.object({
   title: z
     .string()
     .min(1, t ? t('chat:group_name_required') : 'Tên nhóm là bắt buộc')
@@ -230,7 +230,7 @@ export const getCreateGroupSchema = (t) => z.object({
 });
 
 /** Add Members to Group: backend AddMembersRequest */
-export const getAddMembersSchema = (t) => z.object({
+const getAddMembersSchema = (t) => z.object({
   memberIds: z
     .array(z.number().int().positive())
     .min(1, t ? t('chat:members_required') : 'Phải chọn ít nhất một thành viên')
@@ -240,7 +240,7 @@ export const getAddMembersSchema = (t) => z.object({
 // --- Mentorship Schemas ---
 
 /** Create Mentor Profile: backend CreateMentorProfileRequest */
-export const getCreateMentorProfileSchema = (t) => z.object({
+const getCreateMentorProfileSchema = (t) => z.object({
   bio: z.string().max(255).optional().nullable(),
   meetingLink: z
     .string()
@@ -250,14 +250,14 @@ export const getCreateMentorProfileSchema = (t) => z.object({
 });
 
 /** Create Mentee Profile: backend CreateMenteeProfileRequest */
-export const getCreateMenteeProfileSchema = (t) => z.object({
+const getCreateMenteeProfileSchema = (t) => z.object({
   bio: z.string().max(255).optional().nullable(),
 });
 
 // --- Survey Schemas ---
 
 /** Create Survey: backend CreateSurveyRequest */
-export const getCreateSurveySchema = (t) => z.object({
+const getCreateSurveySchema = (t) => z.object({
   title: z
     .string()
     .min(1, t ? t('survey:title_required') : 'Tiêu đề khảo sát là bắt buộc')
@@ -270,7 +270,7 @@ export const getCreateSurveySchema = (t) => z.object({
 // --- Contact/General Schemas ---
 
 /** Contact Form: public contact page */
-export const getContactSchema = (t) => z.object({
+const getContactSchema = (t) => z.object({
   name: z
     .string()
     .min(1, t ? t('contact:field_name_required') : 'Tên là bắt buộc')

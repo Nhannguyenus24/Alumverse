@@ -32,7 +32,10 @@
   "field_title": "Title",
   "field_description": "Description",
   "field_start_at": "Planned start time",
-  "field_duration": "Duration (minutes)",
+  "field_duration": "Time to be public after start",
+  "field_days": "Days",
+  "field_hours": "Hours",
+  "field_minutes": "Minutes",
   "field_allow_multiple": "Allow users to submit multiple times",
 
   "questions": "Questions",

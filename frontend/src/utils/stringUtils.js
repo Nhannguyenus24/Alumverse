@@ -26,7 +26,7 @@ export const stringifyJson = (value, fallback = '-') => {
   }
 };
 
-export const decodeHtmlEntities = (html) => {
+const decodeHtmlEntities = (html) => {
   if (typeof html !== 'string' || !html) return html || '';
   let decoded = html;
   if (/&amp;(lt|gt|quot|#39|nbsp|#160);/gi.test(decoded)) {
@@ -45,7 +45,7 @@ export const decodeHtmlEntities = (html) => {
 const NBSP_CODE_POINT = 160;
 const NBSP_CHAR = String.fromCharCode(NBSP_CODE_POINT);
 
-export const normalizeNbsp = (html) => {
+const normalizeNbsp = (html) => {
   if (typeof html !== 'string' || !html) return html || '';
   const decoded = decodeHtmlEntities(html);
   return decoded

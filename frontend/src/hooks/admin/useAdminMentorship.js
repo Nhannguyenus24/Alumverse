@@ -28,6 +28,7 @@ const useAdminMentorship = (organizationId = null) => {
   // Trang mở ở tab "Cần duyệt" nên mặc định lọc PENDING; tab "DS Mentor" sẽ đổi sang ALL.
   const [approvalFilter, setApprovalFilter] = useState('PENDING');
   const [mentorPaged, setMentorPaged] = useState(fallbackPage);
+  const [mentorCounts, setMentorCounts] = useState({ all: 0, pending: 0 });
   const [mentorLoading, setMentorLoading] = useState(true);
 
   const [menteePage, setMenteePage] = useState(0);
@@ -72,6 +73,20 @@ const useAdminMentorship = (organizationId = null) => {
 
   useEffect(() => { loadMentors(); }, [loadMentors]);
 
+  const loadMentorCounts = useCallback(async () => {
+    const orgId = organizationId || null;
+    const [allData, pendingData] = await Promise.all([
+      safeFetch(() => api.getAllMentorProfiles(0, 1, orgId), fallbackPage),
+      safeFetch(() => api.getMentorProfilesByStatus('PENDING', 0, 1, orgId), fallbackPage),
+    ]);
+    setMentorCounts({
+      all: allData?.totalItem ?? 0,
+      pending: pendingData?.totalItem ?? 0,
+    });
+  }, [organizationId]);
+
+  useEffect(() => { loadMentorCounts(); }, [loadMentorCounts]);
+
   const loadMentees = useCallback(async () => {
     setMenteeLoading(true);
     const orgId = organizationId || null;
@@ -84,10 +99,11 @@ const useAdminMentorship = (organizationId = null) => {
 
   const loadReports = useCallback(async () => {
     setReportLoading(true);
-    const data = await safeFetch(() => api.getMentorReports(reportStatusFilter, reportPage, reportRowsPerPage), fallbackPage);
+    const orgId = organizationId || null;
+    const data = await safeFetch(() => api.getMentorReports(reportStatusFilter, reportPage, reportRowsPerPage, orgId), fallbackPage);
     setReportPaged(data || fallbackPage);
     setReportLoading(false);
-  }, [reportStatusFilter, reportPage, reportRowsPerPage]);
+  }, [reportStatusFilter, reportPage, reportRowsPerPage, organizationId]);
 
   useEffect(() => { loadReports(); }, [loadReports]);
 
@@ -115,28 +131,22 @@ const useAdminMentorship = (organizationId = null) => {
   }, [loadSessions, loadStatistics]);
 
   const approveMentor = useCallback(async (memberId) => {
-    try {
-      await api.approveMentor(memberId);
-      await Promise.all([loadMentors(), loadStatistics()]);
-      return true;
-    } catch { return false; }
-  }, [loadMentors, loadStatistics]);
+    await api.approveMentor(memberId, organizationId || null);
+    await Promise.all([loadMentors(), loadMentorCounts(), loadStatistics()]);
+    return true;
+  }, [loadMentors, loadMentorCounts, loadStatistics, organizationId]);
 
   const rejectMentor = useCallback(async (memberId, reason) => {
-    try {
-      await api.rejectMentor(memberId, reason);
-      await Promise.all([loadMentors(), loadStatistics()]);
-      return true;
-    } catch { return false; }
-  }, [loadMentors, loadStatistics]);
+    await api.rejectMentor(memberId, reason, organizationId || null);
+    await Promise.all([loadMentors(), loadMentorCounts(), loadStatistics()]);
+    return true;
+  }, [loadMentors, loadMentorCounts, loadStatistics, organizationId]);
 
   const requestMentorUpdate = useCallback(async (memberId, reason) => {
-    try {
-      await api.requestMentorUpdate(memberId, reason);
-      await Promise.all([loadMentors(), loadStatistics()]);
-      return true;
-    } catch { return false; }
-  }, [loadMentors, loadStatistics]);
+    await api.requestMentorUpdate(memberId, reason, organizationId || null);
+    await Promise.all([loadMentors(), loadMentorCounts(), loadStatistics()]);
+    return true;
+  }, [loadMentors, loadMentorCounts, loadStatistics, organizationId]);
 
   const resolveReport = useCallback(async (reportId, action, resolutionNote) => {
     try {
@@ -158,6 +168,7 @@ const useAdminMentorship = (organizationId = null) => {
 
     mentors: mentorPaged?.items ?? [],
     mentorTotal: mentorPaged?.totalItem ?? 0,
+    mentorCounts,
     mentorLoading,
     mentorPage, setMentorPage,
     mentorRowsPerPage, setMentorRowsPerPage,
