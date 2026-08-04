@@ -338,7 +338,10 @@ public class AdminOrganizationService {
 
     public Mono<FeatureConfig.SiteIdentity> getSiteIdentity(Integer organizationId) {
         return requireOrganization(organizationId)
-                .map(org -> parseConfig(org.getFeaturesConfig()).getSiteIdentity());
+                .map(org -> {
+                    FeatureConfig.SiteIdentity identity = parseConfig(org.getFeaturesConfig()).getSiteIdentity();
+                    return identity != null ? identity : new FeatureConfig.SiteIdentity();
+                });
     }
 
     public Mono<FeatureConfig> updateSiteIdentity(Integer organizationId, FeatureConfig.SiteIdentity siteIdentity) {
@@ -354,7 +357,10 @@ public class AdminOrganizationService {
 
     public Mono<FeatureConfig.BrandConfig> getBrandConfig(Integer organizationId) {
         return requireOrganization(organizationId)
-                .map(org -> parseConfig(org.getFeaturesConfig()).getBrandConfig());
+                .map(org -> {
+                    FeatureConfig.BrandConfig brand = parseConfig(org.getFeaturesConfig()).getBrandConfig();
+                    return brand != null ? brand : new FeatureConfig.BrandConfig();
+                });
     }
 
     public Mono<FeatureConfig> updateBrandConfig(Integer organizationId, FeatureConfig.BrandConfig brandConfig) {
@@ -447,7 +453,10 @@ public class AdminOrganizationService {
 
     public Mono<FeatureConfig.PrivacySettings> getPrivacySettings(Integer organizationId) {
         return requireOrganization(organizationId)
-                .map(org -> parseConfig(org.getFeaturesConfig()).getPrivacySettings());
+                .map(org -> {
+                    FeatureConfig.PrivacySettings settings = parseConfig(org.getFeaturesConfig()).getPrivacySettings();
+                    return settings != null ? settings : new FeatureConfig.PrivacySettings();
+                });
     }
 
     public Mono<FeatureConfig> updatePrivacySettings(Integer organizationId,
