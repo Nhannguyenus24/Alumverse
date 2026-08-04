@@ -1,0 +1,401 @@
+ID,Module,API_Endpoint,Tên_Test_Case,Input_Đầu_vào,Expected_Status,Expected_DB_State,Mức_độ_ưu_tiên
+1,Auth,POST /api/v1/auth/register,Đăng ký thành công với thông tin hợp lệ,"email hợp lệ, password mạnh, tên đầy đủ",201 Created,"Tạo mới 1 bản ghi User với trạng thái INACTIVE",High
+2,Auth,POST /api/v1/auth/register,Đăng ký thất bại do thiếu email,"bỏ trống trường email",400 Bad Request,"Không thay đổi",High
+3,Auth,POST /api/v1/auth/register,Đăng ký thất bại do sai định dạng email,"email=""abc@123""",400 Bad Request,"Không thay đổi",High
+4,Auth,POST /api/v1/auth/register,Đăng ký thất bại do mật khẩu quá yếu,"password=""123""",400 Bad Request,"Không thay đổi",Medium
+5,Auth,POST /api/v1/auth/register,Đăng ký thất bại do email đã tồn tại,"email của user đã có trong DB",409 Conflict,"Không thay đổi",High
+6,Auth,POST /api/v1/auth/register,Đăng ký thất bại do bỏ trống tên,"name=""""",400 Bad Request,"Không thay đổi",Medium
+7,Auth,POST /api/v1/auth/register,Kiểm tra gửi email OTP sau khi đăng ký,"email hợp lệ",201 Created,"Tạo mã OTP trong bảng user_otps",High
+8,Auth,POST /api/v1/auth/login,Đăng nhập thành công với tài khoản đã kích hoạt,"email đúng, password đúng",200 OK,"Không thay đổi (hoặc update last_login)",High
+9,Auth,POST /api/v1/auth/login,Đăng nhập thất bại do sai mật khẩu,"email đúng, password sai",401 Unauthorized,"Không thay đổi",High
+10,Auth,POST /api/v1/auth/login,Đăng nhập thất bại do sai email (email chưa đăng ký),"email không có trong DB",401 Unauthorized,"Không thay đổi",High
+11,Auth,POST /api/v1/auth/login,Đăng nhập thất bại do tài khoản chưa kích hoạt,"email đúng, password đúng nhưng status=INACTIVE",403 Forbidden,"Không thay đổi",High
+12,Auth,POST /api/v1/auth/login,Đăng nhập thất bại do tài khoản bị khóa (Banned),"email đúng, password đúng nhưng status=BANNED",403 Forbidden,"Không thay đổi",High
+13,Auth,POST /api/v1/auth/login,Kiểm tra format của Access Token và Refresh Token trả về,"email đúng, password đúng",200 OK,"Không thay đổi",Medium
+14,Auth,POST /api/v1/auth/refresh,Lấy token mới thành công bằng Refresh Token hợp lệ,"refresh_token hợp lệ còn hạn",200 OK,"Không thay đổi",High
+15,Auth,POST /api/v1/auth/refresh,Lấy token mới thất bại do Refresh Token hết hạn,"refresh_token đã hết hạn",401 Unauthorized,"Không thay đổi",High
+16,Auth,POST /api/v1/auth/refresh,Lấy token mới thất bại do Refresh Token sai format,"refresh_token=""abc""",401 Unauthorized,"Không thay đổi",High
+17,Auth,POST /api/v1/auth/refresh,Lấy token mới thất bại do thiếu Refresh Token,"bỏ trống trường refresh_token",400 Bad Request,"Không thay đổi",Medium
+18,Auth,POST /api/v1/auth/forgot-password,Yêu cầu cấp lại mật khẩu thành công,"email hợp lệ có trong DB",200 OK,"Tạo mã reset OTP/Token vào DB",High
+19,Auth,POST /api/v1/auth/forgot-password,Yêu cầu thất bại do email không tồn tại,"email không có trong DB",404 Not Found,"Không thay đổi",Medium
+20,Auth,POST /api/v1/auth/forgot-password,Yêu cầu thất bại do thiếu email,"bỏ trống email",400 Bad Request,"Không thay đổi",Medium
+21,Auth,POST /api/v1/auth/forgot-password,Yêu cầu thất bại do email sai format,"email=""invalid-email""",400 Bad Request,"Không thay đổi",Medium
+22,Auth,POST /api/v1/auth/reset-password,Đặt lại mật khẩu thành công,"mã reset hợp lệ, password mới hợp lệ",200 OK,"Cập nhật password mới đã hash, xóa mã reset",High
+23,Auth,POST /api/v1/auth/reset-password,Đặt lại mật khẩu thất bại do mã reset sai,"mã reset không khớp",400 Bad Request,"Không thay đổi",High
+24,Auth,POST /api/v1/auth/reset-password,Đặt lại mật khẩu thất bại do mã reset hết hạn,"mã reset đã hết thời gian hiệu lực",400 Bad Request,"Không thay đổi",High
+25,Auth,POST /api/v1/auth/reset-password,Đặt lại mật khẩu thất bại do password mới quá yếu,"mã reset đúng, password mới=""123""",400 Bad Request,"Không thay đổi",Medium
+26,Auth,POST /api/v1/auth/reset-password,Đặt lại mật khẩu thất bại do thiếu tham số,"thiếu token hoặc password mới",400 Bad Request,"Không thay đổi",Medium
+27,Auth,POST /api/v1/auth/verify-email,Xác thực email thành công,"mã OTP hợp lệ, email khớp",200 OK,"Cập nhật status user thành ACTIVE, xóa OTP",High
+28,Auth,POST /api/v1/auth/verify-email,Xác thực thất bại do OTP sai,"OTP không đúng",400 Bad Request,"Không thay đổi",High
+29,Auth,POST /api/v1/auth/verify-email,Xác thực thất bại do OTP hết hạn,"OTP đã quá thời gian (VD 15 phút)",400 Bad Request,"Không thay đổi",High
+30,Auth,POST /api/v1/auth/verify-email,Xác thực thất bại do tài khoản đã active từ trước,"user status=ACTIVE",400 Bad Request,"Không thay đổi",Medium
+31,Auth,POST /api/v1/auth/google-login,Đăng nhập Google thành công (user mới),"Google ID Token hợp lệ, email chưa có trong DB",200 OK,"Tạo mới User vào DB (Google Auth)",High
+32,Auth,POST /api/v1/auth/google-login,Đăng nhập Google thành công (user cũ),"Google ID Token hợp lệ, email đã có trong DB",200 OK,"Không tạo mới, chỉ trả về Token",High
+33,Auth,POST /api/v1/auth/google-login,Đăng nhập Google thất bại do ID Token sai/hết hạn,"ID Token giả mạo hoặc hết hạn",401 Unauthorized,"Không thay đổi",High
+34,Auth,POST /api/v1/auth/google-login,Đăng nhập Google thất bại do thiếu ID Token,"bỏ trống token",400 Bad Request,"Không thay đổi",Medium
+35,User,GET /api/v1/users/me,Lấy thông tin profile thành công,"Header có Access Token hợp lệ",200 OK,"Không thay đổi",High
+36,User,GET /api/v1/users/me,Lấy profile thất bại do token hết hạn/sai,"Token sai",401 Unauthorized,"Không thay đổi",High
+37,User,GET /api/v1/users/me,Lấy profile thất bại do không gửi token,"Không có header Authorization",401 Unauthorized,"Không thay đổi",High
+38,User,PUT /api/v1/users/me,Cập nhật thông tin profile thành công,"Token hợp lệ, dữ liệu (name, phone, bio) hợp lệ",200 OK,"Bản ghi User được cập nhật các field tương ứng",High
+39,User,PUT /api/v1/users/me,Cập nhật thất bại do gửi data sai định dạng,"phone = ""abc""",400 Bad Request,"Không thay đổi",Medium
+40,User,PUT /api/v1/users/me,Bảo mật: Không cho phép tự ý cập nhật ROLE,"Truyền thêm role=""ADMIN""",200 OK,"Cập nhật thông tin khác, nhưng ROLE vẫn giữ nguyên",High
+41,User,PUT /api/v1/users/me/password,Đổi mật khẩu thành công từ trong profile,"old_password đúng, new_password mạnh",200 OK,"Cập nhật password mới trong DB",High
+42,User,PUT /api/v1/users/me/password,Đổi mật khẩu thất bại do sai mật khẩu cũ,"old_password sai",400 Bad Request,"Không thay đổi",High
+43,User,PUT /api/v1/users/me/password,Đổi mật khẩu thất bại do mật khẩu mới quá yếu,"new_password=""123""",400 Bad Request,"Không thay đổi",Medium
+44,User,PUT /api/v1/users/me/password,Đổi mật khẩu thất bại do mật khẩu mới giống mật khẩu cũ,"new_password = old_password",400 Bad Request,"Không thay đổi",Low
+45,User,PUT /api/v1/users/me/avatar,Upload avatar thành công,"File ảnh hợp lệ (jpg/png), kích thước < 5MB",200 OK,"Cập nhật URL avatar vào bản ghi User",High
+46,User,PUT /api/v1/users/me/avatar,Upload avatar thất bại do file quá lớn,"File ảnh > 5MB",413 Payload Too Large,"Không thay đổi",Medium
+47,User,PUT /api/v1/users/me/avatar,Upload avatar thất bại do sai định dạng file,"File PDF hoặc EXE",415 Unsupported Media Type,"Không thay đổi",High
+48,User,GET /api/v1/users/{id},Xem thông tin công khai của User khác thành công,"id tồn tại",200 OK,"Không thay đổi",Medium
+49,User,GET /api/v1/users/{id},Xem thông tin thất bại do id không tồn tại,"id = 999999",404 Not Found,"Không thay đổi",Medium
+50,User,GET /api/v1/users/{id},Xem thông tin thất bại do truyền sai kiểu id,"id = ""abc""",400 Bad Request,"Không thay đổi",Low
+51,Event,GET /api/v1/events,Lấy danh sách sự kiện có phân trang thành công,"page=0, size=10",200 OK,"Không thay đổi",High
+52,Event,GET /api/v1/events,Lọc danh sách sự kiện theo keyword thành công,"keyword=""workshop""",200 OK,"Không thay đổi",Medium
+53,Event,GET /api/v1/events,Lấy danh sách sự kiện với page vượt quá giới hạn,"page=9999, size=10",200 OK,"Trả về mảng rỗng",Low
+54,Event,GET /api/v1/events,Lấy danh sách sự kiện thất bại do size không hợp lệ,"size=-1",400 Bad Request,"Không thay đổi",Low
+55,Event,POST /api/v1/events,Tạo sự kiện mới thành công (Admin),"Header Token của Admin, Payload event hợp lệ",201 Created,"Tạo 1 bản ghi mới trong bảng events",High
+56,Event,POST /api/v1/events,Tạo sự kiện thất bại do không có quyền (User thường),"Header Token của User thường",403 Forbidden,"Không thay đổi",High
+57,Event,POST /api/v1/events,Tạo sự kiện thất bại do thiếu trường bắt buộc,"Bỏ trống title hoặc start_time",400 Bad Request,"Không thay đổi",High
+58,Event,POST /api/v1/events,Tạo sự kiện thất bại do logic thời gian sai,"end_time trước start_time",400 Bad Request,"Không thay đổi",High
+59,Event,GET /api/v1/events/{id},Xem chi tiết sự kiện thành công,"id hợp lệ",200 OK,"Không thay đổi",High
+60,Event,GET /api/v1/events/{id},Xem chi tiết sự kiện thất bại do không tìm thấy,"id không tồn tại",404 Not Found,"Không thay đổi",High
+61,Event,POST /api/v1/events/{id}/join,Đăng ký tham gia sự kiện thành công,"id sự kiện hợp lệ, Token user hợp lệ",200 OK,"Tạo 1 bản ghi trong bảng event_attendees",High
+62,Event,POST /api/v1/events/{id}/join,Đăng ký tham gia thất bại do sự kiện đã kín chỗ,"sự kiện max_participants đã đạt đỉnh",400 Bad Request,"Không thay đổi",High
+63,Event,POST /api/v1/events/{id}/join,Đăng ký tham gia thất bại do đã đăng ký trước đó,"user đã có tên trong event_attendees",409 Conflict,"Không thay đổi",Medium
+64,Event,POST /api/v1/events/{id}/join,Đăng ký tham gia thất bại do sự kiện đã diễn ra,"sự kiện có status=COMPLETED",400 Bad Request,"Không thay đổi",Medium
+65,Event,DELETE /api/v1/events/{id}/join,Hủy đăng ký tham gia sự kiện thành công,"id sự kiện hợp lệ, Token user hợp lệ",200 OK,"Xóa bản ghi tương ứng trong event_attendees",High
+66,Event,DELETE /api/v1/events/{id}/join,Hủy đăng ký thất bại do chưa từng đăng ký,"user chưa có tên trong event_attendees",404 Not Found,"Không thay đổi",Medium
+67,Event,DELETE /api/v1/events/{id}/join,Hủy đăng ký thất bại do sự kiện đang/đã diễn ra,"sự kiện có start_time trong quá khứ",400 Bad Request,"Không thay đổi",Medium
+68,Mentorship,GET /api/v1/mentors,Lấy danh sách Mentor thành công,"page=0, size=10",200 OK,"Không thay đổi",High
+69,Mentorship,GET /api/v1/mentors,Lọc danh sách Mentor theo kỹ năng (skill),"skill_id hợp lệ",200 OK,"Không thay đổi",Medium
+70,Mentorship,POST /api/v1/mentorship/cv,Nộp CV đăng ký làm Mentor thành công,"File PDF hợp lệ, Token user",201 Created,"Tạo bản ghi trong mentorship_cvs status=PENDING",High
+71,Mentorship,POST /api/v1/mentorship/cv,Nộp CV thất bại do sai định dạng,"File hình ảnh thay vì PDF",400 Bad Request,"Không thay đổi",Medium
+72,Mentorship,POST /api/v1/mentorship/cv,Nộp CV thất bại do đã nộp và đang chờ duyệt,"User đã có CV PENDING",409 Conflict,"Không thay đổi",Medium
+73,Mentorship,POST /api/v1/mentorship/cv,Nộp CV thất bại do đã là Mentor,"User có role MENTOR",400 Bad Request,"Không thay đổi",Low
+74,Mentorship,POST /api/v1/mentorship/requests,Gửi yêu cầu Mentor thành công,"mentor_id hợp lệ, nội dung yêu cầu hợp lệ",201 Created,"Tạo bản ghi trong mentorship_requests status=PENDING",High
+75,Mentorship,POST /api/v1/mentorship/requests,Gửi yêu cầu thất bại do Mentor không tồn tại,"mentor_id không tồn tại",404 Not Found,"Không thay đổi",High
+76,Mentorship,POST /api/v1/mentorship/requests,Gửi yêu cầu thất bại do tự yêu cầu chính mình,"mentor_id = user_id",400 Bad Request,"Không thay đổi",Medium
+77,Mentorship,POST /api/v1/mentorship/requests,Gửi yêu cầu thất bại do đã có yêu cầu PENDING với Mentor này,"Đã gửi trước đó",409 Conflict,"Không thay đổi",Medium
+78,Mentorship,PUT /api/v1/mentorship/requests/{id}/status,Mentor chấp nhận yêu cầu thành công,"id yêu cầu, status=ACCEPTED, Token của Mentor",200 OK,"Cập nhật status, tạo record session",High
+79,Mentorship,PUT /api/v1/mentorship/requests/{id}/status,Mentor từ chối yêu cầu thành công,"id yêu cầu, status=REJECTED, Token của Mentor",200 OK,"Cập nhật status=REJECTED",High
+80,Mentorship,PUT /api/v1/mentorship/requests/{id}/status,Cập nhật trạng thái thất bại do không phải Mentor của yêu cầu này,"Token của Mentor khác",403 Forbidden,"Không thay đổi",High
+81,Mentorship,PUT /api/v1/mentorship/requests/{id}/status,Cập nhật trạng thái thất bại do yêu cầu không còn ở trạng thái PENDING,"Yêu cầu đã ACCEPTED",400 Bad Request,"Không thay đổi",Medium
+82,Mentorship,GET /api/v1/mentorship/sessions,Lấy danh sách Mentorship Sessions của bản thân,"Token User hợp lệ",200 OK,"Không thay đổi",Medium
+83,Article,GET /api/v1/news,Lấy danh sách tin tức thành công,"page=0, size=10",200 OK,"Không thay đổi",High
+84,Article,GET /api/v1/news,Lấy danh sách tin tức thất bại do size < 1,"size=0",400 Bad Request,"Không thay đổi",Low
+85,Article,GET /api/v1/news/{id},Xem chi tiết tin tức thành công,"id hợp lệ",200 OK,"Không thay đổi, tăng view_count",High
+86,Article,GET /api/v1/news/{id},Xem chi tiết thất bại do không tìm thấy,"id không tồn tại",404 Not Found,"Không thay đổi",High
+87,Article,POST /api/v1/news,Tạo tin tức mới thành công (Admin),"Token Admin, Payload hợp lệ",201 Created,"Tạo bản ghi trong articles",High
+88,Article,POST /api/v1/news,Tạo tin tức thất bại do không có quyền,"Token User thường",403 Forbidden,"Không thay đổi",High
+89,Article,POST /api/v1/news,Tạo tin tức thất bại do thiếu tiêu đề,"Bỏ trống title",400 Bad Request,"Không thay đổi",Medium
+90,Article,PUT /api/v1/news/{id},Cập nhật tin tức thành công (Admin),"id hợp lệ, Token Admin",200 OK,"Cập nhật bản ghi tương ứng",Medium
+91,Article,DELETE /api/v1/news/{id},Xóa tin tức thành công (Admin),"id hợp lệ, Token Admin",200 OK,"Xóa bản ghi (hoặc soft delete)",Medium
+92,Article,POST /api/v1/news/{id}/like,Like tin tức thành công,"id hợp lệ, Token User",200 OK,"Tạo bản ghi trong article_likes",High
+93,Article,POST /api/v1/news/{id}/like,Like tin tức thất bại do id không tồn tại,"id không tồn tại",404 Not Found,"Không thay đổi",Medium
+94,Article,DELETE /api/v1/news/{id}/like,Unlike tin tức thành công,"id hợp lệ, Token User đã like trước đó",200 OK,"Xóa bản ghi trong article_likes",High
+95,Article,DELETE /api/v1/news/{id}/like,Unlike tin tức thất bại do chưa từng like,"User chưa like",404 Not Found,"Không thay đổi",Low
+96,Article,GET /api/v1/jobs,Lấy danh sách việc làm thành công,"page=0, size=10",200 OK,"Không thay đổi",High
+97,Article,POST /api/v1/jobs,Đăng tin tuyển dụng thành công,"Token hợp lệ, Payload job hợp lệ",201 Created,"Tạo bản ghi trong jobs",High
+98,Article,POST /api/v1/jobs,Đăng tin tuyển dụng thất bại do thiếu mức lương,"Bỏ trống salary_range",400 Bad Request,"Không thay đổi",Medium
+99,Article,PUT /api/v1/jobs/{id}/approve,Duyệt tin tuyển dụng thành công (Admin),"id hợp lệ, Token Admin",200 OK,"Cập nhật status=APPROVED",High
+100,Article,PUT /api/v1/jobs/{id}/approve,Duyệt tin thất bại do không có quyền,"Token User thường",403 Forbidden,"Không thay đổi",High
+101,Forum,GET /api/v1/forum/posts,Lấy danh sách bài viết diễn đàn thành công,"page=0, size=10",200 OK,"Không thay đổi",High
+102,Forum,GET /api/v1/forum/posts,Lấy danh sách bài viết theo category thành công,"category_id hợp lệ",200 OK,"Không thay đổi",Medium
+103,Forum,POST /api/v1/forum/posts,Tạo bài viết diễn đàn mới thành công,"Token hợp lệ, title và content hợp lệ",201 Created,"Tạo 1 bản ghi trong forum_posts",High
+104,Forum,POST /api/v1/forum/posts,Tạo bài viết thất bại do chứa từ ngữ bị cấm (Spam/Toxic),"content chứa từ cấm",400 Bad Request,"Không thay đổi",High
+105,Forum,POST /api/v1/forum/posts,Tạo bài viết thất bại do thiếu content,"Bỏ trống nội dung",400 Bad Request,"Không thay đổi",Medium
+106,Forum,GET /api/v1/forum/posts/{id},Xem chi tiết bài viết thành công,"id hợp lệ",200 OK,"Không thay đổi",High
+107,Forum,GET /api/v1/forum/posts/{id},Xem chi tiết bài viết thất bại do không tìm thấy,"id không tồn tại",404 Not Found,"Không thay đổi",High
+108,Forum,POST /api/v1/forum/posts/{id}/comments,Đăng bình luận vào bài viết thành công,"id hợp lệ, nội dung comment",201 Created,"Tạo 1 bản ghi trong forum_comments",High
+109,Forum,POST /api/v1/forum/posts/{id}/comments,Đăng bình luận thất bại do bài viết đã bị khóa (Locked),"id của bài viết status=LOCKED",403 Forbidden,"Không thay đổi",High
+110,Forum,DELETE /api/v1/forum/posts/comments/{commentId},Xóa bình luận thành công (Chính chủ),"commentId hợp lệ, Token của người tạo",200 OK,"Xóa (hoặc ẩn) bản ghi trong forum_comments",Medium
+111,Forum,DELETE /api/v1/forum/posts/comments/{commentId},Xóa bình luận thất bại do không phải chủ sở hữu,"Token của người khác",403 Forbidden,"Không thay đổi",High
+112,Forum,DELETE /api/v1/forum/posts/{id},Xóa bài viết diễn đàn thành công (Chính chủ),"id hợp lệ, Token của người tạo",200 OK,"Xóa (hoặc ẩn) bản ghi forum_posts và comments liên quan",Medium
+113,Forum,DELETE /api/v1/forum/posts/{id},Xóa bài viết diễn đàn thành công (Admin),"id hợp lệ, Token của Admin",200 OK,"Xóa bản ghi",High
+114,Forum,POST /api/v1/forum/posts/{id}/like,Thả tim bài viết thành công,"id hợp lệ, Token hợp lệ",200 OK,"Tạo bản ghi trong forum_post_likes",High
+115,Forum,DELETE /api/v1/forum/posts/{id}/like,Bỏ thả tim bài viết thành công,"id hợp lệ",200 OK,"Xóa bản ghi forum_post_likes",Medium
+116,Fundraising,GET /api/v1/funds,Lấy danh sách chiến dịch gây quỹ thành công,"page=0, size=10",200 OK,"Không thay đổi",High
+117,Fundraising,POST /api/v1/funds,Tạo chiến dịch gây quỹ mới (Admin),"Token Admin, target_amount hợp lệ",201 Created,"Tạo bản ghi trong funds",High
+118,Fundraising,POST /api/v1/funds,Tạo chiến dịch thất bại do target_amount âm,"target_amount = -100",400 Bad Request,"Không thay đổi",Medium
+119,Fundraising,GET /api/v1/funds/{id},Xem chi tiết chiến dịch và tổng số tiền đã gom,"id hợp lệ",200 OK,"Không thay đổi",High
+120,Fundraising,POST /api/v1/funds/webhook/sepay,Xử lý Webhook SePay thành công (Giao dịch thật),"Payload chuẩn từ SePay, có API_KEY",200 OK,"Tạo bản ghi donation, cộng điểm cho User",High
+121,Fundraising,POST /api/v1/funds/webhook/sepay,Xử lý Webhook thất bại do sai API_KEY (Giả mạo),"Payload sai SePay API_KEY trong header",401 Unauthorized,"Không thay đổi (Bảo vệ hệ thống)",High
+122,Fundraising,POST /api/v1/funds/webhook/sepay,Bỏ qua giao dịch chuyển tiền ra (Transfer out),"Payload SePay loại rút tiền (transfer_out)",200 OK,"Bỏ qua, Không ghi nhận là donation",Medium
+123,Fundraising,POST /api/v1/funds/webhook/sepay,Xử lý Webhook trùng lặp (Idempotency),"Gửi lại Payload của giao dịch cũ",200 OK,"Không ghi đè, phát hiện trùng lặp transaction_id",High
+124,Fundraising,GET /api/v1/funds/{id}/donations,Lấy danh sách người đã quyên góp,"id quỹ hợp lệ",200 OK,"Không thay đổi",Medium
+125,Fundraising,GET /api/v1/funds/donations/my,Lấy lịch sử quyên góp của bản thân,"Token hợp lệ",200 OK,"Không thay đổi",Medium
+126,Chat,GET /api/v1/chat/conversations,Lấy danh sách các cuộc hội thoại thành công,"Token hợp lệ",200 OK,"Không thay đổi",High
+127,Chat,POST /api/v1/chat/conversations,Tạo cuộc hội thoại 1-1 thành công,"Token hợp lệ, recipient_id hợp lệ",201 Created,"Tạo bản ghi trong chat_conversations",High
+128,Chat,POST /api/v1/chat/conversations,Tạo hội thoại thất bại do recipient_id không tồn tại,"recipient_id ảo",404 Not Found,"Không thay đổi",Medium
+129,Chat,POST /api/v1/chat/conversations,Tạo hội thoại thất bại do User đang bị chặn (Block),"recipient_id đã block User này",403 Forbidden,"Không thay đổi",High
+130,Chat,POST /api/v1/chat/conversations/{id}/messages,Gửi tin nhắn mới thành công,"conversation_id hợp lệ, content hợp lệ",201 Created,"Tạo bản ghi trong chat_messages",High
+131,Chat,POST /api/v1/chat/conversations/{id}/messages,Gửi tin nhắn thất bại do không thuộc hội thoại này,"Token của người ngoài",403 Forbidden,"Không thay đổi",High
+132,Chat,POST /api/v1/chat/conversations/{id}/messages,Gửi tin nhắn thất bại do nội dung quá dài,"content > 5000 ký tự",400 Bad Request,"Không thay đổi",Medium
+133,Chat,GET /api/v1/chat/conversations/{id}/messages,Lấy lịch sử tin nhắn trong hội thoại thành công,"conversation_id hợp lệ, page=0",200 OK,"Không thay đổi",High
+134,Chat,PUT /api/v1/chat/messages/{messageId}/read,Đánh dấu tin nhắn đã đọc thành công,"messageId hợp lệ",200 OK,"Cập nhật is_read = true",Medium
+135,Chat,POST /api/v1/chat/block,Chặn người dùng (Block) thành công,"Token hợp lệ, target_user_id hợp lệ",200 OK,"Tạo bản ghi trong user_blocks",High
+136,Organization,GET /api/v1/organizations,Lấy danh sách các tổ chức/khoa/hội thành công,"page=0, size=10",200 OK,"Không thay đổi",High
+137,Organization,POST /api/v1/organizations,Tạo tổ chức mới thành công (Admin),"Token Admin, tên tổ chức hợp lệ",201 Created,"Tạo bản ghi trong organizations",High
+138,Organization,POST /api/v1/organizations/{id}/join,Gia nhập tổ chức thành công,"id hợp lệ, Token User",200 OK,"Tạo bản ghi trong organization_members",Medium
+139,Organization,DELETE /api/v1/organizations/{id}/leave,Rời khỏi tổ chức thành công,"id hợp lệ, User đã join trước đó",200 OK,"Xóa bản ghi organization_members",Medium
+140,Survey,GET /api/v1/surveys,Lấy danh sách bài khảo sát đang mở,"Token User",200 OK,"Không thay đổi",High
+141,Survey,POST /api/v1/surveys,Tạo bài khảo sát mới (Admin),"Token Admin, chứa danh sách câu hỏi json",201 Created,"Tạo records trong surveys và survey_questions",High
+142,Survey,POST /api/v1/surveys/{id}/responses,Gửi kết quả khảo sát thành công,"id hợp lệ, answers hợp lệ",201 Created,"Tạo records trong survey_responses",High
+143,Survey,POST /api/v1/surveys/{id}/responses,Gửi khảo sát thất bại do bài khảo sát đã đóng,"survey status=CLOSED",400 Bad Request,"Không thay đổi",High
+144,Survey,POST /api/v1/surveys/{id}/responses,Gửi khảo sát thất bại do thiếu câu hỏi bắt buộc,"answers thiếu câu required",400 Bad Request,"Không thay đổi",Medium
+145,Survey,GET /api/v1/surveys/{id}/results,Xem kết quả khảo sát (Admin),"id hợp lệ, Token Admin",200 OK,"Không thay đổi",High
+146,Admin,GET /api/v1/admin/dashboard/stats,Lấy thống kê tổng quan (Dashboard) thành công,"Token Admin",200 OK,"Không thay đổi",Medium
+147,Admin,GET /api/v1/admin/users,Lấy danh sách toàn bộ User (Admin),"Token Admin",200 OK,"Không thay đổi",Medium
+148,Admin,PUT /api/v1/admin/users/{id}/ban,Khóa tài khoản User (Ban),"id hợp lệ, Token Admin",200 OK,"Cập nhật status=BANNED",High
+149,Admin,PUT /api/v1/admin/users/{id}/unban,Mở khóa tài khoản User (Unban),"id hợp lệ, Token Admin",200 OK,"Cập nhật status=ACTIVE",High
+150,Admin,DELETE /api/v1/admin/users/{id},Xóa User thất bại do quy tắc cấm xóa cứng (Soft Delete Only),"Thử hard delete",405 Method Not Allowed,"Không thay đổi (bảo toàn dữ liệu)",High
+151,Admin,PUT /api/v1/admin/alumni-requests/{id}/approve,Duyệt xác thực Cựu Sinh Viên thành công,"id request, Token Admin",200 OK,"Cập nhật request status=APPROVED, user role=ALUMNI",High
+152,Admin,PUT /api/v1/admin/alumni-requests/{id}/approve,Duyệt xác thực thất bại do request đã xử lý,"request status không phải PENDING",400 Bad Request,"Không thay đổi",High
+153,Admin,PUT /api/v1/admin/alumni-requests/{id}/reject,Từ chối xác thực Cựu Sinh Viên,"id request, lý do từ chối",200 OK,"Cập nhật request status=REJECTED",Medium
+154,Admin,GET /api/v1/admin/education-requests,Lấy danh sách yêu cầu cập nhật học vấn,"Token Admin, page=0",200 OK,"Không thay đổi",Medium
+155,Admin,PUT /api/v1/admin/education-requests/{id}/approve,Duyệt thông tin học vấn mới của User,"id request, Token Admin",200 OK,"Cập nhật status, thêm bản ghi vào education_histories",High
+156,Admin,GET /api/v1/admin/audit-logs,Lấy danh sách nhật ký hệ thống (Audit Logs),"Token Admin",200 OK,"Không thay đổi",Medium
+157,Admin,GET /api/v1/admin/audit-logs,Lọc Audit Logs theo module,"module=""AUTH""",200 OK,"Không thay đổi",Low
+158,Shared,POST /api/v1/files/upload,Upload file chung thành công,"File ảnh hợp lệ, <5MB",201 Created,"Lưu file, trả về URL",High
+159,Shared,POST /api/v1/files/upload,Upload file thất bại do dung lượng quá lớn,"File video > 50MB",413 Payload Too Large,"Không thay đổi",High
+160,Shared,POST /api/v1/files/upload,Upload file thất bại do định dạng bị cấm,"File .sh hoặc .exe",415 Unsupported Media Type,"Không thay đổi",High
+161,Shared,GET /api/v1/files/{filename},Xem file/ảnh thành công,"filename tồn tại",200 OK,"Trả về byte stream",High
+162,Shared,GET /api/v1/files/{filename},Xem file thất bại do không tìm thấy,"filename ảo",404 Not Found,"Không thay đổi",Medium
+163,Shared,GET /api/v1/health,Kiểm tra trạng thái server (Health Check),"Không cần token",200 OK,"Không thay đổi",Low
+164,Article,POST /api/v1/saved-items,Lưu bài viết/tin tức/việc làm thành công,"item_id, item_type=""JOB""",200 OK,"Tạo bản ghi trong saved_items",Medium
+165,Article,POST /api/v1/saved-items,Lưu thất bại do item không tồn tại,"item_id ảo",404 Not Found,"Không thay đổi",Medium
+166,Article,DELETE /api/v1/saved-items/{id},Bỏ lưu bài viết thành công,"id hợp lệ của saved_item",200 OK,"Xóa bản ghi saved_items",Medium
+167,Article,GET /api/v1/saved-items,Lấy danh sách các bài đã lưu của User,"Token User",200 OK,"Không thay đổi",Medium
+168,Article,POST /api/v1/achievements,Thêm thành tích (Achievement) cá nhân,"Token User, Payload hợp lệ",201 Created,"Tạo bản ghi trong achievements",Medium
+169,Article,POST /api/v1/achievements,Thêm thành tích thất bại do thiếu tiêu đề,"Bỏ trống title",400 Bad Request,"Không thay đổi",Low
+170,Article,PUT /api/v1/achievements/{id},Chỉnh sửa thành tích cá nhân,"id hợp lệ, Token chính chủ",200 OK,"Cập nhật achievements",Medium
+171,Chat,GET /api/v1/network/search,Tìm kiếm thành viên trong mạng lưới (Network Search),"keyword=""IT""",200 OK,"Không thay đổi",High
+172,Chat,GET /api/v1/network/search,Tìm kiếm thành viên theo khoa/khóa,"faculty=""CNTT"", batch=""2018""",200 OK,"Không thay đổi",High
+173,Chat,GET /api/v1/chat/recent,Lấy preview các tin nhắn gần nhất,"Token User",200 OK,"Không thay đổi",Medium
+174,Auth,POST /api/v1/auth/refresh,Bảo mật: Ngăn chặn dùng lại Refresh Token cũ (Replay Attack),"refresh_token đã được sử dụng trước đó",401 Unauthorized,"Thu hồi toàn bộ token liên quan",High
+175,Auth,POST /api/v1/auth/logout,Đăng xuất thành công,"Token User",200 OK,"Xóa hoặc blacklist Refresh Token hiện tại",High
+176,Auth,POST /api/v1/auth/logout,Đăng xuất thất bại do không có token,"Bỏ trống token",401 Unauthorized,"Không thay đổi",Medium
+177,User,GET /api/v1/users/me/stats,Lấy thống kê cá nhân (số post, số connection),"Token User",200 OK,"Không thay đổi",Medium
+178,Event,GET /api/v1/events/my-events,Lấy danh sách các sự kiện đã đăng ký tham gia,"Token User",200 OK,"Không thay đổi",Medium
+179,Mentorship,GET /api/v1/mentorship/my-mentees,Lấy danh sách mentee của Mentor,"Token Mentor",200 OK,"Không thay đổi",Medium
+180,Mentorship,GET /api/v1/mentorship/my-mentees,Lấy danh sách mentee thất bại do không phải Mentor,"Token User thường",403 Forbidden,"Không thay đổi",Medium
+181,Mentorship,POST /api/v1/mentorship/sessions/{id}/complete,Đánh dấu hoàn thành Mentorship Session,"id session, Token Mentor",200 OK,"Cập nhật status session=COMPLETED",Medium
+182,Forum,PUT /api/v1/forum/posts/{id},Sửa nội dung bài viết diễn đàn (Chính chủ),"id hợp lệ, content mới, Token User",200 OK,"Cập nhật bản ghi forum_posts",Medium
+183,Forum,PUT /api/v1/forum/posts/{id},Sửa bài viết thất bại do quá hạn (ví dụ: cấm sửa sau 24h),"Bài đăng quá lâu",400 Bad Request,"Không thay đổi",Low
+184,Admin,POST /api/v1/admin/email-templates,Tạo template Email mới (Admin),"Token Admin, Payload template",201 Created,"Tạo bản ghi email_templates",Medium
+185,Admin,POST /api/v1/admin/broadcast,Gửi thông báo/email hàng loạt (Broadcast),"Token Admin, Payload nội dung",200 OK,"Đẩy job vào hàng đợi gửi mail",Medium
+186,Admin,POST /api/v1/admin/broadcast,Gửi broadcast thất bại do không có quyền,"Token User thường",403 Forbidden,"Không thay đổi",High
+187,Config,GET /api/v1/config/banks,Lấy danh sách ngân hàng cấu hình sẵn,"Không cần token",200 OK,"Không thay đổi",Low
+188,Config,GET /api/v1/config/ai-providers,Lấy cấu hình AI Providers,"Token Admin",200 OK,"Không thay đổi",Low
+189,Chat,POST /api/v1/chat/block,Chặn thất bại do cố chặn Admin,"id của Admin",400 Bad Request,"Không thay đổi",Low
+190,Chat,DELETE /api/v1/chat/block/{id},Bỏ chặn (Unblock) thành công,"id hợp lệ",200 OK,"Xóa bản ghi user_blocks",Medium
+191,Forum,POST /api/v1/forum/posts/{id}/report,Báo cáo (Report) bài viết vi phạm,"id bài, lý do vi phạm",200 OK,"Tạo bản ghi post_reports",Medium
+192,Forum,POST /api/v1/forum/posts/{id}/report,Báo cáo thất bại do spam (báo cáo quá nhiều lần 1 bài),"Lý do lặp lại",409 Conflict,"Không thay đổi",Low
+193,Admin,GET /api/v1/admin/reports,Lấy danh sách các báo cáo vi phạm,"Token Admin",200 OK,"Không thay đổi",Medium
+194,Admin,PUT /api/v1/admin/reports/{id}/resolve,Xử lý báo cáo vi phạm (Đóng report),"id report, Token Admin",200 OK,"Cập nhật status report=RESOLVED",Medium
+195,Event,GET /api/v1/events/{id}/attendees,Lấy danh sách người tham gia sự kiện (Admin/Creator),"id event, Token Admin",200 OK,"Không thay đổi",Medium
+196,Event,GET /api/v1/events/{id}/attendees,Lấy danh sách người tham gia thất bại do sự kiện riêng tư,"Token User ngoài",403 Forbidden,"Không thay đổi",Low
+197,Survey,PUT /api/v1/surveys/{id}/close,Đóng bài khảo sát thủ công (Admin),"id survey, Token Admin",200 OK,"Cập nhật status=CLOSED",Medium
+198,User,DELETE /api/v1/users/me/education/{id},Xóa lịch sử học vấn của bản thân,"id hợp lệ",200 OK,"Xóa bản ghi education_histories",Medium
+199,User,DELETE /api/v1/users/me/education/{id},Xóa học vấn thất bại do id của người khác,"id học vấn của User B",403 Forbidden,"Không thay đổi",High
+200,Auth,GET /api/v1/auth/me/roles,Kiểm tra quyền hạn hiện tại (Role Check),"Token User",200 OK,"Không thay đổi",Medium
+201,Mentorship,POST /api/v1/mentorship/sessions/{id}/rating,Đánh giá Mentor sau khi hoàn thành session,"id session, rating 1-5, review text",200 OK,"Tạo bản ghi mentorship_ratings",High
+202,Mentorship,POST /api/v1/mentorship/sessions/{id}/rating,Đánh giá thất bại do session chưa hoàn thành,"session status=PENDING",400 Bad Request,"Không thay đổi",Medium
+203,Mentorship,PUT /api/v1/mentorship/skills,Mentor cập nhật danh sách kỹ năng chuyên môn,"Danh sách skill_ids",200 OK,"Xóa skill cũ, tạo skill mới trong mentor_skills",Medium
+204,Mentorship,GET /api/v1/mentorship/schedule,Xem lịch hẹn cố vấn sắp tới,"Token Mentor/Mentee",200 OK,"Không thay đổi",Medium
+205,Mentorship,DELETE /api/v1/mentorship/requests/{id},Hủy yêu cầu Mentor trước khi được duyệt,"id request, Token Mentee",200 OK,"Xóa bản ghi mentorship_requests",Medium
+206,Mentorship,DELETE /api/v1/mentorship/requests/{id},Hủy yêu cầu thất bại do Mentor đã duyệt,"request status=ACCEPTED",400 Bad Request,"Không thay đổi",Medium
+207,Mentorship,GET /api/v1/mentors/{id}/reviews,Xem các đánh giá công khai của Mentor,"id mentor hợp lệ",200 OK,"Không thay đổi",Medium
+208,Mentorship,PUT /api/v1/admin/mentorship-cvs/{id}/approve,Duyệt CV làm Mentor (Admin),"id CV, Token Admin",200 OK,"Cập nhật CV status=APPROVED, User role=MENTOR",High
+209,Mentorship,PUT /api/v1/admin/mentorship-cvs/{id}/reject,Từ chối CV làm Mentor (Admin),"id CV, Token Admin",200 OK,"Cập nhật CV status=REJECTED",High
+210,Mentorship,PUT /api/v1/mentorship/status,Bật/Tắt trạng thái nhận Mentee của Mentor,"is_accepting=false",200 OK,"Cập nhật is_accepting trong bảng mentors",Medium
+211,Fundraising,PUT /api/v1/funds/{id}/close,Đóng quỹ (ngừng nhận quyên góp) thủ công,"id fund, Token Admin",200 OK,"Cập nhật status=CLOSED",High
+212,Fundraising,PUT /api/v1/funds/{id}/close,Đóng quỹ tự động do hết hạn (Job/Test),"Mock thời gian vượt qua end_date",200 OK,"Cập nhật status=CLOSED tự động",Medium
+213,Fundraising,POST /api/v1/funds/{id}/withdraw,Rút tiền khỏi quỹ (Tạo phiếu chi),"id fund, số tiền, Token Admin",201 Created,"Tạo bản ghi fund_withdrawals",High
+214,Fundraising,POST /api/v1/funds/{id}/withdraw,Rút tiền thất bại do vượt quá số dư quỹ,"số tiền > current_amount",400 Bad Request,"Không thay đổi",High
+215,Fundraising,POST /api/v1/funds/{id}/withdraw,Rút tiền thất bại do quỹ chưa đóng,"fund status=ACTIVE",400 Bad Request,"Không thay đổi",Medium
+216,Fundraising,GET /api/v1/funds/{id}/withdrawals,Xem danh sách phiếu chi của một quỹ,"id fund",200 OK,"Không thay đổi",Medium
+217,Fundraising,POST /api/v1/funds/donations/{id}/refund,Hoàn tiền quyên góp (Admin thao tác ngoại lệ),"id donation, Token Admin",200 OK,"Cập nhật donation status=REFUNDED, trừ điểm User",Low
+218,Fundraising,GET /api/v1/funds/leaderboard,Lấy bảng xếp hạng quyên góp (Top Donors),"limit=10",200 OK,"Không thay đổi",Medium
+219,Fundraising,GET /api/v1/funds/leaderboard,Bảng xếp hạng ẩn các donation ở chế độ ẩn danh (Anonymous),"is_anonymous=true",200 OK,"Trả về Tên Ẩn Danh thay vì Tên Thật",High
+220,Fundraising,POST /api/v1/funds/webhook/sepay,Xử lý Webhook với số tiền âm (Lỗi hệ thống ngân hàng),"amount = -50000",400 Bad Request,"Không thay đổi",Low
+221,Survey,PUT /api/v1/surveys/{id},Chỉnh sửa cấu trúc bài khảo sát,"id survey, payload mới",200 OK,"Cập nhật surveys và survey_questions",Medium
+222,Survey,PUT /api/v1/surveys/{id},Chỉnh sửa thất bại do đã có người nộp bài,"survey đã có responses",409 Conflict,"Không thay đổi",High
+223,Survey,DELETE /api/v1/surveys/{id},Xóa bài khảo sát thành công,"id survey, Token Admin",200 OK,"Xóa bản ghi surveys và cascade questions",Medium
+224,Survey,GET /api/v1/surveys/{id}/export,Xuất kết quả khảo sát ra CSV/Excel,"id survey, Token Admin",200 OK,"Trả về file stream",Medium
+225,Survey,GET /api/v1/surveys/my-responses,Xem danh sách các khảo sát bản thân đã tham gia,"Token User",200 OK,"Không thay đổi",Medium
+226,Survey,PUT /api/v1/surveys/{id}/responses,Sửa câu trả lời khảo sát đã nộp,"id survey, Token User, allow_edit=true",200 OK,"Cập nhật nội dung trong survey_responses",Low
+227,Survey,PUT /api/v1/surveys/{id}/responses,Sửa câu trả lời thất bại do survey không cho sửa,"allow_edit=false",403 Forbidden,"Không thay đổi",Medium
+228,Survey,POST /api/v1/surveys,Tạo khảo sát thất bại do ngày kết thúc trước ngày mở,"end_time < start_time",400 Bad Request,"Không thay đổi",Medium
+229,Organization,PUT /api/v1/organizations/{id},Cập nhật thông tin tổ chức/hội nhóm,"id org, Token Admin",200 OK,"Cập nhật bản ghi organizations",Medium
+230,Organization,DELETE /api/v1/organizations/{id}/members/{userId},Khai trừ thành viên khỏi tổ chức,"id org, userId, Token Admin",200 OK,"Xóa bản ghi organization_members",High
+231,Organization,PUT /api/v1/organizations/{id}/roles,Thăng cấp thành viên lên làm Phó Hội Trưởng,"id org, userId, role=MODERATOR, Token Admin",200 OK,"Cập nhật role trong organization_members",Medium
+232,Organization,GET /api/v1/organizations/{id}/members,Lấy danh sách thành viên của một tổ chức,"id org",200 OK,"Không thay đổi",High
+233,Organization,POST /api/v1/organizations/{id}/events,Tạo sự kiện thuộc sở hữu của tổ chức,"id org, Token Admin của Org",201 Created,"Tạo event gắn với organization_id",Medium
+234,Organization,POST /api/v1/organizations/{id}/events,Tạo sự kiện thất bại do không phải Admin tổ chức,"Token thành viên thường",403 Forbidden,"Không thay đổi",High
+235,Config,PUT /api/v1/admin/ai-providers/{id},Bật/Tắt một AI Provider (ví dụ tắt OpenAI, bật Gemini),"id provider, is_active=false",200 OK,"Cập nhật ai_providers",Medium
+236,Config,POST /api/v1/admin/ai-models,Thêm Model AI mới vào hệ thống,"provider_id, model_name, api_key",201 Created,"Tạo bản ghi trong ai_models",High
+237,Config,PUT /api/v1/admin/ai-models/{id}/default,Đặt một Model làm mặc định cho hệ thống,"id model, Token Admin",200 OK,"Cập nhật priority hoặc cờ is_default",Medium
+238,Config,DELETE /api/v1/admin/ai-models/{id},Xóa một Model AI khỏi hệ thống,"id model",200 OK,"Xóa bản ghi ai_models",Low
+239,Forum,POST /api/v1/forum/categories,Tạo chuyên mục diễn đàn mới (Category),"Token Admin, name hợp lệ",201 Created,"Tạo bản ghi forum_categories",Medium
+240,Forum,PUT /api/v1/forum/categories/{id},Đổi tên chuyên mục diễn đàn,"id category, name mới",200 OK,"Cập nhật forum_categories",Low
+241,Forum,DELETE /api/v1/forum/categories/{id},Xóa chuyên mục diễn đàn thất bại do còn bài viết,"category đang có bài viết",409 Conflict,"Không thay đổi",High
+242,Chat,POST /api/v1/chat/conversations/group,Tạo nhóm chat (Group Chat) thành công,"Danh sách user_ids, tên group",201 Created,"Tạo bản ghi chat_conversations (type=GROUP)",Medium
+243,Chat,POST /api/v1/chat/conversations/group/{id}/leave,Rời khỏi nhóm chat,"id conversation, Token User",200 OK,"Xóa User khỏi conversation_participants",Medium
+244,Chat,PUT /api/v1/chat/conversations/group/{id}/add,Thêm thành viên mới vào nhóm chat,"id conversation, user_id mới",200 OK,"Tạo thêm record conversation_participants",Medium
+245,User,GET /api/v1/users/search,Tìm kiếm User toàn hệ thống theo tên/email,"keyword=""Nguyen""",200 OK,"Không thay đổi",High
+246,User,GET /api/v1/users/search,Tìm kiếm User thất bại do từ khóa quá ngắn,"keyword=""A""",400 Bad Request,"Không thay đổi",Low
+247,Event,GET /api/v1/events/upcoming,Lấy danh sách các sự kiện sắp diễn ra,"Không cần tham số",200 OK,"Không thay đổi",High
+248,Article,GET /api/v1/news/trending,Lấy danh sách tin tức nổi bật (nhiều view/like),"Không cần tham số",200 OK,"Không thay đổi",Medium
+249,Article,POST /api/v1/jobs/{id}/apply,Ứng tuyển vào một công việc (Nộp CV),"id job, file CV",201 Created,"Tạo bản ghi job_applications",High
+250,Article,GET /api/v1/jobs/{id}/applications,Nhà tuyển dụng xem danh sách ứng viên,"id job, Token Admin/Creator",200 OK,"Không thay đổi",Medium
+251,Shared,GET /api/v1/notifications,Lấy danh sách thông báo của bản thân,"page=0, size=10",200 OK,"Không thay đổi",High
+252,Shared,PUT /api/v1/notifications/{id}/read,Đánh dấu một thông báo là đã đọc,"id notification",200 OK,"Cập nhật is_read=true",High
+253,Shared,PUT /api/v1/notifications/read-all,Đánh dấu tất cả thông báo là đã đọc,"Token User",200 OK,"Cập nhật toàn bộ is_read=true của User",Medium
+254,Shared,GET /api/v1/sse/notifications,Kết nối SSE (Server-Sent Events) nhận thông báo realtime,"Token User qua query param",200 OK (Stream),"Mở kết nối stream",High
+255,Shared,GET /api/v1/sse/notifications,Kết nối SSE thất bại do token sai,"Token không hợp lệ",401 Unauthorized,"Không mở kết nối",High
+256,Event,POST /api/v1/events/{id}/check-in,Điểm danh sự kiện (Check-in) bằng QR Code,"Mã QR hợp lệ (có mã hóa ID user và Event)",200 OK,"Cập nhật checked_in=true trong event_attendees",High
+257,Event,POST /api/v1/events/{id}/check-in,Điểm danh thất bại do mã QR giả mạo,"Mã QR sai chữ ký/hết hạn",400 Bad Request,"Không thay đổi",High
+258,Event,POST /api/v1/events/{id}/check-in,Điểm danh thất bại do User chưa đăng ký tham gia,"User scan QR nhưng chưa join",403 Forbidden,"Không thay đổi",Medium
+259,Event,GET /api/v1/events/{id}/check-in/stats,Xem thống kê điểm danh sự kiện (Bao nhiêu đi/Bao nhiêu vắng),"id event, Token Admin",200 OK,"Không thay đổi",Medium
+260,Forum,POST /api/v1/forum/posts/ai-tag,Tự động gắn thẻ (AI Tagging) bài viết bằng Gemini,"Nội dung bài viết",200 OK,"Tạo record trong forum_post_tags",High
+261,Forum,POST /api/v1/forum/posts/ai-tag,AI Tagging thất bại do Gemini trả về lỗi (Timeout/Rate Limit),"Mô phỏng Gemini API tịt ngòi",503 Service Unavailable,"Không thay đổi",Medium
+262,Forum,POST /api/v1/forum/posts/{id}/ai-summarize,Dùng AI tóm tắt bình luận trong bài viết,"id bài viết",200 OK,"Không thay đổi DB, trả về đoạn text tóm tắt",Low
+263,Organization,POST /api/v1/organizations/{id}/funds,Tạo quỹ riêng cho khoa/hội nhóm (Organization Fund),"id org, Token Admin của Org",201 Created,"Tạo bản ghi trong funds gắn với organization_id",Medium
+264,Organization,GET /api/v1/organizations/{id}/funds,Lấy danh sách các quỹ trực thuộc tổ chức,"id org",200 OK,"Không thay đổi",Medium
+265,Mentorship,POST /api/v1/mentorship/requests/{id}/reschedule,Yêu cầu dời lịch hẹn Mentorship,"id request, new_time",200 OK,"Cập nhật thời gian mới, status=RESCHEDULED",Medium
+266,Mentorship,POST /api/v1/mentorship/requests/{id}/reschedule,Dời lịch thất bại do quá gần sát giờ hẹn,"new_time < 24h",400 Bad Request,"Không thay đổi",Low
+267,Mentorship,GET /api/v1/mentorship/stats,Lấy thống kê cá nhân (Số giờ cố vấn, Điểm đánh giá trung bình),"Token Mentor",200 OK,"Không thay đổi",Medium
+268,Fundraising,GET /api/v1/funds/{id}/transactions,Lấy sao kê minh bạch của một quỹ (Thu/Chi),"id fund",200 OK,"Không thay đổi",High
+269,User,PUT /api/v1/users/me/privacy,Cập nhật thiết lập quyền riêng tư (ẩn email/SĐT),"Token User, privacy_settings JSON",200 OK,"Cập nhật cột privacy_settings",Medium
+270,User,GET /api/v1/users/{id},Test thiết lập quyền riêng tư: Cố xem SĐT của người đã ẩn SĐT,"id user B đã ẩn SĐT",200 OK,"Trả về data nhưng field phone bị null/mask",High
+271,Admin,POST /api/v1/admin/jobs/crawl,Kích hoạt Crawl Job (Lấy tin tuyển dụng tự động từ trang khác),"Token Admin",200 OK,"Khởi động batch job ngầm",Low
+272,Article,PUT /api/v1/news/{id}/publish,Xuất bản tin tức đang ở bản nháp (Draft -> Published),"id news, Token Admin",200 OK,"Cập nhật status=PUBLISHED, published_at=NOW()",Medium
+273,Chat,POST /api/v1/chat/messages/{id}/recall,Thu hồi tin nhắn đã gửi (Recall/Unsend),"id message, Token chính chủ",200 OK,"Cập nhật is_recalled=true, ẩn nội dung",Medium
+274,Chat,POST /api/v1/chat/messages/{id}/recall,Thu hồi thất bại do quá thời gian cho phép (VD 24h),"Tin nhắn cũ",400 Bad Request,"Không thay đổi",Low
+275,Event,PUT /api/v1/events/{id}/cancel,Hủy bỏ sự kiện đã tạo (Cancel Event),"id event, Token Creator",200 OK,"Cập nhật status=CANCELLED, bắn notification cho attendees",High
+276,Forum,GET /api/v1/forum/categories/{id}/stats,Lấy thống kê chuyên mục (Số bài, comment),"id category",200 OK,"Không thay đổi",Low
+277,Forum,PUT /api/v1/forum/posts/{id}/pin,Ghim bài viết lên đầu (Pin Post),"id bài, Token Admin/Mod",200 OK,"Cập nhật is_pinned=true",Medium
+278,Survey,GET /api/v1/surveys/{id}/questions,Lấy chi tiết cấu trúc câu hỏi của một Survey,"id survey",200 OK,"Không thay đổi",High
+279,Auth,POST /api/v1/auth/resend-otp,Yêu cầu gửi lại mã OTP (Resend OTP),"email hợp lệ",200 OK,"Tạo OTP mới, invalidate OTP cũ",Medium
+280,Auth,POST /api/v1/auth/resend-otp,Yêu cầu gửi lại OTP thất bại do Spam (Quá nhiều lần trong 5 phút),"Spam API",429 Too Many Requests,"Không thay đổi (Chặn bởi Bucket4j)",High
+281,Admin,GET /api/v1/admin/metrics,Lấy số liệu monitoring (tích hợp Prometheus/Actuator),"Token Admin",200 OK,"Không thay đổi",Low
+282,Fundraising,POST /api/v1/funds/webhook/sepay,Xử lý Webhook với số tiền cực nhỏ (VD 1 VNĐ),"amount=1",200 OK,"Ghi nhận hoặc bỏ qua tùy business logic",Low
+283,Shared,POST /api/v1/feedback,Gửi phản hồi/báo lỗi hệ thống (Feedback/Bug Report),"Token User, nội dung",201 Created,"Tạo bản ghi system_feedbacks",Low
+284,Admin,GET /api/v1/admin/feedbacks,Xem danh sách phản hồi từ người dùng,"Token Admin",200 OK,"Không thay đổi",Low
+285,Mentorship,GET /api/v1/mentors/recommend,Gợi ý Mentor phù hợp dựa trên AI/Logic,"Token Mentee",200 OK,"Không thay đổi",Medium
+286,Event,GET /api/v1/events/recommend,Gợi ý sự kiện phù hợp với ngành học/khoa,"Token User",200 OK,"Không thay đổi",Medium
+287,User,GET /api/v1/users/me/points,Xem tổng điểm đóng góp (Alumni Points),"Token User",200 OK,"Không thay đổi",Medium
+288,Chat,PUT /api/v1/chat/conversations/group/{id}/rename,Đổi tên nhóm chat,"id group, tên mới",200 OK,"Cập nhật tên nhóm",Low
+289,Config,GET /api/v1/config/app-version,Lấy cấu hình phiên bản App Mobile tối thiểu (Force Update),"Không cần token",200 OK,"Không thay đổi",Low
+290,Config,PUT /api/v1/admin/config/app-version,Cập nhật phiên bản App bắt buộc (Force Update),"Token Admin, version mới",200 OK,"Cập nhật system_configs",Low
+291,Article,GET /api/v1/jobs/categories,Lấy danh sách các ngành nghề tuyển dụng,"Không cần token",200 OK,"Không thay đổi",Low
+292,Article,PUT /api/v1/jobs/{id}/close,Đóng tin tuyển dụng do đã tuyển đủ người,"id job, Token Creator",200 OK,"Cập nhật status=CLOSED",Medium
+293,Organization,GET /api/v1/organizations/{id}/stats,Lấy thống kê quỹ, event, bài viết của nhóm,"id org",200 OK,"Không thay đổi",Medium
+294,Survey,GET /api/v1/surveys/active,Lấy danh sách nhanh các khảo sát đang nhắm tới User (Targeting),"Token User, match với user_type",200 OK,"Không thay đổi",Medium
+295,Mentorship,POST /api/v1/mentorship/cv/{id}/interview,Lên lịch phỏng vấn Mentor (Admin gửi cho ứng viên),"id CV, Token Admin, thời gian",200 OK,"Cập nhật CV status=INTERVIEW_SCHEDULED",Medium
+296,Mentorship,PUT /api/v1/mentorship/sessions/{id}/cancel,Hủy lịch hẹn đã chốt (Cancel Session),"id session, lý do",200 OK,"Cập nhật status=CANCELLED",High
+297,Fundraising,GET /api/v1/funds/my-impact,Xem thống kê cá nhân đã thay đổi/giúp đỡ được những quỹ nào,"Token User",200 OK,"Không thay đổi",Medium
+298,Event,GET /api/v1/events/{id}/qr-code,Lấy mã QR code tổng của sự kiện để in ra check-in,"id event, Token Admin",200 OK,"Trả về byte/link ảnh QR",Low
+299,User,PUT /api/v1/users/me/social-links,Cập nhật link MXH (LinkedIn, Facebook) vào Profile,"Token User, list links",200 OK,"Cập nhật trường social_links JSON",Medium
+300,Auth,POST /api/v1/auth/change-email,Yêu cầu đổi Email đăng nhập (Gửi mã xác nhận vào mail mới),"Email mới, Token User",200 OK,"Tạo OTP gửi vào mail mới",High
+301,User,POST /api/v1/users/me/export-data,Yêu cầu xuất toàn bộ dữ liệu cá nhân (GDPR Compliance),"Token User",202 Accepted,"Kích hoạt Job tạo file nén dữ liệu, lưu url",High
+302,User,GET /api/v1/users/me/export-data/status,Kiểm tra trạng thái xuất dữ liệu,"Token User",200 OK,"Không thay đổi",Medium
+303,User,DELETE /api/v1/users/me/account,Yêu cầu xóa tài khoản (Deactivate/Soft Delete),"Token User, lý do",200 OK,"Cập nhật status=DEACTIVATED, giữ log",High
+304,User,DELETE /api/v1/users/me/account,Yêu cầu xóa tài khoản thất bại do có phiên mentorship đang mở,"Có session PENDING",409 Conflict,"Không thay đổi",High
+305,User,POST /api/v1/users/me/reactivate,Khôi phục tài khoản trong vòng 30 ngày kể từ khi xóa,"email, password",200 OK,"Cập nhật status=ACTIVE",Medium
+306,User,POST /api/v1/users/me/reactivate,Khôi phục tài khoản thất bại do quá hạn 30 ngày (Đã hard delete),"Tài khoản không tồn tại",404 Not Found,"Không thay đổi",High
+307,Admin,GET /api/v1/admin/analytics/users/growth,Thống kê tăng trưởng người dùng theo ngày/tháng,"start_date, end_date",200 OK,"Không thay đổi",Medium
+308,Admin,GET /api/v1/admin/analytics/funds/summary,Thống kê tổng tiền quyên góp toàn hệ thống,"Token Admin",200 OK,"Không thay đổi",High
+309,Admin,GET /api/v1/admin/analytics/export,Xuất báo cáo thống kê ra định dạng CSV/PDF,"format=PDF",200 OK,"Trả về file stream",Medium
+310,Admin,GET /api/v1/admin/analytics/export,Xuất báo cáo thất bại do khoảng thời gian quá lớn (>1 năm),"start_date và end_date xa nhau",400 Bad Request,"Không thay đổi",Low
+311,Admin,POST /api/v1/admin/moderation/auto-ban/rules,Cập nhật quy tắc Auto-Ban (VD: 5 reports = auto ban),"Token Admin, thresholds JSON",200 OK,"Cập nhật config",High
+312,Admin,POST /api/v1/admin/moderation/image-scan,Webhook quét ảnh bằng AI (Nude/Violent detect),"URL ảnh",200 OK,"Gắn cờ (flag) ảnh vi phạm",High
+313,Forum,POST /api/v1/forum/posts,Đăng bài thất bại do AI phát hiện ảnh nhạy cảm,"Ảnh có nội dung cấm",400 Bad Request,"Không lưu bài, tạo log vi phạm",High
+314,User,PUT /api/v1/users/me/theme,Cập nhật giao diện ưa thích (Dark/Light Mode),"theme=DARK",200 OK,"Cập nhật user_preferences",Low
+315,User,PUT /api/v1/users/me/locale,Cập nhật ngôn ngữ hiển thị (vi/en),"locale=en",200 OK,"Cập nhật user_preferences",Low
+316,Chat,POST /api/v1/chat/ws/typing,Broadcast tín hiệu đang gõ phím qua WebSocket,"WS message TYPE_TYPING",200 OK (WS Broadcast),"Phát tín hiệu cho người nhận",Medium
+317,Chat,POST /api/v1/chat/ws/typing,Broadcast typing thất bại do không cùng hội thoại,"Giả mạo roomId",403 Forbidden,"Ngắt kết nối WS",High
+318,Chat,POST /api/v1/chat/ws/read-receipt,Broadcast tín hiệu đã đọc tin nhắn qua WebSocket,"WS message TYPE_READ",200 OK (WS Broadcast),"Cập nhật trạng thái tin nhắn realtime",Medium
+319,Chat,POST /api/v1/chat/ws/connect,Kết nối WebSocket chat với Token hết hạn,"WS Connect, JWT hết hạn",401 Unauthorized,"Đóng kết nối ngay lập tức",High
+320,Fundraising,POST /api/v1/funds/webhook/sepay,Xử lý giao dịch quyên góp khi quỹ vừa chạm mốc đóng,"Fund đang = Target, gửi thêm tiền",200 OK,"Tiếp nhận tiền nhưng đánh dấu quỹ trạng thái OVERFUNDED",Medium
+321,Fundraising,GET /api/v1/funds/tags/{tag},Tìm kiếm quỹ từ thiện theo Tag (VD: Bão lũ, Khuyến học),"tag=BaoLu",200 OK,"Không thay đổi",Low
+322,Mentorship,POST /api/v1/mentorship/sessions/{id}/dispute,Mở tranh chấp (Dispute) do Mentor không xuất hiện,"id session, lý do tranh chấp",201 Created,"Tạo bản ghi mentorship_disputes",High
+323,Mentorship,PUT /api/v1/admin/mentorship-disputes/{id}/resolve,Admin xử lý tranh chấp Mentorship,"id dispute, phán quyết",200 OK,"Cập nhật status dispute, refund nếu cần",High
+324,Mentorship,GET /api/v1/admin/mentorship-disputes,Lấy danh sách các tranh chấp cần giải quyết,"Token Admin",200 OK,"Không thay đổi",Medium
+325,Shared,POST /api/v1/devices/register,Đăng ký Device Token để nhận Push Notification (FCM/APNS),"device_token, os=ANDROID",200 OK,"Tạo/Cập nhật bản ghi user_devices",High
+326,Shared,DELETE /api/v1/devices/unregister,Hủy đăng ký Device Token khi user đăng xuất,"device_token",200 OK,"Xóa device_token khỏi DB",Medium
+327,Shared,POST /api/v1/devices/register,Đăng ký Device Token thất bại do token rỗng,"device_token = null",400 Bad Request,"Không thay đổi",Low
+328,Auth,POST /api/v1/auth/password/strength,API kiểm tra độ mạnh của mật khẩu (Password Strength Meter),"password string",200 OK,"Không thay đổi DB, trả về điểm số 1-100",Low
+329,User,GET /api/v1/users/me/sessions,Xem danh sách các thiết bị/phiên đang đăng nhập,"Token User",200 OK,"Không thay đổi",High
+330,User,DELETE /api/v1/users/me/sessions/{id},Đăng xuất từ xa thiết bị khác (Revoke Session),"session_id",200 OK,"Blacklist Refresh Token của phiên đó",High
+331,Admin,POST /api/v1/admin/db/backup,Thực hiện sao lưu Database thủ công (Trigger Backup),"Token Super Admin",202 Accepted,"Khởi chạy script pg_dump ngầm",Medium
+332,Admin,POST /api/v1/admin/db/backup,Backup DB thất bại do quyền hạn (Chỉ SuperAdmin),"Token Admin thường",403 Forbidden,"Không thay đổi",High
+333,Config,GET /api/v1/config/maintenance,Kiểm tra trạng thái bảo trì hệ thống,"Không cần token",200 OK,"Trả về is_maintenance = true/false",High
+334,Config,PUT /api/v1/admin/config/maintenance,Bật chế độ bảo trì toàn hệ thống,"Token Admin, is_maintenance=true",200 OK,"Chỉ cho phép Admin truy cập hệ thống",High
+335,User,GET /api/v1/users/me,Truy cập profile khi hệ thống đang bảo trì (User thường),"Token User",503 Service Unavailable,"Trả về lỗi bảo trì",High
+336,Admin,GET /api/v1/users/me,Truy cập profile khi hệ thống đang bảo trì (Admin),"Token Admin",200 OK,"Vượt rào bảo trì thành công",High
+337,Survey,POST /api/v1/surveys/{id}/remind,Gửi thông báo nhắc nhở (Remind) làm khảo sát,"id survey, Token Admin",200 OK,"Gửi email/push noti cho những ai chưa làm",Medium
+338,Article,POST /api/v1/news/{id}/views,Tăng lượt xem (View Count) của bài viết an toàn (Debounce),"id news",200 OK,"Tăng view_count nếu IP/User chưa xem trong 5 phút",Low
+339,Article,POST /api/v1/news/{id}/views,Không tăng view nếu F5 liên tục (Rate Limit Spam View),"Gọi liên tục 10 lần",200 OK,"View chỉ tăng 1 lần",High
+340,Event,POST /api/v1/events/{id}/invite,Mời bạn bè tham gia sự kiện,"id event, list email",200 OK,"Tạo record event_invitations và gửi mail",Medium
+341,Event,GET /api/v1/events/invitations/my,Xem danh sách các sự kiện được mời tham gia,"Token User",200 OK,"Không thay đổi",Medium
+342,Event,PUT /api/v1/events/invitations/{id}/accept,Chấp nhận lời mời tham gia sự kiện,"id invitation",200 OK,"Cập nhật invitation=ACCEPTED, tự tự động tham gia event",High
+343,Forum,GET /api/v1/forum/posts/search,Tìm kiếm bài viết diễn đàn (Full-text search),"keyword=""AI trong y tế""",200 OK,"Không thay đổi",High
+344,Forum,GET /api/v1/forum/posts/search,Tìm kiếm bài viết có lọc theo tag,"tags=""#AI, #Tech""",200 OK,"Không thay đổi",Medium
+345,Organization,POST /api/v1/organizations/{id}/transfer-ownership,Chuyển nhượng quyền chủ sở hữu hội nhóm,"id org, new_owner_id",200 OK,"Đổi role owner, owner cũ thành mod/member",High
+346,Organization,POST /api/v1/organizations/{id}/transfer-ownership,Chuyển nhượng thất bại do người nhận không phải member,"new_owner_id ảo",400 Bad Request,"Không thay đổi",High
+347,Mentorship,POST /api/v1/mentors/{id}/report,Báo cáo Mentor vi phạm quy tắc đạo đức nghề nghiệp,"id mentor, lý do",201 Created,"Tạo bản ghi mentor_reports",Medium
+348,Admin,GET /api/v1/admin/mentorship-reports,Xem danh sách Mentor bị báo cáo,"Token Admin",200 OK,"Không thay đổi",Medium
+349,Admin,PUT /api/v1/admin/mentors/{id}/revoke,Tước quyền Mentor do vi phạm nghiêm trọng,"id mentor, Token Admin",200 OK,"Đổi role MENTOR -> USER, ẩn các request",High
+350,Shared,GET /api/v1/terms-of-service,Lấy nội dung Điều khoản dịch vụ hiện tại,"Không cần token",200 OK,"Không thay đổi",Low
+351,Shared,GET /api/v1/search/global,Tìm kiếm toàn cục (Global Search) đa thực thể (Post, User, Event),"keyword=""HCMUS""",200 OK,"Không thay đổi",High
+352,Shared,GET /api/v1/search/autocomplete,Gợi ý tìm kiếm (Autocomplete) khi đang gõ,"keyword=""HC""",200 OK,"Trả về list string gợi ý",Medium
+353,Event,POST /api/v1/events/{id}/tickets/generate,Tạo vé điện tử (E-ticket/PDF) sau khi đăng ký thành công,"id event, Token User",200 OK,"Lưu file vé vào bộ nhớ, trả về link tải",Medium
+354,Event,GET /api/v1/events/{id}/tickets/download,Tải vé điện tử của sự kiện,"id event",200 OK,"Trả về byte stream file PDF",Medium
+355,Mentorship,POST /api/v1/mentorship/payouts/request,Mentor yêu cầu thanh toán (Payout) điểm/token tích lũy,"số tiền quy đổi, Token Mentor",201 Created,"Tạo bản ghi mentor_payouts",Medium
+356,Admin,PUT /api/v1/admin/mentorship-payouts/{id}/approve,Admin duyệt lệnh rút tiền của Mentor,"id payout, Token Admin",200 OK,"Cập nhật status=COMPLETED",Medium
+357,Forum,GET /api/v1/forum/posts/{id}/seo,Tạo Meta Tags (SEO) và link chia sẻ MXH (Open Graph) cho bài viết,"id bài viết",200 OK,"Trả về object chứa Title, Description, Image URL",Low
+358,User,PUT /api/v1/users/me/onboarding,Hoàn thành Onboarding Step 1 (Thiết lập sở thích/ngành nghề),"Token User, preferences",200 OK,"Cập nhật onboarding_completed=true",High
+359,User,GET /api/v1/users/me/onboarding-status,Kiểm tra tiến độ hoàn thành Profile (Gamification),"Token User",200 OK,"Trả về phần trăm profile %",Medium
+360,Auth,POST /api/v1/auth/bind/facebook,Liên kết tài khoản hiện tại với mạng xã hội Facebook,"FB Token, Token User",200 OK,"Cập nhật facebook_id vào DB",Medium
+361,Auth,POST /api/v1/auth/bind/facebook,Liên kết thất bại do FB Account đã gắn với người khác,"FB Token trùng",409 Conflict,"Không thay đổi",High
+362,Auth,DELETE /api/v1/auth/unbind/facebook,Hủy liên kết tài khoản Facebook,"Token User",200 OK,"Set facebook_id = null",Medium
+363,Auth,DELETE /api/v1/auth/unbind/facebook,Hủy liên kết thất bại nếu chưa có mật khẩu (nguy cơ mất acc),"password_hash rỗng",400 Bad Request,"Không thay đổi",High
+364,Admin,POST /api/v1/admin/jobs/cron/trigger,Trigger thủ công một Cron Job bất kỳ (VD: Clear token hết hạn),"job_name, Token Admin",200 OK,"Thực thi logic job ngầm",Medium
+365,Admin,GET /api/v1/admin/jobs/cron/logs,Xem log thực thi của các Cron Job hệ thống,"Token Admin",200 OK,"Không thay đổi",Low
+366,Config,GET /api/v1/config/banners,Lấy cấu hình các Banner quảng cáo/sự kiện trang chủ,"Không cần token",200 OK,"Không thay đổi",Low
+367,Config,POST /api/v1/admin/config/banners,Thêm Banner mới cho trang chủ,"Token Admin, payload banner",201 Created,"Tạo bản ghi banners",Low
+368,Config,PUT /api/v1/admin/config/banners/{id}/status,Ẩn/Hiện banner quảng cáo,"id banner",200 OK,"Cập nhật is_active",Low
+369,Fundraising,GET /api/v1/funds/{id}/milestones,Lấy danh sách các cột mốc (Milestones) giải ngân của quỹ,"id fund",200 OK,"Không thay đổi",Medium
+370,Fundraising,POST /api/v1/funds/{id}/milestones,Admin thêm cột mốc giải ngân mới (Minh bạch quỹ),"id fund, payload milestone",201 Created,"Tạo bản ghi fund_milestones",Medium
+371,Fundraising,PUT /api/v1/funds/milestones/{id}/complete,Đánh dấu hoàn thành một cột mốc giải ngân,"id milestone",200 OK,"Cập nhật status milestone=COMPLETED",Medium
+372,Article,POST /api/v1/news/{id}/comments,Bình luận vào tin tức/bài viết,"id news, content",201 Created,"Tạo bản ghi news_comments",Low
+373,Article,DELETE /api/v1/news/comments/{commentId},Xóa bình luận bài báo (Chính chủ/Admin),"commentId",200 OK,"Xóa (ẩn) comment",Low
+374,Shared,GET /api/v1/system/time,Đồng bộ thời gian giữa Client và Server (Sync Time),"Không cần token",200 OK,"Trả về Unix Timestamp của Server",Low
+375,Shared,POST /api/v1/logs/client,Nhận log lỗi từ ứng dụng Mobile/Web (Client Error Tracking),"Payload stacktrace",200 OK,"Lưu log xuống file/ELK",Low
+376,User,GET /api/v1/users/leaderboard,Bảng xếp hạng đóng góp của cựu sinh viên (Alumni Leaderboard),"limit=10",200 OK,"Không thay đổi",Medium
+377,Chat,GET /api/v1/chat/stickers,Lấy danh sách các gói nhãn dán (Sticker Packs) có sẵn,"Token User",200 OK,"Không thay đổi",Low
+378,Mentorship,POST /api/v1/mentorship/cv/{id}/comments,Admin/Reviewer ghi chú nội bộ khi duyệt CV Mentor,"id CV, comment nội bộ",201 Created,"Tạo bản ghi cv_reviewer_notes",Low
+379,Event,GET /api/v1/events/{id}/export-attendees,Xuất danh sách người tham gia ra Excel,"id event, Token Admin/Creator",200 OK,"Trả về file Excel (.xlsx)",Medium
+380,Organization,POST /api/v1/organizations/{id}/announcements,Tạo thông báo nội bộ cho các thành viên trong hội nhóm,"id org, content",201 Created,"Gửi thông báo đến members",Medium
+381,Organization,GET /api/v1/organizations/{id}/announcements,Lấy danh sách thông báo nội bộ của nhóm,"id org",200 OK,"Không thay đổi",Medium
+382,Survey,POST /api/v1/surveys/{id}/clone,Sao chép (Clone) một bài khảo sát cũ thành bài mới,"id survey, Token Admin",201 Created,"Copy dữ liệu sang bản ghi surveys mới",Low
+383,Forum,GET /api/v1/forum/users/{id}/posts,Lấy toàn bộ các bài viết diễn đàn của một user cụ thể,"id user",200 OK,"Không thay đổi",Low
+384,Admin,GET /api/v1/admin/cache/clear,Xóa Cache thủ công (Redis/Spring Cache) khi cần update gấp,"Token Admin",200 OK,"Clear cache keys",Medium
+385,Admin,GET /api/v1/admin/cache/stats,Kiểm tra tình trạng bộ nhớ Cache,"Token Admin",200 OK,"Trả về Cache Hit/Miss ratio",Low
+386,Auth,POST /api/v1/auth/impersonate,Bảo mật: Tính năng Admin "Nhập vai" (Impersonate) User để debug,"id user muốn giả mạo, Token SuperAdmin",200 OK,"Cấp token đặc biệt mang quyền của User",High
+387,Auth,POST /api/v1/auth/impersonate,Impersonate thất bại do quyền hạn (Admin thường không được phép),"Token Admin thường",403 Forbidden,"Không thay đổi",High
+388,Mentorship,GET /api/v1/mentors/featured,Lấy danh sách Mentor tiêu biểu/Nổi bật trang chủ,"Không cần token",200 OK,"Không thay đổi",Low
+389,Event,POST /api/v1/events/{id}/sponsors,Thêm nhà tài trợ (Sponsor) cho sự kiện,"id event, logo_url",200 OK,"Cập nhật event_sponsors",Low
+390,Fundraising,POST /api/v1/funds/{id}/share,Theo dõi số lượt chia sẻ (Share count) của quỹ,"id fund",200 OK,"Tăng share_count + 1",Low
+391,User,GET /api/v1/users/me/certificates,Lấy danh sách các chứng nhận điện tử được cấp (E-Certificates),"Token User",200 OK,"Không thay đổi",Low
+392,Shared,POST /api/v1/files/upload/presigned-url,Yêu cầu Presigned URL để upload trực tiếp lên AWS S3 (Client-side upload),"filename, mimetype",200 OK,"Trả về URL AWS tạm thời",High
+393,Shared,POST /api/v1/files/upload/presigned-url,Yêu cầu thất bại do mimetype không hợp lệ,"mimetype=application/x-sh",400 Bad Request,"Không thay đổi",High
+394,Mentorship,GET /api/v1/mentorship/sessions/{id}/notes,Lấy Private Notes (Ghi chú cá nhân) của Mentor cho phiên hẹn,"id session, Token Mentor",200 OK,"Không thay đổi",Medium
+395,Mentorship,POST /api/v1/mentorship/sessions/{id}/notes,Lưu Private Notes cho phiên hẹn,"id session, nội dung notes",200 OK,"Cập nhật trường private_notes",Medium
+396,Mentorship,GET /api/v1/mentorship/sessions/{id}/notes,Xem Note thất bại do Mentee không có quyền truy cập,"Token Mentee",403 Forbidden,"Không thay đổi",Medium
+397,Forum,GET /api/v1/forum/posts/trending,Thuật toán Lấy bài viết Trending (Dựa vào thời gian, like, comment),"page=0",200 OK,"Không thay đổi",High
+398,User,PUT /api/v1/users/me/status-message,Cập nhật trạng thái ngắn gọn (Status Message) hiển thị trên Profile,"status=""Working hard""",200 OK,"Cập nhật status_message",Low
+399,Chat,GET /api/v1/chat/conversations/{id}/attachments,Lấy danh sách hình ảnh/file đã gửi trong cuộc hội thoại,"id conversation",200 OK,"Không thay đổi",Medium
+400,Admin,GET /api/v1/admin/system/about,Lấy thông tin version, build time, OS info của Backend App,"Token Admin",200 OK,"Không thay đổi",Low
