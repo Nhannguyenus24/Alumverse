@@ -2,13 +2,14 @@
 
 VNU HCMUS FIT Graduation Project — **AlumVerse**
 
-This project consists of three main components: a Spring Boot backend, a React/Vite frontend, and a Flutter mobile app.
+This project consists of four main components: a Spring Boot backend, a React/Vite frontend, a Flutter mobile app, and **FitBOT** — a Python/FastAPI RAG assistant (Google Gemini + FAISS).
 
 ## Prerequisites
 - **Docker** & **Docker Compose** (for database)
 - **Java 17+** (for backend)
 - **Node.js 18+** & **npm** (for frontend)
 - **Flutter SDK** (for mobile)
+- **Python 3.9+** (for FitBOT AI assistant)
 
 ## Required Configurations
 Before running the project, you must provide your own credentials and URLs. Replace the placeholders in the respective files:
@@ -41,6 +42,11 @@ Before running the project, you must provide your own credentials and URLs. Repl
 - `YOUR_WS_BASE_URL`: WebSocket URL for the chat service.
 - `YOUR_GOOGLE_CLIENT_ID`: Google OAuth2 Client ID.
 - `YOUR_IMAGE_BASE_URL`: Base URL for fetching images.
+
+> These values can also be passed at runtime via `--dart-define` (see the Mobile setup step below): `API_BASE_URL`, `WS_BASE_URL`, `GOOGLE_CLIENT_ID`, `DEFAULT_ORG_SLUG`.
+
+### FitBOT (`FitBOT/.env`)
+- `GOOGLE_API_KEY`: Google AI Studio API key used by Gemini. Get one at [Google AI Studio](https://aistudio.google.com/app/apikey).
 
 ### Nginx (Production only)
 - `YOUR_DOMAIN`: If deploying to production, replace all occurrences of `YOUR_DOMAIN` in `nginx.prod.conf` with your actual domain name and ensure you have valid SSL certificates in the `/etc/letsencrypt/live/YOUR_DOMAIN/` directory.
@@ -77,3 +83,40 @@ cd mobile_flutter
 flutter pub get
 flutter run
 ```
+To inject environment values at runtime:
+```bash
+flutter run \
+  --dart-define=API_BASE_URL=https://your-api-url \
+  --dart-define=WS_BASE_URL=wss://your-api-url \
+  --dart-define=GOOGLE_CLIENT_ID=your-google-client-id \
+  --dart-define=DEFAULT_ORG_SLUG=fit-hcmus
+```
+Build a release APK with `flutter build apk`.
+
+### 5. FitBOT (AI Assistant — optional)
+FitBOT is a standalone RAG service (Google Gemini + FAISS) that powers the in-app chatbot. It runs independently of Docker Compose on port `8000`.
+
+**Run locally:**
+```bash
+cd FitBOT
+python -m venv venv
+source venv/bin/activate        # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+# create FitBOT/.env with GOOGLE_API_KEY=...
+cd src
+python api_server.py
+```
+The API serves on `http://localhost:8000` (Swagger UI at `/docs`). To let the frontend reach it, set `VITE_FITBOT_API_URL=http://localhost:8000` in `frontend/.env`.
+
+**Run on Google Colab (no local setup):** open `FitBOT/FITBOT_Colab.ipynb`, add `GOOGLE_API_KEY` and `NGROK_TOKEN` to Colab Secrets, run the cells, and use the printed ngrok public URL as `VITE_FITBOT_API_URL`.
+
+> First launch downloads the `BAAI/bge-m3` embedding and `BAAI/bge-reranker-base` reranker models, which may take a few minutes.
+
+## Sample Accounts
+After loading the seed data (`docs/postgres.sql`), you can sign in with:
+
+| Email             | Password     | Role  |
+| ----------------- | ------------ | ----- |
+| `admin@gmail.com` | `Admin2026@` | ADMIN |
+
+> ⚠️ This is a demo/testing credential. Change the password or remove the account before deploying to production.
