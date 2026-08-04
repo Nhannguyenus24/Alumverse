@@ -308,16 +308,22 @@ const adminMentorshipApi = {
 		return apiClient.get(`${BASE_ADMIN_MENTORSHIP}/mentors/by-status`, { params });
 	},
 
-	approveMentor(memberId) {
-		return apiClient.post(`${BASE_ADMIN_MENTORSHIP}/mentors/${memberId}/approve`);
+	approveMentor(memberId, organizationId = null) {
+		const params = {};
+		if (organizationId) params.organizationId = organizationId;
+		return apiClient.post(`${BASE_ADMIN_MENTORSHIP}/mentors/${memberId}/approve`, null, { params });
 	},
 
-	rejectMentor(memberId, reason) {
-		return apiClient.post(`${BASE_ADMIN_MENTORSHIP}/mentors/${memberId}/reject`, { reason });
+	rejectMentor(memberId, reason, organizationId = null) {
+		const params = {};
+		if (organizationId) params.organizationId = organizationId;
+		return apiClient.post(`${BASE_ADMIN_MENTORSHIP}/mentors/${memberId}/reject`, { reason }, { params });
 	},
 
-	requestMentorUpdate(memberId, reason) {
-		return apiClient.post(`${BASE_ADMIN_MENTORSHIP}/mentors/${memberId}/request-update`, { reason });
+	requestMentorUpdate(memberId, reason, organizationId = null) {
+		const params = {};
+		if (organizationId) params.organizationId = organizationId;
+		return apiClient.post(`${BASE_ADMIN_MENTORSHIP}/mentors/${memberId}/request-update`, { reason }, { params });
 	},
 
 	getMentees(page = 0, size = 10, organizationId = null) {
@@ -326,9 +332,10 @@ const adminMentorshipApi = {
 		return apiClient.get(`${BASE_ADMIN_MENTORSHIP}/mentees`, { params });
 	},
 
-	getMentorReports(status = null, page = 0, size = 10) {
+	getMentorReports(status = null, page = 0, size = 10, organizationId = null) {
 		const params = { page, size };
 		if (status && status !== 'ALL') params.status = status;
+		if (organizationId) params.organizationId = organizationId;
 		return apiClient.get(`${BASE_ADMIN_MENTORSHIP}/reports`, { params });
 	},
 
@@ -344,7 +351,6 @@ const adminMentorshipApi = {
 export const {
 	getAllSessions,
 	getSessionsByStatus,
-	getSessionById: getAdminSessionById,
 	updateSessionStatus,
 	deleteSession,
 	getAllMentorProfiles,
@@ -1425,7 +1431,6 @@ export const {
 	updateSessionStatus: updateMentorSessionStatus,
 	updateSessionMeetingLink: updateMentorSessionMeetingLink,
 	getMyMentorFeedbacks,
-	uploadCvFile,
 	getHubStats,
 } = mentorshipApi;
 

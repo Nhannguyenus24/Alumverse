@@ -552,6 +552,10 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
 
     if (access.hasMenteeProfile) {
       const interestTags = (mentee?.interests ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+      const menteeAcademicMeta = [mentee?.academicYear, mentee?.major]
+        .map((item) => item?.trim())
+        .filter(Boolean)
+        .join(' - ');
       return (
         <Stack spacing={5} sx={{ pt: isMentorshipPath ? 0 : 4, borderTop: isMentorshipPath ? 'none' : '1px solid', borderColor: 'divider' }}>
           {!isMentorshipPath && (
@@ -577,6 +581,16 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
                   <MentorshipTag key={idx} label={tag} />
                 ))}
               </Box>
+            </Box>
+          )}
+          {menteeAcademicMeta && (
+            <Box>
+              <Typography variant="h5" fontWeight={800} color="primary.main" mb={2} display="flex" alignItems="center" gap={1}>
+                <SchoolIcon /> {t('profile:mentee_academic_section')}
+              </Typography>
+              <Typography color="text.secondary" sx={{ whiteSpace: 'pre-line', fontSize: '1.05rem', lineHeight: 1.7 }}>
+                {menteeAcademicMeta}
+              </Typography>
             </Box>
           )}
         </Stack>

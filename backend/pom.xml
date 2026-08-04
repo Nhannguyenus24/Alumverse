@@ -30,6 +30,15 @@
 			<artifactId>spring-boot-starter-webflux</artifactId>
 		</dependency>
 
+		<!-- JSON log encoding for the FILE appender, tailed by the Datadog Agent
+		     (source: java). Carries dd.trace_id/dd.span_id from MDC for log-trace
+		     correlation. Version 8.0 targets logback 1.5 (Spring Boot 3.5). -->
+		<dependency>
+			<groupId>net.logstash.logback</groupId>
+			<artifactId>logstash-logback-encoder</artifactId>
+			<version>8.0</version>
+		</dependency>
+
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>

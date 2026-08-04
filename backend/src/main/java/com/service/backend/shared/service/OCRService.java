@@ -29,7 +29,6 @@ import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Timer;
 
 /**
  * Service responsible for Optical Character Recognition (OCR) and text extraction.

@@ -4,7 +4,6 @@ import java.util.List;
 
 import com.service.backend.organization.dto.OrgIntroductionMemberResponse;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data

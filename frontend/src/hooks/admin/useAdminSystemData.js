@@ -64,7 +64,7 @@ const readLocalTouchMap = () => {
   }
 };
 
-export const touchOrganizationInStorage = (orgId) => {
+const touchOrganizationInStorage = (orgId) => {
   if (typeof window === 'undefined' || !orgId) return;
   try {
     const map = readLocalTouchMap();
@@ -82,7 +82,7 @@ const getOrganizationSortTime = (org, touchMap) => {
   return Number.isFinite(time) ? time : 0;
 };
 
-export const sortOrganizationsByRecent = (organizations, touchMap = readLocalTouchMap()) => {
+const sortOrganizationsByRecent = (organizations, touchMap = readLocalTouchMap()) => {
   return [...organizations].sort((a, b) => {
     const recentDiff = getOrganizationSortTime(b, touchMap) - getOrganizationSortTime(a, touchMap);
     if (recentDiff !== 0) {

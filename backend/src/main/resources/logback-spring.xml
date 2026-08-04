@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <springProperty scope="context" name="appName" source="spring.application.name" defaultValue="backend"/>
-    
-    <!-- Console Appender with colored pattern -->
+    <springProperty scope="context" name="logFile" source="logging.file.name" defaultValue="logs/alumverse.log"/>
+
+    <!-- Console appender for systemd journal and local development. -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>
@@ -12,8 +12,28 @@
         </encoder>
     </appender>
 
-    <!-- Root logger -->
+    <!-- Persistent application logs as JSON, rotated daily and whenever they exceed 10 MB.
+         Tailed by the Datadog Agent (source: java). LogstashEncoder emits the dd.trace_id/
+         dd.span_id keys injected into the MDC by dd-java-agent, enabling log-trace correlation. -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${logFile}</file>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${logFile}.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>10MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>3GB</totalSizeCap>
+        </rollingPolicy>
+
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <!-- Static tags aligned with Datadog unified service tagging. -->
+            <customFields>{"service":"alumverse-backend","env":"prod"}</customFields>
+            <!-- Full MDC (incl. dd.trace_id/dd.span_id from dd-java-agent) is included by default. -->
+        </encoder>
+    </appender>
+
     <root level="INFO">
-        <appender-ref ref="CONSOLE" level="INFO" />
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
     </root>
 </configuration>
