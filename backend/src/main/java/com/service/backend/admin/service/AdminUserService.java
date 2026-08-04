@@ -40,6 +40,8 @@ import com.service.backend.shared.dao.UserDisplayInfo;
 import com.service.backend.user.dao.PeerVerificationRepository;
 import com.service.backend.user.dao.UserProfileRepository;
 import com.service.backend.shared.service.EmailService;
+import com.service.backend.shared.service.VerificationRecommendationService;
+import com.service.backend.shared.dto.VerificationRecommendationResponse;
 
 
 import lombok.RequiredArgsConstructor;
@@ -65,6 +67,7 @@ public class AdminUserService {
     private final NotificationService notificationService;
     private final CacheUtils cacheUtils;
     private final EmailService emailService;
+    private final VerificationRecommendationService verificationRecommendationService;
 
     public Mono<PaginatedResponse<UserResponse>> getAllUsers(int page, int size, String search, String role, String status, Integer organizationId) {
         int offset = page * size;
@@ -627,6 +630,17 @@ public class AdminUserService {
 
     public Mono<PaginatedResponse<VerificationRequestResponse>> getPendingVerificationRequests(Integer organizationId, String keyword, String requestType, int page, int size) {
         return getVerificationRequests(organizationId, keyword, true, requestType, page, size);
+    }
+
+    public Mono<VerificationRecommendationResponse> getVerificationRecommendation(Integer requestId) {
+        return adminUserRepository.findVerificationRecommendationContext(requestId)
+                .flatMap(context -> SecurityUtils.assertCanManageContentOrganization(context.getOrganizationId())
+                        .then(verificationRecommendationService.recommend(context)))
+                .doOnSuccess(result -> logger.info(
+                        "verificationRecommendation: requestId={}, verdict={}, generatedByAi={}",
+                        requestId,
+                        result == null ? null : result.getVerdict(),
+                        result == null ? null : result.getGeneratedByAi()));
     }
 
     private Mono<PaginatedResponse<VerificationRequestResponse>> getVerificationRequests(Integer organizationId, String keyword, boolean pendingOnly, String requestType, int page, int size) {

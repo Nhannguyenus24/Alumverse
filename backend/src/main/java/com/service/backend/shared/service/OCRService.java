@@ -229,17 +229,40 @@ public class OCRService {
 
     private Optional<String> extractVisionWithRotations(File file, String extension, String mimeType) {
         Optional<String> original = visionOcrService.extractText(file, mimeType);
-        if (original.isPresent()) {
+        int bestScore = original.map(OCRService::identityEvidenceScore).orElse(0);
+        if (bestScore >= 5) {
             return original;
         }
-        for (int degrees : new int[] {90, 180, 270}) {
+
+        Optional<String> best = original;
+        // 180° first because upside-down phone photos are the most common orientation error.
+        for (int degrees : new int[] {180, 90, 270}) {
             Optional<String> rotatedText = withRotatedImage(file, extension, degrees,
                     rotated -> visionOcrService.extractText(rotated, mimeType));
-            if (rotatedText.isPresent()) {
-                return rotatedText;
+            int score = rotatedText.map(OCRService::identityEvidenceScore).orElse(0);
+            if (score > bestScore) {
+                best = rotatedText;
+                bestScore = score;
+            }
+            if (bestScore >= 5) {
+                break;
             }
         }
-        return Optional.empty();
+        return best;
+    }
+
+    /** Scores identity evidence so a weak, wrongly-oriented OCR result does not stop rotation attempts. */
+    static int identityEvidenceScore(String text) {
+        if (text == null || text.isBlank()) return 0;
+        String normalized = java.text.Normalizer.normalize(text, java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{M}+", "")
+                .toLowerCase();
+        int score = 0;
+        if (normalized.contains("mssv") || normalized.contains("ma so sinh vien")) score += 3;
+        if (normalized.contains("ho ten") || normalized.contains("ho va ten")) score += 3;
+        if (normalized.matches("(?s).*\\b\\d{8,}\\b.*")) score += 3;
+        if (normalized.contains("loai giay to") || normalized.contains("the sinh vien")) score += 1;
+        return score;
     }
 
 
