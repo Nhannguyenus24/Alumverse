@@ -51,10 +51,10 @@ public class RateLimitingFilter implements WebFilter, Ordered {
 
     @Getter
     private enum RateLimitPlan {
-        AUTH(5, Duration.ofMinutes(1)),      // Các API nhạy cảm: 5 requests / phút
-        UPLOAD(5, Duration.ofMinutes(1)),   // Các API upload file: 5 requests / phút
-        FEEDBACK(3, Duration.ofMinutes(1)),  // Feedback công khai (khách vãng lai): 3 requests / phút chống spam
-        DEFAULT(100, Duration.ofMinutes(1)); // API thông thường: 100 requests / phút
+        AUTH(500, Duration.ofMinutes(1)),      // Các API nhạy cảm: 5 requests / phút
+        UPLOAD(500, Duration.ofMinutes(1)),   // Các API upload file: 5 requests / phút
+        FEEDBACK(300, Duration.ofMinutes(1)),  // Feedback công khai (khách vãng lai): 3 requests / phút chống spam
+        DEFAULT(1000, Duration.ofMinutes(1)); // API thông thường: 100 requests / phút
 
         private final Bandwidth limit;
 
