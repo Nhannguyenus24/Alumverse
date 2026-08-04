@@ -215,13 +215,13 @@ public interface UserOrganizationMemberRepository extends R2dbcRepository<Organi
                       WHERE vr.organization_id = om.organization_id
                         AND vr.member_id = om.user_id
                         AND vr."status" = 'PENDING'
-                        AND vr.created_at < :threshold)
+                      HAVING MAX(vr.created_at) < :threshold)
                   OR EXISTS (
                       SELECT 1 FROM peer_verifications pv
                       WHERE pv.organization_id = om.organization_id
                         AND pv.target_member_id = om.user_id
                         AND pv."status" = 'PENDING'
-                        AND pv.created_at < :threshold)
+                      HAVING MAX(pv.created_at) < :threshold)
               )
             RETURNING om.user_id, om.organization_id
             """)
