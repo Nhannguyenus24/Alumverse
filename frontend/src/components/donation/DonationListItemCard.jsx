@@ -1,10 +1,10 @@
-import { Avatar, Badge, Box, Stack, Typography } from "@mui/material";
+import { Badge, Box, Stack, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import {
-  DONATION_AVATAR_FALLBACK,
   formatDonationAmount,
   formatDonationTimestamp,
 } from "../../utils/regexUtils";
+import ChatAvatar from "../ChatAvatar";
 
 export default function DonationListItemCard({ item }) {
   const { t } = useTranslation('donation');
@@ -44,7 +44,7 @@ export default function DonationListItemCard({ item }) {
             />
           }
         >
-          <Avatar src={item.avatarUrl || DONATION_AVATAR_FALLBACK} alt={item.donorName} sx={{ width: 52, height: 52 }} />
+          <ChatAvatar avatarUrl={item.avatarUrl} name={item.donorName} size={52} />
         </Badge>
         <Box sx={{ minWidth: 0 }}>
           <Typography sx={{ color: "text.primary", fontWeight: 800, fontSize: "1rem", lineHeight: 1.3 }} noWrap>
