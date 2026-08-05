@@ -77,7 +77,6 @@ export function useChatMessages(groupId) {
   const isCurrentGroup = groupId != null && chatState.groupId === groupId;
   const messages = isCurrentGroup ? chatState.messages : [];
   const messageChange = isCurrentGroup ? chatState.messageChange : RESET_MESSAGE_CHANGE;
-  const page = isCurrentGroup ? chatState.page : 0;
   const hasMore = isCurrentGroup ? chatState.hasMore : false;
   const isLoading = groupId != null && (!isCurrentGroup || chatState.status === 'loading');
   const isLoadingMore = isCurrentGroup && loadingMoreGroupId === groupId;
@@ -146,7 +145,12 @@ export function useChatMessages(groupId) {
   const loadMore = useCallback(() => {
     if (isLoadingMore || !hasMore || groupId == null) return;
 
-    const nextPage = page + 1;
+    // Derive the page from how many messages we currently hold rather than a
+    // running counter. Realtime messages append at the newest end and shift the
+    // server's DESC offset window; counting loaded messages keeps the next fetch
+    // aligned, so a full page never comes back as pure overlap (which would leave
+    // pagination stalled with hasMore still true and no scroll growth).
+    const nextPage = Math.floor(messages.length / PAGE_SIZE);
     setLoadingMoreGroupId(groupId);
 
     chatApi
@@ -183,7 +187,7 @@ export function useChatMessages(groupId) {
       .finally(() => {
         setLoadingMoreGroupId((current) => current === groupId ? null : current);
       });
-  }, [groupId, page, hasMore, isLoadingMore, createMessageChange]);
+  }, [groupId, messages.length, hasMore, isLoadingMore, createMessageChange]);
 
   const appendMessage = useCallback((msg) => {
     if (groupId == null || activeGroupId.current !== groupId) return;
