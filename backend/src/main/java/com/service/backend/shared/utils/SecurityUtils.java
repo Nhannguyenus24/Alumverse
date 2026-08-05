@@ -208,14 +208,16 @@ public final class SecurityUtils {
      */
     public static Mono<Void> assertSameOrganizationOrAdmin(Integer organizationId) {
         return Mono.zip(getCurrentUserRole(), getCurrentOrganizationId().defaultIfEmpty(-1))
+                .switchIfEmpty(Mono.error(new ApplicationException(
+                        ErrorCode.FORBIDDEN,
+                        "You can only manage data in your own organization")))
                 .flatMap(t -> {
                     boolean ok = "ADMIN".equalsIgnoreCase(t.getT1())
                             || (organizationId != null && organizationId.equals(t.getT2()));
                     return ok
                             ? Mono.<Void>empty()
                             : Mono.<Void>error(new ApplicationException(ErrorCode.FORBIDDEN, "You can only manage data in your own organization"));
-                })
-                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.FORBIDDEN, "You can only manage data in your own organization")));
+                });
     }
 
     /**
