@@ -35,7 +35,7 @@ public abstract class BaseIntegrationTest {
             .withPassword("postgres")
             // Nạp thẳng bản export dữ liệu Production vào DB Test lúc khởi động
             .withCopyFileToContainer(
-                    MountableFile.forHostPath(Paths.get("../docs/postgre_new.sql").toAbsolutePath()),
+                    MountableFile.forHostPath(Paths.get("../docs/postgres.sql").toAbsolutePath()),
                     "/docker-entrypoint-initdb.d/init.sql"
             );
 
@@ -66,7 +66,7 @@ public abstract class BaseIntegrationTest {
         registry.add("spring.r2dbc.username", postgreSQLContainer::getUsername);
         registry.add("spring.r2dbc.password", postgreSQLContainer::getPassword);
 
-        // Tắt Flyway vì file postgre_new.sql đã tạo sẵn schema và data rồi
+        // Tắt Flyway vì file postgres.sql đã tạo sẵn schema và data rồi
         registry.add("spring.flyway.enabled", () -> "false");
     }
 }

@@ -14,12 +14,15 @@ public final class FundDonationMapper {
             return null;
         }
 
+        String donorDisplayName = resolveDonorDisplayName(projection.getDonorName());
+        boolean isAnonymous = FundDonationConstants.DEFAULT_DONOR_DISPLAY_NAME.equals(donorDisplayName);
+
         return FundDonationListItemResponse.builder()
                 .id(projection.getId())
                 .fundId(projection.getFundId())
                 .fundName(projection.getFundName())
-                .donorMemberId(projection.getDonorMemberId())
-                .donorName(resolveDonorDisplayName(projection.getDonorName()))
+                .donorMemberId(isAnonymous ? null : projection.getDonorMemberId())
+                .donorName(donorDisplayName)
                 .amount(projection.getAmount())
                 .address(projection.getAddress())
                 .phone(projection.getPhone())
@@ -27,7 +30,7 @@ public final class FundDonationMapper {
                 .message(projection.getMessage())
                 .status(projection.getStatus())
                 .createdAt(projection.getCreatedAt())
-                .avatarUrl(projection.getAvatarUrl())
+                .avatarUrl(isAnonymous ? null : projection.getAvatarUrl())
                 .build();
     }
 
