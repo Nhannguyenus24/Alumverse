@@ -3,6 +3,50 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { chatApi } from '../../utils/api';
 
 const PAGE_SIZE = 10;
+const RESET_MESSAGE_CHANGE = { type: 'reset', sequence: 0, message: null };
+
+const createInitialChatState = (groupId = null) => ({
+  groupId,
+  status: groupId == null ? 'idle' : 'loading',
+  messages: [],
+  page: 0,
+  hasMore: false,
+  messageChange: RESET_MESSAGE_CHANGE,
+});
+
+const compareMessagesChronologically = (left, right) => {
+  const leftTime = new Date(left.createdAt).getTime();
+  const rightTime = new Date(right.createdAt).getTime();
+
+  if (Number.isFinite(leftTime) && Number.isFinite(rightTime) && leftTime !== rightTime) {
+    return leftTime - rightTime;
+  }
+
+  const leftId = left.id;
+  const rightId = right.id;
+  if (leftId == null || rightId == null || leftId === rightId) return 0;
+  if (typeof leftId === 'number' && typeof rightId === 'number') return leftId - rightId;
+  return String(leftId).localeCompare(String(rightId), undefined, { numeric: true });
+};
+
+// REST and WebSocket can deliver the same message while the initial request is
+// in flight. Keep the live copy's current fields, fill any missing fields from
+// REST, and return one deterministic oldest-first list.
+const mergeInitialMessages = (fetched, current) => {
+  const byId = new Map();
+  const messagesWithoutId = [];
+
+  fetched.forEach((message) => {
+    if (message.id == null) messagesWithoutId.push(message);
+    else byId.set(message.id, message);
+  });
+  current.forEach((message) => {
+    if (message.id == null) messagesWithoutId.push(message);
+    else byId.set(message.id, { ...byId.get(message.id), ...message });
+  });
+
+  return [...byId.values(), ...messagesWithoutId].sort(compareMessagesChronologically);
+};
 
 /**
  * Loads messages for a chat group with "load older" pagination.
@@ -17,92 +61,170 @@ const PAGE_SIZE = 10;
  * @param {number|null} groupId
  */
 export function useChatMessages(groupId) {
-  const [messages, setMessages] = useState([]);
-  const [page, setPage] = useState(0);
-  const [hasMore, setHasMore] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [chatState, setChatState] = useState(() => createInitialChatState(groupId));
+  const [loadingMoreGroupId, setLoadingMoreGroupId] = useState(null);
 
   const activeGroupId = useRef(null);
+  const messageIds = useRef(new Set());
+  const changeSequence = useRef(0);
+  const initialRequestSequence = useRef(0);
+
+  const createMessageChange = useCallback((type, message = null) => {
+    changeSequence.current += 1;
+    return { type, sequence: changeSequence.current, message };
+  }, []);
+
+  const isCurrentGroup = groupId != null && chatState.groupId === groupId;
+  const messages = isCurrentGroup ? chatState.messages : [];
+  const messageChange = isCurrentGroup ? chatState.messageChange : RESET_MESSAGE_CHANGE;
+  const page = isCurrentGroup ? chatState.page : 0;
+  const hasMore = isCurrentGroup ? chatState.hasMore : false;
+  const isLoading = groupId != null && (!isCurrentGroup || chatState.status === 'loading');
+  const isLoadingMore = isCurrentGroup && loadingMoreGroupId === groupId;
 
   useEffect(() => {
+    activeGroupId.current = groupId;
+    messageIds.current = new Set();
+    const requestSequence = ++initialRequestSequence.current;
+
     if (groupId == null) {
-      setMessages([]);
-      setPage(0);
-      setHasMore(false);
       return;
     }
-
-    activeGroupId.current = groupId;
-    setMessages([]);
-    setPage(0);
-    setHasMore(false);
-    setIsLoading(true);
 
     chatApi
       .getMessages(groupId, 0, PAGE_SIZE)
       .then((items) => {
-        if (activeGroupId.current !== groupId) return;
+        if (
+          activeGroupId.current !== groupId
+          || initialRequestSequence.current !== requestSequence
+        ) return;
         const displayOrder = [...items].reverse();
-        setMessages(displayOrder);
-        setHasMore(items.length === PAGE_SIZE);
-        setPage(0);
+        const messageChangeForInitial = createMessageChange('initial');
+        setChatState((prev) => {
+          const currentMessages = prev.groupId === groupId ? prev.messages : [];
+          const mergedMessages = mergeInitialMessages(displayOrder, currentMessages);
+          messageIds.current = new Set([
+            ...messageIds.current,
+            ...mergedMessages.map((item) => item.id).filter((id) => id != null),
+          ]);
+          return {
+            groupId,
+            status: 'ready',
+            messages: mergedMessages,
+            page: 0,
+            hasMore: items.length === PAGE_SIZE,
+            messageChange: messageChangeForInitial,
+          };
+        });
       })
       .catch(() => {
-        if (activeGroupId.current !== groupId) return;
-        setMessages([]);
-        setHasMore(false);
-      })
-      .finally(() => {
-        if (activeGroupId.current !== groupId) return;
-        setIsLoading(false);
+        if (
+          activeGroupId.current !== groupId
+          || initialRequestSequence.current !== requestSequence
+        ) return;
+        const messageChangeForInitial = createMessageChange('initial');
+        setChatState((prev) => {
+          const currentMessages = prev.groupId === groupId ? prev.messages : [];
+          messageIds.current = new Set([
+            ...messageIds.current,
+            ...currentMessages.map((item) => item.id).filter((id) => id != null),
+          ]);
+          return {
+            ...createInitialChatState(groupId),
+            status: 'ready',
+            messages: currentMessages,
+            messageChange: messageChangeForInitial,
+          };
+        });
       });
-  }, [groupId]);
+
+    return () => {
+      if (activeGroupId.current === groupId) activeGroupId.current = null;
+    };
+  }, [groupId, createMessageChange]);
 
   const loadMore = useCallback(() => {
     if (isLoadingMore || !hasMore || groupId == null) return;
 
     const nextPage = page + 1;
-    setIsLoadingMore(true);
+    setLoadingMoreGroupId(groupId);
 
     chatApi
       .getMessages(groupId, nextPage, PAGE_SIZE)
       .then((items) => {
         if (activeGroupId.current !== groupId) return;
         const older = [...items].reverse();
-        setMessages((prev) => [...older, ...prev]);
-        setHasMore(items.length === PAGE_SIZE);
-        setPage(nextPage);
+        const messageChangeForPrepend = createMessageChange('prepend');
+        setChatState((prev) => {
+          if (prev.groupId !== groupId) return prev;
+          const knownIds = new Set(
+            prev.messages.map((item) => item.id).filter((id) => id != null),
+          );
+          const uniqueOlder = older.filter((item) => {
+            if (item.id == null) return true;
+            if (knownIds.has(item.id)) return false;
+            knownIds.add(item.id);
+            return true;
+          });
+          messageIds.current = new Set([...messageIds.current, ...knownIds]);
+          return {
+            ...prev,
+            messages: [...uniqueOlder, ...prev.messages],
+            page: nextPage,
+            // Pagination must be based on the raw server page. A full page can
+            // contain overlap after realtime inserts shift the offset, but an
+            // additional older page may still exist.
+            hasMore: items.length === PAGE_SIZE,
+            messageChange: messageChangeForPrepend,
+          };
+        });
       })
       .catch(() => {})
       .finally(() => {
-        if (activeGroupId.current !== groupId) return;
-        setIsLoadingMore(false);
+        setLoadingMoreGroupId((current) => current === groupId ? null : current);
       });
-  }, [groupId, page, hasMore, isLoadingMore]);
+  }, [groupId, page, hasMore, isLoadingMore, createMessageChange]);
 
   const appendMessage = useCallback((msg) => {
-    setMessages((prev) => {
-      if (msg.id != null && prev.some((m) => m.id === msg.id)) return prev;
-      return [...prev, msg];
+    if (groupId == null || activeGroupId.current !== groupId) return;
+    if (msg.id != null && messageIds.current.has(msg.id)) return;
+    if (msg.id != null) messageIds.current.add(msg.id);
+    const messageChangeForAppend = createMessageChange('append', msg);
+    setChatState((prev) => {
+      if (prev.groupId !== groupId) {
+        if (msg.id != null) messageIds.current.add(msg.id);
+        return {
+          ...createInitialChatState(groupId),
+          messages: [msg],
+          messageChange: messageChangeForAppend,
+        };
+      }
+      if (msg.id != null && prev.messages.some((message) => message.id === msg.id)) return prev;
+      if (msg.id != null) messageIds.current.add(msg.id);
+      return {
+        ...prev,
+        messages: [...prev.messages, msg],
+        messageChange: messageChangeForAppend,
+      };
     });
-  }, []);
+  }, [groupId, createMessageChange]);
 
   // Flip the seen flag on messages a peer has now read (created at or before `readAt`, or all
   // loaded messages when `readAt` is missing). Used to turn "Sent" into "Seen" live.
   const markPeerSeen = useCallback((readAt) => {
     const readTime = readAt ? new Date(readAt).getTime() : null;
-    setMessages((prev) => {
+    setChatState((prev) => {
+      if (prev.groupId !== groupId) return prev;
       let changed = false;
-      const next = prev.map((m) => {
+      const nextMessages = prev.messages.map((m) => {
         if (m.seenByPeer) return m;
         if (readTime != null && new Date(m.createdAt).getTime() > readTime) return m;
         changed = true;
         return { ...m, seenByPeer: true };
       });
-      return changed ? next : prev;
+      return changed ? { ...prev, messages: nextMessages } : prev;
     });
-  }, []);
+  }, [groupId]);
 
   // Re-fetches the newest messages and merges them in, deduped by id.
   // Used after a WebSocket reconnect to pick up messages sent by others
@@ -116,14 +238,33 @@ export function useChatMessages(groupId) {
       .then((items) => {
         if (activeGroupId.current !== targetGroupId) return;
         const fetched = [...items].reverse();
-        setMessages((prev) => {
-          const byId = new Map(prev.map((m) => [m.id, m]));
+        fetched.forEach((item) => {
+          if (item.id != null) messageIds.current.add(item.id);
+        });
+        const messageChangeForResync = createMessageChange('resync');
+        setChatState((prev) => {
+          if (prev.groupId !== targetGroupId) return prev;
+          const byId = new Map(prev.messages.map((m) => [m.id, m]));
           fetched.forEach((m) => byId.set(m.id, m));
-          return Array.from(byId.values()).sort((a, b) => a.id - b.id);
+          return {
+            ...prev,
+            messages: Array.from(byId.values()).sort((a, b) => a.id - b.id),
+            messageChange: messageChangeForResync,
+          };
         });
       })
       .catch(() => {});
-  }, [groupId]);
+  }, [groupId, createMessageChange]);
 
-  return { messages, isLoading, isLoadingMore, hasMore, loadMore, appendMessage, resyncMessages, markPeerSeen };
+  return {
+    messages,
+    messageChange,
+    isLoading,
+    isLoadingMore,
+    hasMore,
+    loadMore,
+    appendMessage,
+    resyncMessages,
+    markPeerSeen,
+  };
 }

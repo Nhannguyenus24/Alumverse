@@ -217,9 +217,17 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
     onSuccess: () => setBlockConfirmOpen(false),
   });
 
-  const { messages, isLoading, isLoadingMore, hasMore, loadMore, appendMessage, resyncMessages, markPeerSeen } = useChatMessages(
-    activeChat?.id ?? null,
-  );
+  const {
+    messages,
+    messageChange,
+    isLoading,
+    isLoadingMore,
+    hasMore,
+    loadMore,
+    appendMessage,
+    resyncMessages,
+    markPeerSeen,
+  } = useChatMessages(activeChat?.id ?? null);
 
   const {
     blockedMembers: blockedMembersInGroup,
@@ -323,7 +331,8 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
       return;
     }
     if (event.type !== 'MESSAGE_CREATED') return;
-    const p = event.payload;
+    const p = event.payload ?? {};
+    if (String(p.groupId) !== String(activeChatIdRef.current)) return;
     appendMessageRef.current({
       id: p.id,
       groupId: p.groupId,
@@ -405,7 +414,6 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
   const scrollRef = useRef(null);
   const prevScrollHeightRef = useRef(null);
   const isInitialLoadRef = useRef(false);
-  const prevMessageCountRef = useRef(0);
 
   // Mark that we are waiting for the initial load to complete
   useEffect(() => {
@@ -420,33 +428,35 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
     }
   }, [isLoading]);
 
-  // After loading older messages: restore scroll position so the view doesn't jump
+  // A history prepend has its own scroll behavior. It must never pass through the
+  // append handler below, otherwise pagination can be mistaken for a live message.
   useEffect(() => {
-    if (!isLoadingMore && prevScrollHeightRef.current != null && scrollRef.current) {
+    if (
+      messageChange.type === 'prepend'
+      && !isLoadingMore
+      && prevScrollHeightRef.current != null
+      && scrollRef.current
+    ) {
       const newScrollHeight = scrollRef.current.scrollHeight;
       scrollRef.current.scrollTop = newScrollHeight - prevScrollHeightRef.current;
       prevScrollHeightRef.current = null;
     }
-  }, [isLoadingMore]);
+  }, [messageChange, isLoadingMore]);
 
-  // After a real-time message arrives: always scroll to bottom for our own message,
-  // otherwise only scroll if already near bottom (avoid yanking while reading history)
+  // Only a real append may follow the bottom. Initial loads, history prepends and
+  // reconnect resyncs have separate behavior and cannot yank someone reading history.
   useEffect(() => {
     const el = scrollRef.current;
-    const prevCount = prevMessageCountRef.current;
-    const newCount = messages.length;
-    prevMessageCountRef.current = newCount;
-
-    if (!el || isLoadingMore || newCount <= prevCount) return;
+    if (!el || messageChange.type !== 'append') return;
     if (isInitialLoadRef.current) return;
 
-    const lastMsg = messages[newCount - 1];
-    const isOwnMessage = lastMsg && lastMsg.senderMemberId === currentUserId;
+    const appendedMessage = messageChange.message;
+    const isOwnMessage = appendedMessage?.senderMemberId === currentUserId;
     const isNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
     if (isOwnMessage || isNearBottom) {
       el.scrollTop = el.scrollHeight;
     }
-  }, [messages, isLoadingMore, currentUserId]);
+  }, [messageChange, currentUserId]);
 
   const handleScroll = useCallback(() => {
     const el = scrollRef.current;
