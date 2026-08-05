@@ -66,8 +66,6 @@
   "close_fund_closing": "Đang đóng...",
   "close_fund_confirm": "Xác nhận đóng",
   "search_placeholder_input": "Tìm kiếm",
-  "donor_phone_email": "SĐT: {{phone}} | Email: {{email}}",
-  "donor_address": "Địa chỉ: {{address}}",
   "list_title": "Danh sách",
   "error_load_donations": "Không thể tải danh sách lượt quyên góp.",
   "no_donations_found": "Không tìm thấy.",

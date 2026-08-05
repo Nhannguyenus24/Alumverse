@@ -66,8 +66,6 @@
   "close_fund_closing": "Closing...",
   "close_fund_confirm": "Confirm closure",
   "search_placeholder_input": "Search",
-  "donor_phone_email": "Phone: {{phone}} | Email: {{email}}",
-  "donor_address": "Address: {{address}}",
   "list_title": "List",
   "error_load_donations": "Unable to load donations.",
   "no_donations_found": "No results found.",

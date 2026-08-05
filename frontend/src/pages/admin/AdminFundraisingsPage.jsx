@@ -145,17 +145,25 @@ const AdminFundraisingsPage = () => {
   const loadCampaignDonations = async (fundId, pageNum = 1, keyword = "", searchByField = "name") => {
     setDonationsLoading(true);
     try {
-      const params = {
-        page: pageNum - 1,
-        limit: 5,
+      const allDonations = await fundApi.getAllFundDonationsForExport(fundId);
+      const normalizedKeyword = keyword.trim().toLocaleLowerCase();
+      const fieldBySearchType = {
+        name: "donorName",
+        phone: "phone",
+        email: "email",
+        address: "address",
+        message: "message",
       };
-      if (keyword.trim()) {
-        params.searchBy = searchByField;
-        params.keyword = keyword.trim();
-      }
-      const res = await fundApi.getFundDonationsByFundId(fundId, params);
-      setDonationsList(res?.items ?? []);
-      setDonationsTotalPages(res?.totalPage ?? 1);
+      const field = fieldBySearchType[searchByField] ?? "donorName";
+      const filteredDonations = normalizedKeyword
+        ? allDonations.filter((item) => String(item?.[field] ?? "").toLocaleLowerCase().includes(normalizedKeyword))
+        : allDonations;
+      const pageSize = 5;
+      const totalPages = Math.max(1, Math.ceil(filteredDonations.length / pageSize));
+      const safePage = Math.min(Math.max(1, pageNum), totalPages);
+      const start = (safePage - 1) * pageSize;
+      setDonationsList(filteredDonations.slice(start, start + pageSize));
+      setDonationsTotalPages(totalPages);
     } catch {
       enqueueSnackbar(t('fund_donations_load_error'), { variant: "error" });
       setDonationsList([]);

@@ -1,5 +1,4 @@
 import { Badge, Box, Stack, Typography } from "@mui/material";
-import { useTranslation } from "react-i18next";
 import {
   formatDonationAmount,
   formatDonationTimestamp,
@@ -7,8 +6,6 @@ import {
 import ChatAvatar from "../ChatAvatar";
 
 export default function DonationListItemCard({ item }) {
-  const { t } = useTranslation('donation');
-
   return (
     <Box
       sx={{
@@ -62,30 +59,6 @@ export default function DonationListItemCard({ item }) {
             }}
           >
             {item.message || "--"}
-          </Typography>
-          <Typography
-            sx={{
-              color: "text.secondary",
-              fontSize: "0.8rem",
-              mt: 0.5,
-              lineHeight: 1.45,
-            }}
-          >
-            {t('donation:donor_phone_email', { phone: item.phone || '--', email: item.email || '--' })}
-          </Typography>
-          <Typography
-            sx={{
-              color: "text.secondary",
-              fontSize: "0.8rem",
-              mt: 0.15,
-              lineHeight: 1.45,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}
-            title={item.address || "--"}
-          >
-            {t('donation:donor_address', { address: item.address || '--' })}
           </Typography>
           <Typography sx={{ color: "text.disabled", fontSize: "0.78rem", mt: 0.45 }}>
             {formatDonationTimestamp(item.createdAt)}

@@ -120,10 +120,7 @@ export const changePasswordRequestSchema = getChangePasswordRequestSchema(null);
 
 export const getDonationSearchOptions = (t) => [
   { value: "name", label: t ? t('contact:field_name') : "Tên" },
-  { value: "phone", label: t ? t('contact:field_phone') : "Số điện thoại" },
-  { value: "address", label: t ? t('contact:field_address') : "Địa chỉ" },
   { value: "message", label: t ? t('contact:field_message') : "Thông điệp" },
-  { value: "email", label: "Email" },
 ];
 
 /** @deprecated Use getDonationSearchOptions(t) instead */
