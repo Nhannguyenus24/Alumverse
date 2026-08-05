@@ -3,7 +3,6 @@ package com.service.backend.fundraising.controller;
 import com.service.backend.fundraising.dto.CreateFundDonationRequest;
 import com.service.backend.fundraising.dto.FundDonationCheckoutResponse;
 import com.service.backend.fundraising.dto.FundDonationListItemResponse;
-import com.service.backend.fundraising.dto.PublicFundDonationListItemResponse;
 import com.service.backend.fundraising.service.FundService;
 import com.service.backend.shared.dto.ApiResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
@@ -41,7 +40,7 @@ public class FundDonationsController {
 
     @PublicEndpoint
     @GetMapping("/{fundId}")
-    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<PublicFundDonationListItemResponse>>>> getDonations(
+    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<FundDonationListItemResponse>>>> getDonations(
             @PathVariable @Min(1) Long fundId,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int limit,
