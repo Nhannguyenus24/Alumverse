@@ -170,6 +170,37 @@ class NewsServiceTest {
         }
 
         @Test
+        @DisplayName("should parse, decode, normalize and safely truncate list content in Java")
+        void transformsHtmlContentIntoPreview() {
+            passThroughCache();
+            NewsListItemResponse featured = item(10, "Featured");
+            featured.setContent("<p>AT&amp;T&nbsp;news</p><p>" + "long text ".repeat(40) + "😀</p>");
+            NewsListItemResponse result = item(7, "Result");
+            result.setContent("<div>First&nbsp; line</div>\n<div>Second &quot;line&quot;</div>");
+            NewsListItemResponse surrogateBoundary = item(6, "Surrogate boundary");
+            surrogateBoundary.setContent("a".repeat(259) + "😀suffix");
+            when(newsRepository.findPublishedFeatured(1)).thenReturn(Mono.just(featured));
+            when(newsRepository.findPublishedList(1, 10, "", "", "", "", "newest", 15, 0))
+                    .thenReturn(reactor.core.publisher.Flux.just(result, surrogateBoundary));
+            when(newsRepository.countPublishedList(1, 10, "", "", "", ""))
+                    .thenReturn(Mono.just(2L));
+
+            StepVerifier.create(newsService.getPublishedList(
+                            0, 15, 1, null, null, null, null, null))
+                    .assertNext(response -> {
+                        assertThat(response.getFeatured().getContent())
+                                .startsWith("AT&T news long text")
+                                .doesNotContain("<p>", "&amp;", "&nbsp;")
+                                .hasSizeLessThanOrEqualTo(260);
+                        assertThat(response.getItems().get(0).getContent())
+                                .isEqualTo("First line Second \"line\"");
+                        assertThat(response.getItems().get(1).getContent())
+                                .isEqualTo("a".repeat(259));
+                    })
+                    .verifyComplete();
+        }
+
+        @Test
         @DisplayName("should include every filter dimension in the cache key")
         void cacheKeyContainsAllFilters() {
             when(cacheUtils.<PublishedNewsResponse>getOrCompute(

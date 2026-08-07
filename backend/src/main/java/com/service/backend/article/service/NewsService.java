@@ -18,6 +18,7 @@ import com.service.backend.shared.utils.CacheNames;
 import com.service.backend.shared.utils.CacheUtils;
 import com.service.backend.user.service.NotificationService;
 import lombok.RequiredArgsConstructor;
+import org.jsoup.Jsoup;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -34,6 +35,7 @@ import java.util.Optional;
 public class NewsService {
 
     private static final Duration LIST_TTL = Duration.ofMinutes(5);
+    private static final int CONTENT_PREVIEW_LENGTH = 260;
 
     private final NewsR2dbcRepository newsRepository;
     private final ImageService imageService;
@@ -216,6 +218,7 @@ public class NewsService {
 
                     return cacheUtils.getOrCompute(CacheNames.NEWS, cacheKey, LIST_TTL,
                             () -> newsRepository.findPublishedFeatured(orgId)
+                                    .map(this::withContentPreview)
                                     .map(Optional::of)
                                     .defaultIfEmpty(Optional.empty())
                                     .flatMap(featuredOptional -> {
@@ -224,6 +227,7 @@ public class NewsService {
                                         Mono<List<NewsListItemResponse>> items = newsRepository.findPublishedList(
                                                         orgId, featuredId, normalizedKeyword, normalizedTopics,
                                                         from, to, normalizedSort, limit, offset)
+                                                .map(this::withContentPreview)
                                                 .collectList();
                                         Mono<Long> total = newsRepository.countPublishedList(
                                                 orgId, featuredId, normalizedKeyword, normalizedTopics, from, to);
@@ -235,6 +239,19 @@ public class NewsService {
                 })
                 .switchIfEmpty(Mono.just(PublishedNewsResponse.of(
                         null, List.of(), 0, page, limit)));
+    }
+
+    private NewsListItemResponse withContentPreview(NewsListItemResponse item) {
+        String plainText = Jsoup.parse(item.getContent() == null ? "" : item.getContent()).text();
+        if (plainText.length() > CONTENT_PREVIEW_LENGTH) {
+            int endIndex = CONTENT_PREVIEW_LENGTH;
+            if (Character.isHighSurrogate(plainText.charAt(endIndex - 1))) {
+                endIndex--;
+            }
+            plainText = plainText.substring(0, endIndex);
+        }
+        item.setContent(plainText);
+        return item;
     }
 
     private String normalizeTopics(String topics) {

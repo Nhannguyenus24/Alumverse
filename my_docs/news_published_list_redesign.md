@@ -77,7 +77,10 @@ The exact response DTO may extend or replace the current generic pagination DTO,
 
 - Keep the JSON field name `content` for compatibility.
 - For both `featured` and `items`, `content` is a plain-text preview capped at approximately 260 characters; the frontend retains its three-line CSS clamp.
-- The repository list queries must not load the complete rich-text content merely to truncate it in Java. Produce the bounded preview in the database query.
+- Keep search, filters, sorting, counting, and pagination in the database, then load complete rich-text
+  content only for the single featured record and the current page (at most 15 items).
+- Convert those bounded results to plain text and truncate them in the backend with an HTML parser;
+  do not implement HTML parsing through nested SQL regular expressions.
 - Use a concrete projection class, not an interface projection. This project uses Spring WebFlux with Spring Data R2DBC.
 - Do not reuse or weaken the detail response: fetching news by ID or slug must still return the complete rich-text `content`.
 

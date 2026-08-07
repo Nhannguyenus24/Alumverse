@@ -12,31 +12,8 @@ import reactor.core.publisher.Mono;
 @Repository
 public interface NewsR2dbcRepository extends R2dbcRepository<News, Integer> {
 
-    String PLAIN_CONTENT_PREVIEW = """
-            LEFT(TRIM(REGEXP_REPLACE(
-                REGEXP_REPLACE(
-                    REGEXP_REPLACE(
-                        REGEXP_REPLACE(
-                            REGEXP_REPLACE(
-                                REGEXP_REPLACE(
-                                    REGEXP_REPLACE(
-                                        REGEXP_REPLACE(
-                                            REGEXP_REPLACE(
-                                                REGEXP_REPLACE(COALESCE(content, ''), '<[^>]*>', ' ', 'g'),
-                                                '&(nbsp|#160|#x0*a0);', ' ', 'gi'),
-                                            '&(amp|#38|#x0*26);', '&', 'gi'),
-                                        '&(lt|#60|#x0*3c);', '<', 'gi'),
-                                    '&(gt|#62|#x0*3e);', '>', 'gi'),
-                                '&(quot|#34|#x0*22);', CHR(34), 'gi'),
-                            '&(apos|#39|#x0*27);', CHR(39), 'gi'),
-                        '&#(x[0-9a-f]+|[0-9]+);', ' ', 'gi'),
-                    '&[a-z][a-z0-9]+;', ' ', 'gi'),
-                '[[:space:]]+', ' ', 'g')), 260)
-            """;
-
     String PUBLIC_LIST_COLUMNS = "id, organization_id, author_member_id, title, slug, "
-            + PLAIN_CONTENT_PREVIEW
-            + " AS content, thumbnail_url, topic, url, is_hidden, created_at, updated_at ";
+            + "content, thumbnail_url, topic, url, is_hidden, created_at, updated_at ";
 
     String FIND_PUBLISHED_FEATURED_QUERY = "SELECT " + PUBLIC_LIST_COLUMNS + """
             FROM news
