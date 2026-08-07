@@ -29,6 +29,11 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webflux</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>org.jsoup</groupId>
+			<artifactId>jsoup</artifactId>
+			<version>1.17.2</version>
+		</dependency>
 
 		<!-- JSON log encoding for the FILE appender, tailed by the Datadog Agent
 		     (source: java). Carries dd.trace_id/dd.span_id from MDC for log-trace

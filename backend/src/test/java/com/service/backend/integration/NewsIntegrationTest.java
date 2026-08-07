@@ -387,13 +387,19 @@ public class NewsIntegrationTest extends BaseIntegrationTest {
     void getPublishedNews_TC10_Success() {
         String token = getValidAccessToken("user_news_tc10@example.com", "USER");
 
-        webTestClient.get().uri("/api/articles/news/published?organizationId=1&page=0&size=10")
+        webTestClient.get().uri("/api/articles/news/published?organizationId=1&page=0&limit=15")
                 .header("X-Forwarded-For", randomIp())
                 .header("Authorization", "Bearer " + token)
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$.data.items").isArray();
+                .jsonPath("$.data.items").isArray()
+                .jsonPath("$.data.currentPage").isEqualTo(0)
+                .jsonPath("$.data.pageSize").isEqualTo(15)
+                .jsonPath("$.data.totalPage").isNumber()
+                .jsonPath("$.data.totalItem").isNumber()
+                .jsonPath("$.data.hasNext").isBoolean()
+                .jsonPath("$.data.hasPrevious").isEqualTo(false);
     }
 
     // =========================================================================

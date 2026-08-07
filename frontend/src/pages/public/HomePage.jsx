@@ -386,7 +386,7 @@ const HomePage = () => {
   const { achievements } = usePublishedAchievements(0, 6);
   const { articles: alumniArticles } = usePublishedAlumniPosts(0, 6);
   const { events: upcomingEvents, isPending: eventsPending } = usePublishedEvents("upcoming", 0, 3);
-  const { news: rawNews } = usePublishedNews(0, 6);
+  const { featured: featuredNews, news: listedNews } = usePublishedNews(0, 5);
   const [featuredPage, setFeaturedPage] = useState(0);
   const [eventPage, setEventPage] = useState(0);
   const [organizations, setOrganizations] = useState([]);
@@ -427,7 +427,8 @@ const HomePage = () => {
       behavior: "smooth",
     });
   };
-  const newsCards = rawNews
+  const newsCards = [featuredNews, ...listedNews]
+    .filter(Boolean)
     .map(normalizeNews)
     .filter(Boolean)
     .map((article) => toCardShape(article, cardFallbackImage))
