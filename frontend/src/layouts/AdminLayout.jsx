@@ -11,6 +11,7 @@ import { AdminProvider } from '../stores/AdminStore';
 import useOrganizationStore from '../stores/organizationStore';
 import { useAuth } from '../hooks/useAuth';
 import { useMyProfile } from '../hooks/profile/useMyProfile';
+import { useToastTopOffset } from '../hooks/useToastTopOffset';
 import Page from '../components/Page';
 
 const HEADER_HEIGHT = 88;
@@ -19,6 +20,7 @@ const SIDEBAR_COLLAPSED_WIDTH = 88;
 
 const AdminLayoutShell = () => {
   const { t } = useTranslation('admin');
+  useToastTopOffset(HEADER_HEIGHT);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [breadcrumbs, setBreadcrumbs] = useState(null);
