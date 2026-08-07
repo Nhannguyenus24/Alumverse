@@ -3,13 +3,16 @@ package com.service.backend.article.controller;
 import com.service.backend.article.dto.CreateNewsRequest;
 import com.service.backend.article.dto.UpdateNewsRequest;
 import com.service.backend.article.dto.NewsResponse;
+import com.service.backend.article.dto.PublishedNewsResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.article.service.NewsService;
 import com.service.backend.shared.dto.ApiResponse;
 import com.service.backend.shared.annotations.PublicEndpoint;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +20,9 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 import io.swagger.v3.oas.annotations.tags.Tag;
+
+import java.time.LocalDate;
+import org.springframework.format.annotation.DateTimeFormat;
 
 @Tag(name = "Articles > News", description = "API endpoints for campus and alumni news")
 @RestController
@@ -84,11 +90,17 @@ public class NewsController {
 
     @PublicEndpoint
     @GetMapping("/published")
-    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<NewsResponse>>>> getPublished(
+    public Mono<ResponseEntity<ApiResponse<PublishedNewsResponse>>> getPublished(
             @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "10") @Min(1) int limit,
-            @RequestParam(required = false) Integer organizationId) {
-        return newsService.getPublished(page, limit, organizationId)
+            @RequestParam(defaultValue = "15") @Min(1) @Max(15) int limit,
+            @RequestParam(required = false) Integer organizationId,
+            @RequestParam(defaultValue = "") String keyword,
+            @RequestParam(defaultValue = "") String topics,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
+            @RequestParam(defaultValue = "newest") @Pattern(regexp = "newest|oldest") String sort) {
+        return newsService.getPublishedList(
+                        page, limit, organizationId, keyword, topics, fromDate, toDate, sort)
                 .map(response -> ResponseEntity
                         .ok(new ApiResponse<>("Published news retrieved successfully", response)));
     }

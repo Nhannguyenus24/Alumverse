@@ -29,7 +29,7 @@ class ArticleRepository {
         if (organizationId != null) 'organizationId': organizationId,
       },
     );
-    return _itemsFrom(res.data, channel: 'news');
+    return parsePublishedNewsResponse(res.data);
   }
 
   Future<List<Article>> getPublishedAlumniPosts({
@@ -151,4 +151,36 @@ class ArticleRepository {
         )
         .toList();
   }
+}
+
+/// Parses the dedicated news-list contract while preserving the legacy mobile
+/// shape: the fixed newest featured article is first, followed by paged items.
+/// Older list-only payloads remain supported during staggered deployments.
+List<Article> parsePublishedNewsResponse(dynamic body) {
+  final data = body is Map ? body['data'] : body;
+  if (data is! Map) {
+    if (data is! List) return const [];
+    return data
+        .whereType<Map>()
+        .map((item) => Article.fromJson(item.cast<String, dynamic>()))
+        .toList();
+  }
+
+  final result = <Article>[];
+  final seenIds = <int>{};
+  final featured = data['featured'];
+  if (featured is Map) {
+    final article = Article.fromJson(featured.cast<String, dynamic>());
+    result.add(article);
+    seenIds.add(article.id);
+  }
+
+  final items = data['items'];
+  if (items is List) {
+    for (final item in items.whereType<Map>()) {
+      final article = Article.fromJson(item.cast<String, dynamic>());
+      if (seenIds.add(article.id)) result.add(article);
+    }
+  }
+  return result;
 }
