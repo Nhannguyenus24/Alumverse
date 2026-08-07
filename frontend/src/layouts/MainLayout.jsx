@@ -7,11 +7,13 @@ import FloatingChatActions from "../components/FloatingChatActions";
 import SurveyPromptModal from "../components/survey/SurveyPromptModal";
 import { getNormalizedPathname } from "../utils/pathUtils";
 import { HEADER_HEIGHT } from "../constants/layout";
+import { useToastTopOffset } from "../hooks/useToastTopOffset";
 
 const MainLayout = () => {
   const location = useLocation();
   const matches = useMatches();
   const { slug } = useParams();
+  useToastTopOffset(HEADER_HEIGHT.xs);
 
   const hideFooter = matches.some((m) => m.handle?.hideFooter);
 
