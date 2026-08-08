@@ -11,8 +11,7 @@ import Input from '../../components/Input';
 import { useAuth } from '../../hooks/useAuth';
 import { useOrgNavigate, useOrgPath } from '../../hooks/useOrgNavigate';
 import { ScrollRevealFields } from '../../components/animations/ScrollReveal';
-
-const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/;
+import { PASSWORD_REGEX } from '../../utils/regexUtils';
 
 const ResetPasswordPage = () => {
   const { t } = useTranslation(['auth', 'common']);
