@@ -7,6 +7,7 @@ import com.service.backend.article.dto.UpdateJobRequest;
 import com.service.backend.article.dto.JobResponse;
 import com.service.backend.article.validation.ArticleTopicCatalog;
 import com.service.backend.shared.dto.PaginatedResponse;
+import com.service.backend.shared.dto.FeaturedPaginatedResponse;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.service.ImageService;
@@ -22,6 +23,10 @@ import reactor.core.publisher.Mono;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -172,6 +177,60 @@ public class JobService {
                 .switchIfEmpty(Mono.just(PaginatedResponse.of(java.util.List.of(), 0, page, limit)));
     }
 
+    public Mono<FeaturedPaginatedResponse<JobResponse>> getActiveList(
+            int page,
+            int limit,
+            Integer organizationId,
+            String keyword,
+            String topics,
+            LocalDate fromDate,
+            LocalDate toDate,
+            String direction) {
+        String normalizedKeyword = keyword == null ? "" : keyword.trim();
+        String normalizedTopics = normalizeTopics(topics);
+        String normalizedDirection = "oldest".equalsIgnoreCase(direction) ? "oldest" : "newest";
+        String from = fromDate == null ? "" : fromDate.toString();
+        String to = toDate == null ? "" : toDate.toString();
+        int offset = page * limit;
+
+        return SecurityUtils.resolvePublicOrganizationId(organizationId)
+                .flatMap(orgId -> {
+                    String cacheKey = String.join("|",
+                            "active-v2",
+                            "org=" + orgId,
+                            "page=" + page,
+                            "limit=" + limit,
+                            "keyword=" + normalizedKeyword.toLowerCase(Locale.ROOT),
+                            "topics=" + normalizedTopics,
+                            "from=" + from,
+                            "to=" + to,
+                            "direction=" + normalizedDirection);
+
+                    return cacheUtils.getOrCompute(CacheNames.JOB, cacheKey, LIST_TTL,
+                            () -> jobRepository.findPublicFeatured(
+                                            orgId, normalizedKeyword, normalizedTopics, from, to, normalizedDirection)
+                                    .map(Optional::of)
+                                    .defaultIfEmpty(Optional.empty())
+                                    .flatMap(featuredOptional -> {
+                                        Integer featuredId = featuredOptional.map(Job::getId).orElse(null);
+                                        Mono<List<JobResponse>> items = jobRepository.findPublicPage(
+                                                        orgId, featuredId, normalizedKeyword, normalizedTopics,
+                                                        from, to, normalizedDirection, limit, offset)
+                                                .map(JobResponse::from)
+                                                .collectList();
+                                        Mono<Long> total = jobRepository.countPublicPage(
+                                                orgId, featuredId, normalizedKeyword, normalizedTopics, from, to);
+
+                                        return Mono.zip(items, total)
+                                                .map(result -> FeaturedPaginatedResponse.of(
+                                                        featuredOptional.map(JobResponse::from).orElse(null),
+                                                        result.getT1(), result.getT2(), page, limit));
+                                    }));
+                })
+                .switchIfEmpty(Mono.just(FeaturedPaginatedResponse.of(
+                        null, List.of(), 0, page, limit)));
+    }
+
     public Mono<PaginatedResponse<JobResponse>> getOpenJobs(int page, int limit) {
         int offset = page * limit;
         LocalDate today = LocalDate.now();
@@ -217,6 +276,19 @@ public class JobService {
                         "/article/job/" + updated.getId()
                 ))
                 .map(JobResponse::from);
+    }
+
+    private String normalizeTopics(String topics) {
+        if (topics == null || topics.isBlank()) {
+            return "";
+        }
+        return Arrays.stream(topics.split(","))
+                .map(ArticleTopicCatalog::normalize)
+                .filter(topic -> topic != null && !topic.isBlank())
+                .distinct()
+                .sorted()
+                .reduce((left, right) -> left + "," + right)
+                .orElse("");
     }
 
     public Mono<JobResponse> deactivate(Integer id) {
