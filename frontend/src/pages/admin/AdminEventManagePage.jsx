@@ -1,6 +1,6 @@
 import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { useEffect, useMemo, useState } from 'react';
-import { useParams, useOutletContext } from 'react-router';
+import { useParams, useOutletContext, useLocation, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { useSnackbar } from 'notistack';
@@ -82,6 +82,8 @@ const AdminEventManagePage = () => {
   const orgNavigate = useOrgNavigate();
   const toOrgPath = useOrgPath();
   const { setBreadcrumbs, adminBase } = useOutletContext();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const [tab, setTab] = useState('participants');
   const [ticketKeyword, setTicketKeyword] = useState('');
@@ -112,6 +114,15 @@ const AdminEventManagePage = () => {
     enabled: Boolean(eventId) && !Number.isNaN(eventId),
   });
 
+  useEffect(() => {
+    if (location.state?.eventEnded) {
+      enqueueSnackbar(t('event:check_in_ended', 'Sự kiện đã kết thúc'), { variant: 'warning' });
+      navigate(location.pathname, { replace: true, state: null });
+      refetchEvent();
+      setNow(Date.now());
+    }
+  }, [location, enqueueSnackbar, navigate, t, refetchEvent]);
+
   const { data: stats, refetch: refetchStats } = useQuery({
     queryKey: ['event', eventId, 'statistics'],
     queryFn: () => eventApi.getEventStatisticsById(eventId),
@@ -130,6 +141,13 @@ const AdminEventManagePage = () => {
   });
 
   const { data: eventQuestions = [] } = useEventQuestions(eventId, Boolean(eventId));
+
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(id);
+  }, []);
+  const isEventEnded = Boolean(event?.endTime) && new Date(event.endTime).getTime() < now;
 
   const { data: interests = fallbackPage, isLoading: interestsLoading } = useQuery({
     queryKey: ['event', eventId, 'interests', interestsPage, interestsSize],
@@ -506,9 +524,19 @@ const AdminEventManagePage = () => {
           <Button color="primary" variant="contained" startIcon={<OpenInNewIcon />} onClick={handlePreview}>
             {t('event:preview_public')}
           </Button>
-          <Button color="accent" variant="contained" startIcon={<HowToRegOutlinedIcon />} onClick={() => orgNavigate(`${adminBase}/events/${eventId}/organize`)}>
-            {t('event:check_in')}
-          </Button>
+          <Tooltip title={isEventEnded ? t('event:check_in_ended', 'Sự kiện đã kết thúc') : ''}>
+            <span>
+              <Button
+                color="accent"
+                variant="contained"
+                startIcon={<HowToRegOutlinedIcon />}
+                disabled={isEventEnded}
+                onClick={() => orgNavigate(`${adminBase}/events/${eventId}/organize`)}
+              >
+                {t('event:check_in')}
+              </Button>
+            </span>
+          </Tooltip>
         </Stack>
       </Stack>
 
