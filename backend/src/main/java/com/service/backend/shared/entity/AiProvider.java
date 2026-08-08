@@ -37,6 +37,9 @@ public class AiProvider {
 
     private Integer priority;
 
+    @Column("quota_exhausted_at")
+    private LocalDateTime quotaExhaustedAt;
+
     @CreatedDate
     @Column("created_at")
     private LocalDateTime createdAt;

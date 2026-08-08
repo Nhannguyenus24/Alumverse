@@ -9,19 +9,26 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class FailoverChatModel implements ChatLanguageModel {
 
     private static final Logger log = LoggerFactory.getLogger(FailoverChatModel.class);
 
-    private final List<ChatLanguageModel> delegates;
+    /** Một mắt xích trong chuỗi: model kèm provider sở hữu key của nó. */
+    public record Delegate(Integer providerId, ChatLanguageModel model) {
+    }
 
-    public FailoverChatModel(List<ChatLanguageModel> delegates) {
+    private final List<Delegate> delegates;
+    private final Consumer<Integer> onQuotaExhausted;
+
+    public FailoverChatModel(List<Delegate> delegates, Consumer<Integer> onQuotaExhausted) {
         if (delegates == null || delegates.isEmpty()) {
             throw new IllegalArgumentException("FailoverChatModel needs at least one delegate model");
         }
         this.delegates = List.copyOf(delegates);
+        this.onQuotaExhausted = onQuotaExhausted;
     }
 
     @Override
@@ -47,11 +54,14 @@ public class FailoverChatModel implements ChatLanguageModel {
     private Response<AiMessage> attempt(Function<ChatLanguageModel, Response<AiMessage>> call) {
         RuntimeException last = null;
         for (int i = 0; i < delegates.size(); i++) {
-            ChatLanguageModel model = delegates.get(i);
+            Delegate delegate = delegates.get(i);
             try {
-                return call.apply(model);
+                return call.apply(delegate.model());
             } catch (RuntimeException e) {
                 last = e;
+                if (isQuotaError(e)) {
+                    notifyQuotaExhausted(delegate.providerId());
+                }
                 boolean hasNext = i < delegates.size() - 1;
                 if (hasNext && isRetryable(e)) {
                     log.warn("AI model #{} failed ({}), trying next model in chain.", i, describe(e));
@@ -63,7 +73,19 @@ public class FailoverChatModel implements ChatLanguageModel {
         throw last != null ? last : new IllegalStateException("No AI model available");
     }
 
-    private boolean isRetryable(Throwable e) {
+    private void notifyQuotaExhausted(Integer providerId) {
+        if (onQuotaExhausted == null || providerId == null) {
+            return;
+        }
+        try {
+            onQuotaExhausted.accept(providerId);
+        } catch (RuntimeException e) {
+            log.warn("Failed to record quota-exhausted state for provider {}", providerId, e);
+        }
+    }
+
+    /** Lỗi hết quota/rate-limit — đáng đánh dấu provider cooldown, chờ health-check hồi phục. */
+    private boolean isQuotaError(Throwable e) {
         for (Throwable t = e; t != null; t = t.getCause()) {
             String msg = t.getMessage();
             if (msg != null) {
@@ -73,8 +95,23 @@ public class FailoverChatModel implements ChatLanguageModel {
                         || m.contains("quota")
                         || m.contains("rate limit")
                         || m.contains("rate-limit")
-                        || m.contains("too many requests")
-                        || m.contains("overloaded")
+                        || m.contains("too many requests")) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean isRetryable(Throwable e) {
+        if (isQuotaError(e)) {
+            return true;
+        }
+        for (Throwable t = e; t != null; t = t.getCause()) {
+            String msg = t.getMessage();
+            if (msg != null) {
+                String m = msg.toLowerCase();
+                if (m.contains("overloaded")
                         || m.contains("unavailable")
                         || m.contains("503")
                         || m.contains("500")

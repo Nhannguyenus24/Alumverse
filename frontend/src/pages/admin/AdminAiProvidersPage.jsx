@@ -82,12 +82,9 @@ export const AdminAiProvidersContent = ({ showHeader = true }) => {
 
   const closeModal = () => setModal((m) => ({ ...m, open: false }));
 
-  const setModelAt = (idx, patch) => {
-    setForm((f) => ({
-      ...f,
-      models: f.models.map((m, i) => (i === idx ? { ...m, ...patch } : m)),
-    }));
-  };
+  // Priority = vị trí trong mảng (0 = trên cùng); không nhập tay, chỉ đổi qua nút ↑↓.
+  const setModelAt = (idx, patch) =>
+    setForm((f) => ({ ...f, models: f.models.map((m, i) => (i === idx ? { ...m, ...patch } : m)) }));
 
   const addModel = () =>
     setForm((f) => ({ ...f, models: [...f.models, { modelName: '', priority: f.models.length, enabled: true }] }));
@@ -102,9 +99,29 @@ export const AdminAiProvidersContent = ({ showHeader = true }) => {
     }
     const models = form.models
       .filter((m) => m.modelName.trim())
-      .map((m, i) => ({ modelName: m.modelName.trim(), priority: Number(m.priority) || i, enabled: m.enabled }));
+      .map((m) => ({ modelName: m.modelName.trim(), priority: Number(m.priority), enabled: m.enabled }));
     if (models.length === 0) {
       enqueueSnackbar('Cần ít nhất một model', { variant: 'warning' });
+      return;
+    }
+    const maxModelPriority = models.length - 1;
+    if (models.some((m) => !Number.isInteger(m.priority) || m.priority < 0 || m.priority > maxModelPriority)) {
+      enqueueSnackbar(`Ưu tiên model phải là số nguyên từ 0 đến ${maxModelPriority}`, { variant: 'warning' });
+      return;
+    }
+    if (new Set(models.map((m) => m.priority)).size !== models.length) {
+      enqueueSnackbar('Ưu tiên các model đang bị trùng nhau', { variant: 'warning' });
+      return;
+    }
+    const others = providers.filter((p) => p.id !== modal.id).map((p) => p.priority ?? 0);
+    const maxProviderPriority = modal.mode === 'edit' ? Math.max(providers.length - 1, 0) : providers.length;
+    const providerPriority = Number(form.priority);
+    if (!Number.isInteger(providerPriority) || providerPriority < 0 || providerPriority > maxProviderPriority) {
+      enqueueSnackbar(`Ưu tiên provider phải là số nguyên từ 0 đến ${maxProviderPriority}`, { variant: 'warning' });
+      return;
+    }
+    if (others.includes(providerPriority)) {
+      enqueueSnackbar('Ưu tiên provider đang trùng với provider khác', { variant: 'warning' });
       return;
     }
     const body = {
