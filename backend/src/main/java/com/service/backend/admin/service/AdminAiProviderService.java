@@ -16,11 +16,13 @@ import dev.langchain4j.model.chat.ChatLanguageModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -38,17 +40,20 @@ public class AdminAiProviderService {
     private final AiSecretCipher cipher;
     private final AiChainService chainService;
     private final AiModelFactory factory;
+    private final WebClient.Builder webClientBuilder;
 
     public AdminAiProviderService(AiProviderR2dbcRepository providerRepo,
                                   AiModelR2dbcRepository modelRepo,
                                   AiSecretCipher cipher,
                                   AiChainService chainService,
-                                  AiModelFactory factory) {
+                                  AiModelFactory factory,
+                                  WebClient.Builder webClientBuilder) {
         this.providerRepo = providerRepo;
         this.modelRepo = modelRepo;
         this.cipher = cipher;
         this.chainService = chainService;
         this.factory = factory;
+        this.webClientBuilder = webClientBuilder;
     }
 
     public Mono<List<AiProviderResponse>> getAll() {
@@ -121,6 +126,7 @@ public class AdminAiProviderService {
     public Mono<String> test(Integer providerId, String modelName) {
         return providerRepo.findById(providerId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.RESOURCES_NOT_FOUND, "AI provider not found")))
+                .flatMap(p -> checkModelExists(p, modelName).thenReturn(p))
                 .flatMap(p -> Mono.fromCallable(() -> {
                     String apiKey = cipher.decrypt(p.getApiKeyEnc());
                     ChatLanguageModel model = factory.buildModel(
@@ -131,6 +137,40 @@ public class AdminAiProviderService {
                 // lỗi server của ta — trả 400 kèm message gốc để admin đọc được, thay vì 500.
                 .onErrorMap(e -> !(e instanceof ApplicationException),
                         e -> new ApplicationException(ErrorCode.BAD_REQUEST, providerError(e)));
+    }
+
+    /**
+     * Xác nhận modelName có thật trong danh sách model của provider (GET /models) trước khi gọi thử.
+     * Một số gateway OpenAI-compatible (OpenRouter...) không báo lỗi khi model sai tên — vẫn trả 200
+     * với nội dung rác — nên phải tự kiểm tra thay vì tin vào response của model.generate().
+     * Chỉ áp dụng cho openai_compatible/openrouter; Gemini không có endpoint /models tương đương nên bỏ qua.
+     */
+    private Mono<Void> checkModelExists(AiProvider p, String modelName) {
+        String type = p.getProviderType() == null ? "" : p.getProviderType().trim().toLowerCase();
+        if (!"openai_compatible".equals(type) && !"openrouter".equals(type)) {
+            return Mono.empty();
+        }
+        String baseUrl = (p.getBaseUrl() == null || p.getBaseUrl().isBlank())
+                ? "https://openrouter.ai/api/v1" : p.getBaseUrl();
+        String apiKey = cipher.decrypt(p.getApiKeyEnc());
+        return webClientBuilder.build().get()
+                .uri(baseUrl.replaceAll("/+$", "") + "/models")
+                .header("Authorization", "Bearer " + apiKey)
+                .retrieve()
+                .bodyToMono(Map.class)
+                .timeout(java.time.Duration.ofSeconds(10))
+                .<Void>handle((body, sink) -> {
+                    Object data = body.get("data");
+                    boolean found = data instanceof List<?> list && list.stream()
+                            .anyMatch(item -> item instanceof Map<?, ?> m && modelName.equals(String.valueOf(m.get("id"))));
+                    if (!found) {
+                        sink.error(new ApplicationException(ErrorCode.BAD_REQUEST,
+                                "Model '" + modelName + "' không tồn tại trên provider này."));
+                    }
+                })
+                // Không chặn test nếu bản thân việc gọi /models lỗi (mạng, provider không hỗ trợ...) —
+                // để model.generate() phía sau tự báo lỗi thật như trước.
+                .onErrorResume(e -> e instanceof ApplicationException ? Mono.error(e) : Mono.empty());
     }
 
     /** Rút gọn message lỗi provider cho dễ đọc trên UI. */
@@ -204,6 +244,7 @@ public class AdminAiProviderService {
                 .hasApiKey(hasKey)
                 .enabled(p.getEnabled())
                 .priority(p.getPriority())
+                .quotaExhaustedAt(p.getQuotaExhaustedAt())
                 .models(modelDtos)
                 .build();
     }
