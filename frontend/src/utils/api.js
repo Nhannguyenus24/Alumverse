@@ -997,6 +997,13 @@ export const fundApi = {
 	},
 };
 
+export const adminFundApi = {
+	async getFunds(params = {}, config = {}) {
+		const response = await apiClient.get('/admin/articles/funds', { params, ...config });
+		return unwrap(response);
+	},
+};
+
 
 
 export const networkApi = {
