@@ -12,6 +12,49 @@ import reactor.core.publisher.Mono;
 @Repository
 public interface LearningResourceR2dbcRepository extends R2dbcRepository<LearningResource, Integer> {
 
+    String PUBLIC_FILTER = """
+            organization_id = :organizationId
+              AND status = 'APPROVED'
+              AND (:keyword = ''
+                   OR POSITION(LOWER(:keyword) IN LOWER(COALESCE(title, ''))) > 0
+                   OR POSITION(LOWER(:keyword) IN LOWER(COALESCE(description, ''))) > 0)
+              AND (:topicsCsv = '' OR CASE UPPER(COALESCE(type, ''))
+                    WHEN 'COURSE' THEN 'online_course'
+                    WHEN 'EBOOK' THEN 'online_course'
+                    WHEN 'VIDEO' THEN 'online_course'
+                    WHEN 'OTHER' THEN 'achievement_scholarship'
+                    WHEN 'MASTERS' THEN 'masters_doctorate'
+                    WHEN 'DOCTORATE' THEN 'masters_doctorate'
+                    ELSE LOWER(REPLACE(type, '-', '_'))
+                  END = ANY(STRING_TO_ARRAY(:topicsCsv, ',')))
+              AND (:fromDate = '' OR CAST(COALESCE(updated_at, created_at) AS date) >= CAST(NULLIF(:fromDate, '') AS date))
+              AND (:toDate = '' OR CAST(COALESCE(updated_at, created_at) AS date) <= CAST(NULLIF(:toDate, '') AS date))
+            """;
+
+    String PUBLIC_ORDER = """
+            ORDER BY
+              CASE WHEN :direction = 'oldest' THEN COALESCE(updated_at, created_at) END ASC,
+              CASE WHEN :direction = 'newest' THEN COALESCE(updated_at, created_at) END DESC,
+              CASE WHEN :direction = 'oldest' THEN id END ASC,
+              CASE WHEN :direction = 'newest' THEN id END DESC
+            """;
+
+    @Query("SELECT * FROM learning_resources WHERE " + PUBLIC_FILTER + PUBLIC_ORDER + " LIMIT 1")
+    Mono<LearningResource> findPublicFeatured(Integer organizationId, String keyword, String topicsCsv,
+                                               String fromDate, String toDate, String direction);
+
+    @Query("SELECT * FROM learning_resources WHERE " + PUBLIC_FILTER
+            + " AND (:featuredId IS NULL OR id <> :featuredId) " + PUBLIC_ORDER
+            + " LIMIT :limit OFFSET :offset")
+    Flux<LearningResource> findPublicPage(Integer organizationId, Integer featuredId, String keyword,
+                                          String topicsCsv, String fromDate, String toDate,
+                                          String direction, int limit, int offset);
+
+    @Query("SELECT COUNT(*) FROM learning_resources WHERE " + PUBLIC_FILTER
+            + " AND (:featuredId IS NULL OR id <> :featuredId)")
+    Mono<Long> countPublicPage(Integer organizationId, Integer featuredId, String keyword,
+                               String topicsCsv, String fromDate, String toDate);
+
     @Query("SELECT * FROM learning_resources WHERE organization_id = :organizationId ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
     Flux<LearningResource> findByOrganizationIdWithPagination(Integer organizationId, int limit, int offset);
 

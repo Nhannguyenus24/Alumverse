@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { useParams } from 'react-router';
-import { Box, Button, Pagination, Typography } from '@mui/material';
+import { Button, Typography } from '@mui/material';
 import { useSnackbar } from 'notistack';
 
 import MenuBookIcon from '@mui/icons-material/MenuBook';
@@ -18,16 +18,12 @@ import { useAuth } from '../../hooks/useAuth';
 import { useCanContribute } from '../../hooks/useCanContribute';
 import { ContributeGuardTooltip } from '../../components/ContributeGuard';
 import { usePublishedLearning } from '../../hooks/articles/usePublishedLearning';
+import { useDebounce } from '../../hooks/useDebounce';
 import { toCardShape } from '../../hooks/articles/toCardShape';
 import { useOrganization } from '../../hooks/useOrganization';
 import apiClient from '../../utils/axios';
 import { deleteArticleByChannel, getArticleAdminEditPath } from '../../utils/articleAdminActions';
-import {
-  ARTICLE_FETCH_LIMIT,
-  applyArticleFilters,
-  getArticleFilterConfig,
-  paginateArticles,
-} from '../../utils/articleListFilters';
+import { getArticleFilterConfig } from '../../utils/articleListFilters';
 import { getDevelopmentSidebarItems } from '../../constants/developmentNav';
 import { getOrganizationHeroBannerUrl } from '../../utils/organizationBrand';
 import {
@@ -54,21 +50,28 @@ const DevelopmentAcademicsPage = () => {
   const filters = useMemo(() => getArticleFilterConfig(t, ['learning']), [t]);
 
   const [page, setPage] = useState(0);
-  const { resources } = usePublishedLearning(0, ARTICLE_FETCH_LIMIT);
-
   const [filterValues, setFilterValues] = useState({ all: true });
+  const debouncedSearch = useDebounce(filterValues.search ?? '', 400);
+  const selectedSort = Array.isArray(filterValues.sort) ? filterValues.sort[0] : filterValues.sort;
+  const { featured, resources: pagedResources, pageInfo } = usePublishedLearning(
+    page,
+    DEVELOPMENT_LIST_PAGE_SIZE,
+    {
+      q: debouncedSearch,
+      topics: filterValues.topic,
+      fromDate: filterValues.fromDate,
+      toDate: filterValues.toDate,
+      direction: selectedSort,
+    },
+  );
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
-  const filteredResources = useMemo(
-    () => applyArticleFilters(resources, filterValues),
-    [resources, filterValues],
-  );
-  const [featured, ...rest] = filteredResources;
-  const { items: pagedResources, pageInfo } = useMemo(
-    () => paginateArticles(rest, page, DEVELOPMENT_LIST_PAGE_SIZE),
-    [rest, page],
-  );
+  useEffect(() => {
+    if (!pageInfo) return;
+    const lastPage = Math.max((pageInfo.totalPage ?? 0) - 1, 0);
+    if (page > lastPage) setPage(lastPage);
+  }, [page, pageInfo]);
 
   const featuredCard = featured ? toCardShape(featured, cardFallbackImage) : null;
   const cards = pagedResources.map((article) => toCardShape(article, cardFallbackImage));
@@ -185,7 +188,7 @@ const DevelopmentAcademicsPage = () => {
               )}
 
               <AppPagination
-                count={pageInfo?.totalPage ?? 1}
+                count={Math.max(pageInfo?.totalPage ?? 0, 1)}
                 page={page + 1}
                 onChange={(_, value) => setPage(value - 1)}
               />

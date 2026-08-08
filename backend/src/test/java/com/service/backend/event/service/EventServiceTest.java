@@ -10,6 +10,8 @@ import com.service.backend.event.dto.*;
 import com.service.backend.organization.dao.OrganizationRepository;
 import com.service.backend.shared.entity.Event;
 import com.service.backend.shared.entity.EventTicket;
+import com.service.backend.shared.dto.FeaturedPaginatedResponse;
+import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.enums.Status;
 import com.service.backend.shared.exception.ApplicationException;
@@ -26,9 +28,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
 
 import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
@@ -119,6 +124,143 @@ class EventServiceTest {
                     .expectErrorMatches(err -> err instanceof ApplicationException &&
                             ((ApplicationException) err).getErrorCode() == ErrorCode.EVENT_NOT_FOUND)
                     .verify();
+        }
+    }
+
+    @Nested
+    @DisplayName("public event lists")
+    class PublicEventLists {
+
+        @SuppressWarnings("unchecked")
+        private void passThroughUpcomingCache() {
+            when(cacheUtils.<FeaturedPaginatedResponse<Event>>getOrCompute(
+                    eq("event_cache"), anyString(), any(), any()))
+                    .thenAnswer(invocation ->
+                            ((Supplier<Mono<FeaturedPaginatedResponse<Event>>>) invocation.getArgument(3)).get());
+        }
+
+        @SuppressWarnings("unchecked")
+        private void passThroughOngoingCache() {
+            when(cacheUtils.<PaginatedResponse<Event>>getOrCompute(
+                    eq("event_cache"), anyString(), any(), any()))
+                    .thenAnswer(invocation ->
+                            ((Supplier<Mono<PaginatedResponse<Event>>>) invocation.getArgument(3)).get());
+        }
+
+        @Test
+        @DisplayName("should preserve the mobile response items when featured mode is disabled")
+        void upcomingWithoutFeaturedKeepsItemsContract() {
+            passThroughUpcomingCache();
+            Event first = Event.builder().id(1L).description("<p>First&nbsp;event</p>").build();
+            when(eventRepo.findUpcomingEventList(
+                    eq(3L), any(LocalDateTime.class), eq(-1L), eq(""), eq(""),
+                    eq(""), eq(""), eq("status"), eq(6), eq(0)))
+                    .thenReturn(Flux.just(first));
+            when(eventRepo.countUpcomingEventList(
+                    eq(3L), any(LocalDateTime.class), eq(-1L), eq(""), eq(""), eq(""), eq("")))
+                    .thenReturn(Mono.just(1L));
+
+            StepVerifier.create(eventService.getUpcomingEventList(
+                            3L, 0, 6, null, null, null, null, null, false))
+                    .assertNext(response -> {
+                        assertThat(response.getFeatured()).isNull();
+                        assertThat(response.getItems()).extracting(Event::getId).containsExactly(1L);
+                        assertThat(response.getItems().get(0).getDescription()).isEqualTo("First event");
+                        assertThat(response.getTotalItem()).isEqualTo(1L);
+                    })
+                    .verifyComplete();
+
+            verify(eventRepo, never()).findEventPageFeatured(
+                    anyLong(), any(), anyString(), anyString(), anyString(), anyString());
+        }
+
+        @Test
+        @DisplayName("should separate a filtered featured event and paginate only the remaining items")
+        void upcomingWithFeaturedUsesFilteredPagination() {
+            passThroughUpcomingCache();
+            Event featured = Event.builder().id(10L).description("<p>Featured &amp; event</p>").build();
+            Event item = Event.builder().id(9L).description("<div>Grid&nbsp;event</div>").build();
+            when(eventRepo.findEventPageFeatured(
+                    eq(4L), any(LocalDateTime.class), eq("campus"), eq("conference,workshop"),
+                    eq("2026-08-01"), eq("2026-08-31")))
+                    .thenReturn(Mono.just(featured));
+            when(eventRepo.findUpcomingEventList(
+                    eq(4L), any(LocalDateTime.class), eq(10L), eq("campus"),
+                    eq("conference,workshop"), eq("2026-08-01"), eq("2026-08-31"),
+                    eq("oldest"), eq(6), eq(6)))
+                    .thenReturn(Flux.just(item));
+            when(eventRepo.countUpcomingEventList(
+                    eq(4L), any(LocalDateTime.class), eq(10L), eq("campus"),
+                    eq("conference,workshop"), eq("2026-08-01"), eq("2026-08-31")))
+                    .thenReturn(Mono.just(7L));
+
+            StepVerifier.create(eventService.getUpcomingEventList(
+                            4L, 1, 6, " campus ", "workshop,conference",
+                            LocalDate.of(2026, 8, 1), LocalDate.of(2026, 8, 31), "oldest", true))
+                    .assertNext(response -> {
+                        assertThat(response.getFeatured().getId()).isEqualTo(10L);
+                        assertThat(response.getFeatured().getDescription()).isEqualTo("Featured & event");
+                        assertThat(response.getItems()).extracting(Event::getId).containsExactly(9L);
+                        assertThat(response.getTotalItem()).isEqualTo(7L);
+                        assertThat(response.getTotalPage()).isEqualTo(2);
+                        assertThat(response.getCurrentPage()).isEqualTo(1);
+                    })
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("should exclude the shared featured event from ongoing pagination when opted in")
+        void ongoingExcludesSharedFeaturedWhenOptedIn() {
+            passThroughOngoingCache();
+            Event featured = Event.builder().id(20L).build();
+            Event item = Event.builder().id(21L).description("<p>Other ongoing</p>").build();
+            when(eventRepo.findEventPageFeatured(
+                    eq(4L), any(LocalDateTime.class), eq("campus"), eq("conference"),
+                    eq("2026-08-01"), eq("2026-08-31")))
+                    .thenReturn(Mono.just(featured));
+            when(eventRepo.findOngoingEventList(
+                    eq(4L), any(LocalDateTime.class), eq(20L), eq("campus"), eq("conference"),
+                    eq("2026-08-01"), eq("2026-08-31"), eq("newest"), eq(6), eq(0)))
+                    .thenReturn(Flux.just(item));
+            when(eventRepo.countOngoingEventList(
+                    eq(4L), any(LocalDateTime.class), eq(20L), eq("campus"), eq("conference"),
+                    eq("2026-08-01"), eq("2026-08-31")))
+                    .thenReturn(Mono.just(1L));
+
+            StepVerifier.create(eventService.getOngoingEventList(
+                            4L, 0, 6, " campus ", "conference",
+                            LocalDate.of(2026, 8, 1), LocalDate.of(2026, 8, 31), "newest", true))
+                    .assertNext(response -> {
+                        assertThat(response.getItems()).extracting(Event::getId).containsExactly(21L);
+                        assertThat(response.getTotalItem()).isEqualTo(1L);
+                        assertThat(response.getTotalPage()).isEqualTo(1);
+                    })
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("should preserve ongoing items when featured exclusion is disabled")
+        void ongoingLegacyCallKeepsItemsContract() {
+            passThroughOngoingCache();
+            Event item = Event.builder().id(20L).build();
+            when(eventRepo.findOngoingEventList(
+                    eq(4L), any(LocalDateTime.class), eq(-1L), eq(""), eq(""), eq(""), eq(""),
+                    eq("status"), eq(20), eq(0)))
+                    .thenReturn(Flux.just(item));
+            when(eventRepo.countOngoingEventList(
+                    eq(4L), any(LocalDateTime.class), eq(-1L), eq(""), eq(""), eq(""), eq("")))
+                    .thenReturn(Mono.just(1L));
+
+            StepVerifier.create(eventService.getOngoingEventList(
+                            4L, 0, 20, null, null, null, null, null, false))
+                    .assertNext(response -> {
+                        assertThat(response.getItems()).extracting(Event::getId).containsExactly(20L);
+                        assertThat(response.getTotalItem()).isEqualTo(1L);
+                    })
+                    .verifyComplete();
+
+            verify(eventRepo, never()).findEventPageFeatured(
+                    anyLong(), any(), anyString(), anyString(), anyString(), anyString());
         }
     }
 

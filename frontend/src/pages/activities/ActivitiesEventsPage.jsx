@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useParams } from 'react-router';
-import { Box, Button, Pagination, Typography } from '@mui/material';
+import { Button, Typography } from '@mui/material';
 import { useSnackbar } from 'notistack';
 
 import { useTranslation } from 'react-i18next';
@@ -13,16 +13,14 @@ import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteD
 import AlumniContentLayout from '../../layouts/AlumniContentLayout';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { usePublishedEvents } from '../../hooks/articles/usePublishedEvents';
+import { useDebounce } from '../../hooks/useDebounce';
 import { toEventCardShape } from '../../hooks/articles/toEventCardShape';
 import { useOrganization } from '../../hooks/useOrganization';
 import { useAuth } from '../../hooks/useAuth';
 import { useCanContribute } from '../../hooks/useCanContribute';
 import { eventApi } from '../../utils/api';
 import {
-  ARTICLE_FETCH_LIMIT,
-  applyArticleFilters,
   getArticleFilterConfig,
-  paginateArticles,
 } from '../../utils/articleListFilters';
 import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
 import { getOrganizationHeroBannerUrl } from '../../utils/organizationBrand';
@@ -46,45 +44,63 @@ const ActivitiesPage = () => {
   const [upcomingPage, setUpcomingPage] = useState(0);
   const [ongoingPage, setOngoingPage] = useState(0);
   const [pastPage, setPastPage] = useState(0);
-  const { events: upcomingEvents } = usePublishedEvents('upcoming', 0, ARTICLE_FETCH_LIMIT);
-  const { events: ongoingEvents } = usePublishedEvents('ongoing', 0, ARTICLE_FETCH_LIMIT);
-  const { events: pastEvents } = usePublishedEvents('past', 0, ARTICLE_FETCH_LIMIT);
-
   const [filters, setFilters] = useState({ all: true });
+  const debouncedSearch = useDebounce(filters.search ?? '', 400);
+  const selectedSort = Array.isArray(filters.sort) ? filters.sort[0] : filters.sort;
+  const eventFilterOptions = {
+    keyword: debouncedSearch,
+    topics: filters.topic,
+    fromDate: filters.fromDate,
+    toDate: filters.toDate,
+    sort: selectedSort === 'oldest' ? 'oldest' : 'newest',
+  };
+  const {
+    featured,
+    events: upcomingEvents,
+    pageInfo: upcomingPageInfo,
+  } = usePublishedEvents('upcoming', upcomingPage, EVENT_SECTION_PAGE_SIZE, {
+    ...eventFilterOptions,
+    withFeatured: true,
+  });
+  const {
+    events: ongoingEvents,
+    pageInfo: ongoingPageInfo,
+  } = usePublishedEvents('ongoing', ongoingPage, EVENT_SECTION_PAGE_SIZE, {
+    ...eventFilterOptions,
+    excludeFeatured: true,
+  });
+  const {
+    events: pastEvents,
+    pageInfo: pastPageInfo,
+  } = usePublishedEvents('past', pastPage, EVENT_SECTION_PAGE_SIZE, eventFilterOptions);
+  const upcomingTotalPage = upcomingPageInfo?.totalPage;
+  const ongoingTotalPage = ongoingPageInfo?.totalPage;
+  const pastTotalPage = pastPageInfo?.totalPage;
+
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
   const filterConfig = useMemo(() => getArticleFilterConfig(t, ['event']), [t]);
-  const filteredUpcomingEvents = useMemo(
-    () => applyArticleFilters(upcomingEvents, filters),
-    [upcomingEvents, filters],
-  );
-  const filteredOngoingEvents = useMemo(
-    () => applyArticleFilters(ongoingEvents, filters),
-    [ongoingEvents, filters],
-  );
-  const filteredPastEvents = useMemo(
-    () => applyArticleFilters(pastEvents, filters),
-    [pastEvents, filters],
-  );
-  const [featured, ...upcomingRest] = filteredUpcomingEvents;
-  const { items: pagedUpcomingEvents, pageInfo: upcomingPageInfo } = useMemo(
-    () => paginateArticles(upcomingRest, upcomingPage, EVENT_SECTION_PAGE_SIZE),
-    [upcomingRest, upcomingPage],
-  );
-  const { items: pagedOngoingEvents, pageInfo: ongoingPageInfo } = useMemo(
-    () => paginateArticles(filteredOngoingEvents, ongoingPage, EVENT_SECTION_PAGE_SIZE),
-    [filteredOngoingEvents, ongoingPage],
-  );
-  const { items: pagedPastEvents, pageInfo: pastPageInfo } = useMemo(
-    () => paginateArticles(filteredPastEvents, pastPage, EVENT_SECTION_PAGE_SIZE),
-    [filteredPastEvents, pastPage],
-  );
+
+  useEffect(() => {
+    if (upcomingTotalPage == null) return;
+    setUpcomingPage((current) => Math.min(current, Math.max(upcomingTotalPage - 1, 0)));
+  }, [upcomingTotalPage]);
+
+  useEffect(() => {
+    if (ongoingTotalPage == null) return;
+    setOngoingPage((current) => Math.min(current, Math.max(ongoingTotalPage - 1, 0)));
+  }, [ongoingTotalPage]);
+
+  useEffect(() => {
+    if (pastTotalPage == null) return;
+    setPastPage((current) => Math.min(current, Math.max(pastTotalPage - 1, 0)));
+  }, [pastTotalPage]);
 
   const featuredCard = featured ? toEventCardShape(featured, cardFallbackImage) : null;
-  const upcomingCards = pagedUpcomingEvents.map((event) => toEventCardShape(event, cardFallbackImage));
-  const ongoingCards = pagedOngoingEvents.map((event) => toEventCardShape(event, cardFallbackImage));
-  const pastCards = pagedPastEvents.map((event) => toEventCardShape(event, cardFallbackImage));
+  const upcomingCards = upcomingEvents.map((event) => toEventCardShape(event, cardFallbackImage));
+  const ongoingCards = ongoingEvents.map((event) => toEventCardShape(event, cardFallbackImage));
+  const pastCards = pastEvents.map((event) => toEventCardShape(event, cardFallbackImage));
 
   const openArticle = (article) => {
     if (!article?.id) return;
@@ -190,12 +206,12 @@ const ActivitiesPage = () => {
                     }}
                   >
                     {upcomingCards.map((card, i) => (
-                      <ScrollRevealItem key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(pagedUpcomingEvents[i])}>
+                      <ScrollRevealItem key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(upcomingEvents[i])}>
                         <ArticleEventCard
                           article={card}
                           isAdmin={isAdmin}
-                          onEdit={() => handleEdit(pagedUpcomingEvents[i])}
-                          onDelete={() => handleDelete(pagedUpcomingEvents[i])}
+                          onEdit={() => handleEdit(upcomingEvents[i])}
+                          onDelete={() => handleDelete(upcomingEvents[i])}
                         />
                       </ScrollRevealItem>
                     ))}
@@ -230,12 +246,12 @@ const ActivitiesPage = () => {
                     }}
                   >
                     {ongoingCards.map((card, i) => (
-                      <ScrollRevealItem key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(pagedOngoingEvents[i])}>
+                      <ScrollRevealItem key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(ongoingEvents[i])}>
                         <ArticleEventCard
                           article={card}
                           isAdmin={isAdmin}
-                          onEdit={() => handleEdit(pagedOngoingEvents[i])}
-                          onDelete={() => handleDelete(pagedOngoingEvents[i])}
+                          onEdit={() => handleEdit(ongoingEvents[i])}
+                          onDelete={() => handleDelete(ongoingEvents[i])}
                         />
                       </ScrollRevealItem>
                     ))}
@@ -270,12 +286,12 @@ const ActivitiesPage = () => {
                     }}
                   >
                     {pastCards.map((card, i) => (
-                      <ScrollRevealItem key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(pagedPastEvents[i])}>
+                      <ScrollRevealItem key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(pastEvents[i])}>
                         <ArticleEventCard
                           article={card}
                           isAdmin={isAdmin}
-                          onEdit={() => handleEdit(pagedPastEvents[i])}
-                          onDelete={() => handleDelete(pagedPastEvents[i])}
+                          onEdit={() => handleEdit(pastEvents[i])}
+                          onDelete={() => handleDelete(pastEvents[i])}
                         />
                       </ScrollRevealItem>
                     ))}

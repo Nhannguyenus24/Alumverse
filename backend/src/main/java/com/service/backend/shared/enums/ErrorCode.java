@@ -35,6 +35,7 @@ public enum ErrorCode {
     GOOGLE_ACCOUNT_EMAIL_MISSING("Google account email is missing", 401),
     GOOGLE_LOGIN_NOT_ALLOWED("Account is not allowed to login with Google", 403),
     RECAPTCHA_VERIFICATION_FAILED("ReCAPTCHA verification failed", 401),
+    OTP_DELIVERY_FAILED("Không gửi được mã xác thực, vui lòng thử lại sau", 503),
     INTERNAL_SERVER_ERROR("Internal server error", 500),
     BAD_REQUEST("Bad request", 400),
     TOO_MANY_REQUESTS("Quá nhiều yêu cầu, vui lòng thử lại sau", 429),
