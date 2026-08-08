@@ -97,6 +97,366 @@ public class EventIntegrationTest extends BaseIntegrationTest {
 
     // Group 1: Get events (TC51 - TC54)
     @Test
+    @Order(50)
+    void publicEventLists_filteredPaginationAndPreview() {
+        String token = "eventpagination" + UUID.randomUUID().toString().replace("-", "");
+        LocalDateTime start = LocalDateTime.now().plusDays(30);
+        String featuredHtml = "<p>" + token + "&nbsp;featured &amp; rich</p>";
+
+        Long olderId = databaseClient.sql("""
+                        INSERT INTO events (
+                            organization_id, title, description, location, topic,
+                            start_time, end_time, is_published, created_at, updated_at)
+                        VALUES (1, :title, :description, :location, 'workshop',
+                                :start, :end, true, :created, :updated)
+                        RETURNING id
+                        """)
+                .bind("title", token + " older")
+                .bind("description", "<div>Older&nbsp;description</div>")
+                .bind("location", "Campus " + token)
+                .bind("start", start.plusDays(1))
+                .bind("end", start.plusDays(1).plusHours(2))
+                .bind("created", LocalDateTime.now().minusDays(2))
+                .bind("updated", LocalDateTime.now().minusDays(2))
+                .map((row, metadata) -> row.get("id", Long.class))
+                .one()
+                .block();
+
+        Long featuredId = databaseClient.sql("""
+                        INSERT INTO events (
+                            organization_id, title, description, location, topic,
+                            start_time, end_time, is_published, created_at, updated_at)
+                        VALUES (1, :title, :description, :location, 'workshop',
+                                :start, :end, true, :created, :updated)
+                        RETURNING id
+                        """)
+                .bind("title", token + " featured")
+                .bind("description", featuredHtml)
+                .bind("location", "Campus " + token)
+                .bind("start", start)
+                .bind("end", start.plusHours(2))
+                .bind("created", LocalDateTime.now().minusDays(1))
+                .bind("updated", LocalDateTime.now().minusDays(1))
+                .map((row, metadata) -> row.get("id", Long.class))
+                .one()
+                .block();
+
+        Long farthestId = databaseClient.sql("""
+                        INSERT INTO events (
+                            organization_id, title, description, location, topic,
+                            start_time, end_time, is_published, created_at, updated_at)
+                        VALUES (1, :title, :description, :location, 'workshop',
+                                :start, :end, true, :created, :updated)
+                        RETURNING id
+                        """)
+                .bind("title", token + " farthest")
+                .bind("description", "<div>Farthest&nbsp;description</div>")
+                .bind("location", "Campus " + token)
+                .bind("start", start.plusDays(2))
+                .bind("end", start.plusDays(2).plusHours(2))
+                // Deliberately oldest metadata: newest must be determined by start_time.
+                .bind("created", LocalDateTime.now().minusYears(2))
+                .bind("updated", LocalDateTime.now().minusYears(2))
+                .map((row, metadata) -> row.get("id", Long.class))
+                .one()
+                .block();
+
+        webTestClient.get().uri(builder -> builder
+                        .path("/api/events/upcoming")
+                        .queryParam("organizationId", 1)
+                        .queryParam("page", 0)
+                        .queryParam("limit", 1)
+                        .queryParam("keyword", token)
+                        .queryParam("topics", "workshop")
+                        .queryParam("fromDate", start.toLocalDate())
+                        .queryParam("toDate", start.plusDays(2).toLocalDate())
+                        .queryParam("sort", "newest")
+                        .queryParam("withFeatured", true)
+                        .build())
+                .header("X-Forwarded-For", randomIp())
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                // Featured is always the nearest match even when the grid is sorted newest first.
+                .jsonPath("$.data.featured.id").isEqualTo(featuredId.intValue())
+                .jsonPath("$.data.featured.description").isEqualTo(token + " featured & rich")
+                .jsonPath("$.data.items[0].id").isEqualTo(farthestId.intValue())
+                .jsonPath("$.data.totalItem").isEqualTo(2)
+                .jsonPath("$.data.totalPage").isEqualTo(2);
+
+        webTestClient.get().uri(builder -> builder
+                        .path("/api/events/upcoming")
+                        .queryParam("organizationId", 1)
+                        .queryParam("page", 1)
+                        .queryParam("limit", 1)
+                        .queryParam("keyword", token)
+                        .queryParam("topics", "workshop")
+                        .queryParam("fromDate", start.toLocalDate())
+                        .queryParam("toDate", start.plusDays(2).toLocalDate())
+                        .queryParam("sort", "newest")
+                        .queryParam("withFeatured", true)
+                        .build())
+                .header("X-Forwarded-For", randomIp())
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.data.featured.id").isEqualTo(featuredId.intValue())
+                .jsonPath("$.data.items[0].id").isEqualTo(olderId.intValue());
+
+        // Legacy/mobile-style calls do not opt into featured extraction: items and status order stay intact.
+        webTestClient.get().uri(builder -> builder
+                        .path("/api/events/upcoming")
+                        .queryParam("organizationId", 1)
+                        .queryParam("page", 0)
+                        .queryParam("limit", 1)
+                        .queryParam("keyword", token)
+                        .build())
+                .header("X-Forwarded-For", randomIp())
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.data.featured").doesNotExist()
+                .jsonPath("$.data.items[0].id").isEqualTo(featuredId.intValue())
+                .jsonPath("$.data.totalItem").isEqualTo(3);
+
+        webTestClient.get().uri("/api/events/" + featuredId + "?organizationId=1")
+                .header("X-Forwarded-For", randomIp())
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.data.description").isEqualTo(featuredHtml);
+    }
+
+    @Test
+    @Order(50)
+    void publicEventLists_sharedFeaturedPrefersOngoingAndExcludesOnlyWinningSource() {
+        String token = "eventsharedfeatured" + UUID.randomUUID().toString().replace("-", "");
+        LocalDateTime now = LocalDateTime.now();
+
+        Long ongoingWinnerId = databaseClient.sql("""
+                        INSERT INTO events (organization_id, title, description, location, topic,
+                            start_time, end_time, is_published)
+                        VALUES (1, :title, :description, :location, 'conference', :start, :end, true)
+                        RETURNING id
+                        """)
+                .bind("title", token + " ongoing winner")
+                .bind("description", token)
+                .bind("location", token)
+                .bind("start", now.minusHours(2))
+                .bind("end", now.plusHours(1))
+                .map((row, metadata) -> row.get("id", Long.class)).one().block();
+
+        Long ongoingOtherId = databaseClient.sql("""
+                        INSERT INTO events (organization_id, title, description, location, topic,
+                            start_time, end_time, is_published)
+                        VALUES (1, :title, :description, :location, 'conference', :start, :end, true)
+                        RETURNING id
+                        """)
+                .bind("title", token + " ongoing other")
+                .bind("description", token)
+                .bind("location", token)
+                .bind("start", now.minusHours(1))
+                .bind("end", now.plusHours(2))
+                .map((row, metadata) -> row.get("id", Long.class)).one().block();
+
+        Long upcomingNearId = databaseClient.sql("""
+                        INSERT INTO events (organization_id, title, description, location, topic,
+                            start_time, end_time, is_published)
+                        VALUES (1, :title, :description, :location, 'conference', :start, :end, true)
+                        RETURNING id
+                        """)
+                .bind("title", token + " fallback upcoming near")
+                .bind("description", token)
+                .bind("location", token)
+                .bind("start", now.plusDays(1))
+                .bind("end", now.plusDays(1).plusHours(1))
+                .map((row, metadata) -> row.get("id", Long.class)).one().block();
+
+        Long upcomingFarId = databaseClient.sql("""
+                        INSERT INTO events (organization_id, title, description, location, topic,
+                            start_time, end_time, is_published)
+                        VALUES (1, :title, :description, :location, 'conference', :start, :end, true)
+                        RETURNING id
+                        """)
+                .bind("title", token + " fallback upcoming far")
+                .bind("description", token)
+                .bind("location", token)
+                .bind("start", now.plusDays(2))
+                .bind("end", now.plusDays(2).plusHours(1))
+                .map((row, metadata) -> row.get("id", Long.class)).one().block();
+
+        // Both endpoints receive identical filters. Upcoming transports the shared ongoing winner,
+        // but its own grid/count retain both upcoming events.
+        webTestClient.get().uri(builder -> builder.path("/api/events/upcoming")
+                        .queryParam("organizationId", 1).queryParam("page", 0).queryParam("limit", 1)
+                        .queryParam("keyword", token).queryParam("topics", "conference")
+                        .queryParam("fromDate", now.minusDays(1).toLocalDate())
+                        .queryParam("toDate", now.plusDays(3).toLocalDate())
+                        .queryParam("sort", "newest").queryParam("withFeatured", true).build())
+                .header("X-Forwarded-For", randomIp()).exchange().expectStatus().isOk().expectBody()
+                .jsonPath("$.data.featured.id").isEqualTo(ongoingWinnerId.intValue())
+                .jsonPath("$.data.items[0].id").isEqualTo(upcomingFarId.intValue())
+                .jsonPath("$.data.totalItem").isEqualTo(2)
+                .jsonPath("$.data.totalPage").isEqualTo(2);
+
+        webTestClient.get().uri(builder -> builder.path("/api/events/ongoing")
+                        .queryParam("organizationId", 1).queryParam("page", 0).queryParam("limit", 1)
+                        .queryParam("keyword", token).queryParam("topics", "conference")
+                        .queryParam("fromDate", now.minusDays(1).toLocalDate())
+                        .queryParam("toDate", now.plusDays(3).toLocalDate())
+                        .queryParam("sort", "newest").queryParam("excludeFeatured", true).build())
+                .header("X-Forwarded-For", randomIp()).exchange().expectStatus().isOk().expectBody()
+                .jsonPath("$.data.items[0].id").isEqualTo(ongoingOtherId.intValue())
+                .jsonPath("$.data.totalItem").isEqualTo(1)
+                .jsonPath("$.data.totalPage").isEqualTo(1);
+
+        // Legacy/mobile-style ongoing calls do not run shared-featured exclusion.
+        webTestClient.get().uri(builder -> builder.path("/api/events/ongoing")
+                        .queryParam("organizationId", 1).queryParam("page", 0).queryParam("limit", 20)
+                        .queryParam("keyword", token).build())
+                .header("X-Forwarded-For", randomIp()).exchange().expectStatus().isOk().expectBody()
+                .jsonPath("$.data.totalItem").isEqualTo(2);
+
+        // The same global selector falls back to the nearest upcoming event when filters match no ongoing event.
+        webTestClient.get().uri(builder -> builder.path("/api/events/upcoming")
+                        .queryParam("organizationId", 1).queryParam("page", 0).queryParam("limit", 1)
+                        .queryParam("keyword", token + " fallback").queryParam("topics", "conference")
+                        .queryParam("fromDate", now.minusDays(1).toLocalDate())
+                        .queryParam("toDate", now.plusDays(3).toLocalDate())
+                        .queryParam("sort", "newest").queryParam("withFeatured", true).build())
+                .header("X-Forwarded-For", randomIp()).exchange().expectStatus().isOk().expectBody()
+                .jsonPath("$.data.featured.id").isEqualTo(upcomingNearId.intValue())
+                .jsonPath("$.data.items[0].id").isEqualTo(upcomingFarId.intValue())
+                .jsonPath("$.data.totalItem").isEqualTo(1)
+                .jsonPath("$.data.totalPage").isEqualTo(1);
+    }
+
+    @Test
+    @Order(50)
+    void publicEventLists_ongoingAndPastQueriesExecuteWithAllFilters() {
+        String token = "eventstatuses" + UUID.randomUUID().toString().replace("-", "");
+        LocalDateTime now = LocalDateTime.now();
+
+        Long ongoingId = databaseClient.sql("""
+                        INSERT INTO events (
+                            organization_id, title, description, location, topic,
+                            start_time, end_time, is_published, created_at, updated_at)
+                        VALUES (1, :title, :description, :location, 'conference',
+                                :start, :end, true, :created, :updated)
+                        RETURNING id
+                        """)
+                .bind("title", token + " ongoing")
+                .bind("description", "<p>Ongoing&nbsp;preview</p>")
+                .bind("location", token + " hall")
+                .bind("start", now.minusHours(1))
+                .bind("end", now.plusHours(1))
+                .bind("created", now.minusYears(5))
+                .bind("updated", now.minusYears(5))
+                .map((row, metadata) -> row.get("id", Long.class))
+                .one()
+                .block();
+
+        Long earliestOngoingId = databaseClient.sql("""
+                        INSERT INTO events (
+                            organization_id, title, description, location, topic,
+                            start_time, end_time, is_published, created_at, updated_at)
+                        VALUES (1, :title, :description, :location, 'conference',
+                                :start, :end, true, :created, :updated)
+                        RETURNING id
+                        """)
+                .bind("title", token + " earliest ongoing")
+                .bind("description", "<p>Earliest&nbsp;ongoing preview</p>")
+                .bind("location", token + " hall")
+                .bind("start", now.minusHours(2))
+                .bind("end", now.plusHours(2))
+                // Deliberately newest metadata: oldest must be determined by start_time.
+                .bind("created", now)
+                .bind("updated", now)
+                .map((row, metadata) -> row.get("id", Long.class))
+                .one()
+                .block();
+
+        Long pastId = databaseClient.sql("""
+                        INSERT INTO events (
+                            organization_id, title, description, location, topic,
+                            start_time, end_time, is_published, created_at, updated_at)
+                        VALUES (1, :title, :description, :location, 'conference',
+                                :start, :end, true, :created, :updated)
+                        RETURNING id
+                        """)
+                .bind("title", token + " past")
+                .bind("description", "<p>Past&nbsp;preview</p>")
+                .bind("location", token + " hall")
+                .bind("start", now.minusDays(2))
+                .bind("end", now.minusDays(1))
+                .bind("created", now.minusDays(2))
+                .bind("updated", now)
+                .map((row, metadata) -> row.get("id", Long.class))
+                .one()
+                .block();
+
+        Long newestPastId = databaseClient.sql("""
+                        INSERT INTO events (
+                            organization_id, title, description, location, topic,
+                            start_time, end_time, is_published, created_at, updated_at)
+                        VALUES (1, :title, :description, :location, 'conference',
+                                :start, :end, true, :created, :updated)
+                        RETURNING id
+                        """)
+                .bind("title", token + " newest past")
+                .bind("description", "<p>Newest&nbsp;past preview</p>")
+                .bind("location", token + " hall")
+                .bind("start", now.minusDays(1))
+                .bind("end", now.minusHours(12))
+                // Deliberately oldest metadata: newest must be determined by start_time.
+                .bind("created", now.minusYears(5))
+                .bind("updated", now.minusYears(5))
+                .map((row, metadata) -> row.get("id", Long.class))
+                .one()
+                .block();
+
+        webTestClient.get().uri(builder -> builder
+                        .path("/api/events/ongoing")
+                        .queryParam("organizationId", 1)
+                        .queryParam("page", 0)
+                        .queryParam("limit", 6)
+                        .queryParam("keyword", token)
+                        .queryParam("topics", "conference")
+                        .queryParam("fromDate", now.minusDays(1).toLocalDate())
+                        .queryParam("toDate", now.plusDays(1).toLocalDate())
+                        .queryParam("sort", "oldest")
+                        .build())
+                .header("X-Forwarded-For", randomIp())
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.data.items[0].id").isEqualTo(earliestOngoingId.intValue())
+                .jsonPath("$.data.items[0].description").isEqualTo("Earliest ongoing preview")
+                .jsonPath("$.data.items[1].id").isEqualTo(ongoingId.intValue())
+                .jsonPath("$.data.totalItem").isEqualTo(2);
+
+        webTestClient.get().uri(builder -> builder
+                        .path("/api/events/past")
+                        .queryParam("organizationId", 1)
+                        .queryParam("page", 0)
+                        .queryParam("limit", 6)
+                        .queryParam("keyword", token)
+                        .queryParam("topics", "conference")
+                        .queryParam("fromDate", now.minusDays(3).toLocalDate())
+                        .queryParam("toDate", now.toLocalDate())
+                        .queryParam("sort", "newest")
+                        .build())
+                .header("X-Forwarded-For", randomIp())
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.data.items[0].id").isEqualTo(newestPastId.intValue())
+                .jsonPath("$.data.items[0].description").isEqualTo("Newest past preview")
+                .jsonPath("$.data.items[1].id").isEqualTo(pastId.intValue())
+                .jsonPath("$.data.totalItem").isEqualTo(2);
+    }
+
+    @Test
     @Order(51)
     void getEvents_TC51_Success() {
         webTestClient.get().uri("/api/events?organizationId=1&page=0&limit=10")

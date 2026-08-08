@@ -383,8 +383,17 @@ const PARTNER_LOGOS = [
 
 const HomePage = () => {
   const { t } = useTranslation(['home', 'common']);
-  const { achievements } = usePublishedAchievements(0, 6);
-  const { articles: alumniArticles } = usePublishedAlumniPosts(0, 6);
+  // Both endpoints hoist their newest entry into `featured` and drop it from `items`. The home
+  // page shows one flat list, so fold it back in to keep showing the 6 newest.
+  // sortBy 'awarded' keeps the home page showing the 6 most recently awarded honors, which is what
+  // it showed before the honors lists moved to server-side pagination. The honors pages keep the
+  // default 'updated'.
+  const { featured: featuredAchievement, achievements: achievementItems } = usePublishedAchievements(
+    0, 6, { sortBy: 'awarded' },
+  );
+  const { featured: featuredAlumni, articles: alumniItems } = usePublishedAlumniPosts(0, 6);
+  const achievements = (featuredAchievement ? [featuredAchievement, ...achievementItems] : achievementItems).slice(0, 6);
+  const alumniArticles = (featuredAlumni ? [featuredAlumni, ...alumniItems] : alumniItems).slice(0, 6);
   const { events: upcomingEvents, isPending: eventsPending } = usePublishedEvents("upcoming", 0, 3);
   const { featured: featuredNews, news: listedNews } = usePublishedNews(0, 5);
   const [featuredPage, setFeaturedPage] = useState(0);

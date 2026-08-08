@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, useRef } from 'react';
-import { fundApi } from '../../utils/api';
+import { adminFundApi, fundApi } from '../../utils/api';
 
 const mapFundRow = (fund) => ({
   id: fund.id,
@@ -75,6 +75,15 @@ const useAdminFundraisingsData = (organizationId) => {
   const abortRef = useRef(null);
 
   const loadFunds = useCallback(async () => {
+    if (organizationId == null || organizationId === '') {
+      abortRef.current?.abort();
+      setFundraisings([]);
+      setTotalCount(0);
+      setLoading(false);
+      setLoadError(false);
+      return;
+    }
+
     setLoading(true);
     setLoadError(false);
     
@@ -87,14 +96,12 @@ const useAdminFundraisingsData = (organizationId) => {
         page,
         limit: rowsPerPage,
       };
-      if (organizationId) {
-        params.organizationId = String(organizationId);
-      }
+      params.organizationId = String(organizationId);
       if (searchQuery) {
-        params.q = searchQuery;
+        params.keyword = searchQuery;
       }
 
-      const payload = await fundApi.getFunds(params, config);
+      const payload = await adminFundApi.getFunds(params, config);
       if (!config.signal.aborted) {
         const { items, totalItem } = extractPagedFunds(payload);
         setFundraisings(sortFundsByTime(items.map(mapFundRow), sortOrder));

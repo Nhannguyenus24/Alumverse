@@ -20,6 +20,33 @@ public interface FundR2dbcRepository extends R2dbcRepository<Funds, Long> {
     @Query("SELECT COUNT(*) FROM funds")
     Mono<Long> countAll();
 
+    @Query("""
+            SELECT * FROM funds
+            WHERE (:organizationId IS NULL OR organization_id = :organizationId)
+              AND (:keyword IS NULL OR LOWER(name) LIKE LOWER(CONCAT('%', :keyword, '%')))
+              AND ((:timeStartedFrom IS NULL AND :timeStartedTo IS NULL) OR time_started BETWEEN :timeStartedFrom AND :timeStartedTo)
+              AND ((:targetAmountMin IS NULL AND :targetAmountMax IS NULL) OR target_amount BETWEEN :targetAmountMin AND :targetAmountMax)
+            ORDER BY
+              CASE
+                WHEN time_started IS NOT NULL
+                  AND time_ended IS NOT NULL
+                  AND time_started < time_ended
+                  AND time_ended < CURRENT_TIMESTAMP
+                THEN 1 ELSE 0
+              END ASC,
+              COALESCE(time_started, created_at, TIMESTAMP '1970-01-01 00:00:00') DESC,
+              id DESC
+            LIMIT 1
+            """)
+    Mono<Funds> findFeaturedFiltered(
+            Integer organizationId,
+            String keyword,
+            LocalDateTime timeStartedFrom,
+            LocalDateTime timeStartedTo,
+            BigDecimal targetAmountMin,
+            BigDecimal targetAmountMax
+    );
+
     @Query("SELECT * FROM funds ORDER BY current_amount DESC LIMIT :limit")
     Flux<Funds> findTopByCurrentAmount(int limit);
 
@@ -29,6 +56,7 @@ public interface FundR2dbcRepository extends R2dbcRepository<Funds, Long> {
               AND (:keyword IS NULL OR LOWER(name) LIKE LOWER(CONCAT('%', :keyword, '%')))
               AND ((:timeStartedFrom IS NULL AND :timeStartedTo IS NULL) OR time_started BETWEEN :timeStartedFrom AND :timeStartedTo)
               AND ((:targetAmountMin IS NULL AND :targetAmountMax IS NULL) OR target_amount BETWEEN :targetAmountMin AND :targetAmountMax)
+              AND (:featuredId IS NULL OR id <> :featuredId)
             ORDER BY id DESC
             LIMIT :limit OFFSET :offset
             """)
@@ -39,6 +67,7 @@ public interface FundR2dbcRepository extends R2dbcRepository<Funds, Long> {
             LocalDateTime timeStartedTo,
             BigDecimal targetAmountMin,
             BigDecimal targetAmountMax,
+            Integer featuredId,
             int limit,
             int offset
     );
@@ -49,6 +78,7 @@ public interface FundR2dbcRepository extends R2dbcRepository<Funds, Long> {
               AND (:keyword IS NULL OR LOWER(name) LIKE LOWER(CONCAT('%', :keyword, '%')))
               AND ((:timeStartedFrom IS NULL AND :timeStartedTo IS NULL) OR time_started BETWEEN :timeStartedFrom AND :timeStartedTo)
               AND ((:targetAmountMin IS NULL AND :targetAmountMax IS NULL) OR target_amount BETWEEN :targetAmountMin AND :targetAmountMax)
+              AND (:featuredId IS NULL OR id <> :featuredId)
             ORDER BY donor_count ASC
             LIMIT :limit OFFSET :offset
             """)
@@ -59,6 +89,7 @@ public interface FundR2dbcRepository extends R2dbcRepository<Funds, Long> {
             LocalDateTime timeStartedTo,
             BigDecimal targetAmountMin,
             BigDecimal targetAmountMax,
+            Integer featuredId,
             int limit,
             int offset
     );
@@ -69,6 +100,7 @@ public interface FundR2dbcRepository extends R2dbcRepository<Funds, Long> {
               AND (:keyword IS NULL OR LOWER(name) LIKE LOWER(CONCAT('%', :keyword, '%')))
               AND ((:timeStartedFrom IS NULL AND :timeStartedTo IS NULL) OR time_started BETWEEN :timeStartedFrom AND :timeStartedTo)
               AND ((:targetAmountMin IS NULL AND :targetAmountMax IS NULL) OR target_amount BETWEEN :targetAmountMin AND :targetAmountMax)
+              AND (:featuredId IS NULL OR id <> :featuredId)
             ORDER BY donor_count DESC
             LIMIT :limit OFFSET :offset
             """)
@@ -79,6 +111,7 @@ public interface FundR2dbcRepository extends R2dbcRepository<Funds, Long> {
             LocalDateTime timeStartedTo,
             BigDecimal targetAmountMin,
             BigDecimal targetAmountMax,
+            Integer featuredId,
             int limit,
             int offset
     );
@@ -89,6 +122,7 @@ public interface FundR2dbcRepository extends R2dbcRepository<Funds, Long> {
               AND (:keyword IS NULL OR LOWER(name) LIKE LOWER(CONCAT('%', :keyword, '%')))
               AND ((:timeStartedFrom IS NULL AND :timeStartedTo IS NULL) OR time_started BETWEEN :timeStartedFrom AND :timeStartedTo)
               AND ((:targetAmountMin IS NULL AND :targetAmountMax IS NULL) OR target_amount BETWEEN :targetAmountMin AND :targetAmountMax)
+              AND (:featuredId IS NULL OR id <> :featuredId)
             """)
     Mono<Long> countFiltered(
             Integer organizationId,
@@ -96,7 +130,8 @@ public interface FundR2dbcRepository extends R2dbcRepository<Funds, Long> {
             LocalDateTime timeStartedFrom,
             LocalDateTime timeStartedTo,
             BigDecimal targetAmountMin,
-            BigDecimal targetAmountMax
+            BigDecimal targetAmountMax,
+            Integer featuredId
     );
 
     @Query("""

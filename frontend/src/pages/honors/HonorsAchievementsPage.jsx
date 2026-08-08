@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { useParams } from 'react-router';
@@ -19,16 +19,12 @@ import { useAuth } from '../../hooks/useAuth';
 import { useCanContribute } from '../../hooks/useCanContribute';
 import { ContributeGuardTooltip } from '../../components/ContributeGuard';
 import { usePublishedAchievements } from '../../hooks/articles/usePublishedAchievements';
+import { useDebounce } from '../../hooks/useDebounce';
 import { toCardShape } from '../../hooks/articles/toCardShape';
 import { useOrganization } from '../../hooks/useOrganization';
 import apiClient from '../../utils/axios';
 import { deleteArticleByChannel, getArticleAdminEditPath } from '../../utils/articleAdminActions';
-import {
-  ARTICLE_FETCH_LIMIT,
-  applyArticleFilters,
-  getArticleFilterConfig,
-  paginateArticles,
-} from '../../utils/articleListFilters';
+import { getArticleFilterConfig } from '../../utils/articleListFilters';
 import { getHonorsSidebarItems } from '../../constants/honorsNav';
 import { getOrganizationHeroBannerUrl } from '../../utils/organizationBrand';
 import {
@@ -55,21 +51,30 @@ const HonorsAchievementsPage = () => {
   const filters = useMemo(() => getArticleFilterConfig(t, ['achievement']), [t]);
 
   const [page, setPage] = useState(0);
-  const { achievements } = usePublishedAchievements(0, ARTICLE_FETCH_LIMIT);
-
   const [filterValues, setFilterValues] = useState({ all: true });
+  const debouncedSearch = useDebounce(filterValues.search ?? '', 400);
+  const selectedSort = Array.isArray(filterValues.sort) ? filterValues.sort[0] : filterValues.sort;
+  const { featured, achievements: pagedAchievements, pageInfo } = usePublishedAchievements(
+    page,
+    HONORS_LIST_PAGE_SIZE,
+    {
+      q: debouncedSearch,
+      topics: filterValues.topic,
+      fromDate: filterValues.fromDate,
+      toDate: filterValues.toDate,
+      direction: selectedSort,
+    },
+  );
+
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
-  const filteredAchievements = useMemo(
-    () => applyArticleFilters(achievements, filterValues),
-    [achievements, filterValues],
-  );
-  const [featured, ...rest] = filteredAchievements;
-  const { items: pagedAchievements, pageInfo } = useMemo(
-    () => paginateArticles(rest, page, HONORS_LIST_PAGE_SIZE),
-    [rest, page],
-  );
+  useEffect(() => {
+    if (!pageInfo) return;
+    const lastPage = Math.max((pageInfo.totalPage ?? 0) - 1, 0);
+    if (page > lastPage) setPage(lastPage);
+  }, [page, pageInfo]);
+
   const featuredCard = featured ? toCardShape(featured, cardFallbackImage) : null;
   const cards = pagedAchievements.map((article) => toCardShape(article, cardFallbackImage));
 
@@ -179,7 +184,7 @@ const HonorsAchievementsPage = () => {
               )}
 
               <AppPagination
-                count={pageInfo?.totalPage ?? 1}
+                count={Math.max(pageInfo?.totalPage ?? 0, 1)}
                 page={page + 1}
                 onChange={(_, value) => setPage(value - 1)}
               />

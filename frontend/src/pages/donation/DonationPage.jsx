@@ -78,7 +78,6 @@ export default function DonationPage() {
   const warningSetRef = useRef(new Set());
 
   const gridPageSize = 9;
-  const fundFetchLimit = 200;
   const handlePageChange = usePaginationScrollToTop({ currentPage: page, setPage });
 
   const donationFilters = useMemo(() => getDonationFilterConfig(t), [t]);
@@ -102,16 +101,16 @@ export default function DonationPage() {
         enqueueSnackbar(error?.response?.data?.message ?? t("donation:error_load_stats"), { variant: "error" });
       });
     return () => { ignore = true; };
-  }, [enqueueSnackbar, isAdmin]);
+  }, [enqueueSnackbar, isAdmin, t]);
 
   useEffect(() => {
+    let ignore = false;
     const debounce = setTimeout(() => {
-      let ignore = false;
       setIsLoading(true);
       setErrorMessage("");
 
       const params = {
-        page: 0, limit: fundFetchLimit,
+        page: page - 1, limit: gridPageSize,
         organizationId: organizationId != null ? String(organizationId) : undefined,
         q: search.trim() || undefined,
         targetAmountMin: filters.amountMin || undefined, targetAmountMax: filters.amountMax || undefined,
@@ -142,26 +141,24 @@ export default function DonationPage() {
             return bTime - aTime;
           });
 
-          const [featured, ...rest] = sortedItems;
-          const start = (page - 1) * gridPageSize;
-          setFeaturedCampaign(featured ?? null);
-          setCampaigns(rest.slice(start, start + gridPageSize));
-
-          const totalItems = Number(pagedData?.totalItem ?? items.length);
-          const adjustedTotalItems = Math.max(totalItems - 1, 0);
-          setPageCount(Math.max(1, Math.ceil(adjustedTotalItems / gridPageSize)));
+          setFeaturedCampaign(pagedData?.featured ?? null);
+          setCampaigns(sortedItems);
+          setPageCount(Math.max(1, Number(pagedData?.totalPage ?? 0)));
         })
         .catch((error) => {
           if (ignore) return;
+          setFeaturedCampaign(null);
           setCampaigns([]);
           setPageCount(1);
           setErrorMessage(error?.response?.data?.message ?? t("donation:error_load_funds"));
         })
         .finally(() => { if (!ignore) setIsLoading(false); });
 
-      return () => { ignore = true; };
     }, 300);
-    return () => clearTimeout(debounce);
+    return () => {
+      ignore = true;
+      clearTimeout(debounce);
+    };
   }, [filters, search, enqueueSnackbar, organizationId, page, refreshToken, t]);
 
   const adminBannerItems = useMemo(() => [

@@ -2,6 +2,7 @@ package com.service.backend.article.service;
 
 import com.service.backend.article.dao.JobR2dbcRepository;
 import com.service.backend.article.dto.JobResponse;
+import com.service.backend.shared.dto.FeaturedPaginatedResponse;
 import com.service.backend.article.dto.UpdateJobRequest;
 import com.service.backend.shared.entity.Job;
 import com.service.backend.shared.enums.ErrorCode;
@@ -17,9 +18,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
 
 import java.time.LocalDate;
+import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
@@ -257,6 +260,43 @@ class JobServiceTest {
                     .expectErrorMatches(err -> err instanceof ApplicationException &&
                             ((ApplicationException) err).getErrorCode() == ErrorCode.JOB_NOT_FOUND)
                     .verify();
+        }
+    }
+
+    @Nested
+    @DisplayName("getActiveList()")
+    class GetActiveList {
+
+        @Test
+        @SuppressWarnings("unchecked")
+        @DisplayName("should apply all filters and exclude featured from the backend page")
+        void filtersAndPaginates() {
+            when(cacheUtils.<FeaturedPaginatedResponse<JobResponse>>getOrCompute(
+                    eq("job_cache"), anyString(), any(), any()))
+                    .thenAnswer(invocation -> ((Supplier<Mono<FeaturedPaginatedResponse<JobResponse>>>)
+                            invocation.getArgument(3)).get());
+            Job featured = Job.builder().id(8).title("Featured").build();
+            Job item = Job.builder().id(6).title("Result").build();
+            when(jobRepository.findPublicFeatured(
+                    2, "engineer", "full_time,remote", "2026-07-01", "2026-08-07", "newest"))
+                    .thenReturn(Mono.just(featured));
+            when(jobRepository.findPublicPage(
+                    2, 8, "engineer", "full_time,remote", "2026-07-01", "2026-08-07", "newest", 12, 0))
+                    .thenReturn(Flux.just(item));
+            when(jobRepository.countPublicPage(
+                    2, 8, "engineer", "full_time,remote", "2026-07-01", "2026-08-07"))
+                    .thenReturn(Mono.just(1L));
+
+            StepVerifier.create(jobService.getActiveList(
+                            0, 12, 2, " engineer ", "remote,full_time",
+                            LocalDate.of(2026, 7, 1), LocalDate.of(2026, 8, 7), "newest"))
+                    .assertNext(response -> {
+                        assertThat(response.getFeatured().getId()).isEqualTo(8);
+                        assertThat(response.getItems()).extracting(JobResponse::getId).containsExactly(6);
+                        assertThat(response.getTotalItem()).isEqualTo(1);
+                        assertThat(response.getTotalPage()).isEqualTo(1);
+                    })
+                    .verifyComplete();
         }
     }
 }
