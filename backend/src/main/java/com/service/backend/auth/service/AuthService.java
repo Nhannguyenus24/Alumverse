@@ -265,7 +265,10 @@ public class AuthService {
                                         OTP_EMAIL_SUBJECT,
                                         OTP_EMAIL_TEMPLATE,
                                         variables
-                                );
+                                ).onErrorMap(error -> {
+                                    logger.error("Failed to deliver OTP to email={}: {}", email, error.getMessage(), error);
+                                    return new ApplicationException(ErrorCode.OTP_DELIVERY_FAILED, error);
+                                });
                             }))
                             .doOnSuccess(v -> logger.info("sendOtpVerification: OTP sent to email={}", email));
                 })

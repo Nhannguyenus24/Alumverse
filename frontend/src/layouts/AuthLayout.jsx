@@ -14,6 +14,8 @@ const AuthLayout = () => {
   const isCompactAuthPage = isLoginPage
   || /\/auth\/register\/?$/.test(location.pathname)
   || /\/auth\/signup-code\/?$/.test(location.pathname)
+  || /\/auth\/forgot-password\/?$/.test(location.pathname)
+  || /\/auth\/reset-password\/?$/.test(location.pathname)
   || /\/auth\/change-password\/?$/.test(location.pathname)
   || /\/admin\/change-password\/?$/.test(location.pathname);
   const defaultLogoSrc = theme.palette.mode === 'dark'
@@ -25,7 +27,8 @@ const AuthLayout = () => {
   return (
     <Box
       sx={{
-        minHeight: '100vh',
+        minHeight: '100svh',
+        height: '100dvh',
         display: 'flex',
         flexDirection: { xs: 'column', md: 'row' },
         overflow: 'hidden',
@@ -35,8 +38,8 @@ const AuthLayout = () => {
         sx={{
           flex: { xs: '1 1 auto', md: '0 0 50%' },
           width: { xs: '100%', md: '50%' },
-          minHeight: '100vh',
-          maxHeight: { xs: '100vh', md: 'none' },
+          minHeight: '100svh',
+          height: '100dvh',
           display: 'flex',
           flexDirection: 'column',
           backgroundColor: 'background.paper',
@@ -136,7 +139,8 @@ const AuthLayout = () => {
           display: { xs: 'none', md: 'block' },
           flex: '0 0 50%',
           width: '50%',
-          minHeight: '100vh',
+          minHeight: '100svh',
+          height: '100dvh',
           backgroundImage: 'url(/auth_school.webp)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',

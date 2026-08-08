@@ -29,6 +29,7 @@
   "GOOGLE_ACCOUNT_EMAIL_MISSING": "Google account email is missing",
   "GOOGLE_LOGIN_NOT_ALLOWED": "Account is not allowed to login with Google",
   "RECAPTCHA_VERIFICATION_FAILED": "ReCAPTCHA verification failed",
+  "OTP_DELIVERY_FAILED": "Unable to send the verification code. Please try again later or contact an administrator.",
   "INTERNAL_SERVER_ERROR": "Internal server error",
   "BAD_REQUEST": "Bad request",
   "TOO_MANY_REQUESTS": "Too many requests, please try again later",
