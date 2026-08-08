@@ -19,15 +19,12 @@ import { useCanContribute } from '../../hooks/useCanContribute';
 import { ContributeGuardTooltip } from '../../components/ContributeGuard';
 import { usePublishedAchievements } from '../../hooks/articles/usePublishedAchievements';
 import { usePublishedAlumniPosts } from '../../hooks/articles/usePublishedAlumniPosts';
+import { useDebounce } from '../../hooks/useDebounce';
 import { toCardShape } from '../../hooks/articles/toCardShape';
 import { useOrganization } from '../../hooks/useOrganization';
 import apiClient from '../../utils/axios';
 import { deleteArticleByChannel, getArticleAdminEditPath } from '../../utils/articleAdminActions';
-import {
-  ARTICLE_FETCH_LIMIT,
-  applyArticleFilters,
-  getArticleFilterConfig,
-} from '../../utils/articleListFilters';
+import { getArticleFilterConfig } from '../../utils/articleListFilters';
 import { getHonorsSidebarItems } from '../../constants/honorsNav';
 import { getOrganizationHeroBannerUrl } from '../../utils/organizationBrand';
 import {
@@ -35,6 +32,23 @@ import {
   ScrollRevealGroup,
   ScrollRevealItem,
 } from '../../components/animations/ScrollReveal';
+
+const HONORS_PREVIEW_SIZE = 6;
+
+const articleTime = (article) => {
+  const value = article?.updatedAt ?? article?.createdAt ?? article?.publishedAt;
+  const time = value ? new Date(value).getTime() : 0;
+  return Number.isNaN(time) ? 0 : time;
+};
+
+const pickFeatured = (achievement, alumni, direction) => {
+  if (!achievement) return alumni;
+  if (!alumni) return achievement;
+  if (direction === 'oldest') {
+    return articleTime(achievement) <= articleTime(alumni) ? achievement : alumni;
+  }
+  return articleTime(achievement) >= articleTime(alumni) ? achievement : alumni;
+};
 
 const HonorsPage = () => {
   const { t } = useTranslation(['honors', 'common']);
@@ -49,26 +63,43 @@ const HonorsPage = () => {
   const isAdmin = isAuthenticated && isOrgManager;
   const adminBase = slug ? `/${slug}/admin` : '/admin';
 
-  const { achievements } = usePublishedAchievements(0, ARTICLE_FETCH_LIMIT);
-  const { articles: alumniArticles } = usePublishedAlumniPosts(0, ARTICLE_FETCH_LIMIT);
-
   const [filters, setFilters] = useState({
     all: true,
   });
+  const debouncedSearch = useDebounce(filters.search ?? '', 400);
+  const selectedSort = Array.isArray(filters.sort) ? filters.sort[0] : filters.sort;
+  const requestFilters = {
+    q: debouncedSearch,
+    topics: filters.topic,
+    fromDate: filters.fromDate,
+    toDate: filters.toDate,
+    direction: selectedSort,
+  };
+
+  const { featured: featuredAchievement, achievements } = usePublishedAchievements(
+    0, HONORS_PREVIEW_SIZE, requestFilters,
+  );
+  const { featured: featuredAlumni, articles: alumniArticles } = usePublishedAlumniPosts(
+    0, HONORS_PREVIEW_SIZE, requestFilters,
+  );
+
   const [submitAnchorEl, setSubmitAnchorEl] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
   const filterConfig = useMemo(() => getArticleFilterConfig(t, ['alumni', 'achievement']), [t]);
-  const filteredArticles = useMemo(
-    () => applyArticleFilters([...achievements, ...alumniArticles], filters),
-    [achievements, alumniArticles, filters],
-  );
 
-  const [featured, ...rest] = filteredArticles;
+  // Each endpoint excludes its own featured item from `items`, so whichever channel loses the
+  // hero slot has to put its featured article back at the top of its own section — otherwise
+  // that article would disappear from the page entirely.
+  const featured = pickFeatured(featuredAchievement, featuredAlumni, selectedSort);
   const featuredCard = featured ? toCardShape(featured, cardFallbackImage) : null;
-  const visibleAlumniArticles = rest.filter((article) => article.channel === 'alumni').slice(0, 6);
-  const visibleAchievementArticles = rest.filter((article) => article.channel === 'achievement').slice(0, 6);
+  const visibleAchievementArticles = featuredAchievement && featured?.channel !== 'achievement'
+    ? [featuredAchievement, ...achievements].slice(0, HONORS_PREVIEW_SIZE)
+    : achievements.slice(0, HONORS_PREVIEW_SIZE);
+  const visibleAlumniArticles = featuredAlumni && featured?.channel !== 'alumni'
+    ? [featuredAlumni, ...alumniArticles].slice(0, HONORS_PREVIEW_SIZE)
+    : alumniArticles.slice(0, HONORS_PREVIEW_SIZE);
   const alumniCards = visibleAlumniArticles.map((article) => toCardShape(article, cardFallbackImage));
   const achievementCards = visibleAchievementArticles.map((article) => toCardShape(article, cardFallbackImage));
 

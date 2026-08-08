@@ -2,7 +2,7 @@ package com.service.backend.fundraising.controller;
 
 import com.service.backend.fundraising.dto.CreateFundRequest;
 import com.service.backend.fundraising.dto.FundDetailResponse;
-import com.service.backend.fundraising.dto.FundListItemResponse;
+import com.service.backend.fundraising.dto.FundListPageResponse;
 import com.service.backend.fundraising.dto.UpdateFundRequest;
 import com.service.backend.fundraising.dto.UpdateFundBasicInfoRequest;
 import com.service.backend.fundraising.dto.UpdateFundDonationVisibilityRequest;
@@ -11,7 +11,6 @@ import com.service.backend.fundraising.dto.SupportedBanksResponse;
 import com.service.backend.shared.entity.Funds;
 import com.service.backend.fundraising.service.FundService;
 import com.service.backend.shared.dto.ApiResponse;
-import com.service.backend.shared.dto.PaginatedResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
@@ -50,7 +49,7 @@ public class FundController {
     }
 
     @GetMapping
-    public Mono<ResponseEntity<ApiResponse<DataWithWarnings<PaginatedResponse<FundListItemResponse>>>>> getAll(
+    public Mono<ResponseEntity<ApiResponse<DataWithWarnings<FundListPageResponse>>>> getAll(
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int limit,
             @RequestParam(required = false) @Size(max = 255) String q,

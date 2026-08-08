@@ -22,6 +22,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.test.util.ReflectionTestUtils;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import reactor.util.context.Context;
@@ -92,6 +93,76 @@ class FundServiceTest {
     }
 
     // ─── getFundDetail ────────────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("getFundsForList()")
+    class GetFundsForList {
+
+        @Test
+        @DisplayName("returns a stable featured fund separately and paginates the remaining funds")
+        void getFundsForList_excludesFeaturedFromPageAndCount() {
+            Funds featured = Funds.builder().id(1).name("Featured").organizationId(4).build();
+            Funds firstItem = Funds.builder().id(12).name("Page item 1").organizationId(4).build();
+            Funds secondItem = Funds.builder().id(11).name("Page item 2").organizationId(4).build();
+            FundFilterRequest request = FundFilterRequest.builder()
+                    .page(1)
+                    .size(9)
+                    .organizationId("4")
+                    .q("  scholarship  ")
+                    .build();
+
+            when(fundR2dbcRepository.findFeaturedFiltered(
+                    eq(4), eq("scholarship"), isNull(), isNull(), isNull(), isNull()))
+                    .thenReturn(Mono.just(featured));
+            when(fundR2dbcRepository.findFiltered(
+                    eq(4), eq("scholarship"), isNull(), isNull(), isNull(), isNull(),
+                    eq(1), eq(9), eq(9)))
+                    .thenReturn(Flux.just(firstItem, secondItem));
+            when(fundR2dbcRepository.countFiltered(
+                    eq(4), eq("scholarship"), isNull(), isNull(), isNull(), isNull(), eq(1)))
+                    .thenReturn(Mono.just(18L));
+
+            StepVerifier.create(fundService.getFundsForList(request))
+                    .assertNext(result -> {
+                        assertThat(result.getWarnings()).isEmpty();
+                        assertThat(result.getData().getFeatured().getId()).isEqualTo(1);
+                        assertThat(result.getData().getItems())
+                                .extracting(FundListItemResponse::getId)
+                                .containsExactly(12, 11);
+                        assertThat(result.getData().getCurrentPage()).isEqualTo(1);
+                        assertThat(result.getData().getPageSize()).isEqualTo(9);
+                        assertThat(result.getData().getTotalItem()).isEqualTo(18L);
+                        assertThat(result.getData().getTotalPage()).isEqualTo(2);
+                    })
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("returns an empty featured value when no fund matches")
+        void getFundsForList_noMatchingFunds() {
+            FundFilterRequest request = FundFilterRequest.builder().page(0).size(9).build();
+
+            when(fundR2dbcRepository.findFeaturedFiltered(
+                    isNull(), isNull(), isNull(), isNull(), isNull(), isNull()))
+                    .thenReturn(Mono.empty());
+            when(fundR2dbcRepository.findFiltered(
+                    isNull(), isNull(), isNull(), isNull(), isNull(), isNull(),
+                    isNull(), eq(9), eq(0)))
+                    .thenReturn(Flux.empty());
+            when(fundR2dbcRepository.countFiltered(
+                    isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), isNull()))
+                    .thenReturn(Mono.just(0L));
+
+            StepVerifier.create(fundService.getFundsForList(request))
+                    .assertNext(result -> {
+                        assertThat(result.getData().getFeatured()).isNull();
+                        assertThat(result.getData().getItems()).isEmpty();
+                        assertThat(result.getData().getTotalItem()).isZero();
+                        assertThat(result.getData().getTotalPage()).isZero();
+                    })
+                    .verifyComplete();
+        }
+    }
 
     @Nested
     @DisplayName("getFundDetail()")

@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { useParams } from 'react-router';
-import { Box, Button, Pagination, Typography } from '@mui/material';
+import { Button, Typography } from '@mui/material';
 import { useSnackbar } from 'notistack';
 
 import WorkIcon from '@mui/icons-material/Work';
@@ -17,16 +17,12 @@ import { useAuth } from '../../hooks/useAuth';
 import { useCanContribute } from '../../hooks/useCanContribute';
 import { ContributeGuardTooltip } from '../../components/ContributeGuard';
 import { usePublishedJobs } from '../../hooks/articles/usePublishedJobs';
+import { useDebounce } from '../../hooks/useDebounce';
 import { toCardShape } from '../../hooks/articles/toCardShape';
 import { useOrganization } from '../../hooks/useOrganization';
 import apiClient from '../../utils/axios';
 import { deleteArticleByChannel, getArticleAdminEditPath } from '../../utils/articleAdminActions';
-import {
-  ARTICLE_FETCH_LIMIT,
-  applyArticleFilters,
-  getArticleFilterConfig,
-  paginateArticles,
-} from '../../utils/articleListFilters';
+import { getArticleFilterConfig } from '../../utils/articleListFilters';
 import { getDevelopmentSidebarItems } from '../../constants/developmentNav';
 import { getOrganizationHeroBannerUrl } from '../../utils/organizationBrand';
 import {
@@ -53,18 +49,28 @@ const DevelopmentJobsPage = () => {
   const filters = useMemo(() => getArticleFilterConfig(t, ['job']), [t]);
 
   const [page, setPage] = useState(0);
-  const { jobs } = usePublishedJobs(0, ARTICLE_FETCH_LIMIT);
-
   const [filterValues, setFilterValues] = useState({ all: true });
+  const debouncedSearch = useDebounce(filterValues.search ?? '', 400);
+  const selectedSort = Array.isArray(filterValues.sort) ? filterValues.sort[0] : filterValues.sort;
+  const { featured, jobs: pagedJobs, pageInfo } = usePublishedJobs(
+    page,
+    DEVELOPMENT_LIST_PAGE_SIZE,
+    {
+      q: debouncedSearch,
+      topics: filterValues.topic,
+      fromDate: filterValues.fromDate,
+      toDate: filterValues.toDate,
+      direction: selectedSort,
+    },
+  );
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
-  const filteredJobs = useMemo(() => applyArticleFilters(jobs, filterValues), [jobs, filterValues]);
-  const [featured, ...rest] = filteredJobs;
-  const { items: pagedJobs, pageInfo } = useMemo(
-    () => paginateArticles(rest, page, DEVELOPMENT_LIST_PAGE_SIZE),
-    [rest, page],
-  );
+  useEffect(() => {
+    if (!pageInfo) return;
+    const lastPage = Math.max((pageInfo.totalPage ?? 0) - 1, 0);
+    if (page > lastPage) setPage(lastPage);
+  }, [page, pageInfo]);
 
   const featuredCard = featured ? toCardShape(featured, cardFallbackImage) : null;
   const cards = pagedJobs.map((article) => toCardShape(article, cardFallbackImage));
@@ -181,7 +187,7 @@ const DevelopmentJobsPage = () => {
               )}
 
               <AppPagination
-                count={pageInfo?.totalPage ?? 1}
+                count={Math.max(pageInfo?.totalPage ?? 0, 1)}
                 page={page + 1}
                 onChange={(_, value) => setPage(value - 1)}
               />

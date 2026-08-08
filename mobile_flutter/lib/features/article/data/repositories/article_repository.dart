@@ -45,7 +45,7 @@ class ArticleRepository {
         if (organizationId != null) 'organizationId': organizationId,
       },
     );
-    return _itemsFrom(res.data, channel: 'alumni');
+    return parseFeaturedListResponse(res.data, channel: 'alumni');
   }
 
   Future<List<Article>> getApprovedAchievements({
@@ -153,16 +153,24 @@ class ArticleRepository {
   }
 }
 
-/// Parses the dedicated news-list contract while preserving the legacy mobile
-/// shape: the fixed newest featured article is first, followed by paged items.
-/// Older list-only payloads remain supported during staggered deployments.
-List<Article> parsePublishedNewsResponse(dynamic body) {
+/// Parses the featured-list contract (`data.featured` + `data.items`) while
+/// preserving the legacy mobile shape: the fixed newest article is first,
+/// followed by the paged items. The backend hoists the newest row into
+/// `featured` and removes it from `items`, so a parser that reads `items` alone
+/// silently drops it.
+///
+/// Older list-only payloads remain supported during staggered deployments —
+/// `featured` may be absent or null (an older backend, or an empty result) and
+/// `data` may even be a bare list.
+List<Article> parseFeaturedListResponse(dynamic body, {String channel = 'news'}) {
   final data = body is Map ? body['data'] : body;
   if (data is! Map) {
     if (data is! List) return const [];
     return data
         .whereType<Map>()
-        .map((item) => Article.fromJson(item.cast<String, dynamic>()))
+        .map(
+          (item) => Article.fromJson(item.cast<String, dynamic>(), channel: channel),
+        )
         .toList();
   }
 
@@ -170,7 +178,10 @@ List<Article> parsePublishedNewsResponse(dynamic body) {
   final seenIds = <int>{};
   final featured = data['featured'];
   if (featured is Map) {
-    final article = Article.fromJson(featured.cast<String, dynamic>());
+    final article = Article.fromJson(
+      featured.cast<String, dynamic>(),
+      channel: channel,
+    );
     result.add(article);
     seenIds.add(article.id);
   }
@@ -178,9 +189,17 @@ List<Article> parsePublishedNewsResponse(dynamic body) {
   final items = data['items'];
   if (items is List) {
     for (final item in items.whereType<Map>()) {
-      final article = Article.fromJson(item.cast<String, dynamic>());
+      final article = Article.fromJson(
+        item.cast<String, dynamic>(),
+        channel: channel,
+      );
       if (seenIds.add(article.id)) result.add(article);
     }
   }
   return result;
+}
+
+/// Parses the published-news list. Same contract as every other featured list.
+List<Article> parsePublishedNewsResponse(dynamic body) {
+  return parseFeaturedListResponse(body);
 }
