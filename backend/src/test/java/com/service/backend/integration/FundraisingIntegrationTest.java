@@ -197,7 +197,10 @@ public class FundraisingIntegrationTest extends BaseIntegrationTest {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$.data.data.items[0].name").isEqualTo("Quỹ học bổng 2026");
+                .jsonPath("$.data.data.featured.name").isEqualTo("Quỹ học bổng 2026")
+                .jsonPath("$.data.data.items").isEmpty()
+                .jsonPath("$.data.data.totalItem").isEqualTo(0)
+                .jsonPath("$.data.data.totalPage").isEqualTo(0);
     }
 
     @Test

@@ -4,6 +4,7 @@ import com.service.backend.article.dto.CreateJobRequest;
 import com.service.backend.article.dto.UpdateJobRequest;
 import com.service.backend.article.dto.JobResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
+import com.service.backend.shared.dto.FeaturedPaginatedResponse;
 import com.service.backend.article.service.JobService;
 import com.service.backend.shared.dto.ApiResponse;
 import com.service.backend.shared.annotations.PublicEndpoint;
@@ -16,6 +17,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
+
+import java.time.LocalDate;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Tag(name = "Articles > Jobs", description = "API endpoints for job postings and recruitment")
@@ -74,11 +77,17 @@ public class JobController {
 
     @PublicEndpoint
     @GetMapping("/active")
-    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<JobResponse>>>> getActive(
+    public Mono<ResponseEntity<ApiResponse<FeaturedPaginatedResponse<JobResponse>>>> getActive(
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int limit,
-            @RequestParam(required = false) Integer organizationId) {
-        return jobService.getActive(page, limit, organizationId)
+            @RequestParam(required = false) Integer organizationId,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String topics,
+            @RequestParam(required = false) LocalDate fromDate,
+            @RequestParam(required = false) LocalDate toDate,
+            @RequestParam(defaultValue = "newest") String direction) {
+        return jobService.getActiveList(
+                        page, limit, organizationId, q, topics, fromDate, toDate, direction)
                 .map(response -> ResponseEntity
                         .ok(new ApiResponse<>("Active jobs retrieved successfully", response)));
     }

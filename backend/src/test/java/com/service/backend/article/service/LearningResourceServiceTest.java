@@ -2,7 +2,9 @@ package com.service.backend.article.service;
 
 import com.service.backend.article.dao.LearningResourceR2dbcRepository;
 import com.service.backend.article.dto.UpdateLearningResourceRequest;
+import com.service.backend.article.dto.LearningResourceResponse;
 import com.service.backend.shared.entity.LearningResource;
+import com.service.backend.shared.dto.FeaturedPaginatedResponse;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.CacheUtils;
@@ -11,11 +13,16 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import com.service.backend.shared.service.ImageService;
+import com.service.backend.user.service.NotificationService;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
+
+import java.time.LocalDate;
+import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
@@ -28,6 +35,7 @@ class LearningResourceServiceTest {
     @Mock private LearningResourceR2dbcRepository learningResourceRepository;
     @Mock private CacheUtils cacheUtils;
     @Mock private ImageService imageService;
+    @Mock private NotificationService notificationService;
 
     @InjectMocks
     private LearningResourceService learningResourceService;
@@ -177,5 +185,42 @@ class LearningResourceServiceTest {
     @Nested
     @DisplayName("getByType()")
     class GetByType {
+    }
+
+    @Nested
+    @DisplayName("getPublishedList()")
+    class GetPublishedList {
+
+        @Test
+        @SuppressWarnings("unchecked")
+        @DisplayName("should apply all filters and exclude featured from the backend page")
+        void filtersAndPaginates() {
+            when(cacheUtils.<FeaturedPaginatedResponse<LearningResourceResponse>>getOrCompute(
+                    eq("learning_resource_cache"), anyString(), any(), any()))
+                    .thenAnswer(invocation -> ((Supplier<Mono<FeaturedPaginatedResponse<LearningResourceResponse>>>)
+                            invocation.getArgument(3)).get());
+            LearningResource featured = LearningResource.builder().id(9).title("Featured").build();
+            LearningResource item = LearningResource.builder().id(7).title("Result").build();
+            when(learningResourceRepository.findPublicFeatured(
+                    3, "java", "online_course,research", "2026-08-01", "2026-08-07", "oldest"))
+                    .thenReturn(Mono.just(featured));
+            when(learningResourceRepository.findPublicPage(
+                    3, 9, "java", "online_course,research", "2026-08-01", "2026-08-07", "oldest", 12, 12))
+                    .thenReturn(Flux.just(item));
+            when(learningResourceRepository.countPublicPage(
+                    3, 9, "java", "online_course,research", "2026-08-01", "2026-08-07"))
+                    .thenReturn(Mono.just(13L));
+
+            StepVerifier.create(learningResourceService.getPublishedList(
+                            1, 12, 3, " java ", "research,online_course",
+                            LocalDate.of(2026, 8, 1), LocalDate.of(2026, 8, 7), "oldest"))
+                    .assertNext(response -> {
+                        assertThat(response.getFeatured().getId()).isEqualTo(9);
+                        assertThat(response.getItems()).extracting(LearningResourceResponse::getId).containsExactly(7);
+                        assertThat(response.getTotalItem()).isEqualTo(13);
+                        assertThat(response.getTotalPage()).isEqualTo(2);
+                    })
+                    .verifyComplete();
+        }
     }
 }

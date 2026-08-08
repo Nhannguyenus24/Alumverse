@@ -15,6 +15,7 @@ import com.service.backend.fundraising.dto.FundDonationListItemResponse;
 import com.service.backend.fundraising.constants.FundDonationConstants;
 import com.service.backend.fundraising.mapper.FundDonationMapper;
 import com.service.backend.fundraising.dto.FundListItemResponse;
+import com.service.backend.fundraising.dto.FundListPageResponse;
 import com.service.backend.fundraising.dto.FundStatisticsResponse;
 import com.service.backend.fundraising.dto.FundFilterRequest;
 import com.service.backend.fundraising.dto.UpdateFundRequest;
@@ -206,7 +207,7 @@ public class FundService {
                                 "Bank is not supported: " + bankCode)));
     }
 
-    public Mono<DataWithWarnings<PaginatedResponse<FundListItemResponse>>> getFundsForList(FundFilterRequest req) {
+    public Mono<DataWithWarnings<FundListPageResponse>> getFundsForList(FundFilterRequest req) {
         int page = Math.max(0, req.getPage());
         int limit = Math.max(1, req.getSize());
         int offset = page * limit;
@@ -290,29 +291,64 @@ public class FundService {
             }
         }
 
-        Flux<Funds> data;
-        if (sortByDonor) {
-            data = sortAsc
-                    ? fundR2dbcRepository.findFilteredOrderByDonorCountAsc(organizationId, keyword, tsFrom, tsTo, amtMin, amtMax, limit, offset)
-                    : fundR2dbcRepository.findFilteredOrderByDonorCountDesc(organizationId, keyword, tsFrom, tsTo, amtMin, amtMax, limit, offset);
-        } else {
-            data = fundR2dbcRepository.findFiltered(organizationId, keyword, tsFrom, tsTo, amtMin, amtMax, limit, offset);
-        }
-        Mono<Long> count = fundR2dbcRepository.countFiltered(
-                organizationId,
-                keyword,
-                tsFrom,
-                tsTo,
-                amtMin,
-                amtMax
-        );
+        final boolean useDonorSort = sortByDonor;
+        final boolean donorSortAscending = sortAsc;
+        final Integer filteredOrganizationId = organizationId;
+        final String filteredKeyword = keyword;
+        final LocalDateTime filteredStart = tsFrom;
+        final LocalDateTime filteredEnd = tsTo;
+        final BigDecimal filteredAmountMin = amtMin;
+        final BigDecimal filteredAmountMax = amtMax;
 
-        return PaginationHelper.paginate(
-                data.map(FundListItemResponse::from),
-                count,
-                page,
-                limit
-        ).map(paged -> new DataWithWarnings<>(paged, warnings));
+        return fundR2dbcRepository.findFeaturedFiltered(
+                        filteredOrganizationId,
+                        filteredKeyword,
+                        filteredStart,
+                        filteredEnd,
+                        filteredAmountMin,
+                        filteredAmountMax
+                )
+                .map(Optional::of)
+                .defaultIfEmpty(Optional.empty())
+                .flatMap(featuredOptional -> {
+                    Integer featuredId = featuredOptional.map(Funds::getId).orElse(null);
+                    Flux<Funds> data;
+                    if (useDonorSort) {
+                        data = donorSortAscending
+                                ? fundR2dbcRepository.findFilteredOrderByDonorCountAsc(
+                                        filteredOrganizationId, filteredKeyword, filteredStart, filteredEnd,
+                                        filteredAmountMin, filteredAmountMax, featuredId, limit, offset)
+                                : fundR2dbcRepository.findFilteredOrderByDonorCountDesc(
+                                        filteredOrganizationId, filteredKeyword, filteredStart, filteredEnd,
+                                        filteredAmountMin, filteredAmountMax, featuredId, limit, offset);
+                    } else {
+                        data = fundR2dbcRepository.findFiltered(
+                                filteredOrganizationId, filteredKeyword, filteredStart, filteredEnd,
+                                filteredAmountMin, filteredAmountMax, featuredId, limit, offset);
+                    }
+
+                    Mono<Long> count = fundR2dbcRepository.countFiltered(
+                            filteredOrganizationId,
+                            filteredKeyword,
+                            filteredStart,
+                            filteredEnd,
+                            filteredAmountMin,
+                            filteredAmountMax,
+                            featuredId
+                    );
+
+                    return PaginationHelper.paginate(
+                                    data.map(FundListItemResponse::from),
+                                    count,
+                                    page,
+                                    limit
+                            )
+                            .map(paged -> FundListPageResponse.of(
+                                    featuredOptional.map(FundListItemResponse::from).orElse(null),
+                                    paged
+                            ));
+                })
+                .map(result -> new DataWithWarnings<>(result, warnings));
     }
 
     public Mono<FundDetailResponse> getFundDetail(Long fundId) {

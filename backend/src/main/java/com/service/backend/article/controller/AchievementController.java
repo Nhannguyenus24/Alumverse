@@ -3,11 +3,13 @@ package com.service.backend.article.controller;
 import com.service.backend.article.dto.CreateAchievementRequest;
 import com.service.backend.article.dto.UpdateAchievementRequest;
 import com.service.backend.article.dto.AchievementResponse;
+import com.service.backend.shared.dto.FeaturedPaginatedResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.article.service.AchievementService;
 import com.service.backend.shared.dto.ApiResponse;
 import com.service.backend.shared.annotations.PublicEndpoint;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +18,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
+
+import java.time.LocalDate;
 import com.service.backend.shared.enums.Status;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
@@ -64,11 +68,18 @@ public class AchievementController {
 
     @PublicEndpoint
     @GetMapping
-    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<AchievementResponse>>>> getAll(
+    public Mono<ResponseEntity<ApiResponse<FeaturedPaginatedResponse<AchievementResponse>>>> getAll(
             @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "10") @Min(1) int limit,
-            @RequestParam(required = false) Integer organizationId) {
-        return achievementService.getByStatus(Status.APPROVED, organizationId, page, limit)
+            @RequestParam(defaultValue = "10") @Min(1) @Max(100) int limit,
+            @RequestParam(required = false) Integer organizationId,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String topics,
+            @RequestParam(required = false) LocalDate fromDate,
+            @RequestParam(required = false) LocalDate toDate,
+            @RequestParam(defaultValue = "updated") String sortBy,
+            @RequestParam(defaultValue = "newest") String direction) {
+        return achievementService.getPublicList(
+                        page, limit, organizationId, q, topics, fromDate, toDate, sortBy, direction)
                 .map(response -> ResponseEntity
                         .ok(new ApiResponse<>("Achievements retrieved successfully", response)));
     }

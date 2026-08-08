@@ -45,4 +45,54 @@ void main() {
       expect(news.map((article) => article.id), [2, 1]);
     },
   );
+
+  test('featured list parser keeps the featured alumni post at the head', () {
+    final posts = parseFeaturedListResponse({
+      'data': {
+        'featured': {
+          'id': 5,
+          'title': 'Newest alumni post',
+          'content': 'Featured preview',
+          'createdAt': '2026-08-07T10:00:00',
+        },
+        'items': [
+          {
+            'id': 4,
+            'title': 'Older alumni post',
+            'content': 'Item preview',
+            'createdAt': '2026-08-06T10:00:00',
+          },
+        ],
+      },
+    }, channel: 'alumni');
+
+    expect(posts.map((article) => article.id), [5, 4]);
+    expect(posts.first.title, 'Newest alumni post');
+  });
+
+  test('featured list parser tolerates a missing or null featured', () {
+    final withoutFeatured = parseFeaturedListResponse({
+      'data': {
+        'items': [
+          {'id': 4, 'title': 'Only item'},
+        ],
+      },
+    }, channel: 'alumni');
+    expect(withoutFeatured.map((article) => article.id), [4]);
+
+    final nullFeatured = parseFeaturedListResponse({
+      'data': {
+        'featured': null,
+        'items': [
+          {'id': 4, 'title': 'Only item'},
+        ],
+      },
+    }, channel: 'alumni');
+    expect(nullFeatured.map((article) => article.id), [4]);
+
+    final empty = parseFeaturedListResponse({
+      'data': {'featured': null, 'items': <dynamic>[]},
+    }, channel: 'alumni');
+    expect(empty, isEmpty);
+  });
 }

@@ -10,6 +10,7 @@ import com.service.backend.event.dao.EventInvitationR2dbcRepository;
 import com.service.backend.event.dao.EventEmailLogR2dbcRepository;
 import com.service.backend.event.dao.EventQuestionR2dbcRepository;
 import com.service.backend.event.dto.*;
+import com.service.backend.shared.dto.FeaturedPaginatedResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.enums.QuestionType;
@@ -22,6 +23,7 @@ import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.service.EmailService;
 import com.service.backend.shared.service.ImageService;
 import com.service.backend.shared.utils.JsonUtils;
+import com.service.backend.shared.utils.HtmlPreviewUtils;
 import com.service.backend.shared.utils.SecurityUtils;
 import com.service.backend.shared.utils.PaginationHelper;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +33,7 @@ import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -62,6 +65,7 @@ public class EventService {
      * recipients. Bounding it keeps the same set of emails/result while using fewer resources.
      */
     private static final int BULK_EMAIL_CONCURRENCY = 8;
+    private static final int CONTENT_PREVIEW_LENGTH = 260;
 
     // ─── Event CRUD ───────────────────────────────────────────────────────────
 
@@ -190,6 +194,168 @@ public class EventService {
         String cacheKey = "past_events_org_" + organizationId + "_page_" + page + "_limit_" + limit;
         return cacheUtils.getOrCompute(CacheNames.EVENT, cacheKey, java.time.Duration.ofMinutes(5), () ->
                 this.findPastEvents(organizationId, page, limit));
+    }
+
+    public Mono<FeaturedPaginatedResponse<Event>> getUpcomingEventList(
+            Long organizationId,
+            int page,
+            int limit,
+            String keyword,
+            String topics,
+            LocalDate fromDate,
+            LocalDate toDate,
+            String sort,
+            boolean withFeatured) {
+        EventListFilters filters = normalizeEventListFilters(keyword, topics, fromDate, toDate, sort);
+        String cacheKey = eventListCacheKey(
+                "upcoming-v4", organizationId, page, limit, filters, withFeatured);
+
+        return cacheUtils.getOrCompute(CacheNames.EVENT, cacheKey, java.time.Duration.ofMinutes(5), () -> {
+            LocalDateTime now = LocalDateTime.now();
+            Mono<Optional<Event>> featuredMono = withFeatured
+                    ? findEventPageFeatured(organizationId, now, filters)
+                            .map(this::withDescriptionPreview)
+                            .map(Optional::of)
+                            .defaultIfEmpty(Optional.empty())
+                    : Mono.just(Optional.empty());
+
+            return featuredMono.flatMap(featuredOptional -> {
+                Long excludedId = featuredOptional.map(Event::getId).orElse(-1L);
+                Mono<List<Event>> items = eventRepo.findUpcomingEventList(
+                                organizationId, now, excludedId, filters.keyword(), filters.topics(),
+                                filters.fromDate(), filters.toDate(), filters.sort(), limit, page * limit)
+                        .map(this::withDescriptionPreview)
+                        .collectList();
+                Mono<Long> total = eventRepo.countUpcomingEventList(
+                        organizationId, now, excludedId, filters.keyword(), filters.topics(),
+                        filters.fromDate(), filters.toDate());
+
+                return Mono.zip(items, total)
+                        .map(result -> FeaturedPaginatedResponse.of(
+                                featuredOptional.orElse(null), result.getT1(), result.getT2(), page, limit));
+            });
+        });
+    }
+
+    public Mono<PaginatedResponse<Event>> getOngoingEventList(
+            Long organizationId,
+            int page,
+            int limit,
+            String keyword,
+            String topics,
+            LocalDate fromDate,
+            LocalDate toDate,
+            String sort,
+            boolean excludeFeatured) {
+        EventListFilters filters = normalizeEventListFilters(keyword, topics, fromDate, toDate, sort);
+        String cacheKey = eventListCacheKey(
+                "ongoing-v4", organizationId, page, limit, filters, excludeFeatured);
+
+        return cacheUtils.getOrCompute(CacheNames.EVENT, cacheKey, java.time.Duration.ofMinutes(5), () -> {
+            LocalDateTime now = LocalDateTime.now();
+            Mono<Long> excludedIdMono = excludeFeatured
+                    ? findEventPageFeatured(organizationId, now, filters)
+                            .map(Event::getId)
+                            .defaultIfEmpty(-1L)
+                    : Mono.just(-1L);
+            return excludedIdMono.flatMap(excludedId -> PaginationHelper.paginate(
+                        eventRepo.findOngoingEventList(
+                                        organizationId, now, excludedId, filters.keyword(), filters.topics(),
+                                        filters.fromDate(), filters.toDate(), filters.sort(), limit, page * limit)
+                                .map(this::withDescriptionPreview),
+                        eventRepo.countOngoingEventList(
+                                organizationId, now, excludedId, filters.keyword(), filters.topics(),
+                                filters.fromDate(), filters.toDate()),
+                        page,
+                        limit));
+        });
+    }
+
+    private Mono<Event> findEventPageFeatured(
+            Long organizationId, LocalDateTime now, EventListFilters filters) {
+        return eventRepo.findEventPageFeatured(
+                organizationId, now, filters.keyword(), filters.topics(),
+                filters.fromDate(), filters.toDate());
+    }
+
+    public Mono<PaginatedResponse<Event>> getPastEventList(
+            Long organizationId,
+            int page,
+            int limit,
+            String keyword,
+            String topics,
+            LocalDate fromDate,
+            LocalDate toDate,
+            String sort) {
+        EventListFilters filters = normalizeEventListFilters(keyword, topics, fromDate, toDate, sort);
+        String cacheKey = eventListCacheKey(
+                "past-v4", organizationId, page, limit, filters, false);
+
+        return cacheUtils.getOrCompute(CacheNames.EVENT, cacheKey, java.time.Duration.ofMinutes(5), () -> {
+            LocalDateTime now = LocalDateTime.now();
+            return PaginationHelper.paginate(
+                    eventRepo.findPastEventList(
+                                    organizationId, now, filters.keyword(), filters.topics(),
+                                    filters.fromDate(), filters.toDate(), filters.sort(), limit, page * limit)
+                            .map(this::withDescriptionPreview),
+                    eventRepo.countPastEventList(
+                            organizationId, now, filters.keyword(), filters.topics(),
+                            filters.fromDate(), filters.toDate()),
+                    page,
+                    limit);
+        });
+    }
+
+    private EventListFilters normalizeEventListFilters(
+            String keyword, String topics, LocalDate fromDate, LocalDate toDate, String sort) {
+        String normalizedKeyword = keyword == null ? "" : keyword.trim();
+        String normalizedTopics = topics == null || topics.isBlank()
+                ? ""
+                : Arrays.stream(topics.split(","))
+                        .map(topic -> ArticleTopicCatalog.requireValid(ArticleTopicCatalog.Channel.EVENT, topic))
+                        .distinct()
+                        .sorted()
+                        .reduce((left, right) -> left + "," + right)
+                        .orElse("");
+        String normalizedSort = "oldest".equalsIgnoreCase(sort)
+                ? "oldest"
+                : "newest".equalsIgnoreCase(sort) ? "newest" : "status";
+        return new EventListFilters(
+                normalizedKeyword,
+                normalizedTopics,
+                fromDate == null ? "" : fromDate.toString(),
+                toDate == null ? "" : toDate.toString(),
+                normalizedSort);
+    }
+
+    private String eventListCacheKey(
+            String scope,
+            Long organizationId,
+            int page,
+            int limit,
+            EventListFilters filters,
+            boolean withFeatured) {
+        return String.join("|",
+                scope,
+                "org=" + organizationId,
+                "page=" + page,
+                "limit=" + limit,
+                "keyword=" + filters.keyword().toLowerCase(Locale.ROOT),
+                "topics=" + filters.topics(),
+                "from=" + filters.fromDate(),
+                "to=" + filters.toDate(),
+                "sort=" + filters.sort(),
+                "featured=" + withFeatured);
+    }
+
+    private Event withDescriptionPreview(Event event) {
+        event.setDescription(HtmlPreviewUtils.toPlainTextPreview(
+                event.getDescription(), CONTENT_PREVIEW_LENGTH));
+        return event;
+    }
+
+    private record EventListFilters(
+            String keyword, String topics, String fromDate, String toDate, String sort) {
     }
 
     public Mono<PaginatedResponse<Event>> searchEvents(Long organizationId, String keyword, int page, int limit) {

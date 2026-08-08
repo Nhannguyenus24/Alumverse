@@ -1061,7 +1061,7 @@
   "fund_btn_create": "Open fundraising",
   "fund_stat_total_raised": "Total raised",
   "fund_stat_active": "Active funds",
-  "fund_stat_total_donors": "Total donors",
+  "fund_stat_total_donors": "Total fund donations",
   "fund_stat_completion": "Completion rate",
   "fund_search_placeholder": "Search by fund name...",
   "fund_detail_title": "Fund detail",

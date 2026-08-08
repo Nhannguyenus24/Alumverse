@@ -6,10 +6,12 @@ import com.service.backend.article.dto.CreateAlumniPostRequest;
 import com.service.backend.article.dto.UpdateAlumniPostRequest;
 import com.service.backend.article.dto.AlumniPostResponse;
 import com.service.backend.article.validation.ArticleTopicCatalog;
+import com.service.backend.shared.dto.FeaturedPaginatedResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.service.ImageService;
+import com.service.backend.shared.utils.HtmlPreviewUtils;
 import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.shared.utils.SecurityUtils;
 import com.service.backend.shared.utils.CacheNames;
@@ -20,12 +22,20 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
+import java.time.LocalDate;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class AlumniPostService {
 
     private static final Duration LIST_TTL = Duration.ofMinutes(5);
+    private static final int CONTENT_PREVIEW_LENGTH = 260;
 
     private final AlumniPostR2dbcRepository alumniPostRepository;
     private final ImageService imageService;
@@ -175,6 +185,99 @@ public class AlumniPostService {
                                 alumniPostRepository.countPublishedByOrganizationId(orgId),
                                 page, limit)))
                 .switchIfEmpty(Mono.just(PaginatedResponse.of(java.util.List.of(), 0, page, limit)));
+    }
+
+    /**
+     * Public alumni-post list for the honors pages: server-side filtering, sorting and pagination,
+     * plus a featured item that is excluded from {@code items} (and from the total) so it never
+     * appears twice and never shifts the page boundaries.
+     */
+    public Mono<FeaturedPaginatedResponse<AlumniPostResponse>> getPublishedList(
+            int page,
+            int limit,
+            Integer organizationId,
+            String keyword,
+            String topics,
+            LocalDate fromDate,
+            LocalDate toDate,
+            String direction) {
+        String normalizedKeyword = keyword == null ? "" : keyword.trim();
+        String normalizedTopics = normalizeTopics(topics);
+        String normalizedDirection = "oldest".equalsIgnoreCase(direction) ? "oldest" : "newest";
+        String from = fromDate == null ? "" : fromDate.toString();
+        String to = toDate == null ? "" : toDate.toString();
+        int offset = page * limit;
+
+        return SecurityUtils.resolvePublicOrganizationId(organizationId)
+                .flatMap(orgId -> {
+                    String cacheKey = String.join("|",
+                            "published-list-v1",
+                            "org=" + orgId,
+                            "page=" + page,
+                            "limit=" + limit,
+                            "keyword=" + normalizedKeyword.toLowerCase(Locale.ROOT),
+                            "topics=" + normalizedTopics,
+                            "from=" + from,
+                            "to=" + to,
+                            "direction=" + normalizedDirection);
+
+                    return cacheUtils.getOrCompute(CacheNames.ALUMNI_POST, cacheKey, LIST_TTL,
+                            () -> alumniPostRepository.findPublicFeatured(
+                                            orgId, normalizedKeyword, normalizedTopics, from, to, normalizedDirection)
+                                    .map(AlumniPostResponse::from)
+                                    .map(this::withContentPreview)
+                                    .map(Optional::of)
+                                    .defaultIfEmpty(Optional.empty())
+                                    .flatMap(featuredOptional -> {
+                                        Integer featuredId = featuredOptional
+                                                .map(AlumniPostResponse::getId)
+                                                .orElse(null);
+                                        Mono<List<AlumniPostResponse>> items = alumniPostRepository.findPublicPage(
+                                                        orgId, featuredId, normalizedKeyword, normalizedTopics,
+                                                        from, to, normalizedDirection, limit, offset)
+                                                .map(AlumniPostResponse::from)
+                                                .map(this::withContentPreview)
+                                                .collectList();
+                                        Mono<Long> total = alumniPostRepository.countPublicPage(
+                                                orgId, featuredId, normalizedKeyword, normalizedTopics, from, to);
+
+                                        return Mono.zip(items, total)
+                                                .map(result -> FeaturedPaginatedResponse.of(
+                                                        featuredOptional.orElse(null),
+                                                        result.getT1(), result.getT2(), page, limit));
+                                    }));
+                })
+                .switchIfEmpty(Mono.just(FeaturedPaginatedResponse.of(
+                        null, List.of(), 0, page, limit)));
+    }
+
+    /**
+     * Content is rich HTML. List cards only ever render a short excerpt, so strip the markup and
+     * bound the length here instead of shipping whole articles down the wire. Detail endpoints
+     * intentionally keep returning the full content.
+     */
+    private AlumniPostResponse withContentPreview(AlumniPostResponse item) {
+        item.setContent(HtmlPreviewUtils.toPlainTextPreview(item.getContent(), CONTENT_PREVIEW_LENGTH));
+        return item;
+    }
+
+    /**
+     * Normalizes without validating against the alumni catalog. The /honors overview builds a
+     * single topic filter from the union of the alumni and achievement catalogs and sends it to
+     * both endpoints, so rejecting an out-of-channel topic here would 400 the whole page. Unknown
+     * topics simply reach the query and match nothing, which is the intended result.
+     */
+    private String normalizeTopics(String topics) {
+        if (topics == null || topics.isBlank()) {
+            return "";
+        }
+
+        return Arrays.stream(topics.split(","))
+                .map(ArticleTopicCatalog::normalize)
+                .filter(topic -> topic != null && !topic.isBlank())
+                .distinct()
+                .sorted(Comparator.naturalOrder())
+                .collect(Collectors.joining(","));
     }
 
     public Mono<PaginatedResponse<AlumniPostResponse>> getByAuthorMemberId(
