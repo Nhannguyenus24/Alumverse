@@ -3,8 +3,17 @@ import dayjs from "dayjs";
 
 // --- Regex Patterns ---
 
-/** Password pattern: at least one lowercase, uppercase, digit, special char @$!%*?& */
-const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/;
+/** Password pattern: at least one lowercase, uppercase, digit, and non-alphanumeric special character. */
+export const PASSWORD_SPECIAL_REGEX = /[^A-Za-z0-9\s]/;
+export const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9\s]).+$/;
+
+export const getPasswordRequirementState = (value = '') => ({
+  length: value.length >= 8,
+  uppercase: /[A-Z]/.test(value),
+  lowercase: /[a-z]/.test(value),
+  digit: /\d/.test(value),
+  special: PASSWORD_SPECIAL_REGEX.test(value),
+});
 
 /** OTP: exactly 6 digits */
 const OTP_REGEX = /^[0-9]{6}$/;
@@ -56,7 +65,7 @@ export const getRegisterSchema = (t) => z
       .min(1, t ? t('auth:password_required') : 'Mật khẩu là bắt buộc')
       .min(8, t ? t('auth:password_length') : 'Mật khẩu từ 8–100 ký tự')
       .max(100, t ? t('auth:password_length') : 'Mật khẩu từ 8–100 ký tự')
-      .regex(PASSWORD_REGEX, t ? t('auth:password_complexity') : 'Mật khẩu phải có ít nhất một chữ hoa, chữ thường, số và ký tự đặc biệt (@$!%*?&)'),
+      .regex(PASSWORD_REGEX, t ? t('auth:password_complexity') : 'Mật khẩu phải có ít nhất một chữ hoa, chữ thường, số và ký tự đặc biệt'),
     confirmPassword: z.string().min(1, t ? t('auth:confirm_password_required') : 'Vui lòng nhập lại mật khẩu'),
   })
   .refine((data) => data.password === data.confirmPassword, {
@@ -92,7 +101,7 @@ export const getChangePasswordSchema = (t) => z.object({
     .min(1, t ? t('auth:new_password_required') : 'Mật khẩu mới là bắt buộc')
     .min(8, t ? t('auth:new_password_length') : 'Mật khẩu mới từ 8–50 ký tự')
     .max(50, t ? t('auth:new_password_length') : 'Mật khẩu mới từ 8–50 ký tự')
-    .regex(PASSWORD_REGEX, t ? t('auth:password_complexity') : 'Mật khẩu phải có ít nhất một chữ hoa, chữ thường, số và ký tự đặc biệt (@$!%*?&)'),
+    .regex(PASSWORD_REGEX, t ? t('auth:password_complexity') : 'Mật khẩu phải có ít nhất một chữ hoa, chữ thường, số và ký tự đặc biệt'),
   confirmNewPassword: z.string().min(1, t ? t('auth:confirm_new_password_required') : 'Vui lòng nhập lại mật khẩu mới'),
 }).refine((data) => data.newPassword === data.confirmNewPassword, {
   message: t ? t('auth:new_passwords_not_match') : 'Mật khẩu mới không trùng khớp',
@@ -107,7 +116,7 @@ const getChangePasswordRequestSchema = (t) => z.object({
     .min(1, t ? t('auth:new_password_required') : 'Mật khẩu mới là bắt buộc')
     .min(8, t ? t('auth:new_password_length') : 'Mật khẩu mới từ 8–50 ký tự')
     .max(50, t ? t('auth:new_password_length') : 'Mật khẩu mới từ 8–50 ký tự')
-    .regex(PASSWORD_REGEX, t ? t('auth:password_complexity') : 'Mật khẩu phải có ít nhất một chữ hoa, chữ thường, số và ký tự đặc biệt (@$!%*?&)'),
+    .regex(PASSWORD_REGEX, t ? t('auth:password_complexity') : 'Mật khẩu phải có ít nhất một chữ hoa, chữ thường, số và ký tự đặc biệt'),
 });
 
 /** @deprecated Use getChangePasswordSchema(t) instead */

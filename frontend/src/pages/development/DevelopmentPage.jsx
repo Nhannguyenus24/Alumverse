@@ -19,15 +19,12 @@ import { useCanContribute } from '../../hooks/useCanContribute';
 import { ContributeGuardTooltip } from '../../components/ContributeGuard';
 import { usePublishedJobs } from '../../hooks/articles/usePublishedJobs';
 import { usePublishedLearning } from '../../hooks/articles/usePublishedLearning';
+import { useDebounce } from '../../hooks/useDebounce';
 import { toCardShape } from '../../hooks/articles/toCardShape';
 import { useOrganization } from '../../hooks/useOrganization';
 import apiClient from '../../utils/axios';
 import { deleteArticleByChannel, getArticleAdminEditPath } from '../../utils/articleAdminActions';
-import {
-  ARTICLE_FETCH_LIMIT,
-  applyArticleFilters,
-  getArticleFilterConfig,
-} from '../../utils/articleListFilters';
+import { getArticleFilterConfig } from '../../utils/articleListFilters';
 import { getDevelopmentSidebarItems } from '../../constants/developmentNav';
 import { getOrganizationHeroBannerUrl } from '../../utils/organizationBrand';
 import {
@@ -113,6 +110,21 @@ const PreviewSection = ({
   </ScrollRevealGroup>
 );
 
+const articleTime = (article) => {
+  const value = article?.updatedAt ?? article?.createdAt ?? article?.publishedAt;
+  const time = value ? new Date(value).getTime() : 0;
+  return Number.isNaN(time) ? 0 : time;
+};
+
+const pickFeatured = (learning, job, direction) => {
+  if (!learning) return job;
+  if (!job) return learning;
+  if (direction === 'oldest') {
+    return articleTime(learning) <= articleTime(job) ? learning : job;
+  }
+  return articleTime(learning) >= articleTime(job) ? learning : job;
+};
+
 const DevelopmentPage = () => {
   const { t } = useTranslation(['dev', 'mentorship', 'common']);
   const { slug } = useParams();
@@ -128,35 +140,43 @@ const DevelopmentPage = () => {
   const sidebar = getDevelopmentSidebarItems(t);
   const filters = useMemo(() => getArticleFilterConfig(t, ['learning', 'job']), [t]);
 
+  const [filterValues, setFilterValues] = useState({ all: true });
+  const debouncedSearch = useDebounce(filterValues.search ?? '', 400);
+  const selectedSort = Array.isArray(filterValues.sort) ? filterValues.sort[0] : filterValues.sort;
+  const requestFilters = {
+    q: debouncedSearch,
+    topics: filterValues.topic,
+    fromDate: filterValues.fromDate,
+    toDate: filterValues.toDate,
+    direction: selectedSort,
+  };
+
   const {
+    featured: featuredAcademic,
     resources: academics,
     isPending: academicsPending,
     errorMessage: academicsError,
-  } = usePublishedLearning(0, ARTICLE_FETCH_LIMIT);
+  } = usePublishedLearning(0, 6, requestFilters);
 
   const {
+    featured: featuredJob,
     jobs,
     isPending: jobsPending,
     errorMessage: jobsError,
-  } = usePublishedJobs(0, ARTICLE_FETCH_LIMIT);
+  } = usePublishedJobs(0, 6, requestFilters);
 
-  const [filterValues, setFilterValues] = useState({ all: true });
   const [submitAnchorEl, setSubmitAnchorEl] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
-  const filteredDevelopmentArticles = useMemo(
-    () => applyArticleFilters([...academics, ...jobs], filterValues),
-    [academics, jobs, filterValues],
-  );
-  const [featured, ...rest] = filteredDevelopmentArticles;
+  const featured = pickFeatured(featuredAcademic, featuredJob, selectedSort);
   const featuredCard = featured ? toCardShape(featured, cardFallbackImage) : null;
-  const visibleAcademics = rest
-    .filter((article) => article.channel === 'learning')
-    .slice(0, 6);
-  const visibleJobs = rest
-    .filter((article) => article.channel === 'job')
-    .slice(0, 6);
+  const visibleAcademics = featuredAcademic && featured?.channel !== 'learning'
+    ? [featuredAcademic, ...academics].slice(0, 6)
+    : academics.slice(0, 6);
+  const visibleJobs = featuredJob && featured?.channel !== 'job'
+    ? [featuredJob, ...jobs].slice(0, 6)
+    : jobs.slice(0, 6);
 
   const openArticle = (article) => {
     if (!article?.id) return;

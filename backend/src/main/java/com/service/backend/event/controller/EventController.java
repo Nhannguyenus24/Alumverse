@@ -3,12 +3,14 @@ package com.service.backend.event.controller;
 import com.service.backend.shared.entity.*;
 import com.service.backend.event.dto.*;
 import com.service.backend.shared.dto.ApiResponse;
+import com.service.backend.shared.dto.FeaturedPaginatedResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.event.service.EventService;
 import com.service.backend.shared.annotations.PublicEndpoint;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,7 +20,9 @@ import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 import io.swagger.v3.oas.annotations.Parameter;
 import java.util.Map;
+import java.time.LocalDate;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.format.annotation.DateTimeFormat;
 
 @Tag(name = "Events", description = "API endpoints for viewing and joining events")
 @RestController
@@ -90,13 +94,20 @@ public class EventController {
 
     @PublicEndpoint
     @GetMapping("/upcoming")
-    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<Event>>>> getUpcomingEvents(
+    public Mono<ResponseEntity<ApiResponse<FeaturedPaginatedResponse<Event>>>> getUpcomingEvents(
             @RequestParam(required = false) Long organizationId,
             @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "10") @Min(1) int limit) {
-        Mono<PaginatedResponse<Event>> result = organizationId != null
-                ? eventService.getUpcomingEvents(organizationId, page, limit)
-                : Mono.just(PaginatedResponse.of(java.util.List.of(), 0, page, limit));
+            @RequestParam(defaultValue = "10") @Min(1) int limit,
+            @RequestParam(defaultValue = "") String keyword,
+            @RequestParam(defaultValue = "") String topics,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
+            @RequestParam(defaultValue = "status") @Pattern(regexp = "status|newest|oldest") String sort,
+            @RequestParam(defaultValue = "false") boolean withFeatured) {
+        Mono<FeaturedPaginatedResponse<Event>> result = organizationId != null
+                ? eventService.getUpcomingEventList(
+                        organizationId, page, limit, keyword, topics, fromDate, toDate, sort, withFeatured)
+                : Mono.just(FeaturedPaginatedResponse.of(null, java.util.List.of(), 0, page, limit));
         return result.map(e -> ResponseEntity.ok(new ApiResponse<>("Upcoming events retrieved successfully", e)));
     }
 
@@ -105,9 +116,16 @@ public class EventController {
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<Event>>>> getOngoingEvents(
             @RequestParam(required = false) Long organizationId,
             @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "10") @Min(1) int limit) {
+            @RequestParam(defaultValue = "10") @Min(1) int limit,
+            @RequestParam(defaultValue = "") String keyword,
+            @RequestParam(defaultValue = "") String topics,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
+            @RequestParam(defaultValue = "status") @Pattern(regexp = "status|newest|oldest") String sort,
+            @RequestParam(defaultValue = "false") boolean excludeFeatured) {
         Mono<PaginatedResponse<Event>> result = organizationId != null
-                ? eventService.getOngoingEvents(organizationId, page, limit)
+                ? eventService.getOngoingEventList(
+                        organizationId, page, limit, keyword, topics, fromDate, toDate, sort, excludeFeatured)
                 : Mono.just(PaginatedResponse.of(java.util.List.of(), 0, page, limit));
         return result.map(e -> ResponseEntity.ok(new ApiResponse<>("Ongoing events retrieved successfully", e)));
     }
@@ -117,8 +135,14 @@ public class EventController {
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<Event>>>> getPastEvents(
             @RequestParam Long organizationId,
             @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "10") @Min(1) int limit) {
-        return eventService.getPastEvents(organizationId, page, limit)
+            @RequestParam(defaultValue = "10") @Min(1) int limit,
+            @RequestParam(defaultValue = "") String keyword,
+            @RequestParam(defaultValue = "") String topics,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
+            @RequestParam(defaultValue = "status") @Pattern(regexp = "status|newest|oldest") String sort) {
+        return eventService.getPastEventList(
+                        organizationId, page, limit, keyword, topics, fromDate, toDate, sort)
                 .map(e -> ResponseEntity.ok(new ApiResponse<>("Past events retrieved successfully", e)));
     }
 
