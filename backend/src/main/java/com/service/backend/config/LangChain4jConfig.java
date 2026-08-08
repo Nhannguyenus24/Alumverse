@@ -9,6 +9,7 @@ import com.service.backend.shared.service.DocumentExtractionService;
 import com.service.backend.shared.service.SkillExtractionFallback;
 import com.service.backend.shared.service.SkillExtractionService;
 import com.service.backend.shared.service.SurveyInsightService;
+import com.service.backend.shared.service.VerificationRecommendationAiService;
 import dev.langchain4j.service.AiServices;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -87,6 +88,11 @@ public class LangChain4jConfig {
                 return "Chưa cấu hình khóa AI. Vui lòng xem phần tổng hợp số liệu để tự phân tích.";
             }
         };
+    }
+
+    @Bean
+    public VerificationRecommendationAiService verificationRecommendationAiService() {
+        return aiDelegate(VerificationRecommendationAiService.class);
     }
 
     @Bean

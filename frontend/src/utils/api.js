@@ -238,6 +238,10 @@ const adminUserApi = {
 		return apiClient.put(`${BASE_ADMIN_USERS}/verification-requests/${requestId}`, { status, adminNote });
 	},
 
+	getVerificationRecommendation(requestId) {
+		return apiClient.get(`${BASE_ADMIN_USERS}/verification-requests/${requestId}/ai-recommendation`);
+	},
+
 	reopenVerificationRequest(requestId, requestType, adminNote) {
 		return apiClient.post(`${BASE_ADMIN_USERS}/verification-requests/${requestId}/reopen`, { requestType, adminNote });
 	},
@@ -265,6 +269,7 @@ export const {
 	resetPasswordByAdmin,
 	updateTrustedVerifier,
 	getVerificationRequests,
+	getVerificationRecommendation,
 	reviewVerificationRequest,
 	reopenVerificationRequest,
 	addOrganizationMember,

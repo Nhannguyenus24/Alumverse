@@ -602,4 +602,27 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
 
     @Query("SELECT member_id, organization_id FROM verification_requests WHERE id = :requestId")
     Mono<com.service.backend.admin.dto.VerificationRequestInfo> findVerificationRequestInfoById(@Param("requestId") Integer requestId);
+
+    @Query("""
+            SELECT vr.id AS request_id,
+                   vr.member_id AS member_id,
+                   vr.organization_id AS organization_id,
+                   u.full_name AS full_name,
+                   om.student_id AS student_id,
+                   CAST(om.faculty AS text) AS declared_faculty,
+                   CAST(om.program AS text) AS declared_program,
+                   CAST(om.major AS text) AS declared_major,
+                   CAST(om.started_year AS text) AS declared_started_year,
+                   CAST(om.graduated_year AS text) AS declared_graduated_year,
+                   CAST(om.graduation_status AS text) AS declared_graduation_status,
+                   CAST(vr.document_type AS text) AS document_type,
+                   vr.ai_summary AS ocr_text
+            FROM verification_requests vr
+            JOIN users u ON u.id = vr.member_id
+            JOIN organization_members om
+              ON om.user_id = vr.member_id AND om.organization_id = vr.organization_id
+            WHERE vr.id = :requestId
+            """)
+    Mono<com.service.backend.admin.dto.VerificationRecommendationContext> findVerificationRecommendationContext(
+            @Param("requestId") Integer requestId);
 }
