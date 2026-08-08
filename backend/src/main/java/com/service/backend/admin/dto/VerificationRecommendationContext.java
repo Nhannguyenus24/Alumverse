@@ -37,6 +37,11 @@ public class VerificationRecommendationContext {
     private String declaredGraduationStatus;
     @Column("document_type")
     private String documentType;
+    /**
+     * Bound to {@code verification_requests.ai_summary}: the LLM-extracted
+     * identity fields ("Label: value" lines), not the raw OCR dump — except
+     * when extraction failed, in which case raw OCR text is stored instead.
+     */
     @Column("ocr_text")
     private String ocrText;
     /** Derived locally with accent/order-insensitive name token matching. */

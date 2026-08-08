@@ -96,9 +96,20 @@ class VerificationRecommendationServiceTest {
 
     @Test
     void toleratesOneCharacterOcrErrorInNameToken() {
+        // "minh" (4 chars) mis-OCR'd as "minj" — exercises the fuzzy edit-distance
+        // branch, which only applies to tokens of length >= 4.
         org.junit.jupiter.api.Assertions.assertTrue(VerificationRecommendationService.nameTokensMatch(
                 "Nguyễn Thị Minh Anh",
-                "ho ten anh minh thj nguyen mssv 22123456"));
+                "ho ten anh minj thi nguyen mssv 22123456"));
+    }
+
+    @Test
+    void rejectsOcrErrorInShortNameToken() {
+        // Tokens shorter than 4 chars ("an") never fuzzy-match — a 1-character
+        // slip there changes meaning too easily (e.g. "an" vs "am").
+        org.junit.jupiter.api.Assertions.assertFalse(VerificationRecommendationService.nameTokensMatch(
+                "Nguyễn Văn An",
+                "ho ten van am nguyen mssv 22123456"));
     }
 
     @Test

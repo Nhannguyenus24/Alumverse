@@ -1,7 +1,11 @@
 package com.service.backend.shared.service;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.text.Normalizer;
 import java.util.ArrayList;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -212,7 +216,16 @@ public class VerificationRecommendationService {
     }
 
     private String cacheKey(VerificationRecommendationContext context) {
-        return context.getRequestId() + ":" + Integer.toHexString(JsonUtils.toJson(context).hashCode());
+        return context.getRequestId() + ":" + sha256Hex(JsonUtils.toJson(context));
+    }
+
+    private static String sha256Hex(String value) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            return HexFormat.of().formatHex(digest.digest(value.getBytes(StandardCharsets.UTF_8)));
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 unavailable", e);
+        }
     }
 
     private String normalizeText(String value) {
