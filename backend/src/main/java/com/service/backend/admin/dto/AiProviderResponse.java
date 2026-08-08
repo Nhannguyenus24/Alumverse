@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -21,5 +22,6 @@ public class AiProviderResponse {
     private Boolean hasApiKey;
     private Boolean enabled;
     private Integer priority;
+    private LocalDateTime quotaExhaustedAt;
     private List<AiModelDto> models;
 }
