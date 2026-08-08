@@ -3,7 +3,9 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
+import '../../../../core/config/env.dart';
 import '../../../../core/errors/api_exception.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -26,6 +28,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   final _emailCtl = TextEditingController();
   final _passCtl = TextEditingController();
   bool _obscure = true;
+  bool _googleLoading = false;
 
   @override
   void dispose() {
@@ -47,6 +50,39 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       _showError(auth.error!);
     } else if (auth.valueOrNull?.isLoggedIn == true) {
       context.go(RouteNames.home);
+    }
+  }
+
+  /// Native Google sign-in, then hands the ID token to [AuthNotifier] which
+  /// calls the same backend endpoint the password login uses.
+  Future<void> _submitGoogle() async {
+    setState(() => _googleLoading = true);
+    try {
+      final googleUser = await GoogleSignIn(
+        serverClientId: Env.googleClientId,
+      ).signIn();
+      if (googleUser == null) return; // user cancelled the picker
+
+      final googleAuth = await googleUser.authentication;
+      final idToken = googleAuth.idToken;
+      if (idToken == null) {
+        if (mounted) AppToast.error(context, 'auth.login_failed'.tr());
+        return;
+      }
+
+      await ref.read(authStateProvider.notifier).loginWithGoogle(idToken);
+      if (!mounted) return;
+
+      final auth = ref.read(authStateProvider);
+      if (auth.hasError) {
+        _showError(auth.error!);
+      } else if (auth.valueOrNull?.isLoggedIn == true) {
+        context.go(RouteNames.home);
+      }
+    } catch (e) {
+      if (mounted) AppToast.fromError(context, e, fallback: 'auth.login_failed'.tr());
+    } finally {
+      if (mounted) setState(() => _googleLoading = false);
     }
   }
 
@@ -189,18 +225,15 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 const SizedBox(height: 24),
                 OutlinedButton.icon(
                   onPressed:
-                      loading
-                          ? null
-                          : () {
-                            // TODO: Google Sign-In — gọi google_sign_in để lấy
-                            // idToken rồi ref.read(authStateProvider.notifier)
-                            // .loginWithGoogle(idToken).
-                            AppToast.info(
-                              context,
-                              'auth.google_coming_soon'.tr(),
-                            );
-                          },
-                  icon: const Icon(Icons.g_mobiledata, size: 30),
+                      (loading || _googleLoading) ? null : _submitGoogle,
+                  icon:
+                      _googleLoading
+                          ? const SizedBox(
+                            height: 18,
+                            width: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                          : const Icon(Icons.g_mobiledata, size: 30),
                   label: Text('auth.continue_with_google'.tr()),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 12),
