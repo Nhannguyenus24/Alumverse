@@ -35,6 +35,7 @@ import com.service.backend.admin.service.AdminUserService;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.dto.ApiResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
+import com.service.backend.shared.dto.VerificationRecommendationResponse;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.SecurityUtils;
 
@@ -209,6 +210,17 @@ public class AdminUserController {
                         : adminUserService.getAllVerificationRequests(null, keyword, requestType, page, size)))
                 .map(data -> ResponseEntity.ok(
                         new ApiResponse<>("Verification requests fetched successfully", data)));
+    }
+
+    /** AI recommendation only; it never approves or rejects the request. */
+    @GetMapping("/verification-requests/{requestId}/ai-recommendation")
+    public Mono<ResponseEntity<ApiResponse<VerificationRecommendationResponse>>> getVerificationRecommendation(
+            @PathVariable Integer requestId) {
+        return adminUserService.getVerificationRecommendation(requestId)
+                .map(data -> ResponseEntity.ok(
+                        new ApiResponse<>("Verification recommendation generated successfully", data)))
+                .switchIfEmpty(Mono.error(new ApplicationException(
+                        ErrorCode.RESOURCES_NOT_FOUND, "Verification request not found")));
     }
 
     /**

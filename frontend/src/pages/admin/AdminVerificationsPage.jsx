@@ -46,6 +46,7 @@ import {
   getTrustedVerifiers,
   getUserById,
   getUsers,
+  getVerificationRecommendation,
   getVerificationRequests,
   reopenVerificationRequest,
   reviewVerificationRequest,
@@ -271,6 +272,9 @@ const AdminVerificationsPage = () => {
   // Self-declared profile of the sender, loaded when the proof dialog opens.
   const [senderProfile, setSenderProfile] = useState(null);
   const [senderLoading, setSenderLoading] = useState(false);
+  const [aiRecommendation, setAiRecommendation] = useState(null);
+  const [aiRecommendationLoading, setAiRecommendationLoading] = useState(false);
+  const [aiRecommendationError, setAiRecommendationError] = useState('');
 
   useEffect(() => {
     setBreadcrumbs?.([{ label: t('nav_verifications'), active: true }]);
@@ -430,6 +434,35 @@ const AdminVerificationsPage = () => {
     return () => { cancelled = true; };
   }, [documentViewerRequest]);
 
+  // AI only recommends. The approve/reject actions below remain explicit admin decisions.
+  useEffect(() => {
+    const requestId = documentViewerRequest?.id;
+    if (!requestId) {
+      setAiRecommendation(null);
+      setAiRecommendationError('');
+      return undefined;
+    }
+
+    let cancelled = false;
+    setAiRecommendation(null);
+    setAiRecommendationError('');
+    setAiRecommendationLoading(true);
+    getVerificationRecommendation(requestId)
+      .then((res) => {
+        if (!cancelled) setAiRecommendation(res?.data?.data || null);
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setAiRecommendationError(error?.response?.data?.message || t('verif_ai_error'));
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setAiRecommendationLoading(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [documentViewerRequest?.id, documentViewerRequest?.aiSummary, t]);
+
   // Proof requests open the combined document dialog (evidence + review in one place);
   // peer requests keep the plain review dialog since they have no document to show.
   const handleReview = (request) => {
@@ -451,6 +484,8 @@ const AdminVerificationsPage = () => {
   const closeDocumentDialog = () => {
     setDocumentViewerRequest(null);
     setSenderProfile(null);
+    setAiRecommendation(null);
+    setAiRecommendationError('');
   };
 
   const submitReview = async (request, status, note = '') => {
@@ -511,18 +546,6 @@ const AdminVerificationsPage = () => {
   const formatGraduationStatus = (value) => {
     const key = normalizeGraduationStatus(value);
     return key ? t(`graduation_status.${key}`, { defaultValue: key }) : '';
-  };
-
-  /**
-   * Chỉ cảnh báo (sai lệch, ảnh không đọc được) mới đủ sức đề nghị từ chối.
-   * Thiếu thông tin tự khai là mức info: nhắc admin lưu ý chứ không phải cớ để từ chối.
-   */
-  const recommendation = (findings) => {
-    // Chưa đọc xong tài liệu thì chưa có cơ sở nào để khuyên duyệt hay từ chối.
-    if (findings.some((f) => f.severity === 'pending')) return 'pending';
-    if (findings.some((f) => f.severity === 'warning')) return 'reject';
-    if (findings.length > 0) return 'review';
-    return 'approve';
   };
 
   const documentFindings = useMemo(() => {
@@ -1149,10 +1172,17 @@ const AdminVerificationsPage = () => {
                   </Box>
                 )}
 
-                {/* Đối chiếu tài liệu với thông tin tự khai để admin quyết nhanh */}
+                {/* AI recommends; only the buttons below can make the final admin decision. */}
                 {(() => {
-                  const verdict = recommendation(documentFindings);
+                  const candidateVerdict = String(aiRecommendation?.verdict || '').toLowerCase();
+                  const verdict = VERDICT_TONE[candidateVerdict]
+                    ? candidateVerdict
+                    : (aiRecommendationLoading ? 'pending' : 'review');
                   const tone = VERDICT_TONE[verdict];
+                  const aiReasons = [
+                    ...(aiRecommendation?.reasons || []),
+                    ...(aiRecommendation?.mismatches || []),
+                  ];
                   return (
                     <Box
                       sx={{
@@ -1172,37 +1202,74 @@ const AdminVerificationsPage = () => {
                           gap: 0.5,
                         }}
                       >
-                        <Iconify icon="mdi:clipboard-check-outline" /> {t('verif_check_title')}
+                        <Iconify icon="mdi:robot-outline" /> {t('verif_ai_title')}
                       </Typography>
 
                       <Typography
                         variant="body2"
-                        sx={{ color: `${tone}.main`, fontWeight: 700, mt: 1, mb: documentFindings.length ? 1 : 0 }}
+                        sx={{ color: `${tone}.main`, fontWeight: 700, mt: 1, mb: 1 }}
                       >
-                        {t(`verif_verdict_${verdict}`)}
+                        {aiRecommendationLoading ? t('verif_ai_loading') : t(`verif_verdict_${verdict}`)}
                       </Typography>
 
-                      {documentFindings.length === 0 ? (
+                      {aiRecommendation && (
+                        <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mb: 1 }}>
+                          <Chip
+                            size="small"
+                            label={aiRecommendation.generatedByAi ? t('verif_ai_generated') : t('verif_ai_fallback')}
+                            color={aiRecommendation.generatedByAi ? 'primary' : 'default'}
+                            variant="outlined"
+                          />
+                        </Stack>
+                      )}
+
+                      {aiRecommendationError ? (
+                        <Typography variant="body2" color="error.main">{aiRecommendationError}</Typography>
+                      ) : aiRecommendation?.summary ? (
                         <Typography variant="body2" sx={{ color: 'text.primary' }}>
-                          {t('verif_check_ok')}
+                          {aiRecommendation.summary}
                         </Typography>
-                      ) : (
+                      ) : null}
+
+                      {aiReasons.length > 0 && (
                         <Stack component="ul" spacing={0.75} sx={{ m: 0, pl: 2.5 }}>
-                          {documentFindings.map((finding) => (
+                          {aiReasons.map((reason, index) => (
                             <Typography
-                              key={finding.code}
+                              key={`${index}-${reason}`}
                               component="li"
                               variant="body2"
                               sx={{ color: 'text.primary', lineHeight: 1.5 }}
                             >
-                              {findingMessage(finding)}
+                              {reason}
                             </Typography>
                           ))}
                         </Stack>
                       )}
+
+                      {aiRecommendation?.disclaimer && (
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                          {aiRecommendation.disclaimer}
+                        </Typography>
+                      )}
                     </Box>
                   );
                 })()}
+
+                {/* Deterministic checks remain visible as evidence, but no longer choose the verdict. */}
+                {documentFindings.length > 0 && (
+                  <Box sx={{ p: 2, borderRadius: 2, border: `1px dashed ${theme.palette.divider}` }}>
+                    <Typography variant="caption" sx={{ fontWeight: 800 }}>
+                      {t('verif_rule_checks_title')}
+                    </Typography>
+                    <Stack component="ul" spacing={0.75} sx={{ m: 0, pl: 2.5, mt: 1 }}>
+                      {documentFindings.map((finding) => (
+                        <Typography key={finding.code} component="li" variant="body2">
+                          {findingMessage(finding)}
+                        </Typography>
+                      ))}
+                    </Stack>
+                  </Box>
+                )}
 
                 <Box>
                   <Typography variant="caption" color="text.secondary" gutterBottom display="block">
