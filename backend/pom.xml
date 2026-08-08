@@ -106,9 +106,11 @@
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-crypto</artifactId>
 		</dependency>
+		<!-- Resend HTTP email API (replaces SMTP / spring-boot-starter-mail) -->
 		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-mail</artifactId>
+			<groupId>com.resend</groupId>
+			<artifactId>resend-java</artifactId>
+			<version>4.13.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
