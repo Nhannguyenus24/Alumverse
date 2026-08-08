@@ -96,7 +96,7 @@ public class VisionOcrService {
             log.info("Vision OCR chưa cấu hình ocr.vision.model.");
             return Mono.just(false);
         }
-        return providerRepo.findByEnabledTrueOrderByPriorityAscIdAsc()
+        return providerRepo.findByEnabledTrueAndQuotaExhaustedAtIsNullOrderByPriorityAscIdAsc()
                 .next()
                 .map(provider -> {
                     try {

@@ -2,6 +2,8 @@ package com.service.backend.article.service;
 
 import com.service.backend.article.dao.NewsR2dbcRepository;
 import com.service.backend.article.dto.NewsResponse;
+import com.service.backend.article.dto.NewsListItemResponse;
+import com.service.backend.article.dto.PublishedNewsResponse;
 import com.service.backend.article.dto.UpdateNewsRequest;
 import com.service.backend.shared.entity.News;
 import com.service.backend.shared.enums.ErrorCode;
@@ -20,6 +22,9 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
@@ -71,6 +76,18 @@ class NewsServiceTest {
         }
 
         @Test
+        @DisplayName("should retain complete rich content for detail responses")
+        void getById_keepsFullContent() {
+            String fullContent = "<p>" + "complete article content ".repeat(30) + "</p>";
+            News news = News.builder().id(1).content(fullContent).build();
+            when(newsRepository.findById(1)).thenReturn(Mono.just(news));
+
+            StepVerifier.create(newsService.getById(1))
+                    .assertNext(dto -> assertThat(dto.getContent()).isEqualTo(fullContent))
+                    .verifyComplete();
+        }
+
+        @Test
         @DisplayName("should fail when news not found")
         void getById_notFound() {
             when(newsRepository.findById(99)).thenReturn(Mono.empty());
@@ -79,6 +96,135 @@ class NewsServiceTest {
                     .expectErrorMatches(err -> err instanceof ApplicationException &&
                             ((ApplicationException) err).getErrorCode() == ErrorCode.NEWS_NOT_FOUND)
                     .verify();
+        }
+    }
+
+    // ─── public published list ───────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("getPublishedList()")
+    class GetPublishedList {
+
+        @SuppressWarnings("unchecked")
+        private void passThroughCache() {
+            when(cacheUtils.<PublishedNewsResponse>getOrCompute(
+                    eq("news_cache"), anyString(), any(), any()))
+                    .thenAnswer(invocation -> ((Supplier<Mono<PublishedNewsResponse>>) invocation.getArgument(3)).get());
+        }
+
+        @Test
+        @DisplayName("should return fixed featured separately and paginate only filtered non-featured items")
+        void separatesFeaturedAndUsesBackendFilters() {
+            passThroughCache();
+            NewsListItemResponse featured = item(10, "Newest fixed article");
+            NewsListItemResponse result = item(7, "Matching article");
+            when(newsRepository.findPublishedFeatured(3)).thenReturn(Mono.just(featured));
+            when(newsRepository.findPublishedList(
+                    3, 10, "reactive", "academic_research,alumni_news",
+                    "2026-08-01", "2026-08-07", "oldest", 15, 15))
+                    .thenReturn(reactor.core.publisher.Flux.just(result));
+            when(newsRepository.countPublishedList(
+                    3, 10, "reactive", "academic_research,alumni_news",
+                    "2026-08-01", "2026-08-07"))
+                    .thenReturn(Mono.just(16L));
+
+            StepVerifier.create(newsService.getPublishedList(
+                            1, 15, 3, " reactive ", "alumni_news,academic_research",
+                            LocalDate.of(2026, 8, 1), LocalDate.of(2026, 8, 7), "oldest"))
+                    .assertNext(response -> {
+                        assertThat(response.getFeatured()).isSameAs(featured);
+                        assertThat(response.getItems()).containsExactly(result);
+                        assertThat(response.getTotalItem()).isEqualTo(16);
+                        assertThat(response.getTotalPage()).isEqualTo(2);
+                        assertThat(response.getCurrentPage()).isEqualTo(1);
+                        assertThat(response.getPageSize()).isEqualTo(15);
+                        assertThat(response.getHasPrevious()).isTrue();
+                        assertThat(response.getHasNext()).isFalse();
+                    })
+                    .verifyComplete();
+
+            verify(newsRepository).findPublishedFeatured(3);
+        }
+
+        @Test
+        @DisplayName("should keep featured independent from keyword and return empty filtered items")
+        void featuredIsIndependentFromFilters() {
+            passThroughCache();
+            NewsListItemResponse featured = item(10, "Does not match");
+            when(newsRepository.findPublishedFeatured(1)).thenReturn(Mono.just(featured));
+            when(newsRepository.findPublishedList(
+                    1, 10, "different", "", "", "", "newest", 15, 0))
+                    .thenReturn(reactor.core.publisher.Flux.empty());
+            when(newsRepository.countPublishedList(1, 10, "different", "", "", ""))
+                    .thenReturn(Mono.just(0L));
+
+            StepVerifier.create(newsService.getPublishedList(
+                            0, 15, 1, "different", "", null, null, "newest"))
+                    .assertNext(response -> {
+                        assertThat(response.getFeatured()).isSameAs(featured);
+                        assertThat(response.getItems()).isEmpty();
+                        assertThat(response.getTotalItem()).isZero();
+                        assertThat(response.getTotalPage()).isZero();
+                    })
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("should parse, decode, normalize and safely truncate list content in Java")
+        void transformsHtmlContentIntoPreview() {
+            passThroughCache();
+            NewsListItemResponse featured = item(10, "Featured");
+            featured.setContent("<p>AT&amp;T&nbsp;news</p><p>" + "long text ".repeat(40) + "😀</p>");
+            NewsListItemResponse result = item(7, "Result");
+            result.setContent("<div>First&nbsp; line</div>\n<div>Second &quot;line&quot;</div>");
+            NewsListItemResponse surrogateBoundary = item(6, "Surrogate boundary");
+            surrogateBoundary.setContent("a".repeat(259) + "😀suffix");
+            when(newsRepository.findPublishedFeatured(1)).thenReturn(Mono.just(featured));
+            when(newsRepository.findPublishedList(1, 10, "", "", "", "", "newest", 15, 0))
+                    .thenReturn(reactor.core.publisher.Flux.just(result, surrogateBoundary));
+            when(newsRepository.countPublishedList(1, 10, "", "", "", ""))
+                    .thenReturn(Mono.just(2L));
+
+            StepVerifier.create(newsService.getPublishedList(
+                            0, 15, 1, null, null, null, null, null))
+                    .assertNext(response -> {
+                        assertThat(response.getFeatured().getContent())
+                                .startsWith("AT&T news long text")
+                                .doesNotContain("<p>", "&amp;", "&nbsp;")
+                                .hasSizeLessThanOrEqualTo(260);
+                        assertThat(response.getItems().get(0).getContent())
+                                .isEqualTo("First line Second \"line\"");
+                        assertThat(response.getItems().get(1).getContent())
+                                .isEqualTo("a".repeat(259));
+                    })
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("should include every filter dimension in the cache key")
+        void cacheKeyContainsAllFilters() {
+            when(cacheUtils.<PublishedNewsResponse>getOrCompute(
+                    eq("news_cache"), anyString(), any(), any()))
+                    .thenReturn(Mono.just(PublishedNewsResponse.of(null, List.of(), 0, 2, 12)));
+
+            StepVerifier.create(newsService.getPublishedList(
+                            2, 12, 4, "Campus", "alumni_news",
+                            LocalDate.of(2026, 1, 2), LocalDate.of(2026, 2, 3), "oldest"))
+                    .expectNextCount(1)
+                    .verifyComplete();
+
+            verify(cacheUtils).getOrCompute(
+                    eq("news_cache"),
+                    eq("published-v2|org=4|page=2|limit=12|keyword=campus|topics=alumni_news|from=2026-01-02|to=2026-02-03|sort=oldest"),
+                    any(), any());
+        }
+
+        private NewsListItemResponse item(Integer id, String title) {
+            NewsListItemResponse item = new NewsListItemResponse();
+            item.setId(id);
+            item.setTitle(title);
+            item.setContent("bounded preview");
+            return item;
         }
     }
 

@@ -1,0 +1,72 @@
+=== HƯỚNG DẪN CÀI ĐẶT ===
+
+Hệ thống AlumVerse gồm 4 thành phần:
+  - Backend  : Spring Boot (Java 17), chạy tại http://localhost:8080
+  - Frontend : ReactJS + Vite, chạy tại http://localhost:5173
+  - Mobile   : Ứng dụng Flutter (Android/iOS)
+  - FitBOT   : Trợ lý AI hỏi–đáp (RAG) bằng Python/FastAPI, chạy tại http://localhost:8000
+
+1. YÊU CẦU CÔNG CỤ VÀ MÔI TRƯỜNG PHÁT TRIỂN:
+- Node.js (phiên bản LTS mới nhất): Dùng để phát triển và chạy Frontend.
+- Java 17 (JDK 17): Dùng để phát triển và chạy Backend (Spring Boot).
+- Docker & Docker Compose: Dùng để chạy cơ sở dữ liệu (PostgreSQL), Nginx và các dịch vụ hạ tầng (Prometheus).
+- Flutter SDK: Dùng để phát triển ứng dụng Mobile.
+- Python 3.9+ (khuyến nghị 3.10+): Dùng để chạy trợ lý AI FitBOT.
+
+2. CẤU HÌNH MÔI TRƯỜNG (.env & properties):
+- Frontend:
+  + Vào thư mục 'frontend'.
+  + Tạo hoặc copy file '.env', điền các thông số: VITE_API_BASE_URL, VITE_WS_CHAT_URL, VITE_GOOGLE_CLIENT_ID, VITE_RECAPTCHA_SITE_KEY.
+  + Nếu dùng FitBOT: điền thêm VITE_FITBOT_API_URL (mặc định http://localhost:8000).
+- Backend:
+  + Vào thư mục 'backend/src/main/resources/'.
+  + Mở file 'application.properties', điền/kiểm tra đầy đủ các variable như: spring.r2dbc.* (kết nối DB), spring.flyway.*, jwt.secret, google.oauth.client-id, gemini.api.key, ...
+- Mobile (Flutter):
+  + Ứng dụng mobile không dùng file .env thông thường.
+  + Các giá trị môi trường được truyền khi chạy bằng tham số --dart-define.
+  + Các biến cần thiết: API_BASE_URL, WS_BASE_URL, GOOGLE_CLIENT_ID, DEFAULT_ORG_SLUG.
+  + Ví dụ:
+    flutter run \
+      --dart-define=API_BASE_URL=https://your-api-url \
+      --dart-define=WS_BASE_URL=wss://your-api-url \
+      --dart-define=GOOGLE_CLIENT_ID=your-google-client-id \
+      --dart-define=DEFAULT_ORG_SLUG=fit-hcmus
+- FitBOT (Python/FastAPI):
+  + Vào thư mục 'FitBOT'.
+  + Tạo file '.env' và điền: GOOGLE_API_KEY=your_google_api_key_here
+  + Lấy API key miễn phí tại: https://aistudio.google.com/app/apikey
+
+3. HƯỚNG DẪN CÀI ĐẶT THƯ VIỆN:
+* Frontend (ReactJS/Vite):
+  - Mở terminal.
+  - Di chuyển vào thư mục frontend: cd frontend
+  - Chạy lệnh cài đặt các package npm: npm i --legacy-peer-deps
+
+* Backend (Spring Boot/Maven):
+  - Các thư viện được quản lý tự động bởi Maven.
+  - Không cần cài đặt thủ công, Maven sẽ tự động tải thư viện khi bạn biên dịch hoặc chạy dự án.
+
+* Mobile (Flutter):
+  - Mở terminal.
+  - Di chuyển vào thư mục mobile_flutter: cd mobile_flutter
+  - Chạy lệnh kiểm tra môi trường: flutter doctor
+  - Chạy lệnh cài thư viện: flutter pub get
+  - Nếu cần build bản APK: flutter build apk
+  - Chạy ứng dụng: flutter run
+  - Nếu muốn truyền biến môi trường cho mobile, dùng lệnh như sau:
+      flutter run \
+        --dart-define=API_BASE_URL=https://your-api-url \
+        --dart-define=WS_BASE_URL=wss://your-api-url \
+        --dart-define=GOOGLE_CLIENT_ID=your-google-client-id \
+        --dart-define=DEFAULT_ORG_SLUG=fit-hcmus
+
+* FitBOT (Python/FastAPI - trợ lý AI):
+  - Mở terminal.
+  - Di chuyển vào thư mục FitBOT: cd FitBOT
+  - Tạo và kích hoạt môi trường ảo:
+      + Windows        : python -m venv venv  &&  venv\Scripts\activate
+      + Linux/macOS    : python3 -m venv venv  &&  source venv/bin/activate
+  - Cài đặt các thư viện: pip install -r requirements.txt
+  - Đảm bảo đã tạo file .env chứa GOOGLE_API_KEY (xem mục 2).
+  - Ghi chú: lần chạy đầu tiên sẽ tự tải các model embedding (BAAI/bge-m3) và
+    reranker (BAAI/bge-reranker-base), có thể mất vài phút tùy tốc độ mạng.

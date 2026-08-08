@@ -1,11 +1,12 @@
 
-import { useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { SnackbarProvider } from 'notistack';
 import { styled } from '@mui/material/styles';
 import { Box, GlobalStyles } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import Iconify from './Iconify';
 import IconButtonAnimate from './IconButtonAnimate';
+import ToastPositionContext from '../contexts/toastPositionContext';
 
 // ------------------------------------------
 // Override Material Design Content
@@ -41,13 +42,18 @@ const StyledMaterialDesignContent = styled(MaterialDesignContent)(({ theme }) =>
 
 // ------------------------------------------
 
-function SnackbarStyles() {
+const DEFAULT_TOP_OFFSET = 14;
+
+function SnackbarStyles({ topOffset }) {
   const theme = useTheme();
 
   return (
     <GlobalStyles
       styles={{
         '#root': {
+          '& .notistack-SnackbarContainer': {
+            top: `${DEFAULT_TOP_OFFSET + topOffset}px !important`,
+          },
           '& .SnackbarItem-message': {
             padding: '0 !important',
             fontWeight: theme.typography.fontWeightMedium,
@@ -73,15 +79,30 @@ function SnackbarStyles() {
 
 export default function NotistackProvider({ children }) {
   const notistackRef = useRef(null);
+  const offsetsRef = useRef(new Map());
+  const [topOffset, setTopOffset] = useState(0);
+
+  const registerToastTopOffset = useCallback((offset) => {
+    const registrationId = Symbol('toast-top-offset');
+    const normalizedOffset = Number.isFinite(offset) ? Math.max(0, offset) : 0;
+
+    offsetsRef.current.set(registrationId, normalizedOffset);
+    setTopOffset(Math.max(0, ...offsetsRef.current.values()));
+
+    return () => {
+      offsetsRef.current.delete(registrationId);
+      setTopOffset(Math.max(0, ...offsetsRef.current.values()));
+    };
+  }, []);
 
   const onClose = (key) => () => {
     notistackRef.current.closeSnackbar(key);
   };
 
   return (
-    <>
-      <SnackbarStyles />
-      
+    <ToastPositionContext.Provider value={registerToastTopOffset}>
+      <SnackbarStyles topOffset={topOffset} />
+
       <SnackbarProvider
         ref={notistackRef}
         dense
@@ -108,7 +129,7 @@ export default function NotistackProvider({ children }) {
       >
         {children}
       </SnackbarProvider>
-    </>
+    </ToastPositionContext.Provider>
   );
 }
 

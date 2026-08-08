@@ -1,0 +1,101 @@
+Để truy cập trực tiếp, sử dụng: https://alumverse-hcmus.vercel.app/fit-hcmus
+
+=== HƯỚNG DẪN SỬ DỤNG ===
+
+  Phần này hướng dẫn cách biên dịch và chạy chương trình.
+  Vui lòng đảm bảo bạn đã cài đặt đầy đủ các công cụ và thư viện theo file HuongDanCaiDat.txt.
+
+  Dự án cung cấp 2 cách để khởi chạy: Chạy toàn bộ hệ thống tự động qua Docker (khuyên dùng) hoặc Chạy thủ công từng phần (dành cho phát triển).
+  ──────
+  ### OPTION 1: CHẠY TOÀN BỘ HỆ THỐNG TỰ ĐỘNG (KHUYÊN DÙNG)
+
+  Với tuỳ chọn này, toàn bộ Database, Backend, Frontend và Nginx sẽ được tự động cài đặt và kết nối với nhau.
+
+  BƯỚC 1: KHỞI ĐỘNG HỆ THỐNG
+
+  • Mở terminal tại thư mục gốc của dự án.
+  • Chạy lệnh:
+  docker-compose up -d --build
+  • Lưu ý: Lệnh này sẽ tự động build và chạy Database (PostgreSQL), Backend (Spring Boot), Frontend (Vite) và bọc Nginx ở ngoài cùng. (Nếu muốn chạy cả Prometheus, bạn cần mở file docker-compose.yml và
+  bỏ comment phần service prometheus trước khi chạy lệnh).
+
+  BƯỚC 2: TRUY CẬP ỨNG DỤNG
+
+  • Mở trình duyệt và truy cập http://localhost:5173/fit-hcmus (Nginx sẽ tự động điều phối traffic cho Frontend và Backend).
+  • Lưu ý: FitBOT (trợ lý AI) là dịch vụ Python riêng, không nằm trong docker-compose. Nếu muốn dùng tính năng chatbot, hãy chạy FitBOT theo hướng dẫn ở phần dưới.
+  ──────
+  ### OPTION 2: CHẠY THỦ CÔNG TỪNG PHẦN (DÀNH CHO PHÁT TRIỂN)
+
+  Với tuỳ chọn này, bạn chỉ dùng Docker để chạy Database, còn Frontend và Backend sẽ chạy trực tiếp trên máy host.
+
+  BƯỚC 1: KHỞI ĐỘNG DATABASE
+
+  • Mở terminal tại thư mục gốc của dự án.
+  • Chạy lệnh khởi động duy nhất database:
+  docker-compose up -d db
+
+  BƯỚC 2: BIÊN DỊCH VÀ CHẠY BACKEND
+
+  • Mở một cửa sổ terminal mới.
+  • Di chuyển vào thư mục backend:
+  cd backend
+  • Chạy ứng dụng (Spring Boot):
+      • Trên Windows: .\mvnw.cmd spring-boot:run
+      • Trên Linux/macOS: ./mvnw spring-boot:run
+  • (Nếu muốn biên dịch ra file JAR, sử dụng lệnh: ./mvnw clean package -DskipTests)
+  • Backend sẽ chạy tại: http://localhost:8080
+
+  BƯỚC 3: BIÊN DỊCH VÀ CHẠY FRONTEND
+
+  • Mở một cửa sổ terminal mới.
+  • Di chuyển vào thư mục frontend:
+  cd frontend
+  • Chạy ứng dụng ở chế độ phát triển (development):
+  npm run dev
+  • (Nếu muốn biên dịch ra file tĩnh để deploy, sử dụng lệnh: npm run build)
+  • Frontend sẽ chạy tại: http://localhost:5173
+  ──────
+  ### BƯỚC 4: BIÊN DỊCH VÀ CHẠY MOBILE (Tùy chọn nếu cần test app)
+
+  • Mở một cửa sổ terminal mới.
+  • Di chuyển vào thư mục mobile_flutter:
+  cd mobile_flutter
+  • Cài đặt thư viện (chỉ cần lần đầu): flutter pub get
+  • Chạy ứng dụng trên máy ảo hoặc thiết bị thật đã kết nối:
+  flutter run
+  • (Nếu muốn truyền biến môi trường, dùng các tham số --dart-define như hướng dẫn trong HuongDanCaiDat.txt)
+  • (Nếu muốn build ra file cài đặt Android: flutter build apk)
+  ──────
+  ### BƯỚC 5: CHẠY FITBOT - TRỢ LÝ AI (Tùy chọn nếu cần tính năng chatbot)
+
+  FitBOT là dịch vụ hỏi–đáp (RAG) dùng Google Gemini + FAISS, chạy độc lập với hệ thống chính.
+
+  CÁCH A: CHẠY TRÊN MÁY (LOCAL)
+
+  • Mở một cửa sổ terminal mới.
+  • Di chuyển vào thư mục FitBOT:
+  cd FitBOT
+  • Kích hoạt môi trường ảo (đã tạo ở bước cài đặt):
+      • Trên Windows: venv\Scripts\activate
+      • Trên Linux/macOS: source venv/bin/activate
+  • Đảm bảo file .env đã có GOOGLE_API_KEY.
+  • Khởi động server FastAPI:
+  cd src && python api_server.py
+  • FitBOT sẽ chạy tại: http://localhost:8000 (tài liệu API tại http://localhost:8000/docs).
+  • Để Frontend gọi được FitBOT, đặt biến VITE_FITBOT_API_URL=http://localhost:8000 trong frontend/.env rồi chạy lại Frontend.
+
+  CÁCH B: CHẠY TRÊN GOOGLE COLAB (không cần cài đặt trên máy)
+
+  • Mở file FitBOT/FITBOT_Colab.ipynb bằng Google Colab.
+  • Lưu 2 secret trong Colab (biểu tượng chìa khóa 🔑 bên trái): GOOGLE_API_KEY và NGROK_TOKEN.
+  • Chạy lần lượt các cell: cài thư viện → mount Google Drive → tạo .env → cấu hình ngrok → khởi động server.
+  • Colab sẽ in ra một public URL (ngrok). Dùng URL này làm VITE_FITBOT_API_URL cho Frontend.
+  ──────
+  ### TÀI KHOẢN MẪU (DỮ LIỆU SEED)
+
+  Khi nạp dữ liệu mẫu (docs/postgres.sql), có thể đăng nhập bằng tài khoản quản trị:
+      • Email    : admin@gmail.com
+      • Mật khẩu : Admin2026@
+      • Vai trò  : ADMIN (toàn quyền quản trị hệ thống)
+
+  Lưu ý: Đây là tài khoản dùng cho môi trường thử nghiệm/demo. Vui lòng đổi mật khẩu hoặc xóa tài khoản này trước khi triển khai thật (production).
