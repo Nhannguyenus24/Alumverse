@@ -1034,10 +1034,7 @@
     "select_org_desc": "Select the organization you want to access to continue.",
     "select_org_please": "Please select an organization",
     "cannot_enter": "Cannot access this organization.",
-    "org_list_load_failed": "Failed to load organization list. You can enter the organization identifier manually.",
-    "org_identifier": "Organization identifier",
-    "org_identifier_hint": "e.g. cs-hcmus",
-    "org_identifier_required": "Please enter the organization identifier"
+    "org_list_load_failed": "Could not load the organization list. Please try again."
   },
   "home": {
     "community_title": "Honors",
