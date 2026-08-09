@@ -16,6 +16,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -79,23 +80,31 @@ class SepayWebhookServiceTest {
         @Test
         @DisplayName("should process webhook successfully with valid data")
         void processWebhook_success() {
-            Map<String, Object> body = new HashMap<>();
-            body.put("transferType", "in");
-            body.put("content", "Payment FD42 confirmed");
+            Map<String, Object> body = validWebhook(72542821L);
 
             when(fundDonationsRepository.findById(42)).thenReturn(
                     Mono.just(com.service.backend.shared.entity.FundDonations.builder()
                             .id(42)
+                            .fundId(7)
                             .status(com.service.backend.shared.enums.Status.PENDING)
                             .build())
             );
-            when(fundDonationsRepository.save(any())).thenReturn(
+            when(fundRepository.findReceivingInfoLookupByFundId(7L)).thenReturn(Mono.just(
+                    com.service.backend.fundraising.dto.FundReceivingInfoLookup.builder()
+                            .riAccountNumber("0917669258")
+                            .build()));
+            when(fundDonationsRepository.claimPendingDonation(
+                    42, 72542821L, new BigDecimal("2000"))).thenReturn(
                     Mono.just(com.service.backend.shared.entity.FundDonations.builder()
                             .id(42)
+                            .fundId(7)
+                            .amount(new BigDecimal("2000"))
                             .status(com.service.backend.shared.enums.Status.SUCCESS)
+                            .sepayTransactionId(72542821L)
                             .build())
             );
-            when(fundRepository.incrementDonorCountAndAmount(any(), any())).thenReturn(Mono.just(1));
+            when(fundRepository.incrementDonorCountAndAmount(7, new BigDecimal("2000")))
+                    .thenReturn(Mono.just(1));
             when(cacheUtils.clear(anyString())).thenReturn(Mono.empty());
 
             StepVerifier.create(sepayWebhookService.processWebhook("Apikey test-api-key", body))
@@ -104,6 +113,113 @@ class SepayWebhookServiceTest {
 
             // Marking the donation SUCCESS must invalidate the fund-statistics cache.
             verify(cacheUtils).clear(com.service.backend.shared.utils.CacheNames.FUND_STATISTICS);
+            verify(fundDonationsRepository).claimPendingDonation(
+                    42, 72542821L, new BigDecimal("2000"));
+            verify(fundDonationsRepository, never()).insertAdditionalDonation(anyInt(), anyLong(), any());
+        }
+
+        @Test
+        @DisplayName("should create another donation for a second transfer using the same QR")
+        void processWebhook_secondTransferCreatesDonation() {
+            Map<String, Object> body = validWebhook(72542822L);
+            com.service.backend.shared.entity.FundDonations source =
+                    com.service.backend.shared.entity.FundDonations.builder()
+                            .id(42)
+                            .fundId(7)
+                            .status(com.service.backend.shared.enums.Status.SUCCESS)
+                            .sepayTransactionId(72542821L)
+                            .build();
+            com.service.backend.shared.entity.FundDonations additional =
+                    com.service.backend.shared.entity.FundDonations.builder()
+                            .id(43)
+                            .fundId(7)
+                            .amount(new BigDecimal("2000"))
+                            .status(com.service.backend.shared.enums.Status.SUCCESS)
+                            .sepayTransactionId(72542822L)
+                            .build();
+
+            when(fundDonationsRepository.findById(42)).thenReturn(Mono.just(source));
+            when(fundRepository.findReceivingInfoLookupByFundId(7L)).thenReturn(Mono.just(
+                    com.service.backend.fundraising.dto.FundReceivingInfoLookup.builder()
+                            .riAccountNumber("0917669258")
+                            .build()));
+            when(fundDonationsRepository.claimPendingDonation(
+                    42, 72542822L, new BigDecimal("2000"))).thenReturn(Mono.empty());
+            when(fundDonationsRepository.insertAdditionalDonation(
+                    42, 72542822L, new BigDecimal("2000"))).thenReturn(Mono.just(additional));
+            when(fundRepository.incrementDonorCountAndAmount(7, new BigDecimal("2000")))
+                    .thenReturn(Mono.just(1));
+            when(cacheUtils.clear(anyString())).thenReturn(Mono.empty());
+
+            StepVerifier.create(sepayWebhookService.processWebhook("Apikey test-api-key", body))
+                    .assertNext(result -> assertThat(result.get("success")).isTrue())
+                    .verifyComplete();
+
+            verify(fundDonationsRepository).insertAdditionalDonation(
+                    42, 72542822L, new BigDecimal("2000"));
+            verify(fundRepository).incrementDonorCountAndAmount(7, new BigDecimal("2000"));
+        }
+
+        @Test
+        @DisplayName("should not increment the fund when SePay retries the same transaction")
+        void processWebhook_duplicateTransactionIsIgnored() {
+            Map<String, Object> body = validWebhook(72542821L);
+            when(fundDonationsRepository.findById(42)).thenReturn(Mono.just(
+                    com.service.backend.shared.entity.FundDonations.builder()
+                            .id(42)
+                            .fundId(7)
+                            .status(com.service.backend.shared.enums.Status.SUCCESS)
+                            .sepayTransactionId(72542821L)
+                            .build()));
+            when(fundRepository.findReceivingInfoLookupByFundId(7L)).thenReturn(Mono.just(
+                    com.service.backend.fundraising.dto.FundReceivingInfoLookup.builder()
+                            .riAccountNumber("0917669258")
+                            .build()));
+            when(fundDonationsRepository.claimPendingDonation(
+                    42, 72542821L, new BigDecimal("2000"))).thenReturn(Mono.empty());
+            when(fundDonationsRepository.insertAdditionalDonation(
+                    42, 72542821L, new BigDecimal("2000"))).thenReturn(Mono.empty());
+
+            StepVerifier.create(sepayWebhookService.processWebhook("Apikey test-api-key", body))
+                    .assertNext(result -> assertThat(result.get("success")).isTrue())
+                    .verifyComplete();
+
+            verify(fundRepository, never()).incrementDonorCountAndAmount(any(), any());
+            verify(cacheUtils, never()).clear(anyString());
+        }
+
+        @Test
+        @DisplayName("should acknowledge but ignore a transfer sent to another account")
+        void processWebhook_wrongReceivingAccountIsIgnored() {
+            Map<String, Object> body = validWebhook(72542821L);
+            when(fundDonationsRepository.findById(42)).thenReturn(Mono.just(
+                    com.service.backend.shared.entity.FundDonations.builder()
+                            .id(42)
+                            .fundId(7)
+                            .status(com.service.backend.shared.enums.Status.PENDING)
+                            .build()));
+            when(fundRepository.findReceivingInfoLookupByFundId(7L)).thenReturn(Mono.just(
+                    com.service.backend.fundraising.dto.FundReceivingInfoLookup.builder()
+                            .riAccountNumber("0000000000")
+                            .build()));
+
+            StepVerifier.create(sepayWebhookService.processWebhook("Apikey test-api-key", body))
+                    .assertNext(result -> assertThat(result.get("success")).isTrue())
+                    .verifyComplete();
+
+            verify(fundDonationsRepository, never()).claimPendingDonation(anyInt(), anyLong(), any());
+            verify(fundDonationsRepository, never()).insertAdditionalDonation(anyInt(), anyLong(), any());
+            verify(fundRepository, never()).incrementDonorCountAndAmount(any(), any());
+        }
+
+        private Map<String, Object> validWebhook(long transactionId) {
+            Map<String, Object> body = new HashMap<>();
+            body.put("id", transactionId);
+            body.put("transferType", "in");
+            body.put("accountNumber", "0917669258");
+            body.put("content", "141469805680-FD42-CHUYEN TIEN");
+            body.put("transferAmount", 2000);
+            return body;
         }
     }
 }
