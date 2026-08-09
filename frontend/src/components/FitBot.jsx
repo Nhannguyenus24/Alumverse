@@ -294,6 +294,7 @@ const SUGGESTION_KEYS = [
 ];
 
 const FITBOT_API_URL = import.meta.env.VITE_FITBOT_API_URL || '/fitbot-api';
+const MIN_QUESTION_LENGTH = 3;
 
 // Query the RAG API and return the answer. The endpoint responds with a
 // single JSON body ({ answer, sources }), so we do a plain JSON POST that
@@ -414,8 +415,9 @@ export default function FitBot({ isOpen = false, isBlocked = false, onOpen, onCl
 
 
   const handleSendMessage = useCallback(async (messageText) => {
-    const textToSend = typeof messageText === 'string' ? messageText : inputValue.trim();
-    if (!textToSend) return;
+    const rawText = typeof messageText === 'string' ? messageText : inputValue;
+    const textToSend = rawText.trim();
+    if (textToSend.length < MIN_QUESTION_LENGTH) return;
 
     // Add user message
     const userMessage = {
@@ -499,6 +501,10 @@ export default function FitBot({ isOpen = false, isBlocked = false, onOpen, onCl
     onOpen?.();
     handleSendMessage(suggestion);
   }, [handleSendMessage, onOpen]);
+
+  const trimmedInput = inputValue.trim();
+  const inputTooShort =
+    trimmedInput.length > 0 && trimmedInput.length < MIN_QUESTION_LENGTH;
 
   const handleClose = useCallback(() => {
     onClose?.();
@@ -617,6 +623,8 @@ export default function FitBot({ isOpen = false, isBlocked = false, onOpen, onCl
               placeholder={t('fitbot_send_placeholder')}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
+              error={inputTooShort}
+              helperText={inputTooShort ? t('fitbot_question_too_short') : undefined}
               onKeyPress={(e) => {
                 if (e.key === 'Enter') {
                   handleSendMessage();
@@ -635,7 +643,7 @@ export default function FitBot({ isOpen = false, isBlocked = false, onOpen, onCl
             <Button
               variant="contained"
               onClick={() => handleSendMessage()}
-              disabled={isTyping || !inputValue.trim()}
+              disabled={isTyping || trimmedInput.length < MIN_QUESTION_LENGTH}
               size="small"
               sx={{
                 borderRadius: '50%',
