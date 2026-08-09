@@ -1,8 +1,19 @@
 package com.service.backend.shared.service;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.Base64;
-import java.util.List;
 import java.util.Map;
+import java.util.Properties;
+
+import jakarta.mail.MessagingException;
+import jakarta.mail.Session;
+import jakarta.mail.internet.InternetAddress;
+import jakarta.mail.internet.MimeBodyPart;
+import jakarta.mail.internet.MimeMessage;
+import jakarta.mail.internet.MimeMultipart;
+import jakarta.mail.util.ByteArrayDataSource;
+import jakarta.activation.DataHandler;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,10 +24,12 @@ import org.springframework.util.StringUtils;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
-import com.resend.Resend;
-import com.resend.core.exception.ResendException;
-import com.resend.services.emails.model.Attachment;
-import com.resend.services.emails.model.CreateEmailOptions;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
+import com.google.api.services.gmail.Gmail;
+import com.google.api.services.gmail.model.Message;
+import com.google.auth.http.HttpCredentialsAdapter;
+import com.google.auth.oauth2.UserCredentials;
 import com.service.backend.shared.dao.EmailTemplateR2dbcRepository;
 
 import reactor.core.publisher.Mono;
@@ -29,7 +42,7 @@ import io.micrometer.core.instrument.Timer;
 @Service
 public class EmailService {
     private static final Logger log = LoggerFactory.getLogger(EmailService.class);
-    private final Resend resend;
+    private final Gmail gmailService;
     private final TemplateEngine templateEngine;
     private final MeterRegistry meterRegistry;
     private final EmailTemplateR2dbcRepository emailTemplateRepository;
@@ -40,22 +53,39 @@ public class EmailService {
     @Value("${app.mail.from-name}")
     private String fromName;
 
-    public EmailService(@Value("${resend.api-key}") String resendApiKey,
-                        @Qualifier("emailTemplateEngine") TemplateEngine templateEngine, MeterRegistry meterRegistry,
-                        EmailTemplateR2dbcRepository emailTemplateRepository) {
-        this.resend = new Resend(resendApiKey);
+    public EmailService(
+            @Value("${google.mail.client-id}") String clientId,
+            @Value("${google.mail.client-secret}") String clientSecret,
+            @Value("${google.mail.refresh-token}") String refreshToken,
+            @Qualifier("emailTemplateEngine") TemplateEngine templateEngine,
+            MeterRegistry meterRegistry,
+            EmailTemplateR2dbcRepository emailTemplateRepository) {
+
         this.templateEngine = templateEngine;
         this.meterRegistry = meterRegistry;
         this.emailTemplateRepository = emailTemplateRepository;
+
+        UserCredentials credentials = UserCredentials.newBuilder()
+                .setClientId(clientId)
+                .setClientSecret(clientSecret)
+                .setRefreshToken(refreshToken)
+                .build();
+
+        this.gmailService = new Gmail.Builder(
+                new NetHttpTransport(),
+                GsonFactory.getDefaultInstance(),
+                new HttpCredentialsAdapter(credentials))
+                .setApplicationName("AlumVerse")
+                .build();
     }
 
     public Mono<Void> sendHtmlEmail(String to, String subject, String templateName, Map<String, Object> variables) {
         return resolveTemplate(templateName, subject)
-                .flatMap(resolved -> dispatch(to, resolved.subject(), templateName, resolved.templateOrContent(), variables, List.of()));
+                .flatMap(resolved -> dispatch(to, resolved.subject(), templateName, resolved.templateOrContent(), variables, null, null, null));
     }
 
     public Mono<Void> sendRawHtmlEmail(String to, String subject, String htmlContent, Map<String, Object> variables) {
-        return dispatch(to, subject, "raw", htmlContent, variables, List.of());
+        return dispatch(to, subject, "raw", htmlContent, variables, null, null, null);
     }
 
     public Mono<Void> sendHtmlEmailWithInlineImage(
@@ -67,15 +97,8 @@ public class EmailService {
             byte[] imageBytes,
             String imageMimeType
     ) {
-        Attachment inlineImage = Attachment.builder()
-                .fileName(contentId)
-                .contentId(contentId)
-                .contentType(imageMimeType)
-                .content(Base64.getEncoder().encodeToString(imageBytes))
-                .build();
         return resolveTemplate(templateName, subject)
-            .flatMap(resolved -> dispatch(to, resolved.subject(), templateName, resolved.templateOrContent(), variables,
-                List.of(inlineImage)));
+            .flatMap(resolved -> dispatch(to, resolved.subject(), templateName, resolved.templateOrContent(), variables, contentId, imageBytes, imageMimeType));
     }
 
     private Mono<ResolvedTemplate> resolveTemplate(String templateName, String subject) {
@@ -93,31 +116,21 @@ public class EmailService {
     }
 
     private Mono<Void> dispatch(String to, String subject, String template, String templateOrContent, Map<String, Object> variables,
-                                List<Attachment> attachments) {
+                                String contentId, byte[] imageBytes, String imageMimeType) {
         return Mono.defer(() -> {
             Timer.Sample sample = Timer.start(meterRegistry);
             return Mono.fromCallable(() -> {
                 Context context = new Context();
                 context.setVariables(variables);
-
-                // templateOrContent có thể là tên file (resolver classpath) hoặc chuỗi HTML từ DB (string resolver)
                 String htmlContent = templateEngine.process(templateOrContent, context);
 
-                CreateEmailOptions.Builder builder = CreateEmailOptions.builder()
-                        .from(formatFrom())
-                        .to(to)
-                        .subject(subject)
-                        .html(htmlContent);
-                if (attachments != null && !attachments.isEmpty()) {
-                    builder.attachments(attachments);
-                }
-
-                return resend.emails().send(builder.build());
+                Message message = createMessageWithEmail(createEmail(to, subject, htmlContent, contentId, imageBytes, imageMimeType));
+                return gmailService.users().messages().send("me", message).execute();
             })
             .subscribeOn(Schedulers.boundedElastic())
             .doOnSuccess(resp -> log.info("Email sent successfully to: {} with subject: {} (id={})", to, subject, resp.getId()))
             .doOnError(e -> log.error("Failed to send email to: {}. Error: {}", to, e.getMessage(), e))
-            .onErrorMap(ResendException.class, e -> new RuntimeException("Failed to send email", e))
+            .onErrorMap(Exception.class, e -> new RuntimeException("Failed to send email", e))
             .then()
             .doFinally(sig -> {
                 String outcome = sig == SignalType.ON_ERROR ? "error" : "success";
@@ -133,11 +146,47 @@ public class EmailService {
         });
     }
 
-    /** Định dạng "from" theo chuẩn Resend: "Tên hiển thị <địa-chỉ@miền>". */
+    private MimeMessage createEmail(String to, String subject, String htmlContent, String contentId, byte[] imageBytes, String imageMimeType) throws MessagingException {
+        Properties props = new Properties();
+        Session session = Session.getDefaultInstance(props, null);
+        MimeMessage email = new MimeMessage(session);
+
+        email.setFrom(new InternetAddress(formatFrom()));
+        email.addRecipient(jakarta.mail.Message.RecipientType.TO, new InternetAddress(to));
+        email.setSubject(subject);
+
+        MimeMultipart multipart = new MimeMultipart("related");
+
+        MimeBodyPart htmlPart = new MimeBodyPart();
+        htmlPart.setContent(htmlContent, "text/html; charset=utf-8");
+        multipart.addBodyPart(htmlPart);
+
+        if (imageBytes != null && contentId != null) {
+            MimeBodyPart imagePart = new MimeBodyPart();
+            ByteArrayDataSource bds = new ByteArrayDataSource(imageBytes, imageMimeType);
+            imagePart.setDataHandler(new DataHandler(bds));
+            imagePart.setHeader("Content-ID", "<" + contentId + ">");
+            imagePart.setDisposition(MimeBodyPart.INLINE);
+            multipart.addBodyPart(imagePart);
+        }
+
+        email.setContent(multipart);
+        return email;
+    }
+
+    private Message createMessageWithEmail(MimeMessage emailContent) throws MessagingException, IOException {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        emailContent.writeTo(buffer);
+        byte[] bytes = buffer.toByteArray();
+        String encodedEmail = Base64.getUrlEncoder().encodeToString(bytes);
+        Message message = new Message();
+        message.setRaw(encodedEmail);
+        return message;
+    }
+
     private String formatFrom() {
         return StringUtils.hasText(fromName) ? fromName + " <" + fromAddress + ">" : fromAddress;
     }
 
-    /** Kết quả phân giải template: chuỗi truyền vào engine (tên file hoặc HTML) và subject cuối cùng. */
     private record ResolvedTemplate(String templateOrContent, String subject) {}
 }
