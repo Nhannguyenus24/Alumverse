@@ -293,7 +293,7 @@ const SUGGESTION_KEYS = [
   'fitbot_suggestion_admin_office',
 ];
 
-const FITBOT_API_URL = import.meta.env.VITE_FITBOT_API_URL || '/fitbot-api';
+const FITBOT_API_URL = import.meta.env.VITE_FITBOT_API_URL;
 const MIN_QUESTION_LENGTH = 3;
 
 // Query the RAG API and return the answer. The endpoint responds with a
