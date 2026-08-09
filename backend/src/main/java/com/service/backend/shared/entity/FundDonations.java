@@ -50,6 +50,9 @@ public class FundDonations {
     @Column("status")
     private Status status;
 
+    @Column("sepay_transaction_id")
+    private Long sepayTransactionId;
+
     @CreatedDate
     @Column("created_at")
     private LocalDateTime createdAt;
