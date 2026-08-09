@@ -40,14 +40,6 @@ export default defineConfig(({ mode }) => {
         changeOrigin: true,
         secure: true,
       },
-      '/fitbot-api': {
-        target: 'https://3038-2405-4802-9191-f020-1be7-2208-e52c-e37c.ngrok-free.app',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/fitbot-api/, ''),
-        secure: false,
-        timeout: 600000,
-        proxyTimeout: 600000,
-      },
     },
   },
   build: {
