@@ -293,11 +293,13 @@ const SUGGESTION_KEYS = [
   'fitbot_suggestion_admin_office',
 ];
 
+const FITBOT_API_URL = import.meta.env.VITE_FITBOT_API_URL || '/fitbot-api';
+
 // Query the RAG API and return the answer. The endpoint responds with a
 // single JSON body ({ answer, sources }), so we do a plain JSON POST that
 // mirrors the working curl request rather than SSE streaming.
 const streamSSEResponse = async (userMessage, onChunk, onComplete, onError, signal) => {
-  const apiEndpoint = '/fitbot-api/api/query';
+  const apiEndpoint = `${FITBOT_API_URL}/api/query`;
 
   try {
     const requestBody = {
@@ -312,6 +314,7 @@ const streamSSEResponse = async (userMessage, onChunk, onComplete, onError, sign
       headers: {
         accept: 'application/json',
         'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': 'true',
       },
       body: JSON.stringify(requestBody),
       signal,
