@@ -5,6 +5,7 @@ import { styled, keyframes } from '@mui/material/styles';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useTranslation } from 'react-i18next';
+import { streamFitBotResponse } from '../utils/fitBotApi';
 
 const CHAT_HISTORY_STORAGE_KEY = 'fitbot_chat_history';
 const CHAT_HISTORY_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
@@ -293,51 +294,7 @@ const SUGGESTION_KEYS = [
   'fitbot_suggestion_admin_office',
 ];
 
-const FITBOT_API_URL = import.meta.env.VITE_FITBOT_API_URL;
 const MIN_QUESTION_LENGTH = 3;
-
-// Query the RAG API and return the answer. The endpoint responds with a
-// single JSON body ({ answer, sources }), so we do a plain JSON POST that
-// mirrors the working curl request rather than SSE streaming.
-const streamSSEResponse = async (userMessage, onChunk, onComplete, onError, signal) => {
-  const apiEndpoint = `${FITBOT_API_URL}/api/query`;
-
-  try {
-    const requestBody = {
-      question: userMessage,
-      top_k: 7,
-      model: 'gemini-2.5-flash',
-      use_reranker: false,
-    };
-
-    const response = await fetch(apiEndpoint, {
-      method: 'POST',
-      headers: {
-        accept: 'application/json',
-        'Content-Type': 'application/json',
-        'ngrok-skip-browser-warning': 'true',
-      },
-      body: JSON.stringify(requestBody),
-      signal,
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const answer = typeof data === 'string'
-      ? data
-      : (data.answer || data.response || data.text || data.content || '');
-
-    if (answer) onChunk(answer);
-    onComplete();
-  } catch (error) {
-    if (error.name !== 'AbortError') {
-      onError(error);
-    }
-  }
-};
 
 export default function FitBot({ isOpen = false, isBlocked = false, onOpen, onClose }) {
   const { t } = useTranslation('common');
@@ -454,29 +411,28 @@ export default function FitBot({ isOpen = false, isBlocked = false, onOpen, onCl
     abortControllerRef.current = new AbortController();
 
     // Stream response from server via SSE
-    streamSSEResponse(
-      textToSend,
-      (chunk) => {
-        // Cập nhật trực tiếp ngay khi nhận chunk để markdown render không bị lỗi và chữ chạy nhanh hơn
-        fullResponse += chunk;
-        setMessages((prev) => {
-          const updatedMessages = [...prev];
-          const botMessageIndex = updatedMessages.findIndex(
-            (msg) => msg.id === botMessageId
-          );
-          if (botMessageIndex >= 0) {
-            updatedMessages[botMessageIndex].text = fullResponse;
-          }
-          return updatedMessages;
-        });
-      },
-      () => {
-        // On complete
-        setIsTyping(false);
-        abortControllerRef.current = null;
-      },
-      () => {
-        // On error - show fallback message
+    try {
+      await streamFitBotResponse(textToSend, {
+        signal: abortControllerRef.current.signal,
+        onContent: (chunk) => {
+          // Cập nhật trực tiếp ngay khi nhận chunk để markdown render không bị lỗi và chữ chạy nhanh hơn
+          fullResponse += chunk;
+          setMessages((prev) => {
+            const updatedMessages = [...prev];
+            const botMessageIndex = updatedMessages.findIndex(
+              (msg) => msg.id === botMessageId
+            );
+            if (botMessageIndex >= 0) {
+              updatedMessages[botMessageIndex].text = fullResponse;
+            }
+            return updatedMessages;
+          });
+        },
+      });
+      setIsTyping(false);
+      abortControllerRef.current = null;
+    } catch (error) {
+      if (error.name !== 'AbortError') {
         const errorMessage = t('fitbot_error_message');
         fullResponse = errorMessage;
         setMessages((prev) => {
@@ -491,9 +447,8 @@ export default function FitBot({ isOpen = false, isBlocked = false, onOpen, onCl
         });
         setIsTyping(false);
         abortControllerRef.current = null;
-      },
-      abortControllerRef.current.signal
-    );
+      }
+    }
   }, [inputValue, t]);
 
   const handleSuggestionClick = useCallback((suggestion) => {
@@ -623,7 +578,6 @@ export default function FitBot({ isOpen = false, isBlocked = false, onOpen, onCl
               placeholder={t('fitbot_send_placeholder')}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              error={inputTooShort}
               helperText={inputTooShort ? t('fitbot_question_too_short') : undefined}
               onKeyPress={(e) => {
                 if (e.key === 'Enter') {
@@ -637,7 +591,15 @@ export default function FitBot({ isOpen = false, isBlocked = false, onOpen, onCl
                 '& .MuiOutlinedInput-root': {
                   borderRadius: '20px',
                   fontSize: '0.95rem',
+                  ...(inputTooShort && {
+                    '& fieldset': { borderColor: 'primary.main' },
+                    '&:hover fieldset': { borderColor: 'primary.main' },
+                    '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+                  }),
                 },
+                ...(inputTooShort && {
+                  '& .MuiFormHelperText-root': { color: 'primary.main' },
+                }),
               }}
             />
             <Button
