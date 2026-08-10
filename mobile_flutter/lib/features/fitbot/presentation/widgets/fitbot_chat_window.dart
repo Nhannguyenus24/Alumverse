@@ -33,8 +33,9 @@ class _FitBotChatWindowState extends ConsumerState<FitBotChatWindow> {
 
   void _send() {
     final text = _input.text.trim();
-    if (text.isEmpty) return;
+    if (text.length < fitBotMinQuestionLength) return;
     _input.clear();
+    setState(() {});
     ref.read(fitBotControllerProvider.notifier).sendMessage(text);
   }
 
@@ -135,6 +136,11 @@ class _FitBotChatWindowState extends ConsumerState<FitBotChatWindow> {
   }
 
   Widget _composer(bool isTyping) {
+    final input = _input.text.trim();
+    final isTooShort =
+        input.isNotEmpty && input.length < fitBotMinQuestionLength;
+    final canSend = input.length >= fitBotMinQuestionLength;
+
     return SafeArea(
       top: false,
       child: Padding(
@@ -148,9 +154,12 @@ class _FitBotChatWindowState extends ConsumerState<FitBotChatWindow> {
                 minLines: 1,
                 maxLines: 3,
                 textInputAction: TextInputAction.send,
-                onSubmitted: (_) => _send(),
+                onChanged: (_) => setState(() {}),
+                onSubmitted: isTyping || !canSend ? null : (_) => _send(),
                 decoration: InputDecoration(
                   hintText: 'fitbot.input_hint'.tr(),
+                  errorText:
+                      isTooShort ? 'fitbot.question_too_short'.tr() : null,
                   isDense: true,
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
@@ -170,7 +179,7 @@ class _FitBotChatWindowState extends ConsumerState<FitBotChatWindow> {
               radius: 22,
               backgroundColor: AppColors.primary,
               child: IconButton(
-                onPressed: isTyping ? null : _send,
+                onPressed: isTyping || !canSend ? null : _send,
                 icon: const Icon(Icons.send_rounded, color: Colors.white),
               ),
             ),

@@ -5,7 +5,6 @@ import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
-import VolunteerActivismOutlinedIcon from "@mui/icons-material/VolunteerActivismOutlined";
 import { useState } from "react";
 import dayjs from "dayjs";
 import { useTranslation } from "react-i18next";
@@ -224,6 +223,15 @@ const FeaturedArticleDonationCard = ({ campaign, article, onNavigate, onEdit, on
 
         {/* ACTION BLOCK */}
         <Box sx={{ mt: "auto", pt: { xs: 1.25, md: 2.5 }, display: "flex", flexDirection: "column", gap: { xs: 1.5, md: 2.5 } }}>
+          {!isAdmin && (
+            <Box sx={{ width: "100%" }}>
+              <Typography sx={{ mb: 0.8, color: "primary.main", fontWeight: 700, fontSize: "0.92rem" }}>
+                {`${formatCurrency(data?.currentAmount)} / ${formatCurrency(data?.targetAmount)} (VND)`}
+              </Typography>
+
+              <LinearProgress variant="determinate" value={progressValue} sx={{ height: 12, borderRadius: 999, overflow: "hidden" }} />
+            </Box>
+          )}
 
           {isClosed ? (
             <Button
@@ -262,15 +270,7 @@ const FeaturedArticleDonationCard = ({ campaign, article, onNavigate, onEdit, on
                 </Button>
               </Stack>
             </Stack>
-          ) : (
-            <Button
-              fullWidth variant="contained" color="accent" sx={{ textTransform: "none", fontWeight: 600, py: 1.2 }}
-              startIcon={<VolunteerActivismOutlinedIcon />}
-              onClick={(e) => { e.stopPropagation(); onNavigate?.(); }}
-            >
-              {t('donation:donate')}
-            </Button>
-          )}
+          ) : null}
         </Box>
       </Box>
     </Box>

@@ -5,7 +5,6 @@ import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
-import VolunteerActivismOutlinedIcon from "@mui/icons-material/VolunteerActivismOutlined";
 import { useState } from "react";
 import dayjs from "dayjs";
 import { useTranslation } from "react-i18next";
@@ -182,8 +181,8 @@ const ArticleDonationCard = ({ campaign, onNavigate, onEdit, onClose, isAdmin, f
         {truncateText(description, CAMPAIGN_DESCRIPTION_MAX_CHARS)}
       </Typography>
 
-      {/* ADMIN PROGRESS */}
-      {isAdmin && (
+      {/* PROGRESS */}
+      {(
         <Box>
           <Typography sx={{ mb: 0.7, color: "primary.main", fontWeight: 700, fontSize: "0.84rem" }}>
             {`${formatCurrency(campaign.currentAmount)} / ${formatCurrency(campaign.targetAmount)} (VND)`}
@@ -239,15 +238,7 @@ const ArticleDonationCard = ({ campaign, onNavigate, onEdit, onClose, isAdmin, f
             </Button>
           </Stack>
         </Stack>
-      ) : (
-        <Button
-          fullWidth variant="contained" color="accent" sx={{ textTransform: "none", fontWeight: 600 }}
-          startIcon={<VolunteerActivismOutlinedIcon />}
-          onClick={(e) => { e.stopPropagation(); onNavigate?.(); }}
-        >
-          {t('donation:donate')}
-        </Button>
-      )}
+      ) : null}
     </Box>
   );
 };

@@ -21,7 +21,7 @@ import AdminFitBotKnowledgeContent from './AdminFitBotKnowledgePage';
 import apiClient from '../../utils/axios';
 import useAuthStore from '../../stores/authStore';
 
-const FITBOT_API_URL = import.meta.env.VITE_FITBOT_API_URL || '/fitbot-api';
+const FITBOT_API_URL = import.meta.env.VITE_FITBOT_API_URL;
 
 const AdminAIBotConfigPage = () => {
   const { t } = useTranslation('admin');

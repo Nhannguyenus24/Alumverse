@@ -5,6 +5,8 @@ import { HelmetProvider } from 'react-helmet-async';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { GoogleReCaptchaProvider } from '@google-recaptcha/react';
+import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import { router } from './routes';
 import NotistackProvider from './components/NotistackProvider';
 import RealtimeEventsProvider from './components/RealtimeEventsProvider';
@@ -78,6 +80,8 @@ const App = () => {
       ) : (
         appContent
       )}
+      <Analytics />
+      <SpeedInsights />
     </HelmetProvider>
   );
 };

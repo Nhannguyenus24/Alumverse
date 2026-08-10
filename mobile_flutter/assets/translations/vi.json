@@ -211,6 +211,7 @@
     "no_answer": "Xin lỗi, tôi chưa có câu trả lời cho câu hỏi này. Bạn thử hỏi cách khác nhé.",
     "server_error": "Xin lỗi, có lỗi xảy ra khi kết nối với máy chủ. Vui lòng thử lại sau.",
     "clear_conversation": "Xóa hội thoại",
+    "question_too_short": "Vui lòng nhập ít nhất 3 ký tự.",
     "input_hint": "Gửi tin nhắn..."
   },
   "event": {
