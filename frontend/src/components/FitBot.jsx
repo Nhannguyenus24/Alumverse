@@ -252,6 +252,7 @@ const MessageBubble = styled(Box, {
 }));
 
 const InputContainer = styled(Box)(({ theme }) => ({
+  position: 'relative',
   padding: theme.spacing(2),
   borderTop: `1px solid ${theme.palette.divider}`,
   backgroundColor: theme.palette.background.paper,
@@ -259,6 +260,20 @@ const InputContainer = styled(Box)(({ theme }) => ({
   display: 'flex',
   gap: theme.spacing(1),
   alignItems: 'flex-end',
+}));
+
+const InputValidationMessage = styled(Typography)(({ theme }) => ({
+  position: 'absolute',
+  left: theme.spacing(2),
+  bottom: `calc(100% + ${theme.spacing(0.5)})`,
+  zIndex: 1,
+  margin: 0,
+  padding: theme.spacing(0.5, 1),
+  borderRadius: theme.spacing(1),
+  backgroundColor: theme.palette.background.paper,
+  color: theme.palette.primary.main,
+  boxShadow: '0 2px 6px rgba(0, 0, 0, 0.12)',
+  pointerEvents: 'none',
 }));
 
 const TypingIndicator = styled(Box)(({ theme }) => ({
@@ -572,13 +587,17 @@ export default function FitBot({ isOpen = false, isBlocked = false, onOpen, onCl
 
           {/* Input */}
           <InputContainer>
+            {inputTooShort && (
+              <InputValidationMessage variant="caption" role="alert">
+                {t('fitbot_question_too_short')}
+              </InputValidationMessage>
+            )}
             <TextField
               fullWidth
               size="small"
               placeholder={t('fitbot_send_placeholder')}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              helperText={inputTooShort ? t('fitbot_question_too_short') : undefined}
               onKeyPress={(e) => {
                 if (e.key === 'Enter') {
                   handleSendMessage();
@@ -597,9 +616,6 @@ export default function FitBot({ isOpen = false, isBlocked = false, onOpen, onCl
                     '&.Mui-focused fieldset': { borderColor: 'primary.main' },
                   }),
                 },
-                ...(inputTooShort && {
-                  '& .MuiFormHelperText-root': { color: 'primary.main' },
-                }),
               }}
             />
             <Button
