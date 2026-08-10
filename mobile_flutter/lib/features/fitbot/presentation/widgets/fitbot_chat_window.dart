@@ -145,56 +145,95 @@ class _FitBotChatWindowState extends ConsumerState<FitBotChatWindow> {
       top: false,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
+        child: Stack(
+          clipBehavior: Clip.none,
           children: [
-            Expanded(
-              child: TextField(
-                controller: _input,
-                minLines: 1,
-                maxLines: 3,
-                textInputAction: TextInputAction.send,
-                onChanged: (_) => setState(() {}),
-                onSubmitted: isTyping || !canSend ? null : (_) => _send(),
-                decoration: InputDecoration(
-                  hintText: 'fitbot.input_hint'.tr(),
-                  errorText:
-                      isTooShort ? 'fitbot.question_too_short'.tr() : null,
-                  errorStyle: const TextStyle(color: AppColors.primary),
-                  isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _input,
+                    minLines: 1,
+                    maxLines: 3,
+                    textInputAction: TextInputAction.send,
+                    onChanged: (_) => setState(() {}),
+                    onSubmitted: isTyping || !canSend ? null : (_) => _send(),
+                    decoration: InputDecoration(
+                      hintText: 'fitbot.input_hint'.tr(),
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      filled: true,
+                      fillColor: AppColors.background,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        borderSide: BorderSide.none,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        borderSide: BorderSide(
+                          color:
+                              isTooShort
+                                  ? AppColors.primary
+                                  : Colors.transparent,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        borderSide: BorderSide(
+                          color:
+                              isTooShort
+                                  ? AppColors.primary
+                                  : Colors.transparent,
+                          width: isTooShort ? 1.5 : 1,
+                        ),
+                      ),
+                    ),
                   ),
-                  filled: true,
-                  fillColor: AppColors.background,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide.none,
+                ),
+                const SizedBox(width: 8),
+                CircleAvatar(
+                  radius: 22,
+                  backgroundColor: AppColors.primary,
+                  child: IconButton(
+                    onPressed: isTyping || !canSend ? null : _send,
+                    icon: const Icon(Icons.send_rounded, color: Colors.white),
                   ),
-                  errorBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: const BorderSide(color: AppColors.primary),
+                ),
+              ],
+            ),
+            if (isTooShort)
+              Positioned(
+                left: 0,
+                bottom: 52,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
                   ),
-                  focusedErrorBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: const BorderSide(
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(6),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x1F000000),
+                        blurRadius: 6,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Text(
+                    'fitbot.question_too_short'.tr(),
+                    style: const TextStyle(
                       color: AppColors.primary,
-                      width: 1.5,
+                      fontSize: 12,
                     ),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(width: 8),
-            CircleAvatar(
-              radius: 22,
-              backgroundColor: AppColors.primary,
-              child: IconButton(
-                onPressed: isTyping || !canSend ? null : _send,
-                icon: const Icon(Icons.send_rounded, color: Colors.white),
-              ),
-            ),
           ],
         ),
       ),
