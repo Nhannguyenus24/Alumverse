@@ -281,26 +281,47 @@ const AdminAIBotConfigPage = () => {
           {/* Bot Testing Section */}
           <AdminSectionPanel title={t('bot_test_title')} subtitle={t('bot_test_subtitle')}>
               <Stack direction="row" spacing={2} mb={2}>
-                <TextField
-                  fullWidth
-                  variant="outlined"
-                  placeholder={t('bot_question_placeholder')}
-                  value={question}
-                  onChange={(e) => setQuestion(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleAskBot()}
-                  helperText={questionTooShort ? t('bot_question_too_short') : undefined}
-                  disabled={asking}
-                  sx={{
-                    ...(questionTooShort && {
-                      '& .MuiOutlinedInput-root': {
-                        '& fieldset': { borderColor: 'primary.main' },
-                        '&:hover fieldset': { borderColor: 'primary.main' },
-                        '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-                      },
-                      '& .MuiFormHelperText-root': { color: 'primary.main' },
-                    }),
-                  }}
-                />
+                <Box sx={{ position: 'relative', flex: 1 }}>
+                  {questionTooShort && (
+                    <Typography
+                      variant="caption"
+                      role="alert"
+                      sx={{
+                        position: 'absolute',
+                        left: 8,
+                        bottom: 'calc(100% + 4px)',
+                        zIndex: 1,
+                        px: 1,
+                        py: 0.5,
+                        borderRadius: 1,
+                        bgcolor: 'background.paper',
+                        color: 'primary.main',
+                        boxShadow: '0 2px 6px rgba(0, 0, 0, 0.12)',
+                        pointerEvents: 'none',
+                      }}
+                    >
+                      {t('bot_question_too_short')}
+                    </Typography>
+                  )}
+                  <TextField
+                    fullWidth
+                    variant="outlined"
+                    placeholder={t('bot_question_placeholder')}
+                    value={question}
+                    onChange={(e) => setQuestion(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAskBot()}
+                    disabled={asking}
+                    sx={{
+                      ...(questionTooShort && {
+                        '& .MuiOutlinedInput-root': {
+                          '& fieldset': { borderColor: 'primary.main' },
+                          '&:hover fieldset': { borderColor: 'primary.main' },
+                          '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+                        },
+                      }),
+                    }}
+                  />
+                </Box>
                 <Button
                   variant="contained"
                   onClick={handleAskBot}
