@@ -160,6 +160,7 @@ class _FitBotChatWindowState extends ConsumerState<FitBotChatWindow> {
                   hintText: 'fitbot.input_hint'.tr(),
                   errorText:
                       isTooShort ? 'fitbot.question_too_short'.tr() : null,
+                  errorStyle: const TextStyle(color: AppColors.primary),
                   isDense: true,
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
@@ -170,6 +171,17 @@ class _FitBotChatWindowState extends ConsumerState<FitBotChatWindow> {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
                     borderSide: BorderSide.none,
+                  ),
+                  errorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: const BorderSide(color: AppColors.primary),
+                  ),
+                  focusedErrorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: const BorderSide(
+                      color: AppColors.primary,
+                      width: 1.5,
+                    ),
                   ),
                 ),
               ),
