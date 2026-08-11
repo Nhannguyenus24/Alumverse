@@ -16,9 +16,9 @@ class FitBotRepository {
 
   final Dio _dio;
 
-  // Same origin the web app proxies to via `/ngrok-api`.
+  // Same FitBot service used by the web app; mobile calls it directly.
   static const String _endpoint =
-      'https://glimmer-clustered-exorcist.ngrok-free.dev/api/stream-query';
+      'https://3038-2405-4802-9191-f020-1be7-2208-e52c-e37c.ngrok-free.app/api/stream-query';
 
   /// Streams the assistant's answer for [question] token-by-token. Each text
   /// chunk is yielded as it arrives so the UI can render progressively.

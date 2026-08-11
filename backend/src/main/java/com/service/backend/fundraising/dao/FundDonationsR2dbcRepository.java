@@ -5,6 +5,7 @@ import com.service.backend.shared.entity.FundDonations;
 import com.service.backend.fundraising.projection.FundDonationListProjection;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.r2dbc.repository.R2dbcRepository;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -14,6 +15,62 @@ import java.time.LocalDateTime;
 
 @Repository
 public interface FundDonationsR2dbcRepository extends R2dbcRepository<FundDonations, Integer> {
+
+    @Query("""
+            UPDATE fund_donations
+            SET status = 'SUCCESS',
+                amount = :amount,
+                sepay_transaction_id = :sepayTransactionId
+            WHERE id = :donationId
+              AND status = 'PENDING'
+              AND sepay_transaction_id IS NULL
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM fund_donations processed
+                  WHERE processed.sepay_transaction_id = :sepayTransactionId
+              )
+            RETURNING *
+            """)
+    Mono<FundDonations> claimPendingDonation(
+            @Param("donationId") Integer donationId,
+            @Param("sepayTransactionId") Long sepayTransactionId,
+            @Param("amount") BigDecimal amount);
+
+    @Query("""
+            INSERT INTO fund_donations (
+                fund_id,
+                donor_member_id,
+                donor_name,
+                amount,
+                address,
+                phone,
+                email,
+                message,
+                status,
+                created_at,
+                sepay_transaction_id
+            )
+            SELECT
+                fund_id,
+                donor_member_id,
+                donor_name,
+                :amount,
+                address,
+                phone,
+                email,
+                message,
+                'SUCCESS',
+                CURRENT_TIMESTAMP,
+                :sepayTransactionId
+            FROM fund_donations
+            WHERE id = :sourceDonationId
+            ON CONFLICT (sepay_transaction_id) DO NOTHING
+            RETURNING *
+            """)
+    Mono<FundDonations> insertAdditionalDonation(
+            @Param("sourceDonationId") Integer sourceDonationId,
+            @Param("sepayTransactionId") Long sepayTransactionId,
+            @Param("amount") BigDecimal amount);
 
     @Query("""
             SELECT

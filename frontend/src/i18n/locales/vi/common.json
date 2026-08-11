@@ -67,6 +67,7 @@
   "saving": "Đang lưu...",
   "fitbot_chat_tooltip": "Chat với trợ lý ảo",
   "fitbot_send_placeholder": "Gửi tin nhắn...",
+  "fitbot_question_too_short": "Vui lòng nhập ít nhất 3 ký tự.",
   "fitbot_error_message": "Xin lỗi, có lỗi xảy ra khi kết nối với máy chủ. Vui lòng thử lại sau.",
   "chat_tooltip": "Tin nhắn",
   "chat_login_prompt": "Vui lòng đăng nhập để sử dụng tính năng chat với cựu sinh viên và bạn bè.",

@@ -153,6 +153,7 @@
   "bot_test_title": "Kiểm thử phản hồi",
   "bot_test_subtitle": "Gửi câu hỏi nhanh để kiểm tra dữ liệu bot đang dùng.",
   "bot_question_placeholder": "Nhập câu hỏi cho AI Bot...",
+  "bot_question_too_short": "Vui lòng nhập ít nhất 3 ký tự.",
   "bot_send": "Gửi",
   "bot_answer_label": "Câu trả lời",
   "bot_sources_label": "Nguồn tham chiếu",
