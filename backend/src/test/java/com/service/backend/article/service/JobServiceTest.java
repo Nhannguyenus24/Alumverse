@@ -275,8 +275,16 @@ class JobServiceTest {
                     eq("job_cache"), anyString(), any(), any()))
                     .thenAnswer(invocation -> ((Supplier<Mono<FeaturedPaginatedResponse<JobResponse>>>)
                             invocation.getArgument(3)).get());
-            Job featured = Job.builder().id(8).title("Featured").build();
-            Job item = Job.builder().id(6).title("Result").build();
+            Job featured = Job.builder()
+                    .id(8)
+                    .title("Featured")
+                    .description("<p>Featured <strong>description</strong></p>")
+                    .build();
+            Job item = Job.builder()
+                    .id(6)
+                    .title("Result")
+                    .description("<p>" + "x".repeat(300) + "</p>")
+                    .build();
             when(jobRepository.findPublicFeatured(
                     2, "engineer", "full_time,remote", "2026-07-01", "2026-08-07", "newest"))
                     .thenReturn(Mono.just(featured));
@@ -292,7 +300,9 @@ class JobServiceTest {
                             LocalDate.of(2026, 7, 1), LocalDate.of(2026, 8, 7), "newest"))
                     .assertNext(response -> {
                         assertThat(response.getFeatured().getId()).isEqualTo(8);
+                        assertThat(response.getFeatured().getDescription()).isEqualTo("Featured description");
                         assertThat(response.getItems()).extracting(JobResponse::getId).containsExactly(6);
+                        assertThat(response.getItems().get(0).getDescription()).hasSize(260).doesNotContain("<p>");
                         assertThat(response.getTotalItem()).isEqualTo(1);
                         assertThat(response.getTotalPage()).isEqualTo(1);
                     })
