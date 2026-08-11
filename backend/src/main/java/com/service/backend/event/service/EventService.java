@@ -208,7 +208,7 @@ public class EventService {
             boolean withFeatured) {
         EventListFilters filters = normalizeEventListFilters(keyword, topics, fromDate, toDate, sort);
         String cacheKey = eventListCacheKey(
-                "upcoming-v4", organizationId, page, limit, filters, withFeatured);
+                "upcoming-v5", organizationId, page, limit, filters, withFeatured);
 
         return cacheUtils.getOrCompute(CacheNames.EVENT, cacheKey, java.time.Duration.ofMinutes(5), () -> {
             LocalDateTime now = LocalDateTime.now();
@@ -249,7 +249,7 @@ public class EventService {
             boolean excludeFeatured) {
         EventListFilters filters = normalizeEventListFilters(keyword, topics, fromDate, toDate, sort);
         String cacheKey = eventListCacheKey(
-                "ongoing-v4", organizationId, page, limit, filters, excludeFeatured);
+                "ongoing-v5", organizationId, page, limit, filters, excludeFeatured);
 
         return cacheUtils.getOrCompute(CacheNames.EVENT, cacheKey, java.time.Duration.ofMinutes(5), () -> {
             LocalDateTime now = LocalDateTime.now();
