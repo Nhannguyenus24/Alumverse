@@ -22,10 +22,10 @@ const fmtDate = (str) => {
   return p.length === 3 ? `${p[2]}/${p[1]}` : str;
 };
 
-const AdminPlatformSection = () => {
+const AdminPlatformSection = ({ from, to }) => {
   const { t } = useTranslation(['admin']);
   const theme = useTheme();
-  const { stats } = useAdminPlatformStats();
+  const { stats } = useAdminPlatformStats(from, to);
   const { chat, orgComparison, quality } = stats;
 
   const messagesByDay = (chat?.messagesByDay || []).map((s) => ({ name: fmtDate(s.name), value: Number(s.value ?? 0) }));

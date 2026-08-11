@@ -15,10 +15,10 @@ const metricRowSx = {
   '& > *': { flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 8px)', md: '1 1 0' } },
 };
 
-const AdminUserGrowthSection = () => {
+const AdminUserGrowthSection = ({ from, to }) => {
   const { t } = useTranslation('admin');
   const system = useAdminSystemContext();
-  const { stats } = useAdminUserGrowthStats(system?.stableOrgId);
+  const { stats } = useAdminUserGrowthStats(system?.stableOrgId, from, to);
 
   const fmtDate = (str) => {
     const p = String(str ?? '').slice(0, 10).split('-');

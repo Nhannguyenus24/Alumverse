@@ -28,8 +28,11 @@ public class AdminFundraisingService {
     private final FundR2dbcRepository fundRepository;
     private final FundDonationsR2dbcRepository fundDonationsRepository;
 
-    public Mono<FundraisingStatisticsDTO> getStatistics() {
+    public Mono<FundraisingStatisticsDTO> getStatistics(LocalDateTime from, LocalDateTime to) {
         LocalDateTime now = LocalDateTime.now();
+        // Fund/donation totals stay all-time; only the donation timeline follows the window.
+        LocalDateTime end = to != null ? to : now;
+        LocalDateTime start = from != null ? from : end.minusDays(30);
 
         Mono<com.service.backend.admin.dto.AdminFundAggregatedStatsProjection> fundStatsMono = fundRepository.getAdminAggregatedFundStats(now);
         Mono<com.service.backend.admin.dto.AdminFundDonationAggregatedStatsProjection> donStatsMono = fundDonationsRepository.getAdminAggregatedDonationStats();
@@ -38,7 +41,7 @@ public class AdminFundraisingService {
                 .map(this::toFundSummary)
                 .collectList();
 
-        Mono<List<FundraisingStatisticsDTO.DayCount>> timelineMono = fundDonationsRepository.getDailyDonationCounts()
+        Mono<List<FundraisingStatisticsDTO.DayCount>> timelineMono = fundDonationsRepository.getDailyDonationCountsBetween(start, end)
                 .map(this::toDayCount)
                 .collectList();
 

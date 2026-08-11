@@ -27,12 +27,32 @@ const normalizeCreatedAt = (user, fallbackTs) => {
   return new Date(fallbackTs).toISOString();
 };
 
-const useAdminDashboardAggregates = (allUsers, allPosts, organizations) => {
+// Daily buckets spanning [rangeStart, rangeEnd] (local days). Range-based charts
+// (registrations, forum posts) use this so they follow the selected window.
+const buildDailySeries = (items, getTs, rangeStart, rangeEnd) => {
+  const series = [];
+  const cursor = startOfLocalDay(rangeStart);
+  const lastDay = startOfLocalDay(rangeEnd);
+  let guard = 0;
+  for (let dayStart = cursor; dayStart <= lastDay && guard < 400; dayStart += MS_DAY, guard += 1) {
+    const dayEnd = dayStart + MS_DAY;
+    const count = items.filter((it) => {
+      const t = new Date(getTs(it)).getTime();
+      return t >= dayStart && t < dayEnd;
+    }).length;
+    series.push({ date: formatDayLabel(dayStart), count });
+  }
+  return series;
+};
+
+const useAdminDashboardAggregates = (allUsers, allPosts, organizations, from, to) => {
   const [now] = useState(() => Date.now());
 
   return useMemo(() => {
-    const weekAgo = now - 7 * MS_DAY;
     const monthAgo = now - 30 * MS_DAY;
+    // Selected window (falls back to the last 30 days).
+    const rangeEnd = to ? new Date(to).getTime() : now;
+    const rangeStart = from ? new Date(from).getTime() : monthAgo;
 
     const users = Array.isArray(allUsers) ? allUsers : [];
     const posts = Array.isArray(allPosts) ? allPosts : [];
@@ -44,8 +64,11 @@ const useAdminDashboardAggregates = (allUsers, allPosts, organizations) => {
     }));
 
     const totalUsers = usersWithCreated.length;
-    const newUsersWeek = usersWithCreated.filter((u) => new Date(u.createdAt).getTime() >= weekAgo).length;
-    const newUsersMonth = usersWithCreated.filter((u) => new Date(u.createdAt).getTime() >= monthAgo).length;
+    // Range-based: members that joined within the selected window.
+    const newUsersInRange = usersWithCreated.filter((u) => {
+      const t = new Date(u.createdAt).getTime();
+      return t >= rangeStart && t <= rangeEnd;
+    }).length;
 
     let activeUsers = 0;
     let inactiveUsers = 0;
@@ -63,20 +86,12 @@ const useAdminDashboardAggregates = (allUsers, allPosts, organizations) => {
       }
     });
 
-    const userGrowthDays = 30;
-    const userGrowthSeries = [];
-    for (let i = userGrowthDays - 1; i >= 0; i -= 1) {
-      const dayStart = startOfLocalDay(now - i * MS_DAY);
-      const dayEnd = dayStart + MS_DAY;
-      const count = usersWithCreated.filter((u) => {
-        const t = new Date(u.createdAt).getTime();
-        return t >= dayStart && t < dayEnd;
-      }).length;
-      userGrowthSeries.push({
-        date: formatDayLabel(dayStart),
-        count,
-      });
-    }
+    const userGrowthSeries = buildDailySeries(
+      usersWithCreated,
+      (u) => u.createdAt,
+      rangeStart,
+      rangeEnd,
+    );
 
     const totalPosts = posts.length;
     const totalFlags = posts.reduce((acc, p) => acc + (Number(p.flagsCount) || 0), 0);
@@ -110,20 +125,12 @@ const useAdminDashboardAggregates = (allUsers, allPosts, organizations) => {
       postedAt: p.postedAt || new Date(now).toISOString(),
     }));
 
-    const forumDaySpan = 7;
-    const forumPostsByDay = [];
-    for (let i = forumDaySpan - 1; i >= 0; i -= 1) {
-      const dayStart = startOfLocalDay(now - i * MS_DAY);
-      const dayEnd = dayStart + MS_DAY;
-      const count = postsWithPostedAt.filter((p) => {
-        const t = new Date(p.postedAt).getTime();
-        return t >= dayStart && t < dayEnd;
-      }).length;
-      forumPostsByDay.push({
-        date: formatDayLabel(dayStart),
-        count,
-      });
-    }
+    const forumPostsByDay = buildDailySeries(
+      postsWithPostedAt,
+      (p) => p.postedAt,
+      rangeStart,
+      rangeEnd,
+    );
 
     const totalOrganizations = orgs.length;
     let activeOrganizations = 0;
@@ -161,8 +168,7 @@ const useAdminDashboardAggregates = (allUsers, allPosts, organizations) => {
     return {
       user: {
         totalUsers,
-        newUsersWeek,
-        newUsersMonth,
+        newUsersInRange,
         activeUsers,
         inactiveUsers,
         bannedUsers,
@@ -187,7 +193,7 @@ const useAdminDashboardAggregates = (allUsers, allPosts, organizations) => {
         activeOrganizationsList,
       },
     };
-  }, [allUsers, allPosts, organizations, now]);
+  }, [allUsers, allPosts, organizations, now, from, to]);
 };
 
 export default useAdminDashboardAggregates;

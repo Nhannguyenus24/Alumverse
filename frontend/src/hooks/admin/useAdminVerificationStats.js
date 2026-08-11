@@ -21,17 +21,20 @@ const emptyStats = {
   approvedPeerVerifications: 0,
 };
 
-const useAdminVerificationStats = (organizationId) => {
+const useAdminVerificationStats = (organizationId, from, to) => {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(emptyStats);
 
   useEffect(() => {
-    const params = organizationId ? { organizationId } : {};
+    const params = {};
+    if (organizationId) params.organizationId = organizationId;
+    if (from) params.from = from;
+    if (to) params.to = to;
     fetchSafe(() => apiClient.get('/admin/users/verification-statistics', { params }), emptyStats).then((data) => {
       setStats(data || emptyStats);
       setLoading(false);
     });
-  }, [organizationId]);
+  }, [organizationId, from, to]);
 
   return { loading, stats };
 };

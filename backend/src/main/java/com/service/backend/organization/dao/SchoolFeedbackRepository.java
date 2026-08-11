@@ -40,4 +40,13 @@ public interface SchoolFeedbackRepository extends R2dbcRepository<SchoolFeedback
            "GROUP BY CAST(created_at AS DATE) " +
            "ORDER BY date")
     Flux<com.service.backend.shared.projection.DailyCountProjection> getDailyFeedbackCounts();
+
+    // Windowed variant of getDailyFeedbackCounts for the dashboard time-range selector.
+    @Query("SELECT CAST(created_at AS DATE) AS date, COUNT(*) AS count " +
+           "FROM school_feedbacks " +
+           "WHERE created_at >= :from AND created_at < :to " +
+           "GROUP BY CAST(created_at AS DATE) " +
+           "ORDER BY date")
+    Flux<com.service.backend.shared.projection.DailyCountProjection> getDailyFeedbackCountsBetween(
+            java.time.LocalDateTime from, java.time.LocalDateTime to);
 }

@@ -644,11 +644,14 @@ public class AdminOrganizationService {
                         : Mono.error(e));
     }
 
-    public Mono<FeedbackStatisticsDTO> getFeedbackStatistics() {
+    public Mono<FeedbackStatisticsDTO> getFeedbackStatistics(java.time.LocalDateTime from, java.time.LocalDateTime to) {
+        // Totals stay all-time; only the feedback timeline follows the selected window.
+        java.time.LocalDateTime end = to != null ? to : java.time.LocalDateTime.now();
+        java.time.LocalDateTime start = from != null ? from : end.minusDays(30);
         return Mono.zip(
                 schoolFeedbackRepository.countByOrganizationId(null),
                 schoolFeedbackRepository.countUnread(),
-                schoolFeedbackRepository.getDailyFeedbackCounts()
+                schoolFeedbackRepository.getDailyFeedbackCountsBetween(start, end)
                         .map(p -> FeedbackStatisticsDTO.DayCount.builder()
                                 .date(p.getDate() != null ? p.getDate().toString() : "")
                                 .count(p.getCount() != null ? p.getCount() : 0L)
