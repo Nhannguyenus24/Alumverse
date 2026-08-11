@@ -42,7 +42,7 @@ public interface EventR2dbcRepository extends R2dbcRepository<Event, Long> {
     @Query("""
             SELECT * FROM events
             WHERE organization_id = :organizationId
-              AND (end_time >= :now OR start_time > :now)
+              AND (start_time > :now OR (start_time <= :now AND end_time >= :now))
               AND is_published = true
               AND (:keyword = ''
                    OR POSITION(LOWER(:keyword) IN LOWER(COALESCE(title, ''))) > 0
@@ -52,9 +52,16 @@ public interface EventR2dbcRepository extends R2dbcRepository<Event, Long> {
               AND (:fromDate = '' OR CAST(start_time AS date) >= CAST(NULLIF(:fromDate, '') AS date))
               AND (:toDate = '' OR CAST(end_time AS date) <= CAST(NULLIF(:toDate, '') AS date))
             ORDER BY
-              CASE WHEN start_time <= :now AND end_time >= :now THEN 0 ELSE 1 END ASC,
-              CASE WHEN start_time <= :now AND end_time >= :now THEN end_time END ASC,
+              CASE
+                WHEN start_time > :now
+                 AND (registration_start_at IS NULL OR registration_start_at <= :now)
+                 AND (registration_end_at IS NULL OR registration_end_at >= :now)
+                THEN 0
+                WHEN start_time > :now THEN 1
+                ELSE 2
+              END ASC,
               CASE WHEN start_time > :now THEN start_time END ASC,
+              CASE WHEN start_time <= :now AND end_time >= :now THEN end_time END ASC,
               id ASC
             LIMIT 1
             """)
