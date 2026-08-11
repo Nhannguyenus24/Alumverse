@@ -12,9 +12,9 @@ const metricRowSx = {
   '& > *': { flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 8px)', md: '1 1 0' } },
 };
 
-const AdminFeedbackSection = () => {
+const AdminFeedbackSection = ({ from, to }) => {
   const { t } = useTranslation('admin');
-  const { stats } = useAdminFeedbackStats();
+  const { stats } = useAdminFeedbackStats(from, to);
 
   const fmtDate = (str) => {
     const p = String(str ?? '').slice(0, 10).split('-');

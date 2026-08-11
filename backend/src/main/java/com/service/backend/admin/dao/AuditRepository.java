@@ -12,6 +12,8 @@ import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.time.LocalDateTime;
+
 @Repository
 public interface AuditRepository extends R2dbcRepository<UserLoginHistory, Long> {
 
@@ -62,6 +64,25 @@ public interface AuditRepository extends R2dbcRepository<UserLoginHistory, Long>
            "GROUP BY CAST(login_at AS DATE) " +
            "ORDER BY date DESC")
     Flux<DailyCountProjection> getDailyLoginStats();
+
+    // ---- Windowed [from, to) variants for the dashboard time-range selector ----
+
+    @Query("SELECT login_method AS method, COUNT(*) AS count " +
+           "FROM user_login_histories " +
+           "WHERE login_at >= :from AND login_at < :to " +
+           "GROUP BY login_method " +
+           "ORDER BY count DESC")
+    Flux<LoginMethodProjection> getLoginMethodStatsBetween(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+
+    @Query("SELECT CAST(login_at AS DATE) AS date, COUNT(*) AS count " +
+           "FROM user_login_histories " +
+           "WHERE login_at >= :from AND login_at < :to " +
+           "GROUP BY CAST(login_at AS DATE) " +
+           "ORDER BY date DESC")
+    Flux<DailyCountProjection> getDailyLoginStatsBetween(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+
+    @Query("SELECT COUNT(DISTINCT user_id) FROM user_login_histories WHERE login_at >= :from AND login_at < :to")
+    Mono<Long> countActiveBetween(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
 
     @Query("SELECT ulh.user_id AS user_id, u.email AS email, " +
            "COUNT(DISTINCT ulh.login_ip) AS distinct_ip_count, COUNT(*) AS total_logins " +

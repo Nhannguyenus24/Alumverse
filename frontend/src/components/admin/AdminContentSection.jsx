@@ -16,9 +16,9 @@ const metricRowSx = {
   '& > *': { flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 8px)', md: '1 1 0' } },
 };
 
-const AdminContentSection = () => {
+const AdminContentSection = ({ from, to }) => {
   const { t } = useTranslation(['admin']);
-  const { stats } = useAdminContentStats();
+  const { stats } = useAdminContentStats(from, to);
 
   const contentTypeData = [
     { name: t('admin:chart_legend_news'), count: Number(stats.totalNews) },

@@ -15,9 +15,9 @@ const metricRowSx = {
 
 const fmt = (n) => Number(n ?? 0).toLocaleString('vi-VN');
 
-const AdminEngagementSection = () => {
+const AdminEngagementSection = ({ from, to }) => {
   const { t } = useTranslation(['admin']);
-  const { stats } = useAdminEngagementStats();
+  const { stats } = useAdminEngagementStats(from, to);
 
   const byHour = (stats.loginsByHour || []).map((s) => ({ name: `${s.name}h`, value: Number(s.value ?? 0) }));
   const byMethod = (stats.loginsByMethod || []).map((s) => ({ name: String(s.name ?? '—'), value: Number(s.value ?? 0) }));

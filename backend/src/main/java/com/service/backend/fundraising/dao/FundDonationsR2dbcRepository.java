@@ -204,6 +204,15 @@ public interface FundDonationsR2dbcRepository extends R2dbcRepository<FundDonati
            "ORDER BY date")
     Flux<com.service.backend.shared.projection.DailyAmountProjection> getDailyDonationCounts();
 
+    // Windowed variant of getDailyDonationCounts for the dashboard time-range selector.
+    @Query("SELECT CAST(created_at AS DATE) AS date, COUNT(*) AS count, COALESCE(SUM(amount), 0) AS amount " +
+           "FROM fund_donations " +
+           "WHERE status = 'SUCCESS' AND created_at >= :from AND created_at < :to " +
+           "GROUP BY CAST(created_at AS DATE) " +
+           "ORDER BY date")
+    Flux<com.service.backend.shared.projection.DailyAmountProjection> getDailyDonationCountsBetween(
+            @Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+
     @Query("""
             SELECT
               fd.id AS id,

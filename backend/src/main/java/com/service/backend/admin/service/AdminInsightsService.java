@@ -16,13 +16,14 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
 /**
  * Computes the extended admin dashboard insight aggregates (funnels, cohorts,
  * engagement, platform health). Each public method is cached for 5 minutes to
- * mirror {@link AdminDashboardService#getMetrics()}.
+ * mirror {@link AdminDashboardService#getMetrics}.
  */
 @Service
 @RequiredArgsConstructor
@@ -195,15 +196,20 @@ public class AdminInsightsService {
 
     // --------------------------- engagement ----------------------------
 
-    public Mono<EngagementStatsDTO> getEngagement() {
-        return cacheUtils.getOrCompute(CacheNames.ADMIN_ENGAGEMENT, "global", TTL, this::computeEngagement);
+    public Mono<EngagementStatsDTO> getEngagement(LocalDateTime from, LocalDateTime to) {
+        LocalDateTime end = to != null ? to : LocalDateTime.now();
+        LocalDateTime start = from != null ? from : end.minusDays(30);
+        return cacheUtils.getOrCompute(CacheNames.ADMIN_ENGAGEMENT, "global|" + start + "|" + end, TTL,
+                () -> computeEngagement(start, end));
     }
 
-    private Mono<EngagementStatsDTO> computeEngagement() {
-        Mono<List<StatPoint>> dailyLogins = auditRepository.getDailyLoginStats()
+    // DAU/WAU/MAU stickiness stay fixed standard windows; the time-series charts
+    // (loginsByHour, loginsByMethod, dailyLogins) follow the selected [start, end) window.
+    private Mono<EngagementStatsDTO> computeEngagement(LocalDateTime start, LocalDateTime end) {
+        Mono<List<StatPoint>> dailyLogins = auditRepository.getDailyLoginStatsBetween(start, end)
                 .map(p -> sp(p.getDate() == null ? "" : p.getDate().toString(), p.getCount() == null ? 0L : p.getCount()))
                 .collectList();
-        Mono<List<StatPoint>> loginsByMethod = auditRepository.getLoginMethodStatsLast30Days()
+        Mono<List<StatPoint>> loginsByMethod = auditRepository.getLoginMethodStatsBetween(start, end)
                 .map(p -> sp(p.getMethod() == null ? "unknown" : p.getMethod(), p.getCount() == null ? 0L : p.getCount()))
                 .collectList();
 
@@ -211,7 +217,7 @@ public class AdminInsightsService {
                         auditRepository.countDailyActive(),
                         repo.countWeeklyActive(),
                         repo.countMonthlyActive(),
-                        toPoints(repo.loginsByHour()),
+                        toPoints(repo.loginsByHourBetween(start, end)),
                         loginsByMethod,
                         dailyLogins)
                 .map(t -> {
@@ -231,12 +237,16 @@ public class AdminInsightsService {
 
     // ---------------------------- platform -----------------------------
 
-    public Mono<PlatformStatsDTO> getPlatform() {
-        return cacheUtils.getOrCompute(CacheNames.ADMIN_PLATFORM, "global", TTL, this::computePlatform);
+    public Mono<PlatformStatsDTO> getPlatform(LocalDateTime from, LocalDateTime to) {
+        LocalDateTime end = to != null ? to : LocalDateTime.now();
+        LocalDateTime start = from != null ? from : end.minusDays(30);
+        return cacheUtils.getOrCompute(CacheNames.ADMIN_PLATFORM, "global|" + start + "|" + end, TTL,
+                () -> computePlatform(start, end));
     }
 
-    private Mono<PlatformStatsDTO> computePlatform() {
-        Mono<List<StatPoint>> messagesByDay = repo.chatMessagesByDay()
+    // Only the messages-by-day time-series follows the window; totals/distributions stay all-time.
+    private Mono<PlatformStatsDTO> computePlatform(LocalDateTime start, LocalDateTime end) {
+        Mono<List<StatPoint>> messagesByDay = repo.chatMessagesByDayBetween(start, end)
                 .map(p -> sp(p.getDate() == null ? "" : p.getDate().toString(), p.getCount() == null ? 0L : p.getCount()))
                 .collectList();
 
