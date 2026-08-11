@@ -249,6 +249,25 @@ const MessageBubble = styled(Box, {
   '& p': { margin: '0 0 0.5em 0', '&:last-child': { margin: 0 } },
   '& ul, & ol': { margin: '0 0 0.5em 0', paddingLeft: '1.5em' },
   '& li': { marginBottom: '0.2em' },
+  '& table': {
+    display: 'block',
+    maxWidth: '100%',
+    overflowX: 'auto',
+    borderCollapse: 'collapse',
+    margin: '0 0 0.5em 0',
+    fontSize: '0.85rem',
+  },
+  '& th, & td': {
+    border: `1px solid ${theme.palette.divider}`,
+    padding: theme.spacing(0.5, 1),
+    textAlign: 'left',
+    whiteSpace: 'nowrap',
+  },
+  '& thead th': {
+    backgroundColor: theme.palette.mode === 'dark'
+      ? theme.palette.grey[700]
+      : theme.palette.grey[100],
+  },
 }));
 
 const InputContainer = styled(Box)(({ theme }) => ({
@@ -352,6 +371,13 @@ export default function FitBot({ isOpen = false, isBlocked = false, onOpen, onCl
     };
   }, []);
 
+  // Hide suggestion when blocked by another chat widget
+  useEffect(() => {
+    if (isBlocked) {
+      setShowSuggestion(false);
+    }
+  }, [isBlocked]);
+
   // Show random suggestion at random interval
   useEffect(() => {
     if (!isChatOpen) {
@@ -382,6 +408,8 @@ export default function FitBot({ isOpen = false, isBlocked = false, onOpen, onCl
         clearTimeout(suggestionTimeoutRef.current);
         clearTimeout(suggestionHideTimeoutRef.current);
       };
+    } else {
+      setShowSuggestion(false);
     }
   }, [isBlocked, isChatOpen, t]);
 
