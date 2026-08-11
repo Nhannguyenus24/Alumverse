@@ -18,10 +18,11 @@ import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
 import { useSnackbar } from 'notistack';
 import { AdminAiProvidersContent } from './AdminAiProvidersPage';
 import AdminFitBotKnowledgeContent from './AdminFitBotKnowledgePage';
-import apiClient from '../../utils/axios';
 import useAuthStore from '../../stores/authStore';
+import { streamFitBotResponse } from '../../utils/fitBotApi';
 
-const FITBOT_API_URL = import.meta.env.VITE_FITBOT_API_URL || '/fitbot-api';
+const FITBOT_API_URL = import.meta.env.VITE_FITBOT_API_URL;
+const MIN_QUESTION_LENGTH = 3;
 
 const AdminAIBotConfigPage = () => {
   const { t } = useTranslation('admin');
@@ -36,6 +37,9 @@ const AdminAIBotConfigPage = () => {
   const [question, setQuestion] = useState('');
   const [botResponse, setBotResponse] = useState(null);
   const [asking, setAsking] = useState(false);
+  const trimmedQuestion = question.trim();
+  const questionTooShort =
+    trimmedQuestion.length > 0 && trimmedQuestion.length < MIN_QUESTION_LENGTH;
 
   const [viewFilename, setViewFilename] = useState(null);
   const [viewContent, setViewContent] = useState('');
@@ -154,71 +158,26 @@ const AdminAIBotConfigPage = () => {
   };
 
   const handleAskBot = async () => {
-    if (!question.trim()) return;
+    if (trimmedQuestion.length < MIN_QUESTION_LENGTH) return;
     setAsking(true);
     setBotResponse({ answer: '', sources: [] });
     try {
       const token = useAuthStore.getState().token;
-      const res = await fetch(`${FITBOT_API_URL}/api/query`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-          'ngrok-skip-browser-warning': 'true'
-        },
-        body: JSON.stringify({
-          question,
-          top_k: 7,
-          model: 'gemini-2.5-flash',
-          use_reranker: false,
-        })
-      });
-      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder('utf-8');
-      let done = false;
-      let buffer = '';
       let currentAnswer = '';
       let currentSources = [];
-
-      while (!done) {
-        const { value, done: readerDone } = await reader.read();
-        done = readerDone;
-        if (value) {
-          buffer += decoder.decode(value, { stream: true });
-          let newlineIndex;
-          while ((newlineIndex = buffer.indexOf('\n\n')) >= 0) {
-            const eventStr = buffer.slice(0, newlineIndex);
-            buffer = buffer.slice(newlineIndex + 2);
-            
-            const lines = eventStr.split('\n');
-            for (const line of lines) {
-              if (line.startsWith('data: ')) {
-                const dataStr = line.slice(6).trim();
-                if (dataStr === '[DONE]') {
-                  done = true;
-                  break;
-                }
-                try {
-                  const data = JSON.parse(dataStr);
-                  if (data.answer) {
-                    currentAnswer += data.answer;
-                    setBotResponse({ answer: currentAnswer, sources: currentSources });
-                  }
-                  if (data.sources) {
-                    currentSources = data.sources;
-                    setBotResponse({ answer: currentAnswer, sources: currentSources });
-                  }
-                } catch (e) {
-                  // Ignore JSON parse errors for incomplete data chunks just in case
-                  console.warn('Failed to parse SSE data', e, dataStr);
-                }
-              }
-            }
-          }
-        }
-      }
+      await streamFitBotResponse(trimmedQuestion, {
+        headers: {
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+        onContent: (chunk) => {
+          currentAnswer += chunk;
+          setBotResponse({ answer: currentAnswer, sources: currentSources });
+        },
+        onSources: (sources) => {
+          currentSources = sources;
+          setBotResponse({ answer: currentAnswer, sources: currentSources });
+        },
+      });
     } catch (error) {
       setBotResponse({ answer: t('bot_error_prefix') + error.message, sources: [] });
     } finally {
@@ -322,19 +281,51 @@ const AdminAIBotConfigPage = () => {
           {/* Bot Testing Section */}
           <AdminSectionPanel title={t('bot_test_title')} subtitle={t('bot_test_subtitle')}>
               <Stack direction="row" spacing={2} mb={2}>
-                <TextField
-                  fullWidth
-                  variant="outlined"
-                  placeholder={t('bot_question_placeholder')}
-                  value={question}
-                  onChange={(e) => setQuestion(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleAskBot()}
-                  disabled={asking}
-                />
+                <Box sx={{ position: 'relative', flex: 1 }}>
+                  {questionTooShort && (
+                    <Typography
+                      variant="caption"
+                      role="alert"
+                      sx={{
+                        position: 'absolute',
+                        left: 8,
+                        bottom: 'calc(100% + 4px)',
+                        zIndex: 1,
+                        px: 1,
+                        py: 0.5,
+                        borderRadius: 1,
+                        bgcolor: 'background.paper',
+                        color: 'primary.main',
+                        boxShadow: '0 2px 6px rgba(0, 0, 0, 0.12)',
+                        pointerEvents: 'none',
+                      }}
+                    >
+                      {t('bot_question_too_short')}
+                    </Typography>
+                  )}
+                  <TextField
+                    fullWidth
+                    variant="outlined"
+                    placeholder={t('bot_question_placeholder')}
+                    value={question}
+                    onChange={(e) => setQuestion(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAskBot()}
+                    disabled={asking}
+                    sx={{
+                      ...(questionTooShort && {
+                        '& .MuiOutlinedInput-root': {
+                          '& fieldset': { borderColor: 'primary.main' },
+                          '&:hover fieldset': { borderColor: 'primary.main' },
+                          '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+                        },
+                      }),
+                    }}
+                  />
+                </Box>
                 <Button
                   variant="contained"
                   onClick={handleAskBot}
-                  disabled={asking || !question.trim()}
+                  disabled={asking || trimmedQuestion.length < MIN_QUESTION_LENGTH}
                   sx={{ minWidth: 120 }}
                 >
                   {asking ? <CircularProgress size={24} color="inherit" /> : t('bot_send')}
