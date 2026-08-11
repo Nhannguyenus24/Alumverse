@@ -252,7 +252,9 @@ class _Bubble extends StatelessWidget {
       alignment: isBot ? Alignment.centerLeft : Alignment.centerRight,
       child: Container(
         constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.66,
+          // Bot replies can contain tables, so give them more room than the
+          // user's short messages.
+          maxWidth: MediaQuery.of(context).size.width * (isBot ? 0.82 : 0.66),
         ),
         margin: const EdgeInsets.symmetric(vertical: 4),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
