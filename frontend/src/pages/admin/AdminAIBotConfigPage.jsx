@@ -17,7 +17,6 @@ import UploadFileIcon from '@mui/icons-material/UploadFile';
 import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
 import { useSnackbar } from 'notistack';
 import { AdminAiProvidersContent } from './AdminAiProvidersPage';
-import AdminFitBotKnowledgeContent from './AdminFitBotKnowledgePage';
 import useAuthStore from '../../stores/authStore';
 import { streamFitBotResponse } from '../../utils/fitBotApi';
 
@@ -45,7 +44,7 @@ const AdminAIBotConfigPage = () => {
   const [viewContent, setViewContent] = useState('');
   const [viewLoading, setViewLoading] = useState(false);
   const tabParam = searchParams.get('tab');
-  const activeTab = ['knowledge-db', 'providers'].includes(tabParam) ? tabParam : 'knowledge';
+  const activeTab = ['providers'].includes(tabParam) ? tabParam : 'knowledge';
 
   useEffect(() => {
     if (setBreadcrumbs) {
@@ -199,15 +198,12 @@ const AdminAIBotConfigPage = () => {
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
         <Tabs value={activeTab} onChange={handleTabChange} variant="scrollable" scrollButtons="auto">
           <Tab value="knowledge" label={t('bot_config_tab_knowledge')} sx={{ textTransform: 'none', fontWeight: 700 }} />
-          <Tab value="knowledge-db" label={t('bot_config_tab_knowledge_db')} sx={{ textTransform: 'none', fontWeight: 700 }} />
           <Tab value="providers" label={t('bot_config_tab_providers')} sx={{ textTransform: 'none', fontWeight: 700 }} />
         </Tabs>
       </Box>
 
       {activeTab === 'providers' ? (
         <AdminAiProvidersContent showHeader={false} />
-      ) : activeTab === 'knowledge-db' ? (
-        <AdminFitBotKnowledgeContent />
       ) : (
         <Stack spacing={4}>
           <Box>
