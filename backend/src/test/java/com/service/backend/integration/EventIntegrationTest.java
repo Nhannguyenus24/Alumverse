@@ -229,7 +229,7 @@ public class EventIntegrationTest extends BaseIntegrationTest {
 
     @Test
     @Order(50)
-    void publicEventLists_sharedFeaturedPrefersOngoingAndExcludesOnlyWinningSource() {
+    void publicEventLists_featuredPrefersOpenRegistrationThenFallsBackToUpcomingAndOngoing() {
         String token = "eventsharedfeatured" + UUID.randomUUID().toString().replace("-", "");
         LocalDateTime now = LocalDateTime.now();
 
@@ -261,8 +261,8 @@ public class EventIntegrationTest extends BaseIntegrationTest {
 
         Long upcomingNearId = databaseClient.sql("""
                         INSERT INTO events (organization_id, title, description, location, topic,
-                            start_time, end_time, is_published)
-                        VALUES (1, :title, :description, :location, 'conference', :start, :end, true)
+                            start_time, end_time, registration_start_at, is_published)
+                        VALUES (1, :title, :description, :location, 'conference', :start, :end, :registrationStart, true)
                         RETURNING id
                         """)
                 .bind("title", token + " fallback upcoming near")
@@ -270,12 +270,13 @@ public class EventIntegrationTest extends BaseIntegrationTest {
                 .bind("location", token)
                 .bind("start", now.plusDays(1))
                 .bind("end", now.plusDays(1).plusHours(1))
+                .bind("registrationStart", now.plusHours(1))
                 .map((row, metadata) -> row.get("id", Long.class)).one().block();
 
         Long upcomingFarId = databaseClient.sql("""
                         INSERT INTO events (organization_id, title, description, location, topic,
-                            start_time, end_time, is_published)
-                        VALUES (1, :title, :description, :location, 'conference', :start, :end, true)
+                            start_time, end_time, registration_start_at, is_published)
+                        VALUES (1, :title, :description, :location, 'conference', :start, :end, :registrationStart, true)
                         RETURNING id
                         """)
                 .bind("title", token + " fallback upcoming far")
@@ -283,10 +284,27 @@ public class EventIntegrationTest extends BaseIntegrationTest {
                 .bind("location", token)
                 .bind("start", now.plusDays(2))
                 .bind("end", now.plusDays(2).plusHours(1))
+                .bind("registrationStart", now.plusHours(1))
                 .map((row, metadata) -> row.get("id", Long.class)).one().block();
 
-        // Both endpoints receive identical filters. Upcoming transports the shared ongoing winner,
-        // but its own grid/count retain both upcoming events.
+        Long openRegistrationId = databaseClient.sql("""
+                        INSERT INTO events (organization_id, title, description, location, topic,
+                            start_time, end_time, registration_start_at, registration_end_at, is_published)
+                        VALUES (1, :title, :description, :location, 'conference', :start, :end,
+                                :registrationStart, :registrationEnd, true)
+                        RETURNING id
+                        """)
+                .bind("title", token + " registration open")
+                .bind("description", token)
+                .bind("location", token)
+                .bind("start", now.plusDays(3))
+                .bind("end", now.plusDays(3).plusHours(1))
+                .bind("registrationStart", now.minusHours(1))
+                .bind("registrationEnd", now.plusDays(1))
+                .map((row, metadata) -> row.get("id", Long.class)).one().block();
+
+        // An upcoming event whose registration is open outranks an ongoing event and upcoming
+        // fallbacks whose registration has not opened yet.
         webTestClient.get().uri(builder -> builder.path("/api/events/upcoming")
                         .queryParam("organizationId", 1).queryParam("page", 0).queryParam("limit", 1)
                         .queryParam("keyword", token).queryParam("topics", "conference")
@@ -294,11 +312,12 @@ public class EventIntegrationTest extends BaseIntegrationTest {
                         .queryParam("toDate", now.plusDays(3).toLocalDate())
                         .queryParam("sort", "newest").queryParam("withFeatured", true).build())
                 .header("X-Forwarded-For", randomIp()).exchange().expectStatus().isOk().expectBody()
-                .jsonPath("$.data.featured.id").isEqualTo(ongoingWinnerId.intValue())
+                .jsonPath("$.data.featured.id").isEqualTo(openRegistrationId.intValue())
                 .jsonPath("$.data.items[0].id").isEqualTo(upcomingFarId.intValue())
                 .jsonPath("$.data.totalItem").isEqualTo(2)
                 .jsonPath("$.data.totalPage").isEqualTo(2);
 
+        // The selected featured event is upcoming, so ongoing items remain intact.
         webTestClient.get().uri(builder -> builder.path("/api/events/ongoing")
                         .queryParam("organizationId", 1).queryParam("page", 0).queryParam("limit", 1)
                         .queryParam("keyword", token).queryParam("topics", "conference")
@@ -307,8 +326,27 @@ public class EventIntegrationTest extends BaseIntegrationTest {
                         .queryParam("sort", "newest").queryParam("excludeFeatured", true).build())
                 .header("X-Forwarded-For", randomIp()).exchange().expectStatus().isOk().expectBody()
                 .jsonPath("$.data.items[0].id").isEqualTo(ongoingOtherId.intValue())
-                .jsonPath("$.data.totalItem").isEqualTo(1)
-                .jsonPath("$.data.totalPage").isEqualTo(1);
+                .jsonPath("$.data.totalItem").isEqualTo(2)
+                .jsonPath("$.data.totalPage").isEqualTo(2);
+
+        // If there is no upcoming match at all, the selector falls back to the ongoing event
+        // ending soonest; ongoing extraction still prevents that event from being duplicated.
+        webTestClient.get().uri(builder -> builder.path("/api/events/upcoming")
+                        .queryParam("organizationId", 1).queryParam("page", 0).queryParam("limit", 1)
+                        .queryParam("keyword", token + " ongoing").queryParam("topics", "conference")
+                        .queryParam("withFeatured", true).build())
+                .header("X-Forwarded-For", randomIp()).exchange().expectStatus().isOk().expectBody()
+                .jsonPath("$.data.featured.id").isEqualTo(ongoingWinnerId.intValue())
+                .jsonPath("$.data.items").isEmpty()
+                .jsonPath("$.data.totalItem").isEqualTo(0);
+
+        webTestClient.get().uri(builder -> builder.path("/api/events/ongoing")
+                        .queryParam("organizationId", 1).queryParam("page", 0).queryParam("limit", 1)
+                        .queryParam("keyword", token + " ongoing").queryParam("topics", "conference")
+                        .queryParam("excludeFeatured", true).build())
+                .header("X-Forwarded-For", randomIp()).exchange().expectStatus().isOk().expectBody()
+                .jsonPath("$.data.items[0].id").isEqualTo(ongoingOtherId.intValue())
+                .jsonPath("$.data.totalItem").isEqualTo(1);
 
         // Legacy/mobile-style ongoing calls do not run shared-featured exclusion.
         webTestClient.get().uri(builder -> builder.path("/api/events/ongoing")
@@ -317,7 +355,7 @@ public class EventIntegrationTest extends BaseIntegrationTest {
                 .header("X-Forwarded-For", randomIp()).exchange().expectStatus().isOk().expectBody()
                 .jsonPath("$.data.totalItem").isEqualTo(2);
 
-        // The same global selector falls back to the nearest upcoming event when filters match no ongoing event.
+        // When no matching upcoming event is in its registration window, fall back to the nearest upcoming event.
         webTestClient.get().uri(builder -> builder.path("/api/events/upcoming")
                         .queryParam("organizationId", 1).queryParam("page", 0).queryParam("limit", 1)
                         .queryParam("keyword", token + " fallback").queryParam("topics", "conference")
