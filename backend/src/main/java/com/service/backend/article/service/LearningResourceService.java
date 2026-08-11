@@ -15,6 +15,7 @@ import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.shared.utils.SecurityUtils;
 import com.service.backend.shared.utils.CacheNames;
 import com.service.backend.shared.utils.CacheUtils;
+import com.service.backend.shared.utils.HtmlPreviewUtils;
 import com.service.backend.shared.service.ImageService;
 import com.service.backend.user.service.NotificationService;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +35,7 @@ import java.util.Optional;
 public class LearningResourceService {
 
     private static final Duration LIST_TTL = Duration.ofMinutes(5);
+    private static final int DESCRIPTION_PREVIEW_LENGTH = 260;
 
     private final LearningResourceR2dbcRepository learningResourceRepository;
     private final CacheUtils cacheUtils;
@@ -191,26 +193,39 @@ public class LearningResourceService {
                     return cacheUtils.getOrCompute(CacheNames.LEARNING_RESOURCE, cacheKey, LIST_TTL,
                             () -> learningResourceRepository.findPublicFeatured(
                                             orgId, normalizedKeyword, normalizedTopics, from, to, normalizedDirection)
+                                    .map(LearningResourceResponse::from)
+                                    .map(this::withDescriptionPreview)
                                     .map(Optional::of)
                                     .defaultIfEmpty(Optional.empty())
                                     .flatMap(featuredOptional -> {
-                                        Integer featuredId = featuredOptional.map(LearningResource::getId).orElse(null);
+                                        Integer featuredId = featuredOptional.map(LearningResourceResponse::getId).orElse(null);
                                         Mono<List<LearningResourceResponse>> items = learningResourceRepository.findPublicPage(
                                                         orgId, featuredId, normalizedKeyword, normalizedTopics,
                                                         from, to, normalizedDirection, limit, offset)
                                                 .map(LearningResourceResponse::from)
+                                                .map(this::withDescriptionPreview)
                                                 .collectList();
                                         Mono<Long> total = learningResourceRepository.countPublicPage(
                                                 orgId, featuredId, normalizedKeyword, normalizedTopics, from, to);
 
                                         return Mono.zip(items, total)
                                                 .map(result -> FeaturedPaginatedResponse.of(
-                                                        featuredOptional.map(LearningResourceResponse::from).orElse(null),
+                                                        featuredOptional.orElse(null),
                                                         result.getT1(), result.getT2(), page, limit));
                                     }));
                 })
                 .switchIfEmpty(Mono.just(FeaturedPaginatedResponse.of(
                         null, List.of(), 0, page, limit)));
+    }
+
+    /**
+     * Resource descriptions are rich HTML. List cards only need a bounded plain-text excerpt;
+     * detail endpoints intentionally retain the full description.
+     */
+    private LearningResourceResponse withDescriptionPreview(LearningResourceResponse item) {
+        item.setDescription(HtmlPreviewUtils.toPlainTextPreview(
+                item.getDescription(), DESCRIPTION_PREVIEW_LENGTH));
+        return item;
     }
 
     public Mono<PaginatedResponse<LearningResourceResponse>> getByType(String type, int page, int limit) {
