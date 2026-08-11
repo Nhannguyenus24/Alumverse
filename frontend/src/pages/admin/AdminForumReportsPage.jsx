@@ -344,11 +344,13 @@ const AdminForumReportsPage = () => {
         maxWidth="sm"
       >
         <DialogTitle sx={{ fontWeight: 700 }}>{t('forum_review_dialog_title', { id: reviewDialog.report?.id })}</DialogTitle>
-        <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
+        <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 2.5 }}>
           <TextField
             select
             label={t('forum_review_decision_label')}
+            InputLabelProps={{ shrink: true }}
             fullWidth
+            sx={{ mt: 1 }}
             value={reviewForm.decision}
             onChange={(e) => setReviewForm((f) => ({ ...f, decision: e.target.value }))}
           >
