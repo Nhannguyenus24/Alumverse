@@ -1,9 +1,8 @@
-import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import { NavLink, useOutletContext } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import {
-  Box, Button, IconButton, MenuItem, Select, Skeleton, Stack,
-  Tooltip, Typography, alpha, useTheme,
+  Box, Button, Skeleton, Stack, Typography, alpha, useTheme,
 } from '@mui/material';
 import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
 import ForumOutlinedIcon from '@mui/icons-material/ForumOutlined';
@@ -16,16 +15,22 @@ import MarkChatUnreadOutlinedIcon from '@mui/icons-material/MarkChatUnreadOutlin
 import BusinessCenterOutlinedIcon from '@mui/icons-material/BusinessCenterOutlined';
 import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
 import VolunteerActivismOutlinedIcon from '@mui/icons-material/VolunteerActivismOutlined';
-import RefreshOutlinedIcon from '@mui/icons-material/RefreshOutlined';
 import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetricTile';
 import AdminDashboardSections from '../../components/admin/AdminDashboardSections';
+import TimeRangeControls from '../../components/admin/TimeRangeControls';
 import Chart from '../../components/Chart';
-import { useAdminSystemContext, useAdminUsersContext, useAdminForumContext } from '../../stores/AdminStore';
+import { useAdminSystemContext, useAdminForumContext } from '../../stores/AdminStore';
 import useAdminDashboardAggregates from '../../hooks/admin/useAdminDashboardAggregates';
 import useAdminDashboardData from '../../hooks/admin/useAdminDashboardData';
+import useTimeRange from '../../hooks/admin/useTimeRange';
 import { getUsers, getAllPosts } from '../../utils/api';
 import { useAuth } from '../../hooks/useAuth';
 import { useMyProfile } from '../../hooks/profile/useMyProfile';
+
+const parseList = (res) => {
+  const data = res?.data?.data ?? res?.data ?? res ?? [];
+  return Array.isArray(data) ? data : (data?.items || data?.content || []);
+};
 
 const AdminDashboardPage = () => {
   const theme = useTheme();
@@ -34,38 +39,46 @@ const AdminDashboardPage = () => {
   const { data: profile } = useMyProfile();
   const isAdmin = user?.role === 'ADMIN';
   const { loading: systemLoading, organizations } = useAdminSystemContext();
-  const { loading: dashboardLoading, metrics, timeline, reload } = useAdminDashboardData();
-  const { allUsers: paginatedUsers } = useAdminUsersContext();
-  const { allPosts: paginatedPosts, statistics } = useAdminForumContext();
-  
+  const { statistics } = useAdminForumContext();
+
+  const {
+    timeRange, setTimeRange,
+    customStart, setCustomStart,
+    customEnd, setCustomEnd,
+    refreshInterval, setRefreshInterval,
+    from, to,
+    refresh, refreshTick,
+  } = useTimeRange({ defaultRange: '30d' });
+
+  const { loading: dashboardLoading, metrics, timeline, reload } = useAdminDashboardData(from, to);
+
   const [allUsers, setAllUsers] = useState([]);
   const [allPosts, setAllPosts] = useState([]);
   const [fetchingAll, setFetchingAll] = useState(true);
 
+  // Full user/post lists are filtered client-side for the Users/Forum aggregates.
+  // They don't depend on the time range (no date params on these endpoints), so we
+  // only re-pull them on mount and on a refresh tick (manual button / auto-refresh).
+  // State is only touched in the async resolution to avoid synchronous setState in
+  // the effect body.
+  const fetchAll = useCallback(() => Promise.all([
+    getUsers(0, 10000, '', 'ALL', 'ALL', null).catch(() => ({ data: { data: [] } })),
+    getAllPosts('', 0, 10000, null).catch(() => ({ data: { data: [] } })),
+  ]).then(([usersRes, postsRes]) => {
+    setAllUsers(parseList(usersRes));
+    setAllPosts(parseList(postsRes));
+    setFetchingAll(false);
+  }), []);
+
   useEffect(() => {
     let mounted = true;
-    setFetchingAll(true);
-    Promise.all([
-      getUsers(0, 10000, '', 'ALL', 'ALL', null).catch(() => ({ data: { data: [] } })),
-      getAllPosts('', 0, 10000, null).catch(() => ({ data: { data: [] } }))
-    ]).then(([usersRes, postsRes]) => {
-      if (!mounted) return;
-      
-      const usersData = usersRes?.data?.data ?? usersRes?.data ?? usersRes ?? [];
-      const postsData = postsRes?.data?.data ?? postsRes?.data ?? postsRes ?? [];
-      
-      const parsedUsers = Array.isArray(usersData) ? usersData : (usersData?.items || usersData?.content || []);
-      const parsedPosts = Array.isArray(postsData) ? postsData : (postsData?.items || postsData?.content || []);
-
-      setAllUsers(parsedUsers);
-      setAllPosts(parsedPosts);
-      setFetchingAll(false);
-    });
+    fetchAll().catch(() => { if (mounted) setFetchingAll(false); });
     return () => { mounted = false; };
-  }, []);
+    // refreshTick drives manual + auto refresh; the metrics hook reloads on from/to.
+  }, [fetchAll, refreshTick]);
 
   const loading = systemLoading || dashboardLoading || fetchingAll;
-  const aggregates = useAdminDashboardAggregates(allUsers, allPosts, organizations);
+  const aggregates = useAdminDashboardAggregates(allUsers, allPosts, organizations, from, to);
   const { setBreadcrumbs, adminBase } = useOutletContext();
   const displayName =
     profile?.fullName ||
@@ -76,24 +89,11 @@ const AdminDashboardPage = () => {
     user?.studentId ||
     'ADMIN';
 
-  const INTERVALS = useMemo(() => [
-    { value: '0', label: t('admin:refresh_interval_none') },
-    { value: '1', label: t('admin:refresh_interval_1m') },
-    { value: '5', label: t('admin:refresh_interval_5m') },
-    { value: '15', label: t('admin:refresh_interval_15m') },
-  ], [t]);
-
   const SYSTEM_STATUS_ITEMS = useMemo(() => [
     [t('admin:system_db')],
     [t('admin:system_email')],
     [t('admin:system_image_storage')],
   ], [t]);
-
-  const [refreshInterval, setRefreshInterval] = useState('0');
-  const [sectionRefreshKey, setSectionRefreshKey] = useState(0);
-  const [lastRefreshed, setLastRefreshed] = useState(null);
-  const [refreshing, setRefreshing] = useState(false);
-  const intervalRef = useRef(null);
 
   useEffect(() => {
     setBreadcrumbs?.([{ label: t('admin:breadcrumb_dashboard'), active: true }]);
@@ -101,45 +101,23 @@ const AdminDashboardPage = () => {
 
   const handleRefresh = useCallback(() => {
     reload?.();
-    setSectionRefreshKey((k) => k + 1);
-    setLastRefreshed(new Date());
-    setRefreshing(true);
-    
-    // Also re-fetch all users and posts when refresh is clicked
-    setFetchingAll(true);
-    Promise.all([
-      getUsers(0, 10000, '', 'ALL', 'ALL', null).catch(() => ({ data: { data: [] } })),
-      getAllPosts('', 0, 10000, null).catch(() => ({ data: { data: [] } }))
-    ]).then(([usersRes, postsRes]) => {
-      const usersData = usersRes?.data?.data ?? usersRes?.data ?? usersRes ?? [];
-      const postsData = postsRes?.data?.data ?? postsRes?.data ?? postsRes ?? [];
-      
-      const parsedUsers = Array.isArray(usersData) ? usersData : (usersData?.items || usersData?.content || []);
-      const parsedPosts = Array.isArray(postsData) ? postsData : (postsData?.items || postsData?.content || []);
+    refresh();
+  }, [reload, refresh]);
 
-      setAllUsers(parsedUsers);
-      setAllPosts(parsedPosts);
-      setFetchingAll(false);
-    });
-
-    setTimeout(() => setRefreshing(false), 800);
-  }, [reload]);
-
-  useEffect(() => {
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    if (refreshInterval === '0') return;
-    const ms = Number(refreshInterval) * 60 * 1000;
-    intervalRef.current = setInterval(handleRefresh, ms);
-    return () => clearInterval(intervalRef.current);
-  }, [refreshInterval, handleRefresh]);
+  const rangeLabel = useMemo(
+    () => (timeRange === 'custom'
+      ? t('admin:dashboard_range.custom_range')
+      : t(`admin:dashboard_range.last_${timeRange}`)),
+    [timeRange, t],
+  );
 
   const { chartData, totalUsers, pendingPosts, totalOrgs, memberTrend } = useMemo(() => {
     const total = metrics?.totalUsers ?? aggregates.user.totalUsers;
-    const newUsers30 = Number(metrics?.newUsers?.['30d'] ?? 0);
-    // Real 30-day growth: new members over the prior member base. null hides the chip
-    // when there is no history to compare against (avoids showing a fabricated number).
-    const priorBase = Number(total) - newUsers30;
-    const trend = priorBase > 0 ? Math.round((newUsers30 / priorBase) * 100) : null;
+    const newUsersRange = Number(metrics?.newUsers?.range ?? metrics?.newUsers?.['30d'] ?? 0);
+    // Growth of the selected window over the prior member base. null hides the chip
+    // when there is no history to compare against (avoids a fabricated number).
+    const priorBase = Number(total) - newUsersRange;
+    const trend = priorBase > 0 ? Math.round((newUsersRange / priorBase) * 100) : null;
     return {
       chartData: Array.isArray(timeline) ? timeline : [],
       totalUsers: total,
@@ -172,7 +150,7 @@ const AdminDashboardPage = () => {
 
   return (
     <Stack spacing={4}>
-      {/* Welcome Header + Refresh Controls */}
+      {/* Welcome Header + Time-range Controls */}
       <Stack
         direction={{ xs: 'column', sm: 'row' }}
         justifyContent="space-between"
@@ -188,55 +166,18 @@ const AdminDashboardPage = () => {
           </Typography>
         </Box>
 
-        <Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0 }}>
-          {lastRefreshed && (
-            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-              {lastRefreshed.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-            </Typography>
-          )}
-          <Tooltip title={t('admin:refresh_now')}>
-            <IconButton
-              size="small"
-              onClick={handleRefresh}
-              sx={{
-                color: 'primary.main',
-                bgcolor: (theme) => alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.14 : 0.08),
-                border: '1px solid',
-                borderColor: (theme) => alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.24 : 0.12),
-                '&:hover': {
-                  bgcolor: (theme) => alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.22 : 0.14),
-                },
-                '& svg': {
-                  transition: 'transform 0.1s',
-                  animation: refreshing ? 'dashboardSpin 0.8s linear infinite' : 'none',
-                  '@keyframes dashboardSpin': {
-                    from: { transform: 'rotate(0deg)' },
-                    to: { transform: 'rotate(360deg)' },
-                  },
-                },
-              }}
-            >
-              <RefreshOutlinedIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Select
-            value={refreshInterval}
-            onChange={(e) => setRefreshInterval(e.target.value)}
-            size="small"
-            sx={{
-              fontSize: 12, fontWeight: 700,
-              minWidth: 110,
-              bgcolor: 'background.paper',
-              '& .MuiSelect-select': { py: 0.75, px: 1.5 },
-            }}
-          >
-            {INTERVALS.map(({ value, label }) => (
-              <MenuItem key={value} value={value} sx={{ fontSize: 13, fontWeight: 600 }}>
-                {label}
-              </MenuItem>
-            ))}
-          </Select>
-        </Stack>
+        <TimeRangeControls
+          timeRange={timeRange}
+          setTimeRange={setTimeRange}
+          customStart={customStart}
+          setCustomStart={setCustomStart}
+          customEnd={customEnd}
+          setCustomEnd={setCustomEnd}
+          refreshInterval={refreshInterval}
+          setRefreshInterval={setRefreshInterval}
+          onRefresh={handleRefresh}
+          loading={dashboardLoading}
+        />
       </Stack>
 
       {/* Primary Metrics */}
@@ -276,7 +217,7 @@ const AdminDashboardPage = () => {
         >
           <AdminDashboardMetricTile
             label={t('admin:system_activity')}
-            value={(metrics?.auditLogsCountToday || 0).toLocaleString()}
+            value={(metrics?.dailyActive ?? metrics?.auditLogsCountToday ?? 0).toLocaleString()}
             icon={<TrendingUpIcon />}
             caption={t('admin:system_activity_caption')}
           />
@@ -310,7 +251,7 @@ const AdminDashboardPage = () => {
           >
             <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Typography variant="h6" sx={{ fontWeight: 800, color: 'primary.main' }}>{t('admin:activity_chart')}</Typography>
-              <Typography variant="caption" color="text.secondary" fontWeight={600}>{t('admin:last_7_days')}</Typography>
+              <Typography variant="caption" color="text.secondary" fontWeight={600}>{rangeLabel}</Typography>
             </Box>
             <Chart
               type="area"
@@ -389,9 +330,11 @@ const AdminDashboardPage = () => {
 
       {/* Detailed Sections — key forces remount of all section hooks on refresh */}
       <AdminDashboardSections
-        key={sectionRefreshKey}
+        key={refreshTick}
         aggregates={aggregates}
         forumStats={statistics}
+        from={from}
+        to={to}
       />
     </Stack>
   );

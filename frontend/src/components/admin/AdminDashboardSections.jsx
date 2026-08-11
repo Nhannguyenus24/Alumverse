@@ -4,7 +4,6 @@ import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
 import StarOutlinedIcon from '@mui/icons-material/StarOutlined';
 import PeopleAltOutlinedIcon from '@mui/icons-material/PeopleAltOutlined';
 import PersonAddAltOutlinedIcon from '@mui/icons-material/PersonAddAltOutlined';
-import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined';
 import CheckCircleOutlineOutlinedIcon from '@mui/icons-material/CheckCircleOutlineOutlined';
 import PersonOffOutlinedIcon from '@mui/icons-material/PersonOffOutlined';
 import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
@@ -41,7 +40,7 @@ const metricRowSx = {
   },
 };
 
-const AdminDashboardSections = ({ aggregates, forumStats }) => {
+const AdminDashboardSections = ({ aggregates, forumStats, from, to }) => {
   const { t } = useTranslation(['admin', 'forum']);
   const { user, forum, organization } = aggregates;
   const stats = forumStats || {};
@@ -57,8 +56,7 @@ const AdminDashboardSections = ({ aggregates, forumStats }) => {
           <Stack spacing={2}>
             <Stack direction="row" flexWrap="wrap" spacing={2} useFlexGap sx={metricRowSx}>
               <AdminDashboardMetricTile label={t('admin:metric_total_users')} value={user.totalUsers} icon={<PeopleAltOutlinedIcon />} />
-              <AdminDashboardMetricTile label={t('admin:metric_joined_this_week')} value={user.newUsersWeek} icon={<PersonAddAltOutlinedIcon />} />
-              <AdminDashboardMetricTile label={t('admin:metric_joined_this_month')} value={user.newUsersMonth} icon={<CalendarMonthOutlinedIcon />} />
+              <AdminDashboardMetricTile label={t('admin:dashboard_range.joined_in_range')} value={user.newUsersInRange} icon={<PersonAddAltOutlinedIcon />} />
             </Stack>
             <Stack direction="row" flexWrap="wrap" spacing={2} useFlexGap sx={metricRowSx}>
               <AdminDashboardMetricTile label={t('admin:metric_active_users')} value={user.activeUsers} icon={<CheckCircleOutlineOutlinedIcon />} />
@@ -283,40 +281,40 @@ const AdminDashboardSections = ({ aggregates, forumStats }) => {
       </AdminSectionPanel>
 
       {/* Conversion funnels (high-level insight for PO/BU) */}
-      <AdminFunnelSection />
+      <AdminFunnelSection from={from} to={to} />
 
       {/* Member cohort / demographics */}
-      <AdminCohortSection />
+      <AdminCohortSection from={from} to={to} />
 
       {/* User Growth */}
-      <AdminUserGrowthSection />
+      <AdminUserGrowthSection from={from} to={to} />
 
       {/* Verification */}
-      <AdminVerificationSection />
+      <AdminVerificationSection from={from} to={to} />
 
       {/* Events */}
-      <AdminEventSection />
+      <AdminEventSection from={from} to={to} />
 
       {/* Mentorship */}
-      <AdminMentorshipSection />
+      <AdminMentorshipSection from={from} to={to} />
 
       {/* Fundraising */}
-      <AdminFundraisingSection />
+      <AdminFundraisingSection from={from} to={to} />
 
       {/* Content & Articles */}
-      <AdminContentSection />
+      <AdminContentSection from={from} to={to} />
 
       {/* Feedback */}
-      <AdminFeedbackSection />
+      <AdminFeedbackSection from={from} to={to} />
 
       {/* Engagement & Retention */}
-      <AdminEngagementSection />
+      <AdminEngagementSection from={from} to={to} />
 
       {/* Security & Audit */}
-      <AdminSecuritySection />
+      <AdminSecuritySection from={from} to={to} />
 
       {/* Platform health: chat, cross-org, service quality */}
-      <AdminPlatformSection />
+      <AdminPlatformSection from={from} to={to} />
     </Box>
   );
 };

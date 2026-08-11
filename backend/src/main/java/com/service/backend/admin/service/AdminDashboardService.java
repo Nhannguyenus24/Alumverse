@@ -42,7 +42,12 @@ public class AdminDashboardService {
     private final AuditRepository auditRepository;
     private final CacheUtils cacheUtils;
 
-    public Mono<DashboardMetricsDTO> getMetrics() {
+    public Mono<DashboardMetricsDTO> getMetrics(LocalDateTime from, LocalDateTime to) {
+        // Point-in-time totals stay all-time; only the range-based fields (new users,
+        // donations, active users) follow the selected [start, end) window.
+        LocalDateTime end = to != null ? to : LocalDateTime.now();
+        LocalDateTime start = from != null ? from : end.minusDays(30);
+
         Supplier<Mono<DashboardMetricsDTO>> supplier = () -> {
             Mono<Long> totalUsersMono = adminUserRepository.countAllUsers();
             Mono<Long> totalOrgsMono = organizationRepository.count();
@@ -51,16 +56,12 @@ public class AdminDashboardService {
             Mono<Long> upcomingEventsMono = eventRepo.countUpcomingEvents(LocalDateTime.now());
             Mono<Long> ticketsSoldMono = eventRepo.countAllTickets();
             Mono<Long> totalDonationsMono = fundDonationsRepository.countAll();
-            LocalDateTime end = LocalDateTime.now();
-            LocalDateTime start7 = end.minusDays(7);
-            LocalDateTime start30 = end.minusDays(30);
-            Mono<BigDecimal> donations30Mono = fundDonationsRepository.sumAmountBetween(start30, end)
+            Mono<BigDecimal> donationsRangeMono = fundDonationsRepository.sumAmountBetween(start, end)
                     .defaultIfEmpty(BigDecimal.ZERO);
-            Mono<Long> newUsers7Mono = adminUserRepository.countUsersCreatedSince(start7).defaultIfEmpty(0L);
-            Mono<Long> newUsers30Mono = adminUserRepository.countUsersCreatedSince(start30).defaultIfEmpty(0L);
+            Mono<Long> newUsersRangeMono = adminUserRepository.countUsersCreatedBetween(start, end).defaultIfEmpty(0L);
 
             return Mono.zip(totalUsersMono, totalOrgsMono, pendingVerifMono, totalEventsMono,
-                    upcomingEventsMono, ticketsSoldMono, totalDonationsMono, donations30Mono)
+                    upcomingEventsMono, ticketsSoldMono, totalDonationsMono, donationsRangeMono)
                     .map(tuple -> {
                         DashboardMetricsDTO dto = new DashboardMetricsDTO();
                         dto.setTotalUsers(tuple.getT1());
@@ -75,21 +76,21 @@ public class AdminDashboardService {
                         return dto;
                     })
                     .flatMap(dto -> Mono.zip(
-                                    auditRepository.countDailyActive().defaultIfEmpty(0L),
-                                    newUsers7Mono,
-                                    newUsers30Mono)
+                                    auditRepository.countActiveBetween(start, end).defaultIfEmpty(0L),
+                                    newUsersRangeMono)
                             .map(t -> {
                                 dto.setDailyActive(t.getT1());
                                 Map<String, Long> newUsers = new HashMap<>();
-                                newUsers.put("7d", t.getT2());
-                                newUsers.put("30d", t.getT3());
+                                newUsers.put("range", t.getT2());
                                 dto.setNewUsers(newUsers);
                                 return dto;
                             }))
                     .doOnSuccess(dto -> log.debug("getMetrics result: {}", JsonUtils.toJson(dto)));
         };
 
-        return cacheUtils.getOrCompute(CacheNames.ADMIN_METRICS, "global", Duration.ofMinutes(5), supplier);
+        // Window is part of the cache key so different ranges don't serve each other's data.
+        String cacheKey = "global|" + start + "|" + end;
+        return cacheUtils.getOrCompute(CacheNames.ADMIN_METRICS, cacheKey, Duration.ofMinutes(5), supplier);
     }
 
     public Mono<PaginatedResponse<ActivityItemDTO>> getActivities(Integer organizationId, int page, int size) {

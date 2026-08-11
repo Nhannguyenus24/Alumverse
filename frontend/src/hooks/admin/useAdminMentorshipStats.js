@@ -24,16 +24,19 @@ const emptyStats = {
   totalFeedbacks: 0,
 };
 
-const useAdminMentorshipStats = () => {
+const useAdminMentorshipStats = (from, to) => {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(emptyStats);
 
   useEffect(() => {
-    fetchSafe(() => apiClient.get('/admin/mentorship/statistics'), emptyStats).then((data) => {
+    const params = {};
+    if (from) params.from = from;
+    if (to) params.to = to;
+    fetchSafe(() => apiClient.get('/admin/mentorship/statistics', { params }), emptyStats).then((data) => {
       setStats(data || emptyStats);
       setLoading(false);
     });
-  }, []);
+  }, [from, to]);
 
   return { loading, stats };
 };

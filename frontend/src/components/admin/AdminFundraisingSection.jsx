@@ -19,9 +19,9 @@ const fmt = (n) => Number(n ?? 0).toLocaleString('vi-VN');
 const fmtMoney = (n) =>
   Number(n ?? 0).toLocaleString('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 });
 
-const AdminFundraisingSection = () => {
+const AdminFundraisingSection = ({ from, to }) => {
   const { t } = useTranslation(['admin', 'donation']);
-  const { stats } = useAdminFundraisingStats();
+  const { stats } = useAdminFundraisingStats(from, to);
 
   const donationStatusData = [
     { name: t('donation:status_success'), count: Number(stats.successfulDonations) },

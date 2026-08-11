@@ -15,8 +15,8 @@ const metricRowSx = {
   '& > *': { flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 8px)', md: '1 1 0' } },
 };
 
-const AdminEventSection = () => {
-  const { stats } = useAdminEventStats();
+const AdminEventSection = ({ from, to }) => {
+  const { stats } = useAdminEventStats(from, to);
   const { t } = useTranslation(['admin', 'event', 'common']);
 
   const ticketStatusData = [

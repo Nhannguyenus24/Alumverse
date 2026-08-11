@@ -20,16 +20,19 @@ const emptyStats = {
   dailyLogins: [],
 };
 
-const useAdminEngagementStats = () => {
+const useAdminEngagementStats = (from, to) => {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(emptyStats);
 
   useEffect(() => {
-    fetchSafe(() => apiClient.get('/admin/dashboard/engagement'), emptyStats).then((data) => {
+    const params = {};
+    if (from) params.from = from;
+    if (to) params.to = to;
+    fetchSafe(() => apiClient.get('/admin/dashboard/engagement', { params }), emptyStats).then((data) => {
       setStats(data || emptyStats);
       setLoading(false);
     });
-  }, []);
+  }, [from, to]);
 
   return { loading, stats };
 };

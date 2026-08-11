@@ -15,9 +15,9 @@ const metricRowSx = {
   '& > *': { flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 8px)', md: '1 1 0' } },
 };
 
-const AdminMentorshipSection = () => {
+const AdminMentorshipSection = ({ from, to }) => {
   const { t } = useTranslation(['admin', 'mentorship']);
-  const { stats } = useAdminMentorshipStats();
+  const { stats } = useAdminMentorshipStats(from, to);
 
   const sessionStatusData = [
     { name: t('mentorship:session_status_pending'), count: Number(stats.pendingSessions) },
