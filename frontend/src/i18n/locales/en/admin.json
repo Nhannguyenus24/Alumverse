@@ -153,6 +153,7 @@
   "bot_test_title": "Response testing",
   "bot_test_subtitle": "Send a quick question to verify the bot data.",
   "bot_question_placeholder": "Enter a question for the AI Bot...",
+  "bot_question_too_short": "Please enter at least 3 characters.",
   "bot_send": "Send",
   "bot_answer_label": "Answer",
   "bot_sources_label": "Sources",

@@ -199,8 +199,16 @@ class LearningResourceServiceTest {
                     eq("learning_resource_cache"), anyString(), any(), any()))
                     .thenAnswer(invocation -> ((Supplier<Mono<FeaturedPaginatedResponse<LearningResourceResponse>>>)
                             invocation.getArgument(3)).get());
-            LearningResource featured = LearningResource.builder().id(9).title("Featured").build();
-            LearningResource item = LearningResource.builder().id(7).title("Result").build();
+            LearningResource featured = LearningResource.builder()
+                    .id(9)
+                    .title("Featured")
+                    .description("<p>Featured <strong>description</strong></p>")
+                    .build();
+            LearningResource item = LearningResource.builder()
+                    .id(7)
+                    .title("Result")
+                    .description("<p>" + "x".repeat(300) + "</p>")
+                    .build();
             when(learningResourceRepository.findPublicFeatured(
                     3, "java", "online_course,research", "2026-08-01", "2026-08-07", "oldest"))
                     .thenReturn(Mono.just(featured));
@@ -216,7 +224,9 @@ class LearningResourceServiceTest {
                             LocalDate.of(2026, 8, 1), LocalDate.of(2026, 8, 7), "oldest"))
                     .assertNext(response -> {
                         assertThat(response.getFeatured().getId()).isEqualTo(9);
+                        assertThat(response.getFeatured().getDescription()).isEqualTo("Featured description");
                         assertThat(response.getItems()).extracting(LearningResourceResponse::getId).containsExactly(7);
+                        assertThat(response.getItems().get(0).getDescription()).hasSize(260).doesNotContain("<p>");
                         assertThat(response.getTotalItem()).isEqualTo(13);
                         assertThat(response.getTotalPage()).isEqualTo(2);
                     })

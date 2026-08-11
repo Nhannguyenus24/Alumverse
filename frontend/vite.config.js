@@ -40,20 +40,6 @@ export default defineConfig(({ mode }) => {
         changeOrigin: true,
         secure: true,
       },
-      '/ngrok-api': {
-        target: 'https://glimmer-clustered-exorcist.ngrok-free.dev',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/ngrok-api/, ''),
-        secure: false,
-      },
-      '/fitbot-api': {
-        target: 'http://167.99.79.46',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/fitbot-api/, ''),
-        secure: false,
-        timeout: 600000,
-        proxyTimeout: 600000,
-      },
     },
   },
   build: {
