@@ -44,7 +44,7 @@ import SpeedOutlinedIcon from '@mui/icons-material/SpeedOutlined';
 import TimerOutlinedIcon from '@mui/icons-material/TimerOutlined';
 import AccessTimeOutlinedIcon from '@mui/icons-material/AccessTimeOutlined';
 import PeopleAltOutlinedIcon from '@mui/icons-material/PeopleAltOutlined';
-import apiClient from '../../utils/axios';
+import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 import dayjs from 'dayjs';
 import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetricTile';
@@ -53,14 +53,8 @@ import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
 // ── Datadog metrics source ────────────────────────────────────────────────────
 // The backend no longer exposes Prometheus (disabled in prod for performance);
 // Micrometer metrics are shipped to Datadog under their original *dot* names
-// (http.endpoint.requests, http.endpoint.latency, ai.generate.time, ...).
-//
-// The browser CANNOT call Datadog's v1 query API directly: Datadog does not send
-// CORS headers, so the preflight fails (404), and it would leak the API/APP keys
-// into the client bundle. Instead this page hits our own backend proxy
-// (GET /api/admin/monitoring/datadog/query, ADMIN-only) which holds the keys
-// server-side and forwards the query to Datadog. The response is Datadog's raw
-// body `{ series: [...] }`, so the parsing below is unchanged.
+// (http.endpoint.requests, http.endpoint.latency, ai.generate.time, ...). This
+// page reads them straight from Datadog's v1 timeseries query API.
 //
 // Assumptions (adjust here if they don't match your Datadog account):
 //   • Timer latency is reported in MILLISECONDS (Micrometer's Datadog registry
@@ -70,7 +64,10 @@ import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
 //     (e.g. http.endpoint.latency.percentile{phi:0.95}).
 //   • Standard JVM/system meters keep their Micrometer dot names
 //     (jvm.memory.used, jvm.gc.pause, system.cpu.usage, r2dbc.pool.acquired, ...).
-const DD_PROXY_URL = '/admin/monitoring/datadog/query';
+const DD_SITE = import.meta.env.VITE_DATADOG_SITE || 'datadoghq.com';
+const DD_API_KEY = import.meta.env.VITE_DATADOG_API_KEY || '';
+const DD_APP_KEY = import.meta.env.VITE_DATADOG_APP_KEY || '';
+const DD_QUERY_URL = `https://api.${DD_SITE}/api/v1/query`;
 
 const QUERIES = {
   requestRate: 'sum:http.endpoint.requests{*}.as_rate()',
@@ -244,11 +241,10 @@ const aggregatePoints = (pointlist = [], mode = 'last') => {
   }
 };
 
-// Goes through our ADMIN-only backend proxy (apiClient attaches the JWT + uses the
-// same-origin `/api` base). The backend returns Datadog's raw body `{ series: [...] }`.
 const datadogQuery = async (query, from, to) => {
-  const res = await apiClient.get(DD_PROXY_URL, {
+  const res = await axios.get(DD_QUERY_URL, {
     params: { from, to, query },
+    headers: { 'DD-API-KEY': DD_API_KEY, 'DD-APPLICATION-KEY': DD_APP_KEY },
     timeout: 60000
   });
   return (res.data && Array.isArray(res.data.series)) ? res.data.series : [];
