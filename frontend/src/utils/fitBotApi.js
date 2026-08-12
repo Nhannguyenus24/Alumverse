@@ -69,6 +69,72 @@ const parseSseEvent = (eventText, { onContent, onSources }) => {
   return event.type === 'done';
 };
 
+// ---------------------------------------------------------------------------
+// Knowledge base management (admin)
+//
+// These mirror the FitBOT /api/knowledge/* endpoints and share the same base
+// URL / path handling as the chat endpoints above. Every knowledge endpoint on
+// the FitBOT side requires a Bearer JWT (editor/admin scope), so callers must
+// pass an `Authorization` header via `headers`.
+// ---------------------------------------------------------------------------
+
+// Upload/download requests must not force a JSON Content-Type: the browser sets
+// the correct multipart boundary for FormData, and downloads carry their own.
+const baseHeaders = (headers = {}) => ({
+  'ngrok-skip-browser-warning': 'true',
+  ...headers,
+});
+
+export const listKnowledge = async ({ signal, headers } = {}) => {
+  const response = await fetch(getEndpoint('/api/knowledge'), {
+    headers: baseHeaders(headers),
+    signal,
+  });
+  ensureSuccessfulResponse(response);
+  const data = await response.json();
+  return data.items || [];
+};
+
+export const importKnowledge = async (file, { signal, headers, overwrite = false } = {}) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const response = await fetch(
+    getEndpoint(`/api/knowledge/import?overwrite=${overwrite ? 'true' : 'false'}`),
+    {
+      method: 'POST',
+      headers: baseHeaders(headers),
+      body: formData,
+      signal,
+    }
+  );
+  ensureSuccessfulResponse(response);
+  return response.json();
+};
+
+export const deleteKnowledge = async (name, { signal, headers } = {}) => {
+  const response = await fetch(getEndpoint(`/api/knowledge/${encodeURIComponent(name)}`), {
+    method: 'DELETE',
+    headers: baseHeaders(headers),
+    signal,
+  });
+  ensureSuccessfulResponse(response);
+  return response.json();
+};
+
+export const downloadKnowledgeFile = async (name, { signal, headers } = {}) => {
+  const response = await fetch(
+    getEndpoint(`/api/knowledge/${encodeURIComponent(name)}/file`),
+    { headers: baseHeaders(headers), signal }
+  );
+  ensureSuccessfulResponse(response);
+  const contentType = response.headers.get('content-type') || '';
+  const isTextual =
+    contentType.includes('text/') ||
+    contentType.includes('application/json') ||
+    /\.(txt|md|csv|json)$/i.test(name);
+  return { contentType, isTextual, text: isTextual ? await response.text() : null };
+};
+
 export const streamFitBotResponse = async (
   question,
   { signal, headers, onContent, onSources } = {}
