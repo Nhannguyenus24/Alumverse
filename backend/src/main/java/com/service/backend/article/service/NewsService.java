@@ -5,6 +5,8 @@ import com.service.backend.shared.entity.News;
 import com.service.backend.article.dto.CreateNewsRequest;
 import com.service.backend.article.dto.UpdateNewsRequest;
 import com.service.backend.article.dto.NewsResponse;
+import com.service.backend.article.dto.NewsListItemResponse;
+import com.service.backend.article.dto.PublishedNewsResponse;
 import com.service.backend.article.validation.ArticleTopicCatalog;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.enums.ErrorCode;
@@ -14,18 +16,26 @@ import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.shared.utils.SecurityUtils;
 import com.service.backend.shared.utils.CacheNames;
 import com.service.backend.shared.utils.CacheUtils;
+import com.service.backend.shared.utils.HtmlPreviewUtils;
 import com.service.backend.user.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
+import java.time.LocalDate;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class NewsService {
 
     private static final Duration LIST_TTL = Duration.ofMinutes(5);
+    private static final int CONTENT_PREVIEW_LENGTH = 260;
 
     private final NewsR2dbcRepository newsRepository;
     private final ImageService imageService;
@@ -175,6 +185,78 @@ public class NewsService {
                                 newsRepository.countPublishedByOrganizationId(orgId),
                                 page, limit)))
                 .switchIfEmpty(Mono.just(PaginatedResponse.of(java.util.List.of(), 0, page, limit)));
+    }
+
+    public Mono<PublishedNewsResponse> getPublishedList(
+            int page,
+            int limit,
+            Integer organizationId,
+            String keyword,
+            String topics,
+            LocalDate fromDate,
+            LocalDate toDate,
+            String sort) {
+        String normalizedKeyword = keyword == null ? "" : keyword.trim();
+        String normalizedTopics = normalizeTopics(topics);
+        String normalizedSort = "oldest".equalsIgnoreCase(sort) ? "oldest" : "newest";
+        String from = fromDate == null ? "" : fromDate.toString();
+        String to = toDate == null ? "" : toDate.toString();
+        int offset = page * limit;
+
+        return SecurityUtils.resolvePublicOrganizationId(organizationId)
+                .flatMap(orgId -> {
+                    String cacheKey = String.join("|",
+                            "published-v2",
+                            "org=" + orgId,
+                            "page=" + page,
+                            "limit=" + limit,
+                            "keyword=" + normalizedKeyword.toLowerCase(Locale.ROOT),
+                            "topics=" + normalizedTopics,
+                            "from=" + from,
+                            "to=" + to,
+                            "sort=" + normalizedSort);
+
+                    return cacheUtils.getOrCompute(CacheNames.NEWS, cacheKey, LIST_TTL,
+                            () -> newsRepository.findPublishedFeatured(orgId)
+                                    .map(this::withContentPreview)
+                                    .map(Optional::of)
+                                    .defaultIfEmpty(Optional.empty())
+                                    .flatMap(featuredOptional -> {
+                                        NewsListItemResponse featured = featuredOptional.orElse(null);
+                                        int featuredId = featured == null ? -1 : featured.getId();
+                                        Mono<List<NewsListItemResponse>> items = newsRepository.findPublishedList(
+                                                        orgId, featuredId, normalizedKeyword, normalizedTopics,
+                                                        from, to, normalizedSort, limit, offset)
+                                                .map(this::withContentPreview)
+                                                .collectList();
+                                        Mono<Long> total = newsRepository.countPublishedList(
+                                                orgId, featuredId, normalizedKeyword, normalizedTopics, from, to);
+
+                                        return Mono.zip(items, total)
+                                                .map(result -> PublishedNewsResponse.of(
+                                                        featured, result.getT1(), result.getT2(), page, limit));
+                                    }));
+                })
+                .switchIfEmpty(Mono.just(PublishedNewsResponse.of(
+                        null, List.of(), 0, page, limit)));
+    }
+
+    private NewsListItemResponse withContentPreview(NewsListItemResponse item) {
+        item.setContent(HtmlPreviewUtils.toPlainTextPreview(item.getContent(), CONTENT_PREVIEW_LENGTH));
+        return item;
+    }
+
+    private String normalizeTopics(String topics) {
+        if (topics == null || topics.isBlank()) {
+            return "";
+        }
+
+        return Arrays.stream(topics.split(","))
+                .map(topic -> ArticleTopicCatalog.requireValid(ArticleTopicCatalog.Channel.NEWS, topic))
+                .distinct()
+                .sorted(Comparator.naturalOrder())
+                .reduce((left, right) -> left + "," + right)
+                .orElse("");
     }
 
     public Mono<PaginatedResponse<NewsResponse>> search(String keyword, int page, int limit) {

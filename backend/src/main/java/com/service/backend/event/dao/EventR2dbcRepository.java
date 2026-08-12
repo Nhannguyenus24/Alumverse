@@ -39,6 +39,156 @@ public interface EventR2dbcRepository extends R2dbcRepository<Event, Long> {
     @Query("SELECT COUNT(*) FROM events WHERE organization_id = :organizationId AND end_time < :now AND is_published = true")
     Mono<Long> countPastEvents(Long organizationId, LocalDateTime now);
 
+    @Query("""
+            SELECT * FROM events
+            WHERE organization_id = :organizationId
+              AND (start_time > :now OR (start_time <= :now AND end_time >= :now))
+              AND is_published = true
+              AND (:keyword = ''
+                   OR POSITION(LOWER(:keyword) IN LOWER(COALESCE(title, ''))) > 0
+                   OR POSITION(LOWER(:keyword) IN LOWER(COALESCE(description, ''))) > 0
+                   OR POSITION(LOWER(:keyword) IN LOWER(COALESCE(location, ''))) > 0)
+              AND (:topicsCsv = '' OR LOWER(REPLACE(topic, '-', '_')) = ANY(STRING_TO_ARRAY(:topicsCsv, ',')))
+              AND (:fromDate = '' OR CAST(start_time AS date) >= CAST(NULLIF(:fromDate, '') AS date))
+              AND (:toDate = '' OR CAST(end_time AS date) <= CAST(NULLIF(:toDate, '') AS date))
+            ORDER BY
+              CASE
+                WHEN start_time > :now
+                 AND (registration_start_at IS NULL OR registration_start_at <= :now)
+                 AND (registration_end_at IS NULL OR registration_end_at >= :now)
+                THEN 0
+                WHEN start_time > :now THEN 1
+                ELSE 2
+              END ASC,
+              CASE WHEN start_time > :now THEN start_time END ASC,
+              CASE WHEN start_time <= :now AND end_time >= :now THEN end_time END ASC,
+              id ASC
+            LIMIT 1
+            """)
+    Mono<Event> findEventPageFeatured(Long organizationId, LocalDateTime now, String keyword,
+                                      String topicsCsv, String fromDate, String toDate);
+
+    @Query("""
+            SELECT * FROM events
+            WHERE organization_id = :organizationId
+              AND start_time > :now
+              AND is_published = true
+              AND id <> :excludedId
+              AND (:keyword = ''
+                   OR POSITION(LOWER(:keyword) IN LOWER(COALESCE(title, ''))) > 0
+                   OR POSITION(LOWER(:keyword) IN LOWER(COALESCE(description, ''))) > 0
+                   OR POSITION(LOWER(:keyword) IN LOWER(COALESCE(location, ''))) > 0)
+              AND (:topicsCsv = '' OR LOWER(REPLACE(topic, '-', '_')) = ANY(STRING_TO_ARRAY(:topicsCsv, ',')))
+              AND (:fromDate = '' OR CAST(start_time AS date) >= CAST(NULLIF(:fromDate, '') AS date))
+              AND (:toDate = '' OR CAST(end_time AS date) <= CAST(NULLIF(:toDate, '') AS date))
+            ORDER BY
+              CASE WHEN :sort = 'oldest' THEN start_time END ASC,
+              CASE WHEN :sort = 'newest' THEN start_time END DESC,
+              start_time ASC,
+              id ASC
+            LIMIT :limit OFFSET :offset
+            """)
+    Flux<Event> findUpcomingEventList(Long organizationId, LocalDateTime now, Long excludedId,
+                                      String keyword, String topicsCsv, String fromDate, String toDate,
+                                      String sort, int limit, int offset);
+
+    @Query("""
+            SELECT COUNT(*) FROM events
+            WHERE organization_id = :organizationId
+              AND start_time > :now
+              AND is_published = true
+              AND id <> :excludedId
+              AND (:keyword = ''
+                   OR POSITION(LOWER(:keyword) IN LOWER(COALESCE(title, ''))) > 0
+                   OR POSITION(LOWER(:keyword) IN LOWER(COALESCE(description, ''))) > 0
+                   OR POSITION(LOWER(:keyword) IN LOWER(COALESCE(location, ''))) > 0)
+              AND (:topicsCsv = '' OR LOWER(REPLACE(topic, '-', '_')) = ANY(STRING_TO_ARRAY(:topicsCsv, ',')))
+              AND (:fromDate = '' OR CAST(start_time AS date) >= CAST(NULLIF(:fromDate, '') AS date))
+              AND (:toDate = '' OR CAST(end_time AS date) <= CAST(NULLIF(:toDate, '') AS date))
+            """)
+    Mono<Long> countUpcomingEventList(Long organizationId, LocalDateTime now, Long excludedId,
+                                      String keyword, String topicsCsv, String fromDate, String toDate);
+
+    @Query("""
+            SELECT * FROM events
+            WHERE organization_id = :organizationId
+              AND start_time <= :now AND end_time >= :now
+              AND is_published = true
+              AND id <> :excludedId
+              AND (:keyword = ''
+                   OR POSITION(LOWER(:keyword) IN LOWER(COALESCE(title, ''))) > 0
+                   OR POSITION(LOWER(:keyword) IN LOWER(COALESCE(description, ''))) > 0
+                   OR POSITION(LOWER(:keyword) IN LOWER(COALESCE(location, ''))) > 0)
+              AND (:topicsCsv = '' OR LOWER(REPLACE(topic, '-', '_')) = ANY(STRING_TO_ARRAY(:topicsCsv, ',')))
+              AND (:fromDate = '' OR CAST(start_time AS date) >= CAST(NULLIF(:fromDate, '') AS date))
+              AND (:toDate = '' OR CAST(end_time AS date) <= CAST(NULLIF(:toDate, '') AS date))
+            ORDER BY
+              CASE WHEN :sort = 'oldest' THEN start_time END ASC,
+              CASE WHEN :sort = 'newest' THEN start_time END DESC,
+              start_time ASC,
+              id ASC
+            LIMIT :limit OFFSET :offset
+            """)
+    Flux<Event> findOngoingEventList(Long organizationId, LocalDateTime now, Long excludedId, String keyword,
+                                     String topicsCsv, String fromDate, String toDate, String sort,
+                                     int limit, int offset);
+
+    @Query("""
+            SELECT COUNT(*) FROM events
+            WHERE organization_id = :organizationId
+              AND start_time <= :now AND end_time >= :now
+              AND is_published = true
+              AND id <> :excludedId
+              AND (:keyword = ''
+                   OR POSITION(LOWER(:keyword) IN LOWER(COALESCE(title, ''))) > 0
+                   OR POSITION(LOWER(:keyword) IN LOWER(COALESCE(description, ''))) > 0
+                   OR POSITION(LOWER(:keyword) IN LOWER(COALESCE(location, ''))) > 0)
+              AND (:topicsCsv = '' OR LOWER(REPLACE(topic, '-', '_')) = ANY(STRING_TO_ARRAY(:topicsCsv, ',')))
+              AND (:fromDate = '' OR CAST(start_time AS date) >= CAST(NULLIF(:fromDate, '') AS date))
+              AND (:toDate = '' OR CAST(end_time AS date) <= CAST(NULLIF(:toDate, '') AS date))
+            """)
+    Mono<Long> countOngoingEventList(Long organizationId, LocalDateTime now, Long excludedId, String keyword,
+                                     String topicsCsv, String fromDate, String toDate);
+
+    @Query("""
+            SELECT * FROM events
+            WHERE organization_id = :organizationId
+              AND end_time < :now
+              AND is_published = true
+              AND (:keyword = ''
+                   OR POSITION(LOWER(:keyword) IN LOWER(COALESCE(title, ''))) > 0
+                   OR POSITION(LOWER(:keyword) IN LOWER(COALESCE(description, ''))) > 0
+                   OR POSITION(LOWER(:keyword) IN LOWER(COALESCE(location, ''))) > 0)
+              AND (:topicsCsv = '' OR LOWER(REPLACE(topic, '-', '_')) = ANY(STRING_TO_ARRAY(:topicsCsv, ',')))
+              AND (:fromDate = '' OR CAST(start_time AS date) >= CAST(NULLIF(:fromDate, '') AS date))
+              AND (:toDate = '' OR CAST(end_time AS date) <= CAST(NULLIF(:toDate, '') AS date))
+            ORDER BY
+              CASE WHEN :sort = 'oldest' THEN start_time END ASC,
+              CASE WHEN :sort = 'newest' THEN start_time END DESC,
+              end_time DESC,
+              id DESC
+            LIMIT :limit OFFSET :offset
+            """)
+    Flux<Event> findPastEventList(Long organizationId, LocalDateTime now, String keyword,
+                                  String topicsCsv, String fromDate, String toDate, String sort,
+                                  int limit, int offset);
+
+    @Query("""
+            SELECT COUNT(*) FROM events
+            WHERE organization_id = :organizationId
+              AND end_time < :now
+              AND is_published = true
+              AND (:keyword = ''
+                   OR POSITION(LOWER(:keyword) IN LOWER(COALESCE(title, ''))) > 0
+                   OR POSITION(LOWER(:keyword) IN LOWER(COALESCE(description, ''))) > 0
+                   OR POSITION(LOWER(:keyword) IN LOWER(COALESCE(location, ''))) > 0)
+              AND (:topicsCsv = '' OR LOWER(REPLACE(topic, '-', '_')) = ANY(STRING_TO_ARRAY(:topicsCsv, ',')))
+              AND (:fromDate = '' OR CAST(start_time AS date) >= CAST(NULLIF(:fromDate, '') AS date))
+              AND (:toDate = '' OR CAST(end_time AS date) <= CAST(NULLIF(:toDate, '') AS date))
+            """)
+    Mono<Long> countPastEventList(Long organizationId, LocalDateTime now, String keyword,
+                                  String topicsCsv, String fromDate, String toDate);
+
     @Query("SELECT * FROM events WHERE organization_id = :organizationId AND (LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(description) LIKE LOWER(CONCAT('%', :keyword, '%'))) AND is_published = true ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
     Flux<Event> searchEvents(Long organizationId, String keyword, int limit, int offset);
 

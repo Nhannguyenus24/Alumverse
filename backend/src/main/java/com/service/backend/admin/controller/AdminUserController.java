@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.service.backend.admin.dto.BanUserRequest;
@@ -35,6 +36,7 @@ import com.service.backend.admin.service.AdminUserService;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.dto.ApiResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
+import com.service.backend.shared.dto.VerificationRecommendationResponse;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.SecurityUtils;
 
@@ -211,6 +213,17 @@ public class AdminUserController {
                         new ApiResponse<>("Verification requests fetched successfully", data)));
     }
 
+    /** AI recommendation only; it never approves or rejects the request. */
+    @GetMapping("/verification-requests/{requestId}/ai-recommendation")
+    public Mono<ResponseEntity<ApiResponse<VerificationRecommendationResponse>>> getVerificationRecommendation(
+            @PathVariable Integer requestId) {
+        return adminUserService.getVerificationRecommendation(requestId)
+                .map(data -> ResponseEntity.ok(
+                        new ApiResponse<>("Verification recommendation generated successfully", data)))
+                .switchIfEmpty(Mono.error(new ApplicationException(
+                        ErrorCode.RESOURCES_NOT_FOUND, "Verification request not found")));
+    }
+
     /**
      * Approve or reject a verification request
      */
@@ -369,8 +382,10 @@ public class AdminUserController {
 
     @GetMapping("/growth-statistics")
     public Mono<ResponseEntity<ApiResponse<UserGrowthStatisticsDTO>>> getUserGrowthStatistics(
-            @RequestParam(required = false) Integer organizationId) {
-        return adminUserService.getUserGrowthStatistics(organizationId)
+            @RequestParam(required = false) Integer organizationId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) java.time.LocalDateTime from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) java.time.LocalDateTime to) {
+        return adminUserService.getUserGrowthStatistics(organizationId, from, to)
                 .map(stats -> ResponseEntity.ok(
                         new ApiResponse<>("User growth statistics fetched successfully", stats)));
     }

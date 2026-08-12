@@ -50,6 +50,7 @@ const AdminEventOrganizePage = () => {
   const [checkResult, setCheckResult] = useState(null);
   const [checkedTicket, setCheckedTicket] = useState(null);
   const [eventTitle, setEventTitle] = useState('');
+  const [eventEndTime, setEventEndTime] = useState(null);
 
   const numericEventId = Number(eventId);
 
@@ -86,9 +87,19 @@ const AdminEventOrganizePage = () => {
   useEffect(() => {
     if (!eventId) return;
     eventApi.getEventById(eventId)
-      .then((res) => { if (res?.title) setEventTitle(res.title); })
+      .then((res) => {
+        if (res?.title) setEventTitle(res.title);
+        if (res?.endTime) setEventEndTime(res.endTime);
+      })
       .catch(() => {});
   }, [eventId]);
+
+  useEffect(() => {
+    if (!eventEndTime) return;
+    if (new Date(eventEndTime).getTime() < Date.now()) {
+      orgNavigate(`${adminBase}/events/${eventId}`, { replace: true, state: { eventEnded: true } });
+    }
+  }, [eventEndTime, eventId, orgNavigate, adminBase]);
 
   // Accept either a raw ticket code, the encrypted QR token, or a legacy
   // `ALUMVERSE-TICKET-`-prefixed code. The backend decrypts/verifies and enforces
@@ -125,7 +136,7 @@ const AdminEventOrganizePage = () => {
       <Container maxWidth="lg" sx={{ py: 3 }}>
         <Stack spacing={3}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <IconButton onClick={() => orgNavigate(`${adminBase}/events`)} color="primary">
+            <IconButton onClick={() => orgNavigate(`${adminBase}/events/${eventId}`)} color="primary">
               <ArrowBackIcon />
             </IconButton>
             <Box>

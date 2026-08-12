@@ -282,6 +282,46 @@ class AuthServiceTest {
         }
     }
 
+    // ─── resetPasswordWithOtp ────────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("resetPasswordWithOtp()")
+    class ResetPasswordWithOtp {
+
+        @Test
+        @DisplayName("should reset password for Google-created account without old password")
+        void resetPassword_googleAccountSuccess() {
+            Map<String, Object> cacheData = new HashMap<>();
+            cacheData.put("otp", "123456");
+            cacheData.put("userId", 1);
+
+            when(cacheUtils.get("otp_verification", "google@email.com")).thenReturn(Mono.just(cacheData));
+            when(passwordEncoder.encode("newPass")).thenReturn("newHashed");
+            when(authRepository.updatePasswordById(1, "newHashed")).thenReturn(Mono.empty());
+            when(cacheUtils.evict("otp_verification", "google@email.com")).thenReturn(Mono.empty());
+
+            StepVerifier.create(authService.resetPasswordWithOtp("google@email.com", "123456", "newPass"))
+                    .verifyComplete();
+
+            verify(authRepository).updatePasswordById(1, "newHashed");
+        }
+
+        @Test
+        @DisplayName("should fail with invalid OTP")
+        void resetPassword_invalidOtp() {
+            Map<String, Object> cacheData = new HashMap<>();
+            cacheData.put("otp", "123456");
+            cacheData.put("userId", 1);
+
+            when(cacheUtils.get("otp_verification", "test@email.com")).thenReturn(Mono.just(cacheData));
+
+            StepVerifier.create(authService.resetPasswordWithOtp("test@email.com", "999999", "newPass"))
+                    .expectErrorMatches(err -> err instanceof ApplicationException &&
+                            ((ApplicationException) err).getErrorCode() == ErrorCode.INVALID_OTP)
+                    .verify();
+        }
+    }
+
     // ─── verifyOtpAndActivate ────────────────────────────────────────────────────
 
     @Nested
@@ -357,6 +397,22 @@ class AuthServiceTest {
             StepVerifier.create(authService.sendOtpVerification("notfound@email.com"))
                     .expectErrorMatches(err -> err instanceof ApplicationException &&
                             ((ApplicationException) err).getErrorCode() == ErrorCode.USER_NOT_FOUND)
+                    .verify();
+        }
+
+        @Test
+        @DisplayName("should expose delivery failure instead of internal server error when email sending fails")
+        void sendOtp_emailDeliveryFailed() {
+            User user = User.builder().id(1).email("test@email.com").build();
+
+            when(authRepository.findByEmail("test@email.com")).thenReturn(Mono.just(user));
+            when(cacheUtils.putWithTtl(anyString(), anyString(), any(), any())).thenReturn(Mono.empty());
+            when(emailService.sendHtmlEmail(anyString(), anyString(), anyString(), any()))
+                    .thenReturn(Mono.error(new RuntimeException("SMTP unavailable")));
+
+            StepVerifier.create(authService.sendOtpVerification("test@email.com"))
+                    .expectErrorMatches(err -> err instanceof ApplicationException &&
+                            ((ApplicationException) err).getErrorCode() == ErrorCode.OTP_DELIVERY_FAILED)
                     .verify();
         }
     }

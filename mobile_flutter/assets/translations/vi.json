@@ -211,6 +211,7 @@
     "no_answer": "Xin lỗi, tôi chưa có câu trả lời cho câu hỏi này. Bạn thử hỏi cách khác nhé.",
     "server_error": "Xin lỗi, có lỗi xảy ra khi kết nối với máy chủ. Vui lòng thử lại sau.",
     "clear_conversation": "Xóa hội thoại",
+    "question_too_short": "Vui lòng nhập ít nhất 3 ký tự.",
     "input_hint": "Gửi tin nhắn..."
   },
   "event": {
@@ -1034,10 +1035,7 @@
     "select_org_desc": "Chọn đơn vị bạn muốn truy cập để tiếp tục.",
     "select_org_please": "Vui lòng chọn tổ chức",
     "cannot_enter": "Không vào được tổ chức này.",
-    "org_list_load_failed": "Không tải được danh sách tổ chức. Bạn có thể nhập định danh tổ chức.",
-    "org_identifier": "Định danh tổ chức",
-    "org_identifier_hint": "vd: cs-hcmus",
-    "org_identifier_required": "Vui lòng nhập định danh tổ chức"
+    "org_list_load_failed": "Không thể tải danh sách tổ chức. Vui lòng thử lại."
   },
   "home": {
     "community_title": "Vinh danh",

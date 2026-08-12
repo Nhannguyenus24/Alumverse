@@ -7,6 +7,7 @@ import com.service.backend.article.dto.UpdateLearningResourceRequest;
 import com.service.backend.article.dto.LearningResourceResponse;
 import com.service.backend.article.validation.ArticleTopicCatalog;
 import com.service.backend.shared.dto.PaginatedResponse;
+import com.service.backend.shared.dto.FeaturedPaginatedResponse;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.enums.Status;
 import com.service.backend.shared.exception.ApplicationException;
@@ -14,6 +15,7 @@ import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.shared.utils.SecurityUtils;
 import com.service.backend.shared.utils.CacheNames;
 import com.service.backend.shared.utils.CacheUtils;
+import com.service.backend.shared.utils.HtmlPreviewUtils;
 import com.service.backend.shared.service.ImageService;
 import com.service.backend.user.service.NotificationService;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +24,10 @@ import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 @Service
@@ -29,6 +35,7 @@ import java.util.Optional;
 public class LearningResourceService {
 
     private static final Duration LIST_TTL = Duration.ofMinutes(5);
+    private static final int DESCRIPTION_PREVIEW_LENGTH = 260;
 
     private final LearningResourceR2dbcRepository learningResourceRepository;
     private final CacheUtils cacheUtils;
@@ -154,6 +161,73 @@ public class LearningResourceService {
                 .switchIfEmpty(Mono.just(PaginatedResponse.of(java.util.List.of(), 0, page, limit)));
     }
 
+    public Mono<FeaturedPaginatedResponse<LearningResourceResponse>> getPublishedList(
+            int page,
+            int limit,
+            Integer organizationId,
+            String keyword,
+            String topics,
+            LocalDate fromDate,
+            LocalDate toDate,
+            String direction) {
+        String normalizedKeyword = keyword == null ? "" : keyword.trim();
+        String normalizedTopics = normalizeTopics(topics);
+        String normalizedDirection = "oldest".equalsIgnoreCase(direction) ? "oldest" : "newest";
+        String from = fromDate == null ? "" : fromDate.toString();
+        String to = toDate == null ? "" : toDate.toString();
+        int offset = page * limit;
+
+        return SecurityUtils.resolvePublicOrganizationId(organizationId)
+                .flatMap(orgId -> {
+                    String cacheKey = String.join("|",
+                            "published-v2",
+                            "org=" + orgId,
+                            "page=" + page,
+                            "limit=" + limit,
+                            "keyword=" + normalizedKeyword.toLowerCase(Locale.ROOT),
+                            "topics=" + normalizedTopics,
+                            "from=" + from,
+                            "to=" + to,
+                            "direction=" + normalizedDirection);
+
+                    return cacheUtils.getOrCompute(CacheNames.LEARNING_RESOURCE, cacheKey, LIST_TTL,
+                            () -> learningResourceRepository.findPublicFeatured(
+                                            orgId, normalizedKeyword, normalizedTopics, from, to, normalizedDirection)
+                                    .map(LearningResourceResponse::from)
+                                    .map(this::withDescriptionPreview)
+                                    .map(Optional::of)
+                                    .defaultIfEmpty(Optional.empty())
+                                    .flatMap(featuredOptional -> {
+                                        Integer featuredId = featuredOptional.map(LearningResourceResponse::getId).orElse(null);
+                                        Mono<List<LearningResourceResponse>> items = learningResourceRepository.findPublicPage(
+                                                        orgId, featuredId, normalizedKeyword, normalizedTopics,
+                                                        from, to, normalizedDirection, limit, offset)
+                                                .map(LearningResourceResponse::from)
+                                                .map(this::withDescriptionPreview)
+                                                .collectList();
+                                        Mono<Long> total = learningResourceRepository.countPublicPage(
+                                                orgId, featuredId, normalizedKeyword, normalizedTopics, from, to);
+
+                                        return Mono.zip(items, total)
+                                                .map(result -> FeaturedPaginatedResponse.of(
+                                                        featuredOptional.orElse(null),
+                                                        result.getT1(), result.getT2(), page, limit));
+                                    }));
+                })
+                .switchIfEmpty(Mono.just(FeaturedPaginatedResponse.of(
+                        null, List.of(), 0, page, limit)));
+    }
+
+    /**
+     * Resource descriptions are rich HTML. List cards only need a bounded plain-text excerpt;
+     * detail endpoints intentionally retain the full description.
+     */
+    private LearningResourceResponse withDescriptionPreview(LearningResourceResponse item) {
+        item.setDescription(HtmlPreviewUtils.toPlainTextPreview(
+                item.getDescription(), DESCRIPTION_PREVIEW_LENGTH));
+        return item;
+    }
+
     public Mono<PaginatedResponse<LearningResourceResponse>> getByType(String type, int page, int limit) {
         int offset = page * limit;
         String resourceType = normalizeType(type);
@@ -188,5 +262,18 @@ public class LearningResourceService {
 
     private String normalizeType(String type) {
         return ArticleTopicCatalog.normalize(type);
+    }
+
+    private String normalizeTopics(String topics) {
+        if (topics == null || topics.isBlank()) {
+            return "";
+        }
+        return Arrays.stream(topics.split(","))
+                .map(ArticleTopicCatalog::normalize)
+                .filter(topic -> topic != null && !topic.isBlank())
+                .distinct()
+                .sorted()
+                .reduce((left, right) -> left + "," + right)
+                .orElse("");
     }
 }

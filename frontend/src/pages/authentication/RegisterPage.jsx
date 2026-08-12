@@ -12,7 +12,7 @@ import GoogleIcon from '@mui/icons-material/Google';
 import Page from '../../components/Page';
 import { ScrollRevealFields } from '../../components/animations/ScrollReveal';
 import Input from '../../components/Input';
-import { getRegisterSchema } from '../../utils/regexUtils';
+import { getPasswordRequirementState, getRegisterSchema } from '../../utils/regexUtils';
 import { useAuth } from '../../hooks/useAuth';
 import { useOrgNavigate, useOrgPath } from '../../hooks/useOrgNavigate';
 import useOrganizationStore from '../../stores/organizationStore';
@@ -55,13 +55,7 @@ const RegisterPage = () => {
       }
     : undefined;
 
-  const passwordRequirements = {
-    length: passwordValue.length >= 8,
-    uppercase: /[A-Z]/.test(passwordValue),
-    lowercase: /[a-z]/.test(passwordValue),
-    digit: /\d/.test(passwordValue),
-    special: /[@$!%*?&]/.test(passwordValue),
-  };
+  const passwordRequirements = getPasswordRequirementState(passwordValue);
 
   const registerSchema = useMemo(() => getRegisterSchema(t), [t]);
 

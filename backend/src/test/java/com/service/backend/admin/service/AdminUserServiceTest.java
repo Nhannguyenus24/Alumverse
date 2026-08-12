@@ -9,6 +9,7 @@ import com.service.backend.shared.enums.UserRole;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.service.EmailService;
 import com.service.backend.shared.service.SseService;
+import com.service.backend.shared.service.VerificationRecommendationService;
 import com.service.backend.shared.utils.CacheUtils;
 import com.service.backend.user.dao.PeerVerificationRepository;
 import com.service.backend.user.dao.UserOrganizationMemberRepository;
@@ -43,6 +44,7 @@ class AdminUserServiceTest {
     @Mock private NotificationService notificationService;
     @Mock private CacheUtils cacheUtils;
     @Mock private EmailService emailService;
+    @Mock private VerificationRecommendationService verificationRecommendationService;
 
     @InjectMocks private AdminUserService adminUserService;
 

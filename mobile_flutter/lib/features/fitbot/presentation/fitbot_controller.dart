@@ -11,6 +11,7 @@ import '../data/fitbot_repository.dart';
 const _storageKey = 'fitbot_chat_history';
 const _ttl = Duration(days: 7);
 const _maxMessages = 30;
+const fitBotMinQuestionLength = 3;
 
 FitBotMessage _welcomeMessage() => FitBotMessage(
   id: 'welcome',
@@ -49,7 +50,7 @@ class FitBotController extends StateNotifier<FitBotState> {
 
   Future<void> sendMessage(String text) async {
     final trimmed = text.trim();
-    if (trimmed.isEmpty || state.isTyping) return;
+    if (trimmed.length < fitBotMinQuestionLength || state.isTyping) return;
 
     final userMsg = FitBotMessage(
       id: 'u${DateTime.now().microsecondsSinceEpoch}',

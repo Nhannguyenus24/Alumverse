@@ -67,6 +67,7 @@
   "saving": "Saving...",
   "fitbot_chat_tooltip": "Chat with AI assistant",
   "fitbot_send_placeholder": "Send a message...",
+  "fitbot_question_too_short": "Please enter at least 3 characters.",
   "fitbot_error_message": "Sorry, an error occurred connecting to the server. Please try again later.",
   "chat_tooltip": "Messages",
   "chat_login_prompt": "Please log in to use the chat feature with alumni and friends.",

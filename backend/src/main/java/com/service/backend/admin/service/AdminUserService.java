@@ -40,6 +40,8 @@ import com.service.backend.shared.dao.UserDisplayInfo;
 import com.service.backend.user.dao.PeerVerificationRepository;
 import com.service.backend.user.dao.UserProfileRepository;
 import com.service.backend.shared.service.EmailService;
+import com.service.backend.shared.service.VerificationRecommendationService;
+import com.service.backend.shared.dto.VerificationRecommendationResponse;
 
 
 import lombok.RequiredArgsConstructor;
@@ -65,6 +67,7 @@ public class AdminUserService {
     private final NotificationService notificationService;
     private final CacheUtils cacheUtils;
     private final EmailService emailService;
+    private final VerificationRecommendationService verificationRecommendationService;
 
     public Mono<PaginatedResponse<UserResponse>> getAllUsers(int page, int size, String search, String role, String status, Integer organizationId) {
         int offset = page * size;
@@ -629,6 +632,17 @@ public class AdminUserService {
         return getVerificationRequests(organizationId, keyword, true, requestType, page, size);
     }
 
+    public Mono<VerificationRecommendationResponse> getVerificationRecommendation(Integer requestId) {
+        return adminUserRepository.findVerificationRecommendationContext(requestId)
+                .flatMap(context -> SecurityUtils.assertCanManageContentOrganization(context.getOrganizationId())
+                        .then(verificationRecommendationService.recommend(context)))
+                .doOnSuccess(result -> logger.info(
+                        "verificationRecommendation: requestId={}, verdict={}, generatedByAi={}",
+                        requestId,
+                        result == null ? null : result.getVerdict(),
+                        result == null ? null : result.getGeneratedByAi()));
+    }
+
     private Mono<PaginatedResponse<VerificationRequestResponse>> getVerificationRequests(Integer organizationId, String keyword, boolean pendingOnly, String requestType, int page, int size) {
         int offset = page * size;
         String kw = (keyword != null && !keyword.trim().isEmpty()) ? "%" + keyword.trim() + "%" : null;
@@ -860,15 +874,21 @@ public class AdminUserService {
                 .doOnError(error -> logger.error("Error updating is_trusted_verifier for user {} and organization {}: {}", userId, organizationId, error.getMessage()));
     }
 
-    public Mono<UserGrowthStatisticsDTO> getUserGrowthStatistics(Integer organizationId) {
+    public Mono<UserGrowthStatisticsDTO> getUserGrowthStatistics(Integer organizationId,
+                                                                 java.time.LocalDateTime from,
+                                                                 java.time.LocalDateTime to) {
         java.time.LocalDateTime now = java.time.LocalDateTime.now();
         java.time.LocalDateTime today = now.minusDays(1);
         java.time.LocalDateTime sevenDaysAgo = now.minusDays(7);
         java.time.LocalDateTime thirtyDaysAgo = now.minusDays(30);
+        // The today/7d/30d buckets stay fixed; only the daily-registration series
+        // follows the selected [start, end) window.
+        java.time.LocalDateTime end = to != null ? to : now;
+        java.time.LocalDateTime start = from != null ? from : end.minusDays(30);
 
         return Mono.zip(
                 adminUserRepository.getAggregatedUserGrowthStats(today, sevenDaysAgo, thirtyDaysAgo, organizationId),
-                adminUserRepository.getDailyUserRegistrations(organizationId)
+                adminUserRepository.getDailyUserRegistrationsBetween(start, end, organizationId)
                         .map(p -> UserGrowthStatisticsDTO.DayCount.builder()
                                 .date(p.getDate() != null ? p.getDate().toString() : "")
                                 .count(p.getCount() != null ? p.getCount() : 0L)

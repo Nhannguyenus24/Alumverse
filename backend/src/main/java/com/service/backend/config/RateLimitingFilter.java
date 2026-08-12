@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpMethod;
 import org.springframework.core.Ordered;
 import org.springframework.stereotype.Component;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
@@ -27,6 +28,7 @@ import com.service.backend.shared.exception.ApplicationException;
 import java.time.Duration;
 
 @Component
+@ConditionalOnProperty(name = "app.rate-limit.enabled", havingValue = "true", matchIfMissing = true)
 public class RateLimitingFilter implements WebFilter, Ordered {
 
     private final ObjectMapper objectMapper;
@@ -49,10 +51,10 @@ public class RateLimitingFilter implements WebFilter, Ordered {
 
     @Getter
     private enum RateLimitPlan {
-        AUTH(5, Duration.ofMinutes(1)),      // Các API nhạy cảm: 5 requests / phút
-        UPLOAD(5, Duration.ofMinutes(1)),   // Các API upload file: 5 requests / phút
-        FEEDBACK(3, Duration.ofMinutes(1)),  // Feedback công khai (khách vãng lai): 3 requests / phút chống spam
-        DEFAULT(100, Duration.ofMinutes(1)); // API thông thường: 100 requests / phút
+        AUTH(5000, Duration.ofMinutes(1)),      // Các API nhạy cảm: 5 requests / phút
+        UPLOAD(5000, Duration.ofMinutes(1)),   // Các API upload file: 5 requests / phút
+        FEEDBACK(3000, Duration.ofMinutes(1)),  // Feedback công khai (khách vãng lai): 3 requests / phút chống spam
+        DEFAULT(10000, Duration.ofMinutes(1)); // API thông thường: 100 requests / phút
 
         private final Bandwidth limit;
 

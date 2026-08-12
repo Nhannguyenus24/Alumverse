@@ -338,7 +338,10 @@ public class AdminOrganizationService {
 
     public Mono<FeatureConfig.SiteIdentity> getSiteIdentity(Integer organizationId) {
         return requireOrganization(organizationId)
-                .map(org -> parseConfig(org.getFeaturesConfig()).getSiteIdentity());
+                .map(org -> {
+                    FeatureConfig.SiteIdentity identity = parseConfig(org.getFeaturesConfig()).getSiteIdentity();
+                    return identity != null ? identity : new FeatureConfig.SiteIdentity();
+                });
     }
 
     public Mono<FeatureConfig> updateSiteIdentity(Integer organizationId, FeatureConfig.SiteIdentity siteIdentity) {
@@ -354,7 +357,10 @@ public class AdminOrganizationService {
 
     public Mono<FeatureConfig.BrandConfig> getBrandConfig(Integer organizationId) {
         return requireOrganization(organizationId)
-                .map(org -> parseConfig(org.getFeaturesConfig()).getBrandConfig());
+                .map(org -> {
+                    FeatureConfig.BrandConfig brand = parseConfig(org.getFeaturesConfig()).getBrandConfig();
+                    return brand != null ? brand : new FeatureConfig.BrandConfig();
+                });
     }
 
     public Mono<FeatureConfig> updateBrandConfig(Integer organizationId, FeatureConfig.BrandConfig brandConfig) {
@@ -447,7 +453,10 @@ public class AdminOrganizationService {
 
     public Mono<FeatureConfig.PrivacySettings> getPrivacySettings(Integer organizationId) {
         return requireOrganization(organizationId)
-                .map(org -> parseConfig(org.getFeaturesConfig()).getPrivacySettings());
+                .map(org -> {
+                    FeatureConfig.PrivacySettings settings = parseConfig(org.getFeaturesConfig()).getPrivacySettings();
+                    return settings != null ? settings : new FeatureConfig.PrivacySettings();
+                });
     }
 
     public Mono<FeatureConfig> updatePrivacySettings(Integer organizationId,
@@ -635,11 +644,14 @@ public class AdminOrganizationService {
                         : Mono.error(e));
     }
 
-    public Mono<FeedbackStatisticsDTO> getFeedbackStatistics() {
+    public Mono<FeedbackStatisticsDTO> getFeedbackStatistics(java.time.LocalDateTime from, java.time.LocalDateTime to) {
+        // Totals stay all-time; only the feedback timeline follows the selected window.
+        java.time.LocalDateTime end = to != null ? to : java.time.LocalDateTime.now();
+        java.time.LocalDateTime start = from != null ? from : end.minusDays(30);
         return Mono.zip(
                 schoolFeedbackRepository.countByOrganizationId(null),
                 schoolFeedbackRepository.countUnread(),
-                schoolFeedbackRepository.getDailyFeedbackCounts()
+                schoolFeedbackRepository.getDailyFeedbackCountsBetween(start, end)
                         .map(p -> FeedbackStatisticsDTO.DayCount.builder()
                                 .date(p.getDate() != null ? p.getDate().toString() : "")
                                 .count(p.getCount() != null ? p.getCount() : 0L)

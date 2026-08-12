@@ -5,12 +5,13 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/route_names.dart';
 import '../../../../shared/widgets/app_toast.dart';
+import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/logo.dart';
 import '../providers/organization_provider.dart';
 
 /// Pick the organization to enter (Moodle-style gate). Loads the list of
 /// organizations from the backend so the user chooses from a dropdown instead
-/// of guessing a slug. Falls back to a free-text slug field if the list fails.
+/// of guessing a slug.
 class OrganizationSelectPage extends ConsumerStatefulWidget {
   const OrganizationSelectPage({super.key});
 
@@ -21,15 +22,7 @@ class OrganizationSelectPage extends ConsumerStatefulWidget {
 
 class _OrganizationSelectPageState
     extends ConsumerState<OrganizationSelectPage> {
-  final _formKey = GlobalKey<FormState>();
-  final _slugCtl = TextEditingController(); // fallback when list fails
   String? _selectedSlug;
-
-  @override
-  void dispose() {
-    _slugCtl.dispose();
-    super.dispose();
-  }
 
   Future<void> _enter(String slug) async {
     await ref.read(organizationStateProvider.notifier).fetchOrganization(slug);
@@ -51,11 +44,6 @@ class _OrganizationSelectPageState
       return;
     }
     await _enter(slug);
-  }
-
-  Future<void> _submitFallback() async {
-    if (!_formKey.currentState!.validate()) return;
-    await _enter(_slugCtl.text.trim());
   }
 
   @override
@@ -93,20 +81,16 @@ class _OrganizationSelectPageState
                       child: Center(child: CircularProgressIndicator()),
                     ),
                 error:
-                    (_, __) => _Fallback(
-                      formKey: _formKey,
-                      controller: _slugCtl,
-                      loading: loading,
-                      onSubmit: _submitFallback,
+                    (_, __) => ErrorView(
+                      message: 'organization.org_list_load_failed'.tr(),
+                      iconColor: Theme.of(context).colorScheme.primary,
                       onRetry: () => ref.invalidate(organizationListProvider),
                     ),
                 data: (orgs) {
                   if (orgs.isEmpty) {
-                    return _Fallback(
-                      formKey: _formKey,
-                      controller: _slugCtl,
-                      loading: loading,
-                      onSubmit: _submitFallback,
+                    return ErrorView(
+                      message: 'organization.org_list_load_failed'.tr(),
+                      iconColor: Theme.of(context).colorScheme.primary,
                       onRetry: () => ref.invalidate(organizationListProvider),
                     );
                   }
@@ -173,76 +157,6 @@ class _OrganizationSelectPageState
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-/// Free-text slug entry, shown only if the organization list can't be loaded.
-class _Fallback extends StatelessWidget {
-  const _Fallback({
-    required this.formKey,
-    required this.controller,
-    required this.loading,
-    required this.onSubmit,
-    required this.onRetry,
-  });
-
-  final GlobalKey<FormState> formKey;
-  final TextEditingController controller;
-  final bool loading;
-  final VoidCallback onSubmit;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return Form(
-      key: formKey,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            'organization.org_list_load_failed'.tr(),
-            textAlign: TextAlign.center,
-          ),
-          TextButton(onPressed: onRetry, child: Text('common.retry'.tr())),
-          const SizedBox(height: 8),
-          TextFormField(
-            controller: controller,
-            validator:
-                (v) =>
-                    (v == null || v.trim().isEmpty)
-                        ? 'organization.org_identifier_required'.tr()
-                        : null,
-            decoration: InputDecoration(
-              labelText: 'organization.org_identifier'.tr(),
-              hintText: 'organization.org_identifier_hint'.tr(),
-              prefixIcon: const Icon(Icons.link),
-            ),
-            onFieldSubmitted: (_) => onSubmit(),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: loading ? null : onSubmit,
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-            ),
-            child:
-                loading
-                    ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                    : Text(
-                      'common.next'.tr(),
-                      style: const TextStyle(fontSize: 16),
-                    ),
-          ),
-        ],
       ),
     );
   }

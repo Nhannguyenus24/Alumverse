@@ -20,17 +20,20 @@ const emptyStats = {
   dailyRegistrations: [],
 };
 
-const useAdminUserGrowthStats = (organizationId) => {
+const useAdminUserGrowthStats = (organizationId, from, to) => {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(emptyStats);
 
   useEffect(() => {
-    const params = organizationId ? { organizationId } : {};
+    const params = {};
+    if (organizationId) params.organizationId = organizationId;
+    if (from) params.from = from;
+    if (to) params.to = to;
     fetchSafe(() => apiClient.get('/admin/users/growth-statistics', { params }), emptyStats).then((data) => {
       setStats(data || emptyStats);
       setLoading(false);
     });
-  }, [organizationId]);
+  }, [organizationId, from, to]);
 
   return { loading, stats };
 };

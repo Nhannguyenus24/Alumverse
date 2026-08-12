@@ -17,9 +17,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.service.backend.shared.utils.SecurityUtils;
+import org.springframework.format.annotation.DateTimeFormat;
 import reactor.core.publisher.Mono;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.access.prepost.PreAuthorize;
+
+import java.time.LocalDateTime;
 
 @Tag(name = "Admin > Dashboard", description = "API endpoints for admin dashboard metrics and statistics")
 @RestController
@@ -37,8 +40,10 @@ public class AdminDashboardController {
     }
 
     @GetMapping("/metrics")
-    public Mono<ResponseEntity<ApiResponse<DashboardMetricsDTO>>> getMetrics() {
-        return dashboardService.getMetrics()
+    public Mono<ResponseEntity<ApiResponse<DashboardMetricsDTO>>> getMetrics(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to) {
+        return dashboardService.getMetrics(from, to)
                 .map(metrics -> ResponseEntity.ok(new ApiResponse<>("Metrics fetched", metrics)));
     }
 
@@ -66,14 +71,18 @@ public class AdminDashboardController {
     }
 
     @GetMapping("/engagement")
-    public Mono<ResponseEntity<ApiResponse<EngagementStatsDTO>>> getEngagement() {
-        return insightsService.getEngagement()
+    public Mono<ResponseEntity<ApiResponse<EngagementStatsDTO>>> getEngagement(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to) {
+        return insightsService.getEngagement(from, to)
                 .map(e -> ResponseEntity.ok(new ApiResponse<>("Engagement fetched", e)));
     }
 
     @GetMapping("/platform")
-    public Mono<ResponseEntity<ApiResponse<PlatformStatsDTO>>> getPlatform() {
-        return insightsService.getPlatform()
+    public Mono<ResponseEntity<ApiResponse<PlatformStatsDTO>>> getPlatform(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to) {
+        return insightsService.getPlatform(from, to)
                 .map(p -> ResponseEntity.ok(new ApiResponse<>("Platform stats fetched", p)));
     }
 }

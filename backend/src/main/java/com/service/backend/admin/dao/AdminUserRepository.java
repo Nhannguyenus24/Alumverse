@@ -55,6 +55,12 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
     Mono<Long> countUsersCreatedSince(@Param("since") LocalDateTime since);
 
     /**
+     * Count users created within the [from, to) window (for the windowed "new users" metric).
+     */
+    @Query("SELECT COUNT(*) FROM users WHERE created_at >= :from AND created_at < :to")
+    Mono<Long> countUsersCreatedBetween(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+
+    /**
      * Watch user with peer verifications (get users who verified this user)
      * @param userId The target user ID
      * @return Flux of verifier user data
@@ -553,6 +559,24 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
            "ORDER BY date")
     Flux<com.service.backend.shared.projection.DailyCountProjection> getDailyUserRegistrations(@Param("organizationId") Integer organizationId);
 
+    /**
+     * Daily registration counts within an explicit [from, to) window (windowed variant
+     * of {@link #getDailyUserRegistrations}).
+     */
+    @Query("SELECT CAST(u.created_at AS DATE) AS date, COUNT(*) AS count " +
+           "FROM users u " +
+           "WHERE u.created_at >= :from AND u.created_at < :to " +
+           "AND (CAST(:organizationId AS INTEGER) IS NULL OR EXISTS (" +
+           "    SELECT 1 FROM organization_members om " +
+           "    WHERE om.user_id = u.id AND om.organization_id = :organizationId" +
+           ")) " +
+           "GROUP BY CAST(u.created_at AS DATE) " +
+           "ORDER BY date")
+    Flux<com.service.backend.shared.projection.DailyCountProjection> getDailyUserRegistrationsBetween(
+        @Param("from") LocalDateTime from,
+        @Param("to") LocalDateTime to,
+        @Param("organizationId") Integer organizationId);
+
     @Query("""
         SELECT
             SUM(CASE WHEN u.created_at >= :today THEN 1 ELSE 0 END) AS new_users_today,
@@ -602,4 +626,27 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
 
     @Query("SELECT member_id, organization_id FROM verification_requests WHERE id = :requestId")
     Mono<com.service.backend.admin.dto.VerificationRequestInfo> findVerificationRequestInfoById(@Param("requestId") Integer requestId);
+
+    @Query("""
+            SELECT vr.id AS request_id,
+                   vr.member_id AS member_id,
+                   vr.organization_id AS organization_id,
+                   u.full_name AS full_name,
+                   om.student_id AS student_id,
+                   CAST(om.faculty AS text) AS declared_faculty,
+                   CAST(om.program AS text) AS declared_program,
+                   CAST(om.major AS text) AS declared_major,
+                   CAST(om.started_year AS text) AS declared_started_year,
+                   CAST(om.graduated_year AS text) AS declared_graduated_year,
+                   CAST(om.graduation_status AS text) AS declared_graduation_status,
+                   CAST(vr.document_type AS text) AS document_type,
+                   vr.ai_summary AS ocr_text
+            FROM verification_requests vr
+            JOIN users u ON u.id = vr.member_id
+            JOIN organization_members om
+              ON om.user_id = vr.member_id AND om.organization_id = vr.organization_id
+            WHERE vr.id = :requestId
+            """)
+    Mono<com.service.backend.admin.dto.VerificationRecommendationContext> findVerificationRecommendationContext(
+            @Param("requestId") Integer requestId);
 }

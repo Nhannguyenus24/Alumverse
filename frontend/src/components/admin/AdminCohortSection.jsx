@@ -27,9 +27,9 @@ const ChartCard = ({ title, children }) => (
   </Box>
 );
 
-const AdminCohortSection = () => {
+const AdminCohortSection = ({ from, to }) => {
   const { t } = useTranslation(['admin']);
-  const { stats } = useAdminCohortStats();
+  const { stats } = useAdminCohortStats(from, to);
 
   const points = (arr) => (arr || []).map((s) => ({ name: String(s.name ?? '—'), value: Number(s.value ?? 0) }));
 

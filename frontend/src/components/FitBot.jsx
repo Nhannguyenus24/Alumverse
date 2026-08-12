@@ -5,6 +5,7 @@ import { styled, keyframes } from '@mui/material/styles';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useTranslation } from 'react-i18next';
+import { streamFitBotResponse } from '../utils/fitBotApi';
 
 const CHAT_HISTORY_STORAGE_KEY = 'fitbot_chat_history';
 const CHAT_HISTORY_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
@@ -248,9 +249,29 @@ const MessageBubble = styled(Box, {
   '& p': { margin: '0 0 0.5em 0', '&:last-child': { margin: 0 } },
   '& ul, & ol': { margin: '0 0 0.5em 0', paddingLeft: '1.5em' },
   '& li': { marginBottom: '0.2em' },
+  '& table': {
+    display: 'block',
+    maxWidth: '100%',
+    overflowX: 'auto',
+    borderCollapse: 'collapse',
+    margin: '0 0 0.5em 0',
+    fontSize: '0.85rem',
+  },
+  '& th, & td': {
+    border: `1px solid ${theme.palette.divider}`,
+    padding: theme.spacing(0.5, 1),
+    textAlign: 'left',
+    whiteSpace: 'nowrap',
+  },
+  '& thead th': {
+    backgroundColor: theme.palette.mode === 'dark'
+      ? theme.palette.grey[700]
+      : theme.palette.grey[100],
+  },
 }));
 
 const InputContainer = styled(Box)(({ theme }) => ({
+  position: 'relative',
   padding: theme.spacing(2),
   borderTop: `1px solid ${theme.palette.divider}`,
   backgroundColor: theme.palette.background.paper,
@@ -258,6 +279,20 @@ const InputContainer = styled(Box)(({ theme }) => ({
   display: 'flex',
   gap: theme.spacing(1),
   alignItems: 'flex-end',
+}));
+
+const InputValidationMessage = styled(Typography)(({ theme }) => ({
+  position: 'absolute',
+  left: theme.spacing(2),
+  bottom: `calc(100% + ${theme.spacing(0.5)})`,
+  zIndex: 1,
+  margin: 0,
+  padding: theme.spacing(0.5, 1),
+  borderRadius: theme.spacing(1),
+  backgroundColor: theme.palette.background.paper,
+  color: theme.palette.primary.main,
+  boxShadow: '0 2px 6px rgba(0, 0, 0, 0.12)',
+  pointerEvents: 'none',
 }));
 
 const TypingIndicator = styled(Box)(({ theme }) => ({
@@ -293,47 +328,7 @@ const SUGGESTION_KEYS = [
   'fitbot_suggestion_admin_office',
 ];
 
-// Query the RAG API and return the answer. The endpoint responds with a
-// single JSON body ({ answer, sources }), so we do a plain JSON POST that
-// mirrors the working curl request rather than SSE streaming.
-const streamSSEResponse = async (userMessage, onChunk, onComplete, onError, signal) => {
-  const apiEndpoint = '/fitbot-api/api/query';
-
-  try {
-    const requestBody = {
-      question: userMessage,
-      top_k: 7,
-      model: 'gemini-2.5-flash',
-      use_reranker: false,
-    };
-
-    const response = await fetch(apiEndpoint, {
-      method: 'POST',
-      headers: {
-        accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestBody),
-      signal,
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const answer = typeof data === 'string'
-      ? data
-      : (data.answer || data.response || data.text || data.content || '');
-
-    if (answer) onChunk(answer);
-    onComplete();
-  } catch (error) {
-    if (error.name !== 'AbortError') {
-      onError(error);
-    }
-  }
-};
+const MIN_QUESTION_LENGTH = 3;
 
 export default function FitBot({ isOpen = false, isBlocked = false, onOpen, onClose }) {
   const { t } = useTranslation('common');
@@ -376,6 +371,13 @@ export default function FitBot({ isOpen = false, isBlocked = false, onOpen, onCl
     };
   }, []);
 
+  // Hide suggestion when blocked by another chat widget
+  useEffect(() => {
+    if (isBlocked) {
+      setShowSuggestion(false);
+    }
+  }, [isBlocked]);
+
   // Show random suggestion at random interval
   useEffect(() => {
     if (!isChatOpen) {
@@ -406,13 +408,16 @@ export default function FitBot({ isOpen = false, isBlocked = false, onOpen, onCl
         clearTimeout(suggestionTimeoutRef.current);
         clearTimeout(suggestionHideTimeoutRef.current);
       };
+    } else {
+      setShowSuggestion(false);
     }
   }, [isBlocked, isChatOpen, t]);
 
 
   const handleSendMessage = useCallback(async (messageText) => {
-    const textToSend = typeof messageText === 'string' ? messageText : inputValue.trim();
-    if (!textToSend) return;
+    const rawText = typeof messageText === 'string' ? messageText : inputValue;
+    const textToSend = rawText.trim();
+    if (textToSend.length < MIN_QUESTION_LENGTH) return;
 
     // Add user message
     const userMessage = {
@@ -449,29 +454,28 @@ export default function FitBot({ isOpen = false, isBlocked = false, onOpen, onCl
     abortControllerRef.current = new AbortController();
 
     // Stream response from server via SSE
-    streamSSEResponse(
-      textToSend,
-      (chunk) => {
-        // Cập nhật trực tiếp ngay khi nhận chunk để markdown render không bị lỗi và chữ chạy nhanh hơn
-        fullResponse += chunk;
-        setMessages((prev) => {
-          const updatedMessages = [...prev];
-          const botMessageIndex = updatedMessages.findIndex(
-            (msg) => msg.id === botMessageId
-          );
-          if (botMessageIndex >= 0) {
-            updatedMessages[botMessageIndex].text = fullResponse;
-          }
-          return updatedMessages;
-        });
-      },
-      () => {
-        // On complete
-        setIsTyping(false);
-        abortControllerRef.current = null;
-      },
-      () => {
-        // On error - show fallback message
+    try {
+      await streamFitBotResponse(textToSend, {
+        signal: abortControllerRef.current.signal,
+        onContent: (chunk) => {
+          // Cập nhật trực tiếp ngay khi nhận chunk để markdown render không bị lỗi và chữ chạy nhanh hơn
+          fullResponse += chunk;
+          setMessages((prev) => {
+            const updatedMessages = [...prev];
+            const botMessageIndex = updatedMessages.findIndex(
+              (msg) => msg.id === botMessageId
+            );
+            if (botMessageIndex >= 0) {
+              updatedMessages[botMessageIndex].text = fullResponse;
+            }
+            return updatedMessages;
+          });
+        },
+      });
+      setIsTyping(false);
+      abortControllerRef.current = null;
+    } catch (error) {
+      if (error.name !== 'AbortError') {
         const errorMessage = t('fitbot_error_message');
         fullResponse = errorMessage;
         setMessages((prev) => {
@@ -486,9 +490,8 @@ export default function FitBot({ isOpen = false, isBlocked = false, onOpen, onCl
         });
         setIsTyping(false);
         abortControllerRef.current = null;
-      },
-      abortControllerRef.current.signal
-    );
+      }
+    }
   }, [inputValue, t]);
 
   const handleSuggestionClick = useCallback((suggestion) => {
@@ -496,6 +499,10 @@ export default function FitBot({ isOpen = false, isBlocked = false, onOpen, onCl
     onOpen?.();
     handleSendMessage(suggestion);
   }, [handleSendMessage, onOpen]);
+
+  const trimmedInput = inputValue.trim();
+  const inputTooShort =
+    trimmedInput.length > 0 && trimmedInput.length < MIN_QUESTION_LENGTH;
 
   const handleClose = useCallback(() => {
     onClose?.();
@@ -608,6 +615,11 @@ export default function FitBot({ isOpen = false, isBlocked = false, onOpen, onCl
 
           {/* Input */}
           <InputContainer>
+            {inputTooShort && (
+              <InputValidationMessage variant="caption" role="alert">
+                {t('fitbot_question_too_short')}
+              </InputValidationMessage>
+            )}
             <TextField
               fullWidth
               size="small"
@@ -626,13 +638,18 @@ export default function FitBot({ isOpen = false, isBlocked = false, onOpen, onCl
                 '& .MuiOutlinedInput-root': {
                   borderRadius: '20px',
                   fontSize: '0.95rem',
+                  ...(inputTooShort && {
+                    '& fieldset': { borderColor: 'primary.main' },
+                    '&:hover fieldset': { borderColor: 'primary.main' },
+                    '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+                  }),
                 },
               }}
             />
             <Button
               variant="contained"
               onClick={() => handleSendMessage()}
-              disabled={isTyping || !inputValue.trim()}
+              disabled={isTyping || trimmedInput.length < MIN_QUESTION_LENGTH}
               size="small"
               sx={{
                 borderRadius: '50%',

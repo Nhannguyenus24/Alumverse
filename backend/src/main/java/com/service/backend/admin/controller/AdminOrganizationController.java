@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.service.backend.admin.dto.FeedbackStatisticsDTO;
@@ -103,8 +104,10 @@ public class AdminOrganizationController {
 
     @GetMapping("/feedback-statistics")
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
-    public Mono<ResponseEntity<ApiResponse<FeedbackStatisticsDTO>>> getFeedbackStatistics() {
-        return organizationService.getFeedbackStatistics()
+    public Mono<ResponseEntity<ApiResponse<FeedbackStatisticsDTO>>> getFeedbackStatistics(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) java.time.LocalDateTime from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) java.time.LocalDateTime to) {
+        return organizationService.getFeedbackStatistics(from, to)
                 .map(stats -> ResponseEntity.ok(
                         new ApiResponse<>("Feedback statistics fetched successfully", stats)));
     }
