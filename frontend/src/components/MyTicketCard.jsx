@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Box, Typography, Button, Chip, TextField, Stack } from "@mui/material";
 import { Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
 import ConfirmationNumberOutlinedIcon from "@mui/icons-material/ConfirmationNumberOutlined";
@@ -77,7 +78,14 @@ const MyTicketCard = ({ ticket, onCancelled, highlighted = false }) => {
       id={ticket.ticketCode ? `ticket-${ticket.ticketCode}` : undefined}
       sx={{
         borderRadius: 1.5,
-        bgcolor: highlighted ? "primary.light" : "background.paper",
+        // Highlight uses a translucent primary wash (opacity tuned per mode), the
+        // same convention as the other highlighted surfaces (NetworkChatPanel,
+        // NetworkSearchMemberCard). A solid `primary.light` fill reads as a harsh
+        // bright block on dark, so it is not used here.
+        bgcolor: highlighted
+          ? (theme) =>
+              alpha(theme.palette.primary.main, theme.palette.mode === "dark" ? 0.16 : 0.08)
+          : "background.paper",
         border: "1px solid",
         borderColor: highlighted ? "primary.main" : "divider",
         boxShadow: highlighted ? 4 : undefined,

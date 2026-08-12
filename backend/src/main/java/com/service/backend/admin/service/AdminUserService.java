@@ -874,15 +874,21 @@ public class AdminUserService {
                 .doOnError(error -> logger.error("Error updating is_trusted_verifier for user {} and organization {}: {}", userId, organizationId, error.getMessage()));
     }
 
-    public Mono<UserGrowthStatisticsDTO> getUserGrowthStatistics(Integer organizationId) {
+    public Mono<UserGrowthStatisticsDTO> getUserGrowthStatistics(Integer organizationId,
+                                                                 java.time.LocalDateTime from,
+                                                                 java.time.LocalDateTime to) {
         java.time.LocalDateTime now = java.time.LocalDateTime.now();
         java.time.LocalDateTime today = now.minusDays(1);
         java.time.LocalDateTime sevenDaysAgo = now.minusDays(7);
         java.time.LocalDateTime thirtyDaysAgo = now.minusDays(30);
+        // The today/7d/30d buckets stay fixed; only the daily-registration series
+        // follows the selected [start, end) window.
+        java.time.LocalDateTime end = to != null ? to : now;
+        java.time.LocalDateTime start = from != null ? from : end.minusDays(30);
 
         return Mono.zip(
                 adminUserRepository.getAggregatedUserGrowthStats(today, sevenDaysAgo, thirtyDaysAgo, organizationId),
-                adminUserRepository.getDailyUserRegistrations(organizationId)
+                adminUserRepository.getDailyUserRegistrationsBetween(start, end, organizationId)
                         .map(p -> UserGrowthStatisticsDTO.DayCount.builder()
                                 .date(p.getDate() != null ? p.getDate().toString() : "")
                                 .count(p.getCount() != null ? p.getCount() : 0L)

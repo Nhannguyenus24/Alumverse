@@ -77,8 +77,10 @@ public class AuditController {
      */
     @GetMapping("/login-history/stats")
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
-    public Mono<ResponseEntity<ApiResponse<Map<String, Object>>>> getLoginStats() {
-        return auditService.getLoginStats()
+    public Mono<ResponseEntity<ApiResponse<Map<String, Object>>>> getLoginStats(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to) {
+        return auditService.getLoginStats(from, to)
                 .map(data -> ResponseEntity.ok(
                         new ApiResponse<>("Login stats fetched successfully", data)));
     }

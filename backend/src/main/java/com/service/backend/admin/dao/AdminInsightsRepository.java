@@ -11,6 +11,8 @@ import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.time.LocalDateTime;
+
 /**
  * Read-only aggregation queries powering the admin dashboard insight charts
  * (funnels, cohorts, engagement, platform health). Bound to {@link Event} only to
@@ -111,6 +113,12 @@ public interface AdminInsightsRepository extends R2dbcRepository<Event, Long> {
            "GROUP BY EXTRACT(HOUR FROM login_at) ORDER BY EXTRACT(HOUR FROM login_at)")
     Flux<KeyCountProjection> loginsByHour();
 
+    // Windowed variant of loginsByHour for the dashboard time-range selector.
+    @Query("SELECT CAST(EXTRACT(HOUR FROM login_at) AS text) AS key, COUNT(*) AS count " +
+           "FROM user_login_histories WHERE login_at >= :from AND login_at < :to " +
+           "GROUP BY EXTRACT(HOUR FROM login_at) ORDER BY EXTRACT(HOUR FROM login_at)")
+    Flux<KeyCountProjection> loginsByHourBetween(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+
     // ====================== Platform: chat ===========================
 
     @Query("SELECT COUNT(*) FROM chat_messages WHERE deleted_at IS NULL")
@@ -129,6 +137,12 @@ public interface AdminInsightsRepository extends R2dbcRepository<Event, Long> {
            "WHERE created_at >= CURRENT_DATE - INTERVAL '14 days' AND deleted_at IS NULL " +
            "GROUP BY CAST(created_at AS DATE) ORDER BY date")
     Flux<DailyCountProjection> chatMessagesByDay();
+
+    // Windowed variant of chatMessagesByDay for the dashboard time-range selector.
+    @Query("SELECT CAST(created_at AS DATE) AS date, COUNT(*) AS count FROM chat_messages " +
+           "WHERE created_at >= :from AND created_at < :to AND deleted_at IS NULL " +
+           "GROUP BY CAST(created_at AS DATE) ORDER BY date")
+    Flux<DailyCountProjection> chatMessagesByDayBetween(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
 
     @Query("SELECT status AS key, COUNT(*) AS count FROM chat_conversation_requests GROUP BY status")
     Flux<KeyCountProjection> chatRequestsByStatus();

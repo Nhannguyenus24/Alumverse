@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,13 +61,15 @@ public class AuditService {
          .doOnError(e -> logger.error("Error fetching login histories for user {}", e.getMessage()));
     }
 
-    public Mono<Map<String, Object>> getLoginStats() {
+    public Mono<Map<String, Object>> getLoginStats(LocalDateTime from, LocalDateTime to) {
+        LocalDateTime end = to != null ? to : LocalDateTime.now();
+        LocalDateTime start = from != null ? from : end.minusDays(30);
         return Mono.zip(
-                auditRepository.getLoginMethodStats()
+                auditRepository.getLoginMethodStatsBetween(start, end)
                         .map(p -> Map.of("method", p.getMethod() != null ? p.getMethod() : "unknown",
                                          "count", p.getCount() != null ? p.getCount() : 0L))
                         .collectList(),
-                auditRepository.getDailyLoginStats()
+                auditRepository.getDailyLoginStatsBetween(start, end)
                         .map(p -> Map.of("date", p.getDate() != null ? p.getDate().toString() : "",
                                          "count", p.getCount() != null ? p.getCount() : 0L))
                         .collectList()

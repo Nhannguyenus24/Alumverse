@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.service.backend.admin.dto.BanUserRequest;
@@ -381,8 +382,10 @@ public class AdminUserController {
 
     @GetMapping("/growth-statistics")
     public Mono<ResponseEntity<ApiResponse<UserGrowthStatisticsDTO>>> getUserGrowthStatistics(
-            @RequestParam(required = false) Integer organizationId) {
-        return adminUserService.getUserGrowthStatistics(organizationId)
+            @RequestParam(required = false) Integer organizationId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) java.time.LocalDateTime from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) java.time.LocalDateTime to) {
+        return adminUserService.getUserGrowthStatistics(organizationId, from, to)
                 .map(stats -> ResponseEntity.ok(
                         new ApiResponse<>("User growth statistics fetched successfully", stats)));
     }

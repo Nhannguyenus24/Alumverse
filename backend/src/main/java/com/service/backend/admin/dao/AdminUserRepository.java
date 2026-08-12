@@ -55,6 +55,12 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
     Mono<Long> countUsersCreatedSince(@Param("since") LocalDateTime since);
 
     /**
+     * Count users created within the [from, to) window (for the windowed "new users" metric).
+     */
+    @Query("SELECT COUNT(*) FROM users WHERE created_at >= :from AND created_at < :to")
+    Mono<Long> countUsersCreatedBetween(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+
+    /**
      * Watch user with peer verifications (get users who verified this user)
      * @param userId The target user ID
      * @return Flux of verifier user data
@@ -552,6 +558,24 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
            "GROUP BY CAST(u.created_at AS DATE) " +
            "ORDER BY date")
     Flux<com.service.backend.shared.projection.DailyCountProjection> getDailyUserRegistrations(@Param("organizationId") Integer organizationId);
+
+    /**
+     * Daily registration counts within an explicit [from, to) window (windowed variant
+     * of {@link #getDailyUserRegistrations}).
+     */
+    @Query("SELECT CAST(u.created_at AS DATE) AS date, COUNT(*) AS count " +
+           "FROM users u " +
+           "WHERE u.created_at >= :from AND u.created_at < :to " +
+           "AND (CAST(:organizationId AS INTEGER) IS NULL OR EXISTS (" +
+           "    SELECT 1 FROM organization_members om " +
+           "    WHERE om.user_id = u.id AND om.organization_id = :organizationId" +
+           ")) " +
+           "GROUP BY CAST(u.created_at AS DATE) " +
+           "ORDER BY date")
+    Flux<com.service.backend.shared.projection.DailyCountProjection> getDailyUserRegistrationsBetween(
+        @Param("from") LocalDateTime from,
+        @Param("to") LocalDateTime to,
+        @Param("organizationId") Integer organizationId);
 
     @Query("""
         SELECT

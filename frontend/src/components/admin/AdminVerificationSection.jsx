@@ -15,10 +15,10 @@ const metricRowSx = {
   '& > *': { flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 8px)', md: '1 1 0' } },
 };
 
-const AdminVerificationSection = () => {
+const AdminVerificationSection = ({ from, to }) => {
   const { t } = useTranslation('admin');
   const system = useAdminSystemContext();
-  const { stats } = useAdminVerificationStats(system?.stableOrgId);
+  const { stats } = useAdminVerificationStats(system?.stableOrgId, from, to);
 
   const alumniStatusData = [
     { name: t('admin:verification_pending'), count: Number(stats.pendingAlumniRequests) },

@@ -17,9 +17,9 @@ const metricRowSx = {
 
 const pct = (n) => `${Number(n ?? 0).toFixed(1)}%`;
 
-const AdminFunnelSection = () => {
+const AdminFunnelSection = ({ from, to }) => {
   const { t } = useTranslation(['admin']);
-  const { stats } = useAdminFunnelStats();
+  const { stats } = useAdminFunnelStats(from, to);
 
   // Translate the backend stage keys into localized funnel labels.
   const toFunnel = (stages) =>
