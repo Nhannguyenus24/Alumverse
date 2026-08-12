@@ -54,11 +54,16 @@ public class AdminMonitoringService {
                     "Datadog credentials are not configured on the server"));
         }
         return webClient.get()
+                // `query` chứa `{...}` (vd: system.cpu.count{*}, {area:heap}). Nếu truyền thẳng vào
+                // queryParam, WebClient (chế độ TEMPLATE_AND_VALUES) hiểu nhầm `{*}` là biến URI template
+                // và `.build()` không có biến sẽ ném IllegalArgumentException -> GlobalExceptionHandler
+                // trả 400. Truyền query qua placeholder `{query}` + `.build(query)` để nó được coi là
+                // GIÁ TRỊ (được encode, không parse `{}` bên trong).
                 .uri(uri -> uri.path("/api/v1/query")
                         .queryParam("from", from)
                         .queryParam("to", to)
-                        .queryParam("query", query)
-                        .build())
+                        .queryParam("query", "{query}")
+                        .build(query))
                 .header("DD-API-KEY", apiKey)
                 .header("DD-APPLICATION-KEY", appKey)
                 .retrieve()
