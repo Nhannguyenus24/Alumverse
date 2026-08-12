@@ -50,77 +50,62 @@ import dayjs from 'dayjs';
 import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetricTile';
 import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
 
-// ── Datadog metrics source ────────────────────────────────────────────────────
-// The backend no longer exposes Prometheus (disabled in prod for performance);
-// Micrometer metrics are shipped to Datadog under their original *dot* names
-// (http.endpoint.requests, http.endpoint.latency, ai.generate.time, ...). This
-// page reads them straight from Datadog's v1 timeseries query API.
-//
-// Assumptions (adjust here if they don't match your Datadog account):
-//   • Timer latency is reported in MILLISECONDS (Micrometer's Datadog registry
-//     base time unit). If a latency chart reads ~1000x too small, the pipeline is
-//     using seconds instead — append ` * 1000` to the corresponding query.
-//   • Client-side percentiles land as `<timer>.percentile` gauges tagged `phi`
-//     (e.g. http.endpoint.latency.percentile{phi:0.95}).
-//   • Standard JVM/system meters keep their Micrometer dot names
-//     (jvm.memory.used, jvm.gc.pause, system.cpu.usage, r2dbc.pool.acquired, ...).
-const DD_SITE = import.meta.env.VITE_DATADOG_SITE || 'datadoghq.com';
-const DD_API_KEY = import.meta.env.VITE_DATADOG_API_KEY || '';
-const DD_APP_KEY = import.meta.env.VITE_DATADOG_APP_KEY || '';
-const DD_QUERY_URL = `https://api.${DD_SITE}/api/v1/query`;
+const PROMETHEUS_BASE = import.meta.env.VITE_PROMETHEUS_URL || '';
+const PROMETHEUS_URL_RANGE = `${PROMETHEUS_BASE}/api/v1/query_range`;
+const PROMETHEUS_URL_INSTANT = `${PROMETHEUS_BASE}/api/v1/query`;
 
 const QUERIES = {
-  requestRate: 'sum:http.endpoint.requests{*}.as_rate()',
-  errorRate: 'sum:http.endpoint.errors{*}.as_rate()',
-  latencyAvg: 'avg:http.endpoint.latency.avg{*}',
-  latencyP50: 'avg:http.endpoint.latency.percentile{phi:0.5}',
-  latencyP95: 'avg:http.endpoint.latency.percentile{phi:0.95}',
-  latencyP99: 'avg:http.endpoint.latency.percentile{phi:0.99}',
-  cpuSystem: 'avg:system.cpu.usage{*} * 100',
-  cpuProcess: 'avg:process.cpu.usage{*} * 100',
-  memoryHeap: 'sum:jvm.memory.used{area:heap} / 1048576',
-  gcPause: 'sum:jvm.gc.pause.sum{*}.as_rate()',
-  jvmThreadsCurrent: 'sum:jvm.threads.live{*}',
-  jvmThreadsDaemon: 'sum:jvm.threads.daemon{*}',
-  jvmThreadsPeak: 'sum:jvm.threads.peak{*}',
-  dbActiveConns: 'sum:r2dbc.pool.acquired{*}',
-  dbIdleConns: 'sum:r2dbc.pool.idle{*}',
-  dbPendingConns: 'sum:r2dbc.pool.pending{*}',
+  requestRate: 'sum(rate(http_endpoint_requests_total[5m]))',
+  errorRate: 'sum(rate(http_endpoint_errors_total[5m]))',
+  latencyAvg: '(sum(rate(http_endpoint_latency_seconds_sum[5m])) / sum(rate(http_endpoint_latency_seconds_count[5m]))) * 1000',
+  latencyP50: 'histogram_quantile(0.50, sum(rate(http_endpoint_latency_seconds_bucket[5m])) by (le)) * 1000',
+  latencyP95: 'histogram_quantile(0.95, sum(rate(http_endpoint_latency_seconds_bucket[5m])) by (le)) * 1000',
+  latencyP99: 'histogram_quantile(0.99, sum(rate(http_endpoint_latency_seconds_bucket[5m])) by (le)) * 1000',
+  cpuSystem: 'system_cpu_usage * 100',
+  cpuProcess: 'process_cpu_usage * 100',
+  memoryHeap: 'sum(jvm_memory_used_bytes{area="heap"}) / 1024 / 1024',
+  gcPause: 'sum(rate(jvm_gc_pause_seconds_sum[5m])) * 1000',
+  jvmThreadsCurrent: 'sum(jvm_threads_live_threads)',
+  jvmThreadsDaemon: 'sum(jvm_threads_daemon_threads)',
+  jvmThreadsPeak: 'sum(jvm_threads_peak_threads)',
+  dbActiveConns: 'sum(r2dbc_pool_acquired_connections)',
+  dbIdleConns: 'sum(r2dbc_pool_idle_connections)',
+  dbPendingConns: 'sum(r2dbc_pool_pending_connections)',
 
   // --- Tier 1: custom application I/O metrics (already emitted by backend) ---
-  emailLatency: 'avg:email.send.time.avg{*}',
-  ocrLatency: 'avg:ocr.processing.time.avg{*}',
-  imageLatency: 'avg:image.processing.time.avg{*}',
-  imageLatencyP50: 'avg:image.processing.time.percentile{phi:0.5}',
-  imageLatencyP95: 'avg:image.processing.time.percentile{phi:0.95}',
-  imageLatencyP99: 'avg:image.processing.time.percentile{phi:0.99}',
-  fileUploadLatency: 'avg:file.upload.processing.time.avg{*}',
-  storageSize: 'sum:image.storage.size.bytes{*} / 1048576',
+  emailLatency: '(sum(rate(email_send_time_seconds_sum[5m])) / sum(rate(email_send_time_seconds_count[5m]))) * 1000',
+  ocrLatency: '(sum(rate(ocr_processing_time_seconds_sum[5m])) / sum(rate(ocr_processing_time_seconds_count[5m]))) * 1000',
+  imageLatency: '(sum(rate(image_processing_time_seconds_sum[5m])) / sum(rate(image_processing_time_seconds_count[5m]))) * 1000',
+  imageLatencyP50: 'histogram_quantile(0.50, sum(rate(image_processing_time_seconds_bucket[5m])) by (le)) * 1000',
+  imageLatencyP95: 'histogram_quantile(0.95, sum(rate(image_processing_time_seconds_bucket[5m])) by (le)) * 1000',
+  imageLatencyP99: 'histogram_quantile(0.99, sum(rate(image_processing_time_seconds_bucket[5m])) by (le)) * 1000',
+  fileUploadLatency: '(sum(rate(file_upload_processing_time_seconds_sum[5m])) / sum(rate(file_upload_processing_time_seconds_count[5m]))) * 1000',
+  storageSize: 'sum(image_storage_size_bytes) / 1024 / 1024',
 
-  // --- Tier 2: standard Micrometer / JVM metrics ---
-  memoryNonHeap: 'sum:jvm.memory.used{area:nonheap} / 1048576',
-  heapUtilPct: '(sum:jvm.memory.used{area:heap} / sum:jvm.memory.max{area:heap}) * 100',
-  systemLoad: 'avg:system.load.average.1m{*}',
-  cpuCount: 'avg:system.cpu.count{*}',
-  gcCount: 'sum:jvm.gc.pause.count{*}.as_rate()',
-  fdUsagePct: '(avg:process.files.open{*} / avg:process.files.max{*}) * 100',
-  dbSaturationPct: '(sum:r2dbc.pool.acquired{*} / sum:r2dbc.pool.max.allocated{*}) * 100',
+  // --- Tier 2: standard Micrometer / JVM metrics (scraped via enable.all=true) ---
+  memoryNonHeap: 'sum(jvm_memory_used_bytes{area="nonheap"}) / 1024 / 1024',
+  heapUtilPct: 'sum(jvm_memory_used_bytes{area="heap"}) / sum(jvm_memory_max_bytes{area="heap"}) * 100',
+  systemLoad: 'system_load_average_1m',
+  cpuCount: 'system_cpu_count',
+  gcCount: 'sum(rate(jvm_gc_pause_seconds_count[5m]))',
+  fdUsagePct: 'process_files_open_files / process_max_file_descriptors * 100',
+  dbSaturationPct: 'sum(r2dbc_pool_acquired_connections) / sum(r2dbc_pool_max_allocated_connections) * 100',
 
   // --- Tier 3: newly added backend metrics ---
-  rateLimitRejected: 'sum:ratelimit.rejected{*}.as_count()',
-  wsActiveSessions: 'sum:chat.websocket.active.sessions{*}',
-  wsActiveGroups: 'sum:chat.websocket.active.groups{*}',
+  rateLimitRejected: 'sum(increase(ratelimit_rejected_total[5m]))',
+  wsActiveSessions: 'sum(chat_websocket_active_sessions)',
+  wsActiveGroups: 'sum(chat_websocket_active_groups)',
 
   // --- SSE (real-time push) metrics ---
-  sseActiveConnections: 'sum:sse.active.connections{*}',
-  sseActiveUsers: 'sum:sse.active.users{*}',
+  sseActiveConnections: 'sum(sse_active_connections)',
+  sseActiveUsers: 'sum(sse_active_users)',
 
   // --- AI (LLM) latency metrics ---
-  aiLatencyAvg: 'avg:ai.generate.time.avg{*}',
-  aiLatencyP50: 'avg:ai.generate.time.percentile{phi:0.5}',
-  aiLatencyP95: 'avg:ai.generate.time.percentile{phi:0.95}',
-  aiLatencyP99: 'avg:ai.generate.time.percentile{phi:0.99}',
-  aiCallRate: 'sum:ai.generate.count{*}.as_rate()'
+  aiLatencyAvg: '(sum(rate(ai_generate_time_seconds_sum[5m])) / sum(rate(ai_generate_time_seconds_count[5m]))) * 1000',
+  aiLatencyP50: 'histogram_quantile(0.50, sum(rate(ai_generate_time_seconds_bucket[5m])) by (le)) * 1000',
+  aiLatencyP95: 'histogram_quantile(0.95, sum(rate(ai_generate_time_seconds_bucket[5m])) by (le)) * 1000',
+  aiLatencyP99: 'histogram_quantile(0.99, sum(rate(ai_generate_time_seconds_bucket[5m])) by (le)) * 1000',
+  aiCallRate: 'sum(rate(ai_generate_count_total[5m]))'
 };
 
 const buildHuePalette = (count, { baseHue = 210, saturation = 68, lightness = 55 } = {}) => {
@@ -207,88 +192,50 @@ const formatUptime = (totalSeconds) => {
   return `${minutes}m`;
 };
 
-// Datadog's v1 timeseries endpoint returns tags as `["method:get", "path:/api/x"]`.
-// Parse them into a `{ method, path, ... }` object so the rest of this page can keep
-// reading `res.metric.<tag>` exactly like it did with Prometheus label sets.
-const parseTagSet = (tagSet = []) => {
-  const tags = {};
-  (tagSet || []).forEach((entry) => {
-    const idx = entry.indexOf(':');
-    if (idx > 0) tags[entry.slice(0, idx)] = entry.slice(idx + 1);
-  });
-  return tags;
-};
-
-// Datadog `pointlist` is `[[epochMillis, value], ...]` with `null` for gaps.
-// Prometheus gave `[[epochSeconds, "value"], ...]`; convert to that shape so the
-// downstream merge/render code is untouched.
-const toSecondPoints = (pointlist = []) =>
-  (pointlist || [])
-    .filter(([, value]) => value !== null && value !== undefined)
-    .map(([ms, value]) => [Math.floor(ms / 1000), value]);
-
-const aggregatePoints = (pointlist = [], mode = 'last') => {
-  const values = (pointlist || [])
-    .map(([, value]) => value)
-    .filter((value) => value !== null && value !== undefined && !Number.isNaN(value));
-  if (values.length === 0) return 0;
-  switch (mode) {
-    case 'sum': return values.reduce((a, b) => a + b, 0);
-    case 'avg': return values.reduce((a, b) => a + b, 0) / values.length;
-    case 'max': return Math.max(...values);
-    case 'last':
-    default: return values[values.length - 1];
-  }
-};
-
-const datadogQuery = async (query, from, to) => {
-  const res = await axios.get(DD_QUERY_URL, {
-    params: { from, to, query },
-    headers: { 'DD-API-KEY': DD_API_KEY, 'DD-APPLICATION-KEY': DD_APP_KEY },
-    timeout: 60000
-  });
-  return (res.data && Array.isArray(res.data.series)) ? res.data.series : [];
-};
-
-// Single aggregated series → `[[epochSeconds, value], ...]` (was fetchPrometheusRange).
-const fetchDatadogRange = async (query, from, to) => {
+const fetchPrometheusRange = async (query, start, end, step) => {
   try {
-    const series = await datadogQuery(query, from, to);
-    return series.length > 0 ? toSecondPoints(series[0].pointlist) : [];
+    const res = await axios.get(PROMETHEUS_URL_RANGE, {
+      params: { query, start, end, step: `${step}s` },
+      timeout: 60000
+    });
+    if (res.data && res.data.data && res.data.data.result.length > 0) {
+      return res.data.data.result[0].values;
+    }
+    return [];
   } catch (err) {
-    console.error(`Error fetching Datadog range query: ${query}`, err);
+    console.error(`Error fetching range query: ${query}`, err);
     return [];
   }
 };
 
-// Series broken down by tag → `[{ metric: {...tags}, values: [[sec, val], ...] }]`
-// (was fetchPrometheusRangeMultiple).
-const fetchDatadogRangeMultiple = async (query, from, to) => {
+const fetchPrometheusRangeMultiple = async (query, start, end, step) => {
   try {
-    const series = await datadogQuery(query, from, to);
-    return series.map((s) => ({
-      metric: parseTagSet(s.tag_set),
-      values: toSecondPoints(s.pointlist)
-    }));
+    const res = await axios.get(PROMETHEUS_URL_RANGE, {
+      params: { query, start, end, step: `${step}s` },
+      timeout: 60000
+    });
+    if (res.data && res.data.data && res.data.data.result) {
+      return res.data.data.result;
+    }
+    return [];
   } catch (err) {
-    console.error(`Error fetching Datadog range multiple query: ${query}`, err);
+    console.error(`Error fetching range multiple query: ${query}`, err);
     return [];
   }
 };
 
-// Datadog has no true "instant" endpoint, so query the window and collapse each
-// series to one number via `mode` → `[{ metric: {...tags}, value: [sec, val] }]`
-// (was fetchPrometheusInstant). Use 'sum' for counters (total over range), 'avg'
-// for averages, 'max' for maxima and 'last' for gauges (current value).
-const fetchDatadogInstant = async (query, from, to, mode = 'last') => {
+const fetchPrometheusInstant = async (query, time) => {
   try {
-    const series = await datadogQuery(query, from, to);
-    return series.map((s) => ({
-      metric: parseTagSet(s.tag_set),
-      value: [to, aggregatePoints(s.pointlist, mode)]
-    }));
+    const res = await axios.get(PROMETHEUS_URL_INSTANT, {
+      params: { query, time },
+      timeout: 60000
+    });
+    if (res.data && res.data.data && res.data.data.result.length > 0) {
+      return res.data.data.result;
+    }
+    return [];
   } catch (err) {
-    console.error(`Error fetching Datadog instant query: ${query}`, err);
+    console.error(`Error fetching instant query: ${query}`, err);
     return [];
   }
 };
@@ -489,69 +436,69 @@ const AdminSystemMonitoringPage = () => {
         cronjobExecutionsRes,
         cronjobDurationRes
       ] = await Promise.all([
-        fetchDatadogRange(QUERIES.requestRate, start, end),
-        fetchDatadogRange(QUERIES.errorRate, start, end),
-        fetchDatadogRange(QUERIES.latencyAvg, start, end),
-        fetchDatadogRange(QUERIES.latencyP50, start, end),
-        fetchDatadogRange(QUERIES.latencyP95, start, end),
-        fetchDatadogRange(QUERIES.latencyP99, start, end),
-        fetchDatadogRange(QUERIES.cpuSystem, start, end),
-        fetchDatadogRange(QUERIES.cpuProcess, start, end),
-        fetchDatadogRange(QUERIES.memoryHeap, start, end),
-        fetchDatadogRange(QUERIES.gcPause, start, end),
-        fetchDatadogRange(QUERIES.jvmThreadsCurrent, start, end),
-        fetchDatadogRange(QUERIES.jvmThreadsDaemon, start, end),
-        fetchDatadogRange(QUERIES.jvmThreadsPeak, start, end),
-        fetchDatadogRange(QUERIES.dbActiveConns, start, end),
-        fetchDatadogRange(QUERIES.dbIdleConns, start, end),
-        fetchDatadogRange(QUERIES.dbPendingConns, start, end),
-        fetchDatadogRange(QUERIES.emailLatency, start, end),
-        fetchDatadogRange(QUERIES.ocrLatency, start, end),
-        fetchDatadogRange(QUERIES.imageLatency, start, end),
-        fetchDatadogRange(QUERIES.imageLatencyP50, start, end),
-        fetchDatadogRange(QUERIES.imageLatencyP95, start, end),
-        fetchDatadogRange(QUERIES.imageLatencyP99, start, end),
-        fetchDatadogRange(QUERIES.fileUploadLatency, start, end),
-        fetchDatadogRange(QUERIES.storageSize, start, end),
-        fetchDatadogRange(QUERIES.memoryNonHeap, start, end),
-        fetchDatadogRange(QUERIES.heapUtilPct, start, end),
-        fetchDatadogRange(QUERIES.systemLoad, start, end),
-        fetchDatadogRange(QUERIES.cpuCount, start, end),
-        fetchDatadogRange(`sum:logback.events{level:error}.as_count().rollup(sum, ${step})`, start, end),
-        fetchDatadogRange(`sum:logback.events{level:warn}.as_count().rollup(sum, ${step})`, start, end),
-        fetchDatadogRange(QUERIES.gcCount, start, end),
-        fetchDatadogRange(QUERIES.fdUsagePct, start, end),
-        fetchDatadogRange(QUERIES.dbSaturationPct, start, end),
-        fetchDatadogRange(`sum:auth.login{result:success}.as_count().rollup(sum, ${step})`, start, end),
-        fetchDatadogRange(`sum:auth.login{result:failure}.as_count().rollup(sum, ${step})`, start, end),
-        fetchDatadogRange(`sum:auth.token.refresh{result:success}.as_count().rollup(sum, ${step})`, start, end),
-        fetchDatadogRange(`sum:auth.token.refresh{result:failure}.as_count().rollup(sum, ${step})`, start, end),
-        fetchDatadogRange(QUERIES.rateLimitRejected, start, end),
-        fetchDatadogRange(QUERIES.wsActiveSessions, start, end),
-        fetchDatadogRange(QUERIES.wsActiveGroups, start, end),
-        fetchDatadogInstant(`top(sum:http.endpoint.requests{*} by {path,method}.as_count(), 50, 'sum', 'desc')`, start, end, 'sum'),
-        fetchDatadogInstant(`top(sum:api.errors.count{*} by {error_code}.as_count(), 50, 'sum', 'desc')`, start, end, 'sum'),
-        fetchDatadogInstant(`avg:http.endpoint.latency.avg{*} by {path,method}`, start, end, 'avg'),
-        fetchDatadogInstant(`max:http.endpoint.latency.max{*} by {path,method}`, start, end, 'max'),
-        fetchDatadogRangeMultiple(`sum:api.errors.count{*} by {error_code}.as_count().rollup(sum, ${step})`, start, end),
-        fetchDatadogRangeMultiple(`sum:http.endpoint.requests{*} by {status}.as_rate()`, start, end),
-        fetchDatadogInstant(`sum:http.endpoint.requests{*}.as_count()`, start, end, 'sum'),
-        fetchDatadogInstant(`sum:http.endpoint.errors{*}.as_count()`, start, end, 'sum'),
-        fetchDatadogInstant(QUERIES.latencyAvg, start, end, 'last'),
-        fetchDatadogInstant(`avg:process.uptime{*}`, start, end, 'last'),
-        fetchDatadogInstant(QUERIES.sseActiveUsers, start, end, 'last'),
-        fetchDatadogRange(QUERIES.sseActiveConnections, start, end),
-        fetchDatadogRange(QUERIES.sseActiveUsers, start, end),
-        fetchDatadogRange(`sum:sse.events.sent{*}.as_count().rollup(sum, ${step})`, start, end),
-        fetchDatadogRangeMultiple(`sum:sse.events.sent{*} by {event}.as_count().rollup(sum, ${step})`, start, end),
-        fetchDatadogRange(QUERIES.aiLatencyAvg, start, end),
-        fetchDatadogRange(QUERIES.aiLatencyP50, start, end),
-        fetchDatadogRange(QUERIES.aiLatencyP95, start, end),
-        fetchDatadogRange(QUERIES.aiLatencyP99, start, end),
-        fetchDatadogRange(QUERIES.aiCallRate, start, end),
-        fetchDatadogRangeMultiple(`sum:email.send.count{*} by {template}.as_count().rollup(sum, ${step})`, start, end),
-        fetchDatadogRangeMultiple(`sum:cronjob.execution.time.count{*} by {job_name}.as_count().rollup(sum, ${step})`, start, end),
-        fetchDatadogRangeMultiple(`avg:cronjob.execution.time.avg{*} by {job_name}`, start, end)
+        fetchPrometheusRange(QUERIES.requestRate, start, end, step),
+        fetchPrometheusRange(QUERIES.errorRate, start, end, step),
+        fetchPrometheusRange(QUERIES.latencyAvg, start, end, step),
+        fetchPrometheusRange(QUERIES.latencyP50, start, end, step),
+        fetchPrometheusRange(QUERIES.latencyP95, start, end, step),
+        fetchPrometheusRange(QUERIES.latencyP99, start, end, step),
+        fetchPrometheusRange(QUERIES.cpuSystem, start, end, step),
+        fetchPrometheusRange(QUERIES.cpuProcess, start, end, step),
+        fetchPrometheusRange(QUERIES.memoryHeap, start, end, step),
+        fetchPrometheusRange(QUERIES.gcPause, start, end, step),
+        fetchPrometheusRange(QUERIES.jvmThreadsCurrent, start, end, step),
+        fetchPrometheusRange(QUERIES.jvmThreadsDaemon, start, end, step),
+        fetchPrometheusRange(QUERIES.jvmThreadsPeak, start, end, step),
+        fetchPrometheusRange(QUERIES.dbActiveConns, start, end, step),
+        fetchPrometheusRange(QUERIES.dbIdleConns, start, end, step),
+        fetchPrometheusRange(QUERIES.dbPendingConns, start, end, step),
+        fetchPrometheusRange(QUERIES.emailLatency, start, end, step),
+        fetchPrometheusRange(QUERIES.ocrLatency, start, end, step),
+        fetchPrometheusRange(QUERIES.imageLatency, start, end, step),
+        fetchPrometheusRange(QUERIES.imageLatencyP50, start, end, step),
+        fetchPrometheusRange(QUERIES.imageLatencyP95, start, end, step),
+        fetchPrometheusRange(QUERIES.imageLatencyP99, start, end, step),
+        fetchPrometheusRange(QUERIES.fileUploadLatency, start, end, step),
+        fetchPrometheusRange(QUERIES.storageSize, start, end, step),
+        fetchPrometheusRange(QUERIES.memoryNonHeap, start, end, step),
+        fetchPrometheusRange(QUERIES.heapUtilPct, start, end, step),
+        fetchPrometheusRange(QUERIES.systemLoad, start, end, step),
+        fetchPrometheusRange(QUERIES.cpuCount, start, end, step),
+        fetchPrometheusRange(`sum(increase(logback_events_total{level="error"}[${step}s]))`, start, end, step),
+        fetchPrometheusRange(`sum(increase(logback_events_total{level="warn"}[${step}s]))`, start, end, step),
+        fetchPrometheusRange(QUERIES.gcCount, start, end, step),
+        fetchPrometheusRange(QUERIES.fdUsagePct, start, end, step),
+        fetchPrometheusRange(QUERIES.dbSaturationPct, start, end, step),
+        fetchPrometheusRange(`sum(increase(auth_login_total{result="success"}[${step}s]))`, start, end, step),
+        fetchPrometheusRange(`sum(increase(auth_login_total{result="failure"}[${step}s]))`, start, end, step),
+        fetchPrometheusRange(`sum(increase(auth_token_refresh_total{result="success"}[${step}s]))`, start, end, step),
+        fetchPrometheusRange(`sum(increase(auth_token_refresh_total{result="failure"}[${step}s]))`, start, end, step),
+        fetchPrometheusRange(QUERIES.rateLimitRejected, start, end, step),
+        fetchPrometheusRange(QUERIES.wsActiveSessions, start, end, step),
+        fetchPrometheusRange(QUERIES.wsActiveGroups, start, end, step),
+        fetchPrometheusInstant(`topk(50, sum by (path, method) (increase(http_endpoint_requests_total[${rangeSeconds}s])))`, end),
+        fetchPrometheusInstant(`topk(50, sum by (error_code) (increase(api_errors_count_total[${rangeSeconds}s])))`, end),
+        fetchPrometheusInstant(`sum by (path, method) (increase(http_endpoint_latency_seconds_sum[${rangeSeconds}s])) / sum by (path, method) (increase(http_endpoint_latency_seconds_count[${rangeSeconds}s])) * 1000`, end),
+        fetchPrometheusInstant(`max by (path, method) (max_over_time(http_endpoint_latency_seconds_max[${rangeSeconds}s])) * 1000`, end),
+        fetchPrometheusRangeMultiple(`sum by (error_code) (increase(api_errors_count_total[${step}s]))`, start, end, step),
+        fetchPrometheusRangeMultiple(`sum by (status) (rate(http_endpoint_requests_total[5m]))`, start, end, step),
+        fetchPrometheusInstant(`sum(http_endpoint_requests_total)`, end),
+        fetchPrometheusInstant(`sum(http_endpoint_errors_total)`, end),
+        fetchPrometheusInstant(`sum(rate(http_endpoint_latency_seconds_sum[5m])) / sum(rate(http_endpoint_latency_seconds_count[5m])) * 1000`, end),
+        fetchPrometheusInstant(`process_uptime_seconds`, end),
+        fetchPrometheusInstant(QUERIES.sseActiveUsers, end),
+        fetchPrometheusRange(QUERIES.sseActiveConnections, start, end, step),
+        fetchPrometheusRange(QUERIES.sseActiveUsers, start, end, step),
+        fetchPrometheusRange(`sum(increase(sse_events_sent_total[${step}s]))`, start, end, step),
+        fetchPrometheusRangeMultiple(`sum by (event) (increase(sse_events_sent_total[${step}s]))`, start, end, step),
+        fetchPrometheusRange(QUERIES.aiLatencyAvg, start, end, step),
+        fetchPrometheusRange(QUERIES.aiLatencyP50, start, end, step),
+        fetchPrometheusRange(QUERIES.aiLatencyP95, start, end, step),
+        fetchPrometheusRange(QUERIES.aiLatencyP99, start, end, step),
+        fetchPrometheusRange(QUERIES.aiCallRate, start, end, step),
+        fetchPrometheusRangeMultiple(`sum by (template) (increase(email_send_count_total[${step}s]))`, start, end, step),
+        fetchPrometheusRangeMultiple(`sum by (job_name) (increase(cronjob_execution_time_seconds_count[${step}s]))`, start, end, step),
+        fetchPrometheusRangeMultiple(`sum by (job_name) (increase(cronjob_execution_time_seconds_sum[${step}s])) / sum by (job_name) (increase(cronjob_execution_time_seconds_count[${step}s])) * 1000`, start, end, step)
       ]);
 
       // Merge time-series data
