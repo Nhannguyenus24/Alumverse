@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import MarkEmailReadOutlinedIcon from '@mui/icons-material/MarkEmailReadOutlined';
 import { formatDateTime } from '../../utils/dateFormatter';
+import { formatFeedbackSubject } from '../../constants/feedbackSubjects';
 
 const InfoRow = ({ label, children }) => (
   <Box>
@@ -30,7 +31,7 @@ const AdminSchoolFeedbackDetailDialog = ({
   onClose,
   onMarkAsRead,
 }) => {
-  const { t } = useTranslation(['common', 'admin']);
+  const { t } = useTranslation(['common', 'admin', 'contact']);
   if (!feedback) {
     return null;
   }
@@ -59,7 +60,7 @@ const AdminSchoolFeedbackDetailDialog = ({
 
         <Divider />
 
-        <InfoRow label={t('common:subject')}>{feedback.subject}</InfoRow>
+        <InfoRow label={t('common:subject')}>{formatFeedbackSubject(t, feedback.subject)}</InfoRow>
 
         <Box sx={{ bgcolor: 'action.hover', p: 2, borderRadius: 1.5, border: 1, borderColor: 'divider' }}>
           <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, textTransform: 'uppercase', fontSize: 10 }}>

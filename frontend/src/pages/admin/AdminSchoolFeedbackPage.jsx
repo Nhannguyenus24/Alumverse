@@ -22,9 +22,10 @@ import AdminStatusChip from '../../components/admin/AdminStatusChip';
 import AdminSchoolFeedbackDetailDialog from '../../components/admin/AdminSchoolFeedbackDetailDialog';
 import { adminOrganizationApi } from '../../utils/api';
 import { formatDateTime } from '../../utils/dateFormatter';
+import { formatFeedbackSubject } from '../../constants/feedbackSubjects';
 
 const AdminSchoolFeedbackPage = () => {
-  const { t } = useTranslation('admin');
+  const { t } = useTranslation(['admin', 'contact']);
   const { enqueueSnackbar } = useSnackbar();
   const { setBreadcrumbs } = useOutletContext();
 
@@ -102,7 +103,7 @@ const AdminSchoolFeedbackPage = () => {
         </Box>
       )
     },
-    { id: 'subject', label: t('col_title'), render: (val, row) => <Typography variant="body2" sx={{ fontWeight: row.isRead ? 400 : 600 }}>{val}</Typography> },
+    { id: 'subject', label: t('col_title'), render: (val, row) => <Typography variant="body2" sx={{ fontWeight: row.isRead ? 400 : 600 }}>{formatFeedbackSubject(t, val)}</Typography> },
     { 
       id: 'isRead', 
       label: t('col_status'),

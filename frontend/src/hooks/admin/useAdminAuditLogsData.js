@@ -96,7 +96,7 @@ const useAdminAuditLogsData = (filters) => {
       const payload = unwrap(response);
       const list = asList(payload);
       setRows(list.map(mapAuditLog));
-      setTotal(payload?.totalElements ?? payload?.total ?? payload?.totalCount ?? list.length);
+      setTotal(payload?.totalItem ?? payload?.totalElements ?? payload?.total ?? payload?.totalCount ?? list.length);
     } catch {
       setRows([]);
       setTotal(0);

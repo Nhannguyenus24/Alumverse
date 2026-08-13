@@ -9,6 +9,7 @@ import { useOrganization } from '../../hooks/useOrganization';
 import { organizationApi } from '../../utils/api';
 import { useNotification } from '../../hooks/useNotification';
 import { validateVietnamPhone } from '../../utils/regexUtils';
+import { FEEDBACK_SUBJECTS, formatFeedbackSubject } from '../../constants/feedbackSubjects';
 import {
   ScrollReveal,
   ScrollRevealGroup,
@@ -42,14 +43,10 @@ const ContactPage = () => {
   const formBg = 'background.paper';
   const fieldBg = isDark ? alpha(theme.palette.common.white, 0.04) : 'grey.50';
 
-  const SUBJECT_OPTIONS = [
-    { value: 'general', label: t('subject_general') },
-    { value: 'admissions', label: t('subject_admissions') },
-    { value: 'alumni', label: t('subject_alumni') },
-    { value: 'partnership', label: t('subject_partnership') },
-    { value: 'system_error', label: t('subject_system_error') },
-    { value: 'other', label: t('subject_other') },
-  ];
+  const SUBJECT_OPTIONS = FEEDBACK_SUBJECTS.map((value) => ({
+    value,
+    label: formatFeedbackSubject(t, value),
+  }));
 
   const handleChange = (field) => (e) => {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
