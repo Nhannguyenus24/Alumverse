@@ -83,11 +83,15 @@ export const getArticleFilterConfig = (t, channels = []) => [
     type: 'date',
     key: 'fromDate',
     label: t('article:from_date'),
+    // Không được chọn "từ ngày" lớn hơn "đến ngày".
+    maxKey: 'toDate',
   },
   {
     type: 'date',
     key: 'toDate',
     label: t('article:to_date'),
+    // Không được chọn "đến ngày" nhỏ hơn "từ ngày".
+    minKey: 'fromDate',
   },
 ];
 

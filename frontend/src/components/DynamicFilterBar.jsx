@@ -327,18 +327,37 @@ const DynamicFilterBar = ({ config = [], value = {}, onChange }) => {
         if (filter.type === 'date') {
           const value = internalValue[filter.key];
           const hasValue = Boolean(value);
+          // Ràng buộc chéo khoảng ngày: "đến ngày" >= "từ ngày" và ngược lại.
+          const minDate = filter.minKey ? internalValue[filter.minKey] : undefined;
+          const maxDate = filter.maxKey ? internalValue[filter.maxKey] : undefined;
 
           return (
             <Box
-              key={filter.key} onClick={() => document.getElementById(`date-${filter.key}`)?.showPicker?.()}
-              sx={(theme) => ({ ...filterBaseSx(theme, hasValue), cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 1 })}
+              key={filter.key}
+              onClick={() => {
+                const el = document.getElementById(`date-${filter.key}`);
+                try { el?.showPicker?.(); } catch { /* showPicker requires user gesture / unsupported */ }
+              }}
+              sx={(theme) => ({ ...filterBaseSx(theme, hasValue), position: 'relative', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 1 })}
             >
               <span>{hasValue ? formatDateVN(value) : filter.label}</span>
               <CalendarTodayIcon sx={{ fontSize: '1rem' }} />
               <input
                 id={`date-${filter.key}`} type="date" value={value || ''}
+                min={minDate || undefined}
+                max={maxDate || undefined}
                 onChange={(e) => handleDateChange(filter.key, e.target.value)}
-                style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }}
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  width: '100%',
+                  height: '100%',
+                  opacity: 0,
+                  cursor: 'pointer',
+                  // On iOS/iPadOS Safari showPicker() is unreliable, so the native input
+                  // itself must be tappable to open the date picker.
+                  WebkitAppearance: 'none',
+                }}
               />
             </Box>
           );
