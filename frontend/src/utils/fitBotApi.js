@@ -111,6 +111,25 @@ export const importKnowledge = async (file, { signal, headers, overwrite = false
   return response.json();
 };
 
+export const syncKnowledge = async (name, { signal, headers } = {}) => {
+  const response = await fetch(
+    getEndpoint(`/api/knowledge/${encodeURIComponent(name)}/sync`),
+    { method: 'POST', headers: baseHeaders(headers), signal }
+  );
+  ensureSuccessfulResponse(response);
+  return response.json();
+};
+
+export const syncAllKnowledge = async ({ signal, headers } = {}) => {
+  const response = await fetch(getEndpoint('/api/knowledge/sync-all'), {
+    method: 'POST',
+    headers: baseHeaders(headers),
+    signal,
+  });
+  ensureSuccessfulResponse(response);
+  return response.json();
+};
+
 export const deleteKnowledge = async (name, { signal, headers } = {}) => {
   const response = await fetch(getEndpoint(`/api/knowledge/${encodeURIComponent(name)}`), {
     method: 'DELETE',

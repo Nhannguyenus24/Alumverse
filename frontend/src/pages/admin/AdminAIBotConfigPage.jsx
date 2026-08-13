@@ -14,6 +14,7 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
+import SyncIcon from '@mui/icons-material/Sync';
 import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
 import { useSnackbar } from 'notistack';
 import { AdminAiProvidersContent } from './AdminAiProvidersPage';
@@ -24,6 +25,8 @@ import {
   importKnowledge,
   deleteKnowledge,
   downloadKnowledgeFile,
+  syncKnowledge,
+  syncAllKnowledge,
 } from '../../utils/fitBotApi';
 
 const MIN_QUESTION_LENGTH = 3;
@@ -41,8 +44,10 @@ const AdminAIBotConfigPage = () => {
   const [files, setFiles] = useState([]);
   const [loadingFiles, setLoadingFiles] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [syncing, setSyncing] = useState(null); // filename being synced, or 'ALL'
   const [apiError, setApiError] = useState(null);
   const { enqueueSnackbar } = useSnackbar();
+  const isAdmin = useAuthStore((s) => s.user?.role === 'ADMIN');
 
   const [question, setQuestion] = useState('');
   const [botResponse, setBotResponse] = useState(null);
@@ -118,6 +123,37 @@ const AdminAIBotConfigPage = () => {
     } catch (error) {
       console.error(error);
       enqueueSnackbar(error.message, { variant: 'error' });
+    }
+  };
+
+  const handleSyncFile = async (name) => {
+    setSyncing(name);
+    try {
+      const res = await syncKnowledge(name, { headers: authHeaders() });
+      enqueueSnackbar(t('bot_sync_ok', { chunks: res.chunks_indexed ?? 0 }), { variant: 'success' });
+      await fetchFiles();
+    } catch (error) {
+      console.error(error);
+      enqueueSnackbar(error.message, { variant: 'error' });
+    } finally {
+      setSyncing(null);
+    }
+  };
+
+  const handleSyncAll = async () => {
+    setSyncing('ALL');
+    try {
+      const res = await syncAllKnowledge({ headers: authHeaders() });
+      enqueueSnackbar(
+        t('bot_sync_all_ok', { synced: res.total_synced ?? 0, chunks: res.total_chunks ?? 0 }),
+        { variant: 'success' },
+      );
+      await fetchFiles();
+    } catch (error) {
+      console.error(error);
+      enqueueSnackbar(error.message, { variant: 'error' });
+    } finally {
+      setSyncing(null);
     }
   };
 
@@ -206,15 +242,27 @@ const AdminAIBotConfigPage = () => {
             title={t('bot_kb_title')}
             subtitle={t('bot_kb_subtitle')}
             action={(
-              <Button
-                variant="contained"
-                component="label"
-                startIcon={uploading ? <CircularProgress size={20} color="inherit" /> : <UploadFileIcon />}
-                disabled={uploading}
-              >
-                {t('bot_upload_btn')}
-                <input type="file" hidden onChange={handleFileUpload} accept=".txt,.pdf,.md,.csv,.json" />
-              </Button>
+              <Stack direction="row" spacing={1}>
+                {isAdmin && (
+                  <Button
+                    variant="outlined"
+                    onClick={handleSyncAll}
+                    startIcon={syncing === 'ALL' ? <CircularProgress size={20} color="inherit" /> : <SyncIcon />}
+                    disabled={Boolean(syncing) || uploading || loadingFiles}
+                  >
+                    {t('bot_sync_all_btn')}
+                  </Button>
+                )}
+                <Button
+                  variant="contained"
+                  component="label"
+                  startIcon={uploading ? <CircularProgress size={20} color="inherit" /> : <UploadFileIcon />}
+                  disabled={uploading}
+                >
+                  {t('bot_upload_btn')}
+                  <input type="file" hidden onChange={handleFileUpload} accept=".txt,.pdf,.md,.csv,.json" />
+                </Button>
+              </Stack>
             )}
           >
               <TableContainer component={Paper} variant="outlined">
@@ -260,6 +308,16 @@ const AdminAIBotConfigPage = () => {
                             />
                           </TableCell>
                           <TableCell align="right">
+                            {file.type !== 'api' && (
+                              <IconButton
+                                color="primary"
+                                onClick={() => handleSyncFile(file.name)}
+                                disabled={Boolean(syncing)}
+                                title={t('bot_sync_file')}
+                              >
+                                {syncing === file.name ? <CircularProgress size={20} color="inherit" /> : <SyncIcon />}
+                              </IconButton>
+                            )}
                             <IconButton color="primary" onClick={() => handleViewFile(file.name)} title={t('bot_view_file')}>
                               <VisibilityIcon />
                             </IconButton>
