@@ -18,10 +18,21 @@ import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
 import { useSnackbar } from 'notistack';
 import { AdminAiProvidersContent } from './AdminAiProvidersPage';
 import useAuthStore from '../../stores/authStore';
-import { streamFitBotResponse } from '../../utils/fitBotApi';
+import {
+  streamFitBotResponse,
+  listKnowledge,
+  importKnowledge,
+  deleteKnowledge,
+  downloadKnowledgeFile,
+} from '../../utils/fitBotApi';
 
-const FITBOT_API_URL = import.meta.env.VITE_FITBOT_API_URL;
 const MIN_QUESTION_LENGTH = 3;
+
+// Every FitBOT /api/knowledge/* endpoint requires a Bearer JWT (editor/admin scope).
+const authHeaders = () => {
+  const token = useAuthStore.getState().token;
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
 
 const AdminAIBotConfigPage = () => {
   const { t } = useTranslation('admin');
@@ -72,12 +83,8 @@ const AdminAIBotConfigPage = () => {
     setLoadingFiles(true);
     setApiError(null);
     try {
-      const res = await fetch(`${FITBOT_API_URL}/api/files`, {
-        headers: { 'ngrok-skip-browser-warning': 'true' }
-      });
-      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-      const data = await res.json();
-      setFiles(data.files || []);
+      const items = await listKnowledge({ headers: authHeaders() });
+      setFiles(items);
     } catch (error) {
       console.error(error);
       setApiError(t('bot_api_connect_error'));
@@ -91,17 +98,9 @@ const AdminAIBotConfigPage = () => {
     const file = e.target.files[0];
     if (!file) return;
 
-    const formData = new FormData();
-    formData.append('file', file);
-
     setUploading(true);
     try {
-      const res = await fetch(`${FITBOT_API_URL}/api/files/upload?ingest=true`, {
-        method: 'POST',
-        headers: { 'ngrok-skip-browser-warning': 'true' },
-        body: formData,
-      });
-      if (!res.ok) throw new Error('Upload failed');
+      await importKnowledge(file, { headers: authHeaders(), overwrite: true });
       await fetchFiles();
     } catch (error) {
       enqueueSnackbar(error.message, { variant: 'error' });
@@ -111,37 +110,24 @@ const AdminAIBotConfigPage = () => {
     }
   };
 
-  const handleDeleteFile = async (filename) => {
-    if (!window.confirm(t('bot_confirm_delete_file', { filename }))) return;
+  const handleDeleteFile = async (name) => {
+    if (!window.confirm(t('bot_confirm_delete_file', { filename: name }))) return;
     try {
-      const res = await fetch(`${FITBOT_API_URL}/api/files/${filename}`, {
-        method: 'DELETE',
-        headers: { 'ngrok-skip-browser-warning': 'true' },
-      });
-      if (res.ok) {
-        await fetchFiles();
-      }
+      await deleteKnowledge(name, { headers: authHeaders() });
+      await fetchFiles();
     } catch (error) {
       console.error(error);
+      enqueueSnackbar(error.message, { variant: 'error' });
     }
   };
 
-  const handleViewFile = async (filename) => {
-    setViewFilename(filename);
+  const handleViewFile = async (name) => {
+    setViewFilename(name);
     setViewContent('');
     setViewLoading(true);
     try {
-      const res = await fetch(`${FITBOT_API_URL}/api/files/${filename}`, {
-        headers: { 'ngrok-skip-browser-warning': 'true' },
-      });
-      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-      const contentType = res.headers.get('content-type') || '';
-      if (contentType.includes('application/json')) {
-        const data = await res.json();
-        setViewContent(data.content ?? data.text ?? JSON.stringify(data, null, 2));
-      } else {
-        setViewContent(await res.text());
-      }
+      const { isTextual, text } = await downloadKnowledgeFile(name, { headers: authHeaders() });
+      setViewContent(isTextual ? text : t('bot_view_binary'));
     } catch (error) {
       console.error(error);
       enqueueSnackbar(t('bot_view_error'), { variant: 'error' });
@@ -236,33 +222,48 @@ const AdminAIBotConfigPage = () => {
                   <TableHead>
                     <TableRow>
                       <TableCell sx={{ bgcolor: 'primary.main', color: 'primary.contrastText', fontWeight: 800 }}>{t('bot_filename')}</TableCell>
+                      <TableCell sx={{ bgcolor: 'primary.main', color: 'primary.contrastText', fontWeight: 800 }}>{t('bot_status')}</TableCell>
                       <TableCell align="right" sx={{ bgcolor: 'primary.main', color: 'primary.contrastText', fontWeight: 800 }}>{t('col_actions')}</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {loadingFiles ? (
                       <TableRow>
-                        <TableCell colSpan={2} align="center"><LoadingSkeleton /></TableCell>
+                        <TableCell colSpan={3} align="center"><LoadingSkeleton /></TableCell>
                       </TableRow>
                     ) : apiError ? (
                       <TableRow>
-                        <TableCell colSpan={2} align="center">
+                        <TableCell colSpan={3} align="center">
                           <Typography color="error">{apiError}</Typography>
                         </TableCell>
                       </TableRow>
                     ) : files.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={2} align="center">{t('bot_no_files')}</TableCell>
+                        <TableCell colSpan={3} align="center">{t('bot_no_files')}</TableCell>
                       </TableRow>
                     ) : (
                       files.map((file) => (
-                        <TableRow key={file.filename}>
-                          <TableCell>{file.filename}</TableCell>
+                        <TableRow key={file.name}>
+                          <TableCell>{file.name}</TableCell>
+                          <TableCell>
+                            <Chip
+                              label={file.sync_status || 'PENDING'}
+                              size="small"
+                              color={
+                                file.sync_status === 'SYNCED'
+                                  ? 'success'
+                                  : file.sync_status === 'ERROR'
+                                    ? 'error'
+                                    : 'default'
+                              }
+                              variant="outlined"
+                            />
+                          </TableCell>
                           <TableCell align="right">
-                            <IconButton color="primary" onClick={() => handleViewFile(file.filename)} title={t('bot_view_file')}>
+                            <IconButton color="primary" onClick={() => handleViewFile(file.name)} title={t('bot_view_file')}>
                               <VisibilityIcon />
                             </IconButton>
-                            <IconButton color="error" onClick={() => handleDeleteFile(file.filename)}>
+                            <IconButton color="error" onClick={() => handleDeleteFile(file.name)}>
                               <DeleteIcon />
                             </IconButton>
                           </TableCell>

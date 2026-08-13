@@ -148,6 +148,8 @@
   "bot_view_file": "View content",
   "bot_view_close": "Close",
   "bot_view_error": "Could not load the document content.",
+  "bot_view_binary": "This file cannot be previewed as text (binary format such as PDF).",
+  "bot_status": "Status",
   "bot_no_files": "No documents yet.",
   "bot_test_title": "Response testing",
   "bot_test_subtitle": "Send a quick question to verify the bot data.",
