@@ -35,7 +35,7 @@ const LanguageSwitcher = ({ contrastMode = false, color, buttonSx }) => {
 
   return (
     <>
-      <Tooltip title={current.label} arrow placement="bottom" slotProps={TOOLTIP_SLOT_PROPS}>
+      <Tooltip title={current.label} arrow placement="bottom" slotProps={TOOLTIP_SLOT_PROPS} disableTouchListener>
         <IconButton
           onClick={handleOpen}
           size="small"

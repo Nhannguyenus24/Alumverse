@@ -400,6 +400,7 @@ const Header = () => {
                   arrow
                   placement="bottom"
                   slotProps={HEADER_TOOLTIP_SLOT_PROPS}
+                  disableTouchListener
                 >
                   <IconButton
                     size="small"
@@ -584,6 +585,7 @@ const Header = () => {
               arrow
               placement="bottom"
               slotProps={HEADER_TOOLTIP_SLOT_PROPS}
+              disableTouchListener
             >
               <IconButton
                 size="small"
