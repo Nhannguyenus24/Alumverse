@@ -79,6 +79,7 @@ public enum ErrorCode {
     ALUMNI_POST_COMMENT_NOT_FOUND("Không tìm thấy bình luận bài viết cựu sinh viên", 404),
 
     // Mentorship module
+    CV_EXTRACTION_TIMEOUT("Xử lý CV mất quá nhiều thời gian, vui lòng thử lại hoặc dùng file khác", 504),
     MENTOR_PROFILE_NOT_FOUND("Không tìm thấy hồ sơ mentor", 404),
     MENTOR_PROFILE_ALREADY_EXISTS("Hồ sơ mentor đã tồn tại", 409),
     MENTEE_PROFILE_NOT_FOUND("Không tìm thấy hồ sơ mentee", 404),

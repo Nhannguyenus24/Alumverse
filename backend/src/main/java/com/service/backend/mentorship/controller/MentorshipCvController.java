@@ -24,6 +24,8 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
+import java.time.Duration;
+
 @Slf4j
 @Tag(name = "Mentorship > CV", description = "AI-assisted CV upload and profile auto-fill")
 @RestController
@@ -36,6 +38,8 @@ public class MentorshipCvController {
     private final OCRService ocrService;
     private final CvExtractionService cvExtractionService;
     private final SkillExtractionService skillExtractionService;
+
+    private static final Duration EXTRACT_TIMEOUT = Duration.ofSeconds(150);
 
     @PostMapping("/extract")
     public Mono<ResponseEntity<ApiResponse<CvExtractionResponse>>> extractCv(
@@ -58,6 +62,8 @@ public class MentorshipCvController {
                                                 new ApiResponse<>("CV parsed successfully", profile));
                                     }));
                 })
+                .timeout(EXTRACT_TIMEOUT, Mono.error(
+                        new ApplicationException(ErrorCode.CV_EXTRACTION_TIMEOUT, ErrorCode.CV_EXTRACTION_TIMEOUT.getMessage())))
                 .doOnError(e -> log.error("CV extraction failed: {}", e.getMessage()));
     }
 
