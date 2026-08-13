@@ -115,6 +115,9 @@ public class FailoverChatModel implements ChatLanguageModel {
                         || m.contains("unavailable")
                         || m.contains("503")
                         || m.contains("500")
+                        || m.contains("404")
+                        || m.contains("not_found")
+                        || m.contains("no longer available")
                         || m.contains("timeout")
                         || m.contains("timed out")) {
                     return true;

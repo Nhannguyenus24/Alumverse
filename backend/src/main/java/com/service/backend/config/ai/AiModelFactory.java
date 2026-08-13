@@ -18,7 +18,7 @@ public class AiModelFactory {
     private static final Logger log = LoggerFactory.getLogger(AiModelFactory.class);
 
     private static final String OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
-    private static final Duration MODEL_TIMEOUT = Duration.ofSeconds(300);
+    private static final Duration MODEL_TIMEOUT = Duration.ofSeconds(120);
 
     private final AiModelsProperties properties;
 

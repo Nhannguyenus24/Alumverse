@@ -40,7 +40,7 @@ public class OCRService {
 
 
 
-    private static final int MAX_PDF_OCR_PAGES = 5;
+    private static final int MAX_PDF_OCR_PAGES = 2;
     private static final float PDF_RENDER_DPI = 200f;
     private static final int MIN_TEXT_LAYER_CHARS = 20;
     private static final String UNREADABLE = "UNREADABLE";
@@ -183,13 +183,14 @@ public class OCRService {
                 || trimmed.matches(".*\\b\\d{8,}\\b.*");
     }
 
+    /** PDF trang scan render thẳng, không thử xoay — không như ảnh chụp giấy tờ, PDF hiếm khi lệch góc. */
     private String ocrPdfPage(PDFRenderer renderer, int pageIndex, String pdfName) {
         Path tempPage = null;
         try {
             tempPage = Files.createTempFile("ocr_pdf_page_", ".png");
             BufferedImage image = renderer.renderImageWithDPI(pageIndex, PDF_RENDER_DPI, ImageType.RGB);
             ImageIO.write(image, "png", tempPage.toFile());
-            return readImage(tempPage.toFile(), "png").text();
+            return visionOcrService.extractText(tempPage.toFile(), "image/png").orElse("");
         } catch (IOException | RuntimeException e) {
             log.warn("Không OCR được trang {} của PDF '{}': {}", pageIndex + 1, pdfName, e.getMessage());
             return "";
